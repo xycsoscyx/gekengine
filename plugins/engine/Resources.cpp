@@ -131,7 +131,7 @@ namespace Gek
             readWriteResourceMap.clear();
         }
 
-        HANDLE getGlobalHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        HANDLE getGlobalHandle(std::function<HRESULT(IUnknown **)> loadResource)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
@@ -145,36 +145,37 @@ namespace Gek
             return handle;
         }
 
-        HANDLE getUniqueHandle(std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        HANDLE getUniqueHandle(std::function<HRESULT(IUnknown **)> loadResource)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            if (readWrite)
-            {
-                auto &resource = readWriteResourceMap[handle];
+            auto &resource = localResourceMap[handle];
 
-                CComPtr<IUnknown> read, write;
-                if (SUCCEEDED(loadResource(&read)) && read &&
-                    SUCCEEDED(loadResource(&write)) && write)
-                {
-                    resource.set(read, write);
-                }
-            }
-            else
+            CComPtr<IUnknown> data;
+            if (SUCCEEDED(loadResource(&data)) && data)
             {
-                auto &resource = localResourceMap[handle];
-
-                CComPtr<IUnknown> data;
-                if (SUCCEEDED(loadResource(&data)) && data)
-                {
-                    resource.set(data);
-                }
+                resource.set(data);
             }
 
             return handle;
         }
 
-        HANDLE getHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource, bool readWrite = false)
+        HANDLE getUniqueReadWriteHandle(std::function<HRESULT(IUnknown **, IUnknown **)> loadResource)
+        {
+            HANDLE handle;
+            handle.assign(InterlockedIncrement(&nextIdentifier));
+            auto &resource = readWriteResourceMap[handle];
+
+            CComPtr<IUnknown> read, write;
+            if (SUCCEEDED(loadResource(&read, &write)) && read && write)
+            {
+                resource.set(read, write);
+            }
+
+            return handle;
+        }
+
+        HANDLE getHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -191,26 +192,41 @@ namespace Gek
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
 
-                if (readWrite)
-                {
-                    auto &resource = readWriteResourceMap[handle];
+                auto &resource = localResourceMap[handle];
 
-                    CComPtr<IUnknown> read, write;
-                    if (SUCCEEDED(loadResource(&read)) && read &&
-                        SUCCEEDED(loadResource(&write)) && write)
-                    {
-                        resource.set(read, write);
-                    }
+                CComPtr<IUnknown> data;
+                if (SUCCEEDED(loadResource(&data)) && data)
+                {
+                    resource.set(data);
                 }
-                else
-                {
-                    auto &resource = localResourceMap[handle];
+            }
 
-                    CComPtr<IUnknown> data;
-                    if (SUCCEEDED(loadResource(&data)) && data)
-                    {
-                        resource.set(data);
-                    }
+            return handle;
+        }
+
+        HANDLE getReadWriteHandle(std::size_t hash, std::function<HRESULT(IUnknown **, IUnknown **)> loadResource)
+        {
+            HANDLE handle;
+            if (requestedLoadSet.count(hash) > 0)
+            {
+                auto resourceIterator = resourceHandleMap.find(hash);
+                if (resourceIterator != resourceHandleMap.end())
+                {
+                    handle = resourceIterator->second;
+                }
+            }
+            else
+            {
+                requestedLoadSet.insert(hash);
+                handle.assign(InterlockedIncrement(&nextIdentifier));
+                resourceHandleMap[hash] = handle;
+
+                auto &resource = readWriteResourceMap[handle];
+
+                CComPtr<IUnknown> read, write;
+                if (SUCCEEDED(loadResource(&read, &write)) && read && write)
+                {
+                    resource.set(read, write);
                 }
             }
 
@@ -578,81 +594,167 @@ namespace Gek
 
         STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
         {
-            auto createFunction = std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
-            {
-                CComPtr<VideoTexture> texture;
-                HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
-                if (SUCCEEDED(resultValue) && texture)
-                {
-                    resultValue = texture->QueryInterface(returnObject);
-                }
-
-                return resultValue;
-            }, std::placeholders::_1, format, width, height, depth, flags, mipmaps);
-
             if (name)
             {
                 std::size_t hash = std::hash<LPCWSTR>()(name);
-                return resourceManager.getHandle(hash, createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+                if (flags & TextureFlags::ReadWrite ? true : false)
+                {
+                    return resourceManager.getReadWriteHandle(hash, std::bind([this](IUnknown **readObject, IUnknown **writeObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
+                    {
+                        CComPtr<VideoTexture> read, write;
+                        HRESULT resultValue = video->createTexture(&read, format, width, height, depth, flags, mipmaps);
+                        resultValue |= video->createTexture(&write, format, width, height, depth, flags, mipmaps);
+                        if (SUCCEEDED(resultValue) && read && write)
+                        {
+                            resultValue = read->QueryInterface(readObject);
+                            resultValue |= write->QueryInterface(writeObject);
+                        }
+
+                        return resultValue;
+                    }, std::placeholders::_1, std::placeholders::_2, format, width, height, depth, flags, mipmaps));
+                }
+                else
+                {
+                    return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
+                    {
+                        CComPtr<VideoTexture> texture;
+                        HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
+                        if (SUCCEEDED(resultValue) && texture)
+                        {
+                            resultValue = texture->QueryInterface(returnObject);
+                        }
+
+                        return resultValue;
+                    }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
+                }
             }
             else
             {
-                return resourceManager.getGlobalHandle(createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+                return resourceManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
+                {
+                    CComPtr<VideoTexture> texture;
+                    HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
+                    if (SUCCEEDED(resultValue) && texture)
+                    {
+                        resultValue = texture->QueryInterface(returnObject);
+                    }
+
+                    return resultValue;
+                }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
             }
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            auto createFunction = std::bind([this](IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
-            {
-                CComPtr<VideoBuffer> buffer;
-                HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
-                if (SUCCEEDED(resultValue) && buffer)
-                {
-                    resultValue = buffer->QueryInterface(returnObject);
-                }
-
-                return resultValue;
-            }, std::placeholders::_1, stride, count, type, flags, staticData);
-
             if (name)
             {
                 std::size_t hash = std::hash<LPCWSTR>()(name);
-                return resourceManager.getHandle(hash, createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+                if (flags & TextureFlags::ReadWrite ? true : false)
+                {
+                    return resourceManager.getReadWriteHandle(hash, std::bind([this](IUnknown **readObject, IUnknown **writeObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    {
+                        CComPtr<VideoBuffer> read, write;
+                        HRESULT resultValue = video->createBuffer(&read, stride, count, type, flags, staticData);
+                        resultValue |= video->createBuffer(&write, stride, count, type, flags, staticData);
+                        if (SUCCEEDED(resultValue) && read && write)
+                        {
+                            resultValue = read->QueryInterface(readObject);
+                            resultValue |= write->QueryInterface(writeObject);
+                        }
+
+                        return resultValue;
+                    }, std::placeholders::_1, std::placeholders::_2, stride, count, type, flags, staticData));
+                }
+                else
+                {
+                    return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    {
+                        CComPtr<VideoBuffer> buffer;
+                        HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
+                        if (SUCCEEDED(resultValue) && buffer)
+                        {
+                            resultValue = buffer->QueryInterface(returnObject);
+                        }
+
+                        return resultValue;
+                    }, std::placeholders::_1, stride, count, type, flags, staticData));
+                }
             }
             else
             {
-                return resourceManager.getGlobalHandle(createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+                return resourceManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                {
+                    CComPtr<VideoBuffer> buffer;
+                    HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
+                    if (SUCCEEDED(resultValue) && buffer)
+                    {
+                        resultValue = buffer->QueryInterface(returnObject);
+                    }
+
+                    return resultValue;
+                }, std::placeholders::_1, stride, count, type, flags, staticData));
             }
         }
 
         STDMETHODIMP_(ResourceHandle) createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            auto createFunction = std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
-            {
-                CComPtr<VideoBuffer> buffer;
-                HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
-                if (SUCCEEDED(resultValue) && buffer)
-                {
-                    if (flags & Video::BufferFlags::UnorderedAccess)
-                    {
-                        video->getDefaultContext()->clearUnorderedAccessBuffer(buffer, 1.0f);
-                    }
-
-                    resultValue = buffer->QueryInterface(returnObject);
-                }
-
-                return resultValue;
-            }, std::placeholders::_1, format, count, type, flags, staticData);
-
             if (name)
             {
                 std::size_t hash = std::hash<LPCWSTR>()(name);
-                return resourceManager.getHandle(hash, createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+                if (flags & TextureFlags::ReadWrite ? true : false)
+                {
+                    return resourceManager.getReadWriteHandle(hash, std::bind([this](IUnknown **readObject, IUnknown **writeObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    {
+                        CComPtr<VideoBuffer> read, write;
+                        HRESULT resultValue = video->createBuffer(&read, format, count, type, flags, staticData);
+                        resultValue |= video->createBuffer(&write, format, count, type, flags, staticData);
+                        if (SUCCEEDED(resultValue) && read && write)
+                        {
+                            resultValue = read->QueryInterface(readObject);
+                            resultValue |= write->QueryInterface(writeObject);
+                        }
+
+                        return resultValue;
+                    }, std::placeholders::_1, std::placeholders::_2, format, count, type, flags, staticData));
+                }
+                else
+                {
+                    return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    {
+                        CComPtr<VideoBuffer> buffer;
+                        HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
+                        if (SUCCEEDED(resultValue) && buffer)
+                        {
+                            if (flags & Video::BufferFlags::UnorderedAccess)
+                            {
+                                video->getDefaultContext()->clearUnorderedAccessBuffer(buffer, 1.0f);
+                            }
+
+                            resultValue = buffer->QueryInterface(returnObject);
+                        }
+
+                        return resultValue;
+                    }, std::placeholders::_1, format, count, type, flags, staticData));
+                }
             }
             else
             {
-                return resourceManager.getGlobalHandle(createFunction, (flags & TextureFlags::ReadWrite ? true : false));
+                return resourceManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                {
+                    CComPtr<VideoBuffer> buffer;
+                    HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
+                    if (SUCCEEDED(resultValue) && buffer)
+                    {
+                        if (flags & Video::BufferFlags::UnorderedAccess)
+                        {
+                            video->getDefaultContext()->clearUnorderedAccessBuffer(buffer, 1.0f);
+                        }
+
+                        resultValue = buffer->QueryInterface(returnObject);
+                    }
+
+                    return resultValue;
+                }, std::placeholders::_1, format, count, type, flags, staticData));
             }
         }
 
