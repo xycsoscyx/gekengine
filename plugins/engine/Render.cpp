@@ -1,5 +1,4 @@
 ﻿#include "GEK\Engine\Render.h"
-#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\FileSystem.h"
@@ -223,8 +222,6 @@ namespace Gek
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_TRACE_FUNCTION(Render);
-
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -300,7 +297,7 @@ namespace Gek
                     "}                                                                                  \r\n" \
                     "                                                                                   \r\n";
 
-                resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram", nullptr);
+                resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram");
             }
 
             return resultValue;
@@ -317,8 +314,6 @@ namespace Gek
 
         STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
         {
-            GEK_TRACE_FUNCTION(Render);
-
             GEK_REQUIRE_VOID_RETURN(population);
             GEK_REQUIRE_VOID_RETURN(cameraEntity);
 

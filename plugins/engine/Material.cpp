@@ -1,5 +1,4 @@
 ﻿#include "GEK\Engine\Material.h"
-#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Shader.h"
@@ -36,8 +35,6 @@ namespace Gek
         // Material
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            GEK_TRACE_FUNCTION(Material, GEK_PARAMETER(fileName));
-
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 

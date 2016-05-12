@@ -1,5 +1,4 @@
 #include "GEK\Engine\Shader.h"
-#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\FileSystem.h"
@@ -620,8 +619,6 @@ namespace Gek
         // Shader
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            GEK_TRACE_FUNCTION(Shader, GEK_PARAMETER(fileName));
-
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -1233,8 +1230,6 @@ namespace Gek
 
         STDMETHODIMP_(void) loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
-            GEK_TRACE_FUNCTION(Shader, GEK_PARAMETER(materialName));
-
             CPathW filePath(materialName);
             filePath.RemoveFileSpec();
 

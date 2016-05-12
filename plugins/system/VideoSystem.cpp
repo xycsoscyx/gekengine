@@ -1,6 +1,5 @@
 #pragma warning(disable : 4005)
 
-#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\COM.h"
@@ -912,8 +911,6 @@ namespace Gek
         // VideoSystem
         STDMETHODIMP initialize(HWND window, bool fullScreen, Video::Format format)
         {
-            GEK_TRACE_FUNCTION(VideoSystem);
-
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -1499,7 +1496,7 @@ namespace Gek
             d3dDeviceContext->CopyResource(d3dDestination, d3dSource);
         }
 
-        STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+        STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -1513,13 +1510,10 @@ namespace Gek
 #endif
 
             std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
-            if (defineList != nullptr)
+            for (auto &define : defineList)
             {
-                for (auto &define : (*defineList))
-                {
-                    D3D_SHADER_MACRO d3dShaderMacro = { define.first.GetString(), define.second.GetString() };
-                    d3dShaderMacroList.push_back(d3dShaderMacro);
-                }
+                D3D_SHADER_MACRO d3dShaderMacro = { define.first.GetString(), define.second.GetString() };
+                d3dShaderMacroList.push_back(d3dShaderMacro);
             }
 
             d3dShaderMacroList.push_back({ "_COMPUTE_PROGRAM", "1" });
@@ -1545,7 +1539,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -1559,13 +1553,10 @@ namespace Gek
 #endif
 
             std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
-            if (defineList != nullptr)
+            for (auto &kPair : defineList)
             {
-                for (auto &kPair : (*defineList))
-                {
-                    D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
-                    d3dShaderMacroList.push_back(d3dShaderMacro);
-                }
+                D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
+                d3dShaderMacroList.push_back(d3dShaderMacro);
             }
 
             d3dShaderMacroList.push_back({ "_VERTEX_PROGRAM", "1" });
@@ -1581,11 +1572,11 @@ namespace Gek
                 if (SUCCEEDED(resultValue) && d3dShader)
                 {
                     CComPtr<ID3D11InputLayout> d3dInputLayout;
-                    if (elementLayout && !(*elementLayout).empty())
+                    if (!elementLayout.empty())
                     {
                         Video::ElementType lastElementType = Video::ElementType::Vertex;
                         std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
-                        for (auto &element : (*elementLayout))
+                        for (auto &element : elementLayout)
                         {
                             D3D11_INPUT_ELEMENT_DESC elementDesc;
                             if (lastElementType != element.slotClass)
@@ -1623,7 +1614,7 @@ namespace Gek
                             inputElementList.push_back(elementDesc);
                         }
 
-                        if (inputElementList.size() == (*elementLayout).size())
+                        if (inputElementList.size() == elementLayout.size())
                         {
                             resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout);
                         }
@@ -1648,7 +1639,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+        STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -1662,13 +1653,10 @@ namespace Gek
 #endif
 
             std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
-            if (defineList != nullptr)
+            for (auto &kPair : defineList)
             {
-                for (auto &kPair : (*defineList))
-                {
-                    D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
-                    d3dShaderMacroList.push_back(d3dShaderMacro);
-                }
+                D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
+                d3dShaderMacroList.push_back(d3dShaderMacro);
             }
 
             d3dShaderMacroList.push_back({ "_GEOMETRY_PROGRAM", "1" });
@@ -1694,7 +1682,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, std::unordered_map<CStringA, CStringA> *defineList, ID3DInclude *includes)
+        STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
@@ -1708,13 +1696,10 @@ namespace Gek
 #endif
 
             std::vector<D3D_SHADER_MACRO> d3dShaderMacroList;
-            if (defineList != nullptr)
+            for (auto &kPair : defineList)
             {
-                for (auto &kPair : (*defineList))
-                {
-                    D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
-                    d3dShaderMacroList.push_back(d3dShaderMacro);
-                }
+                D3D_SHADER_MACRO d3dShaderMacro = { kPair.first.GetString(), kPair.second.GetString() };
+                d3dShaderMacroList.push_back(d3dShaderMacro);
             }
 
             d3dShaderMacroList.push_back({ "_PIXEL_PROGRAM", "1" });
@@ -1740,31 +1725,31 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
             return compileComputeProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
         }
 
-        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
             return compileVertexProgram(returnObject, nullptr, programScript, entryFunction, elementLayout, defineList, include);
         }
 
-        STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
             return compileGeometryProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
         }
 
-        STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
             return compilePixelProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
         }
 
-        STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -1781,7 +1766,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> *elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -1798,7 +1783,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP loadGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP loadGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -1815,7 +1800,7 @@ namespace Gek
             return resultValue;
         }
 
-        STDMETHODIMP loadPixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> *defineList)
+        STDMETHODIMP loadPixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 

@@ -1,10 +1,9 @@
-﻿#include "GEK\Engine\Engine.h"
-#include "GEK\Engine\Options.h"
-#include "GEK\Utility\Trace.h"
-#include "GEK\Utility\String.h"
+﻿#include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Timer.h"
+#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Options.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Action.h"
 #include "GEK\Engine\Resources.h"
@@ -260,8 +259,6 @@ namespace Gek
         // Engine
         STDMETHODIMP initialize(HWND window)
         {
-            GEK_TRACE_FUNCTION(Engine);
-
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
             Gek::XmlDocument xmlDocument;
@@ -452,8 +449,6 @@ namespace Gek
 
         STDMETHODIMP_(bool) update(void)
         {
-            GEK_TRACE_FUNCTION(Engine);
-
             if (windowActive)
             {
                 timer.update();
@@ -482,8 +477,6 @@ namespace Gek
         // PopulationObserver
         STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
-            GEK_TRACE_FUNCTION(Engine);
-
             POINT currentCursorPosition;
             GetCursorPos(&currentCursorPosition);
             INT32 cursorMovementX = INT32(float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);

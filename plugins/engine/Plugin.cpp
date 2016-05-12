@@ -1,5 +1,4 @@
 #include "GEK\Engine\Plugin.h"
-#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\FileSystem.h"
@@ -113,8 +112,6 @@ namespace Gek
         // Plugin
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            GEK_TRACE_FUNCTION(Plugin, GEK_PARAMETER(fileName));
-
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
             GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
 
@@ -306,7 +303,7 @@ namespace Gek
                                                 return resultValue;
                                             };
 
-                                            resultValue = video->compileVertexProgram(&vertexProgram, engineData, "mainVertexProgram", &elementList, getIncludeData);
+                                            resultValue = video->compileVertexProgram(&vertexProgram, engineData, "mainVertexProgram", elementList, getIncludeData);
                                         }
                                     }
                                     else

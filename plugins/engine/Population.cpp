@@ -1,6 +1,5 @@
 ﻿#include "GEK\Engine\Population.h"
 #include "GEK\Engine\Processor.h"
-#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Entity.h"
@@ -109,8 +108,6 @@ namespace Gek
 
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_TRACE_FUNCTION(Population);
-
             GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -172,8 +169,6 @@ namespace Gek
 
         STDMETHODIMP_(void) update(bool isIdle, float frameTime)
         {
-            GEK_TRACE_FUNCTION(Population);
-
             if (!isIdle)
             {
                 this->frameTime = frameTime;
@@ -225,12 +220,8 @@ namespace Gek
         std::function<void(void)> loadScene;
         STDMETHODIMP load(LPCWSTR fileName)
         {
-            GEK_TRACE_FUNCTION(Population, GEK_PARAMETER(fileName));
-
             loadScene = std::bind([&](const CStringW &fileName) -> HRESULT
             {
-                GEK_TRACE_FUNCTION(Population, GEK_PARAMETER(fileName));
-
                 HRESULT resultValue = E_FAIL;
 
                 free();
@@ -304,8 +295,6 @@ namespace Gek
 
         STDMETHODIMP save(LPCWSTR fileName)
         {
-            GEK_TRACE_FUNCTION(Population, GEK_PARAMETER(fileName));
-
             Gek::XmlDocument xmlDocument;
             xmlDocument.create(L"world");
             Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
