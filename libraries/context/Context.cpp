@@ -1,3 +1,4 @@
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\COM.h"
@@ -53,11 +54,14 @@ namespace Gek
         // Context
         STDMETHODIMP_(void) addSearchPath(LPCWSTR fileName)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
             searchPathList.push_back(fileName);
         }
 
         STDMETHODIMP_(void) initialize(void)
         {
+            GEK_TRACE_FUNCTION();
+
             searchPathList.push_back(L"%root%");
             for (auto &searchPath : searchPathList)
             {
@@ -84,6 +88,7 @@ namespace Gek
                                     }
                                     else
                                     {
+                                        GEK_TRACE_ERROR("Duplicate class entry located", GEK_PARAMETER(moduleClass.first));
                                     }
                                 }
 
@@ -94,12 +99,14 @@ namespace Gek
                             }
                             else
                             {
+                                GEK_TRACE_ERROR("Unable to get plugin class list", GEK_PARAMETER(fileName));
                             }
                         }
                     }
                     else
                     {
                         DWORD errorCode = GetLastError();
+                        GEK_TRACE_ERROR("Unable to load plugin", GEK_PARAMETER(fileName), GEK_PARAMETER(errorCode));
                     }
 
                     return S_OK;
@@ -109,6 +116,8 @@ namespace Gek
 
         STDMETHODIMP createInstance(REFGUID className, REFIID interfaceType, LPVOID FAR *returnObject)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(className), GEK_PARAMETER(interfaceType));
+
             GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
             HRESULT resultValue = E_FAIL;
@@ -129,6 +138,8 @@ namespace Gek
 
         STDMETHODIMP createEachType(REFCLSID typeName, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(typeName));
+
             HRESULT resultValue = S_OK;
             auto typedClassIterator = typedClassList.find(typeName);
             if (typedClassIterator != typedClassList.end())
@@ -154,11 +165,13 @@ namespace Gek
 
     HRESULT Context::create(Context **returnObject)
     {
+        GEK_TRACE_FUNCTION();
+
         GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
 
         HRESULT resultValue = E_OUTOFMEMORY;
         CComPtr<ContextImplementation> context(new ContextImplementation());
-        _ASSERTE(context);
+        GEK_TRACE_CONDITION((context ? true : false), "Unable to create context instance");
         if (context)
         {
             resultValue = context->QueryInterface(IID_PPV_ARGS(returnObject));

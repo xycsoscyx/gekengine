@@ -105,13 +105,31 @@ namespace Gek
 #define _ENABLE_TRACE
 
 #ifdef _ENABLE_TRACE
-#define GEK_PARAMETER(NAME)                                 std::make_pair(#NAME, std::cref(NAME))
-#define GEK_TRACE_FUNCTION(CATEGORY, ...)                   Gek::TraceScope trace( #CATEGORY, __FUNCTION__, __VA_ARGS__)
-#define GEK_TRACE_EVENT(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "event"), __VA_ARGS__)
-#define GEK_TRACE_ERROR(CATEGORY, MESSAGE, ...)             Gek::trace("i", #CATEGORY, GetTickCount64(), __FUNCTION__, MESSAGE, std::make_pair("type", "error"), __VA_ARGS__)
+    namespace Gek
+    {
+        template<typename... ARGS>
+        bool traceCondition(bool condition, LPCSTR function, LPCSTR message, ARGS... args)
+        {
+            if (!condition)
+            {
+                Gek::trace("i", "Failure", GetTickCount64(), function, message, args...);
+            }
+
+            return condition;
+        }
+    };
+
+    #define GEK_PARAMETER(NAME)                             std::make_pair(#NAME, std::cref(NAME))
+    #define GEK_TRACE_SCOPE(...)                            Gek::TraceScope trace( "Scope", __FUNCTION__, __VA_ARGS__)
+    #define GEK_TRACE_FUNCTION(...)                         Gek::trace("i", "Function", GetTickCount64(), __FUNCTION__, __VA_ARGS__)
+    #define GEK_TRACE_EVENT(MESSAGE, ...)                   Gek::trace("i", "Event", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+    #define GEK_TRACE_ERROR(MESSAGE, ...)                   Gek::trace("i", "Error", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+    #define GEK_TRACE_CONDITION(CHECK, MESSAGE, ...)        Gek::traceCondition((CHECK), __FUNCTION__, MESSAGE, __VA_ARGS__)
 #else
-#define GEK_PARAMETER(NAME)
-#define GEK_TRACE_FUNCTION(CATEGORY, ...)
-#define GEK_TRACE_EVENT(CATEGORY, MESSAGE, ...)
-#define GEK_TRACE_ERROR(CATEGORY, MESSAGE, ...)
+    #define GEK_PARAMETER(NAME)
+    #define GEK_TRACE_SCOPE(...)
+    #define GEK_TRACE_FUNCTION(...)
+    #define GEK_TRACE_EVENT(MESSAGE, ...)
+    #define GEK_TRACE_ERROR(MESSAGE, ...)
+    #define GEK_TRACE_CONDITION(CHECK, MESSAGE, ...)
 #endif

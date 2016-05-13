@@ -1,4 +1,5 @@
-﻿#include "GEK\Utility\String.h"
+﻿#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Timer.h"
@@ -259,6 +260,8 @@ namespace Gek
         // Engine
         STDMETHODIMP initialize(HWND window)
         {
+            GEK_TRACE_FUNCTION();
+
             GEK_REQUIRE_RETURN(window, E_INVALIDARG);
 
             Gek::XmlDocument xmlDocument;
@@ -282,6 +285,7 @@ namespace Gek
             }
 
             HRESULT resultValue = CoInitialize(nullptr);
+            GEK_TRACE_CONDITION(SUCCEEDED(resultValue), "Call to CoInitialize failed", GEK_PARAMETER(resultValue));
             if (SUCCEEDED(resultValue))
             {
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(VideoSystemRegistration, &video));
