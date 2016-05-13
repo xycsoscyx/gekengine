@@ -46,8 +46,14 @@ namespace Gek
         }
     }; // namespace String
 
+    DECLARE_INTERFACE(ResourceLoader)
+    {
+        STDMETHOD_(void, requestLoad)           (THIS_ LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource, std::function<void(IUnknown *)> setResource) PURE;
+        STDMETHOD_(void, requestLoad)           (THIS_ LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource, std::function<void(IUnknown *, IUnknown *)> setResource) PURE;
+    };
+
     template <class HANDLE>
-    class ObjectManager
+    class ResourceManager
     {
     public:
         struct AtomicResource
@@ -114,16 +120,16 @@ namespace Gek
         concurrency::concurrent_unordered_map<HANDLE, AtomicResource> globalResourceMap;
 
     public:
-        ObjectManager(void)
+        ResourceManager(void)
             : nextIdentifier(0)
         {
         }
 
-        ~ObjectManager(void)
+        ~ResourceManager(void)
         {
         }
 
-        void clearResources(void)
+        void clear(void)
         {
             requestedLoadSet.clear();
             resourceHandleMap.clear();
@@ -131,80 +137,43 @@ namespace Gek
             readWriteResourceMap.clear();
         }
 
-        HANDLE getGlobalHandle(std::function<HRESULT(IUnknown **)> loadResource)
+        HANDLE getGlobalHandle(ResourceLoader *resourceLoader, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-
-            CComPtr<IUnknown> data;
-            if (SUCCEEDED(loadResource(&data)) && data)
+            resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle, IUnknown *data) -> void
             {
-                globalResourceMap[handle].set(data);
-            }
-
-            return handle;
-        }
-
-        HANDLE getUniqueHandle(std::function<HRESULT(IUnknown **)> loadResource)
-        {
-            HANDLE handle;
-            handle.assign(InterlockedIncrement(&nextIdentifier));
-            auto &resource = localResourceMap[handle];
-
-            CComPtr<IUnknown> data;
-            if (SUCCEEDED(loadResource(&data)) && data)
-            {
+                auto &resource = globalResourceMap[handle];
                 resource.set(data);
-            }
-
+            }, handle, std::placeholders::_1));
             return handle;
         }
 
-        HANDLE getUniqueReadWriteHandle(std::function<HRESULT(IUnknown **, IUnknown **)> loadResource)
+        HANDLE getUniqueHandle(ResourceLoader *resourceLoader, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            auto &resource = readWriteResourceMap[handle];
-
-            CComPtr<IUnknown> read, write;
-            if (SUCCEEDED(loadResource(&read, &write)) && read && write)
+            resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle, IUnknown *data) -> void
             {
-                resource.set(read, write);
-            }
-
-            return handle;
-        }
-
-        HANDLE getHandle(std::size_t hash, std::function<HRESULT(IUnknown **)> loadResource)
-        {
-            HANDLE handle;
-            if (requestedLoadSet.count(hash) > 0)
-            {
-                auto resourceIterator = resourceHandleMap.find(hash);
-                if (resourceIterator != resourceHandleMap.end())
-                {
-                    handle = resourceIterator->second;
-                }
-            }
-            else
-            {
-                requestedLoadSet.insert(hash);
-                handle.assign(InterlockedIncrement(&nextIdentifier));
-                resourceHandleMap[hash] = handle;
-
                 auto &resource = localResourceMap[handle];
-
-                CComPtr<IUnknown> data;
-                if (SUCCEEDED(loadResource(&data)) && data)
-                {
-                    resource.set(data);
-                }
-            }
-
+                resource.set(data);
+            }, handle, std::placeholders::_1));
             return handle;
         }
 
-        HANDLE getReadWriteHandle(std::size_t hash, std::function<HRESULT(IUnknown **, IUnknown **)> loadResource)
+        HANDLE getUniqueReadWriteHandle(ResourceLoader *resourceLoader, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource)
+        {
+            HANDLE handle;
+            handle.assign(InterlockedIncrement(&nextIdentifier));
+            resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle, IUnknown *read, IUnknown *write) -> void
+            {
+                auto &resource = readWriteResourceMap[handle];
+                resource.set(read, write);
+            }, handle, std::placeholders::_1));
+            return handle;
+        }
+
+        HANDLE getHandle(std::size_t hash, ResourceLoader *resourceLoader, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -220,14 +189,37 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-
-                auto &resource = readWriteResourceMap[handle];
-
-                CComPtr<IUnknown> read, write;
-                if (SUCCEEDED(loadResource(&read, &write)) && read && write)
+                resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle, IUnknown *data) -> void
                 {
-                    resource.set(read, write);
+                    auto &resource = localResourceMap[handle];
+                    resource.set(data);
+                }, handle, std::placeholders::_1));
+            }
+
+            return handle;
+        }
+
+        HANDLE getReadWriteHandle(std::size_t hash, ResourceLoader *resourceLoader, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource)
+        {
+            HANDLE handle;
+            if (requestedLoadSet.count(hash) > 0)
+            {
+                auto resourceIterator = resourceHandleMap.find(hash);
+                if (resourceIterator != resourceHandleMap.end())
+                {
+                    handle = resourceIterator->second;
                 }
+            }
+            else
+            {
+                requestedLoadSet.insert(hash);
+                handle.assign(InterlockedIncrement(&nextIdentifier));
+                resourceHandleMap[hash] = handle;
+                resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle, IUnknown *read, IUnknown *write) -> void
+                {
+                    auto &resource = readWriteResourceMap[handle];
+                    resource.set(read, write);
+                }, handle, std::placeholders::_1, std::placeholders::_2));
             }
 
             return handle;
@@ -295,23 +287,25 @@ namespace Gek
 
     class ResourcesImplementation : public ContextUserMixin
         , public Resources
+        , public ResourceLoader
     {
     private:
         IUnknown *initializerContext;
         VideoSystem *video;
 
-        ObjectManager<ProgramHandle> programManager;
-        ObjectManager<PluginHandle> pluginManager;
-        ObjectManager<MaterialPropertiesHandle> materialPropertiesManager;
-        ObjectManager<ShaderHandle> shaderManager;
-        ObjectManager<ResourceHandle> resourceManager;
-        ObjectManager<RenderStatesHandle> renderStateManager;
-        ObjectManager<DepthStatesHandle> depthStateManager;
-        ObjectManager<BlendStatesHandle> blendStateManager;
+        ResourceManager<ProgramHandle> programManager;
+        ResourceManager<PluginHandle> pluginManager;
+        ResourceManager<MaterialHandle> materialManager;
+        ResourceManager<ShaderHandle> shaderManager;
+        ResourceManager<ResourceHandle> resourceManager;
+        ResourceManager<RenderStatesHandle> renderStateManager;
+        ResourceManager<DepthStatesHandle> depthStateManager;
+        ResourceManager<BlendStatesHandle> blendStateManager;
+
+        concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
         std::future<void> loadResourceRunning;
         concurrency::concurrent_queue<std::function<void(void)>> loadResourceQueue;
-        concurrency::concurrent_unordered_map<std::size_t, bool> loadResourceSet;
 
     public:
         ResourcesImplementation(void)
@@ -329,10 +323,12 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Resources)
         END_INTERFACE_LIST_USER
 
-        void requestLoad(void)
+        void requestLoad(std::function<void(void)> load)
         {
-            //loadResourceSet.insert(std::make_pair(hash, true));
-            //loadResourceQueue.push(std::bind(&ModelProcessorImplementation::loadResourceWorker, this, std::ref(model)));
+            load();
+            return;
+
+            loadResourceQueue.push(load);
             if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
                 loadResourceRunning = std::async(std::launch::async, [this](void) -> void
@@ -347,6 +343,30 @@ namespace Gek
                     CoUninitialize();
                 });
             }
+        }
+
+        STDMETHODIMP_(void) requestLoad(LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource, std::function<void(IUnknown *)> setResource)
+        {
+            requestLoad(std::bind([](LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource, std::function<void(IUnknown *)> setResource) -> void
+            {
+                CComPtr<IUnknown> resource;
+                if (SUCCEEDED(loadResource(handle, &resource)) && resource)
+                {
+                    setResource(resource);
+                }
+            }, handle, loadResource, setResource));
+        }
+
+        STDMETHODIMP_(void) requestLoad(LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource, std::function<void(IUnknown *, IUnknown *)> setResource)
+        {
+            requestLoad(std::bind([](LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource, std::function<void(IUnknown *, IUnknown *)> setResource) -> void
+            {
+                CComPtr<IUnknown> read, write;
+                if (SUCCEEDED(loadResource(handle, &read, &write)) && read && write)
+                {
+                    setResource(read, write);
+                }
+            }, handle, loadResource, setResource));
         }
 
         // Resources
@@ -368,20 +388,31 @@ namespace Gek
 
         STDMETHODIMP_(void) clearLocal(void)
         {
-            loadResourceSet.clear();
             loadResourceQueue.clear();
             if (loadResourceRunning.valid() && (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready))
             {
                 loadResourceRunning.get();
             }
 
-            programManager.clearResources();
-            materialPropertiesManager.clearResources();
-            shaderManager.clearResources();
-            resourceManager.clearResources();
-            renderStateManager.clearResources();
-            depthStateManager.clearResources();
-            blendStateManager.clearResources();
+            materialShaderMap.clear();
+            programManager.clear();
+            materialManager.clear();
+            shaderManager.clear();
+            resourceManager.clear();
+            renderStateManager.clear();
+            depthStateManager.clear();
+            blendStateManager.clear();
+        }
+
+        STDMETHODIMP_(ShaderHandle) getShader(MaterialHandle material)
+        {
+            auto shader = materialShaderMap.find(material);
+            if (shader != materialShaderMap.end())
+            {
+                return (*shader).second;
+            }
+
+            return ShaderHandle();
         }
 
         STDMETHODIMP_(LPVOID) getResourceHandle(const std::type_index &type, LPCWSTR name)
@@ -410,9 +441,9 @@ namespace Gek
             {
                 return shaderManager.getResource(*static_cast<const ShaderHandle *>(handle));
             }
-            else if (type == typeid(MaterialPropertiesHandle))
+            else if (type == typeid(MaterialHandle))
             {
-                return materialPropertiesManager.getResource(*static_cast<const MaterialPropertiesHandle *>(handle));
+                return materialManager.getResource(*static_cast<const MaterialHandle *>(handle));
             }
             else if (type == typeid(ResourceHandle))
             {
@@ -424,7 +455,7 @@ namespace Gek
 
         STDMETHODIMP_(PluginHandle) loadPlugin(LPCWSTR fileName)
         {
-            return pluginManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, const CStringW &fileName) -> HRESULT
+            return pluginManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, IUnknown **returnObject, const CStringW &fileName) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -440,13 +471,13 @@ namespace Gek
                 }
 
                 return resultValue;
-            }, std::placeholders::_1, fileName));
+            }, std::placeholders::_1, std::placeholders::_2, fileName));
         }
 
         STDMETHODIMP_(MaterialHandle) loadMaterial(LPCWSTR fileName)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            MaterialPropertiesHandle properties = materialPropertiesManager.getHandle(hash, std::bind([this](IUnknown **returnObject, const CStringW &fileName) -> HRESULT
+            return materialManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, const CStringW &fileName) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -457,30 +488,19 @@ namespace Gek
                     resultValue = material->initialize(initializerContext, fileName);
                     if (SUCCEEDED(resultValue))
                     {
+                        materialShaderMap[*reinterpret_cast<const MaterialHandle *>(handle)] = material->getShader();
                         resultValue = material->QueryInterface(returnObject);
                     }
                 }
 
                 return resultValue;
-            }, std::placeholders::_1, fileName));
-
-            if (properties)
-            {
-                auto material = materialPropertiesManager.getResource<Material>(properties);
-                if (material)
-                {
-                    return MaterialHandle(material->getShader(), properties);
-                }
-            }
-
-            return MaterialHandle();
-
+            }, std::placeholders::_1, std::placeholders::_2, fileName));
         }
 
         STDMETHODIMP_(ShaderHandle) loadShader(LPCWSTR fileName)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            return shaderManager.getHandle(hash, std::bind([this](IUnknown **returnObject, const CStringW &fileName) -> HRESULT
+            return shaderManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, const CStringW &fileName) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
@@ -496,7 +516,7 @@ namespace Gek
                 }
 
                 return resultValue;
-            }, std::placeholders::_1, fileName));
+            }, std::placeholders::_1, std::placeholders::_2, fileName));
         }
 
         STDMETHODIMP_(void) loadResourceList(ShaderHandle shaderHandle, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList)
@@ -520,11 +540,11 @@ namespace Gek
                 renderStates.scissorEnable,
                 renderStates.multisampleEnable,
                 renderStates.antialiasedLineEnable);
-            return renderStateManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::RenderStates renderStates) -> HRESULT
+            return renderStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::RenderStates renderStates) -> HRESULT
             {
                 HRESULT resultValue = video->createRenderStates(returnObject, renderStates);
                 return resultValue;
-            }, std::placeholders::_1, renderStates));
+            }, std::placeholders::_1, std::placeholders::_2, renderStates));
         }
 
         STDMETHODIMP_(DepthStatesHandle) createDepthStates(const Video::DepthStates &depthStates)
@@ -543,11 +563,11 @@ namespace Gek
                 static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation),
                 static_cast<UINT8>(depthStates.stencilBackStates.passOperation),
                 static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
-            return depthStateManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::DepthStates depthStates) -> HRESULT
+            return depthStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::DepthStates depthStates) -> HRESULT
             {
                 HRESULT resultValue = video->createDepthStates(returnObject, depthStates);
                 return resultValue;
-            }, std::placeholders::_1, depthStates));
+            }, std::placeholders::_1, std::placeholders::_2, depthStates));
         }
 
         STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::UnifiedBlendStates &blendStates)
@@ -560,11 +580,11 @@ namespace Gek
                 static_cast<UINT8>(blendStates.alphaDestination),
                 static_cast<UINT8>(blendStates.alphaOperation),
                 blendStates.writeMask);
-            return blendStateManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::UnifiedBlendStates blendStates) -> HRESULT
+            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::UnifiedBlendStates blendStates) -> HRESULT
             {
                 HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
                 return resultValue;
-            }, std::placeholders::_1, blendStates));
+            }, std::placeholders::_1, std::placeholders::_2, blendStates));
         }
 
         STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::IndependentBlendStates &blendStates)
@@ -585,11 +605,11 @@ namespace Gek
                 }
             }
 
-            return blendStateManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::IndependentBlendStates blendStates) -> HRESULT
+            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::IndependentBlendStates blendStates) -> HRESULT
             {
                 HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
                 return resultValue;
-            }, std::placeholders::_1, blendStates));
+            }, std::placeholders::_1, std::placeholders::_2, blendStates));
         }
 
         STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
@@ -599,7 +619,7 @@ namespace Gek
                 std::size_t hash = std::hash<LPCWSTR>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, std::bind([this](IUnknown **readObject, IUnknown **writeObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
+                    return resourceManager.getReadWriteHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **readObject, IUnknown **writeObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
                     {
                         CComPtr<VideoTexture> read, write;
                         HRESULT resultValue = video->createTexture(&read, format, width, height, depth, flags, mipmaps);
@@ -611,11 +631,11 @@ namespace Gek
                         }
 
                         return resultValue;
-                    }, std::placeholders::_1, std::placeholders::_2, format, width, height, depth, flags, mipmaps));
+                    }, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, format, width, height, depth, flags, mipmaps));
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
+                    return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
                     {
                         CComPtr<VideoTexture> texture;
                         HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
@@ -625,12 +645,12 @@ namespace Gek
                         }
 
                         return resultValue;
-                    }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
+                    }, std::placeholders::_1, std::placeholders::_2, format, width, height, depth, flags, mipmaps));
                 }
             }
             else
             {
-                return resourceManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
+                return resourceManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> HRESULT
                 {
                     CComPtr<VideoTexture> texture;
                     HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
@@ -640,7 +660,7 @@ namespace Gek
                     }
 
                     return resultValue;
-                }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
+                }, std::placeholders::_1, std::placeholders::_2, format, width, height, depth, flags, mipmaps));
             }
         }
 
@@ -651,7 +671,7 @@ namespace Gek
                 std::size_t hash = std::hash<LPCWSTR>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, std::bind([this](IUnknown **readObject, IUnknown **writeObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    return resourceManager.getReadWriteHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **readObject, IUnknown **writeObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
                     {
                         CComPtr<VideoBuffer> read, write;
                         HRESULT resultValue = video->createBuffer(&read, stride, count, type, flags, staticData);
@@ -663,11 +683,11 @@ namespace Gek
                         }
 
                         return resultValue;
-                    }, std::placeholders::_1, std::placeholders::_2, stride, count, type, flags, staticData));
+                    }, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, stride, count, type, flags, staticData));
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
                     {
                         CComPtr<VideoBuffer> buffer;
                         HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
@@ -677,12 +697,12 @@ namespace Gek
                         }
 
                         return resultValue;
-                    }, std::placeholders::_1, stride, count, type, flags, staticData));
+                    }, std::placeholders::_1, std::placeholders::_2, stride, count, type, flags, staticData));
                 }
             }
             else
             {
-                return resourceManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                return resourceManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, IUnknown **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
                 {
                     CComPtr<VideoBuffer> buffer;
                     HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
@@ -692,7 +712,7 @@ namespace Gek
                     }
 
                     return resultValue;
-                }, std::placeholders::_1, stride, count, type, flags, staticData));
+                }, std::placeholders::_1, std::placeholders::_2, stride, count, type, flags, staticData));
             }
         }
 
@@ -703,7 +723,7 @@ namespace Gek
                 std::size_t hash = std::hash<LPCWSTR>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, std::bind([this](IUnknown **readObject, IUnknown **writeObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    return resourceManager.getReadWriteHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **readObject, IUnknown **writeObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
                     {
                         CComPtr<VideoBuffer> read, write;
                         HRESULT resultValue = video->createBuffer(&read, format, count, type, flags, staticData);
@@ -715,46 +735,36 @@ namespace Gek
                         }
 
                         return resultValue;
-                    }, std::placeholders::_1, std::placeholders::_2, format, count, type, flags, staticData));
+                    }, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, format, count, type, flags, staticData));
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                    return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
                     {
                         CComPtr<VideoBuffer> buffer;
                         HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
                         if (SUCCEEDED(resultValue) && buffer)
                         {
-                            if (flags & Video::BufferFlags::UnorderedAccess)
-                            {
-                                video->getDefaultContext()->clearUnorderedAccessBuffer(buffer, 1.0f);
-                            }
-
                             resultValue = buffer->QueryInterface(returnObject);
                         }
 
                         return resultValue;
-                    }, std::placeholders::_1, format, count, type, flags, staticData));
+                    }, std::placeholders::_1, std::placeholders::_2, format, count, type, flags, staticData));
                 }
             }
             else
             {
-                return resourceManager.getGlobalHandle(std::bind([this](IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
+                return resourceManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> HRESULT
                 {
                     CComPtr<VideoBuffer> buffer;
                     HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
                     if (SUCCEEDED(resultValue) && buffer)
                     {
-                        if (flags & Video::BufferFlags::UnorderedAccess)
-                        {
-                            video->getDefaultContext()->clearUnorderedAccessBuffer(buffer, 1.0f);
-                        }
-
                         resultValue = buffer->QueryInterface(returnObject);
                     }
 
                     return resultValue;
-                }, std::placeholders::_1, format, count, type, flags, staticData));
+                }, std::placeholders::_1, std::placeholders::_2, format, count, type, flags, staticData));
             }
         }
 
@@ -916,7 +926,7 @@ namespace Gek
         STDMETHODIMP_(ResourceHandle) loadTexture(LPCWSTR fileName, LPCWSTR fallback, UINT32 flags)
         {
             std::size_t hash = std::hash<CStringW>()(CStringW(fileName).MakeReverse());
-            return resourceManager.getHandle(hash, std::bind([this](IUnknown **returnObject, const CStringW &fileName, const CStringW &fallback, UINT32 flags) -> HRESULT
+            return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, const CStringW &fileName, const CStringW &fallback, UINT32 flags) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
                 CComPtr<VideoTexture> texture;
@@ -939,26 +949,26 @@ namespace Gek
                 }
 
                 return resultValue;
-            }, std::placeholders::_1, fileName, fallback, flags));
+            }, std::placeholders::_1, std::placeholders::_2, fileName, fallback, flags));
         }
 
         STDMETHODIMP_(ProgramHandle) loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            return programManager.getUniqueHandle(std::bind([this](IUnknown **returnObject, const CStringW &fileName, const CStringA &entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> defineList) -> HRESULT
+            return programManager.getUniqueHandle(this, std::bind([this](LPCVOID handle, IUnknown **returnObject, const CStringW &fileName, const CStringA &entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> defineList) -> HRESULT
             {
                 HRESULT resultValue = video->loadComputeProgram(returnObject, fileName, entryFunction, onInclude, defineList);
                 return resultValue;
-            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList));
+            }, std::placeholders::_1, std::placeholders::_2, fileName, entryFunction, onInclude, defineList));
         }
 
         STDMETHODIMP_(ProgramHandle) loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            return programManager.getUniqueHandle(std::bind([this](IUnknown **returnObject, const CStringW &fileName, const CStringA &entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> defineList) -> HRESULT
+            return programManager.getUniqueHandle(this, std::bind([this](LPCVOID handle, IUnknown **returnObject, const CStringW &fileName, const CStringA &entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, std::unordered_map<CStringA, CStringA> defineList) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
                 resultValue = video->loadPixelProgram(returnObject, fileName, entryFunction, onInclude, defineList);
                 return resultValue;
-            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList));
+            }, std::placeholders::_1, std::placeholders::_2, fileName, entryFunction, onInclude, defineList));
         }
 
         STDMETHODIMP mapBuffer(ResourceHandle buffer, void **data)

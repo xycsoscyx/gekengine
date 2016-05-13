@@ -51,29 +51,8 @@ namespace Gek
     using ProgramHandle = Handle<UINT16, __LINE__>;
     using PluginHandle = Handle<UINT8, __LINE__>;
     using ShaderHandle = Handle<UINT8, __LINE__>;
-    using MaterialPropertiesHandle = Handle<UINT16, __LINE__>;
+    using MaterialHandle = Handle<UINT16, __LINE__>;
     using ResourceHandle = Handle<UINT32, __LINE__>;
-
-    struct MaterialHandle
-    {
-        ShaderHandle shader;
-        MaterialPropertiesHandle properties;
-
-        MaterialHandle(void)
-        {
-        }
-
-        MaterialHandle(const ShaderHandle &shader, const MaterialPropertiesHandle &properties)
-            : shader(shader)
-            , properties(properties)
-        {
-        }
-
-        operator bool() const
-        {
-            return (shader && properties);
-        }
-    };
 
     namespace TextureFlags
     {
@@ -111,6 +90,7 @@ namespace Gek
         STDMETHOD(initialize)                               (THIS_ IUnknown *initializerContext) PURE;
         STDMETHOD_(void, clearLocal)                        (THIS) PURE;
         
+        STDMETHOD_(ShaderHandle, getShader)                 (THIS_ MaterialHandle material) PURE;
         STDMETHOD_(LPVOID, getResourceHandle)               (THIS_ const std::type_index &type, LPCWSTR name) PURE;
 
         template <typename HANDLE>
@@ -163,15 +143,6 @@ namespace std
         size_t operator()(const Gek::Handle<TYPE, UNIQUE> &value) const
         {
             return value.identifier;
-        }
-    };
-
-    template <>
-    struct hash<Gek::MaterialHandle>
-    {
-        size_t operator()(const Gek::MaterialHandle &value) const
-        {
-            return value.properties;
         }
     };
 };

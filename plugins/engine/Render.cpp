@@ -101,20 +101,18 @@ namespace Gek
 
         struct DrawCallValue
         {
-            typedef std::function<void(RenderContext *renderContext)> DrawCall;
-
             union
             {
                 UINT32 value;
                 struct
                 {
-                    MaterialPropertiesHandle properties;
+                    MaterialHandle material;
                     PluginHandle plugin;
                     ShaderHandle shader;
                 };
             };
 
-            DrawCall onDraw;
+            std::function<void(RenderContext *renderContext)> onDraw;
 
             DrawCallValue(const DrawCallValue &drawCallValue)
                 : value(drawCallValue.value)
@@ -128,10 +126,10 @@ namespace Gek
             {
             }
 
-            DrawCallValue(PluginHandle plugin, MaterialHandle material, DrawCall onDraw)
-                : plugin(plugin)
-                , shader(material.shader)
-                , properties(material.properties)
+            DrawCallValue(MaterialHandle material, PluginHandle plugin, ShaderHandle shader, std::function<void(RenderContext *renderContext)> onDraw)
+                : material(material)
+                , plugin(plugin)
+                , shader(shader)
                 , onDraw(onDraw)
             {
             }
@@ -308,7 +306,11 @@ namespace Gek
         {
             if (plugin && material && draw)
             {
-                drawCallList.push_back(DrawCallValue(plugin, material, draw));
+                ShaderHandle shader = resources->getShader(material);
+                if (shader)
+                {
+                    drawCallList.push_back(DrawCallValue(material, plugin, shader, draw));
+                }
             }
         }
 
@@ -409,7 +411,7 @@ namespace Gek
                                     if (true)
                                     {
                                         PluginHandle currentPlugin;
-                                        MaterialPropertiesHandle currentProperties;
+                                        MaterialHandle currentMaterial;
                                         for (auto &shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
                                         {
                                             if (currentPlugin != (*shaderDrawCall).plugin)
@@ -424,10 +426,10 @@ namespace Gek
                                                 plugin->enable(videoContext);
                                             }
 
-                                            if (currentProperties != (*shaderDrawCall).properties)
+                                            if (currentMaterial != (*shaderDrawCall).material)
                                             {
-                                                currentProperties = (*shaderDrawCall).properties;
-                                                Material *material = resources->getResource<Material, MaterialPropertiesHandle>(currentProperties);
+                                                currentMaterial = (*shaderDrawCall).material;
+                                                Material *material = resources->getResource<Material, MaterialHandle>(currentMaterial);
                                                 if (!material)
                                                 {
                                                     continue;
