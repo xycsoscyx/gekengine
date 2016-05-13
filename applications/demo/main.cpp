@@ -1,7 +1,7 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEK\Utility\Exception.h"
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
@@ -308,10 +308,13 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         //unsigned unused_current_word = 0;
         //_controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
 
+        Gek::traceInitialize();
         CComPtr<Gek::Context> context;
         Gek::Context::create(&context);
         if (context)
         {
+            GEK_TRACE_EVENT("Main", "Starting");
+
 #ifdef _DEBUG
             SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
             context->addSearchPath(L"%root%\\Debug\\Plugins");
@@ -325,6 +328,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             context->createInstance(CLSID_IID_PPV_ARGS(Gek::EngineRegistration, &engineCore));
             if (engineCore)
             {
+                GEK_TRACE_EVENT("Main", "Starting");
                 WNDCLASS kClass;
                 kClass.style = 0;
                 kClass.lpfnWndProc = WindowProc;
@@ -338,6 +342,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 kClass.lpszClassName = L"GEKvX_Engine_Demo";
                 if (RegisterClass(&kClass))
                 {
+                    GEK_TRACE_EVENT("Main", "Starting");
                     UINT32 width = 800;
                     UINT32 height = 600;
                     bool fullscreen = false;
@@ -382,8 +387,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
                     if (window)
                     {
+                        GEK_TRACE_EVENT("Main", "Starting");
                         if (SUCCEEDED(engineCore->initialize(window)))
                         {
+                            GEK_TRACE_EVENT("Main", "Starting");
                             SetWindowLongPtr(window, GWLP_USERDATA, LONG((Gek::Engine *)engineCore));
                             ShowWindow(window, SW_SHOW);
                             UpdateWindow(window);
@@ -410,6 +417,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     }
                 }
             }
+
+            Gek::traceShutDown();
         }
 
         return 0;

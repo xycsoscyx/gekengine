@@ -20,6 +20,7 @@
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="ShuntingYard.cpp" />
     <ClCompile Include="Timer.cpp" />
+    <ClCompile Include="Trace.cpp" />
     <ClCompile Include="XML.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +33,7 @@
     <ClInclude Include="GEK\Utility\ShuntingYard.h" />
     <ClInclude Include="GEK\Utility\String.h" />
     <ClInclude Include="GEK\Utility\Timer.h" />
+    <ClInclude Include="GEK\Utility\Trace.h" />
     <ClInclude Include="GEK\Utility\XML.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">

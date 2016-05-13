@@ -325,8 +325,8 @@ namespace Gek
 
         void requestLoad(std::function<void(void)> load)
         {
-            load();
-            return;
+            static UINT32 count = 0;
+            OutputDebugString(String::format(L"request: %d\r\n", ++count));
 
             loadResourceQueue.push(load);
             if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
@@ -337,6 +337,7 @@ namespace Gek
                     std::function<void(void)> function;
                     while (loadResourceQueue.try_pop(function))
                     {
+                        OutputDebugString(String::format(L"load: %d\r\n", --count));
                         function();
                     };
 

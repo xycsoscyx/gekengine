@@ -45,6 +45,11 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Observable)
         END_INTERFACE_LIST_UNKNOWN
 
+        Context *getContext(void)
+        {
+            return this;
+        }
+
         // Context
         STDMETHODIMP_(void) addSearchPath(LPCWSTR fileName)
         {
