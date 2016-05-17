@@ -36,13 +36,13 @@ namespace Gek
         // AudioSample
         STDMETHODIMP_(LPVOID) getBuffer(void)
         {
-            GEK_REQUIRE_RETURN(directSoundBuffer, nullptr);
+            GEK_REQUIRE(directSoundBuffer);
             return LPVOID(directSoundBuffer);
         }
 
         STDMETHODIMP_(void) setFrequency(UINT32 frequency)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundBuffer);
+            GEK_REQUIRE(directSoundBuffer);
             if (frequency == -1)
             {
                 directSoundBuffer->SetFrequency(DSBFREQUENCY_ORIGINAL);
@@ -55,7 +55,7 @@ namespace Gek
 
         STDMETHODIMP_(void) setVolume(float volume)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundBuffer);
+            GEK_REQUIRE(directSoundBuffer);
             directSoundBuffer->SetVolume(UINT32((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
         }
     };
@@ -75,13 +75,13 @@ namespace Gek
         // AudioEffect
         STDMETHODIMP_(void) setPan(float pan)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundBuffer);
+            GEK_REQUIRE(directSoundBuffer);
             directSoundBuffer->SetPan(UINT32((DSBPAN_RIGHT - DSBPAN_LEFT) * pan) + DSBPAN_LEFT);
         }
 
         STDMETHODIMP_(void) play(bool loop)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundBuffer);
+            GEK_REQUIRE(directSoundBuffer);
 
             DWORD dwStatus = 0;
             if (SUCCEEDED(directSoundBuffer->GetStatus(&dwStatus)) && !(dwStatus & DSBSTATUS_PLAYING))
@@ -110,7 +110,7 @@ namespace Gek
         // AudioSound
         STDMETHODIMP_(void) setDistance(float minimum, float maximum)
         {
-            GEK_REQUIRE_VOID_RETURN(directSound8Buffer3D);
+            GEK_REQUIRE(directSound8Buffer3D);
 
             directSound8Buffer3D->SetMinDistance(minimum, DS3D_DEFERRED);
             directSound8Buffer3D->SetMaxDistance(maximum, DS3D_DEFERRED);
@@ -118,7 +118,8 @@ namespace Gek
 
         STDMETHODIMP_(void) play(const Math::Float3 &origin, bool loop)
         {
-            GEK_REQUIRE_VOID_RETURN(directSound8Buffer3D && directSoundBuffer);
+            GEK_REQUIRE(directSound8Buffer3D);
+            GEK_REQUIRE(directSoundBuffer);
 
             directSound8Buffer3D->SetPosition(origin.x, origin.y, origin.z, DS3D_DEFERRED);
 
@@ -146,7 +147,7 @@ namespace Gek
         // Interface
         STDMETHODIMP initialize(HWND window)
         {
-            GEK_REQUIRE_RETURN(window, E_INVALIDARG);
+            GEK_REQUIRE(window);
 
             HRESULT resultValue = E_FAIL;
             resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr);
@@ -192,13 +193,13 @@ namespace Gek
 
         STDMETHODIMP_(void) setMasterVolume(float volume)
         {
-            GEK_REQUIRE_VOID_RETURN(primarySoundBuffer);
+            GEK_REQUIRE(primarySoundBuffer);
             primarySoundBuffer->SetVolume(UINT32((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
         }
 
         STDMETHODIMP_(float) getMasterVolume(void)
         {
-            GEK_REQUIRE_RETURN(primarySoundBuffer, 0);
+            GEK_REQUIRE(primarySoundBuffer);
 
             long volumeNumber = 0;
             if (FAILED(primarySoundBuffer->GetVolume(&volumeNumber)))
@@ -211,7 +212,7 @@ namespace Gek
 
         STDMETHODIMP_(void) setListener(const Math::Float4x4 &matrix)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundListener);
+            GEK_REQUIRE(directSoundListener);
             directSoundListener->SetPosition(matrix.translation.x, matrix.translation.y, matrix.translation.z, DS3D_DEFERRED);
             directSoundListener->SetOrientation(matrix.rz.x, matrix.rz.y, matrix.rz.z, matrix.ry.x, matrix.ry.y, matrix.ry.z, DS3D_DEFERRED);
             directSoundListener->CommitDeferredSettings();
@@ -219,27 +220,27 @@ namespace Gek
 
         STDMETHODIMP_(void) setDistanceFactor(float factor)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundListener);
+            GEK_REQUIRE(directSoundListener);
             directSoundListener->SetDistanceFactor(factor, DS3D_DEFERRED);
         }
 
         STDMETHODIMP_(void) setDopplerFactor(float factor)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundListener);
+            GEK_REQUIRE(directSoundListener);
             directSoundListener->SetDopplerFactor(factor, DS3D_DEFERRED);
         }
 
         STDMETHODIMP_(void) setRollOffFactor(float factor)
         {
-            GEK_REQUIRE_VOID_RETURN(directSoundListener);
+            GEK_REQUIRE(directSoundListener);
             directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
         }
 
         STDMETHODIMP copyEffect(AudioEffect **returnObject, AudioEffect *source)
         {
-            GEK_REQUIRE_RETURN(directSound, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(source, E_INVALIDARG);
+            GEK_REQUIRE(directSound);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(source);
 
             HRESULT resultValue = E_FAIL;
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
@@ -264,9 +265,9 @@ namespace Gek
 
         STDMETHODIMP copySound(AudioSound **returnObject, AudioSound *source)
         {
-            GEK_REQUIRE_RETURN(directSound, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(source, E_INVALIDARG);
+            GEK_REQUIRE(directSound);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(source);
 
             HRESULT resultValue = E_FAIL;
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
@@ -295,9 +296,9 @@ namespace Gek
 
         HRESULT loadFromFile(IDirectSoundBuffer **returnObject, LPCWSTR fileName, DWORD flags, GUID soundAlgorithm)
         {
-            GEK_REQUIRE_RETURN(directSound, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(directSound);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
             std::vector<UINT8> fileData;
@@ -358,9 +359,9 @@ namespace Gek
 
         STDMETHODIMP loadEffect(AudioEffect **returnObject, LPCWSTR fileName)
         {
-            GEK_REQUIRE_RETURN(directSound, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(directSound);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
@@ -384,9 +385,9 @@ namespace Gek
 
         STDMETHODIMP loadSound(AudioSound **returnObject, LPCWSTR fileName)
         {
-            GEK_REQUIRE_RETURN(directSound, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(directSound);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
             CComPtr<IDirectSoundBuffer> directSoundBuffer;

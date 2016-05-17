@@ -150,7 +150,7 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<PluginResources> resources(initializerContext);
@@ -230,8 +230,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            GEK_REQUIRE_VOID_RETURN(resources);
-            GEK_REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(entity);
 
             if (entity->hasComponents<ParticlesComponent, TransformComponent>())
             {
@@ -260,7 +260,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
         {
-            GEK_REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE(entity);
 
             auto dataEntityIterator = entityDataList.find(entity);
             if (dataEntityIterator != entityDataList.end())
@@ -319,8 +319,8 @@ namespace Gek
         // RenderObserver
         static void drawCall(RenderContext *renderContext, PluginResources *resources, ResourceHandle colorMap, VisibleList::iterator begin, VisibleList::iterator end, ResourceHandle particleBuffer)
         {
-            GEK_REQUIRE_VOID_RETURN(renderContext);
-            GEK_REQUIRE_VOID_RETURN(resources);
+            GEK_REQUIRE(renderContext);
+            GEK_REQUIRE(resources);
 
             resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
             resources->setResource(renderContext->vertexPipeline(), colorMap, 1);
@@ -363,8 +363,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
-            GEK_REQUIRE_VOID_RETURN(cameraEntity);
-            GEK_REQUIRE_VOID_RETURN(viewFrustum);
+            GEK_REQUIRE(cameraEntity);
+            GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
             concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](auto &dataEntity) -> void

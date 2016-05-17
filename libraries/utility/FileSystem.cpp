@@ -33,10 +33,8 @@ namespace Gek
             return expandedFileName;
         }
 
-        HRESULT find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR)> onFileFound)
+        void find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<bool(LPCWSTR)> onFileFound)
         {
-            HRESULT resultValue = S_OK;
-
             CStringW expandedFileName(expandPath(fileName));
             PathAddBackslashW(expandedFileName.GetBuffer(MAX_PATH + 1));
             expandedFileName.ReleaseBuffer();
@@ -52,24 +50,19 @@ namespace Gek
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            resultValue = find((expandedFileName + findData.cFileName), filterTypes, searchRecursively, onFileFound);
+                            find((expandedFileName + findData.cFileName), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        resultValue = onFileFound(expandedFileName + findData.cFileName);
-                    }
-
-                    if (FAILED(resultValue))
-                    {
-                        break;
+                        if (!onFileFound(expandedFileName + findData.cFileName))
+                        {
+                            break;
+                        }
                     }
                 } while (FindNextFile(findHandle, &findData));
-
                 FindClose(findHandle);
             }
-
-            return resultValue;
         }
 
         HMODULE loadLibrary(LPCWSTR fileName)
@@ -77,116 +70,73 @@ namespace Gek
             return LoadLibraryW(expandPath(fileName));
         }
 
-        HRESULT load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
+        void load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
         {
-            HRESULT resultValue = E_FAIL;
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            if (fileHandle == INVALID_HANDLE_VALUE)
+            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %S", fileName);
+
+            DWORD fileSize = GetFileSize(fileHandle, nullptr);
+            if (fileSize > 0)
             {
-                resultValue = E_FAIL;
-            }
-            else
-            {
-                DWORD fileSize = GetFileSize(fileHandle, nullptr);
-                if (fileSize == 0)
+                if (limitReadSize > 0)
                 {
-                    resultValue = S_OK;
+                    buffer.resize(limitReadSize);
                 }
                 else
                 {
-                    if (limitReadSize > 0)
-                    {
-                        buffer.resize(limitReadSize);
-                    }
-                    else
-                    {
-                        buffer.resize(fileSize);
-                    }
-
-                    if (!buffer.empty())
-                    {
-                        DWORD bytesRead = 0;
-                        if (ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr))
-                        {
-                            resultValue = (bytesRead == buffer.size() ? S_OK : E_FAIL);
-                        }
-                        else
-                        {
-                            resultValue = E_FAIL;
-                        }
-                    }
-                    else
-                    {
-                        resultValue = E_OUTOFMEMORY;
-                    }
+                    buffer.resize(fileSize);
                 }
 
-                CloseHandle(fileHandle);
+                DWORD bytesRead = 0;
+                BOOL success = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr);
+                GEK_CHECK_EXCEPTION(!success, FileReadError, "Unable to read %d bytes from file: %S", buffer.size(), fileName);
+                GEK_CHECK_EXCEPTION(bytesRead != buffer.size(), FileReadError, "Unable to read %d bytes from file: %S", buffer.size(), fileName);
             }
 
-            return resultValue;
+            CloseHandle(fileHandle);
         }
 
-        HRESULT load(LPCWSTR fileName, CStringA &string)
+        void load(LPCWSTR fileName, CStringA &string)
         {
             std::vector<UINT8> buffer;
-            HRESULT resultValue = load(fileName, buffer);
-            if (SUCCEEDED(resultValue))
-            {
-                buffer.push_back('\0');
-                string = LPCSTR(buffer.data());
-            }
-
-            return resultValue;
+            load(fileName, buffer);
+            buffer.push_back('\0');
+            string = LPCSTR(buffer.data());
         }
 
-        HRESULT load(LPCWSTR fileName, CStringW &string, bool convertUTF8)
+        void load(LPCWSTR fileName, CStringW &string, bool convertUTF8)
         {
             CStringA readString;
-            HRESULT resultValue = load(fileName, readString);
-            if (SUCCEEDED(resultValue))
-            {
-                string = CA2W(readString, (convertUTF8 ? CP_UTF8 : CP_ACP));
-            }
-
-            return resultValue;
+            load(fileName, readString);
+            string = CA2W(readString, (convertUTF8 ? CP_UTF8 : CP_ACP));
         }
 
-        HRESULT save(LPCWSTR fileName, const std::vector<UINT8> &buffer)
+        void save(LPCWSTR fileName, const std::vector<UINT8> &buffer)
         {
-            HRESULT resultValue = E_FAIL;
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            if (fileHandle != INVALID_HANDLE_VALUE)
-            {
-                DWORD bytesWritten = 0;
-                WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-                resultValue = (bytesWritten == buffer.size() ? S_OK : E_FAIL);
-                CloseHandle(fileHandle);
-            }
+            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %S", fileName);
 
-            return resultValue;
+            DWORD bytesWritten = 0;
+            BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
+            GEK_CHECK_EXCEPTION(!success, FileWriteError, "Unable to write %d bytes from file: %S", buffer.size(), fileName);
+            GEK_CHECK_EXCEPTION(bytesWritten != buffer.size(), FileWriteError, "Unable to write %d bytes from file: %S", buffer.size(), fileName);
+            CloseHandle(fileHandle);
         }
 
-        HRESULT save(LPCWSTR fileName, LPCSTR string)
+        void save(LPCWSTR fileName, LPCSTR string)
         {
-            HRESULT resultValue = E_FAIL;
             UINT32 stringLength = strlen(string);
             std::vector<UINT8> buffer(stringLength);
-            if (buffer.size() == stringLength)
-            {
-                std::copy_n(string, stringLength, buffer.begin());
-                resultValue = save(fileName, buffer);
-            }
-
-            return resultValue;
+            std::copy_n(string, stringLength, buffer.begin());
+            save(fileName, buffer);
         }
 
-        HRESULT save(LPCWSTR fileName, LPCWSTR string, bool convertUTF8)
+        void save(LPCWSTR fileName, LPCWSTR string, bool convertUTF8)
         {
             CW2A writeString(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
-            return save(fileName, writeString);
+            save(fileName, writeString);
         }
     } // namespace FileSystem
 }; // namespace Gek

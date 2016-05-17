@@ -152,27 +152,22 @@ namespace Gek
         } } });
     }
 
-    ShuntingYard::Status ShuntingYard::evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList)
+    void ShuntingYard::evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList)
     {
         std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
-        return convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
+        convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
     }
 
-    ShuntingYard::Status ShuntingYard::evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
     {
-        return evaluateReversePolishNotation(rpnTokenList, value, valueSize);
+        evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    ShuntingYard::Status ShuntingYard::evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize)
     {
         std::vector<Token> rpnTokenList;
-        Status status = evaluteTokenList(expression, rpnTokenList);
-        if (status == Status::Success)
-        {
-            status = evaluateReversePolishNotation(rpnTokenList, value, valueSize);
-        }
-
-        return status;
+        evaluteTokenList(expression, rpnTokenList);
+        evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
     bool ShuntingYard::isNumber(const CStringW &token)
@@ -341,7 +336,7 @@ namespace Gek
         return false;
     }
 
-    ShuntingYard::Status ShuntingYard::parseSubTokens(std::vector<Token> &infixTokenList, CStringW token)
+    void ShuntingYard::parseSubTokens(std::vector<Token> &infixTokenList, CStringW token)
     {
         while (!token.IsEmpty())
         {
@@ -361,23 +356,12 @@ namespace Gek
 
             if (replaceFirstFunction(infixTokenList, token))
             {
-                if (!token.IsEmpty())
-                {
-                    // function must be followed by a left parenthesis, so it has to be at the end of an implicit block
-                    return Status::MissingFunctionParenthesis;
-                }
-
+                GEK_CHECK_EXCEPTION(!token.IsEmpty(), MissingFunctionParenthesis, "Unbalanced scope, missing parenthesis: %S", token);
                 continue;
             }
 
-            if (!token.IsEmpty())
-            {
-                // nothing was replaced, yet we still have remaining characters?
-                return Status::UnknownTokenType;
-            }
+            GEK_CHECK_EXCEPTION(!token.IsEmpty(), UnknownTokenType, "Unknown tokens remaining: %S", token);
         };
-
-        return Status::Success;
     }
 
     std::vector<ShuntingYard::Token> ShuntingYard::convertExpressionToInfix(const CStringW &expression)
@@ -422,7 +406,7 @@ namespace Gek
         return infixTokenList;
     }
 
-    ShuntingYard::Status ShuntingYard::convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList)
+    void ShuntingYard::convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList)
     {
         Stack<Token> stack;
         Stack<bool> parameterExistsStack;
@@ -474,20 +458,11 @@ namespace Gek
                 break;
 
             case TokenType::RightParenthesis:
-                if (stack.empty())
-                {
-                    // we can't have an ending parenthesis without a starting one
-                    return Status::UnbalancedParenthesis;
-                }
-
+                GEK_CHECK_EXCEPTION(stack.empty(), UnbalancedParenthesis, "Unmatched ending parenthesis found");
                 while (stack.top().type != TokenType::LeftParenthesis)
                 {
                     rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
-                    {
-                        // found a closing parenthesis without a starting one
-                        return Status::UnbalancedParenthesis;
-                    }
+                    GEK_CHECK_EXCEPTION(stack.empty(), UnbalancedParenthesis, "Unmatched ending parenthesis found while parsing block");
                 };
 
                 stack.pop();
@@ -521,20 +496,11 @@ namespace Gek
                 break;
 
             case TokenType::Separator:
-                if (stack.empty() || parameterExistsStack.empty())
-                {
-                    // we can't not have values on the stack and find a parameter separator
-                    return Status::MisplacedSeparator;
-                }
-
+                GEK_CHECK_EXCEPTION(stack.empty() || parameterExistsStack.empty(), MisplacedSeparator, "Comma found without a leading value");
                 while (stack.top().type != TokenType::LeftParenthesis)
                 {
                     rpnTokenList.push_back(stack.popTop());
-                    if (stack.empty())
-                    {
-                        // found a separator without a starting parenthesis
-                        return Status::MisplacedSeparator;
-                    }
+                    GEK_CHECK_EXCEPTION(stack.empty(), MisplacedSeparator, "Comma found without a starting parenthesis while parsing block");
                 };
 
                 if (parameterExistsStack.top())
@@ -551,26 +517,19 @@ namespace Gek
                 break;
 
             default:
-                return Status::UnknownTokenType;
+                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %S", token.string);
             };
         }
 
         while (!stack.empty())
         {
-            if (stack.top().type == TokenType::LeftParenthesis ||
-                stack.top().type == TokenType::RightParenthesis)
-            {
-                // all parenthesis should have been handled above
-                return Status::UnbalancedParenthesis;
-            }
-
+            GEK_CHECK_EXCEPTION(stack.top().type == TokenType::LeftParenthesis, UnbalancedParenthesis, "Unused left parenthesis found while unwinding the stack");
+            GEK_CHECK_EXCEPTION(stack.top().type == TokenType::RightParenthesis, UnbalancedParenthesis, "Unused right parenthesis found while unwinding the stack");
             rpnTokenList.push_back(stack.popTop());
         };
-
-        return Status::Success;
     }
 
-    ShuntingYard::Status ShuntingYard::evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
     {
         Stack<Token> stack;
         for (auto &token : rpnTokenList)
@@ -584,108 +543,71 @@ namespace Gek
             case TokenType::UnaryOperation:
                 if (true)
                 {
-                    auto &operation = operationsMap.find(token.string)->second;
-                    if (operation.unaryFunction)
-                    {
-                        if (!stack.empty() && (stack.top().type == TokenType::Number))
-                        {
-                            float functionValue = stack.popTop().value;
-                            stack.push(Token(operation.unaryFunction(functionValue)));
-                        }
-                        else
-                        {
-                            return Status::InvalidOperand;
-                        }
-                    }
-                    else
-                    {
-                        return Status::InvalidOperator;
-                    }
+                    auto &operationIterater = operationsMap.find(token.string);
+                    GEK_CHECK_EXCEPTION(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %S", token.string);
 
+                    auto &operation = (*operationIterater).second;
+                    GEK_CHECK_EXCEPTION(!operation.unaryFunction, InvalidOperator, "No unary function found for operation: %S", token.string);
+
+                    GEK_CHECK_EXCEPTION(stack.empty(), InvalidOperand, "No values found for unary operator: %S", token.string);
+                    GEK_CHECK_EXCEPTION(stack.top().type != TokenType::Number, InvalidOperand, "Invalid token found for unary operator: %S", stack.top().string);
+                    float functionValue = stack.popTop().value;
+
+                    stack.push(Token(operation.unaryFunction(functionValue)));
                     break;
                 }
 
             case TokenType::BinaryOperation:
                 if (true)
                 {
-                    auto &operation = operationsMap.find(token.string)->second;
-                    if (operation.binaryFunction)
-                    {
-                        if (!stack.empty() && (stack.top().type == TokenType::Number))
-                        {
-                            float functionValueRight = stack.popTop().value;
-                            if (!stack.empty() && (stack.top().type == TokenType::Number))
-                            {
-                                float functionValueLeft = stack.popTop().value;
-                                stack.push(Token(operation.binaryFunction(functionValueLeft, functionValueRight)));
-                            }
-                            else
-                            {
-                                return Status::InvalidOperand;
-                            }
-                        }
-                        else
-                        {
-                            return Status::InvalidOperand;
-                        }
-                    }
-                    else
-                    {
-                        return Status::InvalidOperator;
-                    }
+                    auto &operationIterater = operationsMap.find(token.string);
+                    GEK_CHECK_EXCEPTION(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %S", token.string);
 
+                    auto &operation = (*operationIterater).second;
+                    GEK_CHECK_EXCEPTION(!operation.binaryFunction, InvalidOperator, "No binary function found for operation: %S", token.string);
+
+
+                    GEK_CHECK_EXCEPTION(stack.empty(), InvalidOperand, "No right value found for unary operator: %S", token.string);
+                    GEK_CHECK_EXCEPTION(stack.top().type != TokenType::Number, InvalidOperand, "Invalid right token found for unary operator: %S", stack.top().string);
+                    float functionValueRight = stack.popTop().value;
+
+                    GEK_CHECK_EXCEPTION(stack.empty(), InvalidOperand, "No left value found for unary operator: %S", token.string);
+                    GEK_CHECK_EXCEPTION(stack.top().type != TokenType::Number, InvalidOperand, "Invalid left token found for unary operator: %S", stack.top().string);
+                    float functionValueLeft = stack.popTop().value;
+
+                    stack.push(Token(operation.binaryFunction(functionValueLeft, functionValueRight)));
                     break;
                 }
 
             case TokenType::Function:
                 if (true)
                 {
-                    auto &function = functionsMap.find(token.string)->second;
-                    if (function.parameterCount != token.parameterCount)
-                    {
-                        return Status::InvalidFunctionParameters;
-                    }
+                    auto &functionIterator = functionsMap.find(token.string);
+                    GEK_CHECK_EXCEPTION(functionIterator == functionsMap.end(), InvalidFunction, "Unable to find operation: %S", token.string);
 
-                    if (stack.size() < function.parameterCount)
-                    {
-                        return Status::NotEnoughFunctionParameters;
-                    }
+                    auto &function = (*functionIterator).second;
+                    GEK_CHECK_EXCEPTION(function.parameterCount != token.parameterCount, InvalidFunctionParameters, "Mismatched function parameters found");
+                    GEK_CHECK_EXCEPTION(stack.size() < function.parameterCount, NotEnoughFunctionParameters, "Not enough function parameters found");
 
                     stack.push(Token(function.function(stack)));
                     break;
                 }
 
             case TokenType::Vector:
-                if (token.parameterCount != valueSize)
-                {
-                    return Status::InvalidVector;
-                }
-
-                if (stack.size() != valueSize)
-                {
-                    return Status::InvalidVector;
-                }
-
+                GEK_CHECK_EXCEPTION(token.parameterCount != valueSize, InvalidVector, "Mismatched vector type found");
+                GEK_CHECK_EXCEPTION(stack.size() != valueSize, InvalidVector, "Not enough values for required vector found");
                 for (UINT32 axis = valueSize; axis > 0; axis--)
                 {
                     value[axis - 1] = stack.popTop().value;
                 }
 
-                return Status::Success;
-
             default:
-                return Status::UnknownTokenType;
+                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %S", token.string);
             };
         }
 
-        if (stack.size() == valueSize == 1)
-        {
-            (*value) = stack.top().value;
-            return Status::Success;
-        }
-        else
-        {
-            return Status::InvalidEquation;
-        }
+        GEK_CHECK_EXCEPTION(valueSize != 1, InvalidEquation, "Returning too many values for requested type");
+        GEK_CHECK_EXCEPTION(stack.size() != valueSize, InvalidEquation, "Returning too many values for requested type");
+        (*value) = stack.top().value;
     }
 }; // namespace Gek

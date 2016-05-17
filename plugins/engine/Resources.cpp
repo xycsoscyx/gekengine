@@ -373,7 +373,7 @@ namespace Gek
         // Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
@@ -771,7 +771,7 @@ namespace Gek
 
         HRESULT createTexture(VideoTexture **returnObject, CStringW parameters, UINT32 flags)
         {
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            GEK_REQUIRE(returnObject);
 
             HRESULT resultValue = E_FAIL;
 
@@ -886,8 +886,8 @@ namespace Gek
 
         HRESULT loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
         {
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
 

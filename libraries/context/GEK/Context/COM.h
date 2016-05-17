@@ -9,8 +9,7 @@
 
 #define CLSID_IID_PPV_ARGS(CLASS, OBJECT)   __uuidof(CLASS), IID_PPV_ARGS(OBJECT)
 
-#define GEK_REQUIRE_VOID_RETURN(CHECK)      do { if ((CHECK) == false) { _ASSERTE(CHECK); return; } } while (false)
-#define GEK_REQUIRE_RETURN(CHECK, RETURN)   do { if ((CHECK) == false) { _ASSERTE(CHECK); return (RETURN); } } while (false)
+#define GEK_REQUIRE(CHECK)      do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
 
 #define DECLARE_UNKNOWN(CLASS)                                                                      \
     public:                                                                                         \
@@ -32,7 +31,7 @@
                                                                                                     \
     STDMETHODIMP CLASS::QueryInterface(THIS_ REFIID interfaceType, LPVOID FAR *returnObject)        \
     {                                                                                               \
-        GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
+        GEK_REQUIRE(returnObject);
 
 #define INTERFACE_LIST_ENTRY(INTERFACE_IID, INTERFACE_CLASS)                                        \
         if (IsEqualIID(INTERFACE_IID, interfaceType))                                               \
@@ -106,7 +105,7 @@
 #define REGISTER_CLASS(CLASS)                                                                       \
 HRESULT CLASS##CreateInstance(Gek::ContextUser **returnObject)                                      \
 {                                                                                                   \
-    GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);                                                 \
+    GEK_REQUIRE(returnObject);                                                                      \
                                                                                                     \
     HRESULT resultValue = E_OUTOFMEMORY;                                                            \
     CComPtr<CLASS> classObject(new CLASS());                                                        \

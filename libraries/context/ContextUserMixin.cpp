@@ -25,13 +25,13 @@ namespace Gek
     // Utility
     Context * ContextUserMixin::getContext(void)
     {
-        GEK_REQUIRE_RETURN(context, nullptr);
+        GEK_REQUIRE(context);
         return context;
     }
 
     const Context * ContextUserMixin::getContext(void) const
     {
-        GEK_REQUIRE_RETURN(context, nullptr);
+        GEK_REQUIRE(context);
         return context;
     }
 }; // namespace Gek

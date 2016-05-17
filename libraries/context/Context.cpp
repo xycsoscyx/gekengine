@@ -118,7 +118,7 @@ namespace Gek
         {
             GEK_TRACE_FUNCTION(GEK_PARAMETER(className), GEK_PARAMETER(interfaceType));
 
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            GEK_REQUIRE(returnObject);
 
             HRESULT resultValue = E_FAIL;
             auto classIterator = classList.find(className);
@@ -167,11 +167,11 @@ namespace Gek
     {
         GEK_TRACE_FUNCTION();
 
-        GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
+        GEK_REQUIRE(returnObject);
 
         HRESULT resultValue = E_OUTOFMEMORY;
         CComPtr<ContextImplementation> context(new ContextImplementation());
-        GEK_TRACE_CONDITION((context ? true : false), "Unable to create context instance");
+        GEK_CHECK_EXCEPTION((context ? true : false), BaseException, "Unable to create context instance");
         if (context)
         {
             resultValue = context->QueryInterface(IID_PPV_ARGS(returnObject));

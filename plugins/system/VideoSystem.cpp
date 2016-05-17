@@ -398,9 +398,9 @@ namespace Gek
         // ID3DInclude
         STDMETHODIMP Open(D3D_INCLUDE_TYPE includeType, LPCSTR fileName, LPCVOID parentData, LPCVOID *data, UINT *dataSize)
         {
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(data, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(dataSize, E_INVALIDARG);
+            GEK_REQUIRE(fileName);
+            GEK_REQUIRE(data);
+            GEK_REQUIRE(dataSize);
 
             includeBuffer.clear();
             HRESULT resultValue = Gek::FileSystem::load(CA2W(fileName), includeBuffer);
@@ -459,35 +459,35 @@ namespace Gek
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11ComputeShader> d3dComputeShader(program);
             d3dDeviceContext->CSSetShader(d3dComputeShader, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             d3dDeviceContext->CSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
             d3dDeviceContext->CSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
             d3dDeviceContext->CSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
 
         STDMETHODIMP_(void) setUnorderedAccess(IUnknown *unorderedAccess, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView(unorderedAccess);
             d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, &d3dUnorderedAccessView.p, nullptr);
         }
@@ -509,7 +509,7 @@ namespace Gek
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
 
             CComQIPtr<ID3D11VertexShader> d3dVertexShader(program);
             d3dDeviceContext->VSSetShader(d3dVertexShader, nullptr, 0);
@@ -520,21 +520,21 @@ namespace Gek
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             d3dDeviceContext->VSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
             d3dDeviceContext->VSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
             d3dDeviceContext->VSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
@@ -556,28 +556,28 @@ namespace Gek
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11GeometryShader> d3dGeometryShader(program);
             d3dDeviceContext->GSSetShader(d3dGeometryShader, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             d3dDeviceContext->GSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
             d3dDeviceContext->GSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
             d3dDeviceContext->GSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
@@ -599,28 +599,28 @@ namespace Gek
         // VideoPipeline
         STDMETHODIMP_(void) setProgram(IUnknown *program)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11PixelShader> d3dPixelShader(program);
             d3dDeviceContext->PSSetShader(d3dPixelShader, nullptr, 0);
         }
 
         STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             d3dDeviceContext->PSSetConstantBuffers(stage, 1, &d3dBuffer.p);
         }
 
         STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
             d3dDeviceContext->PSSetSamplers(stage, 1, &d3dSamplerState.p);
         }
 
         STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
             d3dDeviceContext->PSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
         }
@@ -658,32 +658,32 @@ namespace Gek
         // VideoContext
         STDMETHODIMP_(VideoPipeline *) computePipeline(void)
         {
-            GEK_REQUIRE_RETURN(computeSystemHandler, nullptr);
+            GEK_REQUIRE(computeSystemHandler);
             return computeSystemHandler.p;
         }
 
         STDMETHODIMP_(VideoPipeline *) vertexPipeline(void)
         {
-            GEK_REQUIRE_RETURN(vertexSystemHandler, nullptr);
+            GEK_REQUIRE(vertexSystemHandler);
             return vertexSystemHandler.p;
         }
 
         STDMETHODIMP_(VideoPipeline *) geometryPipeline(void)
         {
-            GEK_REQUIRE_RETURN(geomtrySystemHandler, nullptr);
+            GEK_REQUIRE(geomtrySystemHandler);
             return geomtrySystemHandler.p;
         }
 
         STDMETHODIMP_(VideoPipeline *) pixelPipeline(void)
         {
-            GEK_REQUIRE_RETURN(pixelSystemHandler, nullptr);
+            GEK_REQUIRE(pixelSystemHandler);
             return pixelSystemHandler.p;
         }
 
         STDMETHODIMP_(void) generateMipMaps(VideoTexture *texture)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(texture);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(texture);
 
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(texture);
             if (d3dShaderResourceView)
@@ -694,7 +694,7 @@ namespace Gek
 
         STDMETHODIMP_(void) clearResources(void)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             
             // ClearState clears too much, we only want to clear resource between calls, but leave constants/states/modes alone
             //d3dDeviceContext->ClearState();
@@ -713,23 +713,23 @@ namespace Gek
 
         STDMETHODIMP_(void) setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(viewPortList);
-            GEK_REQUIRE_VOID_RETURN(viewPortCount);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(viewPortList);
+            GEK_REQUIRE(viewPortCount);
             d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
         }
 
         STDMETHODIMP_(void) setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(rectangleList);
-            GEK_REQUIRE_VOID_RETURN(rectangleCount);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(rectangleList);
+            GEK_REQUIRE(rectangleCount);
             d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
         }
 
         STDMETHODIMP_(void) clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
             if (d3dRenderTargetView)
             {
@@ -739,7 +739,7 @@ namespace Gek
 
         STDMETHODIMP_(void) clearDepthStencilTarget(IUnknown *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer);
             if (d3dDepthStencilView)
             {
@@ -752,8 +752,8 @@ namespace Gek
 
         STDMETHODIMP_(void) clearUnorderedAccessBuffer(VideoBuffer *buffer, float value)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(buffer);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(buffer);
 
             CComQIPtr<ID3D11UnorderedAccessView> d3dBuffer(buffer);
             if (buffer)
@@ -773,8 +773,8 @@ namespace Gek
         ID3D11RenderTargetView *d3dRenderTargetViewList[8];
         STDMETHODIMP_(void) setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(renderTargetList);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(renderTargetList);
 
             for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
             {
@@ -788,28 +788,28 @@ namespace Gek
 
         STDMETHODIMP_(void) setRenderStates(IUnknown *renderStates)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11RasterizerState> d3dRasterizerState(renderStates);
             d3dDeviceContext->RSSetState(d3dRasterizerState);
         }
 
         STDMETHODIMP_(void) setDepthStates(IUnknown *depthStates, UINT32 stencilReference)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11DepthStencilState> d3dDepthStencilState(depthStates);
             d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, stencilReference);
         }
 
         STDMETHODIMP_(void) setBlendStates(IUnknown *blendStates, const Math::Color &blendFactor, UINT32 mask)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11BlendState> d3dBlendState(blendStates);
             d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.data, mask);
         }
 
         STDMETHODIMP_(void) setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(vertexBuffer);
             UINT32 stride = (vertexBuffer ? vertexBuffer->getStride() : 0);
             d3dDeviceContext->IASetVertexBuffers(slot, 1, &d3dBuffer.p, &stride, &offset);
@@ -817,7 +817,7 @@ namespace Gek
 
         STDMETHODIMP_(void) setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Buffer> d3dBuffer(indexBuffer);
             DXGI_FORMAT format = (indexBuffer ? (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT) : DXGI_FORMAT_UNKNOWN);
             d3dDeviceContext->IASetIndexBuffer(d3dBuffer, format, offset);
@@ -825,43 +825,44 @@ namespace Gek
 
         STDMETHODIMP_(void) setPrimitiveType(Video::PrimitiveType primitiveType)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<UINT8>(primitiveType)]);
         }
 
         STDMETHODIMP_(void) drawPrimitive(UINT32 vertexCount, UINT32 firstVertex)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             d3dDeviceContext->Draw(vertexCount, firstVertex);
         }
 
         STDMETHODIMP_(void) drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
         }
 
         STDMETHODIMP_(void) drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
         }
 
         STDMETHODIMP_(void) drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
         }
 
         STDMETHODIMP_(void) dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
         }
 
         STDMETHODIMP_(void) finishCommandList(IUnknown **returnObject)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext && returnObject);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(returnObject);
 
             CComPtr<ID3D11CommandList> d3dCommandList;
             d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
@@ -911,7 +912,7 @@ namespace Gek
         // VideoSystem
         STDMETHODIMP initialize(HWND window, bool fullScreen, Video::Format format)
         {
-            GEK_REQUIRE_RETURN(window, E_INVALIDARG);
+            GEK_REQUIRE(window);
 
             HRESULT resultValue = E_FAIL;
 
@@ -979,7 +980,7 @@ namespace Gek
 
         STDMETHODIMP setSize(UINT32 width, UINT32 height, Video::Format format)
         {
-            GEK_REQUIRE_RETURN(dxSwapChain, E_FAIL);
+            GEK_REQUIRE(dxSwapChain);
 
             HRESULT resultValue = E_FAIL;
 
@@ -1008,7 +1009,7 @@ namespace Gek
 
         STDMETHODIMP resize(void)
         {
-            GEK_REQUIRE_RETURN(dxSwapChain, E_FAIL);
+            GEK_REQUIRE(dxSwapChain);
 
             backBuffer.Release();
             HRESULT resultValue = dxSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
@@ -1049,8 +1050,8 @@ namespace Gek
 
         STDMETHODIMP createDeferredContext(VideoContext **returnObject)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(returnObject);
 
             HRESULT resultValue = E_FAIL;
             CComPtr<ID3D11DeviceContext> d3dDeferredDeviceContext;
@@ -1070,7 +1071,7 @@ namespace Gek
 
         STDMETHODIMP createEvent(IUnknown **returnObject)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
             D3D11_QUERY_DESC description;
@@ -1089,14 +1090,14 @@ namespace Gek
 
         STDMETHODIMP_(void) setEvent(IUnknown *event)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
             CComQIPtr<ID3D11Query> d3dQuery(event);
             d3dDeviceContext->End(d3dQuery);
         }
 
         STDMETHODIMP_(bool) isEventSet(IUnknown *event)
         {
-            GEK_REQUIRE_RETURN(d3dDeviceContext, false);
+            GEK_REQUIRE(d3dDeviceContext);
 
             UINT32 isEventSet = 0;
             CComQIPtr<ID3D11Query> d3dQuery(event);
@@ -1113,7 +1114,7 @@ namespace Gek
 
         STDMETHODIMP createRenderStates(IUnknown **returnObject, const Video::RenderStates &renderStates)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
             D3D11_RASTERIZER_DESC rasterizerDescription;
@@ -1140,7 +1141,7 @@ namespace Gek
 
         STDMETHODIMP createDepthStates(IUnknown **returnObject, const Video::DepthStates &depthStates)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
             D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
@@ -1171,7 +1172,7 @@ namespace Gek
 
         STDMETHODIMP createBlendStates(IUnknown **returnObject, const Video::UnifiedBlendStates &blendStates)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
             D3D11_BLEND_DESC blendDescription;
@@ -1217,7 +1218,7 @@ namespace Gek
 
         STDMETHODIMP createBlendStates(IUnknown **returnObject, const Video::IndependentBlendStates &blendStates)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
             D3D11_BLEND_DESC blendDescription;
@@ -1266,7 +1267,7 @@ namespace Gek
 
         STDMETHODIMP createSamplerStates(IUnknown **returnObject, const Video::SamplerStates &samplerStates)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
             D3D11_SAMPLER_DESC samplerDescription;
@@ -1296,9 +1297,9 @@ namespace Gek
 
         STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(stride > 0, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(count > 0, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(stride > 0);
+            GEK_REQUIRE(count > 0);
 
             HRESULT resultValue = E_FAIL;
             D3D11_BUFFER_DESC bufferDescription;
@@ -1442,8 +1443,8 @@ namespace Gek
 
         STDMETHODIMP_(void) updateBuffer(VideoBuffer *buffer, LPCVOID data)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(data);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(data);
 
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
 
@@ -1452,8 +1453,8 @@ namespace Gek
 
         STDMETHODIMP mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping)
         {
-            GEK_REQUIRE_RETURN(d3dDeviceContext, E_FAIL);
-            GEK_REQUIRE_RETURN(data, E_INVALIDARG);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(data);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
@@ -1478,8 +1479,8 @@ namespace Gek
 
         STDMETHODIMP_(void) unmapBuffer(VideoBuffer *buffer)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(buffer);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(buffer);
 
             CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
             d3dDeviceContext->Unmap(d3dBuffer, 0);
@@ -1487,9 +1488,9 @@ namespace Gek
 
         STDMETHODIMP_(void) copyResource(IUnknown *destination, IUnknown *source)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(destination);
-            GEK_REQUIRE_VOID_RETURN(source);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(destination);
+            GEK_REQUIRE(source);
 
             CComQIPtr<ID3D11Resource> d3dDestination(destination);
             CComQIPtr<ID3D11Resource> d3dSource(source);
@@ -1498,10 +1499,10 @@ namespace Gek
 
         STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(programScript, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(entryFunction, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(programScript);
+            GEK_REQUIRE(entryFunction);
 
             HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -1541,10 +1542,10 @@ namespace Gek
 
         STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(programScript, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(entryFunction, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(programScript);
+            GEK_REQUIRE(entryFunction);
 
             HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -1641,10 +1642,10 @@ namespace Gek
 
         STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(programScript, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(entryFunction, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(programScript);
+            GEK_REQUIRE(entryFunction);
 
             HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -1684,10 +1685,10 @@ namespace Gek
 
         STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_FAIL);
-            GEK_REQUIRE_RETURN(returnObject, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(programScript, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(entryFunction, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(returnObject);
+            GEK_REQUIRE(programScript);
+            GEK_REQUIRE(entryFunction);
 
             HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
@@ -1751,7 +1752,7 @@ namespace Gek
 
         STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
 
@@ -1768,7 +1769,7 @@ namespace Gek
 
         STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
 
@@ -1785,7 +1786,7 @@ namespace Gek
 
         STDMETHODIMP loadGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
 
@@ -1802,7 +1803,7 @@ namespace Gek
 
         STDMETHODIMP loadPixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
 
@@ -1819,7 +1820,7 @@ namespace Gek
 
         STDMETHODIMP createTexture(VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
 
@@ -1994,8 +1995,8 @@ namespace Gek
 
         STDMETHODIMP loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
 
@@ -2087,7 +2088,7 @@ namespace Gek
 
         STDMETHODIMP loadCubeMap(VideoTexture **returnObject, LPCWSTR fileNameList[6], UINT32 flags)
         {
-            GEK_REQUIRE_RETURN(d3dDevice, E_INVALIDARG);
+            GEK_REQUIRE(d3dDevice);
 
             HRESULT resultValue = E_FAIL;
 
@@ -2194,7 +2195,7 @@ namespace Gek
 
         STDMETHODIMP_(void) updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
+            GEK_REQUIRE(d3dDeviceContext);
 
             CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(texture);
             if (d3dShaderResourceView)
@@ -2227,8 +2228,8 @@ namespace Gek
 
         STDMETHODIMP_(void) executeCommandList(IUnknown *commandList)
         {
-            GEK_REQUIRE_VOID_RETURN(d3dDeviceContext);
-            GEK_REQUIRE_VOID_RETURN(commandList);
+            GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(commandList);
 
             CComQIPtr<ID3D11CommandList> d3dCommandList(commandList);
             d3dDeviceContext->ExecuteCommandList(d3dCommandList, FALSE);
@@ -2236,7 +2237,7 @@ namespace Gek
 
         STDMETHODIMP_(void) present(bool waitForVerticalSync)
         {
-            GEK_REQUIRE_VOID_RETURN(dxSwapChain);
+            GEK_REQUIRE(dxSwapChain);
 
             dxSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
         }

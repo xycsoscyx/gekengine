@@ -50,7 +50,7 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<Population> population(initializerContext);
@@ -85,7 +85,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityCreated(Entity *head)
         {
-            GEK_REQUIRE_VOID_RETURN(population);
+            GEK_REQUIRE(population);
         }
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *head)
@@ -94,8 +94,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
-            GEK_REQUIRE_VOID_RETURN(population);
-            GEK_REQUIRE_VOID_RETURN(render);
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(render);
 
             population->listEntities<TransformComponent, FirstPersonCameraComponent>([&](Entity *cameraEntity) -> void
             {

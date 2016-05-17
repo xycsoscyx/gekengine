@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GeK\Utility\Trace.h"
 #include "Gek\Utility\Hash.h"
 #include <functional>
 #include <unordered_map>
@@ -10,6 +11,19 @@ namespace Gek
 {
     class ShuntingYard
     {
+    public:
+        GEK_EXCEPTION_LIST(UnknownTokenType,
+            UnbalancedParenthesis,
+            InvalidVector,
+            InvalidEquation,
+            InvalidOperator,
+            InvalidOperand,
+            InvalidFunction,
+            InvalidFunctionParameters,
+            NotEnoughFunctionParameters,
+            MissingFunctionParenthesis,
+            MisplacedSeparator);
+
     public:
         enum class Associations : UINT8
         {
@@ -75,58 +89,42 @@ namespace Gek
         std::mt19937 mersineTwister;
 
     public:
-        enum class Status : UINT8
-        {
-            Success = 0,
-            UnknownTokenType,
-            UnbalancedParenthesis,
-            InvalidVector,
-            InvalidEquation,
-            InvalidOperator,
-            InvalidOperand,
-            InvalidFunctionParameters,
-            NotEnoughFunctionParameters,
-            MissingFunctionParenthesis,
-            MisplacedSeparator,
-        };
-
-    public:
         ShuntingYard(void);
 
-        Status evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList);
+        void evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList);
 
-        inline Status evaluate(std::vector<Token> &rpnTokenList, float &value)
+        inline void evaluate(std::vector<Token> &rpnTokenList, float &value)
         {
-            return evaluateValue(rpnTokenList, &value, 1);
+            evaluateValue(rpnTokenList, &value, 1);
         }
 
         template <std::size_t SIZE>
-        Status evaluate(std::vector<Token> &rpnTokenList, float(&value)[SIZE])
+        void evaluate(std::vector<Token> &rpnTokenList, float(&value)[SIZE])
         {
-            return evaluateValue(rpnTokenList, value, SIZE);
+            evaluateValue(rpnTokenList, value, SIZE);
         }
 
         template <class TYPE>
-        Status evaluate(std::vector<Token> &rpnTokenList, TYPE &value)
+        void evaluate(std::vector<Token> &rpnTokenList, TYPE &value)
         {
-            return evaluate(rpnTokenList, value.data);
+            evaluate(rpnTokenList, value.data);
         }
 
-        inline Status evaluate(LPCWSTR expression, float &value)
+        inline void evaluate(LPCWSTR expression, float &value)
         {
-            return evaluateValue(expression, &value, 1);
+            evaluateValue(expression, &value, 1);
         }
 
         template <std::size_t SIZE>
-        Status evaluate(LPCWSTR expression, float(&value)[SIZE])
+        void evaluate(LPCWSTR expression, float(&value)[SIZE])
         {
-            return evaluateValue(expression, value, SIZE);
+            evaluateValue(expression, value, SIZE);
         }
 
         template <class TYPE>
-        Status evaluate(LPCWSTR expression, TYPE &value)
+        void evaluate(LPCWSTR expression, TYPE &value)
         {
-            return evaluate(expression, value.data);
+            evaluate(expression, value.data);
         }
 
     private:
@@ -145,18 +143,18 @@ namespace Gek
         void insertToken(std::vector<Token> &infixTokenList, Token &token);
         bool replaceFirstVariable(std::vector<Token> &infixTokenList, CStringW &token);
         bool replaceFirstFunction(std::vector<Token> &infixTokenList, CStringW &token);
-        Status parseSubTokens(std::vector<Token> &infixTokenList, CStringW token);
+        void parseSubTokens(std::vector<Token> &infixTokenList, CStringW token);
         std::vector<Token> convertExpressionToInfix(const CStringW &expression);
-        Status convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList);
-        Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
+        void convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList);
+        void evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
 
         template <std::size_t SIZE>
-        Status evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float(&value)[SIZE])
+        void evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float(&value)[SIZE])
         {
-            return evaluateReversePolishNotation(rpnTokenList, value, SIZE);
+            evaluateReversePolishNotation(rpnTokenList, value, SIZE);
         }
 
-        Status evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
-        Status evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize);
+        void evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
+        void evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize);
     };
 }; // namespace Gek

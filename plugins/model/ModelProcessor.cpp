@@ -296,7 +296,7 @@ namespace Gek
         // System::Interface
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<PluginResources> resources(initializerContext);
@@ -360,8 +360,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            GEK_REQUIRE_VOID_RETURN(resources);
-            GEK_REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(entity);
 
             if (entity->hasComponents<ModelComponent, TransformComponent>())
             {
@@ -385,7 +385,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
         {
-            GEK_REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE(entity);
 
             auto dataEntityIterator = entityDataList.find(entity);
             if (dataEntityIterator != entityDataList.end())
@@ -412,8 +412,8 @@ namespace Gek
 
         STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
-            GEK_REQUIRE_VOID_RETURN(cameraEntity);
-            GEK_REQUIRE_VOID_RETURN(viewFrustum);
+            GEK_REQUIRE(cameraEntity);
+            GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
             concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](DataEntityMap::value_type &dataEntity) -> void

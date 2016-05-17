@@ -35,8 +35,8 @@ namespace Gek
         // Material
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<Resources> resources(initializerContext);

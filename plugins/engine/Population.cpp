@@ -108,7 +108,7 @@ namespace Gek
 
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             resultValue = getContext()->createEachType(__uuidof(ComponentType), [&](REFCLSID className, IUnknown *object) -> HRESULT
@@ -365,7 +365,7 @@ namespace Gek
 
         STDMETHODIMP_(Entity *) getNamedEntity(LPCWSTR name)
         {
-            GEK_REQUIRE_RETURN(name, nullptr);
+            GEK_REQUIRE(name);
 
             Entity* entity = nullptr;
             auto namedEntity = namedEntityList.find(name);

@@ -220,7 +220,7 @@ namespace Gek
         // Render/Resources
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
@@ -316,8 +316,8 @@ namespace Gek
 
         STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
         {
-            GEK_REQUIRE_VOID_RETURN(population);
-            GEK_REQUIRE_VOID_RETURN(cameraEntity);
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(cameraEntity);
 
             auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
             Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
@@ -474,7 +474,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onFree(void)
         {
-            GEK_REQUIRE_VOID_RETURN(resources);
+            GEK_REQUIRE(resources);
 
             resources->clearLocal();
         }

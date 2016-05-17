@@ -425,7 +425,7 @@ namespace Gek
         // Interface
         STDMETHODIMP initialize(HWND window)
         {
-            GEK_REQUIRE_RETURN(window, E_INVALIDARG);
+            GEK_REQUIRE(window);
 
             HRESULT resultValue = E_FAIL;
             this->window = window;
@@ -468,13 +468,13 @@ namespace Gek
 
         STDMETHODIMP_(InputDevice *) getKeyboard(void)
         {
-            GEK_REQUIRE_RETURN(keyboardDevice, nullptr);
+            GEK_REQUIRE(keyboardDevice);
             return keyboardDevice;
         }
 
         STDMETHODIMP_(InputDevice *) getMouse(void)
         {
-            GEK_REQUIRE_RETURN(mouseDevice, nullptr);
+            GEK_REQUIRE(mouseDevice);
             return mouseDevice;
         }
 
@@ -495,8 +495,8 @@ namespace Gek
 
         STDMETHODIMP update(void)
         {
-            GEK_REQUIRE_RETURN(keyboardDevice, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(mouseDevice, E_INVALIDARG);
+            GEK_REQUIRE(keyboardDevice);
+            GEK_REQUIRE(mouseDevice);
 
             mouseDevice->update();
             keyboardDevice->update();

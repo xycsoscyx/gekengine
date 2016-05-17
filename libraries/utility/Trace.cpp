@@ -7,6 +7,24 @@
 
 namespace Gek
 {
+    BaseException::BaseException(LPCSTR function, UINT32 line, LPCSTR message)
+        : std::exception(message)
+        , function(function)
+        , line(line)
+    {
+        trace("i", "exception", GetTickCount64(), function, message);
+    }
+
+    LPCSTR BaseException::where(void)
+    {
+        return function;
+    }
+
+    UINT32 BaseException::when(void)
+    {
+        return line;
+    }
+
     class TraceMutex
     {
     private:
@@ -146,6 +164,7 @@ namespace Gek
 
                                 if (!message.empty())
                                 {
+                                    OutputDebugStringA((message + "\r\n").c_str());
                                     file.write(message);
                                 }
 

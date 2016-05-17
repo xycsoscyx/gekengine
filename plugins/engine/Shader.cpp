@@ -619,8 +619,8 @@ namespace Gek
         // Shader
         STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
-            GEK_REQUIRE_RETURN(fileName, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
+            GEK_REQUIRE(fileName);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<VideoSystem> video(initializerContext);
@@ -1510,9 +1510,9 @@ namespace Gek
 
         STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &resourceList)
         {
-            GEK_REQUIRE_VOID_RETURN(renderContext);
-            GEK_REQUIRE_VOID_RETURN(block);
-            GEK_REQUIRE_VOID_RETURN(pass);
+            GEK_REQUIRE(renderContext);
+            GEK_REQUIRE(block);
+            GEK_REQUIRE(pass);
 
             UINT32 firstStage = 0;
             if (static_cast<BlockImplementation *>(block)->current->lighting)
@@ -1529,8 +1529,8 @@ namespace Gek
 
         STDMETHODIMP_(Block::Iterator) begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
-            GEK_REQUIRE_RETURN(population, Block::Iterator(nullptr));
-            GEK_REQUIRE_RETURN(renderContext, Block::Iterator(nullptr));
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(renderContext);
 
             concurrency::concurrent_vector<LightData> lightData;
             population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *entity) -> void

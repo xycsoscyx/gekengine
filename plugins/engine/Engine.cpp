@@ -262,7 +262,7 @@ namespace Gek
         {
             GEK_TRACE_FUNCTION();
 
-            GEK_REQUIRE_RETURN(window, E_INVALIDARG);
+            GEK_REQUIRE(window);
 
             Gek::XmlDocument xmlDocument;
             if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
@@ -285,7 +285,6 @@ namespace Gek
             }
 
             HRESULT resultValue = CoInitialize(nullptr);
-            GEK_TRACE_CONDITION(SUCCEEDED(resultValue), "Call to CoInitialize failed", GEK_PARAMETER(resultValue));
             if (SUCCEEDED(resultValue))
             {
                 resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(VideoSystemRegistration, &video));

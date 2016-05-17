@@ -115,7 +115,7 @@ namespace Gek
 
         STDMETHODIMP_(UINT32) loadSurface(LPCWSTR fileName)
         {
-            GEK_REQUIRE_RETURN(fileName, 0);
+            GEK_REQUIRE(fileName);
 
             UINT32 surfaceIndex = 0;
             std::size_t fileNameHash = std::hash<CStringW>()(fileName);
@@ -182,7 +182,7 @@ namespace Gek
         // Processor
         STDMETHODIMP initialize(IUnknown *initializerContext)
         {
-            GEK_REQUIRE_RETURN(initializerContext, E_INVALIDARG);
+            GEK_REQUIRE(initializerContext);
 
             HRESULT resultValue = E_FAIL;
             CComQIPtr<Population> population(initializerContext);
@@ -374,12 +374,12 @@ namespace Gek
                 newtonWorld = nullptr;
             }
 
-            GEK_REQUIRE_VOID_RETURN(NewtonGetMemoryUsed() == 0);
+            GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
         }
 
         STDMETHODIMP_(void) onEntityCreated(Entity *entity)
         {
-            GEK_REQUIRE_VOID_RETURN(entity);
+            GEK_REQUIRE(entity);
 
             if (entity->hasComponents<TransformComponent>())
             {
@@ -438,7 +438,7 @@ namespace Gek
 
         STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
         {
-            GEK_REQUIRE_VOID_RETURN(population);
+            GEK_REQUIRE(population);
 
             if (!isIdle && newtonWorld)
             {
@@ -462,7 +462,7 @@ namespace Gek
 
         NewtonCollision *createCollision(Entity *entity, const CStringW &shape)
         {
-            GEK_REQUIRE_RETURN(population, nullptr);
+            GEK_REQUIRE(population, nullptr);
 
             NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<CStringW>()(shape);
