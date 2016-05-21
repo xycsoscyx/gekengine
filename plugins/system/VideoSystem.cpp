@@ -1,9 +1,9 @@
 #pragma warning(disable : 4005)
 
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\COM.h"
-#include "GEK\Context\UnknownMixin.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include <atlbase.h>
@@ -232,9 +232,127 @@ namespace Gek
         };
     }; // namespace DirectX
 
-    class VertexProgram : public UnknownMixin
+    class CommandList
+        : public VideoObject
     {
-    private:
+    public:
+        CComPtr<ID3D11CommandList> d3dCommandList;
+
+    public:
+        CommandList(ID3D11CommandList *d3dCommandList)
+            : d3dCommandList(d3dCommandList)
+        {
+        }
+    };
+
+    class RenderState
+        : public VideoObject
+    {
+    public:
+        CComQIPtr<ID3D11RasterizerState> d3dRenderState;
+
+    public:
+        RenderState(ID3D11RasterizerState *d3dRenderState)
+            : d3dRenderState(d3dRenderState)
+        {
+        }
+    };
+
+    class DepthState
+        : public VideoObject
+    {
+    public:
+        CComQIPtr<ID3D11DepthStencilState> d3dDepthState;
+
+    public:
+        DepthState(ID3D11DepthStencilState *d3dDepthState)
+            : d3dDepthState(d3dDepthState)
+        {
+        }
+    };
+
+    class BlendState
+        : public VideoObject
+    {
+    public:
+        CComQIPtr<ID3D11BlendState> d3dBlendState;
+
+    public:
+        BlendState(ID3D11BlendState *d3dBlendState)
+            : d3dBlendState(d3dBlendState)
+        {
+        }
+    };
+
+    class SamplerState
+        : public VideoObject
+    {
+    public:
+        CComQIPtr<ID3D11SamplerState> d3dSamplerState;
+
+    public:
+        SamplerState(ID3D11SamplerState *d3dSamplerState)
+            : d3dSamplerState(d3dSamplerState)
+        {
+        }
+    };
+
+    class Event
+        : public VideoObject
+    {
+    public:
+        CComPtr<ID3D11Query> d3dQuery;
+
+    public:
+        Event(ID3D11Query *d3dQuery)
+            : d3dQuery(d3dQuery)
+        {
+        }
+    };
+
+    class ResourceView
+        : public VideoObject
+    {
+    public:
+        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+
+    public:
+        ResourceView(ID3D11ShaderResourceView *d3dShaderResourceView)
+            : d3dShaderResourceView(d3dShaderResourceView)
+        {
+        }
+    };
+
+    class UnorderedAccessView
+        : public VideoObject
+    {
+    public:
+        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
+
+    public:
+        UnorderedAccessView(ID3D11UnorderedAccessView *d3dUnorderedAccessView)
+            : d3dUnorderedAccessView(d3dUnorderedAccessView)
+        {
+        }
+    };
+
+    class ComputeProgram
+        : public VideoObject
+    {
+    public:
+        CComPtr<ID3D11ComputeShader> d3dComputeShader;
+
+    public:
+        ComputeProgram(ID3D11ComputeShader *d3dComputeShader)
+            : d3dComputeShader(d3dComputeShader)
+        {
+        }
+    };
+
+    class VertexProgram
+        : public VideoObject
+    {
+    public:
         CComPtr<ID3D11VertexShader> d3dVertexShader;
         CComPtr<ID3D11InputLayout> d3dInputLayout;
 
@@ -244,42 +362,51 @@ namespace Gek
             , d3dInputLayout(d3dInputLayout)
         {
         }
-
-        BEGIN_INTERFACE_LIST(VertexProgram)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11VertexShader, d3dVertexShader)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11InputLayout, d3dInputLayout)
-        END_INTERFACE_LIST_UNKNOWN
     };
 
-    class BufferImplementation : public UnknownMixin
-        , public VideoBuffer
+    class GeometryProgram
+        : public VideoObject
     {
-    private:
+    public:
+        CComPtr<ID3D11GeometryShader> d3dGeometryShader;
+
+    public:
+        GeometryProgram(ID3D11GeometryShader *d3dGeometryShader)
+            : d3dGeometryShader(d3dGeometryShader)
+        {
+        }
+    };
+
+    class PixelProgram
+        : public VideoObject
+    {
+    public:
+        CComPtr<ID3D11PixelShader> d3dPixelShader;
+
+    public:
+        PixelProgram(ID3D11PixelShader *d3dPixelShader)
+            : d3dPixelShader(d3dPixelShader)
+        {
+        }
+    };
+
+    class BaseBuffer
+        : public VideoBuffer
+    {
+    public:
         CComPtr<ID3D11Buffer> d3dBuffer;
-        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
         Video::Format format;
         UINT32 stride;
         UINT32 count;
 
     public:
-        BufferImplementation(Video::Format format, UINT32 stride, UINT32 count, ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView = nullptr, ID3D11UnorderedAccessView *d3dUnorderedAccessView = nullptr)
+        BaseBuffer(Video::Format format, UINT32 stride, UINT32 count, ID3D11Buffer *d3dBuffer)
             : format(format)
             , stride(stride)
             , count(count)
             , d3dBuffer(d3dBuffer)
-            , d3dShaderResourceView(d3dShaderResourceView)
-            , d3dUnorderedAccessView(d3dUnorderedAccessView)
         {
         }
-
-        BEGIN_INTERFACE_LIST(BufferImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoBuffer)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Resource, d3dBuffer)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Buffer, d3dBuffer)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-        END_INTERFACE_LIST_UNKNOWN
 
         // VideoBuffer
         STDMETHODIMP_(Video::Format) getFormat(void)
@@ -298,14 +425,25 @@ namespace Gek
         }
     };
 
-    class TextureImplementation : public UnknownMixin
-        , public VideoTarget
+    class ViewBuffer
+        : public BaseBuffer
+        , public ResourceView
+        , public UnorderedAccessView
+    {
+    public:
+        ViewBuffer(Video::Format format, UINT32 stride, UINT32 count, ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView)
+            : BaseBuffer(format, stride, count, d3dBuffer)
+            , ResourceView(d3dShaderResourceView)
+            , UnorderedAccessView(d3dUnorderedAccessView)
+        {
+        }
+    };
+
+    class BaseTexture
+        : public VideoTexture
     {
     protected:
         CComPtr<ID3D11Resource> d3dResource;
-        CComPtr<ID3D11View> d3dResourceView;
-        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
         Video::Format format;
         UINT32 width;
         UINT32 height;
@@ -313,39 +451,14 @@ namespace Gek
         Video::ViewPort viewPort;
 
     public:
-        TextureImplementation(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+        BaseTexture(ID3D11Resource *d3dResource, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
             : d3dResource(d3dResource)
-            , d3dShaderResourceView(d3dShaderResourceView)
-            , d3dUnorderedAccessView(d3dUnorderedAccessView)
             , format(format)
             , width(width)
             , height(height)
             , depth(depth)
         {
         }
-
-        TextureImplementation(ID3D11Resource *d3dResource, ID3D11View *d3dResourceView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height)
-            : d3dResource(d3dResource)
-            , d3dResourceView(d3dResourceView)
-            , d3dShaderResourceView(d3dShaderResourceView)
-            , d3dUnorderedAccessView(d3dUnorderedAccessView)
-            , format(format)
-            , width(width)
-            , height(height)
-            , depth(1)
-            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(TextureImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoTarget)
-            INTERFACE_LIST_ENTRY_COM(VideoTexture)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Resource, d3dResource)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11RenderTargetView, d3dResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DepthStencilView, d3dResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11ShaderResourceView, d3dShaderResourceView)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11UnorderedAccessView, d3dUnorderedAccessView)
-        END_INTERFACE_LIST_UNKNOWN
 
         // VideoTexture
         STDMETHODIMP_(Video::Format) getFormat(void)
@@ -367,6 +480,37 @@ namespace Gek
         {
             return depth;
         }
+    };
+
+    class ViewTexture
+        : public BaseTexture
+        , public ResourceView
+        , public UnorderedAccessView
+    {
+    public:
+        ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+            : BaseTexture(d3dResource, format, width, height, depth)
+            , ResourceView(d3dShaderResourceView)
+            , UnorderedAccessView(d3dUnorderedAccessView)
+        {
+        }
+    };
+
+    class TargetTexture
+        : public BaseTexture
+        , public VideoTarget
+    {
+    public:
+        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+        Video::ViewPort viewPort;
+
+    public:
+        TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+            : BaseTexture(d3dResource, format, width, height, depth)
+            , d3dRenderTargetView(d3dRenderTargetView)
+            , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+        {
+        }
 
         // VideoTarget
         STDMETHODIMP_(const Video::ViewPort &) getViewPort(void)
@@ -375,10 +519,46 @@ namespace Gek
         }
     };
 
-    class IncludeImplementation : public UnknownMixin
-        , public ID3DInclude
+    class TargetViewTexture
+        : public TargetTexture
+        , public ResourceView
+        , public UnorderedAccessView
     {
-    private:
+    public:
+        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+        Video::ViewPort viewPort;
+
+    public:
+        TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+            : TargetTexture(d3dResource, d3dRenderTargetView, format, width, height, depth)
+            , ResourceView(d3dShaderResourceView)
+            , UnorderedAccessView(d3dUnorderedAccessView)
+        {
+        }
+    };
+
+    class DepthTexture
+        : public BaseTexture
+        , public ResourceView
+        , public UnorderedAccessView
+    {
+    public:
+        CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
+
+    public:
+        DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+            : BaseTexture(d3dResource, format, width, height, depth)
+            , ResourceView(d3dShaderResourceView)
+            , UnorderedAccessView(d3dUnorderedAccessView)
+            , d3dDepthStencilView(d3dDepthStencilView)
+        {
+        }
+    };
+
+    class IncludeImplementation
+        : public ID3DInclude
+    {
+    public:
         CPathW shaderFilePath;
         std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude;
         std::vector<UINT8> includeBuffer;
@@ -391,10 +571,6 @@ namespace Gek
             shaderFilePath.RemoveFileSpec();
         }
 
-        BEGIN_INTERFACE_LIST(IncludeImplementation)
-            INTERFACE_LIST_ENTRY_COM(IUnknown)
-        END_INTERFACE_LIST_UNKNOWN
-
         // ID3DInclude
         STDMETHODIMP Open(D3D_INCLUDE_TYPE includeType, LPCSTR fileName, LPCVOID parentData, LPCVOID *data, UINT *dataSize)
         {
@@ -403,26 +579,38 @@ namespace Gek
             GEK_REQUIRE(dataSize);
 
             includeBuffer.clear();
-            HRESULT resultValue = Gek::FileSystem::load(CA2W(fileName), includeBuffer);
-            if (FAILED(resultValue))
+            try
             {
-                CPathW shaderPath;
-                shaderPath.Combine(shaderFilePath, CA2W(fileName));
-                resultValue = Gek::FileSystem::load(shaderPath, includeBuffer);
+                FileSystem::load(CA2W(fileName), includeBuffer);
             }
-
-            if (FAILED(resultValue))
+            catch (FileSystem::Exception)
             {
-                resultValue = onInclude(fileName, includeBuffer);
-            }
+                try
+                {
+                    CPathW shaderPath;
+                    shaderPath.Combine(shaderFilePath, CA2W(fileName));
+                    FileSystem::load(shaderPath, includeBuffer);
+                }
+                catch (FileSystem::Exception)
+                {
+                    try
+                    {
+                        onInclude(fileName, includeBuffer);
+                    }
+                    catch (FileSystem::Exception)
+                    {
+                    };
+                };
+            };
 
-            if (SUCCEEDED(resultValue))
+            if (!includeBuffer.empty())
             {
                 (*data) = includeBuffer.data();
                 (*dataSize) = includeBuffer.size();
+                return S_OK;
             }
 
-            return resultValue;
+            return E_FAIL;
         }
 
         STDMETHODIMP Close(LPCVOID data)
@@ -431,7 +619,7 @@ namespace Gek
         }
     };
 
-    class PipelineImplementation : public UnknownMixin
+    class PipelineImplementation
     {
     protected:
         ID3D11DeviceContext *d3dDeviceContext;
@@ -443,7 +631,8 @@ namespace Gek
         }
     };
 
-    class ComputePipelineImplementation : public PipelineImplementation
+    class ComputePipelineImplementation
+        : public PipelineImplementation
         , public VideoPipeline
     {
     public:
@@ -452,48 +641,45 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(ComputePipelineImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
-        END_INTERFACE_LIST_UNKNOWN
-
         // VideoPipeline
-        STDMETHODIMP_(void) setProgram(IUnknown *program)
+        void setProgram(VideoObject *program)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11ComputeShader> d3dComputeShader(program);
-            d3dDeviceContext->CSSetShader(d3dComputeShader, nullptr, 0);
+
+            d3dDeviceContext->CSSetShader(program ? reinterpret_cast<ComputeProgram *>(program)->d3dComputeShader : nullptr, nullptr, 0);
         }
 
-        STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            d3dDeviceContext->CSSetConstantBuffers(stage, 1, &d3dBuffer.p);
+
+            d3dDeviceContext->CSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            d3dDeviceContext->CSSetSamplers(stage, 1, &d3dSamplerState.p);
+
+            d3dDeviceContext->CSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
+        void setResource(VideoObject *resource, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            d3dDeviceContext->CSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
+
+            d3dDeviceContext->CSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
 
-        STDMETHODIMP_(void) setUnorderedAccess(IUnknown *unorderedAccess, UINT32 stage)
+        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView(unorderedAccess);
-            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, &d3dUnorderedAccessView.p, nullptr);
+
+            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, &(unorderedAccess ? reinterpret_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView : nullptr), nullptr);
         }
     };
 
-    class VertexPipelineImplementation : public PipelineImplementation
+    class VertexPipelineImplementation
+        : public PipelineImplementation
         , public VideoPipeline
     {
     public:
@@ -502,45 +688,39 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(VertexPipelineImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
-        END_INTERFACE_LIST_UNKNOWN
-
         // VideoPipeline
-        STDMETHODIMP_(void) setProgram(IUnknown *program)
+        void setProgram(VideoObject *program)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            CComQIPtr<ID3D11VertexShader> d3dVertexShader(program);
-            d3dDeviceContext->VSSetShader(d3dVertexShader, nullptr, 0);
-
-            CComQIPtr<ID3D11InputLayout> d3dInputLayout(program);
-            d3dDeviceContext->IASetInputLayout(d3dInputLayout);
+            d3dDeviceContext->VSSetShader(program ? reinterpret_cast<VertexProgram *>(program)->d3dVertexShader : nullptr, nullptr, 0);
+            d3dDeviceContext->IASetInputLayout(program ? reinterpret_cast<VertexProgram *>(program)->d3dInputLayout : nullptr);
         }
 
-        STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            d3dDeviceContext->VSSetConstantBuffers(stage, 1, &d3dBuffer.p);
+
+            d3dDeviceContext->VSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            d3dDeviceContext->VSSetSamplers(stage, 1, &d3dSamplerState.p);
+
+            d3dDeviceContext->VSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
+        void setResource(VideoObject *resource, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            d3dDeviceContext->VSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
+
+            d3dDeviceContext->VSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
     };
 
-    class GeometryPipelineImplementation : public PipelineImplementation
+    class GeometryPipelineImplementation
+        : public PipelineImplementation
         , public VideoPipeline
     {
     public:
@@ -549,41 +729,38 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(GeometryPipelineImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
-        END_INTERFACE_LIST_UNKNOWN
-
         // VideoPipeline
-        STDMETHODIMP_(void) setProgram(IUnknown *program)
+        void setProgram(VideoObject *program)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11GeometryShader> d3dGeometryShader(program);
-            d3dDeviceContext->GSSetShader(d3dGeometryShader, nullptr, 0);
+
+            d3dDeviceContext->GSSetShader(program ? reinterpret_cast<GeometryProgram *>(program)->d3dGeometryShader : nullptr, nullptr, 0);
         }
 
-        STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            d3dDeviceContext->GSSetConstantBuffers(stage, 1, &d3dBuffer.p);
+
+            d3dDeviceContext->GSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            d3dDeviceContext->GSSetSamplers(stage, 1, &d3dSamplerState.p);
+
+            d3dDeviceContext->GSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
+        void setResource(VideoObject *resource, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            d3dDeviceContext->GSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
+
+            d3dDeviceContext->GSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
     };
 
-    class PixelPipelineImplementation : public PipelineImplementation
+    class PixelPipelineImplementation
+        : public PipelineImplementation
         , public VideoPipeline
     {
     public:
@@ -592,49 +769,46 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(PixelPipelineImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoPipeline)
-        END_INTERFACE_LIST_UNKNOWN
-
         // VideoPipeline
-        STDMETHODIMP_(void) setProgram(IUnknown *program)
+        void setProgram(VideoObject *program)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11PixelShader> d3dPixelShader(program);
-            d3dDeviceContext->PSSetShader(d3dPixelShader, nullptr, 0);
+
+            d3dDeviceContext->PSSetShader(program ? reinterpret_cast<PixelProgram *>(program)->d3dPixelShader : nullptr, nullptr, 0);
         }
 
-        STDMETHODIMP_(void) setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            d3dDeviceContext->PSSetConstantBuffers(stage, 1, &d3dBuffer.p);
+
+            d3dDeviceContext->PSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        STDMETHODIMP_(void) setSamplerStates(IUnknown *samplerStates, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11SamplerState> d3dSamplerState(samplerStates);
-            d3dDeviceContext->PSSetSamplers(stage, 1, &d3dSamplerState.p);
+
+            d3dDeviceContext->PSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        STDMETHODIMP_(void) setResource(IUnknown *resource, UINT32 stage)
+        void setResource(VideoObject *resource, UINT32 stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(resource);
-            d3dDeviceContext->PSSetShaderResources(stage, 1, &d3dShaderResourceView.p);
+
+            d3dDeviceContext->PSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
     };
 
-    class VideoContextImplementation : public Gek::ContextUserMixin
+    class VideoContextImplementation
+        : public Gek::ContextUserMixin
         , public VideoContext
     {
-    protected:
+    public:
         CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-        CComPtr<VideoPipeline> computeSystemHandler;
-        CComPtr<VideoPipeline> vertexSystemHandler;
-        CComPtr<VideoPipeline> geomtrySystemHandler;
-        CComPtr<VideoPipeline> pixelSystemHandler;
+        std::shared_ptr<VideoPipeline> computeSystemHandler;
+        std::shared_ptr<VideoPipeline> vertexSystemHandler;
+        std::shared_ptr<VideoPipeline> geomtrySystemHandler;
+        std::shared_ptr<VideoPipeline> pixelSystemHandler;
 
     public:
         VideoContextImplementation(void)
@@ -650,52 +824,47 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(VideoContextImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoContext)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11DeviceContext, d3dDeviceContext)
-            END_INTERFACE_LIST_USER
-
         // VideoContext
         STDMETHODIMP_(VideoPipeline *) computePipeline(void)
         {
             GEK_REQUIRE(computeSystemHandler);
-            return computeSystemHandler.p;
+
+            return computeSystemHandler.get();
         }
 
         STDMETHODIMP_(VideoPipeline *) vertexPipeline(void)
         {
             GEK_REQUIRE(vertexSystemHandler);
-            return vertexSystemHandler.p;
+
+            return vertexSystemHandler.get();
         }
 
         STDMETHODIMP_(VideoPipeline *) geometryPipeline(void)
         {
             GEK_REQUIRE(geomtrySystemHandler);
-            return geomtrySystemHandler.p;
+
+            return geomtrySystemHandler.get();
         }
 
         STDMETHODIMP_(VideoPipeline *) pixelPipeline(void)
         {
             GEK_REQUIRE(pixelSystemHandler);
-            return pixelSystemHandler.p;
+
+            return pixelSystemHandler.get();
         }
 
-        STDMETHODIMP_(void) generateMipMaps(VideoTexture *texture)
+        void generateMipMaps(VideoTexture *texture)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(texture);
 
-            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(texture);
-            if (d3dShaderResourceView)
-            {
-                d3dDeviceContext->GenerateMips(d3dShaderResourceView);
-            }
+            d3dDeviceContext->GenerateMips(reinterpret_cast<ResourceView *>(texture)->d3dShaderResourceView);
         }
 
-        STDMETHODIMP_(void) clearResources(void)
+        void clearResources(void)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            
+
             // ClearState clears too much, we only want to clear resource between calls, but leave constants/states/modes alone
             //d3dDeviceContext->ClearState();
 
@@ -711,172 +880,172 @@ namespace Gek
             d3dDeviceContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, d3dRenderTargetViewList, nullptr);
         }
 
-        STDMETHODIMP_(void) setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount)
+        void setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(viewPortList);
-            GEK_REQUIRE(viewPortCount);
+            GEK_REQUIRE(viewPortCount > 0);
+
             d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
         }
 
-        STDMETHODIMP_(void) setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
+        void setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(rectangleList);
-            GEK_REQUIRE(rectangleCount);
+            GEK_REQUIRE(rectangleCount > 0);
+
             d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
         }
 
-        STDMETHODIMP_(void) clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear)
+        void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11RenderTargetView> d3dRenderTargetView(renderTarget);
-            if (d3dRenderTargetView)
-            {
-                d3dDeviceContext->ClearRenderTargetView(d3dRenderTargetView, colorClear.data);
-            }
+            GEK_REQUIRE(renderTarget);
+
+            d3dDeviceContext->ClearRenderTargetView(reinterpret_cast<TargetTexture *>(renderTarget)->d3dRenderTargetView, colorClear.data);
         }
 
-        STDMETHODIMP_(void) clearDepthStencilTarget(IUnknown *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear)
+        void clearDepthStencilTarget(VideoObject *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11DepthStencilView> d3dDepthStencilView(depthBuffer);
-            if (d3dDepthStencilView)
-            {
-                d3dDeviceContext->ClearDepthStencilView(d3dDepthStencilView,
-                    ((flags & Video::ClearMask::Depth ? D3D11_CLEAR_DEPTH : 0) |
-                     (flags & Video::ClearMask::Stencil ? D3D11_CLEAR_STENCIL : 0)),
-                    depthClear, stencilClear);
-            }
+            GEK_REQUIRE(depthBuffer);
+
+            d3dDeviceContext->ClearDepthStencilView(reinterpret_cast<DepthTexture *>(depthBuffer)->d3dDepthStencilView,
+                ((flags & Video::ClearMask::Depth ? D3D11_CLEAR_DEPTH : 0) |
+                 (flags & Video::ClearMask::Stencil ? D3D11_CLEAR_STENCIL : 0)),
+                  depthClear, stencilClear);
         }
 
-        STDMETHODIMP_(void) clearUnorderedAccessBuffer(VideoBuffer *buffer, float value)
+        void clearUnorderedAccessBuffer(VideoBuffer *buffer, float value)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(buffer);
 
-            CComQIPtr<ID3D11UnorderedAccessView> d3dBuffer(buffer);
-            if (buffer)
+            float valueList[4] =
             {
-                float valueList[4] =
-                {
-                    value,
-                    value,
-                    value,
-                    value,
-                };
+                value,
+                value,
+                value,
+                value,
+            };
 
-                d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dBuffer, valueList);
-            }
+            d3dDeviceContext->ClearUnorderedAccessViewFloat(reinterpret_cast<UnorderedAccessView *>(buffer)->d3dUnorderedAccessView, valueList);
         }
 
         ID3D11RenderTargetView *d3dRenderTargetViewList[8];
-        STDMETHODIMP_(void) setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, IUnknown *depthBuffer)
+        void setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, VideoObject *depthBuffer)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(renderTargetList);
 
             for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
             {
-                CComQIPtr<ID3D11RenderTargetView> d3dRenderTarget(renderTargetList[renderTarget]);
-                d3dRenderTargetViewList[renderTarget] = d3dRenderTarget;
+                d3dRenderTargetViewList[renderTarget] = reinterpret_cast<TargetTexture *>(renderTargetList[renderTarget])->d3dRenderTargetView);
             }
 
-            CComQIPtr<ID3D11DepthStencilView> d3dDepthBuffer(depthBuffer);
-            d3dDeviceContext->OMSetRenderTargets(renderTargetCount, d3dRenderTargetViewList, d3dDepthBuffer);
+            d3dDeviceContext->OMSetRenderTargets(renderTargetCount, d3dRenderTargetViewList, (depthBuffer ? reinterpret_cast<DepthTexture *>(depthBuffer)->d3dDepthStencilView : nullptr));
         }
 
-        STDMETHODIMP_(void) setRenderStates(IUnknown *renderStates)
+        void setRenderState(VideoObject *renderState)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11RasterizerState> d3dRasterizerState(renderStates);
-            d3dDeviceContext->RSSetState(d3dRasterizerState);
+            GEK_REQUIRE(renderState);
+
+            d3dDeviceContext->RSSetState(reinterpret_cast<RenderState *>(renderState)->d3dRenderState);
         }
 
-        STDMETHODIMP_(void) setDepthStates(IUnknown *depthStates, UINT32 stencilReference)
+        void setDepthState(VideoObject *depthState, UINT32 stencilReference)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11DepthStencilState> d3dDepthStencilState(depthStates);
-            d3dDeviceContext->OMSetDepthStencilState(d3dDepthStencilState, stencilReference);
+            GEK_REQUIRE(depthState);
+
+            d3dDeviceContext->OMSetDepthStencilState(reinterpret_cast<DepthState *>(depthState)->d3dDepthState, stencilReference);
         }
 
-        STDMETHODIMP_(void) setBlendStates(IUnknown *blendStates, const Math::Color &blendFactor, UINT32 mask)
+        void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, UINT32 mask)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11BlendState> d3dBlendState(blendStates);
-            d3dDeviceContext->OMSetBlendState(d3dBlendState, blendFactor.data, mask);
+            GEK_REQUIRE(blendState);
+
+            d3dDeviceContext->OMSetBlendState(reinterpret_cast<BlendState *>(blendState)->d3dBlendState, blendFactor.data, mask);
         }
 
-        STDMETHODIMP_(void) setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset)
+        void setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Buffer> d3dBuffer(vertexBuffer);
-            UINT32 stride = (vertexBuffer ? vertexBuffer->getStride() : 0);
-            d3dDeviceContext->IASetVertexBuffers(slot, 1, &d3dBuffer.p, &stride, &offset);
+            GEK_REQUIRE(vertexBuffer);
+
+            UINT32 stride = vertexBuffer->getStride();
+            d3dDeviceContext->IASetVertexBuffers(slot, 1, &reinterpret_cast<BaseBuffer *>(vertexBuffer)->d3dBuffer, &stride, &offset);
         }
 
-        STDMETHODIMP_(void) setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset)
+        void setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Buffer> d3dBuffer(indexBuffer);
-            DXGI_FORMAT format = (indexBuffer ? (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT) : DXGI_FORMAT_UNKNOWN);
-            d3dDeviceContext->IASetIndexBuffer(d3dBuffer, format, offset);
+            GEK_REQUIRE(indexBuffer);
+
+            DXGI_FORMAT format = (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
+            d3dDeviceContext->IASetIndexBuffer(&reinterpret_cast<BaseBuffer *>(indexBuffer)->d3dBuffer, format, offset);
         }
 
-        STDMETHODIMP_(void) setPrimitiveType(Video::PrimitiveType primitiveType)
+        void setPrimitiveType(Video::PrimitiveType primitiveType)
         {
             GEK_REQUIRE(d3dDeviceContext);
+
             d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<UINT8>(primitiveType)]);
         }
 
-        STDMETHODIMP_(void) drawPrimitive(UINT32 vertexCount, UINT32 firstVertex)
+        void drawPrimitive(UINT32 vertexCount, UINT32 firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
+
             d3dDeviceContext->Draw(vertexCount, firstVertex);
         }
 
-        STDMETHODIMP_(void) drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
+        void drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
+
             d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
         }
 
-        STDMETHODIMP_(void) drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+        void drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
+
             d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
         }
 
-        STDMETHODIMP_(void) drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+        void drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
+
             d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
         }
 
-        STDMETHODIMP_(void) dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ)
+        void dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ)
         {
             GEK_REQUIRE(d3dDeviceContext);
+
             d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
         }
 
-        STDMETHODIMP_(void) finishCommandList(IUnknown **returnObject)
+        std::shared_ptr<VideoObject> finishCommandList(void)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            GEK_REQUIRE(returnObject);
 
             CComPtr<ID3D11CommandList> d3dCommandList;
-            d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
-            if (d3dCommandList)
-            {
-                d3dCommandList->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
+            return std::dynamic_pointer_cast<VideoObject>(std::make_shared<CommandList>(d3dCommandList.p));
         }
     };
 
-    class VideoSystemImplementation : virtual public VideoContextImplementation
+    class VideoSystemImplementation
+        : virtual public VideoContextImplementation
         , virtual public VideoSystem
     {
-    private:
+    public:
         HWND window;
         bool isChildWindow;
         bool fullScreen;
@@ -884,7 +1053,7 @@ namespace Gek
 
         CComPtr<ID3D11Device> d3dDevice;
         CComPtr<IDXGISwapChain> dxSwapChain;
-        CComPtr<VideoTarget> backBuffer;
+        std::shared_ptr<VideoTarget> backBuffer;
 
     public:
         VideoSystemImplementation(void)
@@ -898,23 +1067,15 @@ namespace Gek
         ~VideoSystemImplementation(void)
         {
             setFullScreen(false);
-            backBuffer.Release();
+            backBuffer = nullptr;
             dxSwapChain.Release();
             d3dDevice.Release();
         }
 
-        BEGIN_INTERFACE_LIST(VideoSystemImplementation)
-            INTERFACE_LIST_ENTRY_COM(VideoSystem)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_ID3D11Device, d3dDevice)
-            INTERFACE_LIST_ENTRY_MEMBER(IID_IDXGISwapChain, dxSwapChain)
-        END_INTERFACE_LIST_USER
-
         // VideoSystem
-        STDMETHODIMP initialize(HWND window, bool fullScreen, Video::Format format)
+        void initialize(HWND window, bool fullScreen, Video::Format format)
         {
             GEK_REQUIRE(window);
-
-            HRESULT resultValue = E_FAIL;
 
             this->format = format;
             this->isChildWindow = (GetParent(window) != nullptr);
@@ -949,40 +1110,30 @@ namespace Gek
             };
 
             D3D_FEATURE_LEVEL featureLevel;
-            resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext);
-            if (SUCCEEDED(resultValue))
-            {
-                computeSystemHandler = new ComputePipelineImplementation(d3dDeviceContext);
-                vertexSystemHandler = new VertexPipelineImplementation(d3dDeviceContext);
-                geomtrySystemHandler = new GeometryPipelineImplementation(d3dDeviceContext);
-                pixelSystemHandler = new PixelPipelineImplementation(d3dDeviceContext);
-            }
+            HRESULT resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext);
 
-            if (SUCCEEDED(resultValue) && fullScreen && !isChildWindow)
+            computeSystemHandler = std::make_shared<ComputePipelineImplementation>(d3dDeviceContext);
+            vertexSystemHandler = std::make_shared<VertexPipelineImplementation>(d3dDeviceContext);
+            geomtrySystemHandler = std::make_shared<GeometryPipelineImplementation>(d3dDeviceContext);
+            pixelSystemHandler = std::make_shared<PixelPipelineImplementation>(d3dDeviceContext);
+            if (fullScreen && !isChildWindow)
             {
                 resultValue = dxSwapChain->SetFullscreenState(true, nullptr);
             }
-
-            return resultValue;
         }
 
-        STDMETHODIMP setFullScreen(bool fullScreen)
+        void setFullScreen(bool fullScreen)
         {
-            HRESULT resultValue = E_FAIL;
             if (!isChildWindow && this->fullScreen != fullScreen)
             {
                 this->fullScreen = fullScreen;
-                resultValue = dxSwapChain->SetFullscreenState(fullScreen, nullptr);
+                HRESULT resultValue = dxSwapChain->SetFullscreenState(fullScreen, nullptr);
             }
-
-            return resultValue;
         }
 
-        STDMETHODIMP setSize(UINT32 width, UINT32 height, Video::Format format)
+        void setSize(UINT32 width, UINT32 height, Video::Format format)
         {
             GEK_REQUIRE(dxSwapChain);
-
-            HRESULT resultValue = E_FAIL;
 
             DXGI_SWAP_CHAIN_DESC chainDescription;
             DXGI_MODE_DESC &modeDescription = chainDescription.BufferDesc;
@@ -1001,307 +1152,256 @@ namespace Gek
                 description.RefreshRate.Denominator = 1;
                 description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
                 description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
-                resultValue = dxSwapChain->ResizeTarget(&description);
+                HRESULT resultValue = dxSwapChain->ResizeTarget(&description);
             }
-
-            return resultValue;
         }
 
-        STDMETHODIMP resize(void)
+        void resize(void)
         {
             GEK_REQUIRE(dxSwapChain);
 
-            backBuffer.Release();
+            backBuffer = nullptr;
             HRESULT resultValue = dxSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
-            return resultValue;
         }
 
-        STDMETHODIMP_(VideoTarget *) getBackBuffer(void)
+        VideoTarget * const getBackBuffer(void)
         {
             if (!backBuffer)
             {
                 CComPtr<ID3D11Texture2D> d3dRenderTarget;
                 HRESULT resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
-                if (SUCCEEDED(resultValue) && d3dRenderTarget)
-                {
-                    CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                    resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
-                    if (SUCCEEDED(resultValue) && d3dRenderTargetView)
-                    {
-                        D3D11_TEXTURE2D_DESC description;
-                        d3dRenderTarget->GetDesc(&description);
-                        backBuffer = new TextureImplementation(d3dRenderTarget, d3dRenderTargetView, nullptr, nullptr, format, description.Width, description.Height);
-                    }
-                }
+
+                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
+
+                D3D11_TEXTURE2D_DESC description;
+                d3dRenderTarget->GetDesc(&description);
+                backBuffer = std::dynamic_pointer_cast<VideoTarget>(std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1));
             }
 
-            return backBuffer;
+            return backBuffer.get();
         }
 
-        STDMETHODIMP_(VideoContext *) getDefaultContext(void)
+        VideoContext * const getDefaultContext(void)
         {
             return static_cast<VideoContext *>(this);
         }
 
-        STDMETHODIMP_(bool) isFullScreen(void)
+        bool isFullScreen(void)
         {
             return fullScreen;
         }
 
-        STDMETHODIMP createDeferredContext(VideoContext **returnObject)
+        std::shared_ptr<VideoContext> createDeferredContext(void)
         {
             GEK_REQUIRE(d3dDevice);
-            GEK_REQUIRE(returnObject);
 
-            HRESULT resultValue = E_FAIL;
             CComPtr<ID3D11DeviceContext> d3dDeferredDeviceContext;
-            resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
-            if (SUCCEEDED(resultValue) && d3dDeferredDeviceContext)
-            {
-                resultValue = E_OUTOFMEMORY;
-                CComPtr<VideoContextImplementation> deferredContext(new VideoContextImplementation(d3dDeferredDeviceContext));
-                if (deferredContext)
-                {
-                    resultValue = deferredContext->QueryInterface(IID_PPV_ARGS(returnObject));
-                }
-            }
+            HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
 
-            return resultValue;
+            return std::dynamic_pointer_cast<VideoContext>(std::make_shared<VideoContextImplementation>(d3dDeferredDeviceContext.p));
         }
 
-        STDMETHODIMP createEvent(IUnknown **returnObject)
+        std::shared_ptr<VideoObject> createEvent(void)
         {
             GEK_REQUIRE(d3dDevice);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_QUERY_DESC description;
             description.Query = D3D11_QUERY_EVENT;
             description.MiscFlags = 0;
 
             CComPtr<ID3D11Query> d3dQuery;
-            resultValue = d3dDevice->CreateQuery(&description, &d3dQuery);
-            if (SUCCEEDED(resultValue) && d3dQuery)
-            {
-                resultValue = d3dQuery->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDevice->CreateQuery(&description, &d3dQuery);
 
-            return resultValue;
+            return std::dynamic_pointer_cast<VideoObject>(std::make_shared<Event>(d3dQuery));
         }
 
-        STDMETHODIMP_(void) setEvent(IUnknown *event)
+        void setEvent(VideoObject *event)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            CComQIPtr<ID3D11Query> d3dQuery(event);
-            d3dDeviceContext->End(d3dQuery);
+            GEK_REQUIRE(event);
+
+            d3dDeviceContext->End(reinterpret_cast<Event *>(event)->d3dQuery);
         }
 
-        STDMETHODIMP_(bool) isEventSet(IUnknown *event)
+        bool isEventSet(VideoObject *event)
         {
             GEK_REQUIRE(d3dDeviceContext);
+            GEK_REQUIRE(event);
 
             UINT32 isEventSet = 0;
-            CComQIPtr<ID3D11Query> d3dQuery(event);
-            if (d3dQuery)
+            if (FAILED(d3dDeviceContext->GetData(reinterpret_cast<Event *>(event)->d3dQuery, (LPVOID)&isEventSet, sizeof(UINT32), TRUE)))
             {
-                if (FAILED(d3dDeviceContext->GetData(d3dQuery, (LPVOID)&isEventSet, sizeof(UINT32), TRUE)))
-                {
-                    isEventSet = 0;
-                }
+                isEventSet = 0;
             }
 
             return (isEventSet == 1);
         }
 
-        STDMETHODIMP createRenderStates(IUnknown **returnObject, const Video::RenderStates &renderStates)
+        std::shared_ptr<VideoObject> createRenderState(const Video::RenderState &renderState)
         {
             GEK_REQUIRE(d3dDevice);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_RASTERIZER_DESC rasterizerDescription;
-            rasterizerDescription.FrontCounterClockwise = renderStates.frontCounterClockwise;
-            rasterizerDescription.DepthBias = renderStates.depthBias;
-            rasterizerDescription.DepthBiasClamp = renderStates.depthBiasClamp;
-            rasterizerDescription.SlopeScaledDepthBias = renderStates.slopeScaledDepthBias;
-            rasterizerDescription.DepthClipEnable = renderStates.depthClipEnable;
-            rasterizerDescription.ScissorEnable = renderStates.scissorEnable;
-            rasterizerDescription.MultisampleEnable = renderStates.multisampleEnable;
-            rasterizerDescription.AntialiasedLineEnable = renderStates.antialiasedLineEnable;
-            rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<UINT8>(renderStates.fillMode)];
-            rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<UINT8>(renderStates.cullMode)];
+            rasterizerDescription.FrontCounterClockwise = renderState.frontCounterClockwise;
+            rasterizerDescription.DepthBias = renderState.depthBias;
+            rasterizerDescription.DepthBiasClamp = renderState.depthBiasClamp;
+            rasterizerDescription.SlopeScaledDepthBias = renderState.slopeScaledDepthBias;
+            rasterizerDescription.DepthClipEnable = renderState.depthClipEnable;
+            rasterizerDescription.ScissorEnable = renderState.scissorEnable;
+            rasterizerDescription.MultisampleEnable = renderState.multisampleEnable;
+            rasterizerDescription.AntialiasedLineEnable = renderState.antialiasedLineEnable;
+            rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<UINT8>(renderState.fillMode)];
+            rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<UINT8>(renderState.cullMode)];
 
             CComPtr<ID3D11RasterizerState> d3dStates;
-            resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
-            if (SUCCEEDED(resultValue) && d3dStates)
-            {
-                resultValue = d3dStates->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
 
-            return resultValue;
+            return nullptr;
         }
 
-        STDMETHODIMP createDepthStates(IUnknown **returnObject, const Video::DepthStates &depthStates)
+        std::shared_ptr<VideoObject> createDepthState(const Video::DepthState &depthState)
         {
             GEK_REQUIRE(d3dDevice);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
-            depthStencilDescription.DepthEnable = depthStates.enable;
-            depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthStates.comparisonFunction)];
-            depthStencilDescription.StencilEnable = depthStates.stencilEnable;
-            depthStencilDescription.StencilReadMask = depthStates.stencilReadMask;
-            depthStencilDescription.StencilWriteMask = depthStates.stencilWriteMask;
-            depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthStates.stencilFrontStates.failOperation)];
-            depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthStates.stencilFrontStates.depthFailOperation)];
-            depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<UINT8>(depthStates.stencilFrontStates.passOperation)];
-            depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthStates.stencilFrontStates.comparisonFunction)];
-            depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthStates.stencilBackStates.failOperation)];
-            depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation)];
-            depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<UINT8>(depthStates.stencilBackStates.passOperation)];
-            depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction)];
-            depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<UINT8>(depthStates.writeMask)];
+            depthStencilDescription.DepthEnable = depthState.enable;
+            depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthState.comparisonFunction)];
+            depthStencilDescription.StencilEnable = depthState.stencilEnable;
+            depthStencilDescription.StencilReadMask = depthState.stencilReadMask;
+            depthStencilDescription.StencilWriteMask = depthState.stencilWriteMask;
+            depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilFrontState.failOperation)];
+            depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilFrontState.depthFailOperation)];
+            depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilFrontState.passOperation)];
+            depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthState.stencilFrontState.comparisonFunction)];
+            depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilBackState.failOperation)];
+            depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilBackState.depthFailOperation)];
+            depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilBackState.passOperation)];
+            depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthState.stencilBackState.comparisonFunction)];
+            depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<UINT8>(depthState.writeMask)];
 
             CComPtr<ID3D11DepthStencilState> d3dStates;
-            resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
-            if (SUCCEEDED(resultValue) && d3dStates)
-            {
-                resultValue = d3dStates->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
 
-            return resultValue;
+            return nullptr;
         }
 
-        STDMETHODIMP createBlendStates(IUnknown **returnObject, const Video::UnifiedBlendStates &blendStates)
+        std::shared_ptr<VideoObject> createBlendState(const Video::UnifiedBlendState &blendState)
         {
             GEK_REQUIRE(d3dDevice);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_BLEND_DESC blendDescription;
-            blendDescription.AlphaToCoverageEnable = blendStates.alphaToCoverage;
+            blendDescription.AlphaToCoverageEnable = blendState.alphaToCoverage;
             blendDescription.IndependentBlendEnable = false;
-            blendDescription.RenderTarget[0].BlendEnable = blendStates.enable;
-            blendDescription.RenderTarget[0].SrcBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.colorSource)];
-            blendDescription.RenderTarget[0].DestBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.colorDestination)];
-            blendDescription.RenderTarget[0].BlendOp = DirectX::BlendOperationList[static_cast<UINT8>(blendStates.colorOperation)];
-            blendDescription.RenderTarget[0].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.alphaSource)];
-            blendDescription.RenderTarget[0].DestBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.alphaDestination)];
-            blendDescription.RenderTarget[0].BlendOpAlpha = DirectX::BlendOperationList[static_cast<UINT8>(blendStates.alphaOperation)];
+            blendDescription.RenderTarget[0].BlendEnable = blendState.enable;
+            blendDescription.RenderTarget[0].SrcBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.colorSource)];
+            blendDescription.RenderTarget[0].DestBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.colorDestination)];
+            blendDescription.RenderTarget[0].BlendOp = DirectX::BlendOperationList[static_cast<UINT8>(blendState.colorOperation)];
+            blendDescription.RenderTarget[0].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.alphaSource)];
+            blendDescription.RenderTarget[0].DestBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.alphaDestination)];
+            blendDescription.RenderTarget[0].BlendOpAlpha = DirectX::BlendOperationList[static_cast<UINT8>(blendState.alphaOperation)];
             blendDescription.RenderTarget[0].RenderTargetWriteMask = 0;
-            if (blendStates.writeMask & Video::ColorMask::R)
+            if (blendState.writeMask & Video::ColorMask::R)
             {
                 blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
             }
 
-            if (blendStates.writeMask & Video::ColorMask::G)
+            if (blendState.writeMask & Video::ColorMask::G)
             {
                 blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
             }
 
-            if (blendStates.writeMask & Video::ColorMask::B)
+            if (blendState.writeMask & Video::ColorMask::B)
             {
                 blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
             }
 
-            if (blendStates.writeMask & Video::ColorMask::A)
+            if (blendState.writeMask & Video::ColorMask::A)
             {
                 blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
             }
 
             CComPtr<ID3D11BlendState> d3dStates;
-            resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
-            if (SUCCEEDED(resultValue) && d3dStates)
-            {
-                resultValue = d3dStates->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
 
-            return resultValue;
+            return nullptr;
         }
 
-        STDMETHODIMP createBlendStates(IUnknown **returnObject, const Video::IndependentBlendStates &blendStates)
+        std::shared_ptr<VideoObject> createBlendState(const Video::IndependentBlendState &blendState)
         {
             GEK_REQUIRE(d3dDevice);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_BLEND_DESC blendDescription;
-            blendDescription.AlphaToCoverageEnable = blendStates.alphaToCoverage;
+            blendDescription.AlphaToCoverageEnable = blendState.alphaToCoverage;
             blendDescription.IndependentBlendEnable = true;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
-                blendDescription.RenderTarget[renderTarget].BlendEnable = blendStates.targetStates[renderTarget].enable;
-                blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource)];
-                blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination)];
-                blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation)];
-                blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaSource)];
-                blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaDestination)];
-                blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaOperation)];
+                blendDescription.RenderTarget[renderTarget].BlendEnable = blendState.targetStates[renderTarget].enable;
+                blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].colorSource)];
+                blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].colorDestination)];
+                blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<UINT8>(blendState.targetStates[renderTarget].colorOperation)];
+                blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].alphaSource)];
+                blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].alphaDestination)];
+                blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<UINT8>(blendState.targetStates[renderTarget].alphaOperation)];
                 blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
-                if (blendStates.targetStates[renderTarget].writeMask & Video::ColorMask::R)
+                if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::R)
                 {
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
                 }
 
-                if (blendStates.targetStates[renderTarget].writeMask & Video::ColorMask::G)
+                if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::G)
                 {
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
                 }
 
-                if (blendStates.targetStates[renderTarget].writeMask & Video::ColorMask::B)
+                if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::B)
                 {
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
                 }
 
-                if (blendStates.targetStates[renderTarget].writeMask & Video::ColorMask::A)
+                if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::A)
                 {
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                 }
             }
 
             CComPtr<ID3D11BlendState> d3dStates;
-            resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
-            if (SUCCEEDED(resultValue) && d3dStates)
-            {
-                resultValue = d3dStates->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
 
-            return resultValue;
+            return nullptr;
         }
 
-        STDMETHODIMP createSamplerStates(IUnknown **returnObject, const Video::SamplerStates &samplerStates)
+        std::shared_ptr<VideoObject> createSamplerState(const Video::SamplerState &samplerState)
         {
             GEK_REQUIRE(d3dDevice);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_SAMPLER_DESC samplerDescription;
-            samplerDescription.AddressU = DirectX::AddressModeList[static_cast<UINT8>(samplerStates.addressModeU)];
-            samplerDescription.AddressV = DirectX::AddressModeList[static_cast<UINT8>(samplerStates.addressModeV)];
-            samplerDescription.AddressW = DirectX::AddressModeList[static_cast<UINT8>(samplerStates.addressModeW)];
-            samplerDescription.MipLODBias = samplerStates.mipLevelBias;
-            samplerDescription.MaxAnisotropy = samplerStates.maximumAnisotropy;
-            samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(samplerStates.comparisonFunction)];
-            samplerDescription.BorderColor[0] = samplerStates.borderColor.r;
-            samplerDescription.BorderColor[1] = samplerStates.borderColor.g;
-            samplerDescription.BorderColor[2] = samplerStates.borderColor.b;
-            samplerDescription.BorderColor[3] = samplerStates.borderColor.a;
-            samplerDescription.MinLOD = samplerStates.minimumMipLevel;
-            samplerDescription.MaxLOD = samplerStates.maximumMipLevel;
-            samplerDescription.Filter = DirectX::FilterList[static_cast<UINT8>(samplerStates.filterMode)];
+            samplerDescription.AddressU = DirectX::AddressModeList[static_cast<UINT8>(samplerState.addressModeU)];
+            samplerDescription.AddressV = DirectX::AddressModeList[static_cast<UINT8>(samplerState.addressModeV)];
+            samplerDescription.AddressW = DirectX::AddressModeList[static_cast<UINT8>(samplerState.addressModeW)];
+            samplerDescription.MipLODBias = samplerState.mipLevelBias;
+            samplerDescription.MaxAnisotropy = samplerState.maximumAnisotropy;
+            samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(samplerState.comparisonFunction)];
+            samplerDescription.BorderColor[0] = samplerState.borderColor.r;
+            samplerDescription.BorderColor[1] = samplerState.borderColor.g;
+            samplerDescription.BorderColor[2] = samplerState.borderColor.b;
+            samplerDescription.BorderColor[3] = samplerState.borderColor.a;
+            samplerDescription.MinLOD = samplerState.minimumMipLevel;
+            samplerDescription.MaxLOD = samplerState.maximumMipLevel;
+            samplerDescription.Filter = DirectX::FilterList[static_cast<UINT8>(samplerState.filterMode)];
 
             CComPtr<ID3D11SamplerState> d3dStates;
-            resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
-            if (SUCCEEDED(resultValue) && d3dStates)
-            {
-                resultValue = d3dStates->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
+            HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
 
-            return resultValue;
+            return nullptr;
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
+        std::shared_ptr<VideoBuffer> createBuffer(Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(stride > 0);
             GEK_REQUIRE(count > 0);
 
-            HRESULT resultValue = E_FAIL;
             D3D11_BUFFER_DESC bufferDescription;
             bufferDescription.ByteWidth = (stride * count);
             switch (type)
@@ -1369,7 +1469,7 @@ namespace Gek
             CComPtr<ID3D11Buffer> d3dBuffer;
             if (data == nullptr)
             {
-                resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
+                HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
             }
             else
             {
@@ -1377,134 +1477,101 @@ namespace Gek
                 resourceData.pSysMem = data;
                 resourceData.SysMemPitch = 0;
                 resourceData.SysMemSlicePitch = 0;
-                resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
+                HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
             }
 
-            if (d3dBuffer)
+            CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+            if (flags & Video::BufferFlags::Resource)
             {
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (flags & Video::BufferFlags::Resource)
-                {
-                    D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
-                    viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-                    viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = count;
-                    resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
-                    if (FAILED(resultValue))
-                    {
-                        return resultValue;
-                    }
-                }
-
-                CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (flags & Video::BufferFlags::UnorderedAccess)
-                {
-                    D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
-                    viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-                    viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = count;
-                    viewDescription.Buffer.Flags = 0;
-
-                    resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
-                    if (FAILED(resultValue))
-                    {
-                        return resultValue;
-                    }
-                }
-
-                resultValue = E_OUTOFMEMORY;
-                CComPtr<BufferImplementation> buffer(new BufferImplementation(format, stride, count, d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView));
-                if (buffer)
-                {
-                    resultValue = buffer->QueryInterface(IID_PPV_ARGS(returnObject));
-                }
+                D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
+                viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
+                viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+                viewDescription.Buffer.FirstElement = 0;
+                viewDescription.Buffer.NumElements = count;
+                HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
             }
 
-            if (FAILED(resultValue))
+            CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
+            if (flags & Video::BufferFlags::UnorderedAccess)
             {
-                return resultValue;
+                D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
+                viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
+                viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+                viewDescription.Buffer.FirstElement = 0;
+                viewDescription.Buffer.NumElements = count;
+                viewDescription.Buffer.Flags = 0;
+
+                HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
             }
 
-            return resultValue;
+            return std::dynamic_pointer_cast<VideoBuffer>(std::make_shared<ViewBuffer>(format, stride, count, d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView));
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
+        std::shared_ptr<VideoBuffer> createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
-            return createBuffer(returnObject, Video::Format::Unknown, stride, count, type, flags, data);
+            return createBuffer(Video::Format::Unknown, stride, count, type, flags, data);
         }
 
-        STDMETHODIMP createBuffer(VideoBuffer **returnObject, Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
+        std::shared_ptr<VideoBuffer> createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
         {
             UINT32 stride = DirectX::FormatStrideList[static_cast<UINT8>(format)];
-            return createBuffer(returnObject, format, stride, count, type, flags, data);
+            return createBuffer(format, stride, count, type, flags, data);
         }
 
-        STDMETHODIMP_(void) updateBuffer(VideoBuffer *buffer, LPCVOID data)
+        void updateBuffer(VideoBuffer *buffer, LPCVOID data)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(data);
 
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-
+            CComQIPtr<ID3D11Buffer> d3dBuffer;
             d3dDeviceContext->UpdateSubresource(d3dBuffer, 0, nullptr, data, 0, 0);
         }
 
-        STDMETHODIMP mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping)
+        void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(data);
 
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
-            if (d3dBuffer)
-            {
-                D3D11_MAP d3dMapping = DirectX::MapList[static_cast<UINT8>(mapping)];
+            CComQIPtr<ID3D11Buffer> d3dBuffer;
 
-                D3D11_MAPPED_SUBRESOURCE mappedSubResource;
-                mappedSubResource.pData = nullptr;
-                mappedSubResource.RowPitch = 0;
-                mappedSubResource.DepthPitch = 0;
-                
-                resultValue = d3dDeviceContext->Map(d3dBuffer, 0, d3dMapping, 0, &mappedSubResource);
-                if (SUCCEEDED(resultValue))
-                {
-                    (*data) = mappedSubResource.pData;
-                }
-            }
+            D3D11_MAP d3dMapping = DirectX::MapList[static_cast<UINT8>(mapping)];
 
-            return resultValue;
+            D3D11_MAPPED_SUBRESOURCE mappedSubResource;
+            mappedSubResource.pData = nullptr;
+            mappedSubResource.RowPitch = 0;
+            mappedSubResource.DepthPitch = 0;
+
+            HRESULT resultValue = d3dDeviceContext->Map(d3dBuffer, 0, d3dMapping, 0, &mappedSubResource);
+
+            (*data) = mappedSubResource.pData;
         }
 
-        STDMETHODIMP_(void) unmapBuffer(VideoBuffer *buffer)
+        void unmapBuffer(VideoBuffer *buffer)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(buffer);
 
-            CComQIPtr<ID3D11Buffer> d3dBuffer(buffer);
+            CComQIPtr<ID3D11Buffer> d3dBuffer;
             d3dDeviceContext->Unmap(d3dBuffer, 0);
         }
 
-        STDMETHODIMP_(void) copyResource(IUnknown *destination, IUnknown *source)
+        void copyResource(VideoObject *destination, VideoObject *source)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(destination);
             GEK_REQUIRE(source);
 
-            CComQIPtr<ID3D11Resource> d3dDestination(destination);
-            CComQIPtr<ID3D11Resource> d3dSource(source);
+            CComQIPtr<ID3D11Resource> d3dDestination;
+            CComQIPtr<ID3D11Resource> d3dSource;
             d3dDeviceContext->CopyResource(d3dDestination, d3dSource);
         }
 
-        STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
+        std::shared_ptr<VideoObject> compileComputeProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
-            GEK_REQUIRE(returnObject);
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
@@ -1522,32 +1589,20 @@ namespace Gek
 
             CComPtr<ID3DBlob> d3dShaderBlob;
             CComPtr<ID3DBlob> d3dCompilerErrors;
-            resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-            if (SUCCEEDED(resultValue) && d3dShaderBlob)
-            {
-                CComPtr<ID3D11ComputeShader> d3dShader;
-                resultValue = d3dDevice->CreateComputeShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (SUCCEEDED(resultValue) && d3dShader)
-                {
-                    resultValue = d3dShader->QueryInterface(IID_PPV_ARGS(returnObject));
-                }
-            }
-            else if (d3dCompilerErrors)
-            {
-                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
-            }
+            HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
 
-            return resultValue;
+            CComPtr<ID3D11ComputeShader> d3dShader;
+            resultValue = d3dDevice->CreateComputeShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+
+            return nullptr;
         }
 
-        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
+        std::shared_ptr<VideoObject> compileVertexProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
-            GEK_REQUIRE(returnObject);
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
@@ -1565,89 +1620,67 @@ namespace Gek
 
             CComPtr<ID3DBlob> d3dShaderBlob;
             CComPtr<ID3DBlob> d3dCompilerErrors;
-            resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-            if (SUCCEEDED(resultValue) && d3dShaderBlob)
+            HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+
+            CComPtr<ID3D11VertexShader> d3dShader;
+            resultValue = d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+
+            CComPtr<ID3D11InputLayout> d3dInputLayout;
+            if (!elementLayout.empty())
             {
-                CComPtr<ID3D11VertexShader> d3dShader;
-                resultValue = d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (SUCCEEDED(resultValue) && d3dShader)
+                Video::ElementType lastElementType = Video::ElementType::Vertex;
+                std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
+                for (auto &element : elementLayout)
                 {
-                    CComPtr<ID3D11InputLayout> d3dInputLayout;
-                    if (!elementLayout.empty())
+                    D3D11_INPUT_ELEMENT_DESC elementDesc;
+                    if (lastElementType != element.slotClass)
                     {
-                        Video::ElementType lastElementType = Video::ElementType::Vertex;
-                        std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
-                        for (auto &element : elementLayout)
-                        {
-                            D3D11_INPUT_ELEMENT_DESC elementDesc;
-                            if (lastElementType != element.slotClass)
-                            {
-                                elementDesc.AlignedByteOffset = 0;
-                            }
-                            else
-                            {
-                                elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-                            }
-
-                            lastElementType = element.slotClass;
-                            elementDesc.SemanticName = element.semanticName;
-                            elementDesc.SemanticIndex = element.semanticIndex;
-                            elementDesc.InputSlot = element.slotIndex;
-                            switch (element.slotClass)
-                            {
-                            case Video::ElementType::Instance:
-                                elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
-                                elementDesc.InstanceDataStepRate = 1;
-                                break;
-
-                            case Video::ElementType::Vertex:
-                            default:
-                                elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-                                elementDesc.InstanceDataStepRate = 0;
-                            };
-
-                            elementDesc.Format = DirectX::BufferFormatList[static_cast<UINT8>(element.format)];
-                            if (elementDesc.Format == DXGI_FORMAT_UNKNOWN)
-                            {
-                                break;
-                            }
-
-                            inputElementList.push_back(elementDesc);
-                        }
-
-                        if (inputElementList.size() == elementLayout.size())
-                        {
-                            resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout);
-                        }
+                        elementDesc.AlignedByteOffset = 0;
+                    }
+                    else
+                    {
+                        elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
                     }
 
-                    if (SUCCEEDED(resultValue))
+                    lastElementType = element.slotClass;
+                    elementDesc.SemanticName = element.semanticName;
+                    elementDesc.SemanticIndex = element.semanticIndex;
+                    elementDesc.InputSlot = element.slotIndex;
+                    switch (element.slotClass)
                     {
-                        resultValue = E_OUTOFMEMORY;
-                        CComPtr<VertexProgram> shader(new VertexProgram(d3dShader, d3dInputLayout));
-                        if (shader)
-                        {
-                            resultValue = shader->QueryInterface(IID_PPV_ARGS(returnObject));
-                        }
+                    case Video::ElementType::Instance:
+                        elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+                        elementDesc.InstanceDataStepRate = 1;
+                        break;
+
+                    case Video::ElementType::Vertex:
+                    default:
+                        elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+                        elementDesc.InstanceDataStepRate = 0;
+                        break;
+                    };
+
+                    elementDesc.Format = DirectX::BufferFormatList[static_cast<UINT8>(element.format)];
+                    if (elementDesc.Format == DXGI_FORMAT_UNKNOWN)
+                    {
+                        break;
                     }
+
+                    inputElementList.push_back(elementDesc);
                 }
-            }
-            else if (d3dCompilerErrors)
-            {
-                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
+
+                resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout);
             }
 
-            return resultValue;
+            return std::dynamic_pointer_cast<VideoObject>(std::make_shared<VertexProgram>(d3dShader, d3dInputLayout));
         }
 
-        STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
+        std::shared_ptr<VideoObject> compileGeometryProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
-            GEK_REQUIRE(returnObject);
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
@@ -1665,32 +1698,20 @@ namespace Gek
 
             CComPtr<ID3DBlob> d3dShaderBlob;
             CComPtr<ID3DBlob> d3dCompilerErrors;
-            resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-            if (SUCCEEDED(resultValue) && d3dShaderBlob)
-            {
-                CComPtr<ID3D11GeometryShader> d3dShader;
-                resultValue = d3dDevice->CreateGeometryShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (SUCCEEDED(resultValue) && d3dShader)
-                {
-                    resultValue = d3dShader->QueryInterface(IID_PPV_ARGS(returnObject));
-                }
-            }
-            else if (d3dCompilerErrors)
-            {
-                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
-            }
+            HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
 
-            return resultValue;
+            CComPtr<ID3D11GeometryShader> d3dShader;
+            resultValue = d3dDevice->CreateGeometryShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+
+            return nullptr;
         }
 
-        STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
+        std::shared_ptr<VideoObject> compilePixelProgram(LPCWSTR fileName, LPCSTR programScript, LPCSTR entryFunction, const std::unordered_map<CStringA, CStringA> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
-            GEK_REQUIRE(returnObject);
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            HRESULT resultValue = E_FAIL;
             UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
@@ -1708,128 +1729,91 @@ namespace Gek
 
             CComPtr<ID3DBlob> d3dShaderBlob;
             CComPtr<ID3DBlob> d3dCompilerErrors;
-            resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-            if (SUCCEEDED(resultValue) && d3dShaderBlob)
-            {
-                CComPtr<ID3D11PixelShader> d3dShader;
-                resultValue = d3dDevice->CreatePixelShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (SUCCEEDED(resultValue) && d3dShader)
-                {
-                    resultValue = d3dShader->QueryInterface(IID_PPV_ARGS(returnObject));
-                }
-            }
-            else if (d3dCompilerErrors)
-            {
-                OutputDebugStringA(LPCSTR(d3dCompilerErrors->GetBufferPointer()));
-            }
+            HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
 
-            return resultValue;
+            CComPtr<ID3D11PixelShader> d3dShader;
+            resultValue = d3dDevice->CreatePixelShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
+
+            return nullptr;
         }
 
-        STDMETHODIMP compileComputeProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> compileComputeProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
-            return compileComputeProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compileComputeProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        STDMETHODIMP compileVertexProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> compileVertexProgram(LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
-            return compileVertexProgram(returnObject, nullptr, programScript, entryFunction, elementLayout, defineList, include);
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, defineList, &includeHandler);
         }
 
-        STDMETHODIMP compileGeometryProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> compileGeometryProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
-            return compileGeometryProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compileGeometryProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        STDMETHODIMP compilePixelProgram(IUnknown **returnObject, LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> compilePixelProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
-            CComPtr<IncludeImplementation> include(new IncludeImplementation(L"", onInclude));
-            return compilePixelProgram(returnObject, nullptr, programScript, entryFunction, defineList, include);
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compilePixelProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        STDMETHODIMP loadComputeProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            HRESULT resultValue = E_FAIL;
-
             CStringA progamScript;
-            resultValue = Gek::FileSystem::load(fileName, progamScript);
-            if (SUCCEEDED(resultValue))
-            {
-                CComPtr<IncludeImplementation> include(new IncludeImplementation(fileName, onInclude));
-                resultValue = compileComputeProgram(returnObject, fileName, progamScript, entryFunction, defineList, include);
-            }
+            Gek::FileSystem::load(fileName, progamScript);
 
-            return resultValue;
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compileComputeProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        STDMETHODIMP loadVertexProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            HRESULT resultValue = E_FAIL;
-
             CStringA progamScript;
-            resultValue = Gek::FileSystem::load(fileName, progamScript);
-            if (SUCCEEDED(resultValue))
-            {
-                CComPtr<IncludeImplementation> include(new IncludeImplementation(fileName, onInclude));
-                resultValue = compileVertexProgram(returnObject, fileName, progamScript, entryFunction, elementLayout, defineList, include);
-            }
+            Gek::FileSystem::load(fileName, progamScript);
 
-            return resultValue;
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, defineList, &includeHandler);
         }
 
-        STDMETHODIMP loadGeometryProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            HRESULT resultValue = E_FAIL;
-
             CStringA progamScript;
-            resultValue = Gek::FileSystem::load(fileName, progamScript);
-            if (SUCCEEDED(resultValue))
-            {
-                CComPtr<IncludeImplementation> include(new IncludeImplementation(fileName, onInclude));
-                resultValue = compileGeometryProgram(returnObject, fileName, progamScript, entryFunction, defineList, include);
-            }
+            Gek::FileSystem::load(fileName, progamScript);
 
-            return resultValue;
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compileGeometryProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        STDMETHODIMP loadPixelProgram(IUnknown **returnObject, LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
+        std::shared_ptr<VideoObject> loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude, const std::unordered_map<CStringA, CStringA> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            HRESULT resultValue = E_FAIL;
-
             CStringA progamScript;
-            resultValue = Gek::FileSystem::load(fileName, progamScript);
-            if (SUCCEEDED(resultValue))
-            {
-                CComPtr<IncludeImplementation> include(new IncludeImplementation(fileName, onInclude));
-                resultValue = compilePixelProgram(returnObject, fileName, progamScript, entryFunction, defineList, include);
-            }
+            Gek::FileSystem::load(fileName, progamScript);
 
-            return resultValue;
+            IncludeImplementation includeHandler(L"", onInclude);
+            return compilePixelProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        STDMETHODIMP createTexture(VideoTexture **returnObject, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
+        std::shared_ptr<BaseTexture> createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
         {
             GEK_REQUIRE(d3dDevice);
-
-            HRESULT resultValue = E_FAIL;
 
             UINT32 bindFlags = 0;
             if (flags & Video::TextureFlags::RenderTarget)
             {
                 if (flags & Video::TextureFlags::DepthTarget)
                 {
-                    return E_INVALIDARG;
                 }
 
                 bindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -1839,12 +1823,10 @@ namespace Gek
             {
                 if (flags & Video::TextureFlags::RenderTarget)
                 {
-                    return E_INVALIDARG;
                 }
 
                 if (depth > 1)
                 {
-                    return E_INVALIDARG;
                 }
 
                 bindFlags |= D3D11_BIND_DEPTH_STENCIL;
@@ -1878,11 +1860,8 @@ namespace Gek
                 textureDescription.MiscFlags = (mipmaps == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
 
                 CComPtr<ID3D11Texture2D> texture2D;
-                resultValue = d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D);
-                if (SUCCEEDED(resultValue) && texture2D)
-                {
-                    d3dResource = texture2D;
-                }
+                HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, nullptr, &texture2D);
+                d3dResource = texture2D;
             }
             else
             {
@@ -1897,345 +1876,278 @@ namespace Gek
                 textureDescription.CPUAccessFlags = 0;
                 textureDescription.MiscFlags = (mipmaps == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
 
-                CComPtr<ID3D11Texture3D> texture2D;
-                resultValue = d3dDevice->CreateTexture3D(&textureDescription, nullptr, &texture2D);
-                if (SUCCEEDED(resultValue) && texture2D)
-                {
-                    d3dResource = texture2D;
-                }
+                CComPtr<ID3D11Texture3D> texture3D;
+                HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, nullptr, &texture3D);
+                d3dResource = texture3D;
             }
 
-            if (d3dResource)
+            CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+            if (flags & Video::TextureFlags::Resource)
             {
-                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                if (SUCCEEDED(resultValue) && flags & Video::TextureFlags::RenderTarget)
-                {
-                    D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
-                    renderViewDescription.Format = d3dFormat;
-                    if (depth == 1)
-                    {
-                        renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
-                        renderViewDescription.Texture2D.MipSlice = 0;
-                    }
-                    else
-                    {
-                        renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
-                        renderViewDescription.Texture3D.MipSlice = 0;
-                        renderViewDescription.Texture3D.FirstWSlice = 0;
-                        renderViewDescription.Texture3D.WSize = depth;
-                    }
+                HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView);
+            }
 
-                    resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
+            CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
+            if (flags & Video::TextureFlags::UnorderedAccess)
+            {
+                D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
+                viewDescription.Format = d3dFormat;
+                if (depth == 1)
+                {
+                    viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+                    viewDescription.Texture2D.MipSlice = 0;
                 }
+                else
+                {
+                    viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+                    viewDescription.Texture3D.MipSlice = 0;
+                    viewDescription.Texture3D.FirstWSlice = 0;
+                    viewDescription.Texture3D.WSize = depth;
+                }
+
+                HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
+            }
+
+            if (flags & Video::TextureFlags::RenderTarget)
+            {
+                D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
+                renderViewDescription.Format = d3dFormat;
+                if (depth == 1)
+                {
+                    renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
+                    renderViewDescription.Texture2D.MipSlice = 0;
+                }
+                else
+                {
+                    renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
+                    renderViewDescription.Texture3D.MipSlice = 0;
+                    renderViewDescription.Texture3D.FirstWSlice = 0;
+                    renderViewDescription.Texture3D.WSize = depth;
+                }
+
+                CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
+
+                return std::dynamic_pointer_cast<BaseTexture>(std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth));
+            }
+            else if (flags & Video::TextureFlags::DepthTarget)
+            {
+                D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
+                depthStencilDescription.Format = d3dFormat;
+                depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
+                depthStencilDescription.Flags = 0;
+                depthStencilDescription.Texture2D.MipSlice = 0;
 
                 CComPtr<ID3D11DepthStencilView> depthStencilView;
-                if (SUCCEEDED(resultValue) && flags & Video::TextureFlags::DepthTarget)
-                {
-                    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                    depthStencilDescription.Format = d3dFormat;
-                    depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
-                    depthStencilDescription.Flags = 0;
-                    depthStencilDescription.Texture2D.MipSlice = 0;
+                HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &depthStencilView);
 
-                    resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &depthStencilView);
-                }
-
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (SUCCEEDED(resultValue) && flags & Video::TextureFlags::Resource)
-                {
-                    resultValue = d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView);
-                }
-
-                CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (flags & Video::TextureFlags::UnorderedAccess)
-                {
-                    D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = d3dFormat;
-                    if (depth == 1)
-                    {
-                        viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-                        viewDescription.Texture2D.MipSlice = 0;
-                    }
-                    else
-                    {
-                        viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-                        viewDescription.Texture3D.MipSlice = 0;
-                        viewDescription.Texture3D.FirstWSlice = 0;
-                        viewDescription.Texture3D.WSize = depth;
-                    }
-
-                    resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    CComPtr<IUnknown> texture;
-                    if (flags & Video::TextureFlags::RenderTarget)
-                    {
-                        texture = new TextureImplementation(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height);
-                    }
-                    else if (flags & Video::TextureFlags::DepthTarget)
-                    {
-                        texture = new TextureImplementation(d3dResource, depthStencilView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height);
-                    }
-                    else
-                    {
-                        texture = new TextureImplementation(d3dResource, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height, depth);
-                    }
-
-                    if (texture)
-                    {
-                        resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                    }
-                }
+                return std::dynamic_pointer_cast<BaseTexture>(std::make_shared<DepthTexture>(d3dResource.p, depthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth));
             }
-
-            return resultValue;
+            else
+            {
+                return std::dynamic_pointer_cast<BaseTexture>(std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth));
+            }
         }
 
-        STDMETHODIMP loadTexture(VideoTexture **returnObject, LPCWSTR fileName, UINT32 flags)
+        std::shared_ptr<VideoTexture> loadTexture(LPCWSTR fileName, UINT32 flags)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(fileName);
 
-            HRESULT resultValue = E_FAIL;
-
             std::vector<UINT8> fileData;
-            resultValue = Gek::FileSystem::load(fileName, fileData);
-            if (SUCCEEDED(resultValue))
+            Gek::FileSystem::load(fileName, fileData);
+
+            ::DirectX::ScratchImage scratchImage;
+            ::DirectX::TexMetadata textureMetaData;
+
+            CPathW filePath(fileName);
+            CStringW extension(filePath.GetExtension());
+            if (extension.CompareNoCase(L".dds") == 0)
             {
-                ::DirectX::ScratchImage scratchImage;
-                ::DirectX::TexMetadata textureMetaData;
-
-                CPathW filePath(fileName);
-                CStringW extension(filePath.GetExtension());
-                if (extension.CompareNoCase(L".dds") == 0)
-                {
-                    resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, &textureMetaData, scratchImage);
-                }
-                else if(extension.CompareNoCase(L".tga") == 0)
-                {
-                    resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), &textureMetaData, scratchImage);
-                }
-                else if (extension.CompareNoCase(L".png") == 0)
-                {
-                    resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, &textureMetaData, scratchImage);
-                }
-                else if (extension.CompareNoCase(L".bmp") == 0)
-                {
-                    resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, &textureMetaData, scratchImage);
-                }
-                else if (extension.CompareNoCase(L".jpg") == 0 ||
-                         extension.CompareNoCase(L".jpeg") == 0)
-                {
-                    resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, &textureMetaData, scratchImage);
-                }
-
-                if (SUCCEEDED(resultValue))
-                {
-                    if (flags && Video::TextureLoadFlags::sRGB)
-                    {
-                        switch (scratchImage.GetMetadata().format)
-                        {
-                        case DXGI_FORMAT_R8G8B8A8_UNORM:
-                            scratchImage.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC1_UNORM:
-                            scratchImage.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC2_UNORM:
-                            scratchImage.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC3_UNORM:
-                            scratchImage.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
-                            break;
-
-                        case DXGI_FORMAT_BC7_UNORM:
-                            scratchImage.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
-                            break;
-                        };
-                    }
-
-                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                    if (true)
-                    {
-                        resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), &d3dShaderResourceView);
-                    }
-
-                    if (SUCCEEDED(resultValue) && d3dShaderResourceView)
-                    {
-                        resultValue = E_UNEXPECTED;
-                        CComPtr<ID3D11Resource> d3dResource;
-                        d3dShaderResourceView->GetResource(&d3dResource);
-                        if (d3dResource)
-                        {
-                            resultValue = E_OUTOFMEMORY;
-                            CComPtr<TextureImplementation> texture(new TextureImplementation(d3dResource, d3dShaderResourceView, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth));
-                            if (texture)
-                            {
-                                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                            }
-                        }
-                    }
-                }
+                HRESULT resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, &textureMetaData, scratchImage);
+            }
+            else if (extension.CompareNoCase(L".tga") == 0)
+            {
+                HRESULT resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), &textureMetaData, scratchImage);
+            }
+            else if (extension.CompareNoCase(L".png") == 0)
+            {
+                HRESULT resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, &textureMetaData, scratchImage);
+            }
+            else if (extension.CompareNoCase(L".bmp") == 0)
+            {
+                HRESULT resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, &textureMetaData, scratchImage);
+            }
+            else if (extension.CompareNoCase(L".jpg") == 0 ||
+                extension.CompareNoCase(L".jpeg") == 0)
+            {
+                HRESULT resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, &textureMetaData, scratchImage);
             }
 
-            return resultValue;
+            if (flags && Video::TextureLoadFlags::sRGB)
+            {
+                switch (scratchImage.GetMetadata().format)
+                {
+                case DXGI_FORMAT_R8G8B8A8_UNORM:
+                    scratchImage.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC1_UNORM:
+                    scratchImage.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC2_UNORM:
+                    scratchImage.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC3_UNORM:
+                    scratchImage.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC7_UNORM:
+                    scratchImage.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
+                    break;
+                };
+            }
+
+            CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+            HRESULT resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), &d3dShaderResourceView);
+
+            CComPtr<ID3D11Resource> d3dResource;
+            d3dShaderResourceView->GetResource(&d3dResource);
+
+            return std::dynamic_pointer_cast<VideoTexture>(std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth));
         }
 
-        STDMETHODIMP loadCubeMap(VideoTexture **returnObject, LPCWSTR fileNameList[6], UINT32 flags)
+        std::shared_ptr<VideoTexture> loadCubeMap(LPCWSTR fileNameList[6], UINT32 flags)
         {
             GEK_REQUIRE(d3dDevice);
-
-            HRESULT resultValue = E_FAIL;
 
             ::DirectX::ScratchImage cubeMapList[6];
             ::DirectX::TexMetadata cubeMapMetaData;
             for (UINT32 side = 0; side < 6; side++)
             {
                 std::vector<UINT8> fileData;
-                resultValue = Gek::FileSystem::load(fileNameList[side], fileData);
-                if (SUCCEEDED(resultValue))
+                Gek::FileSystem::load(fileNameList[side], fileData);
+
+                CPathW filePath(fileNameList[side]);
+                CStringW extension(filePath.GetExtension());
+                std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
+                if (extension.CompareNoCase(L".dds") == 0)
                 {
-                    CPathW filePath(fileNameList[side]);
-                    CStringW extension(filePath.GetExtension());
-                    if (extension.CompareNoCase(L".dds") == 0)
-                    {
-                        resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, &cubeMapMetaData, cubeMapList[side]);
-                    }
-                    else if (extension.CompareNoCase(L".tga") == 0)
-                    {
-                        resultValue = ::DirectX::LoadFromTGAMemory(fileData.data(), fileData.size(), &cubeMapMetaData, cubeMapList[side]);
-                    }
-                    else if (extension.CompareNoCase(L".png") == 0)
-                    {
-                        resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_PNG, &cubeMapMetaData, cubeMapList[side]);
-                    }
-                    else if (extension.CompareNoCase(L".bmp") == 0)
-                    {
-                        resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_BMP, &cubeMapMetaData, cubeMapList[side]);
-                    }
-                    else if (extension.CompareNoCase(L".jpg") == 0 ||
-                        extension.CompareNoCase(L".jpeg") == 0)
-                    {
-                        resultValue = ::DirectX::LoadFromWICMemory(fileData.data(), fileData.size(), ::DirectX::WIC_CODEC_JPEG, &cubeMapMetaData, cubeMapList[side]);
-                    }
+                    load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, std::placeholders::_3, std::placeholders::_4);
+                    HRESULT resultValue = ::DirectX::LoadFromDDSMemory(fileData.data(), fileData.size(), 0, &cubeMapMetaData, cubeMapList[side]);
+                }
+                else if (extension.CompareNoCase(L".tga") == 0)
+                {
+                    load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
+                }
+                else if (extension.CompareNoCase(L".png") == 0)
+                {
+                    load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, std::placeholders::_3, std::placeholders::_4);
+                }
+                else if (extension.CompareNoCase(L".bmp") == 0)
+                {
+                    load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, std::placeholders::_3, std::placeholders::_4);
+                }
+                else if (extension.CompareNoCase(L".jpg") == 0 ||
+                    extension.CompareNoCase(L".jpeg") == 0)
+                {
+                    load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, std::placeholders::_3, std::placeholders::_4);
+                }
+                else
+                {
                 }
 
-                if (FAILED(resultValue))
-                {
-                    break;
-                }
+                HRESULT resultValue = load(fileData.data(), fileData.size(), &cubeMapMetaData, cubeMapList[side]);
             }
 
-            if (SUCCEEDED(resultValue))
+            ::DirectX::Image imageList[6] =
             {
-                ::DirectX::Image imageList[6] =
+                *cubeMapList[0].GetImage(0, 0, 0),
+                *cubeMapList[1].GetImage(0, 0, 0),
+                *cubeMapList[2].GetImage(0, 0, 0),
+                *cubeMapList[3].GetImage(0, 0, 0),
+                *cubeMapList[4].GetImage(0, 0, 0),
+                *cubeMapList[5].GetImage(0, 0, 0),
+            };
+
+            ::DirectX::ScratchImage cubeMap;
+            cubeMap.InitializeCubeFromImages(imageList, 6, 0);
+            if (flags && Video::TextureLoadFlags::sRGB)
+            {
+                switch (cubeMap.GetMetadata().format)
                 {
-                    *cubeMapList[0].GetImage(0, 0, 0),
-                    *cubeMapList[1].GetImage(0, 0, 0),
-                    *cubeMapList[2].GetImage(0, 0, 0),
-                    *cubeMapList[3].GetImage(0, 0, 0),
-                    *cubeMapList[4].GetImage(0, 0, 0),
-                    *cubeMapList[5].GetImage(0, 0, 0),
+                case DXGI_FORMAT_R8G8B8A8_UNORM:
+                    cubeMap.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC1_UNORM:
+                    cubeMap.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC2_UNORM:
+                    cubeMap.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC3_UNORM:
+                    cubeMap.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
+                    break;
+
+                case DXGI_FORMAT_BC7_UNORM:
+                    cubeMap.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
+                    break;
                 };
-
-                ::DirectX::ScratchImage cubeMap;
-                cubeMap.InitializeCubeFromImages(imageList, 6, 0);
-                if (flags && Video::TextureLoadFlags::sRGB)
-                {
-                    switch (cubeMap.GetMetadata().format)
-                    {
-                    case DXGI_FORMAT_R8G8B8A8_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC1_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC2_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC3_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC7_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
-                        break;
-                    };
-                }
-
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView);
-                if (SUCCEEDED(resultValue) && d3dShaderResourceView)
-                {
-                    resultValue = E_UNEXPECTED;
-                    CComPtr<ID3D11Resource> d3dResource;
-                    d3dShaderResourceView->GetResource(&d3dResource);
-                    if (d3dResource)
-                    {
-                        resultValue = E_OUTOFMEMORY;
-                        CComPtr<TextureImplementation> texture(new TextureImplementation(d3dResource, d3dShaderResourceView, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1));
-                        if (texture)
-                        {
-                            resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-                        }
-                    }
-                }
             }
 
-            return resultValue;
+            CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+            HRESULT resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView);
+
+            CComPtr<ID3D11Resource> d3dResource;
+            d3dShaderResourceView->GetResource(&d3dResource);
+
+            return std::dynamic_pointer_cast<VideoTexture>(std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1));
         }
 
-        STDMETHODIMP_(void) updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
+        void updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView(texture);
-            if (d3dShaderResourceView)
-            {
-                CComQIPtr<ID3D11Resource> d3dResource;
-                d3dShaderResourceView->GetResource(&d3dResource);
-                if (d3dResource)
-                {
-                    if (destinationRectangle == nullptr)
-                    {
-                        d3dDeviceContext->UpdateSubresource(d3dResource, 0, nullptr, data, pitch, pitch);
-                    }
-                    else
-                    {
-                        D3D11_BOX destinationBox =
-                        {
-                            destinationRectangle->left,
-                            destinationRectangle->top,
-                            0,
-                            destinationRectangle->right,
-                            destinationRectangle->bottom,
-                            1,
-                        };
+            CComQIPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
 
-                        d3dDeviceContext->UpdateSubresource(d3dResource, 0, &destinationBox, data, pitch, pitch);
-                    }
-                }
+            CComQIPtr<ID3D11Resource> d3dResource;
+            d3dShaderResourceView->GetResource(&d3dResource);
+
+            if (destinationRectangle == nullptr)
+            {
+                d3dDeviceContext->UpdateSubresource(d3dResource, 0, nullptr, data, pitch, pitch);
+            }
+            else
+            {
+                D3D11_BOX destinationBox =
+                {
+                    destinationRectangle->left,
+                    destinationRectangle->top,
+                    0,
+                    destinationRectangle->right,
+                    destinationRectangle->bottom,
+                    1,
+                };
+
+                d3dDeviceContext->UpdateSubresource(d3dResource, 0, &destinationBox, data, pitch, pitch);
             }
         }
 
-        STDMETHODIMP_(void) executeCommandList(IUnknown *commandList)
+        void executeCommandList(VideoObject *commandList)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(commandList);
 
-            CComQIPtr<ID3D11CommandList> d3dCommandList(commandList);
+            CComQIPtr<ID3D11CommandList> d3dCommandList;
             d3dDeviceContext->ExecuteCommandList(d3dCommandList, FALSE);
         }
 
-        STDMETHODIMP_(void) present(bool waitForVerticalSync)
+        void present(bool waitForVerticalSync)
         {
             GEK_REQUIRE(dxSwapChain);
 

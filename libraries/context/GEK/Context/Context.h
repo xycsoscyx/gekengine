@@ -6,14 +6,14 @@
 
 namespace Gek
 {
-    DECLARE_INTERFACE_IID(Context, "E1BBAFAB-1DD8-42E4-A031-46E22835EF1E") : virtual public IUnknown
+    interface Context
     {
-        static HRESULT create(Context **context);
+        static std::shared_ptr<Context> create(void);
     
-        STDMETHOD_(void, addSearchPath)     (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(void, initialize)        (THIS) PURE;
+        virtual void addSearchPath(LPCWSTR fileName);
+        virtual void initialize(void);
 
-        STDMETHOD(createInstance)           (THIS_ REFCLSID className, REFIID interfaceType, LPVOID FAR *returnObject) PURE;
-        STDMETHOD(createEachType)           (THIS_ REFCLSID typeName, std::function<HRESULT(REFCLSID, IUnknown *)> onCreateInstance) PURE;
+        virtual std::shared_ptr<ContextUser> createInstance(REFCLSID className);
+        virtual void createEachType(REFCLSID typeName, std::function<void(REFCLSID, std::shared_ptr<ContextUser>)> onCreateInstance);
     };
 }; // namespace Gek

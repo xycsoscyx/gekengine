@@ -14,10 +14,10 @@ namespace Gek
     DECLARE_INTERFACE_IID(ParticlesProcessorRegistration, "795F8115-A582-4BEA-ABED-32A2BC1764F7");
 }; // namespace Gek
 
-DECLARE_CONTEXT_SOURCE(Components)
-    ADD_CONTEXT_CLASS(Gek::ParticlesRegistration, Gek::ParticlesImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+DECLARE_PLUGIN_MAP(Components)
+    ADD_PLUGIN_CLASS(Gek::ParticlesRegistration, Gek::ParticlesImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::ParticlesProcessorRegistration, Gek::ParticlesProcessorImplementation)
-        ADD_CLASS_TYPE(Gek::ProcessorType)
-END_CONTEXT_SOURCE
+    ADD_PLUGIN_CLASS(Gek::ParticlesProcessorRegistration, Gek::ParticlesProcessorImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ProcessorType)
+END_PLUGIN_MAP

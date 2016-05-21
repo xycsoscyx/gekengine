@@ -21,12 +21,12 @@ namespace Gek
     DECLARE_REGISTERED_CLASS(EngineImplementation);
 }; // namespace Gek
 
-DECLARE_CONTEXT_SOURCE(Engine)
-    ADD_CONTEXT_CLASS(Gek::PopulationRegistration, Gek::PopulationImplementation)
-    ADD_CONTEXT_CLASS(Gek::RenderRegistration, Gek::RenderImplementation)
-    ADD_CONTEXT_CLASS(Gek::ResourcesRegistration, Gek::ResourcesImplementation)
-    ADD_CONTEXT_CLASS(Gek::PluginRegistration, Gek::PluginImplementation)
-    ADD_CONTEXT_CLASS(Gek::MaterialRegistration, Gek::MaterialImplementation)
-    ADD_CONTEXT_CLASS(Gek::ShaderRegistration, Gek::ShaderImplementation)
-    ADD_CONTEXT_CLASS(Gek::EngineRegistration, Gek::EngineImplementation)
-END_CONTEXT_SOURCE
+DECLARE_PLUGIN_MAP(Engine)
+    ADD_PLUGIN_CLASS(Gek::PopulationRegistration, Gek::PopulationImplementation)
+    ADD_PLUGIN_CLASS(Gek::RenderRegistration, Gek::RenderImplementation)
+    ADD_PLUGIN_CLASS(Gek::ResourcesRegistration, Gek::ResourcesImplementation)
+    ADD_PLUGIN_CLASS(Gek::PluginRegistration, Gek::PluginImplementation)
+    ADD_PLUGIN_CLASS(Gek::MaterialRegistration, Gek::MaterialImplementation)
+    ADD_PLUGIN_CLASS(Gek::ShaderRegistration, Gek::ShaderImplementation)
+    ADD_PLUGIN_CLASS(Gek::EngineRegistration, Gek::EngineImplementation)
+END_PLUGIN_MAP

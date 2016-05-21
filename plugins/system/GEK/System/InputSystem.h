@@ -1,12 +1,15 @@
 #pragma once
 
 #include "GEK\Math\Float3.h"
+#include "GEK\Utility\Trace.h"
 #include <Windows.h>
 
 namespace Gek
 {
     namespace Input
     {
+        GEK_BASE_EXCEPTION();
+
         enum class Key
         {
             Escape              = 0x01,
@@ -167,29 +170,29 @@ namespace Gek
         }; // namespace State
     }; // namespace Input
 
-    DECLARE_INTERFACE_IID(InputDevice, "58BF03BB-69A2-45FC-B124-6DA702E949F9") : virtual public IUnknown
+    interface InputDevice
     {
-        STDMETHOD(update)                           (THIS) PURE;
+        void update(void);
 
-        STDMETHOD_(UINT32, getButtonCount)          (THIS) const PURE;
-        STDMETHOD_(UINT8, getButtonState)           (THIS_ UINT32 buttonIndex) const PURE;
+        UINT32 getButtonCount(void) const;
+        UINT8 getButtonState(UINT32 buttonIndex) const;
 
-        STDMETHOD_(Math::Float3, getAxis)           (THIS) const PURE;
-        STDMETHOD_(Math::Float3, getRotation)       (THIS) const PURE;
-        STDMETHOD_(float, getPointOfView)           (THIS) const PURE;
+        Math::Float3 getAxis(void) const;
+        Math::Float3 getRotation(void) const;
+        float getPointOfView(void) const;
     };
 
-    DECLARE_INTERFACE_IID(InputSystem, "1F96303C-C8CD-4FE8-944F-C2B1B55747F2") : virtual public IUnknown
+    interface InputSystem
     {
-        STDMETHOD(initialize)                           (THIS_ HWND hWindow) PURE;
+        void initialize(HWND hWindow);
 
-        STDMETHOD_(InputDevice *, getKeyboard)          (THIS) PURE;
-        STDMETHOD_(InputDevice *, getMouse)             (THIS) PURE;
+        InputDevice * const getKeyboard(void);
+        InputDevice  const *getMouse(void);
 
-        STDMETHOD_(UINT32, getJoystickCount)            (THIS) PURE;
-        STDMETHOD_(InputDevice *, getJoystick)          (THIS_ UINT32 deviceIndex) PURE;
+        UINT32 getJoystickCount(void);
+        InputDevice * const getJoystick(UINT32 deviceIndex);
 
-        STDMETHOD(update)                               (THIS) PURE;
+        void update(void);
     };
 
     DECLARE_INTERFACE_IID(InputSystemRegistration, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");

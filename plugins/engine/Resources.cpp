@@ -298,9 +298,9 @@ namespace Gek
         ResourceManager<MaterialHandle> materialManager;
         ResourceManager<ShaderHandle> shaderManager;
         ResourceManager<ResourceHandle> resourceManager;
-        ResourceManager<RenderStatesHandle> renderStateManager;
-        ResourceManager<DepthStatesHandle> depthStateManager;
-        ResourceManager<BlendStatesHandle> blendStateManager;
+        ResourceManager<RenderStateHandle> renderStateManager;
+        ResourceManager<DepthStateHandle> depthStateManager;
+        ResourceManager<BlendStateHandle> blendStateManager;
 
         concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
@@ -529,88 +529,88 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(RenderStatesHandle) createRenderStates(const Video::RenderStates &renderStates)
+        STDMETHODIMP_(RenderStateHandle) createRenderState(const Video::RenderState &renderState)
         {
-            std::size_t hash = std::hash_combine(static_cast<UINT8>(renderStates.fillMode),
-                static_cast<UINT8>(renderStates.cullMode),
-                renderStates.frontCounterClockwise,
-                renderStates.depthBias,
-                renderStates.depthBiasClamp,
-                renderStates.slopeScaledDepthBias,
-                renderStates.depthClipEnable,
-                renderStates.scissorEnable,
-                renderStates.multisampleEnable,
-                renderStates.antialiasedLineEnable);
-            return renderStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::RenderStates renderStates) -> HRESULT
+            std::size_t hash = std::hash_combine(static_cast<UINT8>(renderState.fillMode),
+                static_cast<UINT8>(renderState.cullMode),
+                renderState.frontCounterClockwise,
+                renderState.depthBias,
+                renderState.depthBiasClamp,
+                renderState.slopeScaledDepthBias,
+                renderState.depthClipEnable,
+                renderState.scissorEnable,
+                renderState.multisampleEnable,
+                renderState.antialiasedLineEnable);
+            return renderStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::RenderState renderState) -> HRESULT
             {
-                HRESULT resultValue = video->createRenderStates(returnObject, renderStates);
+                HRESULT resultValue = video->createRenderState(returnObject, renderState);
                 return resultValue;
-            }, std::placeholders::_1, std::placeholders::_2, renderStates));
+            }, std::placeholders::_1, std::placeholders::_2, renderState));
         }
 
-        STDMETHODIMP_(DepthStatesHandle) createDepthStates(const Video::DepthStates &depthStates)
+        STDMETHODIMP_(DepthStateHandle) createDepthState(const Video::DepthState &depthState)
         {
-            std::size_t hash = std::hash_combine(depthStates.enable,
-                static_cast<UINT8>(depthStates.writeMask),
-                static_cast<UINT8>(depthStates.comparisonFunction),
-                depthStates.stencilEnable,
-                depthStates.stencilReadMask,
-                depthStates.stencilWriteMask,
-                static_cast<UINT8>(depthStates.stencilFrontStates.failOperation),
-                static_cast<UINT8>(depthStates.stencilFrontStates.depthFailOperation),
-                static_cast<UINT8>(depthStates.stencilFrontStates.passOperation),
-                static_cast<UINT8>(depthStates.stencilFrontStates.comparisonFunction),
-                static_cast<UINT8>(depthStates.stencilBackStates.failOperation),
-                static_cast<UINT8>(depthStates.stencilBackStates.depthFailOperation),
-                static_cast<UINT8>(depthStates.stencilBackStates.passOperation),
-                static_cast<UINT8>(depthStates.stencilBackStates.comparisonFunction));
-            return depthStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::DepthStates depthStates) -> HRESULT
+            std::size_t hash = std::hash_combine(depthState.enable,
+                static_cast<UINT8>(depthState.writeMask),
+                static_cast<UINT8>(depthState.comparisonFunction),
+                depthState.stencilEnable,
+                depthState.stencilReadMask,
+                depthState.stencilWriteMask,
+                static_cast<UINT8>(depthState.stencilFrontState.failOperation),
+                static_cast<UINT8>(depthState.stencilFrontState.depthFailOperation),
+                static_cast<UINT8>(depthState.stencilFrontState.passOperation),
+                static_cast<UINT8>(depthState.stencilFrontState.comparisonFunction),
+                static_cast<UINT8>(depthState.stencilBackState.failOperation),
+                static_cast<UINT8>(depthState.stencilBackState.depthFailOperation),
+                static_cast<UINT8>(depthState.stencilBackState.passOperation),
+                static_cast<UINT8>(depthState.stencilBackState.comparisonFunction));
+            return depthStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::DepthState depthState) -> HRESULT
             {
-                HRESULT resultValue = video->createDepthStates(returnObject, depthStates);
+                HRESULT resultValue = video->createDepthState(returnObject, depthState);
                 return resultValue;
-            }, std::placeholders::_1, std::placeholders::_2, depthStates));
+            }, std::placeholders::_1, std::placeholders::_2, depthState));
         }
 
-        STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::UnifiedBlendStates &blendStates)
+        STDMETHODIMP_(BlendStateHandle) createBlendState(const Video::UnifiedBlendState &blendState)
         {
-            std::size_t hash = std::hash_combine(blendStates.enable,
-                static_cast<UINT8>(blendStates.colorSource),
-                static_cast<UINT8>(blendStates.colorDestination),
-                static_cast<UINT8>(blendStates.colorOperation),
-                static_cast<UINT8>(blendStates.alphaSource),
-                static_cast<UINT8>(blendStates.alphaDestination),
-                static_cast<UINT8>(blendStates.alphaOperation),
-                blendStates.writeMask);
-            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::UnifiedBlendStates blendStates) -> HRESULT
+            std::size_t hash = std::hash_combine(blendState.enable,
+                static_cast<UINT8>(blendState.colorSource),
+                static_cast<UINT8>(blendState.colorDestination),
+                static_cast<UINT8>(blendState.colorOperation),
+                static_cast<UINT8>(blendState.alphaSource),
+                static_cast<UINT8>(blendState.alphaDestination),
+                static_cast<UINT8>(blendState.alphaOperation),
+                blendState.writeMask);
+            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::UnifiedBlendState blendState) -> HRESULT
             {
-                HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
+                HRESULT resultValue = video->createBlendState(returnObject, blendState);
                 return resultValue;
-            }, std::placeholders::_1, std::placeholders::_2, blendStates));
+            }, std::placeholders::_1, std::placeholders::_2, blendState));
         }
 
-        STDMETHODIMP_(BlendStatesHandle) createBlendStates(const Video::IndependentBlendStates &blendStates)
+        STDMETHODIMP_(BlendStateHandle) createBlendState(const Video::IndependentBlendState &blendState)
         {
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
-                if (blendStates.targetStates[renderTarget].enable)
+                if (blendState.targetStates[renderTarget].enable)
                 {
                     std::hash_combine(hash, std::hash_combine(renderTarget,
-                        static_cast<UINT8>(blendStates.targetStates[renderTarget].colorSource),
-                        static_cast<UINT8>(blendStates.targetStates[renderTarget].colorDestination),
-                        static_cast<UINT8>(blendStates.targetStates[renderTarget].colorOperation),
-                        static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaSource),
-                        static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaDestination),
-                        static_cast<UINT8>(blendStates.targetStates[renderTarget].alphaOperation),
-                        blendStates.targetStates[renderTarget].writeMask));
+                        static_cast<UINT8>(blendState.targetStates[renderTarget].colorSource),
+                        static_cast<UINT8>(blendState.targetStates[renderTarget].colorDestination),
+                        static_cast<UINT8>(blendState.targetStates[renderTarget].colorOperation),
+                        static_cast<UINT8>(blendState.targetStates[renderTarget].alphaSource),
+                        static_cast<UINT8>(blendState.targetStates[renderTarget].alphaDestination),
+                        static_cast<UINT8>(blendState.targetStates[renderTarget].alphaOperation),
+                        blendState.targetStates[renderTarget].writeMask));
                 }
             }
 
-            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::IndependentBlendStates blendStates) -> HRESULT
+            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, IUnknown **returnObject, Video::IndependentBlendState blendState) -> HRESULT
             {
-                HRESULT resultValue = video->createBlendStates(returnObject, blendStates);
+                HRESULT resultValue = video->createBlendState(returnObject, blendState);
                 return resultValue;
-            }, std::placeholders::_1, std::placeholders::_2, blendStates));
+            }, std::placeholders::_1, std::placeholders::_2, blendState));
         }
 
         STDMETHODIMP_(ResourceHandle) createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
@@ -997,19 +997,19 @@ namespace Gek
             video->copyResource(resourceManager.getResource(destinationHandle), resourceManager.getResource(sourceHandle));
         }
 
-        STDMETHODIMP_(void) setRenderStates(RenderContext *renderContext, RenderStatesHandle renderStatesHandle)
+        STDMETHODIMP_(void) setRenderState(RenderContext *renderContext, RenderStateHandle renderStateHandle)
         {
-            renderContext->getContext()->setRenderStates(renderStateManager.getResource<IUnknown>(renderStatesHandle));
+            renderContext->getContext()->setRenderState(renderStateManager.getResource<IUnknown>(renderStateHandle));
         }
 
-        STDMETHODIMP_(void) setDepthStates(RenderContext *renderContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference)
+        STDMETHODIMP_(void) setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference)
         {
-            renderContext->getContext()->setDepthStates(depthStateManager.getResource<IUnknown>(depthStatesHandle), stencilReference);
+            renderContext->getContext()->setDepthState(depthStateManager.getResource<IUnknown>(depthStateHandle), stencilReference);
         }
 
-        STDMETHODIMP_(void) setBlendStates(RenderContext *renderContext, BlendStatesHandle blendStatesHandle, const Math::Color &blendFactor, UINT32 sampleMask)
+        STDMETHODIMP_(void) setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask)
         {
-            renderContext->getContext()->setBlendStates(blendStateManager.getResource<IUnknown>(blendStatesHandle), blendFactor, sampleMask);
+            renderContext->getContext()->setBlendState(blendStateManager.getResource<IUnknown>(blendStateHandle), blendFactor, sampleMask);
         }
 
         STDMETHODIMP_(void) setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)

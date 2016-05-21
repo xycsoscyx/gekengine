@@ -179,9 +179,9 @@ namespace Gek
         UINT32 backgroundUpdateHandle;
         UINT32 foregroundUpdateHandle;
 
-        CComPtr<IUnknown> pointSamplerStates;
-        CComPtr<IUnknown> linearClampSamplerStates;
-        CComPtr<IUnknown> linearWrapSamplerStates;
+        CComPtr<IUnknown> pointSamplerState;
+        CComPtr<IUnknown> linearClampSamplerState;
+        CComPtr<IUnknown> linearWrapSamplerState;
         CComPtr<VideoBuffer> engineConstantBuffer;
         CComPtr<VideoBuffer> cameraConstantBuffer;
 
@@ -239,31 +239,31 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                Video::SamplerStates samplerStates;
-                samplerStates.filterMode = Video::FilterMode::AllPoint;
-                samplerStates.addressModeU = Video::AddressMode::Clamp;
-                samplerStates.addressModeV = Video::AddressMode::Clamp;
-                resultValue = video->createSamplerStates(&pointSamplerStates, samplerStates);
+                Video::SamplerState samplerState;
+                samplerState.filterMode = Video::FilterMode::AllPoint;
+                samplerState.addressModeU = Video::AddressMode::Clamp;
+                samplerState.addressModeV = Video::AddressMode::Clamp;
+                resultValue = video->createSamplerState(&pointSamplerState, samplerState);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                Video::SamplerStates samplerStates;
-                samplerStates.maximumAnisotropy = 8;
-                samplerStates.filterMode = Video::FilterMode::Anisotropic;
-                samplerStates.addressModeU = Video::AddressMode::Clamp;
-                samplerStates.addressModeV = Video::AddressMode::Clamp;
-                resultValue = video->createSamplerStates(&linearClampSamplerStates, samplerStates);
+                Video::SamplerState samplerState;
+                samplerState.maximumAnisotropy = 8;
+                samplerState.filterMode = Video::FilterMode::Anisotropic;
+                samplerState.addressModeU = Video::AddressMode::Clamp;
+                samplerState.addressModeV = Video::AddressMode::Clamp;
+                resultValue = video->createSamplerState(&linearClampSamplerState, samplerState);
             }
 
             if (SUCCEEDED(resultValue))
             {
-                Video::SamplerStates samplerStates;
-                samplerStates.maximumAnisotropy = 8;
-                samplerStates.filterMode = Video::FilterMode::Anisotropic;
-                samplerStates.addressModeU = Video::AddressMode::Wrap;
-                samplerStates.addressModeV = Video::AddressMode::Wrap;
-                resultValue = video->createSamplerStates(&linearWrapSamplerStates, samplerStates);
+                Video::SamplerState samplerState;
+                samplerState.maximumAnisotropy = 8;
+                samplerState.filterMode = Video::FilterMode::Anisotropic;
+                samplerState.addressModeU = Video::AddressMode::Wrap;
+                samplerState.addressModeV = Video::AddressMode::Wrap;
+                resultValue = video->createSamplerState(&linearWrapSamplerState, samplerState);
             }
 
             if (SUCCEEDED(resultValue))
@@ -356,12 +356,12 @@ namespace Gek
                 videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
                 videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 1);
 
-                videoContext->pixelPipeline()->setSamplerStates(pointSamplerStates, 0);
-                videoContext->pixelPipeline()->setSamplerStates(linearClampSamplerStates, 1);
-                videoContext->pixelPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
-                videoContext->vertexPipeline()->setSamplerStates(pointSamplerStates, 0);
-                videoContext->vertexPipeline()->setSamplerStates(linearClampSamplerStates, 1);
-                videoContext->vertexPipeline()->setSamplerStates(linearWrapSamplerStates, 2);
+                videoContext->pixelPipeline()->setSamplerState(pointSamplerState, 0);
+                videoContext->pixelPipeline()->setSamplerState(linearClampSamplerState, 1);
+                videoContext->pixelPipeline()->setSamplerState(linearWrapSamplerState, 2);
+                videoContext->vertexPipeline()->setSamplerState(pointSamplerState, 0);
+                videoContext->vertexPipeline()->setSamplerState(linearClampSamplerState, 1);
+                videoContext->vertexPipeline()->setSamplerState(linearWrapSamplerState, 2);
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                 concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool

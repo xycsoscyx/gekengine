@@ -1,4 +1,5 @@
 #include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Utility\Trace.h"
 
 namespace Gek
 {
@@ -11,13 +12,8 @@ namespace Gek
     {
     }
 
-    // IUnknown
-    BEGIN_INTERFACE_LIST(ContextUserMixin)
-        INTERFACE_LIST_ENTRY_COM(ContextUser)
-    END_INTERFACE_LIST_UNKNOWN
-
     // User
-    STDMETHODIMP_(void) ContextUserMixin::registerContext(Context *context)
+    void ContextUserMixin::registerContext(Context *context)
     {
         this->context = context;
     }

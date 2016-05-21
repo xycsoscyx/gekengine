@@ -1,14 +1,13 @@
 #pragma once
 
 #include "COM.h"
-#include "UnknownMixin.h"
 #include "ContextUser.h"
 #include "Context.h"
 
 namespace Gek
 {
-    class ContextUserMixin : virtual public UnknownMixin
-        , virtual public ContextUser
+    class ContextUserMixin
+        : virtual public ContextUser
     {
     private:
         Context *context;
@@ -17,10 +16,8 @@ namespace Gek
         ContextUserMixin(void);
         virtual ~ContextUserMixin(void);
 
-        DECLARE_UNKNOWN(ContextUserMixin);
-
         // Interface
-        STDMETHOD_(void, registerContext)                   (THIS_ Context *context);
+        void registerContext(Context *context);
 
         // Utilities
         Context * getContext(void);

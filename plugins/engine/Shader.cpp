@@ -157,10 +157,10 @@ namespace Gek
             UINT32 depthClearFlags;
             float depthClearValue;
             UINT32 stencilClearValue;
-            DepthStatesHandle depthStates;
-            RenderStatesHandle renderStates;
+            DepthStateHandle depthState;
+            RenderStateHandle renderState;
             Math::Color blendFactor;
-            BlendStatesHandle blendStates;
+            BlendStateHandle blendState;
             std::unordered_map<CStringW, CStringW> renderTargetList;
             std::unordered_map<CStringW, CStringW> resourceList;
             std::unordered_map<CStringW, std::set<CStringW>> actionMap;
@@ -394,7 +394,7 @@ namespace Gek
             return (flags | Video::TextureFlags::Resource);
         }
 
-        void loadStencilStates(Video::DepthStates::StencilStates &stencilStates, Gek::XmlNode &xmlStencilNode)
+        void loadStencilStates(Video::DepthState::StencilStates &stencilStates, Gek::XmlNode &xmlStencilNode)
         {
             stencilStates.passOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"pass").getText());
             stencilStates.failOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"fail").getText());
@@ -402,27 +402,27 @@ namespace Gek
             stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
         }
 
-        void loadDepthStates(PassData &pass, Gek::XmlNode &xmlDepthStatesNode)
+        void loadDepthState(PassData &pass, Gek::XmlNode &xmlDepthStateNode)
         {
-            Video::DepthStates depthStates;
-            if (xmlDepthStatesNode)
+            Video::DepthState depthState;
+            if (xmlDepthStateNode)
             {
                 pass.enableDepth = true;
-                if (xmlDepthStatesNode.hasChildElement(L"clear"))
+                if (xmlDepthStateNode.hasChildElement(L"clear"))
                 {
                     pass.depthClearFlags |= Video::ClearMask::Depth;
-                    pass.depthClearValue = String::to<float>(xmlDepthStatesNode.firstChildElement(L"clear").getText());
+                    pass.depthClearValue = String::to<float>(xmlDepthStateNode.firstChildElement(L"clear").getText());
                 }
 
-                depthStates.enable = true;
+                depthState.enable = true;
 
-                depthStates.comparisonFunction = getComparisonFunction(xmlDepthStatesNode.firstChildElement(L"comparison").getText());
-                depthStates.writeMask = getDepthWriteMask(xmlDepthStatesNode.firstChildElement(L"writemask").getText());
+                depthState.comparisonFunction = getComparisonFunction(xmlDepthStateNode.firstChildElement(L"comparison").getText());
+                depthState.writeMask = getDepthWriteMask(xmlDepthStateNode.firstChildElement(L"writemask").getText());
 
-                if (xmlDepthStatesNode.hasChildElement(L"stencil"))
+                if (xmlDepthStateNode.hasChildElement(L"stencil"))
                 {
-                    Gek::XmlNode xmlStencilNode = xmlDepthStatesNode.firstChildElement(L"stencil");
-                    depthStates.stencilEnable = true;
+                    Gek::XmlNode xmlStencilNode = xmlDepthStateNode.firstChildElement(L"stencil");
+                    depthState.stencilEnable = true;
 
                     if (xmlStencilNode.hasChildElement(L"clear"))
                     {
@@ -432,102 +432,102 @@ namespace Gek
 
                     if (xmlStencilNode.hasChildElement(L"front"))
                     {
-                        loadStencilStates(depthStates.stencilFrontStates, xmlStencilNode.firstChildElement(L"front"));
+                        loadStencilStates(depthState.stencilFrontState, xmlStencilNode.firstChildElement(L"front"));
                     }
 
                     if (xmlStencilNode.hasChildElement(L"back"))
                     {
-                        loadStencilStates(depthStates.stencilBackStates, xmlStencilNode.firstChildElement(L"back"));
+                        loadStencilStates(depthState.stencilBackState, xmlStencilNode.firstChildElement(L"back"));
                     }
                 }
             }
 
-            pass.depthStates = resources->createDepthStates(depthStates);
+            pass.depthState = resources->createDepthState(depthState);
         }
 
-        void loadRenderStates(PassData &pass, Gek::XmlNode &xmlRenderStatesNode)
+        void loadRenderState(PassData &pass, Gek::XmlNode &xmlRenderStateNode)
         {
-            Video::RenderStates renderStates;
-            renderStates.fillMode = getFillMode(xmlRenderStatesNode.firstChildElement(L"fillmode").getText());
-            renderStates.cullMode = getCullMode(xmlRenderStatesNode.firstChildElement(L"cullmode").getText());
-            if (xmlRenderStatesNode.hasChildElement(L"frontcounterclockwise"))
+            Video::RenderState renderState;
+            renderState.fillMode = getFillMode(xmlRenderStateNode.firstChildElement(L"fillmode").getText());
+            renderState.cullMode = getCullMode(xmlRenderStateNode.firstChildElement(L"cullmode").getText());
+            if (xmlRenderStateNode.hasChildElement(L"frontcounterclockwise"))
             {
-                renderStates.frontCounterClockwise = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"frontcounterclockwise").getText());
+                renderState.frontCounterClockwise = String::to<bool>(xmlRenderStateNode.firstChildElement(L"frontcounterclockwise").getText());
             }
 
-            renderStates.depthBias = String::to<UINT32>(xmlRenderStatesNode.firstChildElement(L"depthbias").getText());
-            renderStates.depthBiasClamp = String::to<float>(xmlRenderStatesNode.firstChildElement(L"depthbiasclamp").getText());
-            renderStates.slopeScaledDepthBias = String::to<float>(xmlRenderStatesNode.firstChildElement(L"slopescaleddepthbias").getText());
-            renderStates.depthClipEnable = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"depthclip").getText());
-            renderStates.multisampleEnable = String::to<bool>(xmlRenderStatesNode.firstChildElement(L"multisample").getText());
-            pass.renderStates = resources->createRenderStates(renderStates);
+            renderState.depthBias = String::to<UINT32>(xmlRenderStateNode.firstChildElement(L"depthbias").getText());
+            renderState.depthBiasClamp = String::to<float>(xmlRenderStateNode.firstChildElement(L"depthbiasclamp").getText());
+            renderState.slopeScaledDepthBias = String::to<float>(xmlRenderStateNode.firstChildElement(L"slopescaleddepthbias").getText());
+            renderState.depthClipEnable = String::to<bool>(xmlRenderStateNode.firstChildElement(L"depthclip").getText());
+            renderState.multisampleEnable = String::to<bool>(xmlRenderStateNode.firstChildElement(L"multisample").getText());
+            pass.renderState = resources->createRenderState(renderState);
         }
 
-        void loadBlendTargetStates(Video::TargetBlendStates &blendStates, Gek::XmlNode &xmlBlendStatesNode)
+        void loadBlendTargetStates(Video::TargetBlendState &blendState, Gek::XmlNode &xmlBlendStateNode)
         {
-            if (xmlBlendStatesNode.hasChildElement(L"writemask"))
+            if (xmlBlendStateNode.hasChildElement(L"writemask"))
             {
-                blendStates.writeMask = 0;
-                CStringW writeMask(xmlBlendStatesNode.firstChildElement(L"writemask").getText());
-                if (writeMask.Find(L"r") >= 0) blendStates.writeMask |= Video::ColorMask::R;
-                if (writeMask.Find(L"g") >= 0) blendStates.writeMask |= Video::ColorMask::G;
-                if (writeMask.Find(L"b") >= 0) blendStates.writeMask |= Video::ColorMask::B;
-                if (writeMask.Find(L"a") >= 0) blendStates.writeMask |= Video::ColorMask::A;
+                blendState.writeMask = 0;
+                CStringW writeMask(xmlBlendStateNode.firstChildElement(L"writemask").getText());
+                if (writeMask.Find(L"r") >= 0) blendState.writeMask |= Video::ColorMask::R;
+                if (writeMask.Find(L"g") >= 0) blendState.writeMask |= Video::ColorMask::G;
+                if (writeMask.Find(L"b") >= 0) blendState.writeMask |= Video::ColorMask::B;
+                if (writeMask.Find(L"a") >= 0) blendState.writeMask |= Video::ColorMask::A;
 
             }
             else
             {
-                blendStates.writeMask = Video::ColorMask::RGBA;
+                blendState.writeMask = Video::ColorMask::RGBA;
             }
 
-            if (xmlBlendStatesNode.hasChildElement(L"color"))
+            if (xmlBlendStateNode.hasChildElement(L"color"))
             {
-                Gek::XmlNode&xmlColorNode = xmlBlendStatesNode.firstChildElement(L"color");
-                blendStates.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
-                blendStates.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
-                blendStates.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
+                Gek::XmlNode&xmlColorNode = xmlBlendStateNode.firstChildElement(L"color");
+                blendState.colorSource = getBlendSource(xmlColorNode.getAttribute(L"source"));
+                blendState.colorDestination = getBlendSource(xmlColorNode.getAttribute(L"destination"));
+                blendState.colorOperation = getBlendOperation(xmlColorNode.getAttribute(L"operation"));
             }
 
-            if (xmlBlendStatesNode.hasChildElement(L"alpha"))
+            if (xmlBlendStateNode.hasChildElement(L"alpha"))
             {
-                Gek::XmlNode xmlAlphaNode = xmlBlendStatesNode.firstChildElement(L"alpha");
-                blendStates.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
-                blendStates.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
-                blendStates.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
+                Gek::XmlNode xmlAlphaNode = xmlBlendStateNode.firstChildElement(L"alpha");
+                blendState.alphaSource = getBlendSource(xmlAlphaNode.getAttribute(L"source"));
+                blendState.alphaDestination = getBlendSource(xmlAlphaNode.getAttribute(L"destination"));
+                blendState.alphaOperation = getBlendOperation(xmlAlphaNode.getAttribute(L"operation"));
             }
         }
 
-        void loadBlendStates(PassData &pass, Gek::XmlNode &xmlBlendStatesNode)
+        void loadBlendState(PassData &pass, Gek::XmlNode &xmlBlendStateNode)
         {
-            bool alphaToCoverage = String::to<bool>(xmlBlendStatesNode.firstChildElement(L"alphatocoverage").getText());
-            if (xmlBlendStatesNode.hasChildElement(L"target"))
+            bool alphaToCoverage = String::to<bool>(xmlBlendStateNode.firstChildElement(L"alphatocoverage").getText());
+            if (xmlBlendStateNode.hasChildElement(L"target"))
             {
-                Video::IndependentBlendStates blendStates;
-                Video::TargetBlendStates *targetStateList = blendStates.targetStates;
-                blendStates.alphaToCoverage = alphaToCoverage;
-                Gek::XmlNode xmlTargetNode = xmlBlendStatesNode.firstChildElement(L"target");
+                Video::IndependentBlendState blendState;
+                Video::TargetBlendState *targetStateList = blendState.targetStates;
+                blendState.alphaToCoverage = alphaToCoverage;
+                Gek::XmlNode xmlTargetNode = xmlBlendStateNode.firstChildElement(L"target");
                 while (xmlTargetNode)
                 {
-                    Video::TargetBlendStates &targetStates = *targetStateList++;
+                    Video::TargetBlendState &targetStates = *targetStateList++;
 
                     targetStates.enable = true;
                     loadBlendTargetStates(targetStates, xmlTargetNode);
                     xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
                 };
 
-                pass.blendStates = resources->createBlendStates(blendStates);
+                pass.blendState = resources->createBlendState(blendState);
             }
             else
             {
-                Video::UnifiedBlendStates blendStates;
-                if (xmlBlendStatesNode)
+                Video::UnifiedBlendState blendState;
+                if (xmlBlendStateNode)
                 {
-                    blendStates.enable = true;
-                    blendStates.alphaToCoverage = alphaToCoverage;
-                    loadBlendTargetStates(blendStates, xmlBlendStatesNode);
+                    blendState.enable = true;
+                    blendState.alphaToCoverage = alphaToCoverage;
+                    loadBlendTargetStates(blendState, xmlBlendStateNode);
                 }
 
-                pass.blendStates = resources->createBlendStates(blendStates);
+                pass.blendState = resources->createBlendState(blendState);
             }
         }
 
@@ -920,17 +920,17 @@ namespace Gek
 
                                 if (SUCCEEDED(resultValue))
                                 {
-                                    loadDepthStates(pass, xmlPassNode.firstChildElement(L"depthstates"));
+                                    loadDepthState(pass, xmlPassNode.firstChildElement(L"depthstates"));
                                 }
 
                                 if (SUCCEEDED(resultValue))
                                 {
-                                    loadRenderStates(pass, xmlPassNode.firstChildElement(L"renderstates"));
+                                    loadRenderState(pass, xmlPassNode.firstChildElement(L"renderstates"));
                                 }
 
                                 if (SUCCEEDED(resultValue))
                                 {
-                                    loadBlendStates(pass, xmlPassNode.firstChildElement(L"blendstates"));
+                                    loadBlendState(pass, xmlPassNode.firstChildElement(L"blendstates"));
                                 }
 
                                 if (SUCCEEDED(resultValue))
@@ -1339,9 +1339,9 @@ namespace Gek
                 break;
 
             default:
-                resources->setDepthStates(renderContext, pass.depthStates, 0x0);
-                resources->setRenderStates(renderContext, pass.renderStates);
-                resources->setBlendStates(renderContext, pass.blendStates, pass.blendFactor, 0xFFFFFFFF);
+                resources->setDepthState(renderContext, pass.depthState, 0x0);
+                resources->setRenderState(renderContext, pass.renderState);
+                resources->setBlendState(renderContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
 
                 if (pass.depthClearFlags > 0)
                 {

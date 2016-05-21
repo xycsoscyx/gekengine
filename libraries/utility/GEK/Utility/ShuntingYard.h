@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GeK\Utility\Trace.h"
-#include "Gek\Utility\Hash.h"
+#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Hash.h"
 #include <functional>
 #include <unordered_map>
 #include <random>
@@ -12,17 +12,18 @@ namespace Gek
     class ShuntingYard
     {
     public:
-        GEK_EXCEPTION_LIST(UnknownTokenType,
-            UnbalancedParenthesis,
-            InvalidVector,
-            InvalidEquation,
-            InvalidOperator,
-            InvalidOperand,
-            InvalidFunction,
-            InvalidFunctionParameters,
-            NotEnoughFunctionParameters,
-            MissingFunctionParenthesis,
-            MisplacedSeparator);
+        GEK_BASE_EXCEPTION();
+        GEK_EXCEPTION(UnknownTokenType);
+        GEK_EXCEPTION(UnbalancedParenthesis);
+        GEK_EXCEPTION(InvalidVector);
+        GEK_EXCEPTION(InvalidEquation);
+        GEK_EXCEPTION(InvalidOperator);
+        GEK_EXCEPTION(InvalidOperand);
+        GEK_EXCEPTION(InvalidFunction);
+        GEK_EXCEPTION(InvalidFunctionParameters);
+        GEK_EXCEPTION(NotEnoughFunctionParameters);
+        GEK_EXCEPTION(MissingFunctionParenthesis);
+        GEK_EXCEPTION(MisplacedSeparator);
 
     public:
         enum class Associations : UINT8

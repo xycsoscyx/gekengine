@@ -1,26 +1,37 @@
 #pragma once
 
+#include "GEK\Utility\Trace.h"
 #include <atlbase.h>
 #include <atlstr.h>
 #include <functional>
 
 namespace Gek
 {
+    namespace Xml
+    {
+        GEK_BASE_EXCEPTION();
+
+        static void initialize(void);
+        static void shutdown(void);
+    }; // namespace Xml
+
     class XmlNode
     {
     private:
-        LPVOID node;
+        void *node;
+
+    private:
+        friend class XmlDocument;
+        XmlNode(void);
+        XmlNode(void *node);
 
     public:
-        XmlNode(LPVOID node);
+        virtual ~XmlNode(void);
 
-        operator bool() const
-        {
-            return (node ? true : false);
-        }
+        static XmlNode create(LPCWSTR type);
 
-        HRESULT create(LPCWSTR type);
-        void setType(LPCWSTR type);
+        operator bool() const;
+
         CStringW getType(void) const;
 
         CStringW getText(void) const;
@@ -42,15 +53,18 @@ namespace Gek
     class XmlDocument
     {
     private:
-        LPVOID document;
+        void *document;
+
+    private:
+        XmlDocument(void *document);
 
     public:
-        XmlDocument(void);
-        ~XmlDocument(void);
+        virtual ~XmlDocument(void);
 
-        HRESULT create(LPCWSTR rootType);
-        HRESULT load(LPCWSTR fileName, bool validateDTD = false);
-        HRESULT save(LPCWSTR fileName);
+        static XmlDocument create(LPCWSTR rootType);
+        static XmlDocument load(LPCWSTR fileName, bool validateDTD = false);
+
+        void save(LPCWSTR fileName);
 
         XmlNode getRoot(void) const;
     };

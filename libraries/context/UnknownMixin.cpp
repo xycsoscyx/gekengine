@@ -1,4 +1,5 @@
 #include "GEK\Context\UnknownMixin.h"
+#include "GEK\Utility\Trace.h"
 
 namespace Gek
 {

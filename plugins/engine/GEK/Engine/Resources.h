@@ -45,9 +45,9 @@ namespace Gek
         }
     };
 
-    using RenderStatesHandle = Handle<UINT8, __LINE__>;
-    using DepthStatesHandle = Handle<UINT8, __LINE__>;
-    using BlendStatesHandle = Handle<UINT8, __LINE__>;
+    using RenderStateHandle = Handle<UINT8, __LINE__>;
+    using DepthStateHandle = Handle<UINT8, __LINE__>;
+    using BlendStateHandle = Handle<UINT8, __LINE__>;
     using ProgramHandle = Handle<UINT16, __LINE__>;
     using PluginHandle = Handle<UINT8, __LINE__>;
     using ShaderHandle = Handle<UINT8, __LINE__>;
@@ -113,18 +113,18 @@ namespace Gek
         STDMETHOD_(ProgramHandle, loadComputeProgram)       (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) PURE;
         STDMETHOD_(ProgramHandle, loadPixelProgram)         (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) PURE;
 
-        STDMETHOD_(RenderStatesHandle, createRenderStates)  (THIS_ const Video::RenderStates &renderStates) PURE;
-        STDMETHOD_(DepthStatesHandle, createDepthStates)    (THIS_ const Video::DepthStates &depthStates) PURE;
-        STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::UnifiedBlendStates &blendStates) PURE;
-        STDMETHOD_(BlendStatesHandle, createBlendStates)    (THIS_ const Video::IndependentBlendStates &blendStates) PURE;
+        STDMETHOD_(RenderStateHandle, createRenderState)  (THIS_ const Video::RenderState &renderState) PURE;
+        STDMETHOD_(DepthStateHandle, createDepthState)    (THIS_ const Video::DepthState &depthState) PURE;
+        STDMETHOD_(BlendStateHandle, createBlendState)    (THIS_ const Video::UnifiedBlendState &blendState) PURE;
+        STDMETHOD_(BlendStateHandle, createBlendState)    (THIS_ const Video::IndependentBlendState &blendState) PURE;
 
         STDMETHOD_(void, flip)                              (THIS_ ResourceHandle resourceHandle) PURE;
         STDMETHOD_(void, generateMipMaps)                   (THIS_ RenderContext *renderContext, ResourceHandle resourceHandle) PURE;
         STDMETHOD_(void, copyResource)                      (THIS_ ResourceHandle destinationHandle, ResourceHandle sourceHandle) PURE;
 
-        STDMETHOD_(void, setRenderStates)                   (THIS_ RenderContext *renderContext, RenderStatesHandle renderStatesHandle) PURE;
-        STDMETHOD_(void, setDepthStates)                    (THIS_ RenderContext *renderContext, DepthStatesHandle depthStatesHandle, UINT32 stencilReference) PURE;
-        STDMETHOD_(void, setBlendStates)                    (THIS_ RenderContext *renderContext, BlendStatesHandle blendStatesHandle, const Math::Color &blendFactor, UINT32 sampleMask) PURE;
+        STDMETHOD_(void, setRenderState)                   (THIS_ RenderContext *renderContext, RenderStateHandle renderStateHandle) PURE;
+        STDMETHOD_(void, setDepthState)                    (THIS_ RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference) PURE;
+        STDMETHOD_(void, setBlendState)                    (THIS_ RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask) PURE;
         STDMETHOD_(void, setProgram)                        (THIS_ RenderPipeline *renderPipeline, ProgramHandle programHandle) PURE;
         STDMETHOD_(void, setRenderTargets)                  (THIS_ RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle *depthBuffer) PURE;
         STDMETHOD_(void, clearRenderTarget)                 (THIS_ RenderContext *renderContext, ResourceHandle resourceHandle  , const Math::Color &color) PURE;

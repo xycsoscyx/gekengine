@@ -27,9 +27,6 @@
     <ClInclude Include="GEK\System\InputSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\OverlaySystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\System\VideoSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>

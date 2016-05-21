@@ -13,8 +13,8 @@ namespace Gek
     DECLARE_REGISTERED_CLASS(VideoSystemImplementation);
 }; // namespace Gek
 
-DECLARE_CONTEXT_SOURCE(System)
-    ADD_CONTEXT_CLASS(Gek::InputSystemRegistration, Gek::InputSystemImplementation)
-    ADD_CONTEXT_CLASS(Gek::AudioSystemRegistration, Gek::AudioSystemImplementation)
-    ADD_CONTEXT_CLASS(Gek::VideoSystemRegistration, Gek::VideoSystemImplementation)
-END_CONTEXT_SOURCE
+DECLARE_PLUGIN_MAP(System)
+    ADD_PLUGIN_CLASS(Gek::InputSystemRegistration, Gek::InputSystemImplementation)
+    ADD_PLUGIN_CLASS(Gek::AudioSystemRegistration, Gek::AudioSystemImplementation)
+    ADD_PLUGIN_CLASS(Gek::VideoSystemRegistration, Gek::VideoSystemImplementation)
+END_PLUGIN_MAP

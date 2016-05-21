@@ -7,10 +7,10 @@
 
 namespace Gek
 {
-    DECLARE_INTERFACE(Context);
+    interface Context;
 
-    DECLARE_INTERFACE_IID(ContextUser, "C66EB343-8E2B-47CE-BEF7-09F7B57AF7FD") : virtual public IUnknown
+    interface ContextUser
     {
-        STDMETHOD_(void, registerContext)           (THIS_ Context *context) PURE;
+        void registerContext(Context *context);
     };
 }; // namespace Gek

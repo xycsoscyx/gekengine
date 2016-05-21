@@ -14,10 +14,10 @@ namespace Gek
     DECLARE_INTERFACE_IID(ShapeProcessorRegistration, "61173484-93D4-40AA-88BF-BE41154F1D10");
 }; // namespace Gek
 
-DECLARE_CONTEXT_SOURCE(Components)
-    ADD_CONTEXT_CLASS(Gek::ShapeRegistration, Gek::ShapeImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+DECLARE_PLUGIN_MAP(Components)
+    ADD_PLUGIN_CLASS(Gek::ShapeRegistration, Gek::ShapeImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::ShapeProcessorRegistration, Gek::ShapeProcessorImplementation)
-        ADD_CLASS_TYPE(Gek::ProcessorType)
-END_CONTEXT_SOURCE
+    ADD_PLUGIN_CLASS(Gek::ShapeProcessorRegistration, Gek::ShapeProcessorImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ProcessorType)
+END_PLUGIN_MAP

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GEK\Utility\String.h"
-#include "GEK\Utility\Macros.h"
 #include <string>
 #include <json.hpp>
 
@@ -117,8 +116,9 @@ namespace Gek
     };
 }; // namespace Gek
 
-#define GEK_EXCEPTION(TYPE) class ## TYPE : public Exception { public: using Exception::Exception; };
-#define GEK_EXCEPTION_LIST(...) class Exception : public BaseException { public: using BaseException::BaseException; }; EVAL(MAP(GEK_EXCEPTION, __VA_ARGS__));
+#define GEK_BASE_EXCEPTION()    class Exception : public BaseException { public: using BaseException::BaseException; };
+#define GEK_EXCEPTION(TYPE)     class TYPE : public Exception { public: using Exception::Exception; };
+#define GEK_REQUIRE(CHECK)      do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
 
 #define _ENABLE_TRACE
 

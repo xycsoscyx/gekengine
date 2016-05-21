@@ -1,3 +1,4 @@
+#include "GEK\Utility\Trace.h"
 #include "GEK\Context\ContextUserMixin.h"
 #include "GEK\System\InputSystem.h"
 #define DIRECTINPUT_VERSION 0x0800
@@ -33,8 +34,8 @@ namespace Gek
         return DIENUM_CONTINUE;
     }
 
-    class DeviceImplementation : public UnknownMixin
-        , public InputDevice
+    class DeviceImplementation
+        : public InputDevice
     {
     protected:
         CComPtr<IDirectInputDevice8> device;
@@ -57,31 +58,27 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(DeviceImplementation)
-            INTERFACE_LIST_ENTRY_COM(InputDevice)
-        END_INTERFACE_LIST_UNKNOWN
-
-        STDMETHODIMP_(UINT32) getButtonCount(void) const
+        UINT32 getButtonCount(void) const
         {
             return buttonCount;
         }
 
-        STDMETHODIMP_(UINT8) getButtonState(UINT32 buttonIndex) const
+        UINT8 getButtonState(UINT32 buttonIndex) const
         {
             return buttonStateList[buttonIndex];
         }
 
-        STDMETHODIMP_(Math::Float3) getAxis(void) const
+        Math::Float3 getAxis(void) const
         {
             return axisValues;
         }
 
-        STDMETHODIMP_(Math::Float3) getRotation(void) const
+        Math::Float3 getRotation(void) const
         {
             return rotationValues;
         }
 
-        STDMETHODIMP_(float) getPointOfView(void) const
+        float getPointOfView(void) const
         {
             return pointOfView;
         }
@@ -95,27 +92,19 @@ namespace Gek
             buttonStateList.resize(256);
         }
 
-        HRESULT initialize(IDirectInput8 *directInput, HWND window)
+        void initialize(IDirectInput8 *directInput, HWND window)
         {
             HRESULT resultValue = directInput->CreateDevice(GUID_SysKeyboard, &device, nullptr);
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = device->SetDataFormat(&c_dfDIKeyboard);
-                if (SUCCEEDED(resultValue))
-                {
-                    DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
-                    resultValue = device->SetCooperativeLevel(window, flags);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = device->Acquire();
-                    }
-                }
-            }
 
-            return resultValue;
+            resultValue = device->SetDataFormat(&c_dfDIKeyboard);
+
+            DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+            resultValue = device->SetCooperativeLevel(window, flags);
+
+            resultValue = device->Acquire();
         }
 
-        STDMETHODIMP update(void)
+        void update(void)
         {
             HRESULT resultValue = E_FAIL;
 
@@ -158,8 +147,6 @@ namespace Gek
                     }
                 }
             }
-
-            return resultValue;
         }
     };
 
@@ -174,38 +161,28 @@ namespace Gek
         {
         }
 
-        HRESULT initialize(IDirectInput8 *directInput, HWND window)
+        void initialize(IDirectInput8 *directInput, HWND window)
         {
             HRESULT resultValue = directInput->CreateDevice(GUID_SysMouse, &device, nullptr);
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = device->SetDataFormat(&c_dfDIMouse2);
-                if (SUCCEEDED(resultValue))
-                {
-                    DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
-                    resultValue = device->SetCooperativeLevel(window, flags);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        DIDEVCAPS deviceCaps = { 0 };
-                        deviceCaps.dwSize = sizeof(DIDEVCAPS);
-                        resultValue = device->GetCapabilities(&deviceCaps);
-                        if (SUCCEEDED(resultValue))
-                        {
-                            device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
 
-                            buttonCount = deviceCaps.dwButtons;
-                            buttonStateList.resize(buttonCount);
+            resultValue = device->SetDataFormat(&c_dfDIMouse2);
 
-                            resultValue = device->Acquire();
-                        }
-                    }
-                }
-            }
+            DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+            resultValue = device->SetCooperativeLevel(window, flags);
 
-            return resultValue;
+            DIDEVCAPS deviceCaps = { 0 };
+            deviceCaps.dwSize = sizeof(DIDEVCAPS);
+            resultValue = device->GetCapabilities(&deviceCaps);
+
+            device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
+
+            buttonCount = deviceCaps.dwButtons;
+            buttonStateList.resize(buttonCount);
+
+            resultValue = device->Acquire();
         }
 
-        STDMETHODIMP update(void)
+        void update(void)
         {
             HRESULT resultValue = S_OK;
 
@@ -251,8 +228,6 @@ namespace Gek
                     }
                 }
             }
-
-            return resultValue;
         }
     };
 
@@ -267,38 +242,28 @@ namespace Gek
         {
         }
 
-        HRESULT initialize(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
+        void initialize(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
         {
             HRESULT resultValue = directInput->CreateDevice(deviceID, &device, nullptr);
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = device->SetDataFormat(&c_dfDIJoystick2);
-                if (SUCCEEDED(resultValue))
-                {
-                    DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
-                    resultValue = device->SetCooperativeLevel(window, flags);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        DIDEVCAPS deviceCaps = { 0 };
-                        deviceCaps.dwSize = sizeof(DIDEVCAPS);
-                        resultValue = device->GetCapabilities(&deviceCaps);
-                        if (SUCCEEDED(resultValue))
-                        {
-                            device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
 
-                            buttonCount = deviceCaps.dwButtons;
-                            buttonStateList.resize(buttonCount);
+            resultValue = device->SetDataFormat(&c_dfDIJoystick2);
 
-                            resultValue = device->Acquire();
-                        }
-                    }
-                }
-            }
+            DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
+            resultValue = device->SetCooperativeLevel(window, flags);
 
-            return resultValue;
+            DIDEVCAPS deviceCaps = { 0 };
+            deviceCaps.dwSize = sizeof(DIDEVCAPS);
+            resultValue = device->GetCapabilities(&deviceCaps);
+
+            device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
+
+            buttonCount = deviceCaps.dwButtons;
+            buttonStateList.resize(buttonCount);
+
+            resultValue = device->Acquire();
         }
 
-        STDMETHODIMP update(void)
+        void update(void)
         {
             HRESULT resultValue = S_OK;
 
@@ -361,50 +326,37 @@ namespace Gek
                     }
                 }
             }
-
-            return resultValue;
         }
     };
 
-    class InputSystemImplementation : public ContextUserMixin
+    class InputSystemImplementation
+        : public ContextUserMixin
         , public InputSystem
     {
     private:
         HWND window;
         CComPtr<IDirectInput8> directInput;
-        CComPtr<InputDevice> mouseDevice;
-        CComPtr<InputDevice> keyboardDevice;
-        std::vector<CComPtr<InputDevice>> joystickDeviceList;
+        std::shared_ptr<InputDevice> mouseDevice;
+        std::shared_ptr<InputDevice> keyboardDevice;
+        std::vector<std::shared_ptr<InputDevice>> joystickDeviceList;
 
     private:
         static BOOL CALLBACK joystickEnumeration(LPCDIDEVICEINSTANCE deviceObjectInstance, void *userData)
         {
-            InputSystemImplementation *inputSystem = (InputSystemImplementation *)userData;
-            if (inputSystem)
-            {
-                inputSystem->addJoystick(deviceObjectInstance);
-            }
+            GEK_REQUIRE(deviceObjectInstance);
+            GEK_REQUIRE(userData);
+
+            InputSystemImplementation *inputSystem = static_cast<InputSystemImplementation *>(userData);
+            inputSystem->addJoystick(deviceObjectInstance);
 
             return DIENUM_CONTINUE;
         }
 
         void addJoystick(LPCDIDEVICEINSTANCE deviceObjectInstance)
         {
-            HRESULT resultValue = E_FAIL;
-            CComPtr<JoystickImplementation> joystick = new JoystickImplementation();
-            if (joystick != nullptr)
-            {
-                resultValue = joystick->initialize(directInput, window, deviceObjectInstance->guidInstance);
-                if (SUCCEEDED(resultValue))
-                {
-                    CComPtr<InputDevice> joystickDevice;
-                    resultValue = joystickDevice->QueryInterface(IID_PPV_ARGS(&joystickDevice));
-                    if (SUCCEEDED(resultValue) && joystickDevice != nullptr)
-                    {
-                        joystickDeviceList.push_back(joystickDevice);
-                    }
-                }
-            }
+            std::shared_ptr<JoystickImplementation> joystick(std::make_shared<JoystickImplementation>());
+            joystick->initialize(directInput, window, deviceObjectInstance->guidInstance);
+            joystickDeviceList.push_back(std::dynamic_pointer_cast<InputDevice>(joystick));
         }
 
     public:
@@ -418,82 +370,55 @@ namespace Gek
             joystickDeviceList.clear();
         }
 
-        BEGIN_INTERFACE_LIST(InputSystemImplementation)
-            INTERFACE_LIST_ENTRY_COM(InputSystem)
-        END_INTERFACE_LIST_USER
-
-        // Interface
-        STDMETHODIMP initialize(HWND window)
+        // InputSystem
+        void initialize(HWND window)
         {
             GEK_REQUIRE(window);
 
-            HRESULT resultValue = E_FAIL;
             this->window = window;
-            resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
-            if (SUCCEEDED(resultValue) && directInput != nullptr)
-            {
-                resultValue = E_OUTOFMEMORY;
-                CComPtr<KeyboardImplementation> keyboard = new KeyboardImplementation();
-                if (keyboard != nullptr)
-                {
-                    resultValue = keyboard->initialize(directInput, window);
-                    if (SUCCEEDED(resultValue))
-                    {
-                        resultValue = keyboard->QueryInterface(IID_PPV_ARGS(&keyboardDevice));
-                    }
-                }
 
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = E_OUTOFMEMORY;
-                    CComPtr<MouseImplementation> mouse = new MouseImplementation();
-                    if (mouse != nullptr)
-                    {
-                        resultValue = mouse->initialize(directInput, window);
-                        if (SUCCEEDED(resultValue))
-                        {
-                            resultValue = mouse->QueryInterface(IID_PPV_ARGS(&mouseDevice));
-                        }
-                    }
-                }
+            HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
 
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = directInput->EnumDevices(DI8DEVCLASS_GAMECTRL, joystickEnumeration, LPVOID(this), DIEDFL_ATTACHEDONLY);
-                }
-            }
+            resultValue = E_OUTOFMEMORY;
+            std::shared_ptr<KeyboardImplementation> keyboard(std::make_shared<KeyboardImplementation>());
+            keyboard->initialize(directInput, window);
+            keyboardDevice = std::dynamic_pointer_cast<InputDevice>(keyboard);
 
-            return resultValue;
+            std::shared_ptr<MouseImplementation> mouse(std::make_shared<MouseImplementation>());
+            mouse->initialize(directInput, window);
+            mouseDevice = std::dynamic_pointer_cast<InputDevice>(mouse);
+
+            resultValue = directInput->EnumDevices(DI8DEVCLASS_GAMECTRL, joystickEnumeration, LPVOID(this), DIEDFL_ATTACHEDONLY);
         }
 
-        STDMETHODIMP_(InputDevice *) getKeyboard(void)
+        InputDevice * const getKeyboard(void)
         {
             GEK_REQUIRE(keyboardDevice);
-            return keyboardDevice;
+            return keyboardDevice.get();
         }
 
-        STDMETHODIMP_(InputDevice *) getMouse(void)
+        InputDevice * const getMouse(void)
         {
             GEK_REQUIRE(mouseDevice);
-            return mouseDevice;
+            return mouseDevice.get();
         }
 
-        STDMETHODIMP_(UINT32) getJoystickCount(void)
+        UINT32 getJoystickCount(void)
         {
             return joystickDeviceList.size();
         }
 
-        STDMETHODIMP_(InputDevice *) getJoystick(UINT32 deviceIndex)
+        InputDevice * const getJoystick(UINT32 deviceIndex)
         {
             if (deviceIndex < joystickDeviceList.size())
             {
-                return joystickDeviceList[deviceIndex];
+                return joystickDeviceList[deviceIndex].get();
             }
 
             return nullptr;
         }
 
-        STDMETHODIMP update(void)
+        void update(void)
         {
             GEK_REQUIRE(keyboardDevice);
             GEK_REQUIRE(mouseDevice);
@@ -504,8 +429,6 @@ namespace Gek
             {
                 joystickDevice->update();
             }
-
-            return S_OK;
         }
     };
 

@@ -8,152 +8,150 @@
 
 namespace Gek
 {
+    static xmlNodePtr dummyNode = nullptr;
+    namespace Xml
+    {
+        void initialize(void)
+        {
+            dummyNode = xmlNewNode(nullptr, BAD_CAST "");
+        }
+
+        void shutdown(void)
+        {
+            if (dummyNode)
+            {
+                xmlFreeNode(dummyNode);
+                dummyNode = nullptr;
+            }
+        }
+    };
+
+    XmlNode::XmlNode(void)
+        : node(dummyNode)
+    {
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Gek::Xml::initialize() not called");
+    }
+
     XmlNode::XmlNode(LPVOID node)
         : node(node)
     {
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
     }
 
-    HRESULT XmlNode::create(LPCWSTR type)
+    XmlNode::~XmlNode(void)
     {
-        HRESULT resultValue = E_FAIL;
-
-        xmlNodePtr pNewNode = xmlNewNode(nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)));
-        if (pNewNode != nullptr)
-        {
-            node = pNewNode;
-            resultValue = S_OK;
-        }
-
-        return resultValue;
     }
 
-    void XmlNode::setType(LPCWSTR type)
+    XmlNode XmlNode::create(LPCWSTR type)
     {
-        if (node != nullptr)
-        {
-            xmlNodeSetName(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(type, CP_UTF8)));
-        }
+        xmlNodePtr node = xmlNewNode(nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)));
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Unable to create node: %S", type);
+        return XmlNode(node);
+    }
+
+    XmlNode::operator bool() const
+    {
+        return (node == dummyNode);
     }
 
     CStringW XmlNode::getType(void) const
     {
-        CStringW type;
-        if (node != nullptr)
-        {
-            type = CA2W((const char *)static_cast<xmlNodePtr>(node)->name, CP_UTF8);
-        }
-
-        return type;
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        return LPCWSTR(CA2W(reinterpret_cast<LPCSTR>(static_cast<xmlNodePtr>(node)->name), CP_UTF8));
     }
 
     CStringW XmlNode::getText(void) const
     {
-        CStringW text;
-        if (node != nullptr)
-        {
-            xmlChar *content = xmlNodeGetContent(static_cast<xmlNodePtr>(node));
-            if (content != nullptr)
-            {
-                text = CA2W((const char *)content, CP_UTF8);
-                xmlFree(content);
-            }
-        }
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
 
-        return text;
+        xmlChar *content = xmlNodeGetContent(static_cast<xmlNodePtr>(node));
+        GEK_CHECK_EXCEPTION(content == nullptr, Xml::Exception, "Unable to get node content");
+
+        CA2W text(reinterpret_cast<LPCSTR>(content), CP_UTF8);
+        xmlFree(content);
+        return LPCWSTR(text);
     }
 
     void XmlNode::setText(LPCWSTR format, ...)
     {
-        if (node != nullptr)
-        {
-            CStringW text;
-            if (format != nullptr)
-            {
-                va_list variableList;
-                va_start(variableList, format);
-                text.FormatV(format, variableList);
-                va_end(variableList);
-            }
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
 
-            xmlNodeSetContent(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(text, CP_UTF8)));
+        CStringW text;
+        if (format != nullptr)
+        {
+            va_list variableList;
+            va_start(variableList, format);
+            text.FormatV(format, variableList);
+            va_end(variableList);
         }
+
+        xmlNodeSetContent(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(text, CP_UTF8)));
     }
 
     bool XmlNode::hasAttribute(LPCWSTR name) const
     {
-        if (node != nullptr)
-        {
-            return (xmlHasProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8))) ? true : false);
-        }
-
-        return false;
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        return (xmlHasProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8))) ? true : false);
     }
 
     CStringW XmlNode::getAttribute(LPCWSTR name) const
     {
-        CStringW value;
-        if (node != nullptr)
-        {
-            xmlChar *attribute = xmlGetProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8)));
-            if (attribute != nullptr)
-            {
-                value = CA2W((const char *)attribute, CP_UTF8);
-                xmlFree(attribute);
-            }
-        }
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
 
-        return value;
+        xmlChar *attribute = xmlGetProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8)));
+        GEK_CHECK_EXCEPTION(attribute == nullptr, Xml::Exception, "Unable to get node attribute: %S", name);
+
+        CA2W value(reinterpret_cast<LPCSTR>(attribute), CP_UTF8);
+        xmlFree(attribute);
+        return LPCWSTR(value);
     }
 
     void XmlNode::setAttribute(LPCWSTR name, LPCWSTR format, ...)
     {
-        if (node != nullptr)
-        {
-            CStringW value;
-            if (format != nullptr)
-            {
-                va_list variableList;
-                va_start(variableList, format);
-                value.FormatV(format, variableList);
-                va_end(variableList);
-            }
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
 
-            if (hasAttribute(name))
-            {
-                xmlSetProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8)), BAD_CAST LPCSTR(CW2A(value, CP_UTF8)));
-            }
-            else
-            {
-                xmlNewProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8)), BAD_CAST LPCSTR(CW2A(value, CP_UTF8)));
-            }
+        CStringW value;
+        if (format != nullptr)
+        {
+            va_list variableList;
+            va_start(variableList, format);
+            value.FormatV(format, variableList);
+            va_end(variableList);
+        }
+
+        if (hasAttribute(name))
+        {
+            xmlSetProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8)), BAD_CAST LPCSTR(CW2A(value, CP_UTF8)));
+        }
+        else
+        {
+            xmlNewProp(static_cast<xmlNodePtr>(node), BAD_CAST LPCSTR(CW2A(name, CP_UTF8)), BAD_CAST LPCSTR(CW2A(value, CP_UTF8)));
         }
     }
 
     void XmlNode::listAttributes(std::function<void(LPCWSTR, LPCWSTR)> onAttribute) const
     {
-        if (node != nullptr)
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+
+        for (xmlAttrPtr attribute = static_cast<xmlNodePtr>(node)->properties; attribute != nullptr; attribute = attribute->next)
         {
-            for (xmlAttrPtr attribute = static_cast<xmlNodePtr>(node)->properties; attribute != nullptr; attribute = attribute->next)
-            {
-                CA2W name(LPCSTR(attribute->name), CP_UTF8);
-                onAttribute(name, getAttribute(name));
-            }
+            CA2W name(LPCSTR(attribute->name), CP_UTF8);
+            onAttribute(name, getAttribute(name));
         }
     }
 
     bool XmlNode::hasSiblingElement(LPCWSTR type) const
     {
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+
         bool hasSiblingElement = false;
-        if (node != nullptr)
+        CW2A typeUtf8(type, CP_UTF8);
+        for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
         {
-            CW2A typeUtf8(type, CP_UTF8);
-            for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
+            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
-                {
-                    hasSiblingElement = true;
-                    break;
-                }
+                hasSiblingElement = true;
+                break;
             }
         }
 
@@ -162,36 +160,33 @@ namespace Gek
 
     XmlNode XmlNode::nextSiblingElement(LPCWSTR type) const
     {
-        XmlNode nextNode(nullptr);
-        if (node != nullptr)
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+
+        XmlNode nextNode();
+        CW2A typeUtf8(type, CP_UTF8);
+        for (xmlNodePtr checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
         {
-            CW2A typeUtf8(type, CP_UTF8);
-            for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
+            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
-                {
-                    nextNode = XmlNode(checkingNode);
-                    break;
-                }
+                return XmlNode(checkingNode);
             }
         }
 
-        return nextNode;
+        return XmlNode();
     }
 
     bool XmlNode::hasChildElement(LPCWSTR type) const
     {
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+
         bool hasChildElement = false;
-        if (node != nullptr)
+        CW2A typeUtf8(type, CP_UTF8);
+        for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
         {
-            CW2A typeUtf8(type, CP_UTF8);
-            for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
+            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
-                {
-                    hasChildElement = true;
-                    break;
-                }
+                hasChildElement = true;
+                break;
             }
         }
 
@@ -200,50 +195,43 @@ namespace Gek
 
     XmlNode XmlNode::firstChildElement(LPCWSTR type) const
     {
-        XmlNode childNode(nullptr);
-        if (node != nullptr)
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+
+        CW2A typeUtf8(type, CP_UTF8);
+        for (xmlNodePtr checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
         {
-            CW2A typeUtf8(type, CP_UTF8);
-            for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
+            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, LPCSTR(checkingNode->name)) == 0))
-                {
-                    childNode = XmlNode(checkingNode);
-                    break;
-                }
+                return XmlNode(checkingNode);
             }
         }
 
-        return childNode;
+        return XmlNode();
     }
 
     XmlNode XmlNode::createChildElement(LPCWSTR type, LPCWSTR format, ...)
     {
-        XmlNode newChildNode(nullptr);
-        if (node != nullptr)
-        {
-            CStringW content;
-            if (format != nullptr)
-            {
-                va_list variableList;
-                va_start(variableList, format);
-                content.FormatV(format, variableList);
-                va_end(variableList);
-            }
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
 
-            xmlNodePtr childNode = xmlNewChild(static_cast<xmlNodePtr>(node), nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)), BAD_CAST LPCSTR(CW2A(content, CP_UTF8)));
-            if (childNode != nullptr)
-            {
-                xmlAddChild(static_cast<xmlNodePtr>(node), childNode);
-                newChildNode = XmlNode(childNode);
-            }
+        CStringW content;
+        if (format != nullptr)
+        {
+            va_list variableList;
+            va_start(variableList, format);
+            content.FormatV(format, variableList);
+            va_end(variableList);
         }
 
-        return newChildNode;
+        xmlNodePtr childNode = xmlNewChild(static_cast<xmlNodePtr>(node), nullptr, BAD_CAST LPCSTR(CW2A(type, CP_UTF8)), BAD_CAST LPCSTR(CW2A(content, CP_UTF8)));
+        GEK_CHECK_EXCEPTION(childNode == nullptr, Xml::Exception, "Unable to create new child node: %S (%S)", type, content);
+
+        xmlAddChild(static_cast<xmlNodePtr>(node), childNode);
+
+        return XmlNode(childNode);
     }
 
-    XmlDocument::XmlDocument(void)
-        : document(nullptr)
+    XmlDocument::XmlDocument(void *document)
+        : document(document)
     {
     }
 
@@ -255,67 +243,40 @@ namespace Gek
         }
     }
 
-    HRESULT XmlDocument::create(LPCWSTR rootType)
+    XmlDocument XmlDocument::create(LPCWSTR rootType)
     {
-        if (document != nullptr)
-        {
-            xmlFreeDoc(static_cast<xmlDocPtr>(document));
-            document = nullptr;
-        }
+        xmlDocPtr document = xmlNewDoc(BAD_CAST "1.0");
+        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to create new document");
 
-        HRESULT resultValue = E_FAIL;
-        document = xmlNewDoc(BAD_CAST "1.0");
-        if (document != nullptr)
-        {
-            xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST LPCSTR(CW2A(rootType, CP_UTF8)));
-            if (rootNode != nullptr)
-            {
-                xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
-                resultValue = S_OK;
-            }
-        }
+        xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST LPCSTR(CW2A(rootType, CP_UTF8)));
+        GEK_CHECK_EXCEPTION(rootNode == nullptr, Xml::Exception, "Unable to create root node: %S", rootType);
 
-        return resultValue;
+        xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
+
+        return XmlDocument(document);
     }
 
-    HRESULT XmlDocument::load(LPCWSTR fileName, bool validateDTD)
+    XmlDocument XmlDocument::load(LPCWSTR fileName, bool validateDTD)
     {
-        if (document != nullptr)
-        {
-            xmlFreeDoc(static_cast<xmlDocPtr>(document));
-            document = nullptr;
-        }
-
-        HRESULT resultValue = E_FAIL;
         CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
-        document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
-        if (document != nullptr)
-        {
-            resultValue = S_OK;
-        }
+        xmlDocPtr document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
+        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to load document: %S", fileName);
 
-        return resultValue;
+        return XmlDocument(document);
     }
 
-    HRESULT XmlDocument::save(LPCWSTR fileName)
+    void XmlDocument::save(LPCWSTR fileName)
     {
-        HRESULT resultValue = E_FAIL;
-        if (document != nullptr)
-        {
-            CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
-            xmlSaveFormatFileEnc(CW2A(expandedFileName, CP_UTF8), static_cast<xmlDocPtr>(document), "UTF-8", 1);
-        }
+        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Invalid document encountered");
 
-        return resultValue;
+        CStringW expandedFileName(Gek::FileSystem::expandPath(fileName));
+        xmlSaveFormatFileEnc(CW2A(expandedFileName, CP_UTF8), static_cast<xmlDocPtr>(document), "UTF-8", 1);
     }
 
     XmlNode XmlDocument::getRoot(void) const
     {
-        if (document != nullptr)
-        {
-            return XmlNode(xmlDocGetRootElement(static_cast<xmlDocPtr>(document)));
-        }
+        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Invalid document encountered");
 
-        return XmlNode(nullptr);
+        return XmlNode(xmlDocGetRootElement(static_cast<xmlDocPtr>(document)));
     }
 }; // namespace Gek

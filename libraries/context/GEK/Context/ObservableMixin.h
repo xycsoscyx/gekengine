@@ -7,7 +7,8 @@
 
 namespace Gek
 {
-    class ObservableMixin : virtual public Observable
+    class ObservableMixin
+        : virtual public Observable
     {
     public:
         struct BaseEvent
@@ -45,11 +46,11 @@ namespace Gek
 
         void sendEvent(const BaseEvent &event) const;
 
-        static HRESULT addObserver(IUnknown *observableUnknown, Observer *observer);
-        static HRESULT removeObserver(IUnknown *observableUnknown, Observer *observer);
+        static void addObserver(Observable *observable, Observer *observer);
+        static void removeObserver(Observable *observable, Observer *observer);
 
         // ObservableInterface
-        STDMETHOD(addObserver)      (THIS_ Observer *observer);
-        STDMETHOD(removeObserver)   (THIS_ Observer *observer);
+        void addObserver(Observer *observer);
+        void removeObserver(Observer *observer);
     };
 }; // namespace Gek

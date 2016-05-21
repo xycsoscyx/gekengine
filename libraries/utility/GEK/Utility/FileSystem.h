@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Gek\Utility\Trace.h"
+#include "GEK\Utility\Trace.h"
 #include <functional>
 #include <vector>
 
@@ -8,11 +8,14 @@ namespace Gek
 {
     namespace FileSystem
     {
-        GEK_EXCEPTION_LIST(FileNotFound, FileReadError, FileWriteError);
+        GEK_BASE_EXCEPTION();
+        GEK_EXCEPTION(FileNotFound);
+        GEK_EXCEPTION(FileReadError);
+        GEK_EXCEPTION(FileWriteError);
 
         CStringW expandPath(LPCWSTR fileName);
 
-        HRESULT find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<HRESULT(LPCWSTR fileName)> onFileFound);
+        void find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<bool(LPCWSTR fileName)> onFileFound);
 
         HMODULE loadLibrary(LPCWSTR fileName);
 

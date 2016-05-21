@@ -1,4 +1,5 @@
 #include "GEK\Context\ObservableMixin.h"
+#include "GEK\Utility\Trace.h"
 
 namespace Gek
 {
@@ -14,54 +15,32 @@ namespace Gek
         }
     }
 
-    HRESULT ObservableMixin::addObserver(IUnknown *observableUnknown, Observer *observer)
+    void ObservableMixin::addObserver(Observable *observable, Observer *observer)
     {
-        HRESULT resultValue = E_FAIL;
-        Observable *observable = dynamic_cast<Observable *>(observableUnknown);
-        if (observable)
-        {
-            resultValue = observable->addObserver(observer);
-        }
-
-        return resultValue;
+        observable->addObserver(observer);
     }
 
-    HRESULT ObservableMixin::removeObserver(IUnknown *observableUnknown, Observer *observer)
+    void ObservableMixin::removeObserver(Observable *observable, Observer *observer)
     {
-        HRESULT resultValue = E_FAIL;
-        Observable *observable = dynamic_cast<Observable *>(observableUnknown);
-        if (observable)
-        {
-            resultValue = observable->removeObserver(observer);
-        }
-
-        return resultValue;
+        observable->removeObserver(observer);
     }
 
     // Interface
-    STDMETHODIMP ObservableMixin::addObserver(Observer *observer)
+    void ObservableMixin::addObserver(Observer *observer)
     {
-        HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);
         if (observerIterator == observerList.end())
         {
             observerList.insert(observer);
-            resultValue = S_OK;
         }
-
-        return resultValue;
     }
 
-    STDMETHODIMP ObservableMixin::removeObserver(Observer *observer)
+    void ObservableMixin::removeObserver(Observer *observer)
     {
-        HRESULT resultValue = E_FAIL;
         auto observerIterator = observerList.find(observer);
         if (observerIterator != observerList.end())
         {
             observerList.erase(observerIterator);
-            resultValue = S_OK;
         }
-
-        return resultValue;
     }
 }; // namespace Gek

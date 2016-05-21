@@ -32,28 +32,28 @@ namespace Gek
     DECLARE_INTERFACE_IID(TransformRegistration, "62BAFD17-E5CB-4CA0-84B2-963836AE9836");
 }; // namespace Gek
 
-DECLARE_CONTEXT_SOURCE(Components)
-    ADD_CONTEXT_CLASS(Gek::FirstPersonCameraRegistration, Gek::FirstPersonCameraImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+DECLARE_PLUGIN_MAP(Components)
+    ADD_PLUGIN_CLASS(Gek::FirstPersonCameraRegistration, Gek::FirstPersonCameraImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::ThirdPersonCameraRegistration, Gek::ThirdPersonCameraImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+    ADD_PLUGIN_CLASS(Gek::ThirdPersonCameraRegistration, Gek::ThirdPersonCameraImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::CameraProcessorRegistration, Gek::CameraProcessorImplementation)
-        ADD_CLASS_TYPE(Gek::ProcessorType)
+    ADD_PLUGIN_CLASS(Gek::CameraProcessorRegistration, Gek::CameraProcessorImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ProcessorType)
 
-    ADD_CONTEXT_CLASS(Gek::ColorRegistration, Gek::ColorImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+    ADD_PLUGIN_CLASS(Gek::ColorRegistration, Gek::ColorImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::PointLightRegistration, Gek::PointLightImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+    ADD_PLUGIN_CLASS(Gek::PointLightRegistration, Gek::PointLightImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::SpotLightRegistration, Gek::SpotLightImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+    ADD_PLUGIN_CLASS(Gek::SpotLightRegistration, Gek::SpotLightImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::DirectionalLightRegistration, Gek::DirectionalLightImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
+    ADD_PLUGIN_CLASS(Gek::DirectionalLightRegistration, Gek::DirectionalLightImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
 
-    ADD_CONTEXT_CLASS(Gek::TransformRegistration, Gek::TransformImplementation)
-        ADD_CLASS_TYPE(Gek::ComponentType)
-END_CONTEXT_SOURCE
+    ADD_PLUGIN_CLASS(Gek::TransformRegistration, Gek::TransformImplementation)
+        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
+END_PLUGIN_MAP

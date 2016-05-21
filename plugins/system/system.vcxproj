@@ -175,7 +175,6 @@
   <ItemGroup>
     <ClInclude Include="GEK\System\AudioSystem.h" />
     <ClInclude Include="GEK\System\InputSystem.h" />
-    <ClInclude Include="GEK\System\OverlaySystem.h" />
     <ClInclude Include="GEK\System\VideoSystem.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

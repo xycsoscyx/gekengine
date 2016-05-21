@@ -4,11 +4,11 @@
 
 namespace Gek
 {
-    DECLARE_INTERFACE(Observer);
+    interface Observer;
 
-    DECLARE_INTERFACE_IID(Observable, "AC1B6840-905D-4303-A359-8990FFA1EAE1") : virtual public IUnknown
+    interface Observable
     {
-        STDMETHOD(addObserver)              (THIS_ Observer *observer) PURE;
-        STDMETHOD(removeObserver)           (THIS_ Observer *observer) PURE;
+        void addObserver(Observer *observer);
+        void removeObserver(Observer *observer);
     };
 }; // namespace Gek

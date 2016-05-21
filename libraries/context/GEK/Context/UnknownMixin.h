@@ -4,7 +4,8 @@
 
 namespace Gek
 {
-    class UnknownMixin : virtual public IUnknown
+    class UnknownMixin
+        : virtual public IUnknown
     {
     private:
         ULONG referenceCount;
