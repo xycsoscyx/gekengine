@@ -463,8 +463,8 @@ namespace Gek
             return result;
         }
 
-        template<typename CHAR, typename TYPE, typename... ARGS>
-        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> format(const CHAR *formatting, TYPE value, ARGS... args)
+        template<typename CHAR, typename TYPE, typename... ARGUMENTS>
+        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> format(const CHAR *formatting, TYPE value, ARGUMENTS... arguments)
         {
             CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> result;
             while (*formatting)
@@ -481,7 +481,7 @@ namespace Gek
                         ++formatting;
                         // Should verify format type here
                         result += from<CHAR>(value).GetString();
-                        result += format(formatting, args...);
+                        result += format(formatting, arguments...);
                         return result;
                     }
                 }

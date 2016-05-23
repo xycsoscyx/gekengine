@@ -53,12 +53,12 @@ namespace Gek
         }
 
         // Component
-        STDMETHODIMP_(std::type_index) getIdentifier(void) const
+        std::type_index getIdentifier(void) const
         {
             return typeid(DATA);
         }
 
-        STDMETHODIMP_(LPVOID) create(const Population::ComponentDefinition &componentData)
+        void *create(const Population::ComponentDefinition &componentData)
         {
             DATA *data = new DATA();
             if (data)
@@ -69,10 +69,9 @@ namespace Gek
             return data;
         }
 
-        STDMETHODIMP_(void) destroy(LPVOID voidData)
+        void destroy(void *data)
         {
-            DATA *data = static_cast<DATA *>(voidData);
-            delete data;
+            delete static_cast<DATA *>(data);
         }
     };
 }; // namespace Gek

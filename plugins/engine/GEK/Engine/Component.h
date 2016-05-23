@@ -7,14 +7,14 @@
 
 namespace Gek
 {
-    DECLARE_INTERFACE_IID(ComponentType, "7B71BEF1-A2B2-4791-A664-2EA631E04392");
+    interface ComponentType;
 
-    DECLARE_INTERFACE_IID(Component, "F1CA9EEC-0F09-45DA-BF24-0C70F5F96E3E") : virtual public IUnknown
+    interface Component
     {
-        STDMETHOD_(LPCWSTR, getName)                (THIS) const PURE;
-        STDMETHOD_(std::type_index, getIdentifier)  (THIS) const PURE;
+        LPCWSTR getName(void) const;
+        std::type_index getIdentifier(void) const;
 
-        STDMETHOD_(LPVOID, create)                  (const Population::ComponentDefinition &componentData) PURE;
-        STDMETHOD_(void, destroy)                   (LPVOID voidData) PURE;
+        void *create(const Population::ComponentDefinition &componentData);
+        void destroy(void *data);
     };
 }; // namespace Gek

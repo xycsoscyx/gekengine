@@ -14,11 +14,11 @@ namespace Gek
             CStringW _message;
 
         public:
-            template<typename CHAR, typename... ARGS>
-            Base(LPCSTR file, UINT32 line, const CHAR *format, ARGS... args)
+            template<typename CHAR, typename... ARGUMENTS>
+            Base(LPCSTR file, UINT32 line, const CHAR *format, ARGUMENTS... arguments)
                 : _file(file)
                 , _line(line)
-                , _message(String::format(format, args...))
+                , _message(String::format(format, arguments...))
             {
             }
 

@@ -12,17 +12,11 @@
     <ClCompile Include="ObservableMixin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ContextUserMixin.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Context.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Context\ContextUserMixin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Context\Observable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,9 +33,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\utility\GEK\Utility\Allocator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Context\COM.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

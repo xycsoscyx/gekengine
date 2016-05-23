@@ -21,7 +21,7 @@ namespace Gek
 
         void assign(UINT64 identifier)
         {
-            this->identifier = TYPE(identifier);
+            void->identifier = TYPE(identifier);
         }
 
         operator bool() const
@@ -36,12 +36,12 @@ namespace Gek
 
         bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (this->identifier == handle.identifier);
+            return (void->identifier == handle.identifier);
         }
 
         bool operator != (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (this->identifier != handle.identifier);
+            return (void->identifier != handle.identifier);
         }
     };
 
@@ -62,45 +62,45 @@ namespace Gek
         };
     }; // TextureFlags
 
-    DECLARE_INTERFACE(RenderPipeline);
-    DECLARE_INTERFACE(RenderContext);
+    interface RenderPipeline;
+    interface RenderContext;
 
-    DECLARE_INTERFACE_IID(PluginResources, "5E319AC8-2369-416E-B010-ED3E860405C4") : virtual public IUnknown
+    interface PluginResources
     {
-        STDMETHOD_(PluginHandle, loadPlugin)                (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(MaterialHandle, loadMaterial)            (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(ResourceHandle, loadTexture)             (THIS_ LPCWSTR fileName, LPCWSTR fallback, UINT32 flags) PURE;
+        PluginHandle loadPlugin(LPCWSTR fileName);
+        MaterialHandle loadMaterial(LPCWSTR fileName);
+        ResourceHandle loadTexture(LPCWSTR fileName, LPCWSTR fallback, UINT32 flags);
 
-        STDMETHOD_(ResourceHandle, createTexture)           (THIS_ LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) PURE;
-        STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
-        STDMETHOD_(ResourceHandle, createBuffer)            (THIS_ LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) PURE;
+        ResourceHandle createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1);
+        ResourceHandle createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr);
+        ResourceHandle createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr);
 
-        STDMETHOD(mapBuffer)                                (THIS_ ResourceHandle buffer, void **data) PURE;
-        STDMETHOD_(void, unmapBuffer)                       (THIS_ ResourceHandle buffer) PURE;
+        void mapBuffer(ResourceHandle buffer, void **data);
+        void unmapBuffer(ResourceHandle buffer);
 
-        STDMETHOD_(void, setResource)                       (THIS_ RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
-        STDMETHOD_(void, setUnorderedAccess)                (THIS_ RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
-        STDMETHOD_(void, setConstantBuffer)                 (THIS_ RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) PURE;
-        STDMETHOD_(void, setVertexBuffer)                   (THIS_ RenderContext *renderContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset) PURE;
-        STDMETHOD_(void, setIndexBuffer)                    (THIS_ RenderContext *renderContext, ResourceHandle resourceHandle, UINT32 offset) PURE;
+        void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage);
+        void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage);
+        void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage);
+        void setVertexBuffer(RenderContext *renderContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset);
+        void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, UINT32 offset);
     };
 
-    DECLARE_INTERFACE_IID(Resources, "2B0EB375-460C-46E8-9B99-DB21AB54FBA5") : virtual public PluginResources
+    interface Resources : public PluginResources
     {
-        STDMETHOD(initialize)                               (THIS_ IUnknown *initializerContext) PURE;
-        STDMETHOD_(void, clearLocal)                        (THIS) PURE;
+        void initialize(IUnknown *initializerContext);
+        void clearLocal(void);
         
-        STDMETHOD_(ShaderHandle, getShader)                 (THIS_ MaterialHandle material) PURE;
-        STDMETHOD_(LPVOID, getResourceHandle)               (THIS_ const std::type_index &type, LPCWSTR name) PURE;
+        ShaderHandle getShader(MaterialHandle material);
+        void *getResourceHandle(const std::type_index &type, LPCWSTR name);
 
         template <typename HANDLE>
         HANDLE getResourceHandle(LPCWSTR name)
         {
-            LPVOID handle = getResourceHandle(typeid(HANDLE), name);
+            void *handle = getResourceHandle(typeid(HANDLE), name);
             return (handle ? *reinterpret_cast<HANDLE *>(handle) : ResourceHandle());
         }
 
-        STDMETHOD_(IUnknown *, getResource)                 (THIS_ const std::type_index &type, LPCVOID handle) PURE;
+        IUnknown *getResource(const std::type_index &type, LPCVOID handle);
 
         template <typename RESOURCE, typename HANDLE>
         RESOURCE *getResource(HANDLE handle)
@@ -108,28 +108,28 @@ namespace Gek
             return dynamic_cast<RESOURCE *>(getResource(typeid(HANDLE), LPCVOID(&handle)));
         }
 
-        STDMETHOD_(ShaderHandle, loadShader)                (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(void, loadResourceList)                  (THIS_ ShaderHandle shader, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) PURE;
-        STDMETHOD_(ProgramHandle, loadComputeProgram)       (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) PURE;
-        STDMETHOD_(ProgramHandle, loadPixelProgram)         (THIS_ LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) PURE;
+        ShaderHandle loadShader(LPCWSTR fileName);
+        void loadResourceList(ShaderHandle shader, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList);
+        ProgramHandle loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
+        ProgramHandle loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
 
-        STDMETHOD_(RenderStateHandle, createRenderState)  (THIS_ const Video::RenderState &renderState) PURE;
-        STDMETHOD_(DepthStateHandle, createDepthState)    (THIS_ const Video::DepthState &depthState) PURE;
-        STDMETHOD_(BlendStateHandle, createBlendState)    (THIS_ const Video::UnifiedBlendState &blendState) PURE;
-        STDMETHOD_(BlendStateHandle, createBlendState)    (THIS_ const Video::IndependentBlendState &blendState) PURE;
+        RenderStateHandle createRenderState(const Video::RenderState &renderState);
+        DepthStateHandle createDepthState(const Video::DepthState &depthState);
+        BlendStateHandle createBlendState(const Video::UnifiedBlendState &blendState);
+        BlendStateHandle createBlendState(const Video::IndependentBlendState &blendState);
 
-        STDMETHOD_(void, flip)                              (THIS_ ResourceHandle resourceHandle) PURE;
-        STDMETHOD_(void, generateMipMaps)                   (THIS_ RenderContext *renderContext, ResourceHandle resourceHandle) PURE;
-        STDMETHOD_(void, copyResource)                      (THIS_ ResourceHandle destinationHandle, ResourceHandle sourceHandle) PURE;
+        void flip(ResourceHandle resourceHandle);
+        void generateMipMaps(RenderContext *renderContext, ResourceHandle resourceHandle);
+        void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle);
 
-        STDMETHOD_(void, setRenderState)                   (THIS_ RenderContext *renderContext, RenderStateHandle renderStateHandle) PURE;
-        STDMETHOD_(void, setDepthState)                    (THIS_ RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference) PURE;
-        STDMETHOD_(void, setBlendState)                    (THIS_ RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask) PURE;
-        STDMETHOD_(void, setProgram)                        (THIS_ RenderPipeline *renderPipeline, ProgramHandle programHandle) PURE;
-        STDMETHOD_(void, setRenderTargets)                  (THIS_ RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle *depthBuffer) PURE;
-        STDMETHOD_(void, clearRenderTarget)                 (THIS_ RenderContext *renderContext, ResourceHandle resourceHandle  , const Math::Color &color) PURE;
-        STDMETHOD_(void, clearDepthStencilTarget)           (THIS_ RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) PURE;
-        STDMETHOD_(void, setBackBuffer)                     (THIS_ RenderContext *renderContext, ResourceHandle *depthBuffer) PURE;
+        void setRenderState(RenderContext *renderContext, RenderStateHandle renderStateHandle);
+        void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference);
+        void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask);
+        void setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle);
+        void setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle *depthBuffer);
+        void clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle  , const Math::Color &color);
+        void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear);
+        void setBackBuffer(RenderContext *renderContext, ResourceHandle *depthBuffer);
     };
 
     DECLARE_INTERFACE_IID(ResourcesRegistration, "1EF802ED-5694-479F-AE59-FA3F6F30808A");

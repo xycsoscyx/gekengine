@@ -2,93 +2,54 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\COM.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
-#include <atlbase.h>
-#include <atlstr.h>
-#include <atlpath.h>
-#include <list>
 #include <unordered_map>
+#include <list>
 
 namespace Gek
 {
     class ContextImplementation
-        : virtual public ObservableMixin
-        , virtual public Context
+        : virtual public Context
     {
     private:
-        std::list<CStringW> searchPathList;
-
         std::list<HMODULE> moduleList;
-        std::unordered_map<CLSID, std::function<std::shared_ptr<Gek::ContextUser>(void)>> classList;
-        std::unordered_map<CLSID, std::vector<CLSID>> typedClassList;
+        std::unordered_map<std::wstring, std::function<std::shared_ptr<ContextUser>(Context *, void *)>> classMap;
+        std::unordered_multimap<std::wstring, std::wstring> typeMap;
 
     public:
-        ContextImplementation(void)
-        {
-        }
-
-        ~ContextImplementation(void)
-        {
-            classList.clear();
-            typedClassList.clear();
-            for (auto &module : moduleList)
-            {
-                FreeLibrary(module);
-            }
-        }
-
-        Context *getContext(void)
-        {
-            return this;
-        }
-
-        // Context
-        void addSearchPath(LPCWSTR fileName)
-        {
-            GEK_TRACE_EVENT("Adding plugin search path: %S", GEK_PARAMETER(fileName));
-            searchPathList.push_back(fileName);
-        }
-
-        void initialize(void)
+        ContextImplementation(std::vector<std::wstring> searchPathList)
         {
             GEK_TRACE_FUNCTION();
 
             searchPathList.push_back(L"%root%");
             for (auto &searchPath : searchPathList)
             {
-                Gek::FileSystem::find(searchPath,L"*.dll", false, [&](LPCWSTR fileName) -> bool
+                Gek::FileSystem::find(searchPath.c_str(), L"*.dll", false, [&](const wchar_t *fileName) -> bool
                 {
                     HMODULE module = LoadLibrary(fileName);
                     if (module)
                     {
-                        typedef void(*GEKGETMODULECLASSES)(std::unordered_map<CLSID, std::function<std::shared_ptr<Gek::ContextUser>(void)>> &, std::unordered_map<CLSID, std::vector<CLSID >> &);
-                        GEKGETMODULECLASSES getModuleClasses = (GEKGETMODULECLASSES)GetProcAddress(module, "GEKGetModuleClasses");
-                        if (getModuleClasses)
+                        typedef void(*InitializePlugin)(std::function<void(const wchar_t *, std::function<std::shared_ptr<ContextUser>(Context *, void *)>)> addClass, std::function<void(const wchar_t *, const wchar_t *)> addType);
+                        InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "GEKInitializePlugin");
+                        if (initializePlugin)
                         {
                             GEK_TRACE_EVENT("Plugin found: %S", GEK_PARAMETER(fileName));
 
-                            moduleList.push_back(module);
-                            std::unordered_map<CLSID, std::function<std::shared_ptr<Gek::ContextUser>(void)>> moduleClassList;
-                            std::unordered_map<CLSID, std::vector<CLSID>> moduleTypedClassList;
-                            getModuleClasses(moduleClassList, moduleTypedClassList);
-                            for (auto &moduleClass : moduleClassList)
+                            initializePlugin([this](const wchar_t *className, std::function<std::shared_ptr<ContextUser>(Context *, void *)> creator) -> void
                             {
-                                if (classList.find(moduleClass.first) == classList.end())
+                                if (classMap.count(className) == 0)
                                 {
-                                    classList[moduleClass.first] = moduleClass.second;
+                                    classMap[className] = creator;
                                 }
                                 else
                                 {
-                                    GEK_TRACE_ERROR("Duplicate class entry located", GEK_PARAMETER(moduleClass.first));
+                                    GEK_TRACE_ERROR("Duplicate class entry located", GEK_PARAMETER(className));
                                 }
-                            }
-
-                            for (auto &moduleTypedClass : moduleTypedClassList)
+                            }, [this](const wchar_t *typeName, const wchar_t *className) -> void
                             {
-                                typedClassList[moduleTypedClass.first].insert(typedClassList[moduleTypedClass.first].end(), moduleTypedClass.second.begin(), moduleTypedClass.second.end());
-                            }
+                                typeMap.insert(std::make_pair(typeName, className));
+                            });
                         }
                     }
                     else
@@ -102,35 +63,38 @@ namespace Gek
             }
         }
 
-        std::shared_ptr<Gek::ContextUser> createInstance(REFGUID className)
+        ~ContextImplementation(void)
         {
-            auto classIterator = classList.find(className);
-            GEK_CHECK_EXCEPTION(classIterator == classList.end(), BaseException, "Unable to find requested class");
-
-            std::shared_ptr<Gek::ContextUser> object((*classIterator).second());
-            object->registerContext(this);
-            return object;
+            typeMap.clear();
+            classMap.clear();
+            for (auto &module : moduleList)
+            {
+                FreeLibrary(module);
+            }
         }
 
-        void createEachType(REFCLSID typeName, std::function<void(REFCLSID, std::shared_ptr<Gek::ContextUser>)> onCreateInstance)
+        // Context
+        std::function<std::shared_ptr<ContextUser>(Context *, void *)> getCreator(const wchar_t *name)
         {
-            GEK_REQUIRE(onCreateInstance);
+            return classMap[name];
+        }
 
-            auto typedClassIterator = typedClassList.find(typeName);
-            if (typedClassIterator != typedClassList.end())
+        void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType)
+        {
+            GEK_REQUIRE(typeName);
+            GEK_REQUIRE(onType);
+
+            auto typeIterator = typeMap.equal_range(typeName);
+            for (auto iterator = typeIterator.first; iterator != typeIterator.second; ++iterator)
             {
-                for (auto &className : (*typedClassIterator).second)
-                {
-                    std::shared_ptr<Gek::ContextUser> object(createInstance(className));
-                    onCreateInstance(className, object);
-                };
+                onType((*iterator).second.c_str());
             }
         }
     };
 
-    std::shared_ptr<Context> Context::create(void)
+    ContextPtr Context::create(const std::vector<std::wstring> &searchPathList)
     {
         GEK_TRACE_FUNCTION();
-        return std::dynamic_pointer_cast<Context>(std::make_shared<ContextImplementation>());
+        return std::dynamic_pointer_cast<Context>(std::make_shared<ContextImplementation>(searchPathList));
     }
 };

@@ -23,8 +23,8 @@ namespace Gek
         }
     };
 
-    DECLARE_INTERFACE_IID(ActionObserver, "B1358995-5C9A-4177-AD73-D7F2DB0FD90B") : virtual public Observer
+    interface ActionObserver
     {
-        STDMETHOD_(void, onAction)          (THIS_ LPCWSTR name, const ActionParam &param) { };
+        void onAction(LPCWSTR name, const ActionParam &param) = default;
     };
 }; // namespace Gek

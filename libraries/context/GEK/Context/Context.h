@@ -1,19 +1,32 @@
 #pragma once
 
-#include "GEK\Context\Observer.h"
+#include <Windows.h>
 #include <functional>
-#include <typeindex>
+#include <string>
+#include <memory>
+#include <vector>
+
+#define GEK_PREDECLARE(TYPE) class TYPE;
+#define GEK_INTERFACE(TYPE) class TYPE; typedef std::shared_ptr<TYPE> TYPE##Ptr; class TYPE
 
 namespace Gek
 {
-    interface Context
-    {
-        static std::shared_ptr<Context> create(void);
-    
-        virtual void addSearchPath(LPCWSTR fileName);
-        virtual void initialize(void);
+    GEK_PREDECLARE(ContextUser);
 
-        virtual std::shared_ptr<ContextUser> createInstance(REFCLSID className);
-        virtual void createEachType(REFCLSID typeName, std::function<void(REFCLSID, std::shared_ptr<ContextUser>)> onCreateInstance);
+    GEK_INTERFACE(Context)
+    {
+    public:
+        static ContextPtr create(const std::vector<std::wstring> &searchPathList);
+
+        virtual std::function<std::shared_ptr<ContextUser>(Context *, void *)> getCreator(const wchar_t *name) = 0;
+
+        template <typename TYPE, typename... ARGUMENTS>
+        std::shared_ptr<TYPE> createClass(const wchar_t *name, ARGUMENTS... arguments)
+        {
+            std::tuple<ARGUMENTS...> tuple(arguments...);
+            return std::dynamic_pointer_cast<TYPE>(getCreator(name)(this, reinterpret_cast<void *>(&tuple)));
+        }
+
+        virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) = 0;
     };
 }; // namespace Gek

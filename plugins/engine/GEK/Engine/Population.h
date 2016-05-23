@@ -12,10 +12,10 @@
 
 namespace Gek
 {
-    DECLARE_INTERFACE(Entity);
-    DECLARE_INTERFACE(PopulationObserver);
+    interface Entity;
+    interface PopulationObserver;
 
-    DECLARE_INTERFACE_IID(Population, "43DF2FD7-3BE2-4333-86ED-CB1221C6599B") : virtual public IUnknown
+    interface Population
     {
         struct ComponentDefinition : public CStringW, public std::unordered_map<CStringW, CStringW>
         {
@@ -25,52 +25,52 @@ namespace Gek
         {
         };
 
-        STDMETHOD(initialize)                       (THIS_ IUnknown *initializerContext) PURE;
-        STDMETHOD_(void, destroy)                   (THIS) PURE;
+        void initialize(IUnknown *initializerContext);
+        void destroy(void);
 
-        STDMETHOD_(float, getWorldTime)             (THIS) PURE;
-        STDMETHOD_(float, getFrameTime)             (THIS) PURE;
+        float getWorldTime(void);
+        float getFrameTime(void);
 
-        STDMETHOD_(void, update)                    (THIS_ bool isIdle, float frameTime = 0.0f) PURE;
+        void update(bool isIdle, float frameTime = 0.0f);
 
-        STDMETHOD(load)                             (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD(save)                             (THIS_ LPCWSTR fileName) PURE;
-        STDMETHOD_(void, free)                      (THIS) PURE;
+        void load(LPCWSTR fileName);
+        void save(LPCWSTR fileName);
+        void free(void);
 
-        STDMETHOD_(Entity *, createEntity)          (THIS_ const EntityDefinition &entityParameterList, LPCWSTR name = nullptr) PURE;
-        STDMETHOD_(void, killEntity)                (THIS_ Entity *entity) PURE;
-        STDMETHOD_(Entity *, getNamedEntity)        (THIS_ LPCWSTR name) PURE;
+        Entity *createEntity(const EntityDefinition &entityParameterList, LPCWSTR name = nullptr);
+        void killEntity(Entity *entity);
+        Entity *getNamedEntity(LPCWSTR name);
 
-        STDMETHOD_(void, listEntities)              (THIS_ std::function<void(Entity *)> onEntity) PURE;
+        void listEntities(std::function<void(Entity *)> onEntity);
 
-        template<typename... ARGS>
+        template<typename... ARGUMENTS>
         void listEntities(std::function<void(Entity *)> onEntity)
         {
             listEntities([onEntity](Entity *entity) -> void
             {
-                if (entity->hasComponents<ARGS...>())
+                if (entity->hasComponents<ARGUMENTS...>())
                 {
                     onEntity(entity);
                 }
             });
         }
 
-        STDMETHOD_(void, listProcessors)            (THIS_ std::function<void(Processor *)> onProcessor) PURE;
+        void listProcessors(std::function<void(Processor *)> onProcessor);
 
-        STDMETHOD_(UINT32, setUpdatePriority)       (THIS_ PopulationObserver *observer, UINT32 priority) PURE;
-        STDMETHOD_(void, removeUpdatePriority)      (THIS_ UINT32 updateHandle) PURE;
+        UINT32 setUpdatePriority(PopulationObserver *observer, UINT32 priority);
+        void removeUpdatePriority(UINT32 updateHandle);
     };
 
     DECLARE_INTERFACE_IID(PopulationObserver, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9") : virtual public Observer
     {
-        STDMETHOD_(void, onLoadBegin)               (THIS) { };
-        STDMETHOD_(void, onLoadEnd)                 (THIS_ HRESULT resultValue) { };
-        STDMETHOD_(void, onFree)                    (THIS) { };
+        void onLoadBegin(void) = default;
+        void onLoadEnd(HRESULT resultValue) = default;
+        void onFree(void) = default;
 
-        STDMETHOD_(void, onEntityCreated)           (THIS_ Entity *entity) { };
-        STDMETHOD_(void, onEntityDestroyed)         (THIS_ Entity *entity) { };
+        void onEntityCreated(Entity *entity) = default;
+        void onEntityDestroyed(Entity *entity) = default;
 
-        STDMETHOD_(void, onUpdate)                  (THIS_ UINT32 handle, bool isIdle) { };
+        void onUpdate(UINT32 handle, bool isIdle) = default;
     };
 
     DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");

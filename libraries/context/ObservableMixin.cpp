@@ -15,16 +15,6 @@ namespace Gek
         }
     }
 
-    void ObservableMixin::addObserver(Observable *observable, Observer *observer)
-    {
-        observable->addObserver(observer);
-    }
-
-    void ObservableMixin::removeObserver(Observable *observable, Observer *observer)
-    {
-        observable->removeObserver(observer);
-    }
-
     // Interface
     void ObservableMixin::addObserver(Observer *observer)
     {

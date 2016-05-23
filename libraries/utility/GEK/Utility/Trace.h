@@ -14,11 +14,11 @@ namespace Gek
     {
     }
 
-    template<typename VALUE, typename... ARGS>
-    void getParameters(nlohmann::json &json, std::pair<LPCSTR, VALUE> &value, ARGS&... args)
+    template<typename VALUE, typename... ARGUMENTS>
+    void getParameters(nlohmann::json &json, std::pair<LPCSTR, VALUE> &value, ARGUMENTS&... arguments)
     {
-        json["args"][value.first] = String::from<char>(value.second);
-        getParameters(json, args...);
+        json["arguments"][value.first] = String::from<char>(value.second);
+        getParameters(json, arguments...);
     }
 
     void inline trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function)
@@ -35,8 +35,8 @@ namespace Gek
         trace((profileData.dump(4) + ",\r\n").c_str());
     }
 
-    template<typename... ARGS>
-    void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, ARGS&... args)
+    template<typename... ARGUMENTS>
+    void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, ARGUMENTS&... arguments)
     {
         nlohmann::json profileData = {
             { "name", function },
@@ -47,12 +47,12 @@ namespace Gek
             { "tid", GetCurrentThreadId() },
         };
 
-        getParameters(profileData, args...);
+        getParameters(profileData, arguments...);
         trace((profileData.dump(4) + ",\r\n").c_str());
     }
 
-    template<typename... ARGS>
-    void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, LPCSTR message, ARGS&... args)
+    template<typename... ARGUMENTS>
+    void trace(LPCSTR type, LPCSTR category, ULONGLONG timeStamp, LPCSTR function, LPCSTR message, ARGUMENTS&... arguments)
     {
         nlohmann::json profileData = {
             { "name", function },
@@ -63,10 +63,10 @@ namespace Gek
             { "tid", GetCurrentThreadId() },
         };
 
-        getParameters(profileData, args...);
+        getParameters(profileData, arguments...);
         if (message)
         {
-            profileData["args"]["message"] = message;
+            profileData["arguments"]["message"] = message;
         }
 
         trace((profileData.dump(4) + ",\r\n").c_str());
@@ -87,12 +87,12 @@ namespace Gek
             trace("B", category, GetTickCount64(), function);
         }
 
-        template<typename... ARGS>
-        TraceScope(LPCSTR category, LPCSTR function, ARGS &... args)
+        template<typename... ARGUMENTS>
+        TraceScope(LPCSTR category, LPCSTR function, ARGUMENTS &... arguments)
             : category(category)
             , function(function)
         {
-            trace("B", category, GetTickCount64(), function, args...);
+            trace("B", category, GetTickCount64(), function, arguments...);
         }
 
         ~TraceScope(void)
@@ -109,7 +109,7 @@ namespace Gek
 
     public:
         BaseException(LPCSTR function, UINT32 line, LPCSTR message);
-        virtual ~BaseException(void) { };
+        virtual ~BaseException(void) = default;
 
         LPCSTR where(void);
         UINT32 when(void);

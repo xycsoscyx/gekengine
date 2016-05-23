@@ -46,9 +46,6 @@ namespace Gek
 
         void sendEvent(const BaseEvent &event) const;
 
-        static void addObserver(Observable *observable, Observer *observer);
-        static void removeObserver(Observable *observable, Observer *observer);
-
         // ObservableInterface
         void addObserver(Observer *observer);
         void removeObserver(Observer *observer);

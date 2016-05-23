@@ -4,10 +4,10 @@
 
 namespace Gek
 {
-    DECLARE_INTERFACE_IID(Entity, "F5F5D5D3-E409-437D-BF3B-801DFA230C6C") : virtual public IUnknown
+    interface Entity
     {
-        STDMETHOD_(bool, hasComponent)              (THIS_ const std::type_index &type) PURE;
-        STDMETHOD_(LPVOID, getComponent)            (THIS_ const std::type_index &type) PURE;
+        bool hasComponent(const std::type_index &type);
+        LPVOID getComponent(const std::type_index &type);
 
         template <typename CLASS>
         bool hasComponent(void)
@@ -15,10 +15,10 @@ namespace Gek
             return hasComponent(typeid(CLASS));
         }
 
-        template<typename... ARGS>
+        template<typename... ARGUMENTS>
         bool hasComponents(void)
         {
-            std::vector<bool> hasComponents({ hasComponent<ARGS>()... });
+            std::vector<bool> hasComponents({ hasComponent<ARGUMENTS>()... });
             return std::find_if(hasComponents.begin(), hasComponents.end(), [&](bool hasComponent) -> bool
             {
                 return !hasComponent;

@@ -693,7 +693,7 @@ namespace Gek
 
         BOOL sciterOnTiScriptMethodCall(TISCRIPT_METHOD_PARAMS *parameters)
         {
-            tiscript::args arguments(parameters->vm);
+            tiscript::arguments arguments(parameters->vm);
             return false;
         }
 

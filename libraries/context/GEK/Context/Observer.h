@@ -1,10 +1,10 @@
 #pragma once
 
-#include <Windows.h>
+#include "GEK\Context\Context.h"
 
 namespace Gek
 {
-    interface Observer
+    GEK_INTERFACE(Observer)
     {
     };
 }; // namespace Gek

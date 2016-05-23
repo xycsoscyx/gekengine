@@ -9,27 +9,27 @@
 #include <memory>
 
 #define REGISTER_CLASS(CLASS)                                                                       \
-std::shared_ptr<Gek::ContextUser> CLASS##CreateInstance(void)                                       \
+std::shared_ptr<Gek::ContextUser> CLASS##CreateInstance(void *parameters)                           \
 {                                                                                                   \
     return std::dynamic_pointer_cast<Gek::ContextUser>(std::make_shared<CLASS>());                  \
 }
 
 #define DECLARE_REGISTERED_CLASS(CLASS)                                                             \
-extern std::shared_ptr<Gek::ContextUser> CLASS##CreateInstance(void);
+extern std::shared_ptr<Gek::ContextUser> CLASS##CreateInstance(void *parameters);
 
 #define DECLARE_PLUGIN_MAP(SOURCENAME)                                                              \
 extern "C" __declspec(dllexport)                                                                    \
 void GEKGetModuleClasses(                                                                           \
-    std::unordered_map<CLSID, std::function<std::shared_ptr<Gek::ContextUser>(void)>> &classList,   \
-    std::unordered_map<CLSID, std::vector<CLSID>> &typedClassList)                                  \
+    std::unordered_map<CStringW, std::function<std::shared_ptr<Gek::ContextUser>(void)>> &classList,\
+    std::unordered_map<CStringW, std::vector<CStringW>> &typedClassList)                            \
 {                                                                                                   \
-    CLSID lastClassName = GUID_NULL;
+    CStringW lastClassName;
 
 #define ADD_PLUGIN_CLASS(CLASSNAME, CLASS)                                                          \
-    if (classList.find(__uuidof(CLASSNAME)) == classList.end())                                     \
+    if (classList.find(CLASSNAME) == classList.end())                                               \
     {                                                                                               \
-        classList[__uuidof(CLASSNAME)] = CLASS##CreateInstance;                                     \
-        lastClassName = __uuidof(CLASSNAME);                                                        \
+        classList[CLASSNAME] = CLASS##CreateInstance;                                               \
+        lastClassName = CLASSNAME;                                                                  \
     }                                                                                               \
     else                                                                                            \
     {                                                                                               \
@@ -37,7 +37,7 @@ void GEKGetModuleClasses(                                                       
     }
 
 #define ADD_PLUGIN_CLASS_TYPE(TYPEID)                                                               \
-    typedClassList[__uuidof(TYPEID)].push_back(lastClassName);
+    typedClassList[TYPEID].push_back(lastClassName);
 
 #define END_PLUGIN_MAP                                                                              \
 }

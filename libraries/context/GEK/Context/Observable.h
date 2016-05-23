@@ -1,14 +1,15 @@
 #pragma once
 
-#include <Windows.h>
+#include "GEK\Context\Context.h"
 
 namespace Gek
 {
-    interface Observer;
+    GEK_PREDECLARE(Observer);
 
-    interface Observable
+    GEK_INTERFACE(Observable)
     {
-        void addObserver(Observer *observer);
-        void removeObserver(Observer *observer);
+    public:
+        virtual void addObserver(Observer *observer) = 0;
+        virtual void removeObserver(Observer *observer) = 0;
     };
 }; // namespace Gek

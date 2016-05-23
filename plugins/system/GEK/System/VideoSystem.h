@@ -446,7 +446,7 @@ namespace Gek
         void setConstantBuffer(VideoBuffer *constantBuffer, UINT32 stage);
         void setSamplerState(VideoObject *samplerState, UINT32 stage);
         void setResource(VideoObject *resource, UINT32 stage);
-        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage) { };
+        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage) = default;
     };
 
     interface VideoContext
