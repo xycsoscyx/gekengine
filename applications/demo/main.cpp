@@ -162,9 +162,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     return resultValue;
 }
 
-int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ LPWSTR strCommandLine, _In_ int nCmdShow)
+int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
 {
-    static const LPCWSTR materialFormat = \
+    static const const wchar_t *materialFormat = \
         L"<?xml version=\"1.0\"?>\r\n" \
         L"<material>\r\n" \
         L"    <shader>standard</shader>\r\n" \
@@ -176,14 +176,14 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"    </maps>\r\n" \
         L"</material>";
 
-    static const LPCWSTR entityFormat = \
+    static const const wchar_t *entityFormat = \
         L"        <entity>\r\n" \
         L"            <transform position=\"(%f,2.0,%f)\" scale=\"(0.5,0.5,0.5)\" />\r\n" \
         L"            <!--color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color-->\r\n" \
         L"            <shape skin=\"debug//r%d_m%d\" parameters=\"1\">sphere</shape>\r\n" \
         L"        </entity>\r\n";
 
-    static const LPCWSTR materialLibraryFormat = \
+    static const const wchar_t *materialLibraryFormat = \
         L"    <effect id=\"debug_%name%\">\r\n" \
         L"      <profile_COMMON>\r\n" \
         L"        <newparam sid=\"%name%_png-surface\">\r\n" \
@@ -248,7 +248,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"      </extra>\r\n" \
         L"    </effect>\r\n";
 
-    static const LPCWSTR fileLibraryFormat = \
+    static const const wchar_t *fileLibraryFormat = \
         L"    <image id=\"%name%_png\">\r\n" \
         L"      <init_from>../textures/debug/%name%.png</init_from>\r\n" \
         L"    </image>\r\n";
@@ -289,7 +289,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 #endif
 
         Gek::traceInitialize();
-        std::shared_ptr<Gek::Context> context(Gek::Context::create(searchPathList));
+        Gek::ContextPtr context(Gek::Context::create(searchPathList));
         if (context)
         {
             WNDCLASS kClass;
@@ -347,7 +347,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
                 if (window)
                 {
-                    std::shared_ptr<Gek::Engine> engineCore(context->createClass<Gek::Engine>(L"GEKEngine", window));
+                    Gek::EnginePtr engineCore(context->createClass<Gek::Engine>(L"GEKEngine", window));
                     if (engineCore)
                     {
                         SetWindowLongPtr(window, GWLP_USERDATA, LONG(engineCore.get()));

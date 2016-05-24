@@ -35,13 +35,13 @@ namespace Gek
 
         virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
 
-        virtual void load(LPCWSTR fileName) = 0;
-        virtual void save(LPCWSTR fileName) = 0;
+        virtual void load(const wchar_t *fileName) = 0;
+        virtual void save(const wchar_t *fileName) = 0;
         virtual void free(void) = 0;
 
-        virtual Entity *createEntity(const EntityDefinition &entityParameterList, LPCWSTR name = nullptr) = 0;
+        virtual Entity *createEntity(const EntityDefinition &entityParameterList, const wchar_t *name = nullptr) = 0;
         virtual void killEntity(Entity *entity) = 0;
-        virtual Entity *getNamedEntity(LPCWSTR name) = 0;
+        virtual Entity *getNamedEntity(const wchar_t *name) = 0;
 
         virtual void listEntities(std::function<void(Entity *)> onEntity) = 0;
 

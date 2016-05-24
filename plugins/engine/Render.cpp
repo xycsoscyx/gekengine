@@ -39,7 +39,7 @@ namespace Gek
         END_INTERFACE_LIST_UNKNOWN
 
         // RenderPipeline
-        STDMETHODIMP_(VideoPipeline *) getPipeline(void) { return videoPipeline; };
+        STDMETHODIMP_(VideoPipeline * const) getPipeline(void) { return videoPipeline; };
     };
 
     class RenderContextImplementation
@@ -68,11 +68,11 @@ namespace Gek
         END_INTERFACE_LIST_UNKNOWN
 
         // RenderContext
-        STDMETHODIMP_(VideoContext *) getContext(void) { return videoContext; };
-        STDMETHODIMP_(RenderPipeline *) computePipeline(void) { return computePipelineHandler.p; };
-        STDMETHODIMP_(RenderPipeline *) vertexPipeline(void) { return vertexPipelineHandler.p; };
-        STDMETHODIMP_(RenderPipeline *) geometryPipeline(void) { return geometryPipelineHandler.p; };
-        STDMETHODIMP_(RenderPipeline *) pixelPipeline(void) { return pixelPipelineHandler.p; };
+        STDMETHODIMP_(VideoContext * const) getContext(void) { return videoContext; };
+        STDMETHODIMP_(RenderPipeline * const) computePipeline(void) { return computePipelineHandler.p; };
+        STDMETHODIMP_(RenderPipeline * const) vertexPipeline(void) { return vertexPipelineHandler.p; };
+        STDMETHODIMP_(RenderPipeline * const) geometryPipeline(void) { return geometryPipelineHandler.p; };
+        STDMETHODIMP_(RenderPipeline * const) pixelPipeline(void) { return pixelPipelineHandler.p; };
     };
 
     class RenderImplementation

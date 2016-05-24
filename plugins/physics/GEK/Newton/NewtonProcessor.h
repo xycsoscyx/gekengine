@@ -27,7 +27,7 @@ namespace Gek
 
         virtual Math::Float3 getGravity(const Math::Float3 &position) = 0;
 
-        virtual UINT32 loadSurface(LPCWSTR fileName) = 0;
+        virtual UINT32 loadSurface(const wchar_t *fileName) = 0;
         virtual const Surface &getSurface(UINT32 surfaceIndex) const = 0;
     };
 

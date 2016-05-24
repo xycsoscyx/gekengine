@@ -223,7 +223,7 @@ namespace Gek
                     model.subModelList.resize(subModelCount);
                     for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
                     {
-                        CStringW materialName = LPCWSTR(rawFileData);
+                        CStringW materialName = const wchar_t *(rawFileData);
                         rawFileData += ((materialName.GetLength() + 1) * sizeof(wchar_t));
 
                         SubModel &subModel = model.subModelList[modelIndex];

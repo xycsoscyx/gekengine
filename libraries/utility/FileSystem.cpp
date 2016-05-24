@@ -6,7 +6,7 @@ namespace Gek
 {
     namespace FileSystem
     {
-        CStringW expandPath(LPCWSTR fileName)
+        wstring expandPath(const wchar_t *fileName)
         {
             CStringW expandedFileName(fileName);
             if (expandedFileName.Find(L"%root%") >= 0)
@@ -30,17 +30,16 @@ namespace Gek
             }
 
             expandedFileName.Replace(L"/", L"\\");
-            return expandedFileName;
+            return expandedFileName.GetString();
         }
 
-        void find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<bool(LPCWSTR)> onFileFound)
+        void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
         {
-            CStringW expandedFileName(expandPath(fileName));
-            PathAddBackslashW(expandedFileName.GetBuffer(MAX_PATH + 1));
-            expandedFileName.ReleaseBuffer();
+            wstring expandedFileName(expandPath(fileName));
+            //PathAddBackslashW(expandedFileName.GetBuffer(MAX_PATH + 1));
 
             WIN32_FIND_DATA findData;
-            CStringW expandedFileNameFilter(expandedFileName + filterTypes);
+            wstring expandedFileNameFilter(expandedFileName.getAppended(filterTypes).c_str());
             HANDLE findHandle = FindFirstFile(expandedFileNameFilter, &findData);
             if (findHandle != INVALID_HANDLE_VALUE)
             {
@@ -50,12 +49,12 @@ namespace Gek
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            find((expandedFileName + findData.cFileName), filterTypes, searchRecursively, onFileFound);
+                            find(expandedFileName.getAppended(findData.cFileName).c_str(), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        if (!onFileFound(expandedFileName + findData.cFileName))
+                        if (!onFileFound(expandedFileName.getAppended(findData.cFileName).c_str()))
                         {
                             break;
                         }
@@ -65,12 +64,12 @@ namespace Gek
             }
         }
 
-        HMODULE loadLibrary(LPCWSTR fileName)
+        HMODULE loadLibrary(const wchar_t *fileName)
         {
             return LoadLibraryW(expandPath(fileName));
         }
 
-        void load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
+        void load(const wchar_t *fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
         {
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -97,24 +96,24 @@ namespace Gek
             CloseHandle(fileHandle);
         }
 
-        void load(LPCWSTR fileName, CStringA &string)
+        void load(const wchar_t *fileName, string &fileData)
         {
             std::vector<UINT8> buffer;
             load(fileName, buffer);
             buffer.push_back('\0');
-            string = LPCSTR(buffer.data());
+            fileData = reinterpret_cast<const char *>(buffer.data());
         }
 
-        void load(LPCWSTR fileName, CStringW &string, bool convertUTF8)
+        void load(const wchar_t *fileName, wstring &fileData, bool convertUTF8)
         {
-            CStringA readString;
-            load(fileName, readString);
-            string = CA2W(readString, (convertUTF8 ? CP_UTF8 : CP_ACP));
+            string rawFileData;
+            load(fileName, rawFileData);
+            fileData = String::from<wchar_t>(rawFileData);
         }
 
-        void save(LPCWSTR fileName, const std::vector<UINT8> &buffer)
+        void save(const wchar_t *fileName, const std::vector<UINT8> &buffer)
         {
-            CStringW expandedFileName(expandPath(fileName));
+            wstring expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
             GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %S", fileName);
 
@@ -125,18 +124,18 @@ namespace Gek
             CloseHandle(fileHandle);
         }
 
-        void save(LPCWSTR fileName, LPCSTR string)
+        void save(const wchar_t *fileName, const char *fileData)
         {
-            UINT32 stringLength = strlen(string);
+            UINT32 stringLength = strlen(fileData);
             std::vector<UINT8> buffer(stringLength);
-            std::copy_n(string, stringLength, buffer.begin());
+            std::copy_n(fileData, stringLength, buffer.begin());
             save(fileName, buffer);
         }
 
-        void save(LPCWSTR fileName, LPCWSTR string, bool convertUTF8)
+        void save(const wchar_t *fileName, const wchar_t *fileData, bool convertUTF8)
         {
-            CW2A writeString(string, (convertUTF8 ? CP_UTF8 : CP_ACP));
-            save(fileName, writeString);
+            string rawString(String::from<char>(fileData));
+            save(fileName, rawString.c_str());
         }
     } // namespace FileSystem
 }; // namespace Gek

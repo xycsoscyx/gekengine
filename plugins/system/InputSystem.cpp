@@ -1,6 +1,7 @@
 #include "GEK\Utility\Trace.h"
 #include "GEK\Context\Plugin.h"
 #include "GEK\System\InputSystem.h"
+#include <atlbase.h>
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <algorithm>
@@ -88,13 +89,10 @@ namespace Gek
         : public DeviceImplementation
     {
     public:
-        KeyboardImplementation(void)
+        KeyboardImplementation(IDirectInput8 *directInput, HWND window)
         {
             buttonStateList.resize(256);
-        }
 
-        void initialize(IDirectInput8 *directInput, HWND window)
-        {
             HRESULT resultValue = directInput->CreateDevice(GUID_SysKeyboard, &device, nullptr);
             GEK_CHECK_EXCEPTION(FAILED(resultValue), Input::Exception, "Unable to create keyboard device: %d", resultValue);
 
@@ -159,15 +157,7 @@ namespace Gek
         : public DeviceImplementation
     {
     public:
-        MouseImplementation(void)
-        {
-        }
-
-        ~MouseImplementation(void)
-        {
-        }
-
-        void initialize(IDirectInput8 *directInput, HWND window)
+        MouseImplementation(IDirectInput8 *directInput, HWND window)
         {
             HRESULT resultValue = directInput->CreateDevice(GUID_SysMouse, &device, nullptr);
             GEK_CHECK_EXCEPTION(FAILED(resultValue), Input::Exception, "Unable to create mouse device: %d", resultValue);
@@ -247,15 +237,7 @@ namespace Gek
         : public DeviceImplementation
     {
     public:
-        JoystickImplementation(void)
-        {
-        }
-
-        ~JoystickImplementation(void)
-        {
-        }
-
-        void initialize(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
+        JoystickImplementation(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
         {
             HRESULT resultValue = directInput->CreateDevice(deviceID, &device, nullptr);
             GEK_CHECK_EXCEPTION(FAILED(resultValue), Input::Exception, "Unable to create joystick device: %d", resultValue);
@@ -355,9 +337,9 @@ namespace Gek
     private:
         HWND window;
         CComPtr<IDirectInput8> directInput;
-        std::shared_ptr<InputDevice> mouseDevice;
-        std::shared_ptr<InputDevice> keyboardDevice;
-        std::vector<std::shared_ptr<InputDevice>> joystickDeviceList;
+        InputDevicePtr mouseDevice;
+        InputDevicePtr keyboardDevice;
+        std::vector<InputDevicePtr> joystickDeviceList;
 
     private:
         static BOOL CALLBACK joystickEnumeration(LPCDIDEVICEINSTANCE deviceObjectInstance, void *userData)
@@ -373,9 +355,14 @@ namespace Gek
 
         void addJoystick(LPCDIDEVICEINSTANCE deviceObjectInstance)
         {
-            std::shared_ptr<JoystickImplementation> joystick(std::make_shared<JoystickImplementation>());
-            joystick->initialize(directInput, window, deviceObjectInstance->guidInstance);
-            joystickDeviceList.push_back(std::dynamic_pointer_cast<InputDevice>(joystick));
+            try
+            {
+                InputDevicePtr joystick(std::remake_shared<InputDevice, JoystickImplementation>(directInput, window, deviceObjectInstance->guidInstance));
+                joystickDeviceList.push_back(joystick);
+            }
+            catch (...)
+            {
+            };
         }
 
     public:
@@ -390,14 +377,8 @@ namespace Gek
             HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
             GEK_CHECK_EXCEPTION(FAILED(resultValue), Input::Exception, "Unable to create DirectInput device: %d", resultValue);
 
-            std::shared_ptr<KeyboardImplementation> keyboard(std::make_shared<KeyboardImplementation>());
-            keyboard->initialize(directInput, window);
-            keyboardDevice = std::dynamic_pointer_cast<InputDevice>(keyboard);
-
-            std::shared_ptr<MouseImplementation> mouse(std::make_shared<MouseImplementation>());
-            mouse->initialize(directInput, window);
-            mouseDevice = std::dynamic_pointer_cast<InputDevice>(mouse);
-
+            keyboardDevice = std::remake_shared<InputDevice, KeyboardImplementation>(directInput, window);
+            mouseDevice = std::remake_shared<InputDevice, MouseImplementation>(directInput, window);
             directInput->EnumDevices(DI8DEVCLASS_GAMECTRL, joystickEnumeration, LPVOID(this), DIEDFL_ATTACHEDONLY);
         }
 

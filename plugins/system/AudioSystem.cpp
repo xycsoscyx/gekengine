@@ -2,11 +2,11 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\Plugin.h"
 #include "GEK\System\AudioSystem.h"
-#include "audiere.h"
-
+#include <atlbase.h>
 #include <mmsystem.h>
 #define DIRECTSOUND_VERSION 0x0800
 #include <dsound.h>
+#include "audiere.h"
 
 #pragma comment(lib, "dsound.lib")
 #pragma comment(lib, "dxguid.lib")
@@ -225,7 +225,7 @@ namespace Gek
             directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
         }
 
-        std::shared_ptr<AudioEffect> copyEffect(AudioEffect *source)
+        AudioEffectPtr copyEffect(AudioEffect *source)
         {
             GEK_REQUIRE(directSound);
             GEK_REQUIRE(source);
@@ -237,10 +237,10 @@ namespace Gek
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
             GEK_CHECK_EXCEPTION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
 
-            return std::dynamic_pointer_cast<AudioEffect>(std::make_shared<EffectImplementation>(directSound8Buffer.p));
+            return std::remake_shared<AudioEffect, EffectImplementation>(directSound8Buffer.p);
         }
 
-        std::shared_ptr<AudioSound> copySound(AudioSound *source)
+        AudioSoundPtr copySound(AudioSound *source)
         {
             GEK_REQUIRE(directSound);
             GEK_REQUIRE(source);
@@ -255,10 +255,10 @@ namespace Gek
             CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
             GEK_CHECK_EXCEPTION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
 
-            return std::dynamic_pointer_cast<AudioSound>(std::make_shared<SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p));
+            return std::remake_shared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
         }
 
-        CComPtr<IDirectSoundBuffer> loadFromFile(LPCWSTR fileName, DWORD flags, GUID soundAlgorithm)
+        CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, DWORD flags, GUID soundAlgorithm)
         {
             GEK_REQUIRE(directSound);
             GEK_REQUIRE(fileName);
@@ -311,7 +311,7 @@ namespace Gek
             return directSoundBuffer;
         }
 
-        std::shared_ptr<AudioEffect> loadEffect(LPCWSTR fileName)
+        AudioEffectPtr loadEffect(const wchar_t *fileName)
         {
             GEK_REQUIRE(directSound);
             GEK_REQUIRE(fileName);
@@ -321,10 +321,10 @@ namespace Gek
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
             GEK_CHECK_EXCEPTION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
 
-            return std::dynamic_pointer_cast<AudioEffect>(std::make_shared<EffectImplementation>(directSound8Buffer.p));
+            return std::remake_shared<AudioEffect, EffectImplementation>(directSound8Buffer.p);
         }
 
-        std::shared_ptr<AudioSound> loadSound(LPCWSTR fileName)
+        AudioSoundPtr loadSound(const wchar_t *fileName)
         {
             GEK_REQUIRE(directSound);
             GEK_REQUIRE(fileName);
@@ -337,7 +337,7 @@ namespace Gek
             CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
             GEK_CHECK_EXCEPTION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
 
-            return std::dynamic_pointer_cast<AudioSound>(std::make_shared<SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p));
+            return std::remake_shared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
         }
     };
 

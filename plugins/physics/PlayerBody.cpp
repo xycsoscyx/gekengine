@@ -54,19 +54,19 @@ namespace Gek
         }
     };
 
-    DECLARE_INTERFACE(State)
+    GEK_INTERFACE(State)
     {
-        STDMETHOD_(void, onEnter)       (THIS_ std::shared_ptr<State> previousState) { };
-        STDMETHOD_(void, onExit)        (THIS_ std::shared_ptr<State> nextState) { };
+        STDMETHOD_(void, onEnter)       (THIS_ StatePtr previousState) { };
+        STDMETHOD_(void, onExit)        (THIS_ StatePtr nextState) { };
 
-        STDMETHOD_(std::shared_ptr<State>, onUpdate)   (THIS_ float frameTime) { return nullptr; };
-        STDMETHOD_(std::shared_ptr<State>, onAction)   (THIS_ LPCWSTR name, const ActionParam &param) { return nullptr; };
+        STDMETHOD_(StatePtr, onUpdate)   (THIS_ float frameTime) { return nullptr; };
+        STDMETHOD_(StatePtr, onAction)   (THIS_ const wchar_t *name, const ActionParam &param) { return nullptr; };
     };
 
     class PlayerNewtonBody;
     State *createIdleState(PlayerNewtonBody *playerBody);
     State *createCrouchgingState(PlayerNewtonBody *playerBody);
-    State *createWalkingState(PlayerNewtonBody *playerBody, LPCWSTR trigger);
+    State *createWalkingState(PlayerNewtonBody *playerBody, const wchar_t *trigger);
     State *createJumpingState(PlayerNewtonBody *playerBody);
     State *createFallingState(PlayerNewtonBody *playerBody);
 
@@ -106,7 +106,7 @@ namespace Gek
         NewtonCollision *newtonSupportShape;
         NewtonCollision *newtonUpperBodyShape;
 
-        std::shared_ptr<State> currentState;
+        StatePtr currentState;
         float headingAngle;
         float forwardSpeed;
         float lateralSpeed;
@@ -255,14 +255,14 @@ namespace Gek
         }
 
         // ActionObserver
-        STDMETHODIMP_(void) onAction(LPCWSTR name, const ActionParam &param)
+        STDMETHODIMP_(void) onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"turn") == 0)
             {
                 headingAngle += (param.value * 0.01f);
             }
 
-            std::shared_ptr<State> nextState(currentState ? currentState->onAction(name, param) : nullptr);
+            StatePtr nextState(currentState ? currentState->onAction(name, param) : nullptr);
             if (nextState)
             {
                 currentState->onExit(nextState);
@@ -292,7 +292,7 @@ namespace Gek
             forwardSpeed = 0.0f;
             lateralSpeed = 0.0f;
             verticalSpeed = 0.0f;
-            std::shared_ptr<State> nextState(currentState ? currentState->onUpdate(frameTime) : nullptr);
+            StatePtr nextState(currentState ? currentState->onUpdate(frameTime) : nullptr);
             if (nextState)
             {
                 currentState->onExit(nextState);
@@ -651,37 +651,37 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
+        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
         {
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
             return nullptr;
         }
 
-        STDMETHODIMP_(std::shared_ptr<State>) onAction(LPCWSTR name, const ActionParam &param)
+        STDMETHODIMP_(StatePtr) onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"crouch") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createCrouchgingState(playerBody));
+                return StatePtr(createCrouchgingState(playerBody));
             }
             else if (_wcsicmp(name, L"move_forward") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createWalkingState(playerBody, name));
+                return StatePtr(createWalkingState(playerBody, name));
             }
             else if (_wcsicmp(name, L"move_backward") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createWalkingState(playerBody, name));
+                return StatePtr(createWalkingState(playerBody, name));
             }
             else if (_wcsicmp(name, L"strafe_left") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createWalkingState(playerBody, name));
+                return StatePtr(createWalkingState(playerBody, name));
             }
             else if (_wcsicmp(name, L"strafe_right") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createWalkingState(playerBody, name));
+                return StatePtr(createWalkingState(playerBody, name));
             }
             else if (_wcsicmp(name, L"jump") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createJumpingState(playerBody));
+                return StatePtr(createJumpingState(playerBody));
             }
 
             return nullptr;
@@ -698,17 +698,17 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
+        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
         {
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
             return nullptr;
         }
 
-        STDMETHODIMP_(std::shared_ptr<State>) onAction(LPCWSTR name, const ActionParam &param)
+        STDMETHODIMP_(StatePtr) onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"crouch") == 0 && !param.state)
             {
-                return std::shared_ptr<State>(createIdleState(playerBody));
+                return StatePtr(createIdleState(playerBody));
             }
 
             return nullptr;
@@ -725,7 +725,7 @@ namespace Gek
         bool strafeRight;
 
     public:
-        WalkingState(PlayerNewtonBody *playerBody, LPCWSTR trigger)
+        WalkingState(PlayerNewtonBody *playerBody, const wchar_t *trigger)
             : PlayerStateMixin(playerBody)
             , moveForward(false)
             , moveBackward(false)
@@ -736,7 +736,7 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
+        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
         {
             GEK_REQUIRE(playerBody);
 
@@ -747,7 +747,7 @@ namespace Gek
             return nullptr;
         }
 
-        STDMETHODIMP_(std::shared_ptr<State>) onAction(LPCWSTR name, const ActionParam &param)
+        STDMETHODIMP_(StatePtr) onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"move_forward") == 0)
             {
@@ -767,7 +767,7 @@ namespace Gek
             }
             else if (_wcsicmp(name, L"jump") == 0 && param.state)
             {
-                return std::shared_ptr<State>(createJumpingState(playerBody));
+                return StatePtr(createJumpingState(playerBody));
             }
 
             if (!moveForward &&
@@ -775,7 +775,7 @@ namespace Gek
                 !strafeLeft &&
                 !strafeRight)
             {
-                return std::shared_ptr<State>(createIdleState(playerBody));
+                return StatePtr(createIdleState(playerBody));
             }
 
             return nullptr;
@@ -798,7 +798,7 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
+        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
         {
             GEK_REQUIRE(playerBody);
 
@@ -807,11 +807,11 @@ namespace Gek
 
             if (!playerBody->isJumping())
             {
-                return std::shared_ptr<State>(createIdleState(playerBody));
+                return StatePtr(createIdleState(playerBody));
             }
             else if (playerBody->isFalling())
             {
-                return std::shared_ptr<State>(createFallingState(playerBody));
+                return StatePtr(createFallingState(playerBody));
             }
 
             return nullptr;
@@ -831,7 +831,7 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(std::shared_ptr<State>) onUpdate(float frameTime)
+        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
         {
             GEK_REQUIRE(playerBody);
 
@@ -839,7 +839,7 @@ namespace Gek
 
             if (!playerBody->isFalling())
             {
-                return std::shared_ptr<State>(createIdleState(playerBody));
+                return StatePtr(createIdleState(playerBody));
             }
 
             return nullptr;
@@ -856,7 +856,7 @@ namespace Gek
         return new IdleState(playerBody);
     }
 
-    State *createWalkingState(PlayerNewtonBody *playerBody, LPCWSTR trigger)
+    State *createWalkingState(PlayerNewtonBody *playerBody, const wchar_t *trigger)
     {
         return new WalkingState(playerBody, trigger);
     }
@@ -918,7 +918,7 @@ namespace Gek
             END_INTERFACE_LIST_USER
 
         // Component
-        STDMETHODIMP_(LPCWSTR) getName(void) const
+        STDMETHODIMP_(const wchar_t *) getName(void) const
         {
             return L"player_body";
         }

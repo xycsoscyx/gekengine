@@ -113,7 +113,7 @@ namespace Gek
             return Gravity;
         }
 
-        STDMETHODIMP_(UINT32) loadSurface(LPCWSTR fileName)
+        STDMETHODIMP_(UINT32) loadSurface(const wchar_t *fileName)
         {
             GEK_REQUIRE(fileName);
 

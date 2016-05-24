@@ -11,13 +11,13 @@
 
 namespace Gek
 {
-    static Video::ElementType getElementType(LPCWSTR elementClassString)
+    static Video::ElementType getElementType(const wchar_t *elementClassString)
     {
         if (_wcsicmp(elementClassString, L"instance") == 0) return Video::ElementType::Instance;
         /*else if (_wcsicmp(elementClassString, L"vertex") == 0) */ return Video::ElementType::Vertex;
     }
 
-    Video::Format getFormat(LPCWSTR formatString)
+    Video::Format getFormat(const wchar_t *formatString)
     {
         if (_wcsicmp(formatString, L"BYTE") == 0) return Video::Format::Byte;
         else if (_wcsicmp(formatString, L"BYTE2") == 0) return Video::Format::Byte2;
@@ -45,7 +45,7 @@ namespace Gek
         return Video::Format::Unknown;
     }
 
-    static LPCSTR getFormatType(Video::Format formatType)
+    static const char *getFormatType(Video::Format formatType)
     {
         switch (formatType)
         {
@@ -111,7 +111,7 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Plugin
-        STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
+        STDMETHODIMP initialize(IUnknown *initializerContext, const wchar_t *fileName)
         {
             GEK_REQUIRE(initializerContext);
             GEK_REQUIRE(fileName);
@@ -195,7 +195,7 @@ namespace Gek
                                                     xmlElementNode.hasAttribute(L"index"))
                                                 {
                                                     CW2A semanticName(xmlElementNode.getAttribute(L"name"));
-                                                    elementNameList.push_back(LPCSTR(semanticName));
+                                                    elementNameList.push_back(const char *(semanticName));
                                                     CStringW format(xmlElementNode.getAttribute(L"format"));
 
                                                     Video::InputElement element;
@@ -210,7 +210,7 @@ namespace Gek
 
                                                     if (format.CompareNoCase(L"float4x4") == 0)
                                                     {
-                                                        engineData.AppendFormat("    float4x4 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        engineData.AppendFormat("    float4x4 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
                                                         element.format = Video::Format::Float4;
                                                         elementList.push_back(element);
                                                         element.semanticIndex++;
@@ -222,7 +222,7 @@ namespace Gek
                                                     }
                                                     else if (format.CompareNoCase(L"float4x3") == 0)
                                                     {
-                                                        engineData.AppendFormat("    float4x3 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        engineData.AppendFormat("    float4x3 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
                                                         element.format = Video::Format::Float4;
                                                         elementList.push_back(element);
                                                         element.semanticIndex++;
@@ -233,7 +233,7 @@ namespace Gek
                                                     else
                                                     {
                                                         element.format = getFormat(format);
-                                                        engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), LPCSTR(semanticName), element.semanticIndex);
+                                                        engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
                                                         elementList.push_back(element);
                                                     }
                                                 }
@@ -281,7 +281,7 @@ namespace Gek
                                                 "}                                                                                                          \r\n" \
                                                 "                                                                                                           \r\n";
 
-                                            auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
+                                            auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
                                             {
                                                 HRESULT resultValue = E_FAIL;
                                                 if (_stricmp(fileName, "GEKPlugin") == 0)

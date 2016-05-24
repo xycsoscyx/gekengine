@@ -15,7 +15,7 @@ namespace Gek
         HRESULT save(Population::ComponentDefinition &componentData) const;
         HRESULT load(const Population::ComponentDefinition &componentData);
 
-        inline operator LPCWSTR () const
+        inline operator const wchar_t *() const
         {
             return value.GetString();
         }
@@ -25,7 +25,7 @@ namespace Gek
             return value;
         }
 
-        inline CStringW &operator = (LPCWSTR value)
+        inline CStringW &operator = (const wchar_t *value)
         {
             this->value = value;
             return this->value;

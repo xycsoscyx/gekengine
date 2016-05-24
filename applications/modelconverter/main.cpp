@@ -25,12 +25,12 @@ public:
     int line;
 
 public:
-    OptimizerException(int line, LPCWSTR format, ...)
+    OptimizerException(int line, const wchar_t *formatting, ...)
         : line(line)
     {
         va_list variableList;
-        va_start(variableList, format);
-        message.FormatV(format, variableList);
+        va_start(variableList, formatting);
+        message.FormatV(formatting, variableList);
         va_end(variableList);
     }
 };
@@ -317,7 +317,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
             CPathW materialPath(materialName);
             materialPath.RemoveExtension();
-            materialName = LPCWSTR(materialPath);
+            materialName = const wchar_t *(materialPath);
 
             int texturesPathIndex = materialName.Find(L"\\textures\\");
             if (texturesPathIndex >= 0)
@@ -349,7 +349,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             {
                 materialPath.m_strPath = materialName;
                 materialPath.RemoveFileSpec();
-                materialName = LPCWSTR(materialPath);
+                materialName = const wchar_t *(materialPath);
             }
 
             modelList[materialName] = material.second;

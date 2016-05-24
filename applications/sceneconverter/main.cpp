@@ -48,7 +48,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             while (xmlComponentNode)
             {
                 Population::ComponentDefinition &componentData = entityData[xmlComponentNode.getType()];
-                xmlComponentNode.listAttributes([&componentData](LPCWSTR name, LPCWSTR value) -> void
+                xmlComponentNode.listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
                 {
                     componentData.insert(std::make_pair(name, value));
                 });

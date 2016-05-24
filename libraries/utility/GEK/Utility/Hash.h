@@ -1,67 +1,24 @@
 #pragma once
 
 #include <Windows.h>
-#include <atlbase.h>
-#include <atlstr.h>
 #include <algorithm>
 #include <string>
 
 namespace std
 {
-    template<typename CHARTYPE, typename TRAITSTYPE>
-    struct hash<ATL::CStringT<CHARTYPE, TRAITSTYPE>>
-        : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, size_t>
-    {
-        size_t operator()(const ATL::CStringT<CHARTYPE, TRAITSTYPE> &string) const
-        {
-            return CStringElementTraits<typename TRAITSTYPE>::Hash(string);
-        }
-    };
-
-    template<typename CHARTYPE, typename TRAITSTYPE>
-    struct equal_to<ATL::CStringT<CHARTYPE, TRAITSTYPE>>
-        : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, bool>
-    {
-        bool operator()(const ATL::CStringT<CHARTYPE, TRAITSTYPE> &leftString, const ATL::CStringT<CHARTYPE, TRAITSTYPE> &rightString) const
-        {
-            return (leftString == rightString);
-        }
-    };
-
     template <>
-    struct hash<GUID>
-        : public unary_function<GUID, size_t>
+    struct hash<const char *>
     {
-        size_t operator()(REFGUID guid) const
-        {
-            DWORD *last = (DWORD *)&guid.Data4[0];
-            return (guid.Data1 ^ (guid.Data2 << 16 | guid.Data3) ^ (last[0] | last[1]));
-        }
-    };
-
-    template <>
-    struct equal_to<GUID>
-        : public unary_function<GUID, bool>
-    {
-        bool operator()(REFGUID leftGuid, REFGUID rightGuid) const
-        {
-            return (memcmp(&leftGuid, &rightGuid, sizeof(GUID)) == 0);
-        }
-    };
-
-    template <>
-    struct hash<LPCSTR>
-    {
-        size_t operator()(const LPCSTR &value) const
+        size_t operator()(const char *&value) const
         {
             return hash<string>()(string(value));
         }
     };
 
     template <>
-    struct hash<LPCWSTR>
+    struct hash<const wchar_t *>
     {
-        size_t operator()(const LPCWSTR &value) const
+        size_t operator()(const wchar_t *&value) const
         {
             return hash<wstring>()(wstring(value));
         }
@@ -89,28 +46,4 @@ namespace std
         size_t remainder = hash_combine(ts...);
         return hash_combine(seed, remainder);
     }
-
-    template <typename CLASS>
-    struct hash<CComPtr<CLASS>>
-    {
-        size_t operator()(const CComPtr<CLASS> &value) const
-        {
-            return hash<LPCVOID>()(value.p);
-        }
-    };
-
-    template <typename CLASS>
-    struct hash<CComQIPtr<CLASS>>
-    {
-        size_t operator()(const CComQIPtr<CLASS> &value) const
-        {
-            return hash<LPCVOID>()(value.p);
-        }
-    };
 };
-
-__forceinline
-bool operator < (REFGUID leftGuid, REFGUID rightGuid)
-{
-    return (memcmp(&leftGuid, &rightGuid, sizeof(GUID)) < 0);
-}

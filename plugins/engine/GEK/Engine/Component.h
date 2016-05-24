@@ -11,7 +11,7 @@ namespace Gek
 
     GEK_INTERFACE(Component)
     {
-        virtual LPCWSTR getName(void) const = 0;
+        virtual const wchar_t *getName(void) const = 0;
         virtual std::type_index getIdentifier(void) const = 0;
 
         virtual void *create(const Population::ComponentDefinition &componentData) = 0;

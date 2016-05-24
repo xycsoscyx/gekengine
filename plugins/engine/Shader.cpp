@@ -20,16 +20,16 @@
 
 namespace Gek
 {
-    extern Video::Format getFormat(LPCWSTR formatString);
+    extern Video::Format getFormat(const wchar_t *formatString);
 
-    static Video::DepthWrite getDepthWriteMask(LPCWSTR depthWrite)
+    static Video::DepthWrite getDepthWriteMask(const wchar_t *depthWrite)
     {
         if (_wcsicmp(depthWrite, L"zero") == 0) return Video::DepthWrite::Zero;
         else if (_wcsicmp(depthWrite, L"all") == 0) return Video::DepthWrite::All;
         else return Video::DepthWrite::Zero;
     }
 
-    static Video::ComparisonFunction getComparisonFunction(LPCWSTR comparisonFunction)
+    static Video::ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
     {
         if (_wcsicmp(comparisonFunction, L"always") == 0) return Video::ComparisonFunction::Always;
         else if (_wcsicmp(comparisonFunction, L"never") == 0) return Video::ComparisonFunction::Never;
@@ -42,7 +42,7 @@ namespace Gek
         else return Video::ComparisonFunction::Always;
     }
 
-    static Video::StencilOperation getStencilOperation(LPCWSTR stencilOperation)
+    static Video::StencilOperation getStencilOperation(const wchar_t *stencilOperation)
     {
         if (_wcsicmp(stencilOperation, L"Zero") == 0) return Video::StencilOperation::Zero;
         else if (_wcsicmp(stencilOperation, L"Keep") == 0) return Video::StencilOperation::Keep;
@@ -55,14 +55,14 @@ namespace Gek
         else return Video::StencilOperation::Zero;
     }
 
-    static Video::FillMode getFillMode(LPCWSTR fillMode)
+    static Video::FillMode getFillMode(const wchar_t *fillMode)
     {
         if (_wcsicmp(fillMode, L"solid") == 0) return Video::FillMode::Solid;
         else if (_wcsicmp(fillMode, L"wire") == 0) return Video::FillMode::WireFrame;
         else return Video::FillMode::Solid;
     }
 
-    static Video::CullMode getCullMode(LPCWSTR cullMode)
+    static Video::CullMode getCullMode(const wchar_t *cullMode)
     {
         if (_wcsicmp(cullMode, L"none") == 0) return Video::CullMode::None;
         else if (_wcsicmp(cullMode, L"front") == 0) return Video::CullMode::Front;
@@ -70,7 +70,7 @@ namespace Gek
         else return Video::CullMode::None;
     }
 
-    static Video::BlendSource getBlendSource(LPCWSTR blendSource)
+    static Video::BlendSource getBlendSource(const wchar_t *blendSource)
     {
         if (_wcsicmp(blendSource, L"zero") == 0) return Video::BlendSource::Zero;
         else if (_wcsicmp(blendSource, L"one") == 0) return Video::BlendSource::One;
@@ -92,7 +92,7 @@ namespace Gek
         else return Video::BlendSource::Zero;
     }
 
-    static Video::BlendOperation getBlendOperation(LPCWSTR blendOperation)
+    static Video::BlendOperation getBlendOperation(const wchar_t *blendOperation)
     {
         if (_wcsicmp(blendOperation, L"add") == 0) return Video::BlendOperation::Add;
         else if (_wcsicmp(blendOperation, L"subtract") == 0) return Video::BlendOperation::Subtract;
@@ -141,7 +141,7 @@ namespace Gek
             BindType bindType;
             UINT32 flags;
 
-            Map(LPCWSTR name, LPCWSTR defaultValue, MapType mapType, BindType bindType, UINT32 flags)
+            Map(const wchar_t *name, const wchar_t *defaultValue, MapType mapType, BindType bindType, UINT32 flags)
                 : name(name)
                 , defaultValue(defaultValue)
                 , mapType(mapType)
@@ -286,7 +286,7 @@ namespace Gek
         std::list<BlockData> blockList;
 
     private:
-        static MapType getMapType(LPCWSTR mapType)
+        static MapType getMapType(const wchar_t *mapType)
         {
             if (_wcsicmp(mapType, L"Texture1D") == 0) return MapType::Texture1D;
             else if (_wcsicmp(mapType, L"Texture2D") == 0) return MapType::Texture2D;
@@ -295,7 +295,7 @@ namespace Gek
             return MapType::Texture2D;
         }
 
-        static LPCWSTR getMapType(MapType mapType)
+        static const wchar_t *getMapType(MapType mapType)
         {
             switch (mapType)
             {
@@ -309,7 +309,7 @@ namespace Gek
             return L"Texture2D";
         }
 
-        static BindType getBindType(LPCWSTR bindType)
+        static BindType getBindType(const wchar_t *bindType)
         {
             if (_wcsicmp(bindType, L"Float") == 0) return BindType::Float;
             else if (_wcsicmp(bindType, L"Float2") == 0) return BindType::Float2;
@@ -327,7 +327,7 @@ namespace Gek
             return BindType::Float4;
         }
 
-        static LPCWSTR getBindType(BindType bindType)
+        static const wchar_t *getBindType(BindType bindType)
         {
             switch (bindType)
             {
@@ -547,7 +547,7 @@ namespace Gek
             return childMap;
         }
 
-        std::unordered_map<CStringW, CStringW> loadChildMap(Gek::XmlNode &xmlRootNode, LPCWSTR name)
+        std::unordered_map<CStringW, CStringW> loadChildMap(Gek::XmlNode &xmlRootNode, const wchar_t *name)
         {
             std::unordered_map<CStringW, CStringW> childMap;
             if (xmlRootNode.hasChildElement(name))
@@ -570,7 +570,7 @@ namespace Gek
             return foundDefine;
         }
 
-        CStringW evaluate(LPCWSTR value, bool integer = false)
+        CStringW evaluate(const wchar_t *value, bool integer = false)
         {
             CStringW finalValue(value);
             finalValue.Replace(L"displayWidth", String::format(L"%d", video->getBackBuffer()->getWidth()));
@@ -618,7 +618,7 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Shader
-        STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
+        STDMETHODIMP initialize(IUnknown *initializerContext, const wchar_t *fileName)
         {
             GEK_REQUIRE(initializerContext);
             GEK_REQUIRE(fileName);
@@ -1114,7 +1114,7 @@ namespace Gek
 
                                         CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
                                         CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
-                                        auto getIncludeData = [&](LPCSTR fileName, std::vector<UINT8> &data) -> HRESULT
+                                        auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
                                         {
                                             HRESULT resultValue = E_FAIL;
                                             if (_stricmp(fileName, "GEKEngine") == 0)
@@ -1229,7 +1229,7 @@ namespace Gek
             return priority;
         }
 
-        STDMETHODIMP_(void) loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::list<ResourceHandle> &resourceList)
+        STDMETHODIMP_(void) loadResourceList(const wchar_t *materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
             CPathW filePath(materialName);
             filePath.RemoveFileSpec();
@@ -1246,8 +1246,8 @@ namespace Gek
                 {
                     CStringW dataName = (*dataIterator).second;
                     dataName.MakeLower();
-                    dataName.Replace(L"%directory%", LPCWSTR(filePath));
-                    dataName.Replace(L"%filename%", LPCWSTR(fileSpec));
+                    dataName.Replace(L"%directory%", const wchar_t *(filePath));
+                    dataName.Replace(L"%filename%", const wchar_t *(fileSpec));
                     dataName.Replace(L"%material%", materialName);
                     resource = resources->loadTexture(dataName, mapValue.defaultValue, mapValue.flags);
                 }

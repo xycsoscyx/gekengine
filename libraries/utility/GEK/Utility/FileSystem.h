@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Utility\Trace.h"
+#include "GEK\Utility\String.h"
 #include <functional>
 #include <vector>
 
@@ -13,18 +14,18 @@ namespace Gek
         GEK_EXCEPTION(FileReadError);
         GEK_EXCEPTION(FileWriteError);
 
-        CStringW expandPath(LPCWSTR fileName);
+        wstring expandPath(const wchar_t *fileName);
 
-        void find(LPCWSTR fileName, LPCWSTR filterTypes, bool searchRecursively, std::function<bool(LPCWSTR fileName)> onFileFound);
+        void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
 
-        HMODULE loadLibrary(LPCWSTR fileName);
+        HMODULE loadLibrary(const wchar_t *fileName);
 
-        void load(LPCWSTR fileName, std::vector<UINT8> &buffer, size_t limitReadSize = 0);
-        void load(LPCWSTR fileName, CStringA &string);
-        void load(LPCWSTR fileName, CStringW &string, bool convertUTF8 = true);
+        void load(const wchar_t *fileName, std::vector<UINT8> &buffer, size_t limitReadSize = 0);
+        void load(const wchar_t *fileName, string &string);
+        void load(const wchar_t *fileName, wstring &string, bool convertUTF8 = true);
 
-        void save(LPCWSTR fileName, const std::vector<UINT8> &buffer);
-        void save(LPCWSTR fileName, LPCSTR pString);
-        void save(LPCWSTR fileName, LPCWSTR pString, bool convertUTF8 = true);
+        void save(const wchar_t *fileName, const std::vector<UINT8> &buffer);
+        void save(const wchar_t *fileName, const char *pString);
+        void save(const wchar_t *fileName, const wchar_t *pString, bool convertUTF8 = true);
     }; // namespace File
 }; // namespace Gek

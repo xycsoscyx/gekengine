@@ -7,7 +7,7 @@
 
 namespace Gek
 {
-    BaseException::BaseException(LPCSTR function, UINT32 line, LPCSTR message)
+    BaseException::BaseException(const char *function, UINT32 line, const char *message)
         : std::exception(message)
         , function(function)
         , line(line)
@@ -15,7 +15,7 @@ namespace Gek
         trace("i", "exception", GetTickCount64(), function, message);
     }
 
-    LPCSTR BaseException::where(void)
+    const char *BaseException::where(void)
     {
         return function;
     }
@@ -219,7 +219,7 @@ namespace Gek
         }
     }
 
-    void trace(LPCSTR string)
+    void trace(const char *string)
     {
         HANDLE pipe = CreateFile(L"\\\\.\\pipe\\GEK_Named_Pipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
         if (pipe != INVALID_HANDLE_VALUE)

@@ -7,7 +7,7 @@
 namespace Gek
 {
     template <typename TYPE>
-    void saveParameter(Population::ComponentDefinition &componentData, LPCWSTR name, const TYPE &value)
+    void saveParameter(Population::ComponentDefinition &componentData, const wchar_t *name, const TYPE &value)
     {
         if (name)
         {
@@ -20,7 +20,7 @@ namespace Gek
     }
 
     template <typename TYPE>
-    bool loadParameter(const Population::ComponentDefinition &componentData, LPCWSTR name, TYPE &value)
+    bool loadParameter(const Population::ComponentDefinition &componentData, const wchar_t *name, TYPE &value)
     {
         if (name)
         {

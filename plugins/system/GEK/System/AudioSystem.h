@@ -43,10 +43,10 @@ namespace Gek
         virtual void setDopplerFactor(float factor) = 0;
         virtual void setRollOffFactor(float factor) = 0;
 
-        virtual std::shared_ptr<AudioEffect> copyEffect(AudioEffect *source) = 0;
-        virtual std::shared_ptr<AudioSound> copySound(AudioSound *source) = 0;
+        virtual AudioEffectPtr copyEffect(AudioEffect *source) = 0;
+        virtual AudioSoundPtr copySound(AudioSound *source) = 0;
 
-        virtual std::shared_ptr<AudioEffect> loadEffect(LPCWSTR fileName) = 0;
-        virtual std::shared_ptr<AudioSound> loadSound(LPCWSTR fileName) = 0;
+        virtual AudioEffectPtr loadEffect(const wchar_t *fileName) = 0;
+        virtual AudioSoundPtr loadSound(const wchar_t *fileName) = 0;
     };
 }; // namespace Gek

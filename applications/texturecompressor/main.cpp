@@ -17,12 +17,12 @@ public:
     int line;
 
 public:
-    CompressorException(int line, LPCWSTR format, ...)
+    CompressorException(int line, const wchar_t *formatting, ...)
         : line(line)
     {
         va_list variableList;
-        va_start(variableList, format);
-        message.FormatV(format, variableList);
+        va_start(variableList, formatting);
+        message.FormatV(formatting, variableList);
         va_end(variableList);
     }
 };

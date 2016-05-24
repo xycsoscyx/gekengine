@@ -13,7 +13,7 @@ namespace Gek
     {
     private:
         std::list<HMODULE> moduleList;
-        std::unordered_map<std::wstring, std::function<std::shared_ptr<ContextUser>(Context *, void *)>> classMap;
+        std::unordered_map<std::wstring, std::function<ContextUserPtr(Context *, void *)>> classMap;
         std::unordered_multimap<std::wstring, std::wstring> typeMap;
 
     public:
@@ -29,13 +29,13 @@ namespace Gek
                     HMODULE module = LoadLibrary(fileName);
                     if (module)
                     {
-                        typedef void(*InitializePlugin)(std::function<void(const wchar_t *, std::function<std::shared_ptr<ContextUser>(Context *, void *)>)> addClass, std::function<void(const wchar_t *, const wchar_t *)> addType);
+                        typedef void(*InitializePlugin)(std::function<void(const wchar_t *, std::function<ContextUserPtr(Context *, void *)>)> addClass, std::function<void(const wchar_t *, const wchar_t *)> addType);
                         InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "GEKInitializePlugin");
                         if (initializePlugin)
                         {
                             GEK_TRACE_EVENT("Plugin found: %S", GEK_PARAMETER(fileName));
 
-                            initializePlugin([this](const wchar_t *className, std::function<std::shared_ptr<ContextUser>(Context *, void *)> creator) -> void
+                            initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *)> creator) -> void
                             {
                                 if (classMap.count(className) == 0)
                                 {
@@ -73,12 +73,14 @@ namespace Gek
         }
 
         // Context
-        std::function<std::shared_ptr<ContextUser>(Context *, void *)> getCreator(const wchar_t *name)
+        std::function<ContextUserPtr(Context *, void *)> getCreator(const wchar_t *name) const
         {
-            return classMap[name];
+            auto classIterator = classMap.find(name);
+            GEK_CHECK_EXCEPTION(classIterator == classMap.end(), BaseException, "Unable to find requested class creator: %S", name);
+            return (*classIterator).second;
         }
 
-        void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType)
+        void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const
         {
             GEK_REQUIRE(typeName);
             GEK_REQUIRE(onType);
@@ -91,9 +93,9 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::create(const std::vector<std::wstring> &searchPathList)
+    ContextPtr Context::create(const std::vector<wstring> &searchPathList)
     {
         GEK_TRACE_FUNCTION();
-        return std::dynamic_pointer_cast<Context>(std::make_shared<ContextImplementation>(searchPathList));
+        return std::remake_shared<Context, ContextImplementation>(searchPathList);
     }
 };

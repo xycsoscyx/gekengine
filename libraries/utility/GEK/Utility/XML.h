@@ -1,8 +1,7 @@
 #pragma once
 
 #include "GEK\Utility\Trace.h"
-#include <atlbase.h>
-#include <atlstr.h>
+#include "GEK\Utility\String.h"
 #include <functional>
 
 namespace Gek
@@ -28,26 +27,26 @@ namespace Gek
     public:
         virtual ~XmlNode(void);
 
-        static XmlNode create(LPCWSTR type);
+        static XmlNode create(const wchar_t *type);
 
         operator bool() const;
 
-        CStringW getType(void) const;
+        wstring getType(void) const;
 
-        CStringW getText(void) const;
-        void setText(LPCWSTR format, ...);
+        wstring getText(void) const;
+        void setText(const wchar_t *formatting, ...);
 
-        bool hasAttribute(LPCWSTR name) const;
-        CStringW getAttribute(LPCWSTR name) const;
-        void setAttribute(LPCWSTR name, LPCWSTR format, ...);
-        void listAttributes(std::function<void(LPCWSTR, LPCWSTR)> onAttribute) const;
+        bool hasAttribute(const wchar_t *name) const;
+        wstring getAttribute(const wchar_t *name) const;
+        void setAttribute(const wchar_t *name, const wchar_t *formatting, ...);
+        void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const;
 
-        bool hasChildElement(LPCWSTR type = nullptr) const;
-        XmlNode firstChildElement(LPCWSTR type = nullptr) const;
-        XmlNode createChildElement(LPCWSTR type, LPCWSTR format = nullptr, ...);
+        bool hasChildElement(const wchar_t *type = nullptr) const;
+        XmlNode firstChildElement(const wchar_t *type = nullptr) const;
+        XmlNode createChildElement(const wchar_t *type, const wchar_t *formatting = nullptr, ...);
 
-        bool hasSiblingElement(LPCWSTR type = nullptr) const;
-        XmlNode nextSiblingElement(LPCWSTR type = nullptr) const;
+        bool hasSiblingElement(const wchar_t *type = nullptr) const;
+        XmlNode nextSiblingElement(const wchar_t *type = nullptr) const;
     };
 
     class XmlDocument
@@ -61,10 +60,10 @@ namespace Gek
     public:
         virtual ~XmlDocument(void);
 
-        static XmlDocument create(LPCWSTR rootType);
-        static XmlDocument load(LPCWSTR fileName, bool validateDTD = false);
+        static XmlDocument create(const wchar_t *rootType);
+        static XmlDocument load(const wchar_t *fileName, bool validateDTD = false);
 
-        void save(LPCWSTR fileName);
+        void save(const wchar_t *fileName);
 
         XmlNode getRoot(void) const;
     };

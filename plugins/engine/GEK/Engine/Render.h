@@ -11,17 +11,17 @@ namespace Gek
 
     GEK_INTERFACE(RenderPipeline)
     {
-        virtual VideoPipeline *getPipeline(void) = 0;
+        virtual VideoPipeline * const getPipeline(void) = 0;
     };
 
     GEK_INTERFACE(RenderContext)
     {
-        virtual VideoContext *getContext(void) = 0;
+        virtual VideoContext * const getContext(void) = 0;
 
-        virtual RenderPipeline *computePipeline(void) = 0;
-        virtual RenderPipeline *vertexPipeline(void) = 0;
-        virtual RenderPipeline *geometryPipeline(void) = 0;
-        virtual RenderPipeline *pixelPipeline(void) = 0;
+        virtual RenderPipeline * const computePipeline(void) = 0;
+        virtual RenderPipeline * const vertexPipeline(void) = 0;
+        virtual RenderPipeline * const geometryPipeline(void) = 0;
+        virtual RenderPipeline * const pixelPipeline(void) = 0;
     };
 
     GEK_INTERFACE(Render)

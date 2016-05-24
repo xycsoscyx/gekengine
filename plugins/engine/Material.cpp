@@ -34,7 +34,7 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Material
-        STDMETHODIMP initialize(IUnknown *initializerContext, LPCWSTR fileName)
+        STDMETHODIMP initialize(IUnknown *initializerContext, const wchar_t *fileName)
         {
             GEK_REQUIRE(initializerContext);
             GEK_REQUIRE(fileName);

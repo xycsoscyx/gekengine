@@ -22,7 +22,7 @@
 namespace Gek
 {
     class EngineImplementation
-        : public ContextUserMixin
+        : public Plugin<EngineImplementation, HWND>
         , public ObservableMixin
         , public Engine
         , public RenderObserver
@@ -63,11 +63,10 @@ namespace Gek
         POINT lastCursorPosition;
         float mouseSensitivity;
 
-        CComPtr<VideoSystem> video;
-        CComPtr<Resources> resources;
-        CComPtr<Render> render;
-
-        CComPtr<Population> population;
+        VideoSystemPtr video;
+        ResourcesPtr resources;
+        RenderPtr render;
+        PopulationPtr population;
 
         UINT32 updateHandle;
         ActionQueue actionQueue;
@@ -93,15 +92,15 @@ namespace Gek
             return engine->sciterElementEventProc(element, eventIdentifier, parameters);
         }
 
-        static void CALLBACK sciterDebugOutput(LPVOID userData, UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
+        static void CALLBACK sciterDebugOutput(LPVOID userData, UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
         {
             EngineImplementation *engine = reinterpret_cast<EngineImplementation *>(userData);
             engine->sciterDebugOutput(subsystem, severity, text, textSize);
         }
 
     public:
-        EngineImplementation(void)
-            : window(nullptr)
+        EngineImplementation(HWND window)
+            : window(window)
             , windowActive(false)
             , engineRunning(true)
             , updateAccumulator(0.0)
@@ -170,97 +169,7 @@ namespace Gek
 
                 result = sciter::value(true);
             };
-        }
 
-        ~EngineImplementation(void)
-        {
-            if (population)
-            {
-                population->free();
-                population->destroy();
-            }
-
-            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
-            render.Release();
-            resources.Release();
-            if (population)
-            {
-                population->removeUpdatePriority(updateHandle);
-            }
-
-            population.Release();
-            video.Release();
-            CoUninitialize();
-        }
-
-        BEGIN_INTERFACE_LIST(EngineImplementation)
-            INTERFACE_LIST_ENTRY_COM(Engine)
-            INTERFACE_LIST_ENTRY_COM(Options)
-            INTERFACE_LIST_ENTRY_COM(RenderObserver)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(VideoSystem, video)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(PluginResources, resources)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Resources, resources)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Render, render)
-            INTERFACE_LIST_ENTRY_MEMBER_COM(Population, population)
-        END_INTERFACE_LIST_USER
-
-        // Options
-        STDMETHODIMP_(const CStringW &) getValue(LPCWSTR name, LPCWSTR attribute, const CStringW &defaultValue = L"") CONST
-        {
-            auto &group = options.find(name);
-            if(group != options.end())
-            {
-                auto &value = (*group).second.find(attribute);
-                if (value != (*group).second.end())
-                {
-                    return (*value).second;
-                }
-            }
-
-            return defaultValue;
-        }
-
-        STDMETHODIMP_(void) setValue(LPCWSTR name, LPCWSTR attribute, LPCWSTR value)
-        {
-            auto &group = newOptions[name];
-            group[attribute] = value;
-        }
-
-        STDMETHODIMP_(void) beginChanges(void)
-        {
-            newOptions = options;
-        }
-
-        STDMETHODIMP_(void) finishChanges(bool commit)
-        {
-            if (commit)
-            {
-                options = std::move(newOptions);
-                ObservableMixin::sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
-
-                auto &display = options.find(L"display");
-                if (display != options.end())
-                {
-                    auto &width = (*display).second.find(L"width");
-                    auto &height = (*display).second.find(L"height");
-                    if (width != (*display).second.end() && height != (*display).second.end())
-                    {
-                        video->setSize(String::to<UINT32>((*width).second), String::to<UINT32>((*height).second), Video::Format::sRGBA);
-                    }
-
-                    auto &fullscreen = (*display).second.find(L"fullscreen");
-                    if (fullscreen != (*display).second.end())
-                    {
-                        video->setFullScreen(String::to<bool>((*fullscreen).second));
-                    }
-                }
-            }
-        }
-
-        // Engine
-        STDMETHODIMP initialize(HWND window)
-        {
             GEK_TRACE_FUNCTION();
 
             GEK_REQUIRE(window);
@@ -275,7 +184,7 @@ namespace Gek
                     while (xmlConfigValue)
                     {
                         auto &group = options[xmlConfigValue.getType()];
-                        xmlConfigValue.listAttributes([&](LPCWSTR name, LPCWSTR value) -> void
+                        xmlConfigValue.listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
                         {
                             group[name] = value;
                         });
@@ -286,10 +195,9 @@ namespace Gek
             }
 
             HRESULT resultValue = CoInitialize(nullptr);
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(VideoSystemRegistration, &video));
-            }
+            GEK_CHECK_EXCEPTION(FAILED(resultValue), BaseException, "Unable to initialize COM: %d", resultValue);
+
+            video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
 
             if (SUCCEEDED(resultValue))
             {
@@ -361,10 +269,83 @@ namespace Gek
             {
                 windowActive = true;
             }
-
-            return resultValue;
         }
 
+        ~EngineImplementation(void)
+        {
+            if (population)
+            {
+                population->free();
+                population->destroy();
+            }
+
+            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
+            render.Release();
+            resources.Release();
+            if (population)
+            {
+                population->removeUpdatePriority(updateHandle);
+            }
+
+            population.Release();
+            video.Release();
+            CoUninitialize();
+        }
+
+        // Options
+        STDMETHODIMP_(const CStringW &) getValue(const wchar_t *name, const wchar_t *attribute, const CStringW &defaultValue = L"") CONST
+        {
+            auto &group = options.find(name);
+            if(group != options.end())
+            {
+                auto &value = (*group).second.find(attribute);
+                if (value != (*group).second.end())
+                {
+                    return (*value).second;
+                }
+            }
+
+            return defaultValue;
+        }
+
+        STDMETHODIMP_(void) setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value)
+        {
+            auto &group = newOptions[name];
+            group[attribute] = value;
+        }
+
+        STDMETHODIMP_(void) beginChanges(void)
+        {
+            newOptions = options;
+        }
+
+        STDMETHODIMP_(void) finishChanges(bool commit)
+        {
+            if (commit)
+            {
+                options = std::move(newOptions);
+                ObservableMixin::sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
+
+                auto &display = options.find(L"display");
+                if (display != options.end())
+                {
+                    auto &width = (*display).second.find(L"width");
+                    auto &height = (*display).second.find(L"height");
+                    if (width != (*display).second.end() && height != (*display).second.end())
+                    {
+                        video->setSize(String::to<UINT32>((*width).second), String::to<UINT32>((*height).second), Video::Format::sRGBA);
+                    }
+
+                    auto &fullscreen = (*display).second.find(L"fullscreen");
+                    if (fullscreen != (*display).second.end())
+                    {
+                        video->setFullScreen(String::to<bool>((*fullscreen).second));
+                    }
+                }
+            }
+        }
+
+        // Engine
         STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
         {
             BOOL handled = false;
@@ -761,7 +742,7 @@ namespace Gek
             return FALSE;
         }
 
-        void sciterDebugOutput(UINT subsystem, UINT severity, LPCWSTR text, UINT textSize)
+        void sciterDebugOutput(UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
         {
         }
     };

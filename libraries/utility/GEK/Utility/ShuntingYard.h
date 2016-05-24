@@ -49,11 +49,11 @@ namespace Gek
         {
             TokenType type;
             UINT32 parameterCount;
-            CStringW string;
+            wstring string;
             float value;
 
             Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, const CStringW &string, UINT32 parameterCount = 0);
+            Token(TokenType type, const wstring &string, UINT32 parameterCount = 0);
             Token(float value);
         };
 
@@ -85,15 +85,15 @@ namespace Gek
         };
 
     private:
-        std::unordered_map<CStringW, float> variableMap;
-        std::unordered_map<CStringW, Operation> operationsMap;
-        std::unordered_map<CStringW, Function> functionsMap;
+        std::unordered_map<wstring, float> variableMap;
+        std::unordered_map<wstring, Operation> operationsMap;
+        std::unordered_map<wstring, Function> functionsMap;
         std::mt19937 mersineTwister;
 
     public:
         ShuntingYard(void);
 
-        void evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList);
+        void evaluteTokenList(const wchar_t *expression, std::vector<Token> &rpnTokenList);
 
         inline void evaluate(std::vector<Token> &rpnTokenList, float &value)
         {
@@ -112,41 +112,41 @@ namespace Gek
             evaluate(rpnTokenList, value.data);
         }
 
-        inline void evaluate(LPCWSTR expression, float &value)
+        inline void evaluate(const wchar_t *expression, float &value)
         {
             evaluateValue(expression, &value, 1);
         }
 
         template <std::size_t SIZE>
-        void evaluate(LPCWSTR expression, float(&value)[SIZE])
+        void evaluate(const wchar_t *expression, float(&value)[SIZE])
         {
             evaluateValue(expression, value, SIZE);
         }
 
         template <class TYPE>
-        void evaluate(LPCWSTR expression, TYPE &value)
+        void evaluate(const wchar_t *expression, TYPE &value)
         {
             evaluate(expression, value.data);
         }
 
     private:
-        bool isNumber(const CStringW &token);
-        bool isOperation(const CStringW &token);
-        bool isFunction(const CStringW &token);
-        bool isLeftParenthesis(const CStringW &token);
-        bool isRightParenthesis(const CStringW &token);
-        bool isParenthesis(const CStringW &token);
-        bool isSeparator(const CStringW &token);
-        bool isAssociative(const CStringW &token, const Associations &type);
-        int comparePrecedence(const CStringW &token1, const CStringW &token2);
-        TokenType getTokenType(const CStringW &token);
+        bool isNumber(const wstring &token);
+        bool isOperation(const wstring &token);
+        bool isFunction(const wstring &token);
+        bool isLeftParenthesis(const wstring &token);
+        bool isRightParenthesis(const wstring &token);
+        bool isParenthesis(const wstring &token);
+        bool isSeparator(const wstring &token);
+        bool isAssociative(const wstring &token, const Associations &type);
+        int comparePrecedence(const wstring &token1, const wstring &token2);
+        TokenType getTokenType(const wstring &token);
 
     private:
         void insertToken(std::vector<Token> &infixTokenList, Token &token);
-        bool replaceFirstVariable(std::vector<Token> &infixTokenList, CStringW &token);
-        bool replaceFirstFunction(std::vector<Token> &infixTokenList, CStringW &token);
-        void parseSubTokens(std::vector<Token> &infixTokenList, CStringW token);
-        std::vector<Token> convertExpressionToInfix(const CStringW &expression);
+        bool replaceFirstVariable(std::vector<Token> &infixTokenList, wstring &token);
+        bool replaceFirstFunction(std::vector<Token> &infixTokenList, wstring &token);
+        void parseSubTokens(std::vector<Token> &infixTokenList, wstring token);
+        std::vector<Token> convertExpressionToInfix(const wstring &expression);
         void convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList);
         void evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
 
@@ -157,6 +157,6 @@ namespace Gek
         }
 
         void evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
-        void evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize);
+        void evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize);
     };
 }; // namespace Gek

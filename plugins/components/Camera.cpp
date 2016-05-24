@@ -85,7 +85,7 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Component
-        STDMETHODIMP_(LPCWSTR) getName(void) const
+        STDMETHODIMP_(const wchar_t *) getName(void) const
         {
             return L"first_person_camera";
         }
@@ -105,7 +105,7 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Component
-        STDMETHODIMP_(LPCWSTR) getName(void) const
+        STDMETHODIMP_(const wchar_t *) getName(void) const
         {
             return L"third_person_camera";
         }

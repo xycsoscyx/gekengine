@@ -67,13 +67,13 @@ namespace Gek
 
     GEK_INTERFACE(PluginResources)
     {
-        virtual PluginHandle loadPlugin(LPCWSTR fileName) = 0;
-        virtual MaterialHandle loadMaterial(LPCWSTR fileName) = 0;
-        virtual ResourceHandle loadTexture(LPCWSTR fileName, LPCWSTR fallback, UINT32 flags) = 0;
+        virtual PluginHandle loadPlugin(const wchar_t *fileName) = 0;
+        virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
+        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags) = 0;
 
-        virtual ResourceHandle createTexture(LPCWSTR name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) = 0;
-        virtual ResourceHandle createBuffer(LPCWSTR name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) = 0;
-        virtual ResourceHandle createBuffer(LPCWSTR name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) = 0;
+        virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) = 0;
+        virtual ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) = 0;
+        virtual ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) = 0;
 
         virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
         virtual void unmapBuffer(ResourceHandle buffer) = 0;
@@ -92,10 +92,10 @@ namespace Gek
         virtual void clearLocal(void) = 0;
         
         virtual ShaderHandle getShader(MaterialHandle material) = 0;
-        virtual void *getResourceHandle(const std::type_index &type, LPCWSTR name) = 0;
+        virtual void *getResourceHandle(const std::type_index &type, const wchar_t *name) = 0;
 
         template <typename HANDLE>
-        HANDLE getResourceHandle(LPCWSTR name)
+        HANDLE getResourceHandle(const wchar_t *name)
         {
             void *handle = getResourceHandle(typeid(HANDLE), name) = 0;
             return (handle ? *reinterpret_cast<HANDLE *>(handle) : ResourceHandle()) = 0;
@@ -109,10 +109,10 @@ namespace Gek
             return dynamic_cast<RESOURCE *>(getResource(typeid(HANDLE), LPCVOID(&handle))) = 0;
         }
 
-        virtual ShaderHandle loadShader(LPCWSTR fileName) = 0;
-        virtual void loadResourceList(ShaderHandle shader, LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
-        virtual ProgramHandle loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual ProgramHandle loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual ShaderHandle loadShader(const wchar_t *fileName) = 0;
+        virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
 
         virtual RenderStateHandle createRenderState(const Video::RenderState &renderState) = 0;
         virtual DepthStateHandle createDepthState(const Video::DepthState &depthState) = 0;

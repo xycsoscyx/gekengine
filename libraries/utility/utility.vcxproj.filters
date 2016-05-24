@@ -59,13 +59,7 @@
     <ClInclude Include="GEK\Utility\ShuntingYard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\Exception.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Utility\Trace.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Utility\Macros.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

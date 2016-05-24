@@ -220,7 +220,7 @@ namespace Gek
         }
 
         std::function<void(void)> loadScene;
-        STDMETHODIMP load(LPCWSTR fileName)
+        STDMETHODIMP load(const wchar_t *fileName)
         {
             loadScene = std::bind([&](const CStringW &fileName) -> HRESULT
             {
@@ -247,7 +247,7 @@ namespace Gek
                                 while (xmlComponentNode)
                                 {
                                     auto &componentData = entityDefinition[xmlComponentNode.getType()];
-                                    xmlComponentNode.listAttributes([&componentData](LPCWSTR name, LPCWSTR value) -> void
+                                    xmlComponentNode.listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
                                     {
                                         componentData.insert(std::make_pair(name, value));
                                     });
@@ -295,7 +295,7 @@ namespace Gek
             return S_OK;
         }
 
-        STDMETHODIMP save(LPCWSTR fileName)
+        STDMETHODIMP save(const wchar_t *fileName)
         {
             Gek::XmlDocument xmlDocument;
             xmlDocument.create(L"world");
@@ -318,7 +318,7 @@ namespace Gek
             entityList.clear();
         }
 
-        STDMETHODIMP_(Entity *) createEntity(const EntityDefinition &entityData, LPCWSTR name)
+        STDMETHODIMP_(Entity *) createEntity(const EntityDefinition &entityData, const wchar_t *name)
         {
             CComPtr<EntityImplementation> entity = new EntityImplementation();
             if (entity)
@@ -365,7 +365,7 @@ namespace Gek
             killEntityList.push_back(entity);
         }
 
-        STDMETHODIMP_(Entity *) getNamedEntity(LPCWSTR name)
+        STDMETHODIMP_(Entity *) getNamedEntity(const wchar_t *name)
         {
             GEK_REQUIRE(name);
 

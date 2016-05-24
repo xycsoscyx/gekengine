@@ -15,7 +15,7 @@ namespace Gek
         static ShuntingYard shuntingYard;
 
         template <typename TYPE>
-        void castResult(LPCWSTR expression, TYPE &result, TYPE defaultValue)
+        void castResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)
         {
             try
             {
@@ -30,7 +30,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        void getResult(LPCWSTR expression, TYPE &result, const TYPE &defaultValue)
+        void getResult(const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
         {
             try
             {
@@ -42,47 +42,47 @@ namespace Gek
             };
         }
 
-        void get(LPCWSTR expression, INT32 &result, INT32 defaultValue)
+        void get(const wchar_t *expression, INT32 &result, INT32 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, UINT32 &result, UINT32 defaultValue)
+        void get(const wchar_t *expression, UINT32 &result, UINT32 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, INT64 &result, INT64 defaultValue)
+        void get(const wchar_t *expression, INT64 &result, INT64 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, UINT64 &result, UINT64 defaultValue)
+        void get(const wchar_t *expression, UINT64 &result, UINT64 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, float &result, float defaultValue)
+        void get(const wchar_t *expression, float &result, float defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, Gek::Math::Float2 &result, const Gek::Math::Float2 &defaultValue)
+        void get(const wchar_t *expression, Gek::Math::Float2 &result, const Gek::Math::Float2 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, Gek::Math::Float3 &result, const Gek::Math::Float3 &defaultValue)
+        void get(const wchar_t *expression, Gek::Math::Float3 &result, const Gek::Math::Float3 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, Gek::Math::Float4 &result, const Gek::Math::Float4 &defaultValue)
+        void get(const wchar_t *expression, Gek::Math::Float4 &result, const Gek::Math::Float4 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(LPCWSTR expression, Gek::Math::Color &result, const Gek::Math::Color &defaultValue)
+        void get(const wchar_t *expression, Gek::Math::Color &result, const Gek::Math::Color &defaultValue)
         {
             try
             {
@@ -103,7 +103,7 @@ namespace Gek
             };
         }
 
-        void get(LPCWSTR expression, Gek::Math::Quaternion &result, const Gek::Math::Quaternion &defaultValue)
+        void get(const wchar_t *expression, Gek::Math::Quaternion &result, const Gek::Math::Quaternion &defaultValue)
         {
             try
             {
@@ -124,7 +124,7 @@ namespace Gek
             };
         }
 
-        void get(LPCWSTR expression, CStringW &result)
+        void get(const wchar_t *expression, wstring &result)
         {
             result = expression;
         }

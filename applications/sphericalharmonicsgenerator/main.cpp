@@ -15,12 +15,12 @@ public:
     int line;
 
 public:
-    GeneratorException(int line, LPCWSTR format, ...)
+    GeneratorException(int line, const wchar_t *formatting, ...)
         : line(line)
     {
         va_list variableList;
-        va_start(variableList, format);
-        message.FormatV(format, variableList);
+        va_start(variableList, formatting);
+        message.FormatV(formatting, variableList);
         va_end(variableList);
     }
 };
@@ -176,7 +176,7 @@ namespace Gek
     typedef SH<float, 9> SH9;
     typedef SH<Math::Float4, 9> SH9Color;
 
-    HRESULT loadTexture(LPCWSTR fileName, ::DirectX::ScratchImage &image)
+    HRESULT loadTexture(const wchar_t *fileName, ::DirectX::ScratchImage &image)
     {
         std::vector<UINT8> fileData;
         FileSystem::load(fileName, fileData);
@@ -240,7 +240,7 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT loadCubeMap(LPCWSTR fileName, ::DirectX::ScratchImage &image)
+    HRESULT loadCubeMap(const wchar_t *fileName, ::DirectX::ScratchImage &image)
     {
         HRESULT resultValue = loadTexture(fileName, image);
         if (SUCCEEDED(resultValue) && !image.GetMetadata().IsCubemap())
@@ -251,13 +251,13 @@ namespace Gek
         return resultValue;
     }
 
-    HRESULT loadIntoCubeMap(LPCWSTR directory, ::DirectX::ScratchImage &image)
+    HRESULT loadIntoCubeMap(const wchar_t *directory, ::DirectX::ScratchImage &image)
     {
         HRESULT resultValue = E_FAIL;
         ::DirectX::ScratchImage cubeMapList[6];
         for (UINT32 face = 0; face < 6; face++)
         {
-            static const LPCWSTR directions[] =
+            static const const wchar_t *directions[] =
             {
                 L"posx",
                 L"negx",
@@ -267,7 +267,7 @@ namespace Gek
                 L"negz",
             };
 
-            FileSystem::find(directory, String::format(L"%s.*", directions[face]), false, [&](LPCWSTR fileName) -> bool
+            FileSystem::find(directory, String::format(L"%s.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
             {
                 resultValue = loadTexture(fileName, cubeMapList[face]);
                 if (SUCCEEDED(resultValue))

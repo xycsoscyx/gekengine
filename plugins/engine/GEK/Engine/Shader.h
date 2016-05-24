@@ -41,11 +41,11 @@ namespace Gek
             virtual bool prepare(void);
         };
 
-        virtual void initialize(IUnknown *initializerContext, LPCWSTR fileName) = 0;
+        virtual void initialize(IUnknown *initializerContext, const wchar_t *fileName) = 0;
 
         virtual UINT32 getPriority(void) = 0;
 
-        virtual void loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual void loadResourceList(const wchar_t *materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
         virtual void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) = 0;
 
         virtual Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;

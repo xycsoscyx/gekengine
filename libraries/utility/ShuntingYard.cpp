@@ -17,7 +17,7 @@ namespace Gek
     {
     }
 
-    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const CStringW &string, UINT32 parameterCount)
+    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const wstring &string, UINT32 parameterCount)
         : type(type)
         , string(string)
         , parameterCount(parameterCount)
@@ -152,7 +152,7 @@ namespace Gek
         } } });
     }
 
-    void ShuntingYard::evaluteTokenList(LPCWSTR expression, std::vector<Token> &rpnTokenList)
+    void ShuntingYard::evaluteTokenList(const wchar_t *expression, std::vector<Token> &rpnTokenList)
     {
         std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
         convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
@@ -163,62 +163,62 @@ namespace Gek
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    void ShuntingYard::evaluateValue(LPCWSTR expression, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize)
     {
         std::vector<Token> rpnTokenList;
         evaluteTokenList(expression, rpnTokenList);
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    bool ShuntingYard::isNumber(const CStringW &token)
+    bool ShuntingYard::isNumber(const wstring &token)
     {
-        return std::regex_match(token.GetString(), std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"));
+        return std::regex_match(token.c_str(), std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"));
     }
 
-    bool ShuntingYard::isOperation(const CStringW &token)
+    bool ShuntingYard::isOperation(const wstring &token)
     {
         return (operationsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isFunction(const CStringW &token)
+    bool ShuntingYard::isFunction(const wstring &token)
     {
         return (functionsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isLeftParenthesis(const CStringW &token)
+    bool ShuntingYard::isLeftParenthesis(const wstring &token)
     {
-        return token == L'(';
+        return token.front() == L'(';
     }
 
-    bool ShuntingYard::isRightParenthesis(const CStringW &token)
+    bool ShuntingYard::isRightParenthesis(const wstring &token)
     {
-        return token == L')';
+        return token.front() == L')';
     }
 
-    bool ShuntingYard::isParenthesis(const CStringW &token)
+    bool ShuntingYard::isParenthesis(const wstring &token)
     {
         return (isLeftParenthesis(token) || isRightParenthesis(token));
     }
 
-    bool ShuntingYard::isSeparator(const CStringW &token)
+    bool ShuntingYard::isSeparator(const wstring &token)
     {
-        return token == L',';
+        return token.front() == L',';
     }
 
-    bool ShuntingYard::isAssociative(const CStringW &token, const Associations &type)
+    bool ShuntingYard::isAssociative(const wstring &token, const Associations &type)
     {
         auto &p = operationsMap.find(token)->second;
         return p.association == type;
     }
 
-    int ShuntingYard::comparePrecedence(const CStringW &token1, const CStringW &token2)
+    int ShuntingYard::comparePrecedence(const wstring &token1, const wstring &token2)
     {
         auto &p1 = operationsMap.find(token1)->second;
         auto &p2 = operationsMap.find(token2)->second;
         return p1.precedence - p2.precedence;
     }
 
-    ShuntingYard::TokenType ShuntingYard::getTokenType(const CStringW &token)
+    ShuntingYard::TokenType ShuntingYard::getTokenType(const wstring &token)
     {
         if (isNumber(token))
         {
@@ -306,14 +306,14 @@ namespace Gek
         infixTokenList.push_back(token);
     }
 
-    bool ShuntingYard::replaceFirstVariable(std::vector<Token> &infixTokenList, CStringW &token)
+    bool ShuntingYard::replaceFirstVariable(std::vector<Token> &infixTokenList, wstring &token)
     {
         for (auto &variable : variableMap)
         {
-            if (token.Find(variable.first) == 0)
+            if (token.find(variable.first) == std::string::npos)
             {
                 insertToken(infixTokenList, Token(variable.second));
-                token = token.Mid(variable.first.GetLength());
+                token = &token.at(variable.first.size());
                 return true;
             }
         }
@@ -321,14 +321,14 @@ namespace Gek
         return false;
     }
 
-    bool ShuntingYard::replaceFirstFunction(std::vector<Token> &infixTokenList, CStringW &token)
+    bool ShuntingYard::replaceFirstFunction(std::vector<Token> &infixTokenList, wstring &token)
     {
         for (auto &function : functionsMap)
         {
-            if (token.Find(function.first) == 0)
+            if (token.find(function.first) == std::string::npos)
             {
                 insertToken(infixTokenList, Token(TokenType::Function, function.first));
-                token = token.Mid(function.first.GetLength());
+                token = &token.at(function.first.size());
                 return true;
             }
         }
@@ -336,16 +336,16 @@ namespace Gek
         return false;
     }
 
-    void ShuntingYard::parseSubTokens(std::vector<Token> &infixTokenList, CStringW token)
+    void ShuntingYard::parseSubTokens(std::vector<Token> &infixTokenList, wstring token)
     {
-        while (!token.IsEmpty())
+        while (!token.empty())
         {
             std::wcmatch matches;
-            if (std::regex_search(token.GetString(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
+            if (std::regex_search(token.c_str(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
             {
-                CStringW value = matches[0].str().c_str();
+                wstring value = matches[0].str().c_str();
                 insertToken(infixTokenList, Token(Gek::String::to<float>(value)));
-                token = token.Mid(value.GetLength());
+                token = &token.at(value.size());
                 continue;
             }
 
@@ -356,27 +356,27 @@ namespace Gek
 
             if (replaceFirstFunction(infixTokenList, token))
             {
-                GEK_CHECK_EXCEPTION(!token.IsEmpty(), MissingFunctionParenthesis, "Unbalanced scope, missing parenthesis: %S", token);
+                GEK_CHECK_EXCEPTION(!token.empty(), MissingFunctionParenthesis, "Unbalanced scope, missing parenthesis: %S", token);
                 continue;
             }
 
-            GEK_CHECK_EXCEPTION(!token.IsEmpty(), UnknownTokenType, "Unknown tokens remaining: %S", token);
+            GEK_CHECK_EXCEPTION(!token.empty(), UnknownTokenType, "Unknown tokens remaining: %S", token);
         };
     }
 
-    std::vector<ShuntingYard::Token> ShuntingYard::convertExpressionToInfix(const CStringW &expression)
+    std::vector<ShuntingYard::Token> ShuntingYard::convertExpressionToInfix(const wstring &expression)
     {
-        CStringW runningToken;
+        wstring runningToken;
         std::vector<Token> infixTokenList;
-        for (int index = 0; index < expression.GetLength(); ++index)
+        for (size_t index = 0; index < expression.size(); ++index)
         {
-            CStringW nextToken = expression.GetAt(index);
+            wstring nextToken(&expression.at(index), 1);
             if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
             {
-                if (!runningToken.IsEmpty())
+                if (!runningToken.empty())
                 {
                     parseSubTokens(infixTokenList, runningToken);
-                    runningToken.Empty();
+                    runningToken.clear();
                 }
 
                 insertToken(infixTokenList, Token(getTokenType(nextToken), nextToken));
@@ -385,20 +385,20 @@ namespace Gek
             {
                 if (nextToken == L" ")
                 {
-                    if (!runningToken.IsEmpty())
+                    if (!runningToken.empty())
                     {
                         parseSubTokens(infixTokenList, runningToken);
-                        runningToken.Empty();
+                        runningToken.clear();
                     }
                 }
                 else
                 {
-                    runningToken.Append(nextToken);
+                    runningToken.append(nextToken);
                 }
             }
         }
 
-        if (!runningToken.IsEmpty())
+        if (!runningToken.empty())
         {
             parseSubTokens(infixTokenList, runningToken);
         }

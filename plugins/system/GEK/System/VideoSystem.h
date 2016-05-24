@@ -6,7 +6,7 @@
 #include "GEK\Math\Float4.h"
 #include "GEK\Shapes\Rectangle.h"
 #include "GEK\Utility\Trace.h"
-#include "GEK\Context\Context.h"
+#include "GEK\Utility\String.h"
 #include <unordered_map>
 #include <functional>
 #include <memory>
@@ -390,7 +390,7 @@ namespace Gek
         struct InputElement
         {
             Format format;
-            LPCSTR semanticName;
+            const char *semanticName;
             UINT32 semanticIndex;
             ElementType slotClass;
             UINT32 slotIndex;
@@ -404,7 +404,7 @@ namespace Gek
             {
             }
 
-            InputElement(Format format, LPCSTR semanticName, UINT32 semanticIndex, ElementType slotClass = ElementType::Vertex, UINT32 slotIndex = 0)
+            InputElement(Format format, const char *semanticName, UINT32 semanticIndex, ElementType slotClass = ElementType::Vertex, UINT32 slotIndex = 0)
                 : format(format)
                 , semanticName(semanticName)
                 , semanticIndex(semanticIndex)
@@ -453,10 +453,10 @@ namespace Gek
 
     GEK_INTERFACE(VideoContext)
     {
-        virtual VideoPipeline *computePipeline(void) = 0;
-        virtual VideoPipeline *vertexPipeline(void) = 0;
-        virtual VideoPipeline *geometryPipeline(void) = 0;
-        virtual VideoPipeline *pixelPipeline(void) = 0;
+        virtual VideoPipeline * const computePipeline(void) = 0;
+        virtual VideoPipeline * const vertexPipeline(void) = 0;
+        virtual VideoPipeline * const geometryPipeline(void) = 0;
+        virtual VideoPipeline * const pixelPipeline(void) = 0;
 
         virtual void generateMipMaps(VideoTexture *texture) = 0;
 
@@ -485,7 +485,7 @@ namespace Gek
 
         virtual void dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ) = 0;
 
-        virtual std::shared_ptr<VideoObject> finishCommandList(void) = 0;
+        virtual VideoObjectPtr finishCommandList(void) = 0;
     };
 
     GEK_INTERFACE(VideoSystem)
@@ -500,40 +500,40 @@ namespace Gek
 
         virtual bool isFullScreen(void) = 0;
 
-        virtual std::shared_ptr<VideoContext> createDeferredContext(void) = 0;
+        virtual VideoContextPtr createDeferredContext(void) = 0;
 
-        virtual std::shared_ptr<VideoObject> createEvent(void) = 0;
+        virtual VideoObjectPtr createEvent(void) = 0;
         virtual void setEvent(VideoObject *event) = 0;
         virtual bool isEventSet(VideoObject *event) = 0;
 
-        virtual std::shared_ptr<VideoObject> createRenderState(const Video::RenderState &renderState) = 0;
-        virtual std::shared_ptr<VideoObject> createDepthState(const Video::DepthState &depthState) = 0;
-        virtual std::shared_ptr<VideoObject> createBlendState(const Video::UnifiedBlendState &blendState) = 0;
-        virtual std::shared_ptr<VideoObject> createBlendState(const Video::IndependentBlendState &blendState) = 0;
-        virtual std::shared_ptr<VideoObject> createSamplerState(const Video::SamplerState &samplerState) = 0;
+        virtual VideoObjectPtr createRenderState(const Video::RenderState &renderState) = 0;
+        virtual VideoObjectPtr createDepthState(const Video::DepthState &depthState) = 0;
+        virtual VideoObjectPtr createBlendState(const Video::UnifiedBlendState &blendState) = 0;
+        virtual VideoObjectPtr createBlendState(const Video::IndependentBlendState &blendState) = 0;
+        virtual VideoObjectPtr createSamplerState(const Video::SamplerState &samplerState) = 0;
 
-        virtual std::shared_ptr<VideoTexture> createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1) = 0;
-        virtual std::shared_ptr<VideoTexture> loadTexture(LPCWSTR fileName, UINT32 flags) = 0;
-        virtual std::shared_ptr<VideoTexture> loadCubeMap(LPCWSTR fileNameList[6], UINT32 flags) = 0;
+        virtual VideoTexturePtr createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1) = 0;
+        virtual VideoTexturePtr loadTexture(const wchar_t *fileName, UINT32 flags) = 0;
+        virtual VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], UINT32 flags) = 0;
         virtual void updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) = 0;
 
-        virtual std::shared_ptr<VideoBuffer> createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
-        virtual std::shared_ptr<VideoBuffer> createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
+        virtual VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
+        virtual VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
         virtual void updateBuffer(VideoBuffer *buffer, LPCVOID data) = 0;
         virtual void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
         virtual void unmapBuffer(VideoBuffer *buffer) = 0;
 
         virtual void copyResource(VideoObject *destination, VideoObject *source) = 0;
 
-        virtual std::shared_ptr<VideoObject> compileComputeProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual std::shared_ptr<VideoObject> compileVertexProgram(LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual std::shared_ptr<VideoObject> compileGeometryProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual std::shared_ptr<VideoObject> compilePixelProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
 
-        virtual std::shared_ptr<VideoObject> loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual std::shared_ptr<VideoObject> loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual std::shared_ptr<VideoObject> loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
-        virtual std::shared_ptr<VideoObject> loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
 
         virtual void executeCommandList(VideoObject *commandList) = 0;
 

@@ -25,6 +25,6 @@ namespace Gek
 
     GEK_INTERFACE(ActionObserver)
     {
-        virtual void onAction(LPCWSTR name, const ActionParam &param) = 0;
+        virtual void onAction(const wchar_t *name, const ActionParam &param) = 0;
     };
 }; // namespace Gek
