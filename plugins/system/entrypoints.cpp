@@ -1,20 +1,17 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEK\Context\COM.h"
-#include "GEK\System\InputSystem.h"
-#include "GEK\System\AudioSystem.h"
-#include "GEK\System\VideoSystem.h"
+#include "GEK\Context\Plugin.h"
 
 namespace Gek
 {
-    DECLARE_REGISTERED_CLASS(InputSystemImplementation);
-    DECLARE_REGISTERED_CLASS(AudioSystemImplementation);
-    DECLARE_REGISTERED_CLASS(VideoSystemImplementation);
-}; // namespace Gek
+    GEK_DECLARE_PLUGIN(InputSystemImplementation);
+    GEK_DECLARE_PLUGIN(AudioSystemImplementation);
+    GEK_DECLARE_PLUGIN(VideoSystemImplementation);
 
-DECLARE_PLUGIN_MAP(System)
-    ADD_PLUGIN_CLASS(Gek::InputSystemRegistration, Gek::InputSystemImplementation)
-    ADD_PLUGIN_CLASS(Gek::AudioSystemRegistration, Gek::AudioSystemImplementation)
-    ADD_PLUGIN_CLASS(Gek::VideoSystemRegistration, Gek::VideoSystemImplementation)
-END_PLUGIN_MAP
+    GEK_PLUGIN_BEGIN(System)
+        GEK_PLUGIN_CLASS(L"InputSystem", InputSystemImplementation)
+        GEK_PLUGIN_CLASS(L"AudioSystem", AudioSystemImplementation)
+        GEK_PLUGIN_CLASS(L"VideoSystem", VideoSystemImplementation)
+    GEK_PLUGIN_END()
+}; // namespace Gek

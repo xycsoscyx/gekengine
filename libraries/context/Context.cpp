@@ -1,7 +1,6 @@
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\COM.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
 #include <unordered_map>

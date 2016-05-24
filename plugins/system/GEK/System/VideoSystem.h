@@ -5,13 +5,11 @@
 #include "GEK\Math\Float2.h"
 #include "GEK\Math\Float4.h"
 #include "GEK\Shapes\Rectangle.h"
-#include "GEK\Utility\Hash.h"
 #include "GEK\Utility\Trace.h"
-#include <atlbase.h>
-#include <atlstr.h>
+#include "GEK\Context\Context.h"
+#include <unordered_map>
 #include <functional>
 #include <memory>
-#include <unordered_map>
 
 namespace Gek
 {
@@ -416,128 +414,133 @@ namespace Gek
         };
     }; // namespace Video
 
-    interface VideoObject
+    GEK_INTERFACE(VideoObject)
     {
     };
 
-    interface VideoBuffer : public VideoObject
+    GEK_INTERFACE(VideoBuffer)
+        : virtual public VideoObject
     {
-        Video::Format getFormat(void);
-        UINT32 getStride(void);
-        UINT32 getCount(void);
+    public:
+        virtual Video::Format getFormat(void) = 0;
+        virtual UINT32 getStride(void) = 0;
+        virtual UINT32 getCount(void) = 0;
     };
 
-    interface VideoTexture : public VideoObject
+    GEK_INTERFACE(VideoTexture)
+        : virtual public VideoObject
     {
-        Video::Format getFormat(void);
-        UINT32 getWidth(void);
-        UINT32 getHeight(void);
-        UINT32 getDepth(void);
+    public:
+        virtual Video::Format getFormat(void) = 0;
+        virtual UINT32 getWidth(void) = 0;
+        virtual UINT32 getHeight(void) = 0;
+        virtual UINT32 getDepth(void) = 0;
     };
 
-    interface VideoTarget : public VideoTexture
+    GEK_INTERFACE(VideoTarget)
+        : virtual public VideoTexture
     {
-        const Video::ViewPort &getViewPort(void);
+    public:
+        virtual const Video::ViewPort &getViewPort(void) = 0;
     };
 
-    interface VideoPipeline
+    GEK_INTERFACE(VideoPipeline)
     {
-        void setProgram(VideoObject *program);
-        void setConstantBuffer(VideoBuffer *constantBuffer, UINT32 stage);
-        void setSamplerState(VideoObject *samplerState, UINT32 stage);
-        void setResource(VideoObject *resource, UINT32 stage);
-        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage) = default;
+    public:
+        virtual void setProgram(VideoObject *program) = 0;
+        virtual void setConstantBuffer(VideoBuffer *constantBuffer, UINT32 stage) = 0;
+        virtual void setSamplerState(VideoObject *samplerState, UINT32 stage) = 0;
+        virtual void setResource(VideoObject *resource, UINT32 stage) = 0;
+        virtual void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage) = 0;
     };
 
-    interface VideoContext
+    GEK_INTERFACE(VideoContext)
     {
-        VideoPipeline *computePipeline(void);
-        VideoPipeline *vertexPipeline(void);
-        VideoPipeline *geometryPipeline(void);
-        VideoPipeline *pixelPipeline(void);
+    public:
+        virtual VideoPipeline *computePipeline(void) = 0;
+        virtual VideoPipeline *vertexPipeline(void) = 0;
+        virtual VideoPipeline *geometryPipeline(void) = 0;
+        virtual VideoPipeline *pixelPipeline(void) = 0;
 
-        void generateMipMaps(VideoTexture *texture);
+        virtual void generateMipMaps(VideoTexture *texture) = 0;
 
-        void clearResources(void);
+        virtual void clearResources(void) = 0;
 
-        void setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount);
-        void setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount);
+        virtual void setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount) = 0;
+        virtual void setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) = 0;
 
-        void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear);
-        void clearDepthStencilTarget(VideoObject *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear);
-        void clearUnorderedAccessBuffer(VideoObject *buffer, float value);
-        void setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, VideoObject *depthBuffer);
+        virtual void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear) = 0;
+        virtual void clearDepthStencilTarget(VideoObject *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear) = 0;
+        virtual void setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, VideoObject *depthBuffer) = 0;
 
-        void setRenderState(VideoObject *renderState);
-        void setDepthState(VideoObject *depthState, UINT32 stencilReference);
-        void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, UINT32 sampleMask);
+        virtual void setRenderState(VideoObject *renderState) = 0;
+        virtual void setDepthState(VideoObject *depthState, UINT32 stencilReference) = 0;
+        virtual void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, UINT32 sampleMask) = 0;
 
-        void setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset);
-        void setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset);
-        void setPrimitiveType(Video::PrimitiveType type);
+        virtual void setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset) = 0;
+        virtual void setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset) = 0;
+        virtual void setPrimitiveType(Video::PrimitiveType type) = 0;
 
-        void drawPrimitive(UINT32 vertexCount, UINT32 firstVertex);
-        void drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex);
+        virtual void drawPrimitive(UINT32 vertexCount, UINT32 firstVertex) = 0;
+        virtual void drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex) = 0;
 
-        void drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex);
-        void drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex);
+        virtual void drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) = 0;
+        virtual void drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) = 0;
 
-        void dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ);
+        virtual void dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ) = 0;
 
-        std::shared_ptr<VideoObject> finishCommandList(void);
+        virtual std::shared_ptr<VideoObject> finishCommandList(void) = 0;
     };
 
-    interface VideoSystem
+    GEK_INTERFACE(VideoSystem)
     {
-        void initialize(HWND window, bool fullScreen, Video::Format format);
-        void setFullScreen(bool fullScreen);
-        void setSize(UINT32 width, UINT32 height, Video::Format format);
-        void resize(void);
+    public:
+        virtual void setFullScreen(bool fullScreen) = 0;
+        virtual void setSize(UINT32 width, UINT32 height, Video::Format format) = 0;
+        virtual void resize(void) = 0;
 
-        VideoTarget * const getBackBuffer(void);
-        VideoContext * const getDefaultContext(void);
+        virtual VideoTarget * const getBackBuffer(void) = 0;
+        virtual VideoContext * const getDefaultContext(void) = 0;
 
-        bool isFullScreen(void);
+        virtual bool isFullScreen(void) = 0;
 
-        std::shared_ptr<VideoContext> createDeferredContext(void);
+        virtual std::shared_ptr<VideoContext> createDeferredContext(void) = 0;
 
-        std::shared_ptr<VideoObject> createEvent(void);
-        void setEvent(VideoObject *event);
-        bool isEventSet(VideoObject *event);
+        virtual std::shared_ptr<VideoObject> createEvent(void) = 0;
+        virtual void setEvent(VideoObject *event) = 0;
+        virtual bool isEventSet(VideoObject *event) = 0;
 
-        std::shared_ptr<VideoObject> createRenderState(const Video::RenderState &renderState);
-        std::shared_ptr<VideoObject> createDepthState(const Video::DepthState &depthState);
-        std::shared_ptr<VideoObject> createBlendState(const Video::UnifiedBlendState &blendState);
-        std::shared_ptr<VideoObject> createBlendState(const Video::IndependentBlendState &blendState);
-        std::shared_ptr<VideoObject> createSamplerState(const Video::SamplerState &samplerState);
+        virtual std::shared_ptr<VideoObject> createRenderState(const Video::RenderState &renderState) = 0;
+        virtual std::shared_ptr<VideoObject> createDepthState(const Video::DepthState &depthState) = 0;
+        virtual std::shared_ptr<VideoObject> createBlendState(const Video::UnifiedBlendState &blendState) = 0;
+        virtual std::shared_ptr<VideoObject> createBlendState(const Video::IndependentBlendState &blendState) = 0;
+        virtual std::shared_ptr<VideoObject> createSamplerState(const Video::SamplerState &samplerState) = 0;
 
-        std::shared_ptr<VideoTexture> createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1);
-        std::shared_ptr<VideoTexture> loadTexture(LPCWSTR fileName, UINT32 flags);
-        std::shared_ptr<VideoTexture> loadCubeMap(LPCWSTR fileNameList[6], UINT32 flags);
-        void updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr);
+        virtual std::shared_ptr<VideoTexture> createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1) = 0;
+        virtual std::shared_ptr<VideoTexture> loadTexture(LPCWSTR fileName, UINT32 flags) = 0;
+        virtual std::shared_ptr<VideoTexture> loadCubeMap(LPCWSTR fileNameList[6], UINT32 flags) = 0;
+        virtual void updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) = 0;
 
-        std::shared_ptr<VideoBuffer> createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr);
-        std::shared_ptr<VideoBuffer> createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr);
-        void updateBuffer(VideoBuffer *buffer, LPCVOID data);
-        void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard);
-        void unmapBuffer(VideoBuffer *buffer);
+        virtual std::shared_ptr<VideoBuffer> createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
+        virtual std::shared_ptr<VideoBuffer> createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
+        virtual void updateBuffer(VideoBuffer *buffer, LPCVOID data) = 0;
+        virtual void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
+        virtual void unmapBuffer(VideoBuffer *buffer) = 0;
 
-        void copyResource(VideoObject *destination, VideoObject *source);
+        virtual void copyResource(VideoObject *destination, VideoObject *source) = 0;
 
-        std::shared_ptr<VideoObject> compileComputeProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
-        std::shared_ptr<VideoObject> compileVertexProgram(LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
-        std::shared_ptr<VideoObject> compileGeometryProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
-        std::shared_ptr<VideoObject> compilePixelProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
+        virtual std::shared_ptr<VideoObject> compileComputeProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual std::shared_ptr<VideoObject> compileVertexProgram(LPCSTR programScript, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual std::shared_ptr<VideoObject> compileGeometryProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual std::shared_ptr<VideoObject> compilePixelProgram(LPCSTR programScript, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
 
-        std::shared_ptr<VideoObject> loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
-        std::shared_ptr<VideoObject> loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
-        std::shared_ptr<VideoObject> loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
-        std::shared_ptr<VideoObject> loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>());
+        virtual std::shared_ptr<VideoObject> loadComputeProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual std::shared_ptr<VideoObject> loadVertexProgram(LPCWSTR fileName, LPCSTR entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual std::shared_ptr<VideoObject> loadGeometryProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
+        virtual std::shared_ptr<VideoObject> loadPixelProgram(LPCWSTR fileName, LPCSTR entryFunction, std::function<HRESULT(LPCSTR, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<CStringA, CStringA> &defineList = std::unordered_map<CStringA, CStringA>()) = 0;
 
-        void executeCommandList(VideoObject *commandList);
+        virtual void executeCommandList(VideoObject *commandList) = 0;
 
-        void present(bool waitForVerticalSync);
+        virtual void present(bool waitForVerticalSync) = 0;
     };
-
-    DECLARE_INTERFACE_IID(VideoSystemRegistration, "6B94910F-0D37-487E-92C3-B7C391108B44");
 }; // namespace Gek

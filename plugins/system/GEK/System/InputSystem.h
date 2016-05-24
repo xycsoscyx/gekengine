@@ -2,7 +2,7 @@
 
 #include "GEK\Math\Float3.h"
 #include "GEK\Utility\Trace.h"
-#include <Windows.h>
+#include "GEK\Context\Context.h"
 
 namespace Gek
 {
@@ -170,30 +170,28 @@ namespace Gek
         }; // namespace State
     }; // namespace Input
 
-    interface InputDevice
+    GEK_INTERFACE(InputDevice)
     {
-        void update(void);
+    public:
+        virtual void update(void) = 0;
 
-        UINT32 getButtonCount(void) const;
-        UINT8 getButtonState(UINT32 buttonIndex) const;
+        virtual UINT32 getButtonCount(void) const = 0;
+        virtual UINT8 getButtonState(UINT32 buttonIndex) const = 0;
 
-        Math::Float3 getAxis(void) const;
-        Math::Float3 getRotation(void) const;
-        float getPointOfView(void) const;
+        virtual Math::Float3 getAxis(void) const = 0;
+        virtual Math::Float3 getRotation(void) const = 0;
+        virtual float getPointOfView(void) const = 0;
     };
 
-    interface InputSystem
+    GEK_INTERFACE(InputSystem)
     {
-        void initialize(HWND hWindow);
+    public:
+        virtual InputDevice * const getKeyboard(void) = 0;
+        virtual InputDevice * const getMouse(void) = 0;
 
-        InputDevice * const getKeyboard(void);
-        InputDevice  const *getMouse(void);
+        virtual UINT32 getJoystickCount(void) = 0;
+        virtual InputDevice * const getJoystick(UINT32 deviceIndex) = 0;
 
-        UINT32 getJoystickCount(void);
-        InputDevice * const getJoystick(UINT32 deviceIndex);
-
-        void update(void);
+        virtual void update(void) = 0;
     };
-
-    DECLARE_INTERFACE_IID(InputSystemRegistration, "3A8EA46C-573A-40E6-8741-71ACCA90BAB4");
 }; // namespace Gek

@@ -1,8 +1,7 @@
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\FileSystem.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\System\AudioSystem.h"
-#include "GEK\Context\COM.h"
-#include "GEK\Context\ContextUserMixin.h"
 #include "audiere.h"
 
 #include <mmsystem.h>
@@ -129,7 +128,7 @@ namespace Gek
     };
 
     class AudioSystemImplementation
-        : public ContextUserMixin
+        : public Plugin<AudioSystemImplementation, HWND>
         , public AudioSystem
     {
     private:
@@ -138,8 +137,8 @@ namespace Gek
         CComQIPtr<IDirectSoundBuffer, &IID_IDirectSoundBuffer> primarySoundBuffer;
 
     public:
-        // Interface
-        void initialize(HWND window)
+        AudioSystemImplementation(Context *context, HWND window)
+            : Plugin(context)
         {
             GEK_REQUIRE(window);
 
@@ -175,6 +174,7 @@ namespace Gek
             setRollOffFactor(1.0f);
         }
 
+        // Interface
         void setMasterVolume(float volume)
         {
             GEK_REQUIRE(primarySoundBuffer);
@@ -198,6 +198,7 @@ namespace Gek
         void setListener(const Math::Float4x4 &matrix)
         {
             GEK_REQUIRE(directSoundListener);
+
             directSoundListener->SetPosition(matrix.translation.x, matrix.translation.y, matrix.translation.z, DS3D_DEFERRED);
             directSoundListener->SetOrientation(matrix.rz.x, matrix.rz.y, matrix.rz.z, matrix.ry.x, matrix.ry.y, matrix.ry.z, DS3D_DEFERRED);
             directSoundListener->CommitDeferredSettings();
@@ -340,5 +341,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(AudioSystemImplementation)
+    GEK_REGISTER_PLUGIN(AudioSystemImplementation);
 }; // namespace Gek

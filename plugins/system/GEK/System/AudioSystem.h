@@ -3,8 +3,7 @@
 #include "GEK\Math\Float4.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Utility\Trace.h"
-#include <atlbase.h>
-#include <atlstr.h>
+#include "GEK\Context\Context.h"
 
 namespace Gek
 {
@@ -13,43 +12,45 @@ namespace Gek
         GEK_BASE_EXCEPTION();
     }; // namespace Audio
 
-    interface AudioSample
+    GEK_INTERFACE(AudioSample)
     {
-        void * const getBuffer(void);
-        void setFrequency(UINT32 frequency);
-        void setVolume(float volume);
+    public:
+        virtual void * const getBuffer(void) = 0;
+        virtual void setFrequency(UINT32 frequency) = 0;
+        virtual void setVolume(float volume) = 0;
     };
 
-    interface AudioEffect : public AudioSample
+    GEK_INTERFACE(AudioEffect)
+        : public AudioSample
     {
-        void setPan(float pan);
-        void play(bool loop);
+    public:
+        virtual void setPan(float pan) = 0;
+        virtual void play(bool loop) = 0;
     };
 
-    interface AudioSound : public AudioSample
+    GEK_INTERFACE(AudioSound)
+        : public AudioSample
     {
-        void setDistance(float minimum, float maximum);
-        void play(const Gek::Math::Float3 &origin, bool loop);
+    public:
+        virtual void setDistance(float minimum, float maximum) = 0;
+        virtual void play(const Gek::Math::Float3 &origin, bool loop) = 0;
     };
 
-    interface AudioSystem
+    GEK_INTERFACE(AudioSystem)
     {
-        void initialize(HWND window);
+    public:
+        virtual void setMasterVolume(float volume) = 0;
+        virtual float getMasterVolume(void) = 0;
 
-        void setMasterVolume(float volume);
-        float getMasterVolume(void);
+        virtual void setListener(const Gek::Math::Float4x4 &matrix) = 0;
+        virtual void setDistanceFactor(float factor) = 0;
+        virtual void setDopplerFactor(float factor) = 0;
+        virtual void setRollOffFactor(float factor) = 0;
 
-        void setListener(const Gek::Math::Float4x4 &matrix);
-        void setDistanceFactor(float factor);
-        void setDopplerFactor(float factor);
-        void setRollOffFacto  (float factor);
+        virtual std::shared_ptr<AudioEffect> copyEffect(AudioEffect *source) = 0;
+        virtual std::shared_ptr<AudioSound> copySound(AudioSound *source) = 0;
 
-        std::shared_ptr<AudioEffect> copyEffect(AudioEffect *source);
-        std::shared_ptr<AudioSound> copySound(AudioSound *source);
-
-        std::shared_ptr<AudioEffect> loadEffect(LPCWSTR fileName);
-        std::shared_ptr<AudioSound> loadSound(LPCWSTR fileName);
+        virtual std::shared_ptr<AudioEffect> loadEffect(LPCWSTR fileName) = 0;
+        virtual std::shared_ptr<AudioSound> loadSound(LPCWSTR fileName) = 0;
     };
-
-    DECLARE_INTERFACE_IID(AudioSystemRegistration, "525E4F27-8A87-409C-A25F-8740393A4B7B");
 }; // namespace Gek

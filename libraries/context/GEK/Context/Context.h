@@ -2,8 +2,8 @@
 
 #include <Windows.h>
 #include <functional>
-#include <string>
 #include <memory>
+#include <string>
 #include <vector>
 
 #define GEK_PREDECLARE(TYPE) class TYPE;

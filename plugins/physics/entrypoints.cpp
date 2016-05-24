@@ -23,19 +23,19 @@ namespace Gek
     DECLARE_INTERFACE_IID(NewtonProcessorRegistration, "BCF7CC29-F375-4F29-9DA7-921F6A78E4E3");
 }; // namespace Gek
 
-DECLARE_PLUGIN_MAP(Components)
-    ADD_PLUGIN_CLASS(Gek::MassRegistration, Gek::MassImplementation)
-        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
+GEK_PLUGIN_BEGIN(Components)
+    GEK_PLUGIN_CLASS(Gek::MassRegistration, Gek::MassImplementation)
+        GEK_PLUGIN_TYPE(Gek::ComponentType)
 
-    ADD_PLUGIN_CLASS(Gek::RigidBodyRegistration, Gek::RigidBodyImplementation)
-        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
+    GEK_PLUGIN_CLASS(Gek::RigidBodyRegistration, Gek::RigidBodyImplementation)
+        GEK_PLUGIN_TYPE(Gek::ComponentType)
 
-    ADD_PLUGIN_CLASS(Gek::StaticBodyRegistration, Gek::StaticBodyImplementation)
-        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
+    GEK_PLUGIN_CLASS(Gek::StaticBodyRegistration, Gek::StaticBodyImplementation)
+        GEK_PLUGIN_TYPE(Gek::ComponentType)
 
-    ADD_PLUGIN_CLASS(Gek::PlayerBodyRegistration, Gek::PlayerBodyImplementation)
-        ADD_PLUGIN_CLASS_TYPE(Gek::ComponentType)
+    GEK_PLUGIN_CLASS(Gek::PlayerBodyRegistration, Gek::PlayerBodyImplementation)
+        GEK_PLUGIN_TYPE(Gek::ComponentType)
 
-    ADD_PLUGIN_CLASS(Gek::NewtonProcessorRegistration, Gek::NewtonProcessorImplementation)
-        ADD_PLUGIN_CLASS_TYPE(Gek::ProcessorType)
-END_PLUGIN_MAP
+    GEK_PLUGIN_CLASS(Gek::NewtonProcessorRegistration, Gek::NewtonProcessorImplementation)
+        GEK_PLUGIN_TYPE(Gek::ProcessorType)
+GEK_PLUGIN_END

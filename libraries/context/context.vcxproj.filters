@@ -35,5 +35,8 @@
     <ClInclude Include="..\utility\GEK\Utility\Allocator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GEK\Context\Plugin.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
