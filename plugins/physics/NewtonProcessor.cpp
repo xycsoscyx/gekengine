@@ -131,7 +131,7 @@ namespace Gek
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
                 Gek::XmlDocument xmlDocument;
-                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName))))
+                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%s.xml", fileName))))
                 {
                     Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
@@ -346,7 +346,7 @@ namespace Gek
             if (newtonWorld)
             {
                 NewtonWaitForUpdateToFinish(newtonWorld);
-                NewtonSerializeToFile(newtonWorld, CW2A(FileSystem::expandPath(L"%root%\\data\\newton.bin")), nullptr, nullptr);
+                NewtonSerializeToFile(newtonWorld, CW2A(FileSystem::expandPath(L"$root\\data\\newton.bin")), nullptr, nullptr);
             }
 
             for (auto &collisionPair : collisionList)
@@ -551,7 +551,7 @@ namespace Gek
                 }
                 else
                 {
-                    CStringW fileName(FileSystem::expandPath(String::format(L"%%root%%\\data\\models\\%s.bin", shape.GetString())));
+                    CStringW fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%s.bin", shape.GetString())));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");

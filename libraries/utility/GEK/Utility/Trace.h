@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Utility\String.h"
+#include <Windows.h>
 #include <json.hpp>
 
 namespace Gek

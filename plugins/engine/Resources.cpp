@@ -905,7 +905,7 @@ namespace Gek
             CComPtr<VideoTexture> texture;
             for (auto &format : formatList)
             {
-                CStringW fullFileName(FileSystem::expandPath(String::format(L"%%root%%\\data\\textures\\%s%s", fileName, format)));
+                CStringW fullFileName(FileSystem::expandPath(String::format(L"$root\\data\\textures\\%s%s", fileName, format)));
                 if (PathFileExists(fullFileName))
                 {
                     resultValue = video->loadTexture(&texture, fullFileName, flags);

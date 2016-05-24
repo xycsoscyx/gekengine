@@ -95,7 +95,7 @@ namespace Gek
                 return false;
             }
 
-            file = CreateFile(FileSystem::expandPath(L"%root%/profile.json"), GENERIC_ALL, FILE_SHARE_WRITE, nullptr, openFlags, FILE_ATTRIBUTE_NORMAL, nullptr);
+            file = CreateFile(FileSystem::expandPath(L"$root\\profile.json"), GENERIC_ALL, FILE_SHARE_WRITE, nullptr, openFlags, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (file && file != INVALID_HANDLE_VALUE)
             {
                 SetFilePointer(file, 0, 0, FILE_END);
@@ -176,7 +176,7 @@ namespace Gek
                         else
                         {
                             DWORD error = GetLastError();
-                            OutputDebugStringW(String::format(L"error: %d", error));
+                            OutputDebugStringW(String::format(L"error: %", error));
                         }
                     };
 

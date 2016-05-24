@@ -9,7 +9,7 @@
 namespace Gek
 {
     class ContextImplementation
-        : virtual public Context
+        : public Context
     {
     private:
         std::list<HMODULE> moduleList;
@@ -17,11 +17,11 @@ namespace Gek
         std::unordered_multimap<std::wstring, std::wstring> typeMap;
 
     public:
-        ContextImplementation(std::vector<std::wstring> searchPathList)
+        ContextImplementation(std::vector<wstring> searchPathList)
         {
             GEK_TRACE_FUNCTION();
 
-            searchPathList.push_back(L"%root%");
+            searchPathList.push_back(L"$root");
             for (auto &searchPath : searchPathList)
             {
                 Gek::FileSystem::find(searchPath.c_str(), L"*.dll", false, [&](const wchar_t *fileName) -> bool

@@ -175,7 +175,7 @@ namespace Gek
             GEK_REQUIRE(window);
 
             Gek::XmlDocument xmlDocument;
-            if (SUCCEEDED(xmlDocument.load(L"%root%\\config.xml")))
+            if (SUCCEEDED(xmlDocument.load(L"$root\\config.xml")))
             {
                 Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
                 if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0)
@@ -257,7 +257,7 @@ namespace Gek
                         SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
                         resultValue = S_OK;
 
-                        SciterLoadFile(window, FileSystem::expandPath(L"%root%\\data\\pages\\system.html"));
+                        SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
                         root = sciter::dom::element::root_element(window);
                         background = root.find_first("section#back-layer");
                         foreground = root.find_first("section#fore-layer");

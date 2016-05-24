@@ -5,7 +5,7 @@
 #include "GEK\Math\Float4.h"
 #include "GEK\Math\Color.h"
 #include "GEK\Math\Quaternion.h"
-#include "GEK\Utility\Hash.h"
+#include "GEK\Utility\Trace.h"
 #include <Windows.h>
 #include <sstream>
 #include <vector>
@@ -502,22 +502,6 @@ namespace Gek
         }
 
         template <typename ELEMENT>
-        baseString<ELEMENT> from(DWORD value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return stream.str().c_str();
-        }
-
-        template <typename ELEMENT>
-        baseString<ELEMENT> from(LPCVOID value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return stream.str().c_str();
-        }
-
-        template <typename ELEMENT>
         baseString<ELEMENT> from(INT64 value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
@@ -541,6 +525,30 @@ namespace Gek
             return stream.str().c_str();
         }
 
+        template <typename ELEMENT>
+        baseString<ELEMENT> from(long value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
+        template <typename ELEMENT>
+        baseString<ELEMENT> from(unsigned long value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << "0x" << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            return stream.str().c_str();
+        }
+
+        template <typename ELEMENT>
+        baseString<ELEMENT> from(const void * const value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << value;
+            return stream.str().c_str();
+        }
+
         template <typename ELEMENT, typename SOURCE>
         baseString<ELEMENT> from(const SOURCE &source)
         {
@@ -556,28 +564,7 @@ namespace Gek
         template <typename ELEMENT>
         baseString<ELEMENT> format(const ELEMENT *formatting)
         {
-            baseString<ELEMENT> result;
-            while (*formatting)
-            {
-                if (*formatting == '%')
-                {
-                    ++formatting;
-                    if (*formatting == '%')
-                    {
-                        result += *formatting++;
-                    }
-                    else
-                    {
-                        throw std::runtime_error("invalid format string: missing arguments");
-                    }
-                }
-                else
-                {
-                    result += *formatting++;
-                }
-            };
-
-            return result;
+            return formatting;
         }
 
         template<typename ELEMENT, typename TYPE, typename... ARGUMENTS>
@@ -588,18 +575,15 @@ namespace Gek
             {
                 if (*formatting == '%')
                 {
-                    ++formatting;
                     if (*formatting == '%')
                     {
                         result += *formatting++;
                     }
                     else
                     {
-                        ++formatting;
-                        // Should verify format type here
                         result += from<ELEMENT>(value);
                         result += format(formatting, arguments...);
-                        return result;
+                        break;
                     }
                 }
                 else
@@ -608,7 +592,7 @@ namespace Gek
                 }
             };
 
-            throw std::logic_error("extra arguments provided to format");
+            return result;
         }
     }; // namespace String
 }; // namespace Gek

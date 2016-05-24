@@ -643,7 +643,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\shaders\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\shaders\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
@@ -1129,7 +1129,7 @@ namespace Gek
                                                 if (FAILED(resultValue))
                                                 {
                                                     CPathW shaderPath;
-                                                    shaderPath.Combine(L"%root%\\data\\programs", CA2W(fileName));
+                                                    shaderPath.Combine(L"$root\\data\\programs", CA2W(fileName));
                                                     resultValue = Gek::FileSystem::load(shaderPath, data);
                                                 }
                                             }
@@ -1169,7 +1169,7 @@ namespace Gek
                                                     "                                                       \r\n";
                                             }
 
-                                            pass.program = resources->loadComputeProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData);
+                                            pass.program = resources->loadComputeProgram(L"$root\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData);
                                         }
                                         else
                                         {
@@ -1195,7 +1195,7 @@ namespace Gek
                                                     "                                                       \r\n";
                                             }
 
-                                            pass.program = resources->loadPixelProgram(L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData);
+                                            pass.program = resources->loadPixelProgram(L"$root\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData);
                                         }
                                     }
                                     else

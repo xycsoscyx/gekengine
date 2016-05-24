@@ -230,7 +230,7 @@ namespace Gek
                 ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\scenes\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\scenes\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
@@ -306,7 +306,7 @@ namespace Gek
             {
             }
 
-            xmlDocument.save(Gek::String::format(L"%%root%%\\data\\saves\\%s.xml", fileName));
+            xmlDocument.save(Gek::String::format(L"$root\\data\\saves\\%s.xml", fileName));
             return S_OK;
         }
 

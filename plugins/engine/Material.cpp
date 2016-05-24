@@ -45,7 +45,7 @@ namespace Gek
             {
                 this->resources = resources;
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\materials\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;

@@ -127,7 +127,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"%%root%%\\data\\plugins\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\plugins\\%s.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
@@ -146,7 +146,7 @@ namespace Gek
                                 {
                                     CStringW programFileName = xmlProgramNode.getAttribute(L"source");
                                     CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                    resultValue = video->loadGeometryProgram(&geometryProgram, L"%root%\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
+                                    resultValue = video->loadGeometryProgram(&geometryProgram, L"$root\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
                                 }
                                 else
                                 {
@@ -163,7 +163,7 @@ namespace Gek
                                     Gek::XmlNode xmlProgramNode = xmlVertexNode.firstChildElement(L"program");
                                     if (xmlProgramNode)
                                     {
-                                        CStringW programPath(L"%root%\\data\\programs\\" + xmlProgramNode.getText() + L".hlsl");
+                                        CStringW programPath(L"$root\\data\\programs\\" + xmlProgramNode.getText() + L".hlsl");
 
                                         CStringA progamScript;
                                         resultValue = Gek::FileSystem::load(programPath, progamScript);
@@ -296,7 +296,7 @@ namespace Gek
                                                     if (FAILED(resultValue))
                                                     {
                                                         CPathW shaderPath;
-                                                        shaderPath.Combine(L"%root%\\data\\programs", CA2W(fileName));
+                                                        shaderPath.Combine(L"$root\\data\\programs", CA2W(fileName));
                                                         resultValue = Gek::FileSystem::load(shaderPath, data);
                                                     }
                                                 }

@@ -162,7 +162,7 @@ namespace Gek
 
             HRESULT resultValue = E_FAIL;
 
-            model.fileName.Format(L"%%root%%\\data\\models\\%s.gek", name.GetString());
+            model.fileName.Format(L"$root\\data\\models\\%s.gek", name.GetString());
 
             std::vector<UINT8> fileData;
             resultValue = Gek::FileSystem::load(model.fileName, fileData, PreReadSize);

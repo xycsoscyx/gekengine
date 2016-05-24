@@ -9,7 +9,7 @@ namespace Gek
         wstring expandPath(const wchar_t *fileName)
         {
             CStringW expandedFileName(fileName);
-            if (expandedFileName.Find(L"%root%") >= 0)
+            if (expandedFileName.Find(L"$root") >= 0)
             {
                 CStringW currentModuleName;
                 GetModuleFileName(nullptr, currentModuleName.GetBuffer(MAX_PATH + 1), MAX_PATH);
@@ -26,7 +26,7 @@ namespace Gek
                 // Remove debug/release form path
                 currentModulePath.RemoveFileSpec();
 
-                expandedFileName.Replace(L"%root%", currentModulePath);
+                expandedFileName.Replace(L"$root", currentModulePath);
             }
 
             expandedFileName.Replace(L"/", L"\\");

@@ -457,9 +457,9 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     try
     {
 #ifdef _DEBUG
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
+        SetCurrentDirectory(Gek::FileSystem::expandPath(L"$root\\Debug"));
 #else
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release"));
+        SetCurrentDirectory(Gek::FileSystem::expandPath(L"$root\\Release"));
 #endif
         ::DirectX::ScratchImage image;
         HRESULT resultValue = Gek::loadCubeMap(fileNameInput, image);

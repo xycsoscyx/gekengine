@@ -26,7 +26,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         UINT32 height = 600;
         bool fullscreen = false;
 
-        Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"%root%\\config.xml"));
+        Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"$root\\config.xml"));
 
         Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
         if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
@@ -98,7 +98,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             UINT32 selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
             auto &mode = modeList[selectIndex];
 
-            Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"%root%\\config.xml"));
+            Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"$root\\config.xml"));
 
             Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
             if (!xmlConfigNode || xmlConfigNode.getType().CompareNoCase(L"config") != 0)
@@ -116,7 +116,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             xmlDisplayNode.setAttribute(L"width", L"%d", mode.width);
             xmlDisplayNode.setAttribute(L"height", L"%d", mode.height);
             xmlDisplayNode.setAttribute(L"fullscreen", L"%s", (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
-            xmlDocument.save(L"%root%\\config.xml");
+            xmlDocument.save(L"$root\\config.xml");
 
             EndDialog(dialog, IDOK);
             return TRUE;
@@ -262,10 +262,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         {
             CStringW material(Gek::String::format(materialFormat, (float(roughness) / 9.0f), (float(metalness) / 9.0f)));
             CStringW fileName(Gek::String::format(L"r%d_m%d", roughness, metalness));
-            Gek::FileSystem::save((L"%root%\\data\\materials\\debug\\" + fileName + L".xml"), material);
+            Gek::FileSystem::save((L"$root\\data\\materials\\debug\\" + fileName + L".xml"), material);
 
             entities += Gek::String::format(entityFormat, (float(roughness) - 4.5f), (float(metalness) - 4.5f), roughness, metalness);
-            //CopyFile(Gek::FileSystem::expandPath(L"%root%\\data\\textures\\debug\\r0_m0.png"), Gek::FileSystem::expandPath(L"%root%\\data\\textures\\debug\\") + fileName + L".png", false);
+            //CopyFile(Gek::FileSystem::expandPath(L"$root\\data\\textures\\debug\\r0_m0.png"), Gek::FileSystem::expandPath(L"$root\\data\\textures\\debug\\") + fileName + L".png", false);
 
             materialLibrary += [&](void) -> CStringW { CStringW data(materialLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
             fileLibrary += [&](void) -> CStringW { CStringW data(fileLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
@@ -281,11 +281,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         std::vector<std::wstring> searchPathList;
 
 #ifdef _DEBUG
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Debug"));
-        searchPathList.push_back(L"%root%\\Debug\\Plugins");
+        SetCurrentDirectory(Gek::FileSystem::expandPath(L"$root\\Debug"));
+        searchPathList.push_back(L"$root\\Debug\\Plugins");
 #else
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"%root%\\Release"));
-        searchPathList.push_back(L"%root%\\Release\\Plugins");
+        SetCurrentDirectory(Gek::FileSystem::expandPath(L"$root\\Release"));
+        searchPathList.push_back(L"$root\\Release\\Plugins");
 #endif
 
         Gek::traceInitialize();
@@ -309,7 +309,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 UINT32 height = 600;
                 bool fullscreen = false;
 
-                Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"%root%\\config.xml"));
+                Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"$root\\config.xml"));
 
                 Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
                 if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
