@@ -1,27 +1,9 @@
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Population.h"
 
-class OptimizerException
-{
-public:
-    CStringW message;
-    int line;
-
-public:
-    OptimizerException(int line, LPCWSTR format, ...)
-        : line(line)
-    {
-        va_list variableList;
-        va_start(variableList, format);
-        message.FormatV(format, variableList);
-        va_end(variableList);
-    }
-};
-
-namespace Gek
-{
-}; // namespace Gek
+using namespace Gek;
 
 int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
 {
@@ -49,66 +31,41 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     CoInitialize(nullptr);
     try
     {
-        if (true)
-        {
-            Gek::XmlDocument xmlDocument;
-            HRESULT resultValue = xmlDocument.load(fileNameInput);
-            if (SUCCEEDED(resultValue))
-            {
-                Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
-                if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
-                {
-                    Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
-                    if (xmlPopulationNode)
-                    {
-                        Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
-                        while (xmlEntityNode)
-                        {
-                            Gek::Population::EntityDefinition entityData;
-                            Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
-                            while (xmlComponentNode)
-                            {
-                                Gek::Population::ComponentDefinition &componentData = entityData[xmlComponentNode.getType()];
-                                xmlComponentNode.listAttributes([&componentData](LPCWSTR name, LPCWSTR value) -> void
-                                {
-                                    componentData.insert(std::make_pair(name, value));
-                                });
+        XmlDocument xmlDocument(XmlDocument::load(fileNameInput));
 
-                                if (!xmlComponentNode.getText().IsEmpty())
-                                {
-                                    componentData.SetString(xmlComponentNode.getText());
-                                }
-                                xmlComponentNode = xmlComponentNode.nextSiblingElement();
-                            };
+        XmlNode xmlWorldNode = xmlDocument.getRoot();
+        GEK_CHECK_EXCEPTION(!xmlWorldNode, BaseException, "XML document missing root node");
+        GEK_CHECK_EXCEPTION(xmlWorldNode.getText().CompareNoCase(L"world") == 0, BaseException, "XML document root node not 'world'");
 
-                            xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
-                        };
-                    }
-                    else
-                    {
-                        throw OptimizerException(__LINE__, L"[error] Unable to locate \"population\" node");
-                        resultValue = E_UNEXPECTED;
-                    }
-                }
-                else
-                {
-                    throw OptimizerException(__LINE__, L"[error] Unable to locate \"world\" node");
-                    resultValue = E_UNEXPECTED;
-                }
-            }
-            else
-            {
-                throw OptimizerException(__LINE__, L"[error] Unable to load population");
-            }
-        }
-        else
+        XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
+        GEK_CHECK_EXCEPTION(!xmlPopulationNode, BaseException, "XML document missing population node");
+
+        XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
+        while (xmlEntityNode)
         {
-            throw OptimizerException(__LINE__, L"[error] Unable to create database to store population");
-        }
+            Population::EntityDefinition entityData;
+            XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
+            while (xmlComponentNode)
+            {
+                Population::ComponentDefinition &componentData = entityData[xmlComponentNode.getType()];
+                xmlComponentNode.listAttributes([&componentData](LPCWSTR name, LPCWSTR value) -> void
+                {
+                    componentData.insert(std::make_pair(name, value));
+                });
+
+                if (!xmlComponentNode.getText().IsEmpty())
+                {
+                    componentData.SetString(xmlComponentNode.getText());
+                }
+                xmlComponentNode = xmlComponentNode.nextSiblingElement();
+            };
+
+            xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
+        };
     }
-    catch (OptimizerException exception)
+    catch (BaseException exception)
     {
-        printf("[error] Error (%d): %S", exception.line, exception.message.GetString());
+        printf("[error] Error (%d): %s", exception.when(), exception.what());
     }
     catch (...)
     {

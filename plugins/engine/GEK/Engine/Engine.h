@@ -1,17 +1,15 @@
 #pragma once
 
-#include <Windows.h>
+#include "GEK\Context\Plugin.h"
 
 namespace Gek
 {
-    interface Engine
+    GEK_INTERFACE(Engine)
     {
-        void initialize(HWND window);
+        virtual void initialize(HWND window) = 0;
 
-        LRESULT windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam);
+        virtual LRESULT windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam) = 0;
 
-        bool update(void);
+        virtual bool update(void) = 0;
     };
-
-    DECLARE_INTERFACE_IID(EngineRegistration, "D0361A83-6C91-440B-A383-155D9A2D2FC8");
 }; // namespace Gek

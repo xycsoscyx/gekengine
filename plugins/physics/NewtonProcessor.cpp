@@ -1,5 +1,4 @@
-#include "GEK\Context\COM.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\Evaluator.h"
@@ -37,7 +36,8 @@ namespace Gek
     extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
     extern NewtonEntity *createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
 
-    class NewtonProcessorImplementation : public ContextUserMixin
+    class NewtonProcessorImplementation
+        : public ContextUserMixin
         , public ObservableMixin
         , public PopulationObserver
         , public Processor

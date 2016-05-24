@@ -2,7 +2,7 @@
 #include "GEK\Newton\NewtonEntity.h"
 #include "GEK\Newton\NewtonProcessor.h"
 #include "GEK\Newton\Mass.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Utility\String.h"
@@ -12,7 +12,8 @@
 
 namespace Gek
 {
-    class RigidNewtonBody : public UnknownMixin
+    class RigidNewtonBody
+        : public UnknownMixin
         , public NewtonEntity
     {
     private:
@@ -103,7 +104,8 @@ namespace Gek
         return S_OK;
     }
 
-    class RigidBodyImplementation : public ContextUserMixin
+    class RigidBodyImplementation
+        : public ContextUserMixin
         , public ComponentMixin<RigidBodyComponent>
     {
     public:

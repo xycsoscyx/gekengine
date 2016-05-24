@@ -1,7 +1,6 @@
 #include <initguid.h>
 #include <cguid.h>
 
-#include "GEK\Context\COM.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"

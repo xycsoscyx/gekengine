@@ -1,5 +1,5 @@
 #include "GEK\Components\Color.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
@@ -21,7 +21,8 @@ namespace Gek
         return (loadParameter(componentData, nullptr, value) ? S_OK : E_INVALIDARG);
     }
 
-    class ColorImplementation : public ContextUserMixin
+    class ColorImplementation
+        : public ContextUserMixin
         , public ComponentMixin<ColorComponent>
     {
     public:

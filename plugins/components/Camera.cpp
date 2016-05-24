@@ -1,5 +1,5 @@
 #include "GEK\Components\Camera.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
@@ -71,7 +71,8 @@ namespace Gek
         return CameraComponent::load(componentData);
     }
 
-    class FirstPersonCameraImplementation : public ContextUserMixin
+    class FirstPersonCameraImplementation
+        : public ContextUserMixin
         , public ComponentMixin<FirstPersonCameraComponent>
     {
     public:
@@ -90,7 +91,8 @@ namespace Gek
         }
     };
 
-    class ThirdPersonCameraImplementation : public ContextUserMixin
+    class ThirdPersonCameraImplementation
+        : public ContextUserMixin
         , public ComponentMixin<ThirdPersonCameraComponent>
     {
     public:

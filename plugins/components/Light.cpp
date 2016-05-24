@@ -1,5 +1,5 @@
 #include "GEK\Components\Light.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
@@ -58,7 +58,8 @@ namespace Gek
         return S_OK;
     }
 
-    class PointLightImplementation : public ContextUserMixin
+    class PointLightImplementation
+        : public ContextUserMixin
         , public ComponentMixin<PointLightComponent>
     {
     public:
@@ -77,7 +78,8 @@ namespace Gek
         }
     };
 
-    class SpotLightImplementation : public ContextUserMixin
+    class SpotLightImplementation
+        : public ContextUserMixin
         , public ComponentMixin<SpotLightComponent>
     {
     public:
@@ -96,7 +98,8 @@ namespace Gek
         }
     };
 
-    class DirectionalLightImplementation : public ContextUserMixin
+    class DirectionalLightImplementation
+        : public ContextUserMixin
         , public ComponentMixin<DirectionalLightComponent>
     {
     public:

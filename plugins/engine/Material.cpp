@@ -3,14 +3,15 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Shader.h"
 #include "GEK\Engine\Resources.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\System\VideoSystem.h"
 #include <set>
 #include <ppl.h>
 
 namespace Gek
 {
-    class MaterialImplementation : public ContextUserMixin
+    class MaterialImplementation 
+        : public ContextUserMixin
         , public Material
     {
     private:

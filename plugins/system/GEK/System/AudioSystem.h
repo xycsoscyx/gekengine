@@ -14,7 +14,6 @@ namespace Gek
 
     GEK_INTERFACE(AudioSample)
     {
-    public:
         virtual void * const getBuffer(void) = 0;
         virtual void setFrequency(UINT32 frequency) = 0;
         virtual void setVolume(float volume) = 0;
@@ -23,7 +22,6 @@ namespace Gek
     GEK_INTERFACE(AudioEffect)
         : public AudioSample
     {
-    public:
         virtual void setPan(float pan) = 0;
         virtual void play(bool loop) = 0;
     };
@@ -31,14 +29,12 @@ namespace Gek
     GEK_INTERFACE(AudioSound)
         : public AudioSample
     {
-    public:
         virtual void setDistance(float minimum, float maximum) = 0;
         virtual void play(const Gek::Math::Float3 &origin, bool loop) = 0;
     };
 
     GEK_INTERFACE(AudioSystem)
     {
-    public:
         virtual void setMasterVolume(float volume) = 0;
         virtual float getMasterVolume(void) = 0;
 

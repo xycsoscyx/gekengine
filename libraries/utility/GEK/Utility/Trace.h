@@ -101,7 +101,8 @@ namespace Gek
         }
     };
 
-    class BaseException : public std::exception
+    class BaseException
+        : public std::exception
     {
     private:
         LPCSTR function;

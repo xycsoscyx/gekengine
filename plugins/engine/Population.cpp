@@ -4,7 +4,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include <map>
 #include <ppl.h>
@@ -13,7 +13,8 @@
 
 namespace Gek
 {
-    class EntityImplementation : public UnknownMixin
+    class EntityImplementation
+        : public UnknownMixin
         , public Entity
     {
     private:
@@ -63,7 +64,8 @@ namespace Gek
         }
     };
 
-    class PopulationImplementation : public ContextUserMixin
+    class PopulationImplementation
+        : public ContextUserMixin
         , public ObservableMixin
         , public Population
     {

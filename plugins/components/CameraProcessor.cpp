@@ -1,4 +1,4 @@
-﻿#include "GEK\Context\ContextUserMixin.h"
+﻿#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
@@ -13,7 +13,8 @@
 
 namespace Gek
 {
-    class CameraProcessorImplementation : public ContextUserMixin
+    class CameraProcessorImplementation
+        : public ContextUserMixin
         , public PopulationObserver
         , public Processor
     {

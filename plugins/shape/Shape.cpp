@@ -1,5 +1,5 @@
 ﻿#include "GEK\Engine\Shape.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 
@@ -25,7 +25,8 @@ namespace Gek
         return S_OK;
     }
 
-    class ShapeImplementation : public ContextUserMixin
+    class ShapeImplementation
+        : public ContextUserMixin
         , public ComponentMixin<ShapeComponent>
     {
     public:

@@ -9,7 +9,7 @@
 #include "GEK\Engine\Action.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include <set>
 #include <ppl.h>
@@ -21,7 +21,8 @@
 
 namespace Gek
 {
-    class EngineImplementation : public ContextUserMixin
+    class EngineImplementation
+        : public ContextUserMixin
         , public ObservableMixin
         , public Engine
         , public RenderObserver

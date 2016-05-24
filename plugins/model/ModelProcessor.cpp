@@ -5,8 +5,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
-#include "GEK\Context\COM.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Processor.h"
@@ -29,7 +28,8 @@
 
 namespace Gek
 {
-    class ModelProcessorImplementation : public ContextUserMixin
+    class ModelProcessorImplementation
+        : public ContextUserMixin
         , public PopulationObserver
         , public RenderObserver
         , public Processor

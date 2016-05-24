@@ -172,7 +172,6 @@ namespace Gek
 
     GEK_INTERFACE(InputDevice)
     {
-    public:
         virtual void update(void) = 0;
 
         virtual UINT32 getButtonCount(void) const = 0;
@@ -185,7 +184,6 @@ namespace Gek
 
     GEK_INTERFACE(InputSystem)
     {
-    public:
         virtual InputDevice * const getKeyboard(void) = 0;
         virtual InputDevice * const getMouse(void) = 0;
 

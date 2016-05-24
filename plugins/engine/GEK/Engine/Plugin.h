@@ -6,12 +6,10 @@
 
 namespace Gek
 {
-    interface Plugin
+    GEK_INTERFACE(Plugin)
     {
-        void initialize(IUnknown *initializerContext, LPCWSTR fileName);
+        virtual void initialize(IUnknown *initializerContext, LPCWSTR fileName) = 0;
 
-        void enable(VideoContext *context);
+        virtual void enable(VideoContext *context) = 0;
     };
-
-    DECLARE_INTERFACE_IID(PluginRegistration, "379FF0E3-85F2-4138-A6E4-BCA93241D4F0");
 }; // namespace Gek

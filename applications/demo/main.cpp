@@ -7,7 +7,6 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Context\COM.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Engine.h"
 #include <CommCtrl.h>

@@ -67,7 +67,8 @@ namespace Gek
         }
     };
 
-    class TraceFile : public TraceMutex
+    class TraceFile
+        : public TraceMutex
     {
     private:
         HANDLE file;

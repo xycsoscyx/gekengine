@@ -4,10 +4,10 @@
 
 namespace Gek
 {
-    interface ProcessorType;
+    GEK_PREDECLARE(ProcessorType);
 
-    interface Processor
+    GEK_INTERFACE(Processor)
     {
-        void initialize(IUnknown *initializerContext);
+        virtual void initialize(IUnknown *initializerContext) = 0;
     };
 }; // namespace Gek

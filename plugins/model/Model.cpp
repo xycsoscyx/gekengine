@@ -1,5 +1,5 @@
 ﻿#include "GEK\Engine\Model.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 
@@ -23,7 +23,8 @@ namespace Gek
         return S_OK;
     }
 
-    class ModelImplementation : public ContextUserMixin
+    class ModelImplementation
+        : public ContextUserMixin
         , public ComponentMixin<ModelComponent>
     {
     public:

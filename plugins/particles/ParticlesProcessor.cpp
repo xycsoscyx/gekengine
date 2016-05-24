@@ -6,8 +6,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Utility\ShuntingYard.h"
-#include "GEK\Context\COM.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Processor.h"
@@ -36,7 +35,8 @@ namespace Gek
 {
     static const UINT32 ParticleBufferCount = 1000;
 
-    class ParticlesProcessorImplementation : public ContextUserMixin
+    class ParticlesProcessorImplementation
+        : public ContextUserMixin
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -60,7 +60,8 @@ namespace Gek
             }
         };
 
-        struct EmitterData : public Shapes::AlignedBox
+        struct EmitterData
+            : public Shapes::AlignedBox
         {
             MaterialHandle material;
             ResourceHandle colorMap;
@@ -209,7 +210,8 @@ namespace Gek
         }
 
         template <float const &(*OPERATION)(float const &, float const &)>
-        struct combinable : public concurrency::combinable<float>
+        struct combinable
+            : public concurrency::combinable<float>
         {
             combinable(float defaultValue)
                 : concurrency::combinable<float>([&] {return defaultValue; })

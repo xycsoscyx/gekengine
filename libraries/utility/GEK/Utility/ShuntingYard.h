@@ -59,7 +59,8 @@ namespace Gek
 
     private:
         template <typename DATA>
-        struct Stack : public std::stack<DATA>
+        struct Stack
+            : public std::stack<DATA>
         {
             DATA popTop(void)
             {

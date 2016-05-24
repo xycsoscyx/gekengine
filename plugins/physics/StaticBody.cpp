@@ -1,5 +1,5 @@
 #include "GEK\Newton\StaticBody.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
@@ -22,7 +22,8 @@ namespace Gek
         return S_OK;
     }
 
-    class StaticBodyImplementation : public ContextUserMixin
+    class StaticBodyImplementation
+        : public ContextUserMixin
         , public ComponentMixin<StaticBodyComponent>
     {
     public:

@@ -6,7 +6,8 @@
 namespace Gek
 {
     template <typename TYPE, typename... ARGUMENTS>
-    interface Plugin : public ContextUser
+    interface Plugin
+        : public ContextUser
     {
     public:
         using ContextUser::ContextUser;
@@ -34,7 +35,8 @@ namespace Gek
         }
     };
 /*
-    interface Implementation : public Plugin<Implementation, int>
+    interface Implementation
+        : public Plugin<Implementation, int>
     {
     public:
         Implementation(Context *context, int A)

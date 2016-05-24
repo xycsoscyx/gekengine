@@ -4,10 +4,10 @@
 
 namespace Gek
 {
-    interface Entity
+    GEK_INTERFACE(Entity)
     {
-        bool hasComponent(const std::type_index &type);
-        LPVOID getComponent(const std::type_index &type);
+        virtual bool hasComponent(const std::type_index &type) = 0;
+        virtual LPVOID getComponent(const std::type_index &type) = 0;
 
         template <typename CLASS>
         bool hasComponent(void)

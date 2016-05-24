@@ -9,12 +9,12 @@ namespace Gek
 {
     interface ComponentType;
 
-    interface Component
+    GEK_INTERFACE(Component)
     {
-        LPCWSTR getName(void) const;
-        std::type_index getIdentifier(void) const;
+        virtual LPCWSTR getName(void) const = 0;
+        virtual std::type_index getIdentifier(void) const = 0;
 
-        void *create(const Population::ComponentDefinition &componentData);
-        void destroy(void *data);
+        virtual void *create(const Population::ComponentDefinition &componentData) = 0;
+        virtual void destroy(void *data) = 0;
     };
 }; // namespace Gek

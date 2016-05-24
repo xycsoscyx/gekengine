@@ -337,7 +337,8 @@ namespace Gek
             }
         };
 
-        struct UnifiedBlendState : public TargetBlendState
+        struct UnifiedBlendState
+            : public TargetBlendState
         {
             bool alphaToCoverage;
 
@@ -421,7 +422,6 @@ namespace Gek
     GEK_INTERFACE(VideoBuffer)
         : virtual public VideoObject
     {
-    public:
         virtual Video::Format getFormat(void) = 0;
         virtual UINT32 getStride(void) = 0;
         virtual UINT32 getCount(void) = 0;
@@ -430,7 +430,6 @@ namespace Gek
     GEK_INTERFACE(VideoTexture)
         : virtual public VideoObject
     {
-    public:
         virtual Video::Format getFormat(void) = 0;
         virtual UINT32 getWidth(void) = 0;
         virtual UINT32 getHeight(void) = 0;
@@ -440,13 +439,11 @@ namespace Gek
     GEK_INTERFACE(VideoTarget)
         : virtual public VideoTexture
     {
-    public:
         virtual const Video::ViewPort &getViewPort(void) = 0;
     };
 
     GEK_INTERFACE(VideoPipeline)
     {
-    public:
         virtual void setProgram(VideoObject *program) = 0;
         virtual void setConstantBuffer(VideoBuffer *constantBuffer, UINT32 stage) = 0;
         virtual void setSamplerState(VideoObject *samplerState, UINT32 stage) = 0;
@@ -456,7 +453,6 @@ namespace Gek
 
     GEK_INTERFACE(VideoContext)
     {
-    public:
         virtual VideoPipeline *computePipeline(void) = 0;
         virtual VideoPipeline *vertexPipeline(void) = 0;
         virtual VideoPipeline *geometryPipeline(void) = 0;

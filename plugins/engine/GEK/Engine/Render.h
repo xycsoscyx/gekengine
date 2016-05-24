@@ -7,37 +7,35 @@
 
 namespace Gek
 {
-    interface Entity;
+    GEK_PREDECLARE(Entity);
 
-    interface RenderPipeline
+    GEK_INTERFACE(RenderPipeline)
     {
-        VideoPipeline *getPipeline(void);
+        virtual VideoPipeline *getPipeline(void) = 0;
     };
 
-    interface RenderContext
+    GEK_INTERFACE(RenderContext)
     {
-        VideoContext *getContext(void);
+        virtual VideoContext *getContext(void) = 0;
 
-        RenderPipeline *computePipeline(void);
-        RenderPipeline *vertexPipeline(void);
-        RenderPipeline *geometryPipeline(void);
-        RenderPipeline *pixelPipeline(void);
+        virtual RenderPipeline *computePipeline(void) = 0;
+        virtual RenderPipeline *vertexPipeline(void) = 0;
+        virtual RenderPipeline *geometryPipeline(void) = 0;
+        virtual RenderPipeline *pixelPipeline(void) = 0;
     };
 
-    interface Render
+    GEK_INTERFACE(Render)
     {
-        void initialize(IUnknown *initializerContext);
+        virtual void initialize(IUnknown *initializerContext) = 0;
 
-        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance);
-        void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw);
+        virtual void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance) = 0;
+        virtual void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw) = 0;
     };
 
-    interface RenderObserver
+    GEK_INTERFACE(RenderObserver)
     {
-        void onRenderBackground(void) = default;
-        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) = default;
-        void onRenderForeground(void) = default;
+        virtual void onRenderBackground(void) = 0;
+        virtual void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) = 0;
+        virtual void onRenderForeground(void) = 0;
     };
-
-    DECLARE_INTERFACE_IID(RenderRegistration, "97A6A7BC-B739-49D3-808F-3911AE3B8A77");
 }; // namespace Gek

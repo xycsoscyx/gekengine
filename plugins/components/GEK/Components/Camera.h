@@ -30,14 +30,16 @@ namespace Gek
         HRESULT load(const Population::ComponentDefinition &componentData);
     };
 
-    struct FirstPersonCameraComponent : public CameraComponent
+    struct FirstPersonCameraComponent
+        : public CameraComponent
     {
         FirstPersonCameraComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;
         HRESULT load(const Population::ComponentDefinition &componentData);
     };
 
-    struct ThirdPersonCameraComponent : public CameraComponent
+    struct ThirdPersonCameraComponent
+        : public CameraComponent
     {
         CStringW body;
         Math::Float3 offset;

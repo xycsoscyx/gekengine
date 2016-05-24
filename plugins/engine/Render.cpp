@@ -12,8 +12,7 @@
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Camera.h"
-#include "GEK\Context\COM.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Shapes\Sphere.h"
 #include <set>
@@ -22,7 +21,8 @@
 
 namespace Gek
 {
-    class RenderPipelineImplementation : public UnknownMixin
+    class RenderPipelineImplementation
+        : public UnknownMixin
         , public RenderPipeline
     {
     private:
@@ -42,7 +42,8 @@ namespace Gek
         STDMETHODIMP_(VideoPipeline *) getPipeline(void) { return videoPipeline; };
     };
 
-    class RenderContextImplementation : public UnknownMixin
+    class RenderContextImplementation
+        : public UnknownMixin
         , public RenderContext
     {
     private:
@@ -74,7 +75,8 @@ namespace Gek
         STDMETHODIMP_(RenderPipeline *) pixelPipeline(void) { return pixelPipelineHandler.p; };
     };
 
-    class RenderImplementation : public ContextUserMixin
+    class RenderImplementation
+        : public ContextUserMixin
         , public ObservableMixin
         , public PopulationObserver
         , public Render

@@ -14,8 +14,7 @@
 #include "GEK\Components\Camera.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
-#include "GEK\Context\COM.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Shapes\Sphere.h"
 #include <concurrent_unordered_map.h>
@@ -285,7 +284,8 @@ namespace Gek
         }
     };
 
-    class ResourcesImplementation : public ContextUserMixin
+    class ResourcesImplementation 
+        : public ContextUserMixin
         , public Resources
         , public ResourceLoader
     {

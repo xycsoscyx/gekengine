@@ -23,8 +23,8 @@ namespace Gek
         }
     };
 
-    interface ActionObserver
+    GEK_INTERFACE(ActionObserver)
     {
-        void onAction(LPCWSTR name, const ActionParam &param) = default;
+        virtual void onAction(LPCWSTR name, const ActionParam &param) = 0;
     };
 }; // namespace Gek

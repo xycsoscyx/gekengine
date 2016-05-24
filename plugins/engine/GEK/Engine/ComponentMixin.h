@@ -41,7 +41,8 @@ namespace Gek
     }
 
     template <class DATA>
-    class ComponentMixin : public Component
+    class ComponentMixin
+        : public Component
     {
     public:
         ComponentMixin(void)

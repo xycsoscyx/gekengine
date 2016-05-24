@@ -17,7 +17,8 @@ namespace Gek
         };
 
         template <typename INTERFACE>
-        struct Event : public BaseEvent
+        struct Event
+            : public BaseEvent
         {
         private:
             const std::function<void(INTERFACE *)> &onEvent;

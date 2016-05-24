@@ -6,17 +6,17 @@
 
 namespace Gek
 {
-    interface Options
+    GEK_INTERFACE(Options)
     {
-        const CStringW &getValue(LPCWSTR name, LPCWSTR attribute, const CStringW &defaultValue = L"") const;
+        virtual const CStringW &getValue(LPCWSTR name, LPCWSTR attribute, const CStringW &defaultValue = L"") const = 0;
 
-        void beginChanges(void);
-        void setValue(LPCWSTR name, LPCWSTR attribute, LPCWSTR value);
-        void finishChanges(bool commit);
+        virtual void beginChanges(void) = 0;
+        virtual void setValue(LPCWSTR name, LPCWSTR attribute, LPCWSTR value) = 0;
+        virtual void finishChanges(bool commit) = 0;
     };
 
-    interface OptionsObserver
+    GEK_INTERFACE(OptionsObserver)
     {
-        void onChanged(void)
+        virtual void onChanged(void) = 0;
     };
 }; // namespace Gek

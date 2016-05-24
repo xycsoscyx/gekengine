@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#define GEK_PREDECLARE(TYPE) class TYPE;
-#define GEK_INTERFACE(TYPE) class TYPE; typedef std::shared_ptr<TYPE> TYPE##Ptr; class TYPE
+#define GEK_PREDECLARE(TYPE) struct TYPE;
+#define GEK_INTERFACE(TYPE) struct TYPE; typedef std::shared_ptr<TYPE> TYPE##Ptr; struct TYPE
 
 namespace Gek
 {
@@ -15,7 +15,6 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
-    public:
         static ContextPtr create(const std::vector<std::wstring> &searchPathList);
 
         virtual std::function<std::shared_ptr<ContextUser>(Context *, void *)> getCreator(const wchar_t *name) = 0;

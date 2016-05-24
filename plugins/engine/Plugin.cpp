@@ -2,7 +2,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\System\VideoSystem.h"
 #include <atlbase.h>
 #include <atlpath.h>
@@ -87,7 +87,8 @@ namespace Gek
         return "void";
     }
 
-    class PluginImplementation : public ContextUserMixin
+    class PluginImplementation
+        : public ContextUserMixin
         , public Plugin
     {
     private:

@@ -10,14 +10,14 @@
 
 namespace Gek
 {
-    interface RenderPipeline;
-    interface RenderContext;
+    GEK_PREDECLARE(RenderPipeline);
+    GEK_PREDECLARE(RenderContext);
 
-    interface Shader
+    GEK_INTERFACE(Shader)
     {
-        interface Block;
+        GEK_PREDECLARE(Block);
 
-        interface Pass
+        GEK_INTERFACE(Pass)
         {
             enum class Mode : UINT8
             {
@@ -28,28 +28,26 @@ namespace Gek
 
             typedef std::unique_ptr<Pass> Iterator;
 
-            Iterator next(void);
-            Mode prepare(void);
+            virtual Iterator next(void);
+            virtual Mode prepare(void);
         };
 
-        interface Block
+        GEK_INTERFACE(Block)
         {
             typedef std::unique_ptr<Block> Iterator;
 
-            Iterator next(void);
-            Pass::Iterator begin(void);
-            bool prepare(void);
+            virtual Iterator next(void);
+            virtual Pass::Iterator begin(void);
+            virtual bool prepare(void);
         };
 
-        void initialize(IUnknown *initializerContext, LPCWSTR fileName);
+        virtual void initialize(IUnknown *initializerContext, LPCWSTR fileName) = 0;
 
-        UINT32 getPriority(void);
+        virtual UINT32 getPriority(void) = 0;
 
-        void loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList);
-        void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList);
+        virtual void loadResourceList(LPCWSTR materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) = 0;
 
-        Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum);
+        virtual Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
     };
-
-    DECLARE_INTERFACE_IID(ShaderRegistration, "02B8870C-2AEC-48FD-8F47-34166C9F16C6");
 }; // namespace Gek

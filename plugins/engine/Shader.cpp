@@ -4,7 +4,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
@@ -102,7 +102,8 @@ namespace Gek
         else return Video::BlendOperation::Add;
     }
 
-    class ShaderImplementation : public ContextUserMixin
+    class ShaderImplementation
+        : public ContextUserMixin
         , public Shader
     {
     public:
@@ -1443,7 +1444,8 @@ namespace Gek
             return enableBlock;
         }
 
-        class PassImplementation : public Pass
+        class PassImplementation
+            : public Pass
         {
         public:
             RenderContext *renderContext;
@@ -1473,7 +1475,8 @@ namespace Gek
             }
         };
 
-        class BlockImplementation : public Block
+        class BlockImplementation
+            : public Block
         {
         public:
             RenderContext *renderContext;

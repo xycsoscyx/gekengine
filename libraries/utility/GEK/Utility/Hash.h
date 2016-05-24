@@ -9,7 +9,8 @@
 namespace std
 {
     template<typename CHARTYPE, typename TRAITSTYPE>
-    struct hash<ATL::CStringT<CHARTYPE, TRAITSTYPE>> : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, size_t>
+    struct hash<ATL::CStringT<CHARTYPE, TRAITSTYPE>>
+        : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, size_t>
     {
         size_t operator()(const ATL::CStringT<CHARTYPE, TRAITSTYPE> &string) const
         {
@@ -18,7 +19,8 @@ namespace std
     };
 
     template<typename CHARTYPE, typename TRAITSTYPE>
-    struct equal_to<ATL::CStringT<CHARTYPE, TRAITSTYPE>> : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, bool>
+    struct equal_to<ATL::CStringT<CHARTYPE, TRAITSTYPE>>
+        : public unary_function<ATL::CStringT<CHARTYPE, TRAITSTYPE>, bool>
     {
         bool operator()(const ATL::CStringT<CHARTYPE, TRAITSTYPE> &leftString, const ATL::CStringT<CHARTYPE, TRAITSTYPE> &rightString) const
         {
@@ -27,7 +29,8 @@ namespace std
     };
 
     template <>
-    struct hash<GUID> : public unary_function<GUID, size_t>
+    struct hash<GUID>
+        : public unary_function<GUID, size_t>
     {
         size_t operator()(REFGUID guid) const
         {
@@ -37,7 +40,8 @@ namespace std
     };
 
     template <>
-    struct equal_to<GUID> : public unary_function<GUID, bool>
+    struct equal_to<GUID>
+        : public unary_function<GUID, bool>
     {
         bool operator()(REFGUID leftGuid, REFGUID rightGuid) const
         {

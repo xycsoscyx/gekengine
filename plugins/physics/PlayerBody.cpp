@@ -1,6 +1,6 @@
 #include "GEK\Newton\PlayerBody.h"
 #include "GEK\Newton\NewtonProcessor.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Engine\Action.h"
@@ -70,7 +70,8 @@ namespace Gek
     State *createJumpingState(PlayerNewtonBody *playerBody);
     State *createFallingState(PlayerNewtonBody *playerBody);
 
-    class PlayerNewtonBody : public UnknownMixin
+    class PlayerNewtonBody
+        : public UnknownMixin
         , virtual public ActionObserver
         , virtual public NewtonEntity
     {
@@ -627,7 +628,8 @@ namespace Gek
         }
     };
 
-    class PlayerStateMixin : public State
+    class PlayerStateMixin
+        : public State
     {
     protected:
         PlayerNewtonBody *playerBody;
@@ -639,7 +641,8 @@ namespace Gek
         }
     };
 
-    class IdleState : public PlayerStateMixin
+    class IdleState
+        : public PlayerStateMixin
     {
     public:
         IdleState(PlayerNewtonBody *playerBody)
@@ -685,7 +688,8 @@ namespace Gek
         }
     };
 
-    class CrouchingState : public PlayerStateMixin
+    class CrouchingState
+        : public PlayerStateMixin
     {
     public:
         CrouchingState(PlayerNewtonBody *playerBody)
@@ -711,7 +715,8 @@ namespace Gek
         }
     };
 
-    class WalkingState : public PlayerStateMixin
+    class WalkingState
+        : public PlayerStateMixin
     {
     private:
         bool moveForward;
@@ -777,7 +782,8 @@ namespace Gek
         }
     };
 
-    class JumpingState : public PlayerStateMixin
+    class JumpingState
+        : public PlayerStateMixin
     {
     private:
         float jumpVelocity;
@@ -812,7 +818,8 @@ namespace Gek
         }
     };
 
-    class FallingState : public PlayerStateMixin
+    class FallingState
+        : public PlayerStateMixin
     {
     private:
 
@@ -897,7 +904,8 @@ namespace Gek
         return S_OK;
     }
 
-    class PlayerBodyImplementation : public ContextUserMixin
+    class PlayerBodyImplementation
+        : public ContextUserMixin
         , public ComponentMixin<PlayerBodyComponent>
     {
     public:

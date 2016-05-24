@@ -1,5 +1,5 @@
 #include "GEK\Components\Transform.h"
-#include "GEK\Context\ContextUserMixin.h"
+#include "GEK\Context\Plugin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
@@ -29,7 +29,8 @@ namespace Gek
         return S_OK;
     }
 
-    class TransformImplementation : public ContextUserMixin
+    class TransformImplementation
+        : public ContextUserMixin
         , public ComponentMixin<TransformComponent>
     {
     public:

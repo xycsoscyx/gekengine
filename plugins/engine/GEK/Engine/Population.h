@@ -12,36 +12,38 @@
 
 namespace Gek
 {
-    interface Entity;
-    interface PopulationObserver;
+    GEK_PREDECLARE(Entity);
+    GEK_PREDECLARE(PopulationObserver);
 
-    interface Population
+    GEK_INTERFACE(Population)
     {
-        struct ComponentDefinition : public CStringW, public std::unordered_map<CStringW, CStringW>
+        struct ComponentDefinition
+            : public CStringW, public std::unordered_map<CStringW, CStringW>
         {
         };
 
-        struct EntityDefinition : public std::unordered_map<CStringW, ComponentDefinition>
+        struct EntityDefinition
+            : public std::unordered_map<CStringW, ComponentDefinition>
         {
         };
 
-        void initialize(IUnknown *initializerContext);
-        void destroy(void);
+        virtual void initialize(IUnknown *initializerContext) = 0;
+        virtual void destroy(void) = 0;
 
-        float getWorldTime(void);
-        float getFrameTime(void);
+        virtual float getWorldTime(void) = 0;
+        virtual float getFrameTime(void) = 0;
 
-        void update(bool isIdle, float frameTime = 0.0f);
+        virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
 
-        void load(LPCWSTR fileName);
-        void save(LPCWSTR fileName);
-        void free(void);
+        virtual void load(LPCWSTR fileName) = 0;
+        virtual void save(LPCWSTR fileName) = 0;
+        virtual void free(void) = 0;
 
-        Entity *createEntity(const EntityDefinition &entityParameterList, LPCWSTR name = nullptr);
-        void killEntity(Entity *entity);
-        Entity *getNamedEntity(LPCWSTR name);
+        virtual Entity *createEntity(const EntityDefinition &entityParameterList, LPCWSTR name = nullptr) = 0;
+        virtual void killEntity(Entity *entity) = 0;
+        virtual Entity *getNamedEntity(LPCWSTR name) = 0;
 
-        void listEntities(std::function<void(Entity *)> onEntity);
+        virtual void listEntities(std::function<void(Entity *)> onEntity) = 0;
 
         template<typename... ARGUMENTS>
         void listEntities(std::function<void(Entity *)> onEntity)
@@ -55,23 +57,21 @@ namespace Gek
             });
         }
 
-        void listProcessors(std::function<void(Processor *)> onProcessor);
+        virtual void listProcessors(std::function<void(Processor *)> onProcessor) = 0;
 
-        UINT32 setUpdatePriority(PopulationObserver *observer, UINT32 priority);
-        void removeUpdatePriority(UINT32 updateHandle);
+        virtual UINT32 setUpdatePriority(PopulationObserver *observer, UINT32 priority) = 0;
+        virtual void removeUpdatePriority(UINT32 updateHandle) = 0;
     };
 
-    DECLARE_INTERFACE_IID(PopulationObserver, "51D6E5E6-2AD3-4D61-A704-8E6515F024F9") : virtual public Observer
+    GEK_INTERFACE(PopulationObserver)
     {
-        void onLoadBegin(void) = default;
-        void onLoadEnd(HRESULT resultValue) = default;
-        void onFree(void) = default;
+        virtual void onLoadBegin(void) = 0;
+        virtual void onLoadEnd(HRESULT resultValue) = 0;
+        virtual void onFree(void) = 0;
 
-        void onEntityCreated(Entity *entity) = default;
-        void onEntityDestroyed(Entity *entity) = default;
+        virtual void onEntityCreated(Entity *entity) = 0;
+        virtual void onEntityDestroyed(Entity *entity) = 0;
 
-        void onUpdate(UINT32 handle, bool isIdle) = default;
+        virtual void onUpdate(UINT32 handle, bool isIdle) = 0;
     };
-
-    DECLARE_INTERFACE_IID(PopulationRegistration, "BD97404A-DE56-4DDC-BB34-3190FD51DEE5");
 }; // namespace Gek
