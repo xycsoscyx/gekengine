@@ -1,11 +1,12 @@
 #pragma once
 
-#include <Windows.h>
 #include "GEK\Math\Float3.h"
+#include "GEK\Context\Observable.h"
 
 namespace Gek
 {
     GEK_INTERFACE(NewtonProcessor)
+        : public Observable
     {
         struct Surface
         {
@@ -34,6 +35,6 @@ namespace Gek
     GEK_INTERFACE(NewtonObserver)
         : public Observer
     {
-        virtual void onCollision(Entity *entity0, Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) = 0;
+        virtual void onCollision(Entity *entity0, Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) { };
     };
 }; // namespace Gek

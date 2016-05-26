@@ -6,5 +6,6 @@ namespace Gek
 {
     GEK_INTERFACE(Processor)
     {
+        virtual ~Processor(void) = default;
     };
 }; // namespace Gek

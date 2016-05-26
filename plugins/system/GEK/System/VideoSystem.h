@@ -418,6 +418,7 @@ namespace Gek
 
     GEK_INTERFACE(VideoObject)
     {
+        virtual ~VideoObject(void) = default;
     };
 
     GEK_INTERFACE(VideoBuffer)

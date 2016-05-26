@@ -33,11 +33,11 @@ static void deSerializeCollision(void* const serializeHandle, void* const buffer
 
 namespace Gek
 {
-    extern NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
-    extern NewtonEntity *createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
+    extern NewtonEntityPtr createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
+    extern NewtonEntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
 
     class NewtonProcessorImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<NewtonProcessorImplementation>
         , public ObservableMixin
         , public PopulationObserver
         , public Processor
@@ -72,7 +72,7 @@ namespace Gek
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
         std::unordered_map<std::size_t, UINT32> surfaceIndexList;
-        std::unordered_map<Entity *, CComPtr<NewtonEntity>> entityMap;
+        std::unordered_map<Entity *, NewtonEntityPtr> entityMap;
         std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
     public:
@@ -118,7 +118,7 @@ namespace Gek
             GEK_REQUIRE(fileName);
 
             UINT32 surfaceIndex = 0;
-            std::size_t fileNameHash = std::hash<CStringW>()(fileName);
+            std::size_t fileNameHash = std::hash<wstring>()(fileName);
             auto surfaceIterator = surfaceIndexList.find(fileNameHash);
             if (surfaceIterator != surfaceIndexList.end())
             {
@@ -405,7 +405,7 @@ namespace Gek
                         NewtonCollision *newtonCollision = loadCollision(entity, rigidBodyComponent.shape);
                         if (newtonCollision != nullptr)
                         {
-                            CComPtr<NewtonEntity> rigidBody = createRigidBody(newtonWorld, newtonCollision, entity, transformComponent, massComponent);
+                            NewtonEntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity, transformComponent, massComponent));
                             if (rigidBody)
                             {
                                 entityMap[entity] = rigidBody;
@@ -416,7 +416,7 @@ namespace Gek
                     else if (entity->hasComponent<PlayerBodyComponent>())
                     {
                         auto &playerBodyComponent = entity->getComponent<PlayerBodyComponent>();
-                        CComPtr<NewtonEntity> playerBody = createPlayerBody(actionProvider, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent);
+                        NewtonEntityPtr playerBody(createPlayerBody(actionProvider, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent));
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
@@ -460,12 +460,12 @@ namespace Gek
             return 0;
         }
 
-        NewtonCollision *createCollision(Entity *entity, const CStringW &shape)
+        NewtonCollision *createCollision(Entity *entity, const wstring &shape)
         {
             GEK_REQUIRE(population, nullptr);
 
             NewtonCollision *newtonCollision = nullptr;
-            std::size_t collisionHash = std::hash<CStringW>()(shape);
+            std::size_t collisionHash = std::hash<wstring>()(shape);
             auto collisionIterator = collisionList.find(collisionHash);
             if (collisionIterator != collisionList.end())
             {
@@ -477,8 +477,8 @@ namespace Gek
             else
             {
                 int position = 0;
-                CStringW shapeType(shape.Tokenize(L"|", position));
-                CStringW parameters(shape.Tokenize(L"|", position));
+                wstring shapeType(shape.Tokenize(L"|", position));
+                wstring parameters(shape.Tokenize(L"|", position));
 
                 collisionList[collisionHash] = nullptr;
                 if (shapeType.CompareNoCase(L"*cube") == 0)
@@ -531,7 +531,7 @@ namespace Gek
             return newtonCollision;
         }
 
-        NewtonCollision *loadCollision(Entity *entity, const CStringW &shape)
+        NewtonCollision *loadCollision(Entity *entity, const wstring &shape)
         {
             NewtonCollision *newtonCollision = nullptr;
             if (shape.GetAt(0) == L'*')
@@ -540,7 +540,7 @@ namespace Gek
             }
             else
             {
-                std::size_t shapeHash = std::hash<CStringW>()(shape);
+                std::size_t shapeHash = std::hash<wstring>()(shape);
                 auto collisionIterator = collisionList.find(shapeHash);
                 if (collisionIterator != collisionList.end())
                 {
@@ -551,7 +551,7 @@ namespace Gek
                 }
                 else
                 {
-                    CStringW fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%.bin", shape.GetString())));
+                    wstring fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%.bin", shape.GetString())));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");
@@ -578,7 +578,7 @@ namespace Gek
                                 fread(&materialCount, sizeof(UINT32), 1, file);
                                 for (UINT32 materialIndex = 0; materialIndex < materialCount; materialIndex++)
                                 {
-                                    CStringW materialName;
+                                    wstring materialName;
                                     wchar_t letter = 0;
                                     do
                                     {

@@ -11,6 +11,8 @@ namespace Gek
 {
     namespace Evaluator
     {
+        GEK_BASE_EXCEPTION();
+
         void get(const wchar_t *expression, INT32 &result, INT32 defaultValue = 0);
         void get(const wchar_t *expression, UINT32 &result, UINT32 defaultValue = 0);
         void get(const wchar_t *expression, INT64 &result, INT64 defaultValue = 0);

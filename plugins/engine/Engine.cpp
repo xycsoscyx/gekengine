@@ -22,7 +22,7 @@ namespace Gek
 {
     class EngineImplementation
         : public ContextRegistration<EngineImplementation, HWND>
-        , public ObservableMixin
+        , public ObservableMixin<EngineImplementation>
         , public Engine
         , public RenderObserver
         , public PopulationObserver
@@ -110,6 +110,9 @@ namespace Gek
             , background(nullptr)
             , foreground(nullptr)
         {
+            GEK_TRACE_FUNCTION();
+            GEK_REQUIRE(window);
+
             consoleCommands[L"quit"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 engineRunning = false;
@@ -170,36 +173,30 @@ namespace Gek
                 result = sciter::value(true);
             };
 
-            GEK_TRACE_FUNCTION();
-
-            GEK_REQUIRE(window);
-
-            Gek::XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
+            XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
+            Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
+            if (xmlConfigNode && xmlConfigNode.getType().compare(L"config") == 0)
             {
-                Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
-                if (xmlConfigNode && xmlConfigNode.getType().compare(L"config") == 0)
+                Gek::XmlNode xmlConfigValue = xmlConfigNode.firstChildElement();
+                while (xmlConfigValue)
                 {
-                    Gek::XmlNode xmlConfigValue = xmlConfigNode.firstChildElement();
-                    while (xmlConfigValue)
+                    auto &group = options[xmlConfigValue.getType()];
+                    xmlConfigValue.listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
                     {
-                        auto &group = options[xmlConfigValue.getType()];
-                        xmlConfigValue.listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
-                        {
-                            group[name] = value;
-                        });
+                        group[name] = value;
+                    });
 
-                        xmlConfigValue = xmlConfigValue.nextSiblingElement();
-                    };
-                }
+                    xmlConfigValue = xmlConfigValue.nextSiblingElement();
+                };
             }
 
             HRESULT resultValue = CoInitialize(nullptr);
             GEK_CHECK_EXCEPTION(FAILED(resultValue), BaseException, "Unable to initialize COM: %", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
-            resources = getContext()->createClass<VideoSystem>(L"ResourcesSystem", video);
-            population = getContext()->createClass<VideoSystem>(L"PopulationSystem");
-            render = getContext()->createClass<VideoSystem>(L"RenderSystem", population, resources);
+            resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
+            population = getContext()->createClass<Population>(L"PopulationSystem");
+            render = getContext()->createClass<Render>(L"RenderSystem", population, resources);
 
             updateHandle = population->setUpdatePriority(this, 0);
             render->addObserver((RenderObserver *)this);
@@ -207,7 +204,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 resultValue = E_FAIL;
-                CComQIPtr<IDXGISwapChain> dxSwapChain(video);
+                CComQIPtr<IDXGISwapChain> dxSwapChain;//(video);
                 if (dxSwapChain)
                 {
                     if (SciterCreateOnDirectXWindow(window, dxSwapChain))
@@ -248,7 +245,7 @@ namespace Gek
         }
 
         // Options
-        STDMETHODIMP_(const wstring &) getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") CONST
+        const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const
         {
             auto &group = options.find(name);
             if(group != options.end())
@@ -263,23 +260,23 @@ namespace Gek
             return defaultValue;
         }
 
-        STDMETHODIMP_(void) setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value)
+        void setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value)
         {
             auto &group = newOptions[name];
             group[attribute] = value;
         }
 
-        STDMETHODIMP_(void) beginChanges(void)
+        void beginChanges(void)
         {
             newOptions = options;
         }
 
-        STDMETHODIMP_(void) finishChanges(bool commit)
+        void finishChanges(bool commit)
         {
             if (commit)
             {
                 options = std::move(newOptions);
-                ObservableMixin::sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
+                sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
 
                 auto &display = options.find(L"display");
                 if (display != options.end())
@@ -301,7 +298,7 @@ namespace Gek
         }
 
         // Engine
-        STDMETHODIMP_(LRESULT) windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
+        LRESULT windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
         {
             BOOL handled = false;
             LRESULT lResult = SciterProcND(window, message, wParam, lParam, &handled);
@@ -387,7 +384,7 @@ namespace Gek
             return 0;
         }
 
-        STDMETHODIMP_(bool) update(void)
+        bool update(void)
         {
             if (windowActive)
             {
@@ -415,7 +412,7 @@ namespace Gek
         }
 
         // PopulationObserver
-        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(UINT32 handle, bool isIdle)
         {
             POINT currentCursorPosition;
             GetCursorPos(&currentCursorPosition);
@@ -423,8 +420,8 @@ namespace Gek
             INT32 cursorMovementY = INT32(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
             if (cursorMovementX != 0 || cursorMovementY != 0)
             {
-                ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
             }
 
             lastCursorPosition = currentCursorPosition;
@@ -436,37 +433,37 @@ namespace Gek
                 {
                 case 'W':
                 case VK_UP:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
+                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
                     break;
 
                 case 'S':
                 case VK_DOWN:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
+                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
                     break;
 
                 case 'A':
                 case VK_LEFT:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
+                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
                     break;
 
                 case 'D':
                 case VK_RIGHT:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
+                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
                     break;
 
                 case VK_SPACE:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"jump", action.second)));
+                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"jump", action.second)));
                     break;
 
                 case VK_LCONTROL:
-                    ObservableMixin::sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
+                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
                     break;
                 };
             }
         }
 
         // RenderObserver
-        STDMETHODIMP_(void) onRenderBackground(void)
+        void onRenderBackground(void)
         {
             if (background)
             {
@@ -474,7 +471,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onRenderForeground(void)
+        void onRenderForeground(void)
         {
             if (foreground)
             {
@@ -610,7 +607,7 @@ namespace Gek
 
         BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
         {
-            wstring command(parameters->name);
+            wstring command(String::from<wchar_t>(parameters->name));
 
             std::vector<wstring> parameterList;
             for (UINT32 parameter = 0; parameter < parameters->argc; parameter++)
@@ -630,7 +627,7 @@ namespace Gek
 
         BOOL sciterOnTiScriptMethodCall(TISCRIPT_METHOD_PARAMS *parameters)
         {
-            tiscript::arguments arguments(parameters->vm);
+            tiscript::args arguments(parameters->vm);
             return false;
         }
 
@@ -701,4 +698,6 @@ namespace Gek
         {
         }
     };
+
+    GEK_REGISTER_CONTEXT_USER(EngineImplementation);
 }; // namespace Gek

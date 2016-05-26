@@ -718,7 +718,7 @@ namespace Gek
             {
                 if (xmlDepthNode.hasAttribute(L"source"))
                 {
-                    depthBuffer = resources->getResourceHandle<ResourceHandle>(xmlDepthNode.getAttribute(L"source"));
+                    depthBuffer = resources->getResourceHandle(xmlDepthNode.getAttribute(L"source"));
                 }
                 else
                 {
@@ -740,7 +740,7 @@ namespace Gek
                         wstring source(xmlTargetNode.getAttribute(L"source"));
                         if (!resourceMap.count(source))
                         {
-                            resourceMap[name] = resources->getResourceHandle<ResourceHandle>(source);
+                            resourceMap[name] = resources->getResourceHandle(source);
                         }
                     }
                     else
@@ -1301,12 +1301,13 @@ namespace Gek
                         if (resourceIterator != resourceMap.end())
                         {
                             renderTargetHandle = (*resourceIterator).second;
+                            /*
                             VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
                             if (target)
                             {
                                 shaderConstantData.targetSize.x = float(target->getWidth());
                                 shaderConstantData.targetSize.y = float(target->getHeight());
-                            }
+                            }*/
                         }
 
                         renderTargetList[stage++] = renderTargetHandle;

@@ -3,12 +3,17 @@
 #include "GEK\Math\Color.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Hash.h"
+#include "GEK\Context\Context.h"
 #include "GEK\System\VideoSystem.h"
 #include <type_traits>
 #include <typeindex>
 
 namespace Gek
 {
+    GEK_PREDECLARE(Shader);
+    GEK_PREDECLARE(Plugin);
+    GEK_PREDECLARE(Material);
+
     template <typename TYPE, int UNIQUE>
     struct Handle
     {
@@ -21,7 +26,7 @@ namespace Gek
 
         void assign(UINT64 identifier)
         {
-            void->identifier = TYPE(identifier);
+            this->identifier = TYPE(identifier);
         }
 
         operator bool() const
@@ -36,12 +41,12 @@ namespace Gek
 
         bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (void->identifier == handle.identifier);
+            return (identifier == handle.identifier);
         }
 
         bool operator != (const typename Handle<TYPE, UNIQUE> &handle) const
         {
-            return (void->identifier != handle.identifier);
+            return (identifier != handle.identifier);
         }
     };
 
@@ -63,7 +68,7 @@ namespace Gek
     }; // TextureFlags
 
     GEK_PREDECLARE(RenderPipeline);
-    GEK_INTERFACE(RenderContext);
+    GEK_PREDECLARE(RenderContext);
 
     GEK_INTERFACE(PluginResources)
     {
@@ -90,23 +95,12 @@ namespace Gek
     {
         virtual void clearLocal(void) = 0;
         
-        virtual ShaderHandle getShader(MaterialHandle material) const = 0;
-        virtual void *getResourceHandle(const std::type_index &type, const wchar_t *name) const = 0;
+        virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
+        virtual ResourceHandle getResourceHandle(const wchar_t *name) const = 0;
 
-        template <typename HANDLE>
-        HANDLE getResourceHandle(const wchar_t *name) const
-        {
-            void *handle = getResourceHandle(typeid(HANDLE), name);
-            return (handle ? *reinterpret_cast<HANDLE *>(handle) : ResourceHandle());
-        }
-
-        virtual VideoObject *getResource(const std::type_index &type, LPCVOID handle) = 0;
-
-        template <typename RESOURCE, typename HANDLE>
-        RESOURCE *getResource(HANDLE handle)
-        {
-            return reinterpret_cast<RESOURCE *>(getResource(typeid(HANDLE), LPCVOID(&handle)));
-        }
+        virtual Shader * const getShader(ShaderHandle handle) const = 0;
+        virtual Plugin * const getPlugin(PluginHandle handle) const = 0;
+        virtual Material * const getMaterial(MaterialHandle handle) const = 0;
 
         virtual ShaderHandle loadShader(const wchar_t *fileName) = 0;
         virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<wstring, wstring> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;

@@ -56,11 +56,11 @@ namespace Gek
 
     GEK_INTERFACE(State)
     {
-        STDMETHOD_(void, onEnter)       (THIS_ StatePtr previousState) { };
-        STDMETHOD_(void, onExit)        (THIS_ StatePtr nextState) { };
+        virtual void onEnter(StatePtr previousState) { };
+        virtual void onExit(StatePtr nextState) { };
 
-        STDMETHOD_(StatePtr, onUpdate)   (THIS_ float frameTime) { return nullptr; };
-        STDMETHOD_(StatePtr, onAction)   (THIS_ const wchar_t *name, const ActionParam &param) { return nullptr; };
+        StatePtr onUpdate(float frameTime) { return nullptr; };
+        StatePtr onAction(const wchar_t *name, const ActionParam &param) { return nullptr; };
     };
 
     class PlayerNewtonBody;
@@ -71,9 +71,8 @@ namespace Gek
     State *createFallingState(PlayerNewtonBody *playerBody);
 
     class PlayerNewtonBody
-        : public UnknownMixin
-        , virtual public ActionObserver
-        , virtual public NewtonEntity
+        : public ActionObserver
+        , public NewtonEntity
     {
     public:
         LPVOID operator new(size_t size)
@@ -918,7 +917,7 @@ namespace Gek
             END_INTERFACE_LIST_USER
 
         // Component
-        STDMETHODIMP_(const wchar_t *) getName(void) const
+        const char *getName(void) const
         {
             return L"player_body";
         }

@@ -1,11 +1,9 @@
 #pragma once
 
-#include "GEK\Shapes\Frustum.h"
 #include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
-#include "GEK\System\VideoSystem.h"
+#include "GEK\Shapes\Frustum.h"
+#include "GEK\Context\Context.h"
 #include "GEK\Engine\Resources.h"
-#include <functional>
 #include <memory>
 
 namespace Gek

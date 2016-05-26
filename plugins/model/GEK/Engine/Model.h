@@ -7,8 +7,8 @@ namespace Gek
 {
     struct ModelComponent
     {
-        CStringW value;
-        CStringW skin;
+        wstring value;
+        wstring skin;
 
         ModelComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;
@@ -19,12 +19,12 @@ namespace Gek
             return value.GetString();
         }
 
-        inline operator CStringW () const
+        inline operator wstring () const
         {
             return value;
         }
 
-        inline CStringW &operator = (const wchar_t *value)
+        inline wstring &operator = (const wchar_t *value)
         {
             this->value = value;
             return this->value;

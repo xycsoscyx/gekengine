@@ -17,7 +17,6 @@
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
 #include <concurrent_queue.h>
@@ -46,16 +45,12 @@ namespace Gek
         }
     }; // namespace String
 
-    GEK_INTERFACE(ResourceLoader)
-    {
-        virtual void requestLoad(LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource, std::function<void(IUnknown *)> setResource) = 0;
-        virtual void requestLoad(LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource, std::function<void(IUnknown *, IUnknown *)> setResource) = 0;
-    };
-
-    template <class HANDLE>
+    template <class HANDLE, typename TYPE>
     class ResourceManager
     {
     public:
+        typedef std::shared_ptr<TYPE> TypePtr;
+
         struct AtomicResource
         {
             enum class State : UINT8
@@ -66,7 +61,7 @@ namespace Gek
             };
 
             std::atomic<State> state;
-            VideoObjectPtr data;
+            TypePtr data;
 
             AtomicResource(void)
                 : state(State::Empty)
@@ -79,7 +74,7 @@ namespace Gek
             {
             }
 
-            void set(VideoObject *data)
+            void set(TypePtr data)
             {
                 if (state == State::Empty)
                 {
@@ -89,9 +84,9 @@ namespace Gek
                 }
             }
 
-            IUnknown *get(void)
+            TYPE * const get(void) const
             {
-                return (state == State::Loaded ? data.p : nullptr);
+                return (state == State::Loaded ? data.get() : nullptr);
             }
         };
 
@@ -104,10 +99,14 @@ namespace Gek
             {
             }
 
-            void set(VideoObject *read, VideoObject *write)
+            void setRead(TypePtr data)
             {
-                this->read.set(read);
-                this->write.set(write);
+                this->read.set(data);
+            }
+
+            void setWrite(TypePtr data)
+            {
+                this->write.set(data);
             }
         };
 
@@ -137,11 +136,11 @@ namespace Gek
             readWriteResourceMap.clear();
         }
 
-        HANDLE getGlobalHandle(ResourceLoader *resourceLoader, std::function<VideoObjectPtr(LPCVOID)> loadResource)
+        HANDLE getGlobalHandle(std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle) -> void
+            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
             {
                 auto &resource = globalResourceMap[handle];
                 resource.set(data);
@@ -149,11 +148,11 @@ namespace Gek
             return handle;
         }
 
-        HANDLE getUniqueHandle(ResourceLoader *resourceLoader, std::function<VideoObjectPtr(LPCVOID)> loadResource)
+        HANDLE getUniqueHandle(std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle) -> void
+            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
             {
                 auto &resource = localResourceMap[handle];
                 resource.set(data);
@@ -161,19 +160,24 @@ namespace Gek
             return handle;
         }
 
-        HANDLE getUniqueReadWriteHandle(ResourceLoader *resourceLoader, std::function<VideoObjectPtr(LPCVOID)> loadResource)
+        HANDLE getUniqueReadWriteHandle(std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle) -> void
+            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
             {
                 auto &resource = readWriteResourceMap[handle];
-                resource.set(read, write);
+                resource.setRead(data);
+            }, handle, std::placeholders::_1));
+            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+            {
+                auto &resource = readWriteResourceMap[handle];
+                resource.setWrite(data);
             }, handle, std::placeholders::_1));
             return handle;
         }
 
-        HANDLE getHandle(std::size_t hash, ResourceLoader *resourceLoader, std::function<VideoObjectPtr(LPCVOID)> loadResource)
+        HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -189,7 +193,7 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle) -> void
+                requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
                 {
                     auto &resource = localResourceMap[handle];
                     resource.set(data);
@@ -199,7 +203,7 @@ namespace Gek
             return handle;
         }
 
-        HANDLE getReadWriteHandle(std::size_t hash, ResourceLoader *resourceLoader, std::function<VideoObjectPtr(LPCVOID)> loadResource)
+        HANDLE getReadWriteHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -215,32 +219,36 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                resourceLoader->requestLoad(&handle, loadResource, std::bind([this](HANDLE handle) -> void
+                requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
                 {
                     auto &resource = readWriteResourceMap[handle];
-                    resource.set(read, write);
-                }, handle, std::placeholders::_1, std::placeholders::_2));
+                    resource.setRead(data);
+                }, handle, std::placeholders::_1));
+                requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+                {
+                    auto &resource = readWriteResourceMap[handle];
+                    resource.setWrite(data);
+                }, handle, std::placeholders::_1));
             }
 
             return handle;
         }
 
-        bool getHandle(std::size_t hash, HANDLE **handle)
+        HANDLE getHandle(std::size_t hash) const
         {
             if (requestedLoadSet.count(hash) > 0)
             {
                 auto resourceIterator = resourceHandleMap.find(hash);
                 if (resourceIterator != resourceHandleMap.end())
                 {
-                    (*handle) = &resourceIterator->second;
-                    return true;
+                    return resourceIterator->second;
                 }
             }
 
-            return false;
+            return HANDLE();
         }
 
-        VideoObject *getResource(HANDLE handle, bool writable = false)
+        TYPE * const getResource(HANDLE handle, bool writable = false) const
         {
             auto globalIterator = globalResourceMap.find(handle);
             if (globalIterator != globalResourceMap.end())
@@ -264,12 +272,6 @@ namespace Gek
             return nullptr;
         }
 
-        template <typename TYPE>
-        VideoObject *getResource(HANDLE handle, bool writable = false)
-        {
-            return dynamic_cast<TYPE *>(getResource(handle, writable));
-        }
-
         void flipResource(HANDLE handle)
         {
             auto readWriteIterator = readWriteResourceMap.find(handle);
@@ -286,22 +288,21 @@ namespace Gek
     };
 
     class ResourcesImplementation 
-        : public ContextRegistration<ResourcesImplementation>
+        : public ContextRegistration<ResourcesImplementation, VideoSystem *>
         , public Resources
-        , public ResourceLoader
     {
     private:
         IUnknown *initializerContext;
         VideoSystem *video;
 
-        ResourceManager<ProgramHandle> programManager;
-        ResourceManager<PluginHandle> pluginManager;
-        ResourceManager<MaterialHandle> materialManager;
-        ResourceManager<ShaderHandle> shaderManager;
-        ResourceManager<ResourceHandle> resourceManager;
-        ResourceManager<RenderStateHandle> renderStateManager;
-        ResourceManager<DepthStateHandle> depthStateManager;
-        ResourceManager<BlendStateHandle> blendStateManager;
+        ResourceManager<ProgramHandle, VideoObject> programManager;
+        ResourceManager<PluginHandle, Plugin> pluginManager;
+        ResourceManager<MaterialHandle, Material> materialManager;
+        ResourceManager<ShaderHandle, Shader> shaderManager;
+        ResourceManager<ResourceHandle, VideoObject> resourceManager;
+        ResourceManager<RenderStateHandle, VideoObject> renderStateManager;
+        ResourceManager<DepthStateHandle, VideoObject> depthStateManager;
+        ResourceManager<BlendStateHandle, VideoObject> blendStateManager;
 
         concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
@@ -338,30 +339,6 @@ namespace Gek
             }
         }
 
-        void requestLoad(LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource, std::function<void(IUnknown *)> setResource)
-        {
-            requestLoad(std::bind([](LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **)> loadResource, std::function<void(IUnknown *)> setResource) -> void
-            {
-                CComPtr<IUnknown> resource;
-                if (SUCCEEDED(loadResource(handle, &resource)) && resource)
-                {
-                    setResource(resource);
-                }
-            }, handle, loadResource, setResource));
-        }
-
-        void requestLoad(LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource, std::function<void(IUnknown *, IUnknown *)> setResource)
-        {
-            requestLoad(std::bind([](LPCVOID handle, std::function<HRESULT(LPCVOID, IUnknown **, IUnknown **)> loadResource, std::function<void(IUnknown *, IUnknown *)> setResource) -> void
-            {
-                CComPtr<IUnknown> read, write;
-                if (SUCCEEDED(loadResource(handle, &read, &write)) && read && write)
-                {
-                    setResource(read, write);
-                }
-            }, handle, loadResource, setResource));
-        }
-
         // Resources
         void clearLocal(void)
         {
@@ -381,7 +358,7 @@ namespace Gek
             blendStateManager.clear();
         }
 
-        ShaderHandle getShader(MaterialHandle material)
+        ShaderHandle getMaterialShader(MaterialHandle material) const
         {
             auto shader = materialShaderMap.find(material);
             if (shader != materialShaderMap.end())
@@ -392,73 +369,79 @@ namespace Gek
             return ShaderHandle();
         }
 
-        void *getResourceHandle(const std::type_index &type, const wchar_t *name)
+        ResourceHandle getResourceHandle(const wchar_t *name) const
         {
-            if (type == typeid(ResourceHandle))
-            {
-                std::size_t hash = std::hash<const wchar_t *>()(name);
-
-                ResourceHandle *handle = nullptr;
-                if (resourceManager.getHandle(hash, &handle))
-                {
-                    return static_cast<LPVOID>(handle);
-                }
-            }
-
-            return nullptr;
+            std::size_t hash = std::hash<wstring>()(name);
+            return resourceManager.getHandle(hash);
         }
 
-        VideoObject *getResource(const std::type_index &type, LPCVOID handle)
+        Shader * const getShader(ShaderHandle handle) const
         {
-            if (type == typeid(PluginHandle))
-            {
-                return pluginManager.getResource(*static_cast<const PluginHandle *>(handle));
-            }
-            else if (type == typeid(ShaderHandle))
-            {
-                return shaderManager.getResource(*static_cast<const ShaderHandle *>(handle));
-            }
-            else if (type == typeid(MaterialHandle))
-            {
-                return materialManager.getResource(*static_cast<const MaterialHandle *>(handle));
-            }
-            else if (type == typeid(ResourceHandle))
-            {
-                return resourceManager.getResource(*static_cast<const ResourceHandle *>(handle));
-            }
+            return shaderManager.getResource(handle, false);
+        }
 
-            return nullptr;
-        };
+        Plugin * const getPlugin(PluginHandle handle) const
+        {
+            return pluginManager.getResource(handle, false);
+        }
+
+        Material * const getMaterial(MaterialHandle handle) const
+        {
+            return materialManager.getResource(handle, false);
+        }
 
         PluginHandle loadPlugin(const wchar_t *fileName)
         {
-            return pluginManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, const wstring &fileName) -> VideoObjectPtr
+            auto load = std::bind([this](PluginHandle handle, wstring fileName) -> PluginPtr
             {
                 return getContext()->createClass<Plugin>(L"PluginSystem");
-            }, std::placeholders::_1, fileName));
+            }, std::placeholders::_1, fileName);
+
+            auto request = std::bind([this](PluginHandle handle, std::function<void(PluginPtr)> set, std::function<PluginPtr(PluginHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
+            return pluginManager.getGlobalHandle(request);
         }
 
         MaterialHandle loadMaterial(const wchar_t *fileName)
         {
-            std::size_t hash = std::hash<wstring>()(wstring(fileName).MakeReverse());
-            return materialManager.getHandle(hash, this, std::bind([this](LPCVOID handle, const wstring &fileName) -> VideoObjectPtr
+            auto load = std::bind([this](MaterialHandle handle, wstring fileName) -> MaterialPtr
             {
                 return getContext()->createClass<Material>(L"MaterialSystem");
-            }, std::placeholders::_1, fileName));
+            }, std::placeholders::_1, fileName);
+
+            auto request = std::bind([this](MaterialHandle handle, std::function<void(MaterialPtr)> set, std::function<MaterialPtr(MaterialHandle)> load) -> void
+            {
+                MaterialPtr material = load(handle);
+                materialShaderMap[handle] = material->getShader();
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
+            std::size_t hash = std::hash<wstring>()(fileName);
+            return materialManager.getHandle(hash, request);
         }
 
         ShaderHandle loadShader(const wchar_t *fileName)
         {
-            std::size_t hash = std::hash<wstring>()(wstring(fileName).MakeReverse());
-            return shaderManager.getHandle(hash, this, std::bind([this](LPCVOID handle, const wstring &fileName) -> VideoObjectPtr
+            auto load = std::bind([this](ShaderHandle handle, wstring fileName) -> ShaderPtr
             {
                 return getContext()->createClass<Shader>(L"ShaderSystem");
-            }, std::placeholders::_1, fileName));
+            }, std::placeholders::_1, fileName);
+
+            auto request = std::bind([this](ShaderHandle handle, std::function<void(ShaderPtr)> set, std::function<ShaderPtr(ShaderHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
+            std::size_t hash = std::hash<wstring>()(fileName);
+            return shaderManager.getHandle(hash, request);
         }
 
         void loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<wstring, wstring> &resourceMap, std::list<ResourceHandle> &resourceList)
         {
-            Shader *shader = shaderManager.getResource<Shader>(shaderHandle);
+            Shader *shader = shaderManager.getResource(shaderHandle);
             if (shader)
             {
                 shader->loadResourceList(materialName, resourceMap, resourceList);
@@ -467,6 +450,16 @@ namespace Gek
 
         RenderStateHandle createRenderState(const Video::RenderState &renderState)
         {
+            auto load = std::bind([this](RenderStateHandle handle, Video::RenderState renderState) -> VideoObjectPtr
+            {
+                return video->createRenderState(renderState);
+            }, std::placeholders::_1, renderState);
+
+            auto request = std::bind([this](RenderStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(RenderStateHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             std::size_t hash = std::hash_combine(static_cast<UINT8>(renderState.fillMode),
                 static_cast<UINT8>(renderState.cullMode),
                 renderState.frontCounterClockwise,
@@ -477,15 +470,21 @@ namespace Gek
                 renderState.scissorEnable,
                 renderState.multisampleEnable,
                 renderState.antialiasedLineEnable);
-            return renderStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, Video::RenderState renderState) -> VideoObjectPtr
-            {
-                HRESULT resultValue = video->createRenderState(returnObject, renderState);
-                return resultValue;
-            }, std::placeholders::_1, renderState));
+            return renderStateManager.getHandle(hash, request);
         }
 
         DepthStateHandle createDepthState(const Video::DepthState &depthState)
         {
+            auto load = std::bind([this](DepthStateHandle handle, Video::DepthState depthState) -> VideoObjectPtr
+            {
+                return video->createDepthState(depthState);
+            }, std::placeholders::_1, depthState);
+
+            auto request = std::bind([this](DepthStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(DepthStateHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             std::size_t hash = std::hash_combine(depthState.enable,
                 static_cast<UINT8>(depthState.writeMask),
                 static_cast<UINT8>(depthState.comparisonFunction),
@@ -500,15 +499,21 @@ namespace Gek
                 static_cast<UINT8>(depthState.stencilBackState.depthFailOperation),
                 static_cast<UINT8>(depthState.stencilBackState.passOperation),
                 static_cast<UINT8>(depthState.stencilBackState.comparisonFunction));
-            return depthStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, Video::DepthState depthState) -> VideoObjectPtr
-            {
-                HRESULT resultValue = video->createDepthState(returnObject, depthState);
-                return resultValue;
-            }, std::placeholders::_1, depthState));
+            return depthStateManager.getHandle(hash, request);
         }
 
         BlendStateHandle createBlendState(const Video::UnifiedBlendState &blendState)
         {
+            auto load = std::bind([this](BlendStateHandle handle, Video::UnifiedBlendState blendState) -> VideoObjectPtr
+            {
+                return video->createBlendState(blendState);
+            }, std::placeholders::_1, blendState);
+
+            auto request = std::bind([this](BlendStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(BlendStateHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             std::size_t hash = std::hash_combine(blendState.enable,
                 static_cast<UINT8>(blendState.colorSource),
                 static_cast<UINT8>(blendState.colorDestination),
@@ -517,15 +522,21 @@ namespace Gek
                 static_cast<UINT8>(blendState.alphaDestination),
                 static_cast<UINT8>(blendState.alphaOperation),
                 blendState.writeMask);
-            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, Video::UnifiedBlendState blendState) -> VideoObjectPtr
-            {
-                HRESULT resultValue = video->createBlendState(returnObject, blendState);
-                return resultValue;
-            }, std::placeholders::_1, blendState));
+            return blendStateManager.getHandle(hash, request);
         }
 
         BlendStateHandle createBlendState(const Video::IndependentBlendState &blendState)
         {
+            auto load = std::bind([this](BlendStateHandle handle, Video::IndependentBlendState blendState) -> VideoObjectPtr
+            {
+                return video->createBlendState(blendState);
+            }, std::placeholders::_1, blendState);
+
+            auto request = std::bind([this](BlendStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(BlendStateHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
@@ -542,377 +553,300 @@ namespace Gek
                 }
             }
 
-            return blendStateManager.getHandle(hash, this, std::bind([this](LPCVOID handle, Video::IndependentBlendState blendState) -> VideoObjectPtr
-            {
-                HRESULT resultValue = video->createBlendState(returnObject, blendState);
-                return resultValue;
-            }, std::placeholders::_1, blendState));
+            return blendStateManager.getHandle(hash, request);
         }
 
         ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
         {
+            auto load = std::bind([this](ResourceHandle handle, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> VideoTexturePtr
+            {
+                return video->createTexture(format, width, height, depth, flags, mipmaps);
+            }, std::placeholders::_1, format, width, height, depth, flags, mipmaps);
+
+            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoTexturePtr)> set, std::function<VideoTexturePtr(ResourceHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             if (name)
             {
                 std::size_t hash = std::hash<const wchar_t *>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, this, std::bind([this](LPCVOID handle, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> VideoObjectPtr
-                    {
-                        CComPtr<VideoTexture> read, write;
-                        HRESULT resultValue = video->createTexture(&read, format, width, height, depth, flags, mipmaps);
-                        resultValue |= video->createTexture(&write, format, width, height, depth, flags, mipmaps);
-                        if (SUCCEEDED(resultValue) && read && write)
-                        {
-                            resultValue = read->QueryInterface(readObject);
-                            resultValue |= write->QueryInterface(writeObject);
-                        }
-
-                        return resultValue;
-                    }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
+                    return resourceManager.getReadWriteHandle(hash, request);
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> VideoObjectPtr
-                    {
-                        CComPtr<VideoTexture> texture;
-                        HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
-                        if (SUCCEEDED(resultValue) && texture)
-                        {
-                            resultValue = texture->QueryInterface(returnObject);
-                        }
-
-                        return resultValue;
-                    }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
+                    return resourceManager.getHandle(hash, request);
                 }
             }
             else
             {
-                return resourceManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> VideoObjectPtr
-                {
-                    CComPtr<VideoTexture> texture;
-                    HRESULT resultValue = video->createTexture(&texture, format, width, height, depth, flags, mipmaps);
-                    if (SUCCEEDED(resultValue) && texture)
-                    {
-                        resultValue = texture->QueryInterface(returnObject);
-                    }
-
-                    return resultValue;
-                }, std::placeholders::_1, format, width, height, depth, flags, mipmaps));
+                return resourceManager.getGlobalHandle(request);
             }
         }
 
         ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
+            auto load = std::bind([this](ResourceHandle handle, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoBufferPtr
+            {
+                return video->createBuffer(stride, count, type, flags, staticData);
+            }, std::placeholders::_1, stride, count, type, flags, staticData);
+
+            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoBufferPtr)> set, std::function<VideoBufferPtr(ResourceHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             if (name)
             {
                 std::size_t hash = std::hash<const wchar_t *>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, this, std::bind([this](LPCVOID handle, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoObjectPtr
-                    {
-                        CComPtr<VideoBuffer> read, write;
-                        HRESULT resultValue = video->createBuffer(&read, stride, count, type, flags, staticData);
-                        resultValue |= video->createBuffer(&write, stride, count, type, flags, staticData);
-                        if (SUCCEEDED(resultValue) && read && write)
-                        {
-                            resultValue = read->QueryInterface(readObject);
-                            resultValue |= write->QueryInterface(writeObject);
-                        }
-
-                        return resultValue;
-                    }, std::placeholders::_1, stride, count, type, flags, staticData));
+                    return resourceManager.getReadWriteHandle(hash, request);
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoObjectPtr
-                    {
-                        CComPtr<VideoBuffer> buffer;
-                        HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
-                        if (SUCCEEDED(resultValue) && buffer)
-                        {
-                            resultValue = buffer->QueryInterface(returnObject);
-                        }
-
-                        return resultValue;
-                    }, std::placeholders::_1, stride, count, type, flags, staticData));
+                    return resourceManager.getHandle(hash, request);
                 }
             }
             else
             {
-                return resourceManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoObjectPtr
-                {
-                    CComPtr<VideoBuffer> buffer;
-                    HRESULT resultValue = video->createBuffer(&buffer, stride, count, type, flags, staticData);
-                    if (SUCCEEDED(resultValue) && buffer)
-                    {
-                        resultValue = buffer->QueryInterface(returnObject);
-                    }
-
-                    return resultValue;
-                }, std::placeholders::_1, stride, count, type, flags, staticData));
+                return resourceManager.getGlobalHandle(request);
             }
         }
 
         ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
+            auto load = std::bind([this](ResourceHandle handle, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoBufferPtr
+            {
+                return video->createBuffer(format, count, type, flags, staticData);
+            }, std::placeholders::_1, format, count, type, flags, staticData);
+
+            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoBufferPtr)> set, std::function<VideoBufferPtr(ResourceHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
             if (name)
             {
                 std::size_t hash = std::hash<const wchar_t *>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, this, std::bind([this](LPCVOID handle, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoObjectPtr
-                    {
-                        CComPtr<VideoBuffer> read, write;
-                        HRESULT resultValue = video->createBuffer(&read, format, count, type, flags, staticData);
-                        resultValue |= video->createBuffer(&write, format, count, type, flags, staticData);
-                        if (SUCCEEDED(resultValue) && read && write)
-                        {
-                            resultValue = read->QueryInterface(readObject);
-                            resultValue |= write->QueryInterface(writeObject);
-                        }
-
-                        return resultValue;
-                    }, std::placeholders::_1, format, count, type, flags, staticData));
+                    return resourceManager.getReadWriteHandle(hash, request);
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoObjectPtr
-                    {
-                        CComPtr<VideoBuffer> buffer;
-                        HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
-                        if (SUCCEEDED(resultValue) && buffer)
-                        {
-                            resultValue = buffer->QueryInterface(returnObject);
-                        }
-
-                        return resultValue;
-                    }, std::placeholders::_1, format, count, type, flags, staticData));
+                    return resourceManager.getHandle(hash, request);
                 }
             }
             else
             {
-                return resourceManager.getGlobalHandle(this, std::bind([this](LPCVOID handle, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoObjectPtr
-                {
-                    CComPtr<VideoBuffer> buffer;
-                    HRESULT resultValue = video->createBuffer(&buffer, format, count, type, flags, staticData);
-                    if (SUCCEEDED(resultValue) && buffer)
-                    {
-                        resultValue = buffer->QueryInterface(returnObject);
-                    }
-
-                    return resultValue;
-                }, std::placeholders::_1, format, count, type, flags, staticData));
+                return resourceManager.getGlobalHandle(request);
             }
         }
 
-        void createTexture(VideoTexture **returnObject, wstring parameters, UINT32 flags)
+        VideoTexturePtr createTexture(wstring parameters, UINT32 flags)
         {
-            GEK_REQUIRE(returnObject);
-
-            HRESULT resultValue = E_FAIL;
-
-            CComPtr<VideoTexture> texture;
-
-            int position = 0;
-            wstring type(parameters.Tokenize(L":", position));
-            wstring value(parameters.Tokenize(L":", position));
-            if (type.CompareNoCase(L"color") == 0)
+            VideoTexturePtr texture;
+            std::vector<wstring> tokenList(parameters.getLower().split(L':'));
+            GEK_CHECK_EXCEPTION(tokenList.size() != 2, BaseException, "Invalid number of parameters passed to create texture");
+            if (tokenList[0].compare(L"color") == 0)
             {
-                UINT8 colorData[4] = { 0, 0, 0, 0 };
                 UINT32 colorPitch = 0;
-
-                float color1;
-                Math::Float2 color2;
-                Math::Float3 color3;
-                Math::Float4 color4;
-                if (Evaluator::get(value, color1))
+                UINT8 colorData[4] = { 0, 0, 0, 0 };
+                try
                 {
-                    resultValue = video->createTexture(&texture, Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
+                    float color1;
+                    Evaluator::get(tokenList[1], color1);
+                    texture = video->createTexture(Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
                     colorData[0] = UINT8(color1 * 255.0f);
                     colorPitch = 1;
                 }
-                else if (Evaluator::get(value, color2))
+                catch (Evaluator::Exception exception)
                 {
-                    resultValue = video->createTexture(&texture, Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
-                    colorData[0] = UINT8(color2.x * 255.0f);
-                    colorData[1] = UINT8(color2.y * 255.0f);
-                    colorPitch = 2;
-                }
-                else if (Evaluator::get(value, color3))
-                {
-                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                    colorData[0] = UINT8(color3.x * 255.0f);
-                    colorData[1] = UINT8(color3.y * 255.0f);
-                    colorData[2] = UINT8(color3.z * 255.0f);
-                    colorData[3] = 255;
-                    colorPitch = 4;
-                }
-                else if (Evaluator::get(value, color4))
-                {
-                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                    colorData[0] = UINT8(color4.x * 255.0f);
-                    colorData[1] = UINT8(color4.y * 255.0f);
-                    colorData[2] = UINT8(color4.z * 255.0f);
-                    colorData[3] = UINT8(color4.w * 255.0f);
-                    colorPitch = 4;
-                }
-
-                if (texture && colorPitch > 0)
-                {
-                    video->updateTexture(texture, colorData, colorPitch);
-                }
-            }
-            else if (type.CompareNoCase(L"normal") == 0)
-            {
-                resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                if (texture)
-                {
-                    Math::Float3 normal((Evaluator::get<Math::Float3>(value).getNormal() + 1.0f) * 0.5f);
-                    UINT8 normalData[4] = 
+                    try
                     {
-                        UINT8(normal.x * 255.0f),
-                        UINT8(normal.y * 255.0f),
-                        UINT8(normal.z * 255.0f),
+                        Math::Float2 color2;
+                        Evaluator::get(tokenList[1], color2);
+                        texture = video->createTexture(Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
+                        colorData[0] = UINT8(color2.x * 255.0f);
+                        colorData[1] = UINT8(color2.y * 255.0f);
+                        colorPitch = 2;
+                    }
+                    catch (Evaluator::Exception exception)
+                    {
+                        try
+                        {
+                            Math::Float3 color3;
+                            Evaluator::get(tokenList[1], color3);
+                            texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                            colorData[0] = UINT8(color3.x * 255.0f);
+                            colorData[1] = UINT8(color3.y * 255.0f);
+                            colorData[2] = UINT8(color3.z * 255.0f);
+                            colorData[3] = 255;
+                            colorPitch = 4;
+                        }
+                        catch (Evaluator::Exception exception)
+                        {
+                            try
+                            {
+                                Math::Float4 color4;
+                                Evaluator::get(tokenList[1], color4);
+                                texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                                colorData[0] = UINT8(color4.x * 255.0f);
+                                colorData[1] = UINT8(color4.y * 255.0f);
+                                colorData[2] = UINT8(color4.z * 255.0f);
+                                colorData[3] = UINT8(color4.w * 255.0f);
+                                colorPitch = 4;
+                            }
+                            catch (Evaluator::Exception exception)
+                            {
+                            };
+                        };
+                    };
+                };
+
+                GEK_CHECK_EXCEPTION(!texture, BaseException, "Unable to create texture");
+                GEK_CHECK_EXCEPTION(colorPitch == 0, BaseException, "Unable to evaluate color format");
+                video->updateTexture(texture.get(), colorData, colorPitch);
+            }
+            else if (tokenList[0].compare(L"normal") == 0)
+            {
+                Math::Float3 normal((Evaluator::get<Math::Float3>(tokenList[1]).getNormal() + 1.0f) * 0.5f);
+                UINT8 normalData[4] = 
+                {
+                    UINT8(normal.x * 255.0f),
+                    UINT8(normal.y * 255.0f),
+                    UINT8(normal.z * 255.0f),
+                    255,
+                };
+
+                texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                video->updateTexture(texture.get(), normalData, 4);
+            }
+            else if (tokenList[0].compare(L"pattern") == 0)
+            {
+                if (tokenList[1].compare(L"debug") == 0)
+                {
+                    UINT8 data[] =
+                    {
+                        255, 0, 255, 255,
+                    };
+
+                    texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                    video->updateTexture(texture.get(), data, 4);
+                }
+                else if (tokenList[1].compare(L"flat") == 0)
+                {
+                    UINT8 normalData[4] =
+                    {
+                        127,
+                        127,
+                        255,
                         255,
                     };
 
-                    video->updateTexture(texture, normalData, 4);
-                }
-            }
-            else if (type.CompareNoCase(L"pattern") == 0)
-            {
-                if (value.CompareNoCase(L"debug") == 0)
-                {
-                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                    if (texture)
-                    {
-                        UINT8 data[] =
-                        {
-                            255, 0, 255, 255,
-                        };
-
-                        video->updateTexture(texture, data, 4);
-                    }
-                }
-                else if (value.CompareNoCase(L"flat") == 0)
-                {
-                    resultValue = video->createTexture(&texture, Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                    if (texture)
-                    {
-                        UINT8 normalData[4] =
-                        {
-                            127,
-                            127,
-                            255,
-                            255,
-                        };
-
-                        video->updateTexture(texture, normalData, 4);
-                    }
+                    texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                    video->updateTexture(texture.get(), normalData, 4);
                 }
             }
 
-            if (texture)
-            {
-                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
-
-            return resultValue;
+            return texture;
         }
 
-        void loadTexture(VideoTexture **returnObject, const wchar_t *fileName, UINT32 flags)
+        VideoTexturePtr loadTexture(const wchar_t *fileName, UINT32 flags)
         {
-            GEK_REQUIRE(returnObject);
             GEK_REQUIRE(fileName);
 
-            HRESULT resultValue = E_FAIL;
-
-            // iterate over formats in case the texture name has no extension
-            static const wchar_t *formatList[] =
+            if (*fileName == L'*')
             {
-                L"",
-                L".dds",
-                L".tga",
-                L".png",
-                L".jpg",
-                L".bmp",
-            };
-
-            CComPtr<VideoTexture> texture;
-            for (auto &format : formatList)
+                return createTexture(&fileName[1], flags);
+            }
+            else
             {
-                wstring fullFileName(FileSystem::expandPath(String::format(L"$root\\data\\textures\\%%", fileName, format)));
-                if (PathFileExists(fullFileName))
+                // iterate over formats in case the texture name has no extension
+                static const wchar_t *formatList[] =
                 {
-                    resultValue = video->loadTexture(&texture, fullFileName, flags);
-                    if (SUCCEEDED(resultValue))
+                    L"",
+                    L".dds",
+                    L".tga",
+                    L".png",
+                    L".jpg",
+                    L".bmp",
+                };
+
+                for (auto &format : formatList)
+                {
+                    wstring fullFileName(FileSystem::expandPath(String::format(L"$root\\data\\textures\\%%", fileName, format)));
+                    if (PathFileExists(fullFileName))
                     {
-                        break;
+                        return video->loadTexture(fullFileName, flags);
                     }
                 }
             }
-
-            if (texture)
-            {
-                resultValue = texture->QueryInterface(IID_PPV_ARGS(returnObject));
-            }
-
-            return resultValue;
         }
 
         ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags)
         {
-            std::size_t hash = std::hash<wstring>()(wstring(fileName).MakeReverse());
-            return resourceManager.getHandle(hash, this, std::bind([this](LPCVOID handle, const wstring &fileName, const wstring &fallback, UINT32 flags) -> VideoObjectPtr
+            auto load = std::bind([this](ResourceHandle handle, wstring fileName, wstring fallback, UINT32 flags) -> VideoTexturePtr
             {
-                HRESULT resultValue = E_FAIL;
-                CComPtr<VideoTexture> texture;
-                if (fileName.GetAt(0) == L'*')
+                VideoTexturePtr texture = loadTexture(fileName, flags);
+                if (!texture)
                 {
-                    resultValue = createTexture(&texture, fileName.Mid(1), flags);
-                }
-                else
-                {
-                    resultValue = loadTexture(&texture, fileName, flags);
-                    if ((FAILED(resultValue) || !texture) && fallback.GetAt(0) == L'*')
-                    {
-                        resultValue = createTexture(&texture, fallback.Mid(1), flags);
-                    }
+                    texture = loadTexture(fallback, flags);
                 }
 
-                if (texture)
-                {
-                    resultValue = texture->QueryInterface(returnObject);
-                }
+                return texture;
+            }, std::placeholders::_1, fileName, fallback, flags);
 
-                return resultValue;
-            }, std::placeholders::_1, fileName, fallback, flags));
+            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoTexturePtr)> set, std::function<VideoTexturePtr(ResourceHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
+            std::size_t hash = std::hash<wstring>()(fileName);
+            return resourceManager.getHandle(hash, request);
         }
 
         ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
         {
-            return programManager.getUniqueHandle(this, std::bind([this](LPCVOID handle, const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, std::unordered_map<string, string> defineList) -> VideoObjectPtr
+            auto load = std::bind([this](ProgramHandle handle, wstring fileName, string entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, std::unordered_map<string, string> defineList) -> VideoObjectPtr
             {
                 return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
-            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList));
+            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList);
+
+            auto request = std::bind([this](ProgramHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(ProgramHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
+            return programManager.getUniqueHandle(request);
         }
 
         ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
         {
-            return programManager.getUniqueHandle(this, std::bind([this](LPCVOID handle, const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, std::unordered_map<string, string> defineList) -> VideoObjectPtr
+            auto load = std::bind([this](ProgramHandle handle, wstring fileName, string entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, std::unordered_map<string, string> defineList) -> VideoObjectPtr
             {
                 return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
-            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList));
+            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList);
+
+            auto request = std::bind([this](ProgramHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(ProgramHandle)> load) -> void
+            {
+                set(load(handle));
+            }, std::placeholders::_1, std::placeholders::_2, load);
+
+            return programManager.getUniqueHandle(request);
         }
 
         void mapBuffer(ResourceHandle buffer, void **data)
         {
-            video->mapBuffer(resourceManager.getResource<VideoBuffer>(buffer), data);
+            video->mapBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(buffer)), data);
         }
 
         void unmapBuffer(ResourceHandle buffer)
         {
-            video->unmapBuffer(resourceManager.getResource<VideoBuffer>(buffer));
+            video->unmapBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(buffer)));
         }
 
         void flip(ResourceHandle resourceHandle)
@@ -922,7 +856,7 @@ namespace Gek
 
         void generateMipMaps(RenderContext *renderContext, ResourceHandle resourceHandle)
         {
-            renderContext->getContext()->generateMipMaps(resourceManager.getResource<VideoTexture>(resourceHandle));
+            renderContext->getContext()->generateMipMaps(reinterpret_cast<VideoTexture *>(resourceManager.getResource(resourceHandle)));
         }
 
         void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
@@ -932,57 +866,57 @@ namespace Gek
 
         void setRenderState(RenderContext *renderContext, RenderStateHandle renderStateHandle)
         {
-            renderContext->getContext()->setRenderState(renderStateManager.getResource<IUnknown>(renderStateHandle));
+            renderContext->getContext()->setRenderState(renderStateManager.getResource(renderStateHandle));
         }
 
         void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference)
         {
-            renderContext->getContext()->setDepthState(depthStateManager.getResource<IUnknown>(depthStateHandle), stencilReference);
+            renderContext->getContext()->setDepthState(depthStateManager.getResource(depthStateHandle), stencilReference);
         }
 
         void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask)
         {
-            renderContext->getContext()->setBlendState(blendStateManager.getResource<IUnknown>(blendStateHandle), blendFactor, sampleMask);
+            renderContext->getContext()->setBlendState(blendStateManager.getResource(blendStateHandle), blendFactor, sampleMask);
         }
 
         void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            renderPipeline->getPipeline()->setResource(resourceManager.getResource<IUnknown>(resourceHandle), stage);
+            renderPipeline->getPipeline()->setResource(resourceManager.getResource(resourceHandle), stage);
         }
 
         void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            renderPipeline->getPipeline()->setUnorderedAccess(resourceManager.getResource<IUnknown>(resourceHandle, true), stage);
+            renderPipeline->getPipeline()->setUnorderedAccess(resourceManager.getResource(resourceHandle, true), stage);
         }
 
         void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
         {
-            renderPipeline->getPipeline()->setConstantBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), stage);
+            renderPipeline->getPipeline()->setConstantBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), stage);
         }
 
         void setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle)
         {
-            renderPipeline->getPipeline()->setProgram(programManager.getResource<IUnknown>(programHandle));
+            renderPipeline->getPipeline()->setProgram(programManager.getResource(programHandle));
         }
 
         void setVertexBuffer(RenderContext *renderContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset)
         {
-            renderContext->getContext()->setVertexBuffer(slot, resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
+            renderContext->getContext()->setVertexBuffer(slot, reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
         void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, UINT32 offset)
         {
-            renderContext->getContext()->setIndexBuffer(resourceManager.getResource<VideoBuffer>(resourceHandle), offset);
+            renderContext->getContext()->setIndexBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
         void clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle, const Math::Color &color)
         {
-            renderContext->getContext()->clearRenderTarget(resourceManager.getResource<VideoTarget>(resourceHandle, true), color);
+            renderContext->getContext()->clearRenderTarget(reinterpret_cast<VideoTarget *>(resourceManager.getResource(resourceHandle, true)), color);
         }
 
         void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)
         {
-            renderContext->getContext()->clearDepthStencilTarget(resourceManager.getResource<IUnknown>(depthBuffer), flags, depthClear, stencilClear);
+            renderContext->getContext()->clearDepthStencilTarget(resourceManager.getResource(depthBuffer), flags, depthClear, stencilClear);
         }
 
         Video::ViewPort viewPortList[8];
@@ -991,14 +925,14 @@ namespace Gek
         {
             for (UINT32 renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
-                renderTargetList[renderTarget] = resourceManager.getResource<VideoTarget>(renderTargetHandleList[renderTarget], true);
+                renderTargetList[renderTarget] = reinterpret_cast<VideoTarget *>(resourceManager.getResource(renderTargetHandleList[renderTarget], true));
                 if (renderTargetList[renderTarget])
                 {
                     viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
                 }
             }
 
-            renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, (depthBuffer ? resourceManager.getResource<IUnknown>(*depthBuffer) : nullptr));
+            renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
             renderContext->getContext()->setViewports(viewPortList, renderTargetHandleCount);
         }
 
@@ -1011,10 +945,10 @@ namespace Gek
                 viewPortList[0] = renderTargetList[0]->getViewPort();
             }
 
-            renderContext->getContext()->setRenderTargets(renderTargetList, 1, (depthBuffer ? resourceManager.getResource<IUnknown>(*depthBuffer) : nullptr));
+            renderContext->getContext()->setRenderTargets(renderTargetList, 1, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
             renderContext->getContext()->setViewports(viewPortList, 1);
         }
     };
-
-    REGISTER_CLASS(ResourcesImplementation)
+    
+    GEK_REGISTER_CONTEXT_USER(ResourcesImplementation);
 }; // namespace Gek

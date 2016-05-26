@@ -1,12 +1,14 @@
 #pragma once
 
+#include "GEK\Context\Context.h"
 #include "GEK\Context\Observable.h"
-#include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Shapes\Frustum.h"
 
 namespace Gek
 {
+    GEK_PREDECLARE(VideoPipeline);
+    GEK_PREDECLARE(VideoContext);
     GEK_PREDECLARE(Entity);
 
     GEK_INTERFACE(RenderPipeline)
@@ -34,8 +36,8 @@ namespace Gek
     GEK_INTERFACE(RenderObserver)
         : public Observer
     {
-        virtual void onRenderBackground(void) = 0;
-        virtual void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) = 0;
-        virtual void onRenderForeground(void) = 0;
+        virtual void onRenderBackground(void) { };
+        virtual void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) { };
+        virtual void onRenderForeground(void) { };
     };
 }; // namespace Gek

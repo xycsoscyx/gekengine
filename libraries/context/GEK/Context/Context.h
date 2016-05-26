@@ -39,13 +39,13 @@ namespace Gek
     {
         static ContextPtr create(const std::vector<wstring> &searchPathList);
 
-        virtual std::function<ContextUserPtr(Context *, void *)> getCreator(const wchar_t *name) const = 0;
+        virtual ContextUserPtr createClass(const wchar_t *name, void *parameters) const = 0;
 
         template <typename TYPE, typename... ARGUMENTS>
         std::shared_ptr<TYPE> createClass(const wchar_t *name, ARGUMENTS... arguments) const
         {
             std::tuple<ARGUMENTS...> tuple(arguments...);
-            return std::dynamic_pointer_cast<TYPE>(getCreator(name)(this, reinterpret_cast<void *>(&tuple)));
+            return std::dynamic_pointer_cast<TYPE>(createClass(name, &tuple));
         }
 
         virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const = 0;

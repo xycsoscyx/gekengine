@@ -38,7 +38,7 @@ namespace Gek
         END_INTERFACE_LIST_USER
 
         // Component
-        STDMETHODIMP_(const wchar_t *) getName(void) const
+        const char *getName(void) const
         {
             return L"mass";
         }

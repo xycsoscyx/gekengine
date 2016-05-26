@@ -1,21 +1,18 @@
-﻿#include "GEK\Engine\Population.h"
-#include "GEK\Engine\Processor.h"
-#include "GEK\Utility\String.h"
+﻿#include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Engine\Entity.h"
-#include "GEK\Engine\Component.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
+#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Processor.h"
+#include "GEK\Engine\Entity.h"
+#include "GEK\Engine\Component.h"
 #include <map>
 #include <ppl.h>
-
-#include "GEK\Components\Transform.h"
 
 namespace Gek
 {
     class EntityImplementation
-        : public UnknownMixin
-        , public Entity
+        : public Entity
     {
     private:
         std::unordered_map<std::type_index, std::pair<Component *, LPVOID>> componentList;
@@ -33,10 +30,6 @@ namespace Gek
             }
         }
 
-        BEGIN_INTERFACE_LIST(EntityImplementation)
-            INTERFACE_LIST_ENTRY_COM(Entity)
-        END_INTERFACE_LIST_UNKNOWN
-
         void addComponent(Component *component, LPVOID data)
         {
             componentList[component->getIdentifier()] = std::make_pair(component, data);
@@ -53,32 +46,32 @@ namespace Gek
         }
 
         // Entity
-        STDMETHODIMP_(bool) hasComponent(const std::type_index &type)
+        bool hasComponent(const std::type_index &type)
         {
             return (componentList.count(type) > 0);
         }
 
-        STDMETHODIMP_(LPVOID) getComponent(const std::type_index &type)
+        LPVOID getComponent(const std::type_index &type)
         {
             return componentList[type].second;
         }
     };
 
     class PopulationImplementation
-        : public ContextUserMixin
-        , public ObservableMixin
+        : public ContextRegistration<PopulationImplementation>
+        , public ObservableMixin<PopulationImplementation>
         , public Population
     {
     private:
         float worldTime;
         float frameTime;
 
-        std::unordered_map<CStringW, std::type_index> componentNameList;
-        std::unordered_map<std::type_index, CComPtr<Component>> componentList;
-        std::list<CAdapt<CComPtr<Processor>>> processorList;
+        std::unordered_map<wstring, std::type_index> componentNameList;
+        std::unordered_map<std::type_index, ComponentPtr> componentList;
+        std::list<ProcessorPtr> processorList;
 
-        std::vector<CAdapt<CComPtr<Entity>>> entityList;
-        std::unordered_map<CStringW, Entity *> namedEntityList;
+        std::vector<EntityPtr> entityList;
+        std::unordered_map<wstring, Entity *> namedEntityList;
         std::vector<Entity *> killEntityList;
 
         typedef std::multimap<UINT32, std::pair<UINT32, PopulationObserver *>> UpdatePriorityMap;
@@ -87,89 +80,54 @@ namespace Gek
         std::map<UINT32, UpdatePriorityMap::value_type *> updateHandleMap;
 
     public:
-        PopulationImplementation(void)
+        PopulationImplementation(Context *context)
+            : ContextRegistration(context)
         {
+            getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
+            {
+                ComponentPtr component(context->createClass<Component>(className));
+
+                wstring lowerCaseName(component->getName());
+                lowerCaseName.makeLower();
+
+                auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
+                if (identifierIterator.second)
+                {
+                    if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
+                    {
+                        componentList.erase(identifierIterator.first);
+                    }
+                }
+                else
+                {
+                }
+            });
+
+            getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
+            {
+                processorList.push_back(context->createClass<Processor>(className));
+            });
         }
 
         ~PopulationImplementation(void)
-        {
-        }
-
-        BEGIN_INTERFACE_LIST(PopulationImplementation)
-            INTERFACE_LIST_ENTRY_COM(Observable)
-            INTERFACE_LIST_ENTRY_COM(Population)
-        END_INTERFACE_LIST_USER
-
-        // Population
-        STDMETHODIMP_(void) destroy(void)
         {
             processorList.clear();
             componentNameList.clear();
             componentList.clear();
         }
 
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            resultValue = getContext()->createEachType(__uuidof(ComponentType), [&](REFCLSID className, IUnknown *object) -> HRESULT
-            {
-                CComQIPtr<Component> component(object);
-                if (component)
-                {
-                    CStringW lowerCaseName(component->getName());
-                    lowerCaseName.MakeLower();
-
-                    auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
-                    if (identifierIterator.second)
-                    {
-                        if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
-                        {
-                            componentList.erase(identifierIterator.first);
-                        }
-                    }
-                    else
-                    {
-                    }
-                }
-
-                return S_OK;
-            });
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = getContext()->createEachType(__uuidof(ProcessorType), [&](REFCLSID className, IUnknown *object) -> HRESULT
-                {
-                    HRESULT resultValue = E_FAIL;
-                    CComQIPtr<Processor> system(object);
-                    if (system)
-                    {
-                        resultValue = system->initialize(initializerContext);
-                        if (SUCCEEDED(resultValue))
-                        {
-                            processorList.push_back(system);
-                        }
-                    }
-
-                    return S_OK;
-                });
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP_(float) getFrameTime(void)
+        // Population
+        float getFrameTime(void) const
         {
             return frameTime;
         }
 
-        STDMETHODIMP_(float) getWorldTime(void)
+        float getWorldTime(void) const
         {
             return worldTime;
         }
 
-        STDMETHODIMP_(void) update(bool isIdle, float frameTime)
+        void update(bool isIdle, float frameTime)
         {
             if (!isIdle)
             {
@@ -190,7 +148,7 @@ namespace Gek
 
             for (auto const &killEntity : killEntityList)
             {
-                auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const CStringW, Entity *> &namedEntity) -> bool
+                auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const wstring, Entity *> &namedEntity) -> bool
                 {
                     return (namedEntity.second == killEntity);
                 });
@@ -202,7 +160,11 @@ namespace Gek
 
                 if (entityList.size() > 1)
                 {
-                    auto entityIterator = std::find(entityList.begin(), entityList.end(), killEntity);
+                    auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [killEntity](const EntityPtr &entity) -> bool
+                    {
+                        return (entity.get() == killEntity);
+                    });
+
                     if (entityIterator != entityList.end())
                     {
                         (*entityIterator) = entityList.back();
@@ -220,152 +182,125 @@ namespace Gek
         }
 
         std::function<void(void)> loadScene;
-        STDMETHODIMP load(const wchar_t *fileName)
+        void load(const wchar_t *fileName)
         {
-            loadScene = std::bind([&](const CStringW &fileName) -> HRESULT
+            loadScene = std::bind([&](const wstring &fileName) -> HRESULT
             {
                 HRESULT resultValue = E_FAIL;
 
                 free();
-                ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
+                sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-                Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\scenes\\%.xml", fileName));
-                if (SUCCEEDED(resultValue))
+                Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\scenes\\%.xml", fileName)));
+                Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
+                //if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
+
+                Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
+
+                Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
+                while (xmlEntityNode)
                 {
-                    Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
-                    if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
+                    EntityDefinition entityDefinition;
+                    Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
+                    while (xmlComponentNode)
                     {
-                        Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
-                        if (xmlPopulationNode)
+                        auto &componentData = entityDefinition[xmlComponentNode.getType()];
+                        xmlComponentNode.listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
                         {
-                            Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
-                            while (xmlEntityNode)
-                            {
-                                EntityDefinition entityDefinition;
-                                Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
-                                while (xmlComponentNode)
-                                {
-                                    auto &componentData = entityDefinition[xmlComponentNode.getType()];
-                                    xmlComponentNode.listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
-                                    {
-                                        componentData.insert(std::make_pair(name, value));
-                                    });
+                            componentData.unordered_map::insert(std::make_pair(name, value));
+                        });
 
-                                    if (!xmlComponentNode.getText().IsEmpty())
-                                    {
-                                        componentData.SetString(xmlComponentNode.getText());
-                                    }
-
-                                    xmlComponentNode = xmlComponentNode.nextSiblingElement();
-                                };
-
-                                if (xmlEntityNode.hasAttribute(L"name"))
-                                {
-                                    createEntity(entityDefinition, xmlEntityNode.getAttribute(L"name"));
-                                }
-                                else
-                                {
-                                    createEntity(entityDefinition, nullptr);
-                                }
-
-                                xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
-                            };
-                        }
-                        else
+                        if (!xmlComponentNode.getText().empty())
                         {
-                            resultValue = E_UNEXPECTED;
+                            componentData.assign(xmlComponentNode.getText());
                         }
+
+                        xmlComponentNode = xmlComponentNode.nextSiblingElement();
+                    };
+
+                    if (xmlEntityNode.hasAttribute(L"name"))
+                    {
+                        createEntity(entityDefinition, xmlEntityNode.getAttribute(L"name"));
                     }
                     else
                     {
-                        resultValue = E_UNEXPECTED;
+                        createEntity(entityDefinition, nullptr);
                     }
-                }
-                else
-                {
-                }
+
+                    xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
+                };
 
                 frameTime = 0.0f;
                 worldTime = 0.0f;
-                ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadEnd, std::placeholders::_1, resultValue)));
+                sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadEnd, std::placeholders::_1, resultValue)));
                 return resultValue;
-            }, CStringW(fileName));
-
-            return S_OK;
+            }, wstring(fileName));
         }
 
-        STDMETHODIMP save(const wchar_t *fileName)
+        void save(const wchar_t *fileName)
         {
-            Gek::XmlDocument xmlDocument;
-            xmlDocument.create(L"world");
+            Gek::XmlDocument xmlDocument(XmlDocument::create(L"world"));
+
             Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
             Gek::XmlNode xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
-
             for (auto &entity : entityList)
             {
             }
 
             xmlDocument.save(Gek::String::format(L"$root\\data\\saves\\%.xml", fileName));
-            return S_OK;
         }
 
-        STDMETHODIMP_(void) free(void)
+        void free(void)
         {
-            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onFree, std::placeholders::_1)));
+            sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onFree, std::placeholders::_1)));
             namedEntityList.clear();
             killEntityList.clear();
             entityList.clear();
         }
 
-        STDMETHODIMP_(Entity *) createEntity(const EntityDefinition &entityData, const wchar_t *name)
+        Entity * createEntity(const EntityDefinition &entityData, const wchar_t *name)
         {
-            CComPtr<EntityImplementation> entity = new EntityImplementation();
-            if (entity)
+            std::shared_ptr<EntityImplementation> entity = std::make_shared<EntityImplementation>();
+            for (auto &componentDataPair : entityData)
             {
-                for (auto &componentDataPair : entityData)
+                auto &componentName = componentDataPair.first;
+                auto &componentData = componentDataPair.second;
+                auto componentIterator = componentNameList.find(componentName);
+                if (componentIterator != componentNameList.end())
                 {
-                    auto &componentName = componentDataPair.first;
-                    auto &componentData = componentDataPair.second;
-                    auto componentIterator = componentNameList.find(componentName);
-                    if (componentIterator != componentNameList.end())
+                    std::type_index componentIdentifier = componentIterator->second;
+                    auto componentPair = componentList.find(componentIdentifier);
+                    if (componentPair != componentList.end())
                     {
-                        std::type_index componentIdentifier = componentIterator->second;
-                        auto componentPair = componentList.find(componentIdentifier);
-                        if (componentPair != componentList.end())
+                        Component *componentManager = componentPair->second.get();
+                        LPVOID component = componentManager->create(componentData);
+                        if (component)
                         {
-                            Component *componentManager = componentPair->second;
-                            LPVOID component = componentManager->create(componentData);
-                            if (component)
-                            {
-                                entity->addComponent(componentManager, component);
-                            }
+                            entity->addComponent(componentManager, component);
                         }
                     }
                 }
-
-                if (entity)
-                {
-                    entityList.push_back(CComPtr<Entity>(entity->getClass<Entity>()));
-                    ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, entity)));
-                }
             }
 
-            if (name && entity)
+            EntityPtr baseEntity(std::dynamic_pointer_cast<Entity>(entity));
+
+            entityList.push_back(baseEntity);
+            sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, baseEntity.get())));
+            if (name)
             {
-                namedEntityList[name] = entity;
+                namedEntityList[name] = baseEntity.get();
             }
 
-            return entity.p;
+            return baseEntity.get();
         }
 
-        STDMETHODIMP_(void) killEntity(Entity *entity)
+        void killEntity(Entity *entity)
         {
-            ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
+            sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
             killEntityList.push_back(entity);
         }
 
-        STDMETHODIMP_(Entity *) getNamedEntity(const wchar_t *name)
+        Entity * getNamedEntity(const wchar_t *name) const
         {
             GEK_REQUIRE(name);
 
@@ -373,29 +308,29 @@ namespace Gek
             auto namedEntity = namedEntityList.find(name);
             if (namedEntity != namedEntityList.end())
             {
-                entity = (*namedEntity).second;
+                return (*namedEntity).second;
             }
 
-            return entity;
+            return nullptr;
         }
 
-        STDMETHODIMP_(void) listEntities(std::function<void(Entity *)> onEntity)
+        void listEntities(std::function<void(Entity *)> onEntity) const
         {
-            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const CComPtr<Entity> &entity) -> void
+            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const EntityPtr &entity) -> void
             {
-                onEntity(entity);
+                onEntity(entity.get());
             });
         }
 
-        STDMETHODIMP_(void) listProcessors(std::function<void(Processor *)> onProcessor)
+        void listProcessors(std::function<void(Processor *)> onProcessor) const
         {
-            concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](const CComPtr<Processor> &processor) -> void
+            concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](const ProcessorPtr &processor) -> void
             {
-                onProcessor(processor.p);
+                onProcessor(processor.get());
             });
         }
 
-        STDMETHODIMP_(UINT32) setUpdatePriority(PopulationObserver *observer, UINT32 priority)
+        UINT32 setUpdatePriority(PopulationObserver *observer, UINT32 priority)
         {
             static UINT32 nextHandle = 0;
             UINT32 updateHandle = InterlockedIncrement(&nextHandle);
@@ -405,7 +340,7 @@ namespace Gek
             return updateHandle;
         }
 
-        STDMETHODIMP_(void) removeUpdatePriority(UINT32 updateHandle)
+        void removeUpdatePriority(UINT32 updateHandle)
         {
             auto handleIterator = updateHandleMap.find(updateHandle);
             if (handleIterator != updateHandleMap.end())
@@ -427,5 +362,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(PopulationImplementation)
+    GEK_REGISTER_CONTEXT_USER(PopulationImplementation)
 }; // namespace Gek

@@ -1,5 +1,4 @@
 ﻿#include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Render.h"
@@ -40,7 +39,7 @@ namespace Gek
                 population->removeUpdatePriority(updateHandle);
             }
 
-            ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
+            population->removeObserver((PopulationObserver *)this);
         }
 
         BEGIN_INTERFACE_LIST(CameraProcessorImplementation)

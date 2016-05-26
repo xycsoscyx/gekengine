@@ -1,10 +1,12 @@
-﻿#include "GEK\Engine\Render.h"
-#include "GEK\Utility\String.h"
+﻿#include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Context\ContextUser.h"
+#include "GEK\Context\ObservableMixin.h"
+#include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"
-#include "GEK\Engine\ContextUser.h"
+#include "GEK\Engine\Plugin.h"
 #include "GEK\Engine\Shader.h"
 #include "GEK\Engine\Material.h"
 #include "GEK\Engine\Population.h"
@@ -12,8 +14,6 @@
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Camera.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Shapes\Sphere.h"
 #include <set>
 #include <ppl.h>
@@ -22,8 +22,7 @@
 namespace Gek
 {
     class RenderPipelineImplementation
-        : public UnknownMixin
-        , public RenderPipeline
+        : public RenderPipeline
     {
     private:
         VideoPipeline *videoPipeline;
@@ -34,56 +33,47 @@ namespace Gek
         {
         }
 
-        BEGIN_INTERFACE_LIST(RenderPipelineImplementation)
-            INTERFACE_LIST_ENTRY_COM(RenderPipeline)
-        END_INTERFACE_LIST_UNKNOWN
-
         // RenderPipeline
-        STDMETHODIMP_(VideoPipeline * const) getPipeline(void) { return videoPipeline; };
+        VideoPipeline * const getPipeline(void) { return videoPipeline; };
     };
 
     class RenderContextImplementation
-        : public UnknownMixin
-        , public RenderContext
+        : public RenderContext
     {
     private:
         VideoContext *videoContext;
-        CComPtr<RenderPipeline> computePipelineHandler;
-        CComPtr<RenderPipeline> vertexPipelineHandler;
-        CComPtr<RenderPipeline> geometryPipelineHandler;
-        CComPtr<RenderPipeline> pixelPipelineHandler;
+        RenderPipelinePtr computePipelineHandler;
+        RenderPipelinePtr vertexPipelineHandler;
+        RenderPipelinePtr geometryPipelineHandler;
+        RenderPipelinePtr pixelPipelineHandler;
 
     public:
         RenderContextImplementation(VideoContext *videoContext)
             : videoContext(videoContext)
-            , computePipelineHandler(new RenderPipelineImplementation(videoContext->computePipeline()))
-            , vertexPipelineHandler(new RenderPipelineImplementation(videoContext->vertexPipeline()))
-            , geometryPipelineHandler(new RenderPipelineImplementation(videoContext->geometryPipeline()))
-            , pixelPipelineHandler(new RenderPipelineImplementation(videoContext->pixelPipeline()))
+            , computePipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->computePipeline()))
+            , vertexPipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->vertexPipeline()))
+            , geometryPipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->geometryPipeline()))
+            , pixelPipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->pixelPipeline()))
         {
         }
 
-        BEGIN_INTERFACE_LIST(RenderContextImplementation)
-            INTERFACE_LIST_ENTRY_COM(RenderContext)
-        END_INTERFACE_LIST_UNKNOWN
-
         // RenderContext
-        STDMETHODIMP_(VideoContext * const) getContext(void) { return videoContext; };
-        STDMETHODIMP_(RenderPipeline * const) computePipeline(void) { return computePipelineHandler.p; };
-        STDMETHODIMP_(RenderPipeline * const) vertexPipeline(void) { return vertexPipelineHandler.p; };
-        STDMETHODIMP_(RenderPipeline * const) geometryPipeline(void) { return geometryPipelineHandler.p; };
-        STDMETHODIMP_(RenderPipeline * const) pixelPipeline(void) { return pixelPipelineHandler.p; };
+        VideoContext * const getContext(void) { return videoContext; };
+        RenderPipeline * const computePipeline(void) { return computePipelineHandler.get(); };
+        RenderPipeline * const vertexPipeline(void) { return vertexPipelineHandler.get(); };
+        RenderPipeline * const geometryPipeline(void) { return geometryPipelineHandler.get(); };
+        RenderPipeline * const pixelPipeline(void) { return pixelPipelineHandler.get(); };
     };
 
     class RenderImplementation
-        : public ContextUserMixin
-        , public ObservableMixin
+        : public ContextRegistration<RenderImplementation, VideoSystem *, Resources *, Population *>
+        , public ObservableMixin<RenderImplementation>
         , public PopulationObserver
         , public Render
     {
     public:
         __declspec(align(16))
-        struct EngineConstantData
+            struct EngineConstantData
         {
             float worldTime;
             float frameTime;
@@ -91,7 +81,7 @@ namespace Gek
         };
 
         __declspec(align(16))
-        struct CameraConstantData
+            struct CameraConstantData
         {
             Math::Float2 fieldOfView;
             float minimumDistance;
@@ -181,25 +171,71 @@ namespace Gek
         UINT32 backgroundUpdateHandle;
         UINT32 foregroundUpdateHandle;
 
-        CComPtr<IUnknown> pointSamplerState;
-        CComPtr<IUnknown> linearClampSamplerState;
-        CComPtr<IUnknown> linearWrapSamplerState;
-        CComPtr<VideoBuffer> engineConstantBuffer;
-        CComPtr<VideoBuffer> cameraConstantBuffer;
+        VideoObjectPtr pointSamplerState;
+        VideoObjectPtr linearClampSamplerState;
+        VideoObjectPtr linearWrapSamplerState;
+        VideoBufferPtr engineConstantBuffer;
+        VideoBufferPtr cameraConstantBuffer;
 
-        CComPtr<IUnknown> deferredVertexProgram;
+        VideoObjectPtr deferredVertexProgram;
 
         DrawCallList drawCallList;
 
     public:
-        RenderImplementation(void)
-            : initializerContext(nullptr)
-            , video(nullptr)
-            , resources(nullptr)
-            , population(nullptr)
+        RenderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population)
+            : ContextRegistration(context)
+            , video(video)
+            , resources(resources)
+            , population(population)
             , backgroundUpdateHandle(0)
             , foregroundUpdateHandle(0)
         {
+            population->addObserver((PopulationObserver *)this);
+            backgroundUpdateHandle = population->setUpdatePriority(this, 10);
+            foregroundUpdateHandle = population->setUpdatePriority(this, 100);
+
+            Video::SamplerState pointSamplerStateData;
+            pointSamplerStateData.filterMode = Video::FilterMode::AllPoint;
+            pointSamplerStateData.addressModeU = Video::AddressMode::Clamp;
+            pointSamplerStateData.addressModeV = Video::AddressMode::Clamp;
+            pointSamplerState = video->createSamplerState(pointSamplerStateData);
+
+            Video::SamplerState linearClampSamplerStateData;
+            linearClampSamplerStateData.maximumAnisotropy = 8;
+            linearClampSamplerStateData.filterMode = Video::FilterMode::Anisotropic;
+            linearClampSamplerStateData.addressModeU = Video::AddressMode::Clamp;
+            linearClampSamplerStateData.addressModeV = Video::AddressMode::Clamp;
+            linearClampSamplerState = video->createSamplerState(linearClampSamplerStateData);
+
+            Video::SamplerState linearWrapSamplerStateData;
+            linearWrapSamplerStateData.maximumAnisotropy = 8;
+            linearWrapSamplerStateData.filterMode = Video::FilterMode::Anisotropic;
+            linearWrapSamplerStateData.addressModeU = Video::AddressMode::Wrap;
+            linearWrapSamplerStateData.addressModeV = Video::AddressMode::Wrap;
+            linearWrapSamplerState = video->createSamplerState(linearWrapSamplerStateData);
+
+            engineConstantBuffer = video->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
+
+            cameraConstantBuffer = video->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
+
+            static const char program[] =
+                "struct Pixel                                                                       \r\n" \
+                "{                                                                                  \r\n" \
+                "    float4 position : SV_POSITION;                                                 \r\n" \
+                "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
+                "};                                                                                 \r\n" \
+                "                                                                                   \r\n" \
+                "Pixel mainVertexProgram(in uint vertexID : SV_VertexID)                            \r\n" \
+                "{                                                                                  \r\n" \
+                "    Pixel pixel;                                                                   \r\n" \
+                "    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
+                "    pixel.position = float4(pixel.texCoord * float2(2.0f, -2.0f)                   \r\n" \
+                "                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
+                "    return pixel;                                                                  \r\n" \
+                "}                                                                                  \r\n" \
+                "                                                                                   \r\n";
+
+            deferredVertexProgram = video->compileVertexProgram(program, "mainVertexProgram");
         }
 
         ~RenderImplementation(void)
@@ -210,105 +246,15 @@ namespace Gek
                 population->removeUpdatePriority(backgroundUpdateHandle);
             }
 
-            ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
-        }
-
-        BEGIN_INTERFACE_LIST(RenderImplementation)
-            INTERFACE_LIST_ENTRY_COM(Observable)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_COM(Render)
-        END_INTERFACE_LIST_USER
-
-        // Render/Resources
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<VideoSystem> video(initializerContext);
-            CComQIPtr<Resources> resources(initializerContext);
-            CComQIPtr<Population> population(initializerContext);
-            if (video && resources && population)
-            {
-                this->video = video;
-                this->resources = resources;
-                this->population = population;
-                this->initializerContext = initializerContext;
-                resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-                backgroundUpdateHandle = population->setUpdatePriority(this, 10);
-                foregroundUpdateHandle = population->setUpdatePriority(this, 100);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                Video::SamplerState samplerState;
-                samplerState.filterMode = Video::FilterMode::AllPoint;
-                samplerState.addressModeU = Video::AddressMode::Clamp;
-                samplerState.addressModeV = Video::AddressMode::Clamp;
-                resultValue = video->createSamplerState(&pointSamplerState, samplerState);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                Video::SamplerState samplerState;
-                samplerState.maximumAnisotropy = 8;
-                samplerState.filterMode = Video::FilterMode::Anisotropic;
-                samplerState.addressModeU = Video::AddressMode::Clamp;
-                samplerState.addressModeV = Video::AddressMode::Clamp;
-                resultValue = video->createSamplerState(&linearClampSamplerState, samplerState);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                Video::SamplerState samplerState;
-                samplerState.maximumAnisotropy = 8;
-                samplerState.filterMode = Video::FilterMode::Anisotropic;
-                samplerState.addressModeU = Video::AddressMode::Wrap;
-                samplerState.addressModeV = Video::AddressMode::Wrap;
-                resultValue = video->createSamplerState(&linearWrapSamplerState, samplerState);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = video->createBuffer(&engineConstantBuffer, sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = video->createBuffer(&cameraConstantBuffer, sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                static const char program[] =
-                    "struct Pixel                                                                       \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    float4 position : SV_POSITION;                                                 \r\n" \
-                    "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
-                    "};                                                                                 \r\n" \
-                    "                                                                                   \r\n" \
-                    "Pixel mainVertexProgram(in uint vertexID : SV_VertexID)                            \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    Pixel pixel;                                                                   \r\n" \
-                    "    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
-                    "    pixel.position = float4(pixel.texCoord * float2(2.0f, -2.0f)                   \r\n" \
-                    "                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
-                    "    return pixel;                                                                  \r\n" \
-                    "}                                                                                  \r\n" \
-                    "                                                                                   \r\n";
-
-                resultValue = video->compileVertexProgram(&deferredVertexProgram, program, "mainVertexProgram");
-            }
-
-            return resultValue;
+            population->removeObserver((PopulationObserver *)this);
         }
 
         // Render
-        STDMETHODIMP_(void) queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw)
+        void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw)
         {
             if (plugin && material && draw)
             {
-                ShaderHandle shader = resources->getShader(material);
+                ShaderHandle shader = resources->getMaterialShader(material);
                 if (shader)
                 {
                     drawCallList.push_back(DrawCallValue(material, plugin, shader, draw));
@@ -316,7 +262,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
+        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(cameraEntity);
@@ -340,30 +286,32 @@ namespace Gek
             const Shapes::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
             drawCallList.clear();
-            ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &cameraConstantData.viewMatrix, &viewFrustum)));
+            sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &cameraConstantData.viewMatrix, &viewFrustum)));
             if (!drawCallList.empty())
             {
                 VideoContext *videoContext = video->getDefaultContext();
-                CComPtr<RenderContext> renderContext(new RenderContextImplementation(videoContext));
+                RenderContextPtr renderContext(std::remake_shared<RenderContext, RenderContextImplementation>(videoContext));
 
-                video->updateBuffer(engineConstantBuffer, &engineConstantData);
-                videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer, 0);
-                videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer, 0);
-                videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer, 0);
-                videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer, 0);
+                video->updateBuffer(engineConstantBuffer.get(), &engineConstantData);
+                videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
 
-                video->updateBuffer(cameraConstantBuffer, &cameraConstantData);
-                videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
-                videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
-                videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer, 1);
-                videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer, 1);
+                video->updateBuffer(cameraConstantBuffer.get(), &cameraConstantData);
+                videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
 
-                videoContext->pixelPipeline()->setSamplerState(pointSamplerState, 0);
-                videoContext->pixelPipeline()->setSamplerState(linearClampSamplerState, 1);
-                videoContext->pixelPipeline()->setSamplerState(linearWrapSamplerState, 2);
-                videoContext->vertexPipeline()->setSamplerState(pointSamplerState, 0);
-                videoContext->vertexPipeline()->setSamplerState(linearClampSamplerState, 1);
-                videoContext->vertexPipeline()->setSamplerState(linearWrapSamplerState, 2);
+                videoContext->pixelPipeline()->setSamplerState(pointSamplerState.get(), 0);
+                videoContext->pixelPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
+                videoContext->pixelPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
+
+                videoContext->vertexPipeline()->setSamplerState(pointSamplerState.get(), 0);
+                videoContext->vertexPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
+                videoContext->vertexPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
+
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                 concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
@@ -384,7 +332,7 @@ namespace Gek
                     };
 
                     auto endShaderList = drawCall;
-                    Shader *shader = resources->getResource<Shader, ShaderHandle>(currentShader);
+                    Shader *shader = resources->getShader(currentShader);
                     if (!shader)
                     {
                         continue;
@@ -398,10 +346,10 @@ namespace Gek
                     return (leftValue.shader->getPriority() < rightValue.shader->getPriority());
                 });
 
-                for(auto &drawCallSet : drawCallSetList)
+                for (auto &drawCallSet : drawCallSetList)
                 {
                     auto &shader = drawCallSet.shader;
-                    for (auto block = shader->begin(renderContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
+                    for (auto block = shader->begin(renderContext.get(), cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                     {
                         while (block->prepare())
                         {
@@ -419,7 +367,7 @@ namespace Gek
                                             if (currentPlugin != (*shaderDrawCall).plugin)
                                             {
                                                 currentPlugin = (*shaderDrawCall).plugin;
-                                                Plugin *plugin = resources->getResource<Plugin, PluginHandle>(currentPlugin);
+                                                Plugin *plugin = resources->getPlugin(currentPlugin);
                                                 if (!plugin)
                                                 {
                                                     continue;
@@ -431,23 +379,23 @@ namespace Gek
                                             if (currentMaterial != (*shaderDrawCall).material)
                                             {
                                                 currentMaterial = (*shaderDrawCall).material;
-                                                Material *material = resources->getResource<Material, MaterialHandle>(currentMaterial);
+                                                Material *material = resources->getMaterial(currentMaterial);
                                                 if (!material)
                                                 {
                                                     continue;
                                                 }
 
-                                                shader->setResourceList(renderContext, block.get(), pass.get(), material->getResourceList());
+                                                shader->setResourceList(renderContext.get(), block.get(), pass.get(), material->getResourceList());
                                             }
 
-                                            (*shaderDrawCall).onDraw(renderContext);
+                                            (*shaderDrawCall).onDraw(renderContext.get());
                                         }
                                     }
 
                                     break;
 
                                 case Shader::Pass::Mode::Deferred:
-                                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram);
+                                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                                     videoContext->drawPrimitive(3, 0);
                                     break;
 
@@ -462,11 +410,11 @@ namespace Gek
         }
 
         // PopulationObserver
-        STDMETHODIMP_(void) onLoadBegin(void)
+        void onLoadBegin(void)
         {
         }
 
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
+        void onLoadEnd(HRESULT resultValue)
         {
             if (FAILED(resultValue))
             {
@@ -474,26 +422,26 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onFree(void)
+        void onFree(void)
         {
             GEK_REQUIRE(resources);
 
             resources->clearLocal();
         }
 
-        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(UINT32 handle, bool isIdle)
         {
             if (handle == backgroundUpdateHandle)
             {
-                ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderBackground, std::placeholders::_1)));
+                sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderBackground, std::placeholders::_1)));
             }
             else if (handle == foregroundUpdateHandle)
             {
-                ObservableMixin::sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderForeground, std::placeholders::_1)));
+                sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderForeground, std::placeholders::_1)));
                 video->present(false);
             }
         }
     };
 
-    REGISTER_CLASS(RenderImplementation)
+    GEK_REGISTER_CONTEXT_USER(RenderImplementation);
 }; // namespace Gek

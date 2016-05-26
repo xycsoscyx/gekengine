@@ -2016,7 +2016,7 @@ namespace Gek
             
             GEK_CHECK_EXCEPTION(!load, Video::Exception, "Invalid file type: %", extension);
             HRESULT resultValue = load(fileData.data(), fileData.size(), &textureMetaData, scratchImage);
-            GEK_CHECK_EXCEPTION(FAILED(resultValue), Video::Exception, "Unable to load file: %", resultValue);
+            GEK_CHECK_EXCEPTION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %", resultValue);
 
             if (flags && Video::TextureLoadFlags::sRGB)
             {
@@ -2092,7 +2092,7 @@ namespace Gek
 
                 GEK_CHECK_EXCEPTION(!load, Video::Exception, "Invalid file type: %", extension);
                 HRESULT resultValue = load(fileData.data(), fileData.size(), &cubeMapMetaData, cubeMapList[side]);
-                GEK_CHECK_EXCEPTION(FAILED(resultValue), Video::Exception, "Unable to load file: %", resultValue);
+                GEK_CHECK_EXCEPTION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %", resultValue);
             }
 
             ::DirectX::Image imageList[6] =

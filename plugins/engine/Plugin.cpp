@@ -1,13 +1,12 @@
-#include "GEK\Engine\ContextUser.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoSystem.h"
-#include <atlbase.h>
-#include <atlpath.h>
-#include <set>
+#include "GEK\Engine\Plugin.h"
+#include <experimental\filesystem>
 #include <ppl.h>
+#include <set>
 
 namespace Gek
 {
@@ -88,245 +87,208 @@ namespace Gek
     }
 
     class PluginImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<PluginImplementation, VideoSystem *, const wchar_t *>
         , public Plugin
     {
     private:
         VideoSystem *video;
-        CComPtr<IUnknown> geometryProgram;
-        CComPtr<IUnknown> vertexProgram;
+        VideoObjectPtr geometryProgram;
+        VideoObjectPtr vertexProgram;
 
     public:
-        PluginImplementation(void)
-            : video(nullptr)
+        PluginImplementation(Context *context, VideoSystem *video, const wchar_t *fileName)
+            : ContextRegistration(context)
+            , video(video)
         {
+            GEK_REQUIRE(video);
+            GEK_REQUIRE(fileName);
+
+            Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\plugins\\%.xml", fileName)));
+
+            Gek::XmlNode xmlPluginNode = xmlDocument.getRoot();
+            //if (xmlPluginNode && xmlPluginNode.getType().compare(L"plugin") == 0)
+
+            Gek::XmlNode xmlLayoutNode = xmlPluginNode.firstChildElement(L"layout");
+
+            Gek::XmlNode xmlGeometryNode = xmlPluginNode.firstChildElement(L"geometry");
+            if (xmlGeometryNode)
+            {
+                Gek::XmlNode xmlProgramNode = xmlGeometryNode.firstChildElement(L"program");
+                //if (xmlProgramNode && xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
+
+                wstring programFileName = xmlProgramNode.getAttribute(L"source");
+                string programEntryPoint(String::from<char>(xmlProgramNode.getAttribute(L"entry")));
+                geometryProgram = video->loadGeometryProgram(String::format(L"$root\\data\\programs\\%.hlsl", programFileName), programEntryPoint);
+            }
+
+            Gek::XmlNode xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
+
+            Gek::XmlNode xmlProgramNode = xmlVertexNode.firstChildElement(L"program");
+
+            wstring programPath(String::format(L"$root\\data\\programs\\%.hlsl", xmlProgramNode.getText()));
+
+            string progamScript;
+            Gek::FileSystem::load(programPath, progamScript);
+            string engineData =
+                "struct PluginVertex                                    \r\n" \
+                "{                                                      \r\n";
+
+            std::vector<string> elementNameList;
+            std::vector<Video::InputElement> elementList;
+            Gek::XmlNode xmlElementNode = xmlLayoutNode.firstChildElement();
+            while (xmlElementNode)
+            {
+                if (xmlElementNode.getType().compare(L"instanceIndex") == 0)
+                {
+                    engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
+                }
+                else if (xmlElementNode.getType().compare(L"vertexIndex") == 0)
+                {
+                    engineData += ("    uint vertexIndex : SV_VertexId;\r\n");
+                }
+                else if (xmlElementNode.getType().compare(L"isFrontFace") == 0)
+                {
+                    engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
+                }
+                else if (xmlElementNode.hasAttribute(L"format") &&
+                    xmlElementNode.hasAttribute(L"name") &&
+                    xmlElementNode.hasAttribute(L"index"))
+                {
+                    string semanticName(String::from<char>(xmlElementNode.getAttribute(L"name")));
+                    elementNameList.push_back(semanticName.c_str());
+
+                    wstring format(xmlElementNode.getAttribute(L"format"));
+
+                    Video::InputElement element;
+                    element.semanticName = elementNameList.back().c_str();
+                    element.semanticIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"index"));
+                    if (xmlElementNode.hasAttribute(L"slotclass") &&
+                        xmlElementNode.hasAttribute(L"slotindex"))
+                    {
+                        element.slotClass = getElementType(xmlElementNode.getAttribute(L"slotclass"));
+                        element.slotIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"slotindex"));
+                    }
+
+                    if (format.compare(L"float4x4") == 0)
+                    {
+                        engineData += String::format("    float4x4 % : %%;\r\n", xmlElementNode.getType(), semanticName, element.semanticIndex);
+                        element.format = Video::Format::Float4;
+                        elementList.push_back(element);
+                        element.semanticIndex++;
+                        elementList.push_back(element);
+                        element.semanticIndex++;
+                        elementList.push_back(element);
+                        element.semanticIndex++;
+                        elementList.push_back(element);
+                    }
+                    else if (format.compare(L"float4x3") == 0)
+                    {
+                        engineData += String::format("    float4x3 % : %%;\r\n", xmlElementNode.getType(), semanticName, element.semanticIndex);
+                        element.format = Video::Format::Float4;
+                        elementList.push_back(element);
+                        element.semanticIndex++;
+                        elementList.push_back(element);
+                        element.semanticIndex++;
+                        elementList.push_back(element);
+                    }
+                    else
+                    {
+                        element.format = getFormat(format);
+                        engineData += String::format("    % % : %%;\r\n", getFormatType(element.format), xmlElementNode.getType(), semanticName, element.semanticIndex);
+                        elementList.push_back(element);
+                    }
+                }
+                else
+                {
+                    break;
+                }
+
+                xmlElementNode = xmlElementNode.nextSiblingElement();
+            };
+
+            engineData +=
+                "};                                                                                                         \r\n" \
+                "                                                                                                           \r\n" \
+                "struct ViewVertex                                                                                          \r\n" \
+                "{                                                                                                          \r\n" \
+                "    float3 position;                                                                                       \r\n" \
+                "    float3 normal;                                                                                         \r\n" \
+                "    float2 texCoord;                                                                                       \r\n" \
+                "    float4 color;                                                                                          \r\n" \
+                "};                                                                                                         \r\n" \
+                "                                                                                                           \r\n" \
+                "struct ProjectedVertex                                                                                     \r\n" \
+                "{                                                                                                          \r\n" \
+                "    float4 position : SV_POSITION;                                                                         \r\n" \
+                "    float2 texCoord : TEXCOORD0;                                                                           \r\n" \
+                "    float3 viewPosition : TEXCOORD1;                                                                       \r\n" \
+                "    float3 viewNormal : NORMAL0;                                                                           \r\n" \
+                "    float4 color : COLOR0;                                                                                 \r\n" \
+                "};                                                                                                         \r\n" \
+                "                                                                                                           \r\n" \
+                "#include \"GEKPlugin\"                                                                                     \r\n" \
+                "                                                                                                           \r\n" \
+                "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)                                            \r\n" \
+                "{                                                                                                          \r\n" \
+                "    ViewVertex viewVertex = getViewVertex(pluginVertex);                                                   \r\n" \
+                "                                                                                                           \r\n" \
+                "    ProjectedVertex projectedVertex;                                                                       \r\n" \
+                "    projectedVertex.viewPosition = viewVertex.position;                                                    \r\n" \
+                "    projectedVertex.position = mul(Camera::projectionMatrix, float4(projectedVertex.viewPosition, 1.0));   \r\n" \
+                "    projectedVertex.viewNormal = viewVertex.normal;                                                        \r\n" \
+                "    projectedVertex.texCoord = viewVertex.texCoord;                                                        \r\n" \
+                "    projectedVertex.color = viewVertex.color;                                                              \r\n" \
+                "    return projectedVertex;                                                                                \r\n" \
+                "}                                                                                                          \r\n" \
+                "                                                                                                           \r\n";
+
+            auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
+            {
+                if (_stricmp(fileName, "GEKPlugin") == 0)
+                {
+                    data.resize(progamScript.size());
+                    memcpy(data.data(), progamScript.c_str(), data.size());
+                    return S_OK;
+                }
+                else
+                {
+                    try
+                    {
+                        Gek::FileSystem::load(String::from<wchar_t>(fileName), data);
+                        return S_OK;
+                    }
+                    catch (FileSystem::Exception exception)
+                    {
+                        try
+                        {
+                            std::experimental::filesystem::path path(L"$root\\data\\programs");
+                            path.concat(fileName);
+                            Gek::FileSystem::load(path.c_str(), data);
+                            return S_OK;
+                        }
+                        catch (FileSystem::Exception exception)
+                        {
+                        };
+                    };
+                }
+
+                return E_FAIL;
+            };
+
+            vertexProgram = video->compileVertexProgram(engineData, "mainVertexProgram", elementList, getIncludeData);
         }
 
         ~PluginImplementation(void)
         {
         }
 
-        BEGIN_INTERFACE_LIST(PluginImplementation)
-            INTERFACE_LIST_ENTRY_COM(Plugin)
-        END_INTERFACE_LIST_USER
-
         // Plugin
-        STDMETHODIMP initialize(IUnknown *initializerContext, const wchar_t *fileName)
+        void enable(VideoContext *context)
         {
-            GEK_REQUIRE(initializerContext);
-            GEK_REQUIRE(fileName);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<VideoSystem> video(initializerContext);
-            if (video)
-            {
-                this->video = video;
-                resultValue = S_OK;
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\plugins\\%.xml", fileName));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = E_INVALIDARG;
-                    Gek::XmlNode xmlPluginNode = xmlDocument.getRoot();
-                    if (xmlPluginNode && xmlPluginNode.getType().CompareNoCase(L"plugin") == 0)
-                    {
-                        Gek::XmlNode xmlLayoutNode = xmlPluginNode.firstChildElement(L"layout");
-                        if (xmlLayoutNode)
-                        {
-                            resultValue = S_OK;
-                            Gek::XmlNode xmlGeometryNode = xmlPluginNode.firstChildElement(L"geometry");
-                            if (xmlGeometryNode)
-                            {
-                                Gek::XmlNode xmlProgramNode = xmlGeometryNode.firstChildElement(L"program");
-                                if (xmlProgramNode && xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
-                                {
-                                    CStringW programFileName = xmlProgramNode.getAttribute(L"source");
-                                    CW2A programEntryPoint(xmlProgramNode.getAttribute(L"entry"));
-                                    resultValue = video->loadGeometryProgram(&geometryProgram, L"$root\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint);
-                                }
-                                else
-                                {
-                                    resultValue = E_FAIL;
-                                }
-                            }
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                resultValue = E_INVALIDARG;
-                                Gek::XmlNode xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
-                                if (xmlVertexNode)
-                                {
-                                    Gek::XmlNode xmlProgramNode = xmlVertexNode.firstChildElement(L"program");
-                                    if (xmlProgramNode)
-                                    {
-                                        CStringW programPath(L"$root\\data\\programs\\" + xmlProgramNode.getText() + L".hlsl");
-
-                                        CStringA progamScript;
-                                        resultValue = Gek::FileSystem::load(programPath, progamScript);
-                                        if (SUCCEEDED(resultValue))
-                                        {
-                                            CStringA engineData =
-                                                "struct PluginVertex                                    \r\n" \
-                                                "{                                                      \r\n";
-
-                                            std::vector<CStringA> elementNameList;
-                                            std::vector<Video::InputElement> elementList;
-                                            Gek::XmlNode xmlElementNode = xmlLayoutNode.firstChildElement();
-                                            while (xmlElementNode)
-                                            {
-                                                if (xmlElementNode.getType().CompareNoCase(L"instanceIndex") == 0)
-                                                {
-                                                    engineData.AppendFormat("    uint instanceIndex : SV_InstanceId;\r\n");
-                                                }
-                                                else if (xmlElementNode.getType().CompareNoCase(L"vertexIndex") == 0)
-                                                {
-                                                    engineData.AppendFormat("    uint vertexIndex : SV_VertexId;\r\n");
-                                                }
-                                                else if (xmlElementNode.getType().CompareNoCase(L"isFrontFace") == 0)
-                                                {
-                                                    engineData.AppendFormat("    bool isFrontFace : SV_IsFrontFace;\r\n");
-                                                }
-                                                else if (xmlElementNode.hasAttribute(L"format") &&
-                                                    xmlElementNode.hasAttribute(L"name") &&
-                                                    xmlElementNode.hasAttribute(L"index"))
-                                                {
-                                                    CW2A semanticName(xmlElementNode.getAttribute(L"name"));
-                                                    elementNameList.push_back(const char *(semanticName));
-                                                    CStringW format(xmlElementNode.getAttribute(L"format"));
-
-                                                    Video::InputElement element;
-                                                    element.semanticName = elementNameList.back().GetString();
-                                                    element.semanticIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"index"));
-                                                    if (xmlElementNode.hasAttribute(L"slotclass") &&
-                                                        xmlElementNode.hasAttribute(L"slotindex"))
-                                                    {
-                                                        element.slotClass = getElementType(xmlElementNode.getAttribute(L"slotclass"));
-                                                        element.slotIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"slotindex"));
-                                                    }
-
-                                                    if (format.CompareNoCase(L"float4x4") == 0)
-                                                    {
-                                                        engineData.AppendFormat("    float4x4 % : %%;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
-                                                        element.format = Video::Format::Float4;
-                                                        elementList.push_back(element);
-                                                        element.semanticIndex++;
-                                                        elementList.push_back(element);
-                                                        element.semanticIndex++;
-                                                        elementList.push_back(element);
-                                                        element.semanticIndex++;
-                                                        elementList.push_back(element);
-                                                    }
-                                                    else if (format.CompareNoCase(L"float4x3") == 0)
-                                                    {
-                                                        engineData.AppendFormat("    float4x3 % : %%;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
-                                                        element.format = Video::Format::Float4;
-                                                        elementList.push_back(element);
-                                                        element.semanticIndex++;
-                                                        elementList.push_back(element);
-                                                        element.semanticIndex++;
-                                                        elementList.push_back(element);
-                                                    }
-                                                    else
-                                                    {
-                                                        element.format = getFormat(format);
-                                                        engineData.AppendFormat("    % % : %%;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
-                                                        elementList.push_back(element);
-                                                    }
-                                                }
-                                                else
-                                                {
-                                                    break;
-                                                }
-
-                                                xmlElementNode = xmlElementNode.nextSiblingElement();
-                                            };
-
-                                            engineData +=
-                                                "};                                                                                                         \r\n" \
-                                                "                                                                                                           \r\n" \
-                                                "struct ViewVertex                                                                                          \r\n" \
-                                                "{                                                                                                          \r\n" \
-                                                "    float3 position;                                                                                       \r\n" \
-                                                "    float3 normal;                                                                                         \r\n" \
-                                                "    float2 texCoord;                                                                                       \r\n" \
-                                                "    float4 color;                                                                                          \r\n" \
-                                                "};                                                                                                         \r\n" \
-                                                "                                                                                                           \r\n" \
-                                                "struct ProjectedVertex                                                                                     \r\n" \
-                                                "{                                                                                                          \r\n" \
-                                                "    float4 position : SV_POSITION;                                                                         \r\n" \
-                                                "    float2 texCoord : TEXCOORD0;                                                                           \r\n" \
-                                                "    float3 viewPosition : TEXCOORD1;                                                                       \r\n" \
-                                                "    float3 viewNormal : NORMAL0;                                                                           \r\n" \
-                                                "    float4 color : COLOR0;                                                                                 \r\n" \
-                                                "};                                                                                                         \r\n" \
-                                                "                                                                                                           \r\n" \
-                                                "#include \"GEKPlugin\"                                                                                     \r\n" \
-                                                "                                                                                                           \r\n" \
-                                                "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)                                            \r\n" \
-                                                "{                                                                                                          \r\n" \
-                                                "    ViewVertex viewVertex = getViewVertex(pluginVertex);                                                   \r\n" \
-                                                "                                                                                                           \r\n" \
-                                                "    ProjectedVertex projectedVertex;                                                                       \r\n" \
-                                                "    projectedVertex.viewPosition = viewVertex.position;                                                    \r\n" \
-                                                "    projectedVertex.position = mul(Camera::projectionMatrix, float4(projectedVertex.viewPosition, 1.0));   \r\n" \
-                                                "    projectedVertex.viewNormal = viewVertex.normal;                                                        \r\n" \
-                                                "    projectedVertex.texCoord = viewVertex.texCoord;                                                        \r\n" \
-                                                "    projectedVertex.color = viewVertex.color;                                                              \r\n" \
-                                                "    return projectedVertex;                                                                                \r\n" \
-                                                "}                                                                                                          \r\n" \
-                                                "                                                                                                           \r\n";
-
-                                            auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
-                                            {
-                                                HRESULT resultValue = E_FAIL;
-                                                if (_stricmp(fileName, "GEKPlugin") == 0)
-                                                {
-                                                    data.resize(progamScript.GetLength());
-                                                    memcpy(data.data(), progamScript.GetString(), data.size());
-                                                    resultValue = S_OK;
-                                                }
-                                                else
-                                                {
-                                                    resultValue = Gek::FileSystem::load(CA2W(fileName), data);
-                                                    if (FAILED(resultValue))
-                                                    {
-                                                        CPathW shaderPath;
-                                                        shaderPath.Combine(L"$root\\data\\programs", CA2W(fileName));
-                                                        resultValue = Gek::FileSystem::load(shaderPath, data);
-                                                    }
-                                                }
-
-                                                return resultValue;
-                                            };
-
-                                            resultValue = video->compileVertexProgram(&vertexProgram, engineData, "mainVertexProgram", elementList, getIncludeData);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        resultValue = E_FAIL;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP_(void) enable(VideoContext *context)
-        {
-            context->geometryPipeline()->setProgram(geometryProgram);
-            context->vertexPipeline()->setProgram(vertexProgram);
+            context->geometryPipeline()->setProgram(geometryProgram.get());
+            context->vertexPipeline()->setProgram(vertexProgram.get());
         }
     };
 
-    REGISTER_CLASS(PluginImplementation)
+    GEK_REGISTER_CONTEXT_USER(PluginImplementation)
 }; // namespace Gek

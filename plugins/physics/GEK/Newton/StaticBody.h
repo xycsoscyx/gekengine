@@ -7,7 +7,7 @@ namespace Gek
 {
     struct StaticBodyComponent
     {
-        CStringW shape;
+        wstring shape;
 
         StaticBodyComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;

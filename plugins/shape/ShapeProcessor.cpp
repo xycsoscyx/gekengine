@@ -378,7 +378,7 @@ namespace Gek
         struct Shape
         {
             ShapeType type;
-            CStringW parameters;
+            wstring parameters;
             std::atomic<bool> loaded;
             Shapes::AlignedBox alignedBox;
             ResourceHandle vertexBuffer;
@@ -473,7 +473,7 @@ namespace Gek
             INTERFACE_LIST_ENTRY_COM(Processor)
         END_INTERFACE_LIST_USER
 
-        HRESULT loadBoundingBox(Shape &shape, const CStringW &name, const CStringW &parameters)
+        HRESULT loadBoundingBox(Shape &shape, const wstring &name, const wstring &parameters)
         {
             HRESULT resultValue = E_FAIL;
             if (name.CompareNoCase(L"sphere") == 0)

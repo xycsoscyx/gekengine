@@ -17,14 +17,14 @@ extern "C" __declspec(dllexport) void initializePlugin(                         
     std::function<void(const wchar_t *, std::function<ContextUserPtr(Context *, void *)>)> addClass,                    \
     std::function<void(const wchar_t *, const wchar_t *)> addType)                                                      \
 {                                                                                                                       \
-    std::wstring lastClassName;
+    const wchar_t *lastClassName = nullptr;
 
 #define GEK_CONTEXT_ADD_CLASS(CLASSNAME, CLASS)                                                                         \
-    addClass(CLASSNAME, CLASS##CreateInstance);                                                                         \
-    lastClassName = CLASSNAME;
+    addClass(L#CLASSNAME, CLASS##CreateInstance);                                                                       \
+    lastClassName = L#CLASSNAME;
 
 #define GEK_CONTEXT_ADD_TYPE(TYPEID)                                                                                    \
-    addType(TYPEID, lastClassName);
+    addType(L#TYPEID, lastClassName);
 
 #define GEK_CONTEXT_END()                                                                                               \
 }
@@ -35,6 +35,7 @@ namespace Gek
 
     GEK_INTERFACE(ContextUser)
     {
+        virtual ~ContextUser(void) = default;
     };
 
     template <typename TYPE, typename... ARGUMENTS>

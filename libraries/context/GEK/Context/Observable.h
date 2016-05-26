@@ -6,6 +6,7 @@ namespace Gek
 {
     GEK_INTERFACE(Observer)
     {
+        virtual ~Observer(void) = default;
     };
 
     GEK_INTERFACE(Observable)

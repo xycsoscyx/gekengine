@@ -7,8 +7,9 @@
 
 namespace Gek
 {
+    template <typename TYPE>
     class ObservableMixin
-        : virtual public Observable
+        : public Observable
     {
     public:
         struct BaseEvent
@@ -31,7 +32,7 @@ namespace Gek
 
             void operator () (Observer *observer) const
             {
-                onEvent(std::dynamic_pointer_cast<INTERFACE>(observer));
+                onEvent(reinterpret_cast<INTERFACE *>(observer));
             }
         };
 
@@ -39,12 +40,35 @@ namespace Gek
         std::unordered_set<Observer *> observerList;
 
     public:
-        virtual ~ObservableMixin(void);
+        virtual ~ObservableMixin(void)
+        {
+        }
 
-        void sendEvent(const BaseEvent &event) const;
+        void sendEvent(const BaseEvent &event) const
+        {
+            for (auto &observer : observerList)
+            {
+                event(observer);
+            }
+        }
 
-        // ObservableInterface
-        void addObserver(Observer *observer);
-        void removeObserver(Observer *observer);
+        // Observable
+        void addObserver(Observer *observer)
+        {
+            auto observerIterator = observerList.find(observer);
+            if (observerIterator == observerList.end())
+            {
+                observerList.insert(observer);
+            }
+        }
+
+        void removeObserver(Observer *observer)
+        {
+            auto observerIterator = observerList.find(observer);
+            if (observerIterator != observerList.end())
+            {
+                observerList.erase(observerIterator);
+            }
+        }
     };
 }; // namespace Gek

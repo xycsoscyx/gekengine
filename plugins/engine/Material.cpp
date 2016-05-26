@@ -11,7 +11,7 @@
 namespace Gek
 {
     class MaterialImplementation 
-        : public ContextUserMixin
+        : public ContextRegistration<MaterialImplementation, Resources *, const wchar_t *>
         , public Material
     {
     private:
@@ -20,82 +20,58 @@ namespace Gek
         ShaderHandle shader;
 
     public:
-        MaterialImplementation(void)
-            : resources(nullptr)
+        MaterialImplementation(Context *context, Resources *resources, const wchar_t *fileName)
+            : ContextRegistration(context)
+            , resources(resources)
         {
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(fileName);
+
+            Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName)));
+
+            Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
+            GEK_CHECK_EXCEPTION(!xmlMaterialNode, BaseException, "XML doesn't contain root node: %", fileName);
+            GEK_CHECK_EXCEPTION(xmlMaterialNode.getType().compare(L"material") != 0, BaseException, "XML doesn't contain root material node: %", fileName);
+
+            Gek::XmlNode xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
+            GEK_CHECK_EXCEPTION(!xmlShaderNode, BaseException, "Unable to locate shader node in material: %", fileName);
+
+            wstring shaderFileName = xmlShaderNode.getText();
+            shader = resources->loadShader(shaderFileName);
+
+            std::unordered_map<wstring, wstring> resourceMap;
+            Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+            if (xmlMapsNode)
+            {
+                Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
+                while (xmlMapNode)
+                {
+                    wstring name(xmlMapNode.getType());
+                    wstring source(xmlMapNode.getText());
+                    resourceMap[name] = source;
+
+                    xmlMapNode = xmlMapNode.nextSiblingElement();
+                };
+            }
+
+            resources->loadResourceList(shader, fileName, resourceMap, resourceList);
         }
 
         ~MaterialImplementation(void)
         {
         }
 
-        BEGIN_INTERFACE_LIST(MaterialImplementation)
-            INTERFACE_LIST_ENTRY_COM(Material)
-        END_INTERFACE_LIST_USER
-
         // Material
-        STDMETHODIMP initialize(IUnknown *initializerContext, const wchar_t *fileName)
-        {
-            GEK_REQUIRE(initializerContext);
-            GEK_REQUIRE(fileName);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<Resources> resources(initializerContext);
-            if (resources)
-            {
-                this->resources = resources;
-                Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = E_INVALIDARG;
-                    Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
-                    if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
-                    {
-                        Gek::XmlNode xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
-                        if (xmlShaderNode)
-                        {
-                            CStringW shaderFileName = xmlShaderNode.getText();
-                            shader = resources->loadShader(shaderFileName);
-                            if (shader)
-                            {
-                                resultValue = S_OK;
-                            }
-                        }
-
-                        std::unordered_map<CStringW, CStringW> resourceMap;
-                        Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
-                        if (xmlMapsNode)
-                        {
-                            Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
-                            while (xmlMapNode)
-                            {
-                                CStringW name(xmlMapNode.getType());
-                                CStringW source(xmlMapNode.getText());
-                                resourceMap[name] = source;
-
-                                xmlMapNode = xmlMapNode.nextSiblingElement();
-                            };
-                        }
-
-                        resources->loadResourceList(shader, fileName, resourceMap, resourceList);
-                    }
-                }
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP_(ShaderHandle) getShader(void)
+        ShaderHandle getShader(void) const
         {
             return shader;
         }
 
-        STDMETHODIMP_(const std::list<ResourceHandle>) getResourceList(void)
+        const std::list<ResourceHandle> &getResourceList(void) const
         {
             return resourceList;
         }
     };
 
-    REGISTER_CLASS(MaterialImplementation)
+    GEK_REGISTER_CONTEXT_USER(MaterialImplementation)
 }; // namespace Gek

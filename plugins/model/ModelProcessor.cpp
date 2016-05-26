@@ -69,7 +69,7 @@ namespace Gek
         struct Model
         {
             std::atomic<bool> loaded;
-            CStringW fileName;
+            wstring fileName;
             Shapes::AlignedBox alignedBox;
             std::vector<SubModel> subModelList;
 
@@ -150,13 +150,7 @@ namespace Gek
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
-        BEGIN_INTERFACE_LIST(ModelProcessorImplementation)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_COM(RenderObserver)
-            INTERFACE_LIST_ENTRY_COM(Processor)
-        END_INTERFACE_LIST_USER
-
-        HRESULT loadBoundingBox(Model &model, const CStringW &name)
+        HRESULT loadBoundingBox(Model &model, const wstring &name)
         {
             static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
 
@@ -223,7 +217,7 @@ namespace Gek
                     model.subModelList.resize(subModelCount);
                     for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
                     {
-                        CStringW materialName = const wchar_t *(rawFileData);
+                        wstring materialName = const wchar_t *(rawFileData);
                         rawFileData += ((materialName.GetLength() + 1) * sizeof(wchar_t));
 
                         SubModel &subModel = model.subModelList[modelIndex];
@@ -267,7 +261,7 @@ namespace Gek
 
         HRESULT loadModel(Model &model)
         {
-            std::size_t hash = std::hash<CStringW>()(model.fileName);
+            std::size_t hash = std::hash<wstring>()(model.fileName);
             if (loadModelSet.count(hash) > 0)
             {
                 return S_OK;
@@ -366,7 +360,7 @@ namespace Gek
             if (entity->hasComponents<ModelComponent, TransformComponent>())
             {
                 auto &modelComponent = entity->getComponent<ModelComponent>();
-                std::size_t hash = std::hash<CStringW>()(modelComponent.value);
+                std::size_t hash = std::hash<wstring>()(modelComponent.value);
                 auto pair = dataMap.insert(std::make_pair(hash, Model()));
                 if (pair.second)
                 {

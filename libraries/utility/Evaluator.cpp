@@ -26,6 +26,7 @@ namespace Gek
             catch (ShuntingYard::Exception exception)
             {
                 result = defaultValue;
+                GEK_THROW_EXCEPTION(Exception, "Unable to parse expression");
             };
         }
 
@@ -39,6 +40,7 @@ namespace Gek
             catch (ShuntingYard::Exception exception)
             {
                 result = defaultValue;
+                GEK_THROW_EXCEPTION(Exception, "Unable to parse expression");
             };
         }
 

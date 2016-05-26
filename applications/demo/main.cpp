@@ -9,6 +9,8 @@
 #include <CommCtrl.h>
 #include "resource.h"
 
+using namespace Gek;
+
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -23,55 +25,54 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         UINT32 height = 600;
         bool fullscreen = false;
 
-        Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"$root\\config.xml"));
+        XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
 
-        Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
-        if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
+        XmlNode xmlConfigNode = xmlDocument.getRoot();
+        if (xmlConfigNode && xmlConfigNode.getType().getLower().compare(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
         {
-            Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+            XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
             if (xmlDisplayNode)
             {
                 if (xmlDisplayNode.hasAttribute(L"width"))
                 {
-                    width = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
+                    width = String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
                 }
 
                 if (xmlDisplayNode.hasAttribute(L"height"))
                 {
-                    height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
+                    height = String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
                 }
 
                 if (xmlDisplayNode.hasAttribute(L"fullscreen"))
                 {
-                    fullscreen = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
+                    fullscreen = String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
                 }
             }
         }
 
         UINT32 selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
-        std::vector<Gek::DisplayMode> modeList = Gek::getDisplayModes()[32];
+        std::vector<DisplayMode> modeList = getDisplayModes()[32];
         for (auto &mode : modeList)
         {
-            CStringW aspectRatio(L"");
+            wstring aspectRatio(L"");
             switch (mode.aspectRatio)
             {
-            case Gek::AspectRatio::_4x3:
+            case AspectRatio::_4x3:
                 aspectRatio = L", (4x3)";
                 break;
 
-            case Gek::AspectRatio::_16x9:
+            case AspectRatio::_16x9:
                 aspectRatio = L", (16x9)";
                 break;
 
-            case Gek::AspectRatio::_16x10:
+            case AspectRatio::_16x10:
                 aspectRatio = L", (16x10)";
                 break;
             };
 
-            CStringW modeString;
-            modeString.Format(L"%dx%%", mode.width, mode.height, aspectRatio.GetString());
-            int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.GetString());
+            wstring modeString(String::format(L"%x%%", mode.width, mode.height, aspectRatio));
+            int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.c_str());
             if (mode.width == width && mode.height == height)
             {
                 selectIndex = modeIndex;
@@ -91,20 +92,20 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         {
         case IDOK:
         {
-            std::vector<Gek::DisplayMode> modeList = Gek::getDisplayModes()[32];
+            std::vector<DisplayMode> modeList = getDisplayModes()[32];
             UINT32 selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
             auto &mode = modeList[selectIndex];
 
-            Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"$root\\config.xml"));
+            XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
 
-            Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
-            if (!xmlConfigNode || xmlConfigNode.getType().CompareNoCase(L"config") != 0)
+            XmlNode xmlConfigNode = xmlDocument.getRoot();
+            if (!xmlConfigNode || xmlConfigNode.getType().getLower().compare(L"config") != 0)
             {
-                xmlDocument.create(L"config");
+                xmlDocument = XmlDocument::create(L"config");
                 xmlConfigNode = xmlDocument.getRoot();
             }
 
-            Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+            XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
             if (!xmlDisplayNode)
             {
                 xmlDisplayNode = xmlConfigNode.createChildElement(L"display");
@@ -133,7 +134,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT resultValue = 0;
-    Gek::Engine *engineCore = reinterpret_cast<Gek::Engine *>(GetWindowLongPtr(window, GWLP_USERDATA));
+    Engine *engineCore = reinterpret_cast<Engine *>(GetWindowLongPtr(window, GWLP_USERDATA));
     switch (message)
     {
     case WM_CLOSE:
@@ -250,22 +251,22 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"      <init_from>../textures/debug/%name%.png</init_from>\r\n" \
         L"    </image>\r\n";
 
-    CStringW entities;
-    CStringW materialLibrary;
-    CStringW fileLibrary;
+    wstring entities;
+    wstring materialLibrary;
+    wstring fileLibrary;
     for (UINT32 roughness = 0; roughness < 10; roughness++)
     {
         for (UINT32 metalness = 0; metalness < 10; metalness++)
         {
-            CStringW material(Gek::String::format(materialFormat, (float(roughness) / 9.0f), (float(metalness) / 9.0f)));
-            CStringW fileName(Gek::String::format(L"r%d_m%", roughness, metalness));
-            Gek::FileSystem::save((L"$root\\data\\materials\\debug\\" + fileName + L".xml"), material);
+            wstring material(String::format(materialFormat, (float(roughness) / 9.0f), (float(metalness) / 9.0f)));
+            wstring fileName(String::format(L"r%d_m%", roughness, metalness));
+            FileSystem::save((L"$root\\data\\materials\\debug\\" + fileName + L".xml"), material);
 
-            entities += Gek::String::format(entityFormat, (float(roughness) - 4.5f), (float(metalness) - 4.5f), roughness, metalness);
-            //CopyFile(Gek::FileSystem::expandPath(L"$root\\data\\textures\\debug\\r0_m0.png"), Gek::FileSystem::expandPath(L"$root\\data\\textures\\debug\\") + fileName + L".png", false);
+            entities += String::format(entityFormat, (float(roughness) - 4.5f), (float(metalness) - 4.5f), roughness, metalness);
+            //CopyFile(FileSystem::expandPath(L"$root\\data\\textures\\debug\\r0_m0.png"), FileSystem::expandPath(L"$root\\data\\textures\\debug\\") + fileName + L".png", false);
 
-            materialLibrary += [&](void) -> CStringW { CStringW data(materialLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
-            fileLibrary += [&](void) -> CStringW { CStringW data(fileLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
+            materialLibrary += [&](void) -> wstring { wstring data(materialLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
+            fileLibrary += [&](void) -> wstring { wstring data(fileLibraryFormat); data.Replace(L"%name%", fileName); return data; }();
         }
     }
 
@@ -278,15 +279,15 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         std::vector<std::wstring> searchPathList;
 
 #ifdef _DEBUG
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"$root\\Debug"));
+        SetCurrentDirectory(FileSystem::expandPath(L"$root\\Debug"));
         searchPathList.push_back(L"$root\\Debug\\Plugins");
 #else
-        SetCurrentDirectory(Gek::FileSystem::expandPath(L"$root\\Release"));
+        SetCurrentDirectory(FileSystem::expandPath(L"$root\\Release"));
         searchPathList.push_back(L"$root\\Release\\Plugins");
 #endif
 
-        Gek::traceInitialize();
-        Gek::ContextPtr context(Gek::Context::create(searchPathList));
+        traceInitialize();
+        ContextPtr context(Context::create(searchPathList));
         if (context)
         {
             WNDCLASS kClass;
@@ -306,27 +307,27 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 UINT32 height = 600;
                 bool fullscreen = false;
 
-                Gek::XmlDocument xmlDocument(Gek::XmlDocument::load(L"$root\\config.xml"));
+                XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
 
-                Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
+                XmlNode xmlConfigNode = xmlDocument.getRoot();
                 if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
                 {
-                    Gek::XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
+                    XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
                     if (xmlDisplayNode)
                     {
                         if (xmlDisplayNode.hasAttribute(L"width"))
                         {
-                            width = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
+                            width = String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
                         }
 
                         if (xmlDisplayNode.hasAttribute(L"height"))
                         {
-                            height = Gek::String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
+                            height = String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
                         }
 
                         if (xmlDisplayNode.hasAttribute(L"fullscreen"))
                         {
-                            fullscreen = Gek::String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
+                            fullscreen = String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
                         }
                     }
                 }
@@ -344,7 +345,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
                 if (window)
                 {
-                    Gek::EnginePtr engineCore(context->createClass<Gek::Engine>(L"GEKEngine", window));
+                    EnginePtr engineCore(context->createClass<Engine>(L"GEKEngine", window));
                     if (engineCore)
                     {
                         SetWindowLongPtr(window, GWLP_USERDATA, LONG(engineCore.get()));
@@ -382,7 +383,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 }
             }
 
-            Gek::traceShutDown();
+            traceShutDown();
         }
 
         return 0;
