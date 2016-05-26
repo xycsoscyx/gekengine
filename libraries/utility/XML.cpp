@@ -45,7 +45,7 @@ namespace Gek
     XmlNode XmlNode::create(const wchar_t *type)
     {
         xmlNodePtr node = xmlNewNode(nullptr, BAD_CAST static_cast<const char *>(CW2A(type, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Unable to create node: %S", type);
+        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Unable to create node: %", type);
         return XmlNode(node);
     }
 
@@ -99,7 +99,7 @@ namespace Gek
         GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         xmlChar *attribute = xmlGetProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(attribute == nullptr, Xml::Exception, "Unable to get node attribute: %S", name);
+        GEK_CHECK_EXCEPTION(attribute == nullptr, Xml::Exception, "Unable to get node attribute: %", name);
 
         CA2W value(reinterpret_cast<const char *>(attribute), CP_UTF8);
         xmlFree(attribute);
@@ -222,7 +222,7 @@ namespace Gek
         }
 
         xmlNodePtr childNode = xmlNewChild(static_cast<xmlNodePtr>(node), nullptr, BAD_CAST static_cast<const char *>(CW2A(type, CP_UTF8)), BAD_CAST static_cast<const char *>(CW2A(content, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(childNode == nullptr, Xml::Exception, "Unable to create new child node: %S (%S)", type, content);
+        GEK_CHECK_EXCEPTION(childNode == nullptr, Xml::Exception, "Unable to create new child node: % (%)", type, content);
 
         xmlAddChild(static_cast<xmlNodePtr>(node), childNode);
 
@@ -248,7 +248,7 @@ namespace Gek
         GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to create new document");
 
         xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST static_cast<const char *>(CW2A(rootType, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(rootNode == nullptr, Xml::Exception, "Unable to create root node: %S", rootType);
+        GEK_CHECK_EXCEPTION(rootNode == nullptr, Xml::Exception, "Unable to create root node: %", rootType);
 
         xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
 
@@ -259,7 +259,7 @@ namespace Gek
     {
         wstring expandedFileName(Gek::FileSystem::expandPath(fileName));
         xmlDocPtr document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
-        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to load document: %S", fileName);
+        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to load document: %", fileName);
 
         return XmlDocument(document);
     }

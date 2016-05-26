@@ -1,6 +1,3 @@
-#include <initguid.h>
-#include <cguid.h>
-
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
@@ -73,7 +70,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             };
 
             CStringW modeString;
-            modeString.Format(L"%dx%d%s", mode.width, mode.height, aspectRatio.GetString());
+            modeString.Format(L"%dx%%", mode.width, mode.height, aspectRatio.GetString());
             int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.GetString());
             if (mode.width == width && mode.height == height)
             {
@@ -113,9 +110,9 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 xmlDisplayNode = xmlConfigNode.createChildElement(L"display");
             }
 
-            xmlDisplayNode.setAttribute(L"width", L"%d", mode.width);
-            xmlDisplayNode.setAttribute(L"height", L"%d", mode.height);
-            xmlDisplayNode.setAttribute(L"fullscreen", L"%s", (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
+            xmlDisplayNode.setAttribute(L"width", L"%", mode.width);
+            xmlDisplayNode.setAttribute(L"height", L"%", mode.height);
+            xmlDisplayNode.setAttribute(L"fullscreen", L"%", (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
             xmlDocument.save(L"$root\\config.xml");
 
             EndDialog(dialog, IDOK);
@@ -180,7 +177,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         L"        <entity>\r\n" \
         L"            <transform position=\"(%f,2.0,%f)\" scale=\"(0.5,0.5,0.5)\" />\r\n" \
         L"            <!--color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color-->\r\n" \
-        L"            <shape skin=\"debug//r%d_m%d\" parameters=\"1\">sphere</shape>\r\n" \
+        L"            <shape skin=\"debug//r%d_m%\" parameters=\"1\">sphere</shape>\r\n" \
         L"        </entity>\r\n";
 
     static const const wchar_t *materialLibraryFormat = \
@@ -261,7 +258,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         for (UINT32 metalness = 0; metalness < 10; metalness++)
         {
             CStringW material(Gek::String::format(materialFormat, (float(roughness) / 9.0f), (float(metalness) / 9.0f)));
-            CStringW fileName(Gek::String::format(L"r%d_m%d", roughness, metalness));
+            CStringW fileName(Gek::String::format(L"r%d_m%", roughness, metalness));
             Gek::FileSystem::save((L"$root\\data\\materials\\debug\\" + fileName + L".xml"), material);
 
             entities += Gek::String::format(entityFormat, (float(roughness) - 4.5f), (float(metalness) - 4.5f), roughness, metalness);

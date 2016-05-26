@@ -1,10 +1,10 @@
 #pragma once
 
 #include "GEK\Shapes\Frustum.h"
-#include "GEK\Context\Observer.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\XML.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Resources.h"
-#include "GEK\Utility\XML.h"
 #include <functional>
 #include <memory>
 
@@ -28,24 +28,22 @@ namespace Gek
 
             typedef std::unique_ptr<Pass> Iterator;
 
-            virtual Iterator next(void);
-            virtual Mode prepare(void);
+            virtual Iterator next(void) = 0;
+            virtual Mode prepare(void) = 0;
         };
 
         GEK_INTERFACE(Block)
         {
             typedef std::unique_ptr<Block> Iterator;
 
-            virtual Iterator next(void);
-            virtual Pass::Iterator begin(void);
-            virtual bool prepare(void);
+            virtual Iterator next(void) = 0;
+            virtual Pass::Iterator begin(void) = 0;
+            virtual bool prepare(void) = 0;
         };
-
-        virtual void initialize(IUnknown *initializerContext, const wchar_t *fileName) = 0;
 
         virtual UINT32 getPriority(void) = 0;
 
-        virtual void loadResourceList(const wchar_t *materialName, std::unordered_map<CStringW, CStringW> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual void loadResourceList(const wchar_t *materialName, std::unordered_map<wstring, wstring> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
         virtual void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) = 0;
 
         virtual Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;

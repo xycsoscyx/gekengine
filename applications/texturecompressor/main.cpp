@@ -87,20 +87,20 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     }
     else if (!PathFileExists(fileNameInput))
     {
-        printf("[error] Input file does not exist: %S\r\n", fileNameInput.GetString());
+        printf("[error] Input file does not exist: %\r\n", fileNameInput.GetString());
         return -2;
     }
     else if (!overwrite && PathFileExists(fileNameOutput))
     {
-        printf("[error] Output file already exists: %S\r\n", fileNameOutput.GetString());
+        printf("[error] Output file already exists: %\r\n", fileNameOutput.GetString());
         return -3;
     }
 
     DeleteFile(fileNameOutput);
-    printf("Compressing: -> %S\r\n", fileNameInput.GetString());
-    printf("             <- %S\r\n", fileNameOutput.GetString());
-    printf("Format: %S\r\n", format.GetString());
-    printf("In: %s, Out: %s\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
+    printf("Compressing: -> %\r\n", fileNameInput.GetString());
+    printf("             <- %\r\n", fileNameOutput.GetString());
+    printf("Format: %\r\n", format.GetString());
+    printf("In: %, Out: %\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
 
     try
     {
@@ -202,7 +202,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
 
         if (outputFormat == DXGI_FORMAT_UNKNOWN)
         {
-            throw CompressorException(__LINE__, L"Unknown format specified: %s", format.GetString());
+            throw CompressorException(__LINE__, L"Unknown format specified: %", format.GetString());
         }
 
         UINT32 flags = ::DirectX::TEX_COMPRESS_PARALLEL;
@@ -219,7 +219,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         ::DirectX::ScratchImage outputImage;
         if (FAILED(::DirectX::Compress(inputImage.GetImages(), inputImage.GetImageCount(), inputImage.GetMetadata(), outputFormat, flags, 0.5f, outputImage)))
         {
-            throw CompressorException(__LINE__, L"Unable to compress to format: %s", format.GetString());
+            throw CompressorException(__LINE__, L"Unable to compress to format: %", format.GetString());
         }
 
         printf(".compressed.");
@@ -232,7 +232,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     }
     catch (CompressorException exception)
     {
-        printf("\r\n[error] Error (%d): %S", exception.line, exception.message.GetString());
+        printf("\r\n[error] Error (%): %", exception.line, exception.message.GetString());
     }
     catch (...)
     {

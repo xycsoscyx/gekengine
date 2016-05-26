@@ -33,7 +33,7 @@ namespace Gek
                         InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "GEKInitializePlugin");
                         if (initializePlugin)
                         {
-                            GEK_TRACE_EVENT("Plugin found: %S", GEK_PARAMETER(fileName));
+                            GEK_TRACE_EVENT("Plugin found: %", GEK_PARAMETER(fileName));
 
                             initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *)> creator) -> void
                             {
@@ -76,7 +76,7 @@ namespace Gek
         std::function<ContextUserPtr(Context *, void *)> getCreator(const wchar_t *name) const
         {
             auto classIterator = classMap.find(name);
-            GEK_CHECK_EXCEPTION(classIterator == classMap.end(), BaseException, "Unable to find requested class creator: %S", name);
+            GEK_CHECK_EXCEPTION(classIterator == classMap.end(), BaseException, "Unable to find requested class creator: %", name);
             return (*classIterator).second;
         }
 

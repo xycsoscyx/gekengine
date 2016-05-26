@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Context\Observer.h"
+#include "GEK\Context\Observable.h"
 
 namespace Gek
 {
@@ -24,6 +24,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(ActionObserver)
+        : public Observer
     {
         virtual void onAction(const wchar_t *name, const ActionParam &param) = 0;
     };

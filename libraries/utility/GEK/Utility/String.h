@@ -7,6 +7,8 @@
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Utility\Trace.h"
 #include <Windows.h>
+#include <functional>
+#include <cctype>
 #include <sstream>
 #include <vector>
 
@@ -40,6 +42,7 @@ namespace Gek
 
     public:
         using basic_string::basic_string;
+        using basic_string::operator =;
 
         baseString(void)
         {
@@ -65,11 +68,51 @@ namespace Gek
             return *(std::basic_string *)this;
         }
 
-        std::vector<baseString<ELEMENT>> split(ELEMENT delimiter)
+        void trimLeft(void)
+        {
+            erase(begin(), std::find_if(begin(), end(), [](char ch) { return !std::isspace<char>(ch, std::locale::classic()); }));
+        }
+
+        void trimRight(void)
+        {
+            erase(std::find_if(rbegin(), rend(), [](char ch) { return !std::isspace<char>(ch, std::locale::classic()); }).base(), end());
+        }
+
+        void trim(void)
+        {
+            trimLeft();
+            trimRight();
+        }
+
+        void makeLower(void)
+        {
+            std::transform(begin(), end(), begin(), ::tolower);
+        }
+
+        void makeUpper(void)
+        {
+            std::transform(begin(), end(), begin(), ::toupper);
+        }
+
+        baseString<ELEMENT> getLower(void) const
+        {
+            baseString transformed(*this);
+            std::transform(transformed.begin(), transformed.end(), transformed.begin(), ::tolower);
+            return transformed;
+        }
+
+        baseString<ELEMENT> getUpper(void) const
+        {
+            baseString transformed(*this);
+            std::transform(transformed.begin(), transformed.end(), transformed.begin(), ::toupper);
+            return transformed;
+        }
+
+        std::vector<baseString<ELEMENT>> split(ELEMENT delimiter) const
         {
             baseString current;
             std::vector<baseString> tokens;
-            std::basic_stringstream stream(c_str());
+            std::basic_stringstream<ELEMENT, TRAITS, ALLOCATOR> stream(c_str());
             while (std::getline(stream, current, delimiter))
             {
                 tokens.push_back(current);
@@ -78,7 +121,7 @@ namespace Gek
             return tokens;
         }
 
-        baseString<ELEMENT> getAppended(const ELEMENT *string)
+        baseString<ELEMENT> getAppended(const ELEMENT *string) const
         {
             baseString concatenated(c_str());
             concatenated.append(string);
@@ -91,7 +134,15 @@ namespace Gek
             print(*this, formatting, variableList);
         }
 
-        baseString<ELEMENT> getExtension(void)
+        template <typename SOURCE>
+        void appendFormat(const SOURCE *formatting, va_list variableList)
+        {
+            baseString formatted;
+            print(formatted, formatting, variableList);
+            append(formatted);
+        }
+
+        baseString<ELEMENT> getExtension(void) const
         {
             size_t position = find_last_of('.');
             if (position == std::string::npos)

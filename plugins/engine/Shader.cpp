@@ -4,7 +4,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
@@ -13,10 +13,11 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
-#include <atlpath.h>
-#include <set>
-#include <ppl.h>
 #include <concurrent_vector.h>
+#include <ppl.h>
+#include <experimental\filesystem>
+#include <regex>
+#include <set>
 
 namespace Gek
 {
@@ -103,7 +104,7 @@ namespace Gek
     }
 
     class ShaderImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ShaderImplementation, VideoSystem *, Resources *, Population *, const wchar_t *>
         , public Shader
     {
     public:
@@ -135,8 +136,8 @@ namespace Gek
 
         struct Map
         {
-            CStringW name;
-            CStringW defaultValue;
+            wstring name;
+            wstring defaultValue;
             MapType mapType;
             BindType bindType;
             UINT32 flags;
@@ -162,11 +163,11 @@ namespace Gek
             RenderStateHandle renderState;
             Math::Color blendFactor;
             BlendStateHandle blendState;
-            std::unordered_map<CStringW, CStringW> renderTargetList;
-            std::unordered_map<CStringW, CStringW> resourceList;
-            std::unordered_map<CStringW, std::set<CStringW>> actionMap;
-            std::unordered_map<CStringW, CStringW> copyResourceMap;
-            std::unordered_map<CStringW, CStringW> unorderedAccessList;
+            std::unordered_map<wstring, wstring> renderTargetList;
+            std::unordered_map<wstring, wstring> resourceList;
+            std::unordered_map<wstring, std::set<wstring>> actionMap;
+            std::unordered_map<wstring, wstring> copyResourceMap;
+            std::unordered_map<wstring, wstring> unorderedAccessList;
             ProgramHandle program;
             UINT32 dispatchWidth;
             UINT32 dispatchHeight;
@@ -189,7 +190,7 @@ namespace Gek
         struct BlockData
         {
             bool lighting;
-            std::unordered_map<CStringW, Math::Color> renderTargetsClearList;
+            std::unordered_map<wstring, Math::Color> renderTargetsClearList;
             std::list<PassData> passList;
 
             BlockData(void)
@@ -199,14 +200,14 @@ namespace Gek
         };
 
         __declspec(align(16))
-        struct ShaderConstantData
+            struct ShaderConstantData
         {
             Math::Float2 targetSize;
             float padding[2];
         };
 
         __declspec(align(16))
-        struct LightConstantData
+            struct LightConstantData
         {
             UINT32 count;
             UINT32 padding[3];
@@ -269,19 +270,19 @@ namespace Gek
 
         UINT32 priority;
 
-        CComPtr<VideoBuffer> shaderConstantBuffer;
+        VideoBufferPtr shaderConstantBuffer;
 
         UINT32 lightsPerPass;
-        CComPtr<VideoBuffer> lightConstantBuffer;
-        CComPtr<VideoBuffer> lightDataBuffer;
+        VideoBufferPtr lightConstantBuffer;
+        VideoBufferPtr lightDataBuffer;
         std::vector<LightData> lightList;
 
-        std::unordered_map<CStringW, CStringW> globalDefinesList;
+        std::unordered_map<wstring, wstring> globalDefinesList;
 
         std::list<Map> mapList;
 
         ResourceHandle depthBuffer;
-        std::unordered_map<CStringW, ResourceHandle> resourceMap;
+        std::unordered_map<wstring, ResourceHandle> resourceMap;
 
         std::list<BlockData> blockList;
 
@@ -349,58 +350,53 @@ namespace Gek
             return L"float4";
         }
 
-        static UINT32 getTextureLoadFlags(const CStringW &loadFlags)
+        static UINT32 getTextureLoadFlags(const wstring &loadFlags)
         {
             UINT32 flags = 0;
             int position = 0;
-            CStringW flag(loadFlags.Tokenize(L",", position));
-            while (!flag.IsEmpty())
+            std::vector<wstring> flagList(loadFlags.split(L','));
+            for (auto &flag : flagList)
             {
-                if (flag.CompareNoCase(L"sRGB") == 0)
+                if (flag.compare(L"sRGB") == 0)
                 {
                     flags |= Video::TextureLoadFlags::sRGB;
                 }
-
-                flag = loadFlags.Tokenize(L",", position);
-            };
+            }
 
             return flags;
         }
 
-        static UINT32 getTextureCreateFlags(const CStringW &createFlags)
+        static UINT32 getTextureCreateFlags(const wstring &createFlags)
         {
             UINT32 flags = 0;
             int position = 0;
-            CStringW createFlag(createFlags.Tokenize(L",", position));
-            while (!createFlag.IsEmpty())
+            std::vector<wstring> flagList(createFlags.getLower().split(L','));
+            for (auto &flag : flagList)
             {
-                createFlag.MakeLower();
-                createFlag.Remove(L' ');
-                if (createFlag.CompareNoCase(L"target") == 0)
+                flag.trim();
+                if (flag.compare(L"target") == 0)
                 {
                     flags |= Video::TextureFlags::RenderTarget;
                 }
-                else if (createFlag.CompareNoCase(L"unorderedaccess") == 0)
+                else if (flag.compare(L"unorderedaccess") == 0)
                 {
                     flags |= Video::TextureFlags::UnorderedAccess;
                 }
-                else if (createFlag.CompareNoCase(L"readwrite") == 0)
+                else if (flag.compare(L"readwrite") == 0)
                 {
                     flags |= TextureFlags::ReadWrite;
                 }
-
-                createFlag = createFlags.Tokenize(L",", position);
-            };
+            }
 
             return (flags | Video::TextureFlags::Resource);
         }
 
-        void loadStencilStates(Video::DepthState::StencilStates &stencilStates, Gek::XmlNode &xmlStencilNode)
+        void loadStencilState(Video::DepthState::StencilState &stencilState, Gek::XmlNode &xmlStencilNode)
         {
-            stencilStates.passOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"pass").getText());
-            stencilStates.failOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"fail").getText());
-            stencilStates.depthFailOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"depthfail").getText());
-            stencilStates.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
+            stencilState.passOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"pass").getText());
+            stencilState.failOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"fail").getText());
+            stencilState.depthFailOperation = getStencilOperation(xmlStencilNode.firstChildElement(L"depthfail").getText());
+            stencilState.comparisonFunction = getComparisonFunction(xmlStencilNode.firstChildElement(L"comparison").getText());
         }
 
         void loadDepthState(PassData &pass, Gek::XmlNode &xmlDepthStateNode)
@@ -433,12 +429,12 @@ namespace Gek
 
                     if (xmlStencilNode.hasChildElement(L"front"))
                     {
-                        loadStencilStates(depthState.stencilFrontState, xmlStencilNode.firstChildElement(L"front"));
+                        loadStencilState(depthState.stencilFrontState, xmlStencilNode.firstChildElement(L"front"));
                     }
 
                     if (xmlStencilNode.hasChildElement(L"back"))
                     {
-                        loadStencilStates(depthState.stencilBackState, xmlStencilNode.firstChildElement(L"back"));
+                        loadStencilState(depthState.stencilBackState, xmlStencilNode.firstChildElement(L"back"));
                     }
                 }
             }
@@ -464,16 +460,16 @@ namespace Gek
             pass.renderState = resources->createRenderState(renderState);
         }
 
-        void loadBlendTargetStates(Video::TargetBlendState &blendState, Gek::XmlNode &xmlBlendStateNode)
+        void loadBlendTargetState(Video::TargetBlendState &blendState, Gek::XmlNode &xmlBlendStateNode)
         {
             if (xmlBlendStateNode.hasChildElement(L"writemask"))
             {
                 blendState.writeMask = 0;
-                CStringW writeMask(xmlBlendStateNode.firstChildElement(L"writemask").getText());
-                if (writeMask.Find(L"r") >= 0) blendState.writeMask |= Video::ColorMask::R;
-                if (writeMask.Find(L"g") >= 0) blendState.writeMask |= Video::ColorMask::G;
-                if (writeMask.Find(L"b") >= 0) blendState.writeMask |= Video::ColorMask::B;
-                if (writeMask.Find(L"a") >= 0) blendState.writeMask |= Video::ColorMask::A;
+                wstring writeMask(xmlBlendStateNode.firstChildElement(L"writemask").getText().getLower());
+                if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::ColorMask::R;
+                if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::ColorMask::G;
+                if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
+                if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
 
             }
             else
@@ -504,15 +500,15 @@ namespace Gek
             if (xmlBlendStateNode.hasChildElement(L"target"))
             {
                 Video::IndependentBlendState blendState;
-                Video::TargetBlendState *targetStateList = blendState.targetStates;
+                Video::TargetBlendState *targetStatesList = blendState.targetStates;
                 blendState.alphaToCoverage = alphaToCoverage;
                 Gek::XmlNode xmlTargetNode = xmlBlendStateNode.firstChildElement(L"target");
                 while (xmlTargetNode)
                 {
-                    Video::TargetBlendState &targetStates = *targetStateList++;
+                    Video::TargetBlendState &targetStates = *targetStatesList++;
 
                     targetStates.enable = true;
-                    loadBlendTargetStates(targetStates, xmlTargetNode);
+                    loadBlendTargetState(targetStates, xmlTargetNode);
                     xmlTargetNode = xmlTargetNode.nextSiblingElement(L"target");
                 };
 
@@ -525,31 +521,31 @@ namespace Gek
                 {
                     blendState.enable = true;
                     blendState.alphaToCoverage = alphaToCoverage;
-                    loadBlendTargetStates(blendState, xmlBlendStateNode);
+                    loadBlendTargetState(blendState, xmlBlendStateNode);
                 }
 
                 pass.blendState = resources->createBlendState(blendState);
             }
         }
 
-        std::unordered_map<CStringW, CStringW> loadChildMap(Gek::XmlNode &xmlParentNode)
+        std::unordered_map<wstring, wstring> loadChildMap(Gek::XmlNode &xmlParentNode)
         {
-            std::unordered_map<CStringW, CStringW> childMap;
+            std::unordered_map<wstring, wstring> childMap;
             Gek::XmlNode xmlChildNode = xmlParentNode.firstChildElement();
             while (xmlChildNode)
             {
-                CStringW type(xmlChildNode.getType());
-                CStringW text(xmlChildNode.getText());
-                childMap.insert(std::make_pair(type, text.IsEmpty() ? type : text));
+                wstring type(xmlChildNode.getType());
+                wstring text(xmlChildNode.getText());
+                childMap.insert(std::make_pair(type, text.empty() ? type : text));
                 xmlChildNode = xmlChildNode.nextSiblingElement();
             };
 
             return childMap;
         }
 
-        std::unordered_map<CStringW, CStringW> loadChildMap(Gek::XmlNode &xmlRootNode, const wchar_t *name)
+        std::unordered_map<wstring, wstring> loadChildMap(Gek::XmlNode &xmlRootNode, const wchar_t *name)
         {
-            std::unordered_map<CStringW, CStringW> childMap;
+            std::unordered_map<wstring, wstring> childMap;
             if (xmlRootNode.hasChildElement(name))
             {
                 Gek::XmlNode xmlParentNode = xmlRootNode.firstChildElement(name);
@@ -559,35 +555,40 @@ namespace Gek
             return childMap;
         }
 
-        bool replaceDefines(CStringW &value)
+        bool replaceDefines(wstring &value)
         {
             bool foundDefine = false;
             for (auto &definePair : globalDefinesList)
             {
-                foundDefine |= (value.Replace(definePair.first.GetString(), definePair.second) > 0);
+                std::wsmatch match;
+                std::wregex regex(L"\\" + definePair.first);
+                if (foundDefine = std::regex_search(value, match, regex))
+                {
+                    value = std::regex_replace(value, regex, definePair.second);
+                }
             }
 
             return foundDefine;
         }
 
-        CStringW evaluate(const wchar_t *value, bool integer = false)
+        wstring evaluate(const wchar_t *value, bool integer = false)
         {
-            CStringW finalValue(value);
-            finalValue.Replace(L"displayWidth", String::format(L"%d", video->getBackBuffer()->getWidth()));
-            finalValue.Replace(L"displayHeight", String::format(L"%d", video->getBackBuffer()->getHeight()));
+            wstring finalValue(value);
+            finalValue = std::regex_replace(finalValue, std::wregex(L"\\displayWidth"), String::format(L"%", video->getBackBuffer()->getWidth()));
+            finalValue = std::regex_replace(finalValue, std::wregex(L"\\displayHeight"), String::format(L"%", video->getBackBuffer()->getHeight()));
             while (replaceDefines(finalValue));
 
-            if (finalValue.Find(L"float2") == 0)
+            if (finalValue.find(L"float2") != std::string::npos)
             {
-                return String::format(L"float2%s", String::from<wchar_t>(Evaluator::get<Math::Float2>(finalValue.Mid(6))).GetString());
+                return String::format(L"float2%", String::from<wchar_t>(Evaluator::get<Math::Float2>(&finalValue.at(6))));
             }
-            else if (finalValue.Find(L"float3") == 0)
+            else if (finalValue.find(L"float3") != std::string::npos)
             {
-                return String::format(L"float3%s", String::from<wchar_t>(Evaluator::get<Math::Float3>(finalValue.Mid(6))).GetString());
+                return String::format(L"float3%", String::from<wchar_t>(Evaluator::get<Math::Float3>(&finalValue.at(6))));
             }
-            else if (finalValue.Find(L"float4") == 0)
+            else if (finalValue.find(L"float4") != std::string::npos)
             {
-                return String::format(L"float4%s", String::from<wchar_t>(Evaluator::get<Math::Float4>(finalValue.Mid(6))).GetString());
+                return String::format(L"float4%", String::from<wchar_t>(Evaluator::get<Math::Float4>(&finalValue.at(6))));
             }
             else if (integer)
             {
@@ -600,655 +601,590 @@ namespace Gek
         }
 
     public:
-        ShaderImplementation(void)
-            : video(nullptr)
-            , resources(nullptr)
-            , population(nullptr)
+        ShaderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population, const wchar_t *fileName)
+            : ContextRegistration(context)
+            , video(video)
+            , resources(resources)
+            , population(population)
             , priority(0)
             , lightsPerPass(0)
         {
+            GEK_REQUIRE(video);
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(fileName);
+
+            shaderConstantBuffer = video->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+
+            Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\shaders\\%.xml", fileName)));
+
+            Gek::XmlNode xmlShaderNode = xmlDocument.getRoot();
+            GEK_CHECK_EXCEPTION(xmlShaderNode.getType().compare(L"shader") != 0, BaseException, "XML missing shader root node: %", fileName);
+
+            priority = String::to<UINT32>(xmlShaderNode.getAttribute(L"priority"));
+
+            std::unordered_map<wstring, std::pair<MapType, BindType>> resourceList;
+            Gek::XmlNode xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
+            if (xmlMaterialNode)
+            {
+                Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
+                if (xmlMapsNode)
+                {
+                    Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
+                    while (xmlMapNode)
+                    {
+                        wstring name(xmlMapNode.getType());
+                        wstring defaultValue(xmlMapNode.getAttribute(L"default"));
+                        MapType mapType = getMapType(xmlMapNode.getText());
+                        BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
+                        UINT32 flags = getTextureLoadFlags(xmlMapNode.getAttribute(L"flags"));
+                        mapList.push_back(Map(name, defaultValue, mapType, bindType, flags));
+
+                        xmlMapNode = xmlMapNode.nextSiblingElement();
+                    };
+                }
+            }
+
+            string lightingData;
+            Gek::XmlNode xmlLightingNode = xmlShaderNode.firstChildElement(L"lighting");
+            if (xmlLightingNode)
+            {
+                Gek::XmlNode xmlLightsPerPass = xmlLightingNode.firstChildElement(L"lightsPerPass");
+                if (xmlLightsPerPass && !xmlLightsPerPass.getText().empty())
+                {
+                    lightsPerPass = String::to<UINT32>(xmlLightsPerPass.getText());
+                    if (lightsPerPass > 0)
+                    {
+                        lightConstantBuffer = video->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                        lightConstantBuffer = video->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+
+                        globalDefinesList[L"lightsPerPass"] = String::from<wchar_t>(lightsPerPass);
+
+                        lightingData =
+                            "namespace Lighting                                         \r\n" \
+                            "{                                                          \r\n" \
+                            "    namespace Type                                         \r\n" \
+                            "    {                                                      \r\n" \
+                            "        static const uint Point = 0;                       \r\n" \
+                            "        static const uint Spot = 1;                        \r\n" \
+                            "        static const uint Directional = 2;                 \r\n" \
+                            "    };                                                     \r\n" \
+                            "                                                           \r\n" \
+                            "    struct Data                                            \r\n" \
+                            "    {                                                      \r\n" \
+                            "        uint   type;                                       \r\n" \
+                            "        float3 position;                                   \r\n" \
+                            "        float3 direction;                                  \r\n" \
+                            "        float3 color;                                      \r\n" \
+                            "        float  range;                                      \r\n" \
+                            "        float  radius;                                     \r\n" \
+                            "        float  innerAngle;                                 \r\n" \
+                            "        float  outerAngle;                                 \r\n" \
+                            "    };                                                     \r\n" \
+                            "                                                           \r\n" \
+                            "    cbuffer Parameters : register(b3)                      \r\n" \
+                            "    {                                                      \r\n" \
+                            "        uint    count;                                     \r\n" \
+                            "        uint3   padding;                                   \r\n" \
+                            "    };                                                     \r\n" \
+                            "                                                           \r\n" \
+                            "    StructuredBuffer<Data> list : register(t0);            \r\n";
+
+                        lightingData += String::format(
+                            "    static const uint lightsPerPass = %;                  \r\n", lightsPerPass);
+
+                        lightingData +=
+                            "};                                                         \r\n" \
+                            "                                                           \r\n";
+                    }
+                }
+            }
+
+            Gek::XmlNode xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
+            if (xmlDefinesNode)
+            {
+                Gek::XmlNode xmlDefineNode = xmlDefinesNode.firstChildElement();
+                while (xmlDefineNode)
+                {
+                    wstring name(xmlDefineNode.getType());
+                    wstring value(xmlDefineNode.getText());
+                    globalDefinesList[name] = evaluate(value, String::to<bool>(xmlDefineNode.getAttribute(L"integer")));
+                    xmlDefineNode = xmlDefineNode.nextSiblingElement();
+                };
+            }
+
+            Gek::XmlNode xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
+            if (xmlDepthNode)
+            {
+                if (xmlDepthNode.hasAttribute(L"source"))
+                {
+                    depthBuffer = resources->getResourceHandle<ResourceHandle>(xmlDepthNode.getAttribute(L"source"));
+                }
+                else
+                {
+                    Video::Format format = getFormat(xmlDepthNode.getText());
+                    depthBuffer = resources->createTexture(String::format(L"%:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                }
+            }
+
+            Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
+            if (xmlTargetsNode)
+            {
+                Gek::XmlNode xmlTargetNode = xmlTargetsNode.firstChildElement();
+                while (xmlTargetNode)
+                {
+                    wstring name(xmlTargetNode.getType());
+                    BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
+                    if (xmlTargetNode.hasAttribute(L"source"))
+                    {
+                        wstring source(xmlTargetNode.getAttribute(L"source"));
+                        if (!resourceMap.count(source))
+                        {
+                            resourceMap[name] = resources->getResourceHandle<ResourceHandle>(source);
+                        }
+                    }
+                    else
+                    {
+                        int textureWidth = video->getBackBuffer()->getWidth();
+                        if (xmlTargetNode.hasAttribute(L"width"))
+                        {
+                            textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
+                        }
+
+                        int textureHeight = video->getBackBuffer()->getHeight();
+                        if (xmlTargetNode.hasAttribute(L"height"))
+                        {
+                            textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
+                        }
+
+                        int textureMipMaps = 1;
+                        if (xmlTargetNode.hasAttribute(L"mipmaps"))
+                        {
+                            textureMipMaps = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"mipmaps")));
+                        }
+
+                        Video::Format format = getFormat(xmlTargetNode.getText());
+                        UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
+                        resourceMap[name] = resources->createTexture(String::format(L"%:%", fileName, name), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
+                    }
+
+                    resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
+
+                    xmlTargetNode = xmlTargetNode.nextSiblingElement();
+                };
+            }
+
+            Gek::XmlNode xmlBuffersNode = xmlShaderNode.firstChildElement(L"buffers");
+            if (xmlBuffersNode)
+            {
+                Gek::XmlNode xmlBufferNode = xmlBuffersNode.firstChildElement();
+                while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
+                {
+                    wstring name(xmlBufferNode.getType());
+                    Video::Format format = getFormat(xmlBufferNode.getText());
+                    UINT32 size = String::to<UINT32>(evaluate(xmlBufferNode.getAttribute(L"size"), true));
+                    resourceMap[name] = resources->createBuffer(String::format(L"%:buffer:%", fileName, name), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                    switch (format)
+                    {
+                    case Video::Format::Byte:
+                    case Video::Format::Short:
+                    case Video::Format::Int:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int);
+                        break;
+
+                    case Video::Format::Byte2:
+                    case Video::Format::Short2:
+                    case Video::Format::Int2:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
+                        break;
+
+                    case Video::Format::Int3:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
+                        break;
+
+                    case Video::Format::BGRA:
+                    case Video::Format::Byte4:
+                    case Video::Format::Short4:
+                    case Video::Format::Int4:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
+                        break;
+
+                    case Video::Format::Half:
+                    case Video::Format::Float:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
+                        break;
+
+                    case Video::Format::Half2:
+                    case Video::Format::Float2:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
+                        break;
+
+                    case Video::Format::Float3:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
+                        break;
+
+                    case Video::Format::Half4:
+                    case Video::Format::Float4:
+                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
+                        break;
+                    };
+
+                    xmlBufferNode = xmlBufferNode.nextSiblingElement();
+                };
+            }
+
+            Gek::XmlNode xmlBlockNode = xmlShaderNode.firstChildElement(L"block");
+            while (xmlBlockNode)
+            {
+                BlockData block;
+                block.lighting = String::to<bool>(xmlBlockNode.getAttribute(L"lighting"));
+                GEK_CHECK_EXCEPTION(block.lighting && lightsPerPass <= 0, BaseException, "Lighting enabled without any lights per pass");
+
+                Gek::XmlNode xmlClearNode = xmlBlockNode.firstChildElement(L"clear");
+                if (xmlClearNode)
+                {
+                    Gek::XmlNode xmlClearTargetNode = xmlClearNode.firstChildElement();
+                    while (xmlClearTargetNode)
+                    {
+                        block.renderTargetsClearList[xmlClearTargetNode.getType()] = String::to<Math::Color>(xmlClearTargetNode.getText());
+                        xmlClearTargetNode = xmlClearTargetNode.nextSiblingElement();
+                    };
+                }
+
+                Gek::XmlNode xmlPassNode = xmlBlockNode.firstChildElement(L"pass");
+                while (xmlPassNode)
+                {
+                    GEK_CHECK_EXCEPTION(!xmlPassNode.hasChildElement(L"program"), BaseException, "Pass node requires program child node");
+
+                    PassData pass;
+                    if (xmlPassNode.hasAttribute(L"mode"))
+                    {
+                        wstring modeString = xmlPassNode.getAttribute(L"mode");
+                        if (modeString.compare(L"forward") == 0)
+                        {
+                            pass.mode = Pass::Mode::Forward;
+                        }
+                        else if (modeString.compare(L"deferred") == 0)
+                        {
+                            pass.mode = Pass::Mode::Deferred;
+                        }
+                        else if (modeString.compare(L"compute") == 0)
+                        {
+                            pass.mode = Pass::Mode::Compute;
+                        }
+                        else
+                        {
+                            GEK_THROW_EXCEPTION(BaseException, "Invalid pass mode specified: %", modeString);
+                        }
+                    }
+
+                    if (xmlPassNode.hasChildElement(L"targets"))
+                    {
+                        pass.renderTargetList = loadChildMap(xmlPassNode, L"targets");
+                    }
+
+                    loadDepthState(pass, xmlPassNode.firstChildElement(L"depthstates"));
+                    loadRenderState(pass, xmlPassNode.firstChildElement(L"renderstates"));
+                    loadBlendState(pass, xmlPassNode.firstChildElement(L"blendstates"));
+
+                    if (xmlPassNode.hasChildElement(L"resources"))
+                    {
+                        Gek::XmlNode xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
+                        Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
+                        while (xmlResourceNode)
+                        {
+                            wstring type(xmlResourceNode.getType());
+                            wstring text(xmlResourceNode.getText());
+                            pass.resourceList.insert(std::make_pair(type, text.empty() ? type : text));
+                            if (xmlResourceNode.hasAttribute(L"actions"))
+                            {
+                                auto &actionMap = pass.actionMap[xmlResourceNode.getType()];
+                                wstring actions(xmlResourceNode.getAttribute(L"actions").getLower());
+                                std::vector<wstring> actionList(actions.split(L','));
+                                for(auto &action : actionList)
+                                {
+                                    action.trim();
+                                    actionMap.insert(action);
+                                }
+                            }
+
+                            if (xmlResourceNode.hasAttribute(L"copy"))
+                            {
+                                pass.copyResourceMap[xmlResourceNode.getType()] = xmlResourceNode.getAttribute(L"copy");
+                            }
+
+                            xmlResourceNode = xmlResourceNode.nextSiblingElement();
+                        };
+                    }
+
+                    pass.unorderedAccessList = loadChildMap(xmlPassNode, L"unorderedaccess");
+
+                    string engineData;
+                    if (pass.mode != Pass::Mode::Compute)
+                    {
+                        engineData +=
+                            "struct InputPixel                                          \r\n" \
+                            "{                                                          \r\n";
+                        if (pass.mode == Pass::Mode::Deferred)
+                        {
+                            engineData +=
+                                "    float4 position     : SV_POSITION;                 \r\n" \
+                                "    float2 texCoord     : TEXCOORD0;                   \r\n";
+                        }
+                        else
+                        {
+                            engineData +=
+                                "    float4 position     : SV_POSITION;                 \r\n" \
+                                "    float2 texCoord     : TEXCOORD0;                   \r\n" \
+                                "    float3 viewPosition : TEXCOORD1;                   \r\n" \
+                                "    float3 viewNormal   : NORMAL0;                     \r\n" \
+                                "    float4 color        : COLOR0;                      \r\n" \
+                                "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
+                        }
+
+                        engineData +=
+                            "};                                                         \r\n" \
+                            "                                                           \r\n";
+                    }
+
+                    if (block.lighting)
+                    {
+                        engineData += lightingData;
+                    }
+
+                    UINT32 stage = 0;
+                    string outputData;
+                    for (auto &resourcePair : pass.renderTargetList)
+                    {
+                        auto resourceIterator = resourceList.find(resourcePair.first);
+                        if (resourceIterator != resourceList.end())
+                        {
+                            outputData += String::format("    % % : SV_TARGET%;\r\n", getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
+                        }
+                    }
+
+                    if (!outputData.empty())
+                    {
+                        engineData +=
+                            "struct OutputPixel                                         \r\n" \
+                            "{                                                          \r\n";
+                        engineData += outputData;
+                        engineData +=
+                            "};                                                         \r\n" \
+                            "                                                           \r\n";
+                    }
+
+                    string resourceData;
+                    UINT32 resourceStage(block.lighting ? 1 : 0);
+                    if (pass.mode == Pass::Mode::Forward)
+                    {
+                        for (auto &map : mapList)
+                        {
+                            resourceData += String::format("    %<%> % : register(t%);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name, resourceStage++);
+                        }
+                    }
+
+                    for (auto &resourcePair : pass.resourceList)
+                    {
+                        auto resourceIterator = resourceList.find(resourcePair.first);
+                        if (resourceIterator != resourceList.end())
+                        {
+                            auto &resource = (*resourceIterator).second;
+                            resourceData += String::format("    %<%> % : register(t%);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, resourceStage++);
+                        }
+                    }
+
+                    if (!resourceData.empty())
+                    {
+                        engineData +=
+                            "namespace Resources                                        \r\n" \
+                            "{                                                          \r\n";
+
+                        engineData += resourceData;
+                        engineData +=
+                            "};                                                         \r\n" \
+                            "                                                           \r\n";
+                    }
+
+                    Gek::XmlNode xmlProgramNode = xmlPassNode.firstChildElement(L"program");
+                    if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
+                    {
+                        auto addDefine = [&engineData](const wstring &name, const wstring &value) -> void
+                        {
+                            if (value.find(L"float2") != std::string::npos)
+                            {
+                                engineData += String::format("static const float2 % = %;\r\n", name, value);
+                            }
+                            else if (value.find(L"float3") != std::string::npos)
+                            {
+                                engineData += String::format("static const float3 % = %;\r\n", name, value);
+                            }
+                            else if (value.find(L"float4") != std::string::npos)
+                            {
+                                engineData += String::format("static const float4 % = %;\r\n", name, value);
+                            }
+                            else if (value.find(L".") == std::string::npos)
+                            {
+                                engineData += String::format("static const int % = %;\r\n", name, value);
+                            }
+                            else
+                            {
+                                engineData += String::format("static const float % = %;\r\n", name, value);
+                            }
+                        };
+
+                        Gek::XmlNode xmlDefinesNode = xmlPassNode.firstChildElement(L"defines");
+                        if (xmlDefinesNode)
+                        {
+                            Gek::XmlNode xmlDefineNode = xmlDefinesNode.firstChildElement();
+                            while (xmlDefineNode)
+                            {
+                                wstring name = xmlDefineNode.getType();
+                                wstring value = evaluate(xmlDefineNode.getText());
+                                addDefine(name, value);
+
+                                xmlDefineNode = xmlDefineNode.nextSiblingElement();
+                            };
+                        }
+
+                        for (auto &globalDefine : globalDefinesList)
+                        {
+                            wstring name = globalDefine.first;
+                            wstring value = globalDefine.second;
+                            addDefine(name, value);
+                        }
+
+                        wstring programFileName = xmlProgramNode.firstChildElement(L"source").getText();
+                        string programEntryPoint(String::from<char>(xmlProgramNode.firstChildElement(L"entry").getText()));
+                        auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
+                        {
+                            HRESULT resultValue = E_FAIL;
+                            if (_stricmp(fileName, "GEKEngine") == 0)
+                            {
+                                data.resize(engineData.size());
+                                memcpy(data.data(), engineData, data.size());
+                                resultValue = S_OK;
+                            }
+                            else
+                            {
+                                try
+                                {
+                                    Gek::FileSystem::load(String::from<wchar_t>(fileName), data);
+                                    resultValue = S_OK;
+                                }
+                                catch (FileSystem::Exception exception)
+                                {
+                                    try
+                                    {
+                                        std::experimental::filesystem::path shaderPath(L"$root\\data\\programs");
+                                        shaderPath.concat(fileName);
+                                        Gek::FileSystem::load(shaderPath.c_str(), data);
+                                        resultValue = S_OK;
+                                    }
+                                    catch (FileSystem::Exception exception)
+                                    {
+                                    };
+                                };
+                            }
+
+                            return resultValue;
+                        };
+
+                        Gek::XmlNode xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
+                        if (xmlComputeNode)
+                        {
+                            pass.dispatchWidth = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
+                            pass.dispatchHeight = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
+                            pass.dispatchDepth = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
+                        }
+
+                        if (pass.mode == Pass::Mode::Compute)
+                        {
+                            UINT32 stage = 0;
+                            string unorderedAccessData;
+                            for (auto &resourcePair : pass.unorderedAccessList)
+                            {
+                                auto resourceIterator = resourceList.find(resourcePair.first);
+                                if (resourceIterator != resourceList.end())
+                                {
+                                    unorderedAccessData += String::format("    RW%<%> % : register(u%);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
+                                }
+                            }
+
+                            if (!unorderedAccessData.empty())
+                            {
+                                engineData +=
+                                    "namespace UnorderedAccess                              \r\n" \
+                                    "{                                                      \r\n";
+                                engineData += unorderedAccessData;
+                                engineData +=
+                                    "};                                                     \r\n" \
+                                    "                                                       \r\n";
+                            }
+
+                            pass.program = resources->loadComputeProgram(String::format(L"$root\\data\\programs\\%.hlsl", programFileName), programEntryPoint, getIncludeData);
+                        }
+                        else
+                        {
+                            string unorderedAccessData;
+                            UINT32 stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                            for (auto &resourcePair : pass.unorderedAccessList)
+                            {
+                                auto resourceIterator = resourceList.find(resourcePair.first);
+                                if (resourceIterator != resourceList.end())
+                                {
+                                    unorderedAccessData += String::format("    RW%<%> % : register(u%);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
+                                }
+                            }
+
+                            if (!unorderedAccessData.empty())
+                            {
+                                engineData +=
+                                    "namespace UnorderedAccess                              \r\n" \
+                                    "{                                                      \r\n";
+                                engineData += unorderedAccessData;
+                                engineData +=
+                                    "};                                                     \r\n" \
+                                    "                                                       \r\n";
+                            }
+
+                            pass.program = resources->loadPixelProgram(String::format(L"$root\\data\\programs\\%.hlsl", programFileName), programEntryPoint, getIncludeData);
+                        }
+                    }
+
+                    block.passList.push_back(pass);
+                    xmlPassNode = xmlPassNode.nextSiblingElement(L"pass");
+                };
+
+                blockList.push_back(block);
+                xmlBlockNode = xmlBlockNode.nextSiblingElement(L"block");
+            };
         }
 
         ~ShaderImplementation(void)
         {
         }
 
-        BEGIN_INTERFACE_LIST(ShaderImplementation)
-            INTERFACE_LIST_ENTRY_COM(Shader)
-        END_INTERFACE_LIST_USER
-
         // Shader
-        STDMETHODIMP initialize(IUnknown *initializerContext, const wchar_t *fileName)
-        {
-            GEK_REQUIRE(initializerContext);
-            GEK_REQUIRE(fileName);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<VideoSystem> video(initializerContext);
-            CComQIPtr<Resources> resources(initializerContext);
-            CComQIPtr<Population> population(initializerContext);
-            if (video && resources && population)
-            {
-                this->video = video;
-                this->resources = resources;
-                this->population = population;
-                resultValue = (this->video && this->resources && this->population ? S_OK : E_FAIL);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = video->createBuffer(&shaderConstantBuffer, sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\shaders\\%s.xml", fileName));
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = E_INVALIDARG;
-                    Gek::XmlNode xmlShaderNode = xmlDocument.getRoot();
-                    if (xmlShaderNode && xmlShaderNode.getType().CompareNoCase(L"shader") == 0)
-                    {
-                        priority = String::to<UINT32>(xmlShaderNode.getAttribute(L"priority"));
-
-                        std::unordered_map<CStringW, std::pair<MapType, BindType>> resourceList;
-                        Gek::XmlNode xmlMaterialNode = xmlShaderNode.firstChildElement(L"material");
-                        if (xmlMaterialNode)
-                        {
-                            Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
-                            if (xmlMapsNode)
-                            {
-                                Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
-                                while (xmlMapNode)
-                                {
-                                    CStringW name(xmlMapNode.getType());
-                                    CStringW defaultValue(xmlMapNode.getAttribute(L"default"));
-                                    MapType mapType = getMapType(xmlMapNode.getText());
-                                    BindType bindType = getBindType(xmlMapNode.getAttribute(L"bind"));
-                                    UINT32 flags = getTextureLoadFlags(xmlMapNode.getAttribute(L"flags"));
-                                    mapList.push_back(Map(name, defaultValue, mapType, bindType, flags));
-
-                                    xmlMapNode = xmlMapNode.nextSiblingElement();
-                                };
-                            }
-                        }
-
-                        CStringA lightingData;
-                        Gek::XmlNode xmlLightingNode = xmlShaderNode.firstChildElement(L"lighting");
-                        if (xmlLightingNode)
-                        {
-                            Gek::XmlNode xmlLightsPerPass = xmlLightingNode.firstChildElement(L"lightsPerPass");
-                            if (xmlLightsPerPass && !xmlLightsPerPass.getText().IsEmpty())
-                            {
-                                lightsPerPass = String::to<UINT32>(xmlLightsPerPass.getText());
-                                if (lightsPerPass > 0)
-                                {
-                                    video->createBuffer(&lightConstantBuffer, sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                                    video->createBuffer(&lightDataBuffer, sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-
-                                    globalDefinesList[L"lightsPerPass"] = String::from<wchar_t>(lightsPerPass);
-
-                                    lightingData =
-                                        "namespace Lighting                                         \r\n" \
-                                        "{                                                          \r\n" \
-                                        "    namespace Type                                         \r\n" \
-                                        "    {                                                      \r\n" \
-                                        "        static const uint Point = 0;                       \r\n" \
-                                        "        static const uint Spot = 1;                        \r\n" \
-                                        "        static const uint Directional = 2;                 \r\n" \
-                                        "    };                                                     \r\n" \
-                                        "                                                           \r\n" \
-                                        "    struct Data                                            \r\n" \
-                                        "    {                                                      \r\n" \
-                                        "        uint   type;                                       \r\n" \
-                                        "        float3 position;                                   \r\n" \
-                                        "        float3 direction;                                  \r\n" \
-                                        "        float3 color;                                      \r\n" \
-                                        "        float  range;                                      \r\n" \
-                                        "        float  radius;                                     \r\n" \
-                                        "        float  innerAngle;                                 \r\n" \
-                                        "        float  outerAngle;                                 \r\n" \
-                                        "    };                                                     \r\n" \
-                                        "                                                           \r\n" \
-                                        "    cbuffer Parameters : register(b3)                      \r\n" \
-                                        "    {                                                      \r\n" \
-                                        "        uint    count;                                     \r\n" \
-                                        "        uint3   padding;                                   \r\n" \
-                                        "    };                                                     \r\n" \
-                                        "                                                           \r\n" \
-                                        "    StructuredBuffer<Data> list : register(t0);            \r\n";
-                                    lightingData.AppendFormat(
-                                        "    static const uint lightsPerPass = %d;                  \r\n", lightsPerPass);
-                                    lightingData +=
-                                        "};                                                         \r\n" \
-                                        "                                                           \r\n";
-                                }
-                            }
-                        }
-
-                        Gek::XmlNode xmlDefinesNode = xmlShaderNode.firstChildElement(L"defines");
-                        if (xmlDefinesNode)
-                        {
-                            Gek::XmlNode xmlDefineNode = xmlDefinesNode.firstChildElement();
-                            while (xmlDefineNode)
-                            {
-                                CStringW name(xmlDefineNode.getType());
-                                CStringW value(xmlDefineNode.getText());
-                                globalDefinesList[name] = evaluate(value, String::to<bool>(xmlDefineNode.getAttribute(L"integer")));
-                                xmlDefineNode = xmlDefineNode.nextSiblingElement();
-                            };
-                        }
-
-                        Gek::XmlNode xmlDepthNode = xmlShaderNode.firstChildElement(L"depth");
-                        if (xmlDepthNode)
-                        {
-                            if (xmlDepthNode.hasAttribute(L"source"))
-                            {
-                                depthBuffer = resources->getResourceHandle<ResourceHandle>(xmlDepthNode.getAttribute(L"source"));
-                            }
-                            else
-                            {
-                                Video::Format format = getFormat(xmlDepthNode.getText());
-                                depthBuffer = resources->createTexture(String::format(L"%s:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
-                            }
-                        }
-
-                        Gek::XmlNode xmlTargetsNode = xmlShaderNode.firstChildElement(L"textures");
-                        if (xmlTargetsNode)
-                        {
-                            Gek::XmlNode xmlTargetNode = xmlTargetsNode.firstChildElement();
-                            while (xmlTargetNode)
-                            {
-                                CStringW name(xmlTargetNode.getType());
-                                BindType bindType = getBindType(xmlTargetNode.getAttribute(L"bind"));
-                                if (xmlTargetNode.hasAttribute(L"source"))
-                                {
-                                    CStringW source(xmlTargetNode.getAttribute(L"source"));
-                                    if (!resourceMap.count(source))
-                                    {
-                                        resourceMap[name] = resources->getResourceHandle<ResourceHandle>(source);
-                                    }
-                                }
-                                else
-                                {
-                                    int textureWidth = video->getBackBuffer()->getWidth();
-                                    if (xmlTargetNode.hasAttribute(L"width"))
-                                    {
-                                        textureWidth = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"width")));
-                                    }
-
-                                    int textureHeight = video->getBackBuffer()->getHeight();
-                                    if (xmlTargetNode.hasAttribute(L"height"))
-                                    {
-                                        textureHeight = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"height")));
-                                    }
-
-                                    int textureMipMaps = 1;
-                                    if (xmlTargetNode.hasAttribute(L"mipmaps"))
-                                    {
-                                        textureMipMaps = String::to<UINT32>(evaluate(xmlTargetNode.getAttribute(L"mipmaps")));
-                                    }
-
-                                    Video::Format format = getFormat(xmlTargetNode.getText());
-                                    UINT32 flags = getTextureCreateFlags(xmlTargetNode.getAttribute(L"flags"));
-                                    resourceMap[name] = resources->createTexture(String::format(L"%s:%s", fileName, name.GetString()), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
-                                }
-
-                                resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
-
-                                xmlTargetNode = xmlTargetNode.nextSiblingElement();
-                            };
-                        }
-
-                        Gek::XmlNode xmlBuffersNode = xmlShaderNode.firstChildElement(L"buffers");
-                        if (xmlBuffersNode)
-                        {
-                            Gek::XmlNode xmlBufferNode = xmlBuffersNode.firstChildElement();
-                            while (xmlBufferNode && xmlBufferNode.hasAttribute(L"size"))
-                            {
-                                CStringW name(xmlBufferNode.getType());
-                                Video::Format format = getFormat(xmlBufferNode.getText());
-                                UINT32 size = String::to<UINT32>(evaluate(xmlBufferNode.getAttribute(L"size"), true));
-                                resourceMap[name] = resources->createBuffer(String::format(L"%s:buffer:%s", fileName, name.GetString()), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
-                                switch (format)
-                                {
-                                case Video::Format::Byte:
-                                case Video::Format::Short:
-                                case Video::Format::Int:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int);
-                                    break;
-
-                                case Video::Format::Byte2:
-                                case Video::Format::Short2:
-                                case Video::Format::Int2:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
-                                    break;
-
-                                case Video::Format::Int3:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
-                                    break;
-
-                                case Video::Format::BGRA:
-                                case Video::Format::Byte4:
-                                case Video::Format::Short4:
-                                case Video::Format::Int4:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
-                                    break;
-
-                                case Video::Format::Half:
-                                case Video::Format::Float:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
-                                    break;
-
-                                case Video::Format::Half2:
-                                case Video::Format::Float2:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
-                                    break;
-
-                                case Video::Format::Float3:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
-                                    break;
-
-                                case Video::Format::Half4:
-                                case Video::Format::Float4:
-                                    resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
-                                    break;
-                                };
-
-                                xmlBufferNode = xmlBufferNode.nextSiblingElement();
-                            };
-                        }
-
-                        resultValue = S_OK;
-                        Gek::XmlNode xmlBlockNode = xmlShaderNode.firstChildElement(L"block");
-                        while (xmlBlockNode && SUCCEEDED(resultValue))
-                        {
-                            BlockData block;
-                            block.lighting = String::to<bool>(xmlBlockNode.getAttribute(L"lighting"));
-                            if (block.lighting && lightsPerPass <= 0)
-                            {
-                                resultValue = E_INVALIDARG;
-                                break;
-                            }
-
-                            Gek::XmlNode xmlClearNode = xmlBlockNode.firstChildElement(L"clear");
-                            if (xmlClearNode)
-                            {
-                                Gek::XmlNode xmlClearTargetNode = xmlClearNode.firstChildElement();
-                                while (xmlClearTargetNode)
-                                {
-                                    block.renderTargetsClearList[xmlClearTargetNode.getType()] = String::to<Math::Color>(xmlClearTargetNode.getText());
-                                    xmlClearTargetNode = xmlClearTargetNode.nextSiblingElement();
-                                };
-                            }
-
-                            Gek::XmlNode xmlPassNode = xmlBlockNode.firstChildElement(L"pass");
-                            while (xmlPassNode && SUCCEEDED(resultValue))
-                            {
-                                if (!xmlPassNode.hasChildElement(L"program"))
-                                {
-                                    resultValue = E_INVALIDARG;
-                                    break;
-                                }
-
-                                PassData pass;
-                                if (xmlPassNode.hasAttribute(L"mode"))
-                                {
-                                    CStringW modeString = xmlPassNode.getAttribute(L"mode");
-                                    if (modeString.CompareNoCase(L"forward") == 0)
-                                    {
-                                        pass.mode = Pass::Mode::Forward;
-                                    }
-                                    else if (modeString.CompareNoCase(L"deferred") == 0)
-                                    {
-                                        pass.mode = Pass::Mode::Deferred;
-                                    }
-                                    else if (modeString.CompareNoCase(L"compute") == 0)
-                                    {
-                                        pass.mode = Pass::Mode::Compute;
-                                    }
-                                    else
-                                    {
-                                        resultValue = E_INVALIDARG;
-                                    }
-                                }
-
-                                if (xmlPassNode.hasChildElement(L"targets"))
-                                {
-                                    pass.renderTargetList = loadChildMap(xmlPassNode, L"targets");
-                                }
-
-                                if (SUCCEEDED(resultValue))
-                                {
-                                    loadDepthState(pass, xmlPassNode.firstChildElement(L"depthstates"));
-                                }
-
-                                if (SUCCEEDED(resultValue))
-                                {
-                                    loadRenderState(pass, xmlPassNode.firstChildElement(L"renderstates"));
-                                }
-
-                                if (SUCCEEDED(resultValue))
-                                {
-                                    loadBlendState(pass, xmlPassNode.firstChildElement(L"blendstates"));
-                                }
-
-                                if (SUCCEEDED(resultValue))
-                                {
-                                    if (xmlPassNode.hasChildElement(L"resources"))
-                                    {
-                                        Gek::XmlNode xmlResourcesNode = xmlPassNode.firstChildElement(L"resources");
-                                        Gek::XmlNode xmlResourceNode = xmlResourcesNode.firstChildElement();
-                                        while (xmlResourceNode)
-                                        {
-                                            CStringW type(xmlResourceNode.getType());
-                                            CStringW text(xmlResourceNode.getText());
-                                            pass.resourceList.insert(std::make_pair(type, text.IsEmpty() ? type : text));
-                                            if (xmlResourceNode.hasAttribute(L"actions"))
-                                            {
-                                                auto &actionMap = pass.actionMap[xmlResourceNode.getType()];
-                                                CStringW actions(xmlResourceNode.getAttribute(L"actions"));
-
-                                                int position = 0;
-                                                CStringW action(actions.Tokenize(L",", position));
-                                                while (!action.IsEmpty())
-                                                {
-                                                    action.MakeLower();
-                                                    action.Remove(L' ');
-                                                    actionMap.insert(action);
-                                                    action = actions.Tokenize(L",", position);
-                                                };
-                                            }
-
-                                            if (xmlResourceNode.hasAttribute(L"copy"))
-                                            {
-                                                pass.copyResourceMap[xmlResourceNode.getType()] = xmlResourceNode.getAttribute(L"copy");
-                                            }
-
-                                            xmlResourceNode = xmlResourceNode.nextSiblingElement();
-                                        };
-                                    }
-
-                                    pass.unorderedAccessList = loadChildMap(xmlPassNode, L"unorderedaccess");
-
-                                    CStringA engineData;
-                                    if (pass.mode != Pass::Mode::Compute)
-                                    {
-                                        engineData +=
-                                            "struct InputPixel                                          \r\n" \
-                                            "{                                                          \r\n";
-                                        switch (pass.mode)
-                                        {
-                                        case Pass::Mode::Deferred:
-                                            engineData +=
-                                                "    float4 position     : SV_POSITION;                 \r\n" \
-                                                "    float2 texCoord     : TEXCOORD0;                   \r\n";
-                                            break;
-
-                                        case Pass::Mode::Forward:
-                                            engineData +=
-                                                "    float4 position     : SV_POSITION;                 \r\n" \
-                                                "    float2 texCoord     : TEXCOORD0;                   \r\n" \
-                                                "    float3 viewPosition : TEXCOORD1;                   \r\n" \
-                                                "    float3 viewNormal   : NORMAL0;                     \r\n" \
-                                                "    float4 color        : COLOR0;                      \r\n" \
-                                                "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
-                                            break;
-
-                                        default:
-                                            resultValue = E_INVALIDARG;
-                                            break;
-                                        };
-
-                                        engineData +=
-                                            "};                                                         \r\n" \
-                                            "                                                           \r\n";
-                                    }
-
-                                    if (block.lighting)
-                                    {
-                                        engineData += lightingData;
-                                    }
-
-                                    UINT32 stage = 0;
-                                    CStringA outputData;
-                                    for(auto &resourcePair : pass.renderTargetList)
-                                    {
-                                        auto resourceIterator = resourceList.find(resourcePair.first);
-                                        if (resourceIterator != resourceList.end())
-                                        {
-                                            outputData.AppendFormat("    %S %S : SV_TARGET%d;\r\n", getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
-                                        }
-                                    }
-
-                                    if (!outputData.IsEmpty())
-                                    {
-                                        engineData +=
-                                            "struct OutputPixel                                         \r\n" \
-                                            "{                                                          \r\n";
-                                        engineData += outputData;
-                                        engineData +=
-                                            "};                                                         \r\n" \
-                                            "                                                           \r\n";
-                                    }
-
-                                    CStringA resourceData;
-                                    UINT32 resourceStage(block.lighting ? 1 : 0);
-                                    if (pass.mode == Pass::Mode::Forward)
-                                    {
-                                        for (auto &map : mapList)
-                                        {
-                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(map.mapType), getBindType(map.bindType), map.name.GetString(), resourceStage++);
-                                        }
-                                    }
-
-                                    for (auto &resourcePair : pass.resourceList)
-                                    {
-                                        auto resourceIterator = resourceList.find(resourcePair.first);
-                                        if (resourceIterator != resourceList.end())
-                                        {
-                                            auto &resource = (*resourceIterator).second;
-                                            resourceData.AppendFormat("    %S<%S> %S : register(t%d);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second.GetString(), resourceStage++);
-                                        }
-                                    }
-
-                                    if (!resourceData.IsEmpty())
-                                    {
-                                        engineData +=
-                                            "namespace Resources                                        \r\n" \
-                                            "{                                                          \r\n";
-                                        engineData += resourceData;
-                                        engineData +=
-                                            "};                                                         \r\n" \
-                                            "                                                           \r\n";
-                                    }
-
-                                    Gek::XmlNode xmlProgramNode = xmlPassNode.firstChildElement(L"program");
-                                    if (xmlProgramNode.hasChildElement(L"source") && xmlProgramNode.hasChildElement(L"entry"))
-                                    {
-                                        auto addDefine = [&engineData](const CStringW &name, const CStringW &value) -> void
-                                        {
-                                            if (value.Find(L"float2") == 0)
-                                            {
-                                                engineData.AppendFormat("static const float2 %S = %S;\r\n", name.GetString(), value.GetString());
-                                            }
-                                            else if (value.Find(L"float3") == 0)
-                                            {
-                                                engineData.AppendFormat("static const float3 %S = %S;\r\n", name.GetString(), value.GetString());
-                                            }
-                                            else if (value.Find(L"float4") == 0)
-                                            {
-                                                engineData.AppendFormat("static const float4 %S = %S;\r\n", name.GetString(), value.GetString());
-                                            }
-                                            else if (value.Find(L".") < 0)
-                                            {
-                                                engineData.AppendFormat("static const int %S = %S;\r\n", name.GetString(), value.GetString());
-                                            }
-                                            else
-                                            {
-                                                engineData.AppendFormat("static const float %S = %S;\r\n", name.GetString(), value.GetString());
-                                            }
-                                        };
-
-                                        Gek::XmlNode xmlDefinesNode = xmlPassNode.firstChildElement(L"defines");
-                                        if (xmlDefinesNode)
-                                        {
-                                            Gek::XmlNode xmlDefineNode = xmlDefinesNode.firstChildElement();
-                                            while (xmlDefineNode)
-                                            {
-                                                CStringW name = xmlDefineNode.getType();
-                                                CStringW value = evaluate(xmlDefineNode.getText());
-                                                addDefine(name, value);
-
-                                                xmlDefineNode = xmlDefineNode.nextSiblingElement();
-                                            };
-                                        }
-
-                                        for (auto &globalDefine : globalDefinesList)
-                                        {
-                                            CStringW name = globalDefine.first;
-                                            CStringW value = globalDefine.second;
-                                            addDefine(name, value);
-                                        }
-
-                                        CStringW programFileName = xmlProgramNode.firstChildElement(L"source").getText();
-                                        CW2A programEntryPoint(xmlProgramNode.firstChildElement(L"entry").getText());
-                                        auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
-                                        {
-                                            HRESULT resultValue = E_FAIL;
-                                            if (_stricmp(fileName, "GEKEngine") == 0)
-                                            {
-                                                data.resize(engineData.GetLength());
-                                                memcpy(data.data(), engineData.GetString(), data.size());
-                                                resultValue = S_OK;
-                                            }
-                                            else
-                                            {
-                                                resultValue = Gek::FileSystem::load(CA2W(fileName), data);
-                                                if (FAILED(resultValue))
-                                                {
-                                                    CPathW shaderPath;
-                                                    shaderPath.Combine(L"$root\\data\\programs", CA2W(fileName));
-                                                    resultValue = Gek::FileSystem::load(shaderPath, data);
-                                                }
-                                            }
-
-                                            return resultValue;
-                                        };
-
-                                        Gek::XmlNode xmlComputeNode = xmlProgramNode.firstChildElement(L"compute");
-                                        if (xmlComputeNode)
-                                        {
-                                            pass.dispatchWidth = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"width").getText())), 1U);
-                                            pass.dispatchHeight = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"height").getText())), 1U);
-                                            pass.dispatchDepth = std::max(String::to<UINT32>(evaluate(xmlComputeNode.firstChildElement(L"depth").getText())), 1U);
-                                        }
-
-                                        if (pass.mode == Pass::Mode::Compute)
-                                        {
-                                            UINT32 stage = 0;
-                                            CStringA unorderedAccessData;
-                                            for (auto &resourcePair : pass.unorderedAccessList)
-                                            {
-                                                auto resourceIterator = resourceList.find(resourcePair.first);
-                                                if (resourceIterator != resourceList.end())
-                                                {
-                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
-                                                }
-                                            }
-
-                                            if (!unorderedAccessData.IsEmpty())
-                                            {
-                                                engineData +=
-                                                    "namespace UnorderedAccess                              \r\n" \
-                                                    "{                                                      \r\n";
-                                                engineData += unorderedAccessData;
-                                                engineData +=
-                                                    "};                                                     \r\n" \
-                                                    "                                                       \r\n";
-                                            }
-
-                                            pass.program = resources->loadComputeProgram(L"$root\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData);
-                                        }
-                                        else
-                                        {
-                                            CStringA unorderedAccessData;
-                                            UINT32 stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
-                                            for (auto &resourcePair : pass.unorderedAccessList)
-                                            {
-                                                auto resourceIterator = resourceList.find(resourcePair.first);
-                                                if (resourceIterator != resourceList.end())
-                                                {
-                                                    unorderedAccessData.AppendFormat("    RW%S<%S> %S : register(u%d);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second.GetString(), stage++);
-                                                }
-                                            }
-
-                                            if (!unorderedAccessData.IsEmpty())
-                                            {
-                                                engineData +=
-                                                    "namespace UnorderedAccess                              \r\n" \
-                                                    "{                                                      \r\n";
-                                                engineData += unorderedAccessData;
-                                                engineData +=
-                                                    "};                                                     \r\n" \
-                                                    "                                                       \r\n";
-                                            }
-
-                                            pass.program = resources->loadPixelProgram(L"$root\\data\\programs\\" + programFileName + L".hlsl", programEntryPoint, getIncludeData);
-                                        }
-                                    }
-                                    else
-                                    {
-                                        resultValue = E_INVALIDARG;
-                                    }
-                                }
-
-                                if (SUCCEEDED(resultValue))
-                                {
-                                    block.passList.push_back(pass);
-                                    xmlPassNode = xmlPassNode.nextSiblingElement(L"pass");
-                                }
-                            };
-
-                            if (SUCCEEDED(resultValue))
-                            {
-                                blockList.push_back(block);
-                                xmlBlockNode = xmlBlockNode.nextSiblingElement(L"block");
-                            }
-                        };
-                    }
-                }
-            }
-
-            return resultValue;
-        }
-
-        STDMETHODIMP_(UINT32) getPriority(void)
+        UINT32 getPriority(void)
         {
             return priority;
         }
 
-        STDMETHODIMP_(void) loadResourceList(const wchar_t *materialName, std::unordered_map<CStringW, CStringW> &materialDataMap, std::list<ResourceHandle> &resourceList)
+        void loadResourceList(const wchar_t *materialName, std::unordered_map<wstring, wstring> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
-            CPathW filePath(materialName);
-            filePath.RemoveFileSpec();
-
-            CPathW fileSpec(materialName);
-            fileSpec.StripPath();
-            fileSpec.RemoveExtension();
-
+            wstring filePath;
+            wstring fileSpec;
             for (auto &mapValue : mapList)
             {
                 ResourceHandle resource;
                 auto dataIterator = materialDataMap.find(mapValue.name);
                 if (dataIterator != materialDataMap.end())
                 {
-                    CStringW dataName = (*dataIterator).second;
-                    dataName.MakeLower();
-                    dataName.Replace(L"%directory%", const wchar_t *(filePath));
-                    dataName.Replace(L"%filename%", const wchar_t *(fileSpec));
-                    dataName.Replace(L"%material%", materialName);
+                    wstring dataName = (*dataIterator).second.getLower();
+                    dataName = std::regex_replace(dataName, std::wregex(L"\\$directory"), filePath);
+                    dataName = std::regex_replace(dataName, std::wregex(L"\\$filename"), fileSpec);
+                    dataName = std::regex_replace(dataName, std::wregex(L"\\$material"), materialName);
                     resource = resources->loadTexture(dataName, mapValue.defaultValue, mapValue.flags);
                 }
 
@@ -1265,8 +1201,8 @@ namespace Gek
             RenderPipeline *renderPipeline = (pass.mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             if (block.lighting)
             {
-                renderPipeline->getPipeline()->setResource(lightDataBuffer, 0);
-                renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer, 3);
+                renderPipeline->getPipeline()->setResource(lightDataBuffer.get(), 0);
+                renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer.get(), 3);
                 stage = 1;
             }
 
@@ -1304,7 +1240,7 @@ namespace Gek
                     auto copyResourceIterator = pass.copyResourceMap.find(resourcePair.first);
                     if (copyResourceIterator != pass.copyResourceMap.end())
                     {
-                        CStringW &copyFrom = copyResourceIterator->second;
+                        wstring &copyFrom = copyResourceIterator->second;
                         auto copyIterator = resourceMap.find(copyFrom);
                         if (copyIterator != resourceMap.end())
                         {
@@ -1382,11 +1318,11 @@ namespace Gek
                 break;
             };
 
-            video->updateBuffer(shaderConstantBuffer, &shaderConstantData);
-            renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-            renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-            renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer, 2);
-            renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer, 2);
+            video->updateBuffer(shaderConstantBuffer.get(), &shaderConstantData);
+            renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
             if (pass.mode == Pass::Mode::Compute)
             {
                 renderContext->getContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
@@ -1418,18 +1354,14 @@ namespace Gek
                     UINT32 lightPassCount = std::min((lightListCount - base), lightsPerPass);
 
                     LightConstantData *lightConstants = nullptr;
-                    if (SUCCEEDED(video->mapBuffer(lightConstantBuffer, (void **)&lightConstants)))
-                    {
-                        lightConstants->count = lightPassCount;
-                        video->unmapBuffer(lightConstantBuffer);
-                    }
+                    video->mapBuffer(lightConstantBuffer.get(), (void **)&lightConstants);
+                    lightConstants->count = lightPassCount;
+                    video->unmapBuffer(lightConstantBuffer.get());
 
                     LightData *lightingData = nullptr;
-                    if (SUCCEEDED(video->mapBuffer(lightDataBuffer, (void **)&lightingData)))
-                    {
-                        memcpy(lightingData, &lightList[base], (sizeof(LightData) * lightPassCount));
-                        video->unmapBuffer(lightDataBuffer);
-                    }
+                    video->mapBuffer(lightDataBuffer.get(), (void **)&lightingData);
+                    memcpy(lightingData, &lightList[base], (sizeof(LightData) * lightPassCount));
+                    video->unmapBuffer(lightDataBuffer.get());
 
                     base += lightsPerPass;
                     enableBlock = true;
@@ -1463,13 +1395,13 @@ namespace Gek
             {
             }
 
-            STDMETHODIMP_(Iterator) next(void)
+            Iterator next(void)
             {
                 auto next = current;
                 return Iterator(++next == end ? nullptr : new PassImplementation(renderContext, shader, block, next, end));
             }
 
-            STDMETHODIMP_(Mode) prepare(void)
+            Mode prepare(void)
             {
                 return shader->preparePass(renderContext, (*static_cast<BlockImplementation *>(block)->current), (*current));
             }
@@ -1494,24 +1426,24 @@ namespace Gek
             {
             }
 
-            STDMETHODIMP_(Iterator) next(void)
+            Iterator next(void)
             {
                 auto next = current;
                 return Iterator(++next == end ? nullptr : new BlockImplementation(renderContext, shader, next, end));
             }
 
-            STDMETHODIMP_(Pass::Iterator) begin(void)
+            Pass::Iterator begin(void)
             {
                 return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(renderContext, shader, this, current->passList.begin(), current->passList.end()));
             }
 
-            STDMETHODIMP_(bool) prepare(void)
+            bool prepare(void)
             {
                 return shader->prepareBlock(base, renderContext, (*current));
             }
         };
 
-        STDMETHODIMP_(void) setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &resourceList)
+        void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &resourceList)
         {
             GEK_REQUIRE(renderContext);
             GEK_REQUIRE(block);
@@ -1530,7 +1462,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(Block::Iterator) begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+        Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(renderContext);
@@ -1571,5 +1503,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(ShaderImplementation)
+    GEK_REGISTER_CONTEXT_USER(ShaderImplementation);
 }; // namespace Gek

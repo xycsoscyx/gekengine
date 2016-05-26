@@ -5,7 +5,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Processor.h"
@@ -162,7 +162,7 @@ namespace Gek
 
             HRESULT resultValue = E_FAIL;
 
-            model.fileName.Format(L"$root\\data\\models\\%s.gek", name.GetString());
+            model.fileName.Format(L"$root\\data\\models\\%.gek", name.GetString());
 
             std::vector<UINT8> fileData;
             resultValue = Gek::FileSystem::load(model.fileName, fileData, PreReadSize);
@@ -244,14 +244,14 @@ namespace Gek
                         UINT32 vertexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
-                        subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%p", &subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                        subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%", &subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                         rawFileData += (sizeof(Vertex) * vertexCount);
 
                         UINT32 indexCount = *((UINT32 *)rawFileData);
                         rawFileData += sizeof(UINT32);
 
                         subModel.indexCount = indexCount;
-                        subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%p", &subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                        subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%", &subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                         rawFileData += (sizeof(UINT16) * indexCount);
                     }
                 }

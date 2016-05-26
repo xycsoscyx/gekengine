@@ -1,13 +1,11 @@
 #pragma once
 
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 
 namespace Gek
 {
     GEK_INTERFACE(Engine)
     {
-        virtual void initialize(HWND window) = 0;
-
         virtual LRESULT windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam) = 0;
 
         virtual bool update(void) = 0;

@@ -1,31 +1,22 @@
-#include <initguid.h>
-#include <cguid.h>
-
-#include "GEK\Engine\Population.h"
-#include "GEK\Engine\Render.h"
-#include "GEK\Engine\Resources.h"
-#include "GEK\Engine\Plugin.h"
-#include "GEK\Engine\Material.h"
-#include "GEK\Engine\Shader.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Context\ContextUser.h"
 
 namespace Gek
 {
-    DECLARE_REGISTERED_CLASS(PopulationImplementation);
-    DECLARE_REGISTERED_CLASS(RenderImplementation);
-    DECLARE_REGISTERED_CLASS(ResourcesImplementation);
-    DECLARE_REGISTERED_CLASS(PluginImplementation);
-    DECLARE_REGISTERED_CLASS(MaterialImplementation);
-    DECLARE_REGISTERED_CLASS(ShaderImplementation);
-    DECLARE_REGISTERED_CLASS(EngineImplementation);
-}; // namespace Gek
+    GEK_DECLARE_CONTEXT_USER(PopulationImplementation);
+    GEK_DECLARE_CONTEXT_USER(RenderImplementation);
+    GEK_DECLARE_CONTEXT_USER(ResourcesImplementation);
+    GEK_DECLARE_CONTEXT_USER(PluginImplementation);
+    GEK_DECLARE_CONTEXT_USER(MaterialImplementation);
+    GEK_DECLARE_CONTEXT_USER(ShaderImplementation);
+    GEK_DECLARE_CONTEXT_USER(EngineImplementation);
 
-GEK_PLUGIN_BEGIN(Engine)
-    GEK_PLUGIN_CLASS(Gek::PopulationRegistration, Gek::PopulationImplementation)
-    GEK_PLUGIN_CLASS(Gek::RenderRegistration, Gek::RenderImplementation)
-    GEK_PLUGIN_CLASS(Gek::ResourcesRegistration, Gek::ResourcesImplementation)
-    GEK_PLUGIN_CLASS(Gek::PluginRegistration, Gek::PluginImplementation)
-    GEK_PLUGIN_CLASS(Gek::MaterialRegistration, Gek::MaterialImplementation)
-    GEK_PLUGIN_CLASS(Gek::ShaderRegistration, Gek::ShaderImplementation)
-    GEK_PLUGIN_CLASS(Gek::EngineRegistration, Gek::EngineImplementation)
-GEK_PLUGIN_END
+    GEK_CONTEXT_BEGIN(Engine);
+        GEK_CONTEXT_ADD_CLASS(L"PopulationSystem", PopulationImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"RenderSystem", RenderImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"ResourcesSystem", ResourcesImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"PluginSystem", PluginImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"MaterialSystem", MaterialImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"ShaderSystem", ShaderImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"EngineSystem", EngineImplementation);
+    GEK_CONTEXT_END()
+}; // namespace Gek

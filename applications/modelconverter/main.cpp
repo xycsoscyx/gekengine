@@ -69,7 +69,7 @@ namespace Gek
                 UINT32 nodeMeshIndex = node->mMeshes[meshIndex];
                 if (nodeMeshIndex >= scene->mNumMeshes)
                 {
-                    throw OptimizerException(__LINE__, L"Invalid mesh index encountered: %d (of %d)", nodeMeshIndex, scene->mNumMeshes);
+                    throw OptimizerException(__LINE__, L"Invalid mesh index encountered: % (of %)", nodeMeshIndex, scene->mNumMeshes);
                 }
 
                 const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
@@ -113,7 +113,7 @@ namespace Gek
                         }
                         else
                         {
-                            printf("(Mesh %d) Invalid Face Found: %d (%d vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
+                            printf("(Mesh %) Invalid Face Found: % (% vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
                         }
                     }
 
@@ -292,12 +292,12 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         const aiScene* scene = aiImportFileExWithProperties(CW2A(fileNameInput, CP_UTF8), importFlags, NULL, propertyStore);
         if (scene == nullptr)
         {
-            throw OptimizerException(__LINE__, L"Unable to Load Input: %s", fileNameInput.GetString());
+            throw OptimizerException(__LINE__, L"Unable to Load Input: %", fileNameInput.GetString());
         }
 
         if (scene->mMeshes == nullptr)
         {
-            throw OptimizerException(__LINE__, L"No meshes found in scene: %s", fileNameInput.GetString());
+            throw OptimizerException(__LINE__, L"No meshes found in scene: %", fileNameInput.GetString());
         }
 
         aiApplyPostProcessing(scene, postProcessFlags);
@@ -388,7 +388,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 fwrite(&boundingBox, sizeof(Gek::Shapes::AlignedBox), 1, file);
                 fwrite(&modelCount, sizeof(UINT32), 1, file);
 
-                printf("> Num. Models: %d\r\n", modelCount);
+                printf("> Num. Models: %\r\n", modelCount);
                 for (auto &model : sortedModelList)
                 {
                     CStringW materialName = model.first;
@@ -402,16 +402,16 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                     fwrite(&indexCount, sizeof(UINT32), 1, file);
                     fwrite(model.second.indexList.data(), sizeof(UINT16), model.second.indexList.size(), file);
 
-                    printf("-  %S\r\n", materialName.GetString());
-                    printf("    %d vertices\r\n", model.second.vertexList.size());
-                    printf("    %d indices\r\n", model.second.indexList.size());
+                    printf("-  %\r\n", materialName.GetString());
+                    printf("    % vertices\r\n", model.second.vertexList.size());
+                    printf("    % indices\r\n", model.second.indexList.size());
                 }
 
                 fclose(file);
             }
             else
             {
-                throw OptimizerException(__LINE__, L"[error] Unable to Save Output: %s\r\n", fileNameOutput.GetString());
+                throw OptimizerException(__LINE__, L"[error] Unable to Save Output: %\r\n", fileNameOutput.GetString());
             }
         }
         else  if (mode.CompareNoCase(L"hull") == 0)
@@ -429,7 +429,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 }
             }
 
-            printf("> Num. Points: %d\r\n", pointCloudList.size());
+            printf("> Num. Points: %\r\n", pointCloudList.size());
             NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Gek::Math::Float3), 0.025f, 0, Gek::Math::Float4x4().data);
             if (newtonCollision)
             {
@@ -452,14 +452,14 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             }
             else
             {
-                throw OptimizerException(__LINE__, L"[error] Unable to Serialize Convex Hull: %s\r\n", fileNameOutput.GetString());
+                throw OptimizerException(__LINE__, L"[error] Unable to Serialize Convex Hull: %\r\n", fileNameOutput.GetString());
             }
 
             NewtonDestroy(newtonWorld);
         }
         else  if (mode.CompareNoCase(L"tree") == 0)
         {
-            printf("> Num. Materials: %d\r\n", modelList.size());
+            printf("> Num. Materials: %\r\n", modelList.size());
 
             NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -469,11 +469,11 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 NewtonTreeCollisionBeginBuild(newtonCollision);
                 for (auto &material : modelList)
                 {
-                    printf("-  %S: %d models\r\n", material.first.GetString(), material.second.size());
+                    printf("-  %: % models\r\n", material.first.GetString(), material.second.size());
                     for (auto &model : material.second)
                     {
-                        printf("-    %d vertices\r\n", model.vertexList.size());
-                        printf("     %d indices\r\n", model.indexList.size());
+                        printf("-    % vertices\r\n", model.vertexList.size());
+                        printf("     % indices\r\n", model.indexList.size());
 
                         std::vector<Gek::Math::Float3> faceVertexList;
                         auto &indexList = model.indexList;
@@ -516,7 +516,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
                 }
                 else
                 {
-                    throw OptimizerException(__LINE__, L"[error] Unable to Serialize Tree: %s\r\n", fileNameOutput.GetString());
+                    throw OptimizerException(__LINE__, L"[error] Unable to Serialize Tree: %\r\n", fileNameOutput.GetString());
                 }
 
                 NewtonDestroyCollision(newtonCollision);
@@ -530,12 +530,12 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         }
         else
         {
-            throw OptimizerException(__LINE__, L"[error] Invalid conversion mode specified: %s", mode.GetString());
+            throw OptimizerException(__LINE__, L"[error] Invalid conversion mode specified: %", mode.GetString());
         }
     }
     catch (OptimizerException exception)
     {
-        printf("[error] Error (%d): %S", exception.line, exception.message.GetString());
+        printf("[error] Error (%): %", exception.line, exception.message.GetString());
     }
     catch (...)
     {

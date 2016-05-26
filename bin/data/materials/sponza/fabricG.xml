@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>%material%.Albedo</albedo>
-        <normal>%directory%\fabric.Normal</normal>
-        <roughness>%directory%\fabric.Roughness</roughness>
-        <metalness>%directory%\fabric.Metalness</metalness>
+        <albedo>$material.Albedo</albedo>
+        <normal>$directory\fabric.Normal</normal>
+        <roughness>$directory\fabric.Roughness</roughness>
+        <metalness>$directory\fabric.Metalness</metalness>
     </maps>
 </material>

@@ -4,7 +4,9 @@
 
 namespace Gek
 {
-    GEK_PREDECLARE(Observer);
+    GEK_INTERFACE(Observer)
+    {
+    };
 
     GEK_INTERFACE(Observable)
     {

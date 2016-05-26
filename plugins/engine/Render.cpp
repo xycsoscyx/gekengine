@@ -4,7 +4,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Resources.h"
-#include "GEK\Engine\Plugin.h"
+#include "GEK\Engine\ContextUser.h"
 #include "GEK\Engine\Shader.h"
 #include "GEK\Engine\Material.h"
 #include "GEK\Engine\Population.h"
@@ -12,7 +12,7 @@
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Camera.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Shapes\Sphere.h"
 #include <set>

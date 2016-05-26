@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>%material%.Albedo</albedo>
+        <albedo>$material.Albedo</albedo>
         <normal>*pattern:flat</normal>
-        <roughness>%material%.Roughness</roughness>
+        <roughness>$material.Roughness</roughness>
         <metalness>*color:0</metalness>
     </maps>
 </material>

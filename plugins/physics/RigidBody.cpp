@@ -2,7 +2,7 @@
 #include "GEK\Newton\NewtonEntity.h"
 #include "GEK\Newton\NewtonProcessor.h"
 #include "GEK\Newton\Mass.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Utility\String.h"

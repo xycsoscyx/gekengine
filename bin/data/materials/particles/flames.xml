@@ -2,6 +2,6 @@
 <material>
     <shader>transparent</shader>
     <maps>
-        <albedo>%material%.Albedo</albedo>
+        <albedo>$material.Albedo</albedo>
     </maps>
 </material>

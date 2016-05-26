@@ -6,7 +6,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Utility\ShuntingYard.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Processor.h"

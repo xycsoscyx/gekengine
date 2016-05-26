@@ -31,11 +31,7 @@ namespace Gek
 
             void operator () (Observer *observer) const
             {
-                CComQIPtr<INTERFACE> eventHandler(observer);
-                if (eventHandler)
-                {
-                    onEvent(eventHandler);
-                }
+                onEvent(std::dynamic_pointer_cast<INTERFACE>(observer));
             }
         };
 

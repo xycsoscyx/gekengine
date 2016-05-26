@@ -1,17 +1,14 @@
-#include <initguid.h>
-#include <cguid.h>
-
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 
 namespace Gek
 {
-    GEK_DECLARE_PLUGIN(InputSystemImplementation);
-    GEK_DECLARE_PLUGIN(AudioSystemImplementation);
-    GEK_DECLARE_PLUGIN(VideoSystemImplementation);
+    GEK_DECLARE_CONTEXT_USER(InputSystemImplementation);
+    GEK_DECLARE_CONTEXT_USER(AudioSystemImplementation);
+    GEK_DECLARE_CONTEXT_USER(VideoSystemImplementation);
 
-    GEK_PLUGIN_BEGIN(System)
-        GEK_PLUGIN_CLASS(L"InputSystem", InputSystemImplementation)
-        GEK_PLUGIN_CLASS(L"AudioSystem", AudioSystemImplementation)
-        GEK_PLUGIN_CLASS(L"VideoSystem", VideoSystemImplementation)
-    GEK_PLUGIN_END()
+    GEK_CONTEXT_BEGIN(System);
+        GEK_CONTEXT_ADD_CLASS(L"InputSystem", InputSystemImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"AudioSystem", AudioSystemImplementation);
+        GEK_CONTEXT_ADD_CLASS(L"VideoSystem", VideoSystemImplementation);
+    GEK_CONTEXT_END();
 }; // namespace Gek

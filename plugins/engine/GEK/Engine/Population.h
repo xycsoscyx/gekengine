@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GEK\Utility\Hash.h"
-#include "GEK\Context\Observer.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Context\Observable.h"
 #include "GEK\Engine\Processor.h"
 #include <atlbase.h>
 #include <atlstr.h>
@@ -16,19 +16,18 @@ namespace Gek
     GEK_PREDECLARE(PopulationObserver);
 
     GEK_INTERFACE(Population)
+        : public Observable
     {
         struct ComponentDefinition
-            : public CStringW, public std::unordered_map<CStringW, CStringW>
+            : public std::unordered_map<wstring, wstring>
+            , public wstring
         {
         };
 
         struct EntityDefinition
-            : public std::unordered_map<CStringW, ComponentDefinition>
+            : public std::unordered_map<wstring, ComponentDefinition>
         {
         };
-
-        virtual void initialize(IUnknown *initializerContext) = 0;
-        virtual void destroy(void) = 0;
 
         virtual float getWorldTime(void) = 0;
         virtual float getFrameTime(void) = 0;
@@ -64,6 +63,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(PopulationObserver)
+        : public Observer
     {
         virtual void onLoadBegin(void) = 0;
         virtual void onLoadEnd(HRESULT resultValue) = 0;

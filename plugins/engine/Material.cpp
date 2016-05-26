@@ -3,7 +3,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Shader.h"
 #include "GEK\Engine\Resources.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoSystem.h"
 #include <set>
 #include <ppl.h>
@@ -45,7 +45,7 @@ namespace Gek
             {
                 this->resources = resources;
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;

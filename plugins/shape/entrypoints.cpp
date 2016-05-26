@@ -1,13 +1,9 @@
-#include <initguid.h>
-#include <cguid.h>
+#include "GEK\Context\ContextUser.h"
 
-#include "GEK\Engine\Component.h"
-#include "GEK\Engine\Processor.h"
+GEK_CONTEXT_BEGIN(Components)
+    GEK_CONTEXT_ADD_CLASS(Gek::ShapeRegistration, Gek::ShapeImplementation)
+        GEK_CONTEXT_ADD_TYPE(Gek::ComponentType)
 
-GEK_PLUGIN_BEGIN(Components)
-    GEK_PLUGIN_CLASS(Gek::ShapeRegistration, Gek::ShapeImplementation)
-        GEK_PLUGIN_TYPE(Gek::ComponentType)
-
-    GEK_PLUGIN_CLASS(Gek::ShapeProcessorRegistration, Gek::ShapeProcessorImplementation)
-        GEK_PLUGIN_TYPE(Gek::ProcessorType)
-GEK_PLUGIN_END
+    GEK_CONTEXT_ADD_CLASS(Gek::ShapeProcessorRegistration, Gek::ShapeProcessorImplementation)
+        GEK_CONTEXT_ADD_TYPE(Gek::ProcessorType)
+GEK_CONTEXT_END()

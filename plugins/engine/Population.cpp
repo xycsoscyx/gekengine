@@ -4,7 +4,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include <map>
 #include <ppl.h>
@@ -230,7 +230,7 @@ namespace Gek
                 ObservableMixin::sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\scenes\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\scenes\\%.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
@@ -306,7 +306,7 @@ namespace Gek
             {
             }
 
-            xmlDocument.save(Gek::String::format(L"$root\\data\\saves\\%s.xml", fileName));
+            xmlDocument.save(Gek::String::format(L"$root\\data\\saves\\%.xml", fileName));
             return S_OK;
         }
 

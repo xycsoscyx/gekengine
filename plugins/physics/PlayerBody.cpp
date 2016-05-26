@@ -1,6 +1,6 @@
 #include "GEK\Newton\PlayerBody.h"
 #include "GEK\Newton\NewtonProcessor.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Engine\Action.h"

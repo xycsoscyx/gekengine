@@ -65,7 +65,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     }
     catch (BaseException exception)
     {
-        printf("[error] Error (%d): %s", exception.when(), exception.what());
+        printf("[error] Error (%): %", exception.when(), exception.what());
     }
     catch (...)
     {

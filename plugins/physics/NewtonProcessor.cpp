@@ -1,4 +1,4 @@
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\Evaluator.h"
@@ -131,7 +131,7 @@ namespace Gek
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
                 Gek::XmlDocument xmlDocument;
-                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%s.xml", fileName))))
+                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName))))
                 {
                     Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
@@ -551,7 +551,7 @@ namespace Gek
                 }
                 else
                 {
-                    CStringW fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%s.bin", shape.GetString())));
+                    CStringW fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%.bin", shape.GetString())));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");

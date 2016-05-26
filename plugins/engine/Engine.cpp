@@ -9,20 +9,19 @@
 #include "GEK\Engine\Action.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
-#include <set>
-#include <ppl.h>
 #include <concurrent_unordered_map.h>
+#include <ppl.h>
+#include <set>
 
 #include <sciter-x.h>
-
 #pragma comment(lib, "sciter32.lib")
 
 namespace Gek
 {
     class EngineImplementation
-        : public Plugin<EngineImplementation, HWND>
+        : public ContextRegistration<EngineImplementation, HWND>
         , public ObservableMixin
         , public Engine
         , public RenderObserver
@@ -54,9 +53,9 @@ namespace Gek
         HWND window;
         bool windowActive;
         bool engineRunning;
-        typedef concurrency::concurrent_unordered_map<CStringW, CStringW> OptionGroup;
-        concurrency::concurrent_unordered_map<CStringW, OptionGroup> options;
-        concurrency::concurrent_unordered_map<CStringW, OptionGroup> newOptions;
+        typedef concurrency::concurrent_unordered_map<wstring, wstring> OptionGroup;
+        concurrency::concurrent_unordered_map<wstring, OptionGroup> options;
+        concurrency::concurrent_unordered_map<wstring, OptionGroup> newOptions;
 
         Gek::Timer timer;
         double updateAccumulator;
@@ -71,9 +70,9 @@ namespace Gek
         UINT32 updateHandle;
         ActionQueue actionQueue;
 
-        CStringW currentCommand;
-        std::list<CStringW> commandLog;
-        std::unordered_map<CStringW, std::function<void(const std::vector<CStringW> &, SCITER_VALUE &result)>> consoleCommands;
+        wstring currentCommand;
+        std::list<wstring> commandLog;
+        std::unordered_map<wstring, std::function<void(const std::vector<wstring> &, SCITER_VALUE &result)>> consoleCommands;
 
         sciter::dom::element root;
         sciter::dom::element background;
@@ -99,8 +98,9 @@ namespace Gek
         }
 
     public:
-        EngineImplementation(HWND window)
-            : window(window)
+        EngineImplementation(Context *context, HWND window)
+            : ContextRegistration(context)
+            , window(window)
             , windowActive(false)
             , engineRunning(true)
             , updateAccumulator(0.0)
@@ -110,19 +110,19 @@ namespace Gek
             , background(nullptr)
             , foreground(nullptr)
         {
-            consoleCommands[L"quit"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"quit"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 engineRunning = false;
                 result = sciter::value(true);
             };
 
-            consoleCommands[L"begin_options"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"begin_options"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 this->beginChanges();
                 result = sciter::value(true);
             };
 
-            consoleCommands[L"finish_options"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"finish_options"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 bool commit = false;
                 if (parameters.size() == 1)
@@ -134,7 +134,7 @@ namespace Gek
                 result = sciter::value(true);
             };
 
-            consoleCommands[L"set_option"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"set_option"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 3)
                 {
@@ -147,7 +147,7 @@ namespace Gek
                 }
             };
 
-            consoleCommands[L"get_option"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"get_option"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 2)
                 {
@@ -160,7 +160,7 @@ namespace Gek
                 }
             };
 
-            consoleCommands[L"load_level"] = [this](const std::vector<CStringW> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"load_level"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 1)
                 {
@@ -174,11 +174,10 @@ namespace Gek
 
             GEK_REQUIRE(window);
 
-            Gek::XmlDocument xmlDocument;
-            if (SUCCEEDED(xmlDocument.load(L"$root\\config.xml")))
+            Gek::XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
             {
                 Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
-                if (xmlConfigNode && xmlConfigNode.getType().CompareNoCase(L"config") == 0)
+                if (xmlConfigNode && xmlConfigNode.getType().compare(L"config") == 0)
                 {
                     Gek::XmlNode xmlConfigValue = xmlConfigNode.firstChildElement();
                     while (xmlConfigValue)
@@ -195,53 +194,15 @@ namespace Gek
             }
 
             HRESULT resultValue = CoInitialize(nullptr);
-            GEK_CHECK_EXCEPTION(FAILED(resultValue), BaseException, "Unable to initialize COM: %d", resultValue);
+            GEK_CHECK_EXCEPTION(FAILED(resultValue), BaseException, "Unable to initialize COM: %", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
+            resources = getContext()->createClass<VideoSystem>(L"ResourcesSystem", video);
+            population = getContext()->createClass<VideoSystem>(L"PopulationSystem");
+            render = getContext()->createClass<VideoSystem>(L"RenderSystem", population, resources);
 
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(ResourcesRegistration, &resources));
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(PopulationRegistration, &population));
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = getContext()->createInstance(CLSID_IID_PPV_ARGS(RenderRegistration, &render));
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                this->window = window;
-                resultValue = video->initialize(window, false, Video::Format::sRGBA);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = resources->initialize(this);
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = population->initialize(this);
-                if (SUCCEEDED(resultValue))
-                {
-                    updateHandle = population->setUpdatePriority(this, 0);
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = render->initialize(this);
-                if (SUCCEEDED(resultValue))
-                {
-                    resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
-                }
-            }
+            updateHandle = population->setUpdatePriority(this, 0);
+            render->addObserver((RenderObserver *)this);
 
             if (SUCCEEDED(resultValue))
             {
@@ -273,27 +234,21 @@ namespace Gek
 
         ~EngineImplementation(void)
         {
-            if (population)
-            {
-                population->free();
-                population->destroy();
-            }
-
-            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
-            render.Release();
-            resources.Release();
+            render->removeObserver((RenderObserver *)this);
+            render = nullptr;
+            resources = nullptr;
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
             }
 
-            population.Release();
-            video.Release();
+            population = nullptr;
+            video = nullptr;
             CoUninitialize();
         }
 
         // Options
-        STDMETHODIMP_(const CStringW &) getValue(const wchar_t *name, const wchar_t *attribute, const CStringW &defaultValue = L"") CONST
+        STDMETHODIMP_(const wstring &) getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") CONST
         {
             auto &group = options.find(name);
             if(group != options.end())
@@ -655,9 +610,9 @@ namespace Gek
 
         BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
         {
-            CStringW command(parameters->name);
+            wstring command(parameters->name);
 
-            std::vector<CStringW> parameterList;
+            std::vector<wstring> parameterList;
             for (UINT32 parameter = 0; parameter < parameters->argc; parameter++)
             {
                 parameterList.push_back(parameters->argv[parameter].to_string().c_str());
@@ -746,6 +701,4 @@ namespace Gek
         {
         }
     };
-
-    REGISTER_CLASS(EngineImplementation)
 }; // namespace Gek

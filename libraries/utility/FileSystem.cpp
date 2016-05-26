@@ -73,7 +73,7 @@ namespace Gek
         {
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %S", fileName);
+            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %", fileName);
 
             DWORD fileSize = GetFileSize(fileHandle, nullptr);
             if (fileSize > 0)
@@ -89,8 +89,8 @@ namespace Gek
 
                 DWORD bytesRead = 0;
                 BOOL success = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr);
-                GEK_CHECK_EXCEPTION(!success, FileReadError, "Unable to read %d bytes from file: %S", buffer.size(), fileName);
-                GEK_CHECK_EXCEPTION(bytesRead != buffer.size(), FileReadError, "Unable to read %d bytes from file: %S", buffer.size(), fileName);
+                GEK_CHECK_EXCEPTION(!success, FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
+                GEK_CHECK_EXCEPTION(bytesRead != buffer.size(), FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
             }
 
             CloseHandle(fileHandle);
@@ -115,12 +115,12 @@ namespace Gek
         {
             wstring expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %S", fileName);
+            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %", fileName);
 
             DWORD bytesWritten = 0;
             BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-            GEK_CHECK_EXCEPTION(!success, FileWriteError, "Unable to write %d bytes from file: %S", buffer.size(), fileName);
-            GEK_CHECK_EXCEPTION(bytesWritten != buffer.size(), FileWriteError, "Unable to write %d bytes from file: %S", buffer.size(), fileName);
+            GEK_CHECK_EXCEPTION(!success, FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
+            GEK_CHECK_EXCEPTION(bytesWritten != buffer.size(), FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
             CloseHandle(fileHandle);
         }
 

@@ -1,5 +1,5 @@
 #include "GEK\Components\Camera.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"

@@ -1,8 +1,8 @@
-#include "GEK\Engine\Plugin.h"
+#include "GEK\Engine\ContextUser.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\Plugin.h"
+#include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoSystem.h"
 #include <atlbase.h>
 #include <atlpath.h>
@@ -127,7 +127,7 @@ namespace Gek
             if (SUCCEEDED(resultValue))
             {
                 Gek::XmlDocument xmlDocument;
-                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\plugins\\%s.xml", fileName));
+                resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\plugins\\%.xml", fileName));
                 if (SUCCEEDED(resultValue))
                 {
                     resultValue = E_INVALIDARG;
@@ -210,7 +210,7 @@ namespace Gek
 
                                                     if (format.CompareNoCase(L"float4x4") == 0)
                                                     {
-                                                        engineData.AppendFormat("    float4x4 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
+                                                        engineData.AppendFormat("    float4x4 % : %%;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
                                                         element.format = Video::Format::Float4;
                                                         elementList.push_back(element);
                                                         element.semanticIndex++;
@@ -222,7 +222,7 @@ namespace Gek
                                                     }
                                                     else if (format.CompareNoCase(L"float4x3") == 0)
                                                     {
-                                                        engineData.AppendFormat("    float4x3 %S : %s%d;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
+                                                        engineData.AppendFormat("    float4x3 % : %%;\r\n", xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
                                                         element.format = Video::Format::Float4;
                                                         elementList.push_back(element);
                                                         element.semanticIndex++;
@@ -233,7 +233,7 @@ namespace Gek
                                                     else
                                                     {
                                                         element.format = getFormat(format);
-                                                        engineData.AppendFormat("    %s %S : %s%d;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
+                                                        engineData.AppendFormat("    % % : %%;\r\n", getFormatType(element.format), xmlElementNode.getType().GetString(), const char *(semanticName), element.semanticIndex);
                                                         elementList.push_back(element);
                                                     }
                                                 }

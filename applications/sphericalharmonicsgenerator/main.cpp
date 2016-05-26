@@ -267,7 +267,7 @@ namespace Gek
                 L"negz",
             };
 
-            FileSystem::find(directory, String::format(L"%s.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
+            FileSystem::find(directory, String::format(L"%.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
             {
                 resultValue = loadTexture(fileName, cubeMapList[face]);
                 if (SUCCEEDED(resultValue))
@@ -479,7 +479,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             CStringA output;
             for (int i = 0; i < 9; i++)
             {
-                output.AppendFormat("    radiance.coefficients[%d] = float3(%f, %f, %f);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
+                output.AppendFormat("    radiance.coefficients[%] = float3(%f, %f, %f);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
             }
 
             Gek::FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
@@ -488,7 +488,7 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     }
     catch (GeneratorException exception)
     {
-        printf("[error] Error (%d): %S", exception.line, exception.message.GetString());
+        printf("[error] Error (%): %", exception.line, exception.message.GetString());
     }
     catch (...)
     {

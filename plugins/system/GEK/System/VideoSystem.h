@@ -7,6 +7,7 @@
 #include "GEK\Shapes\Rectangle.h"
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Context\Context.h"
 #include <unordered_map>
 #include <functional>
 #include <memory>

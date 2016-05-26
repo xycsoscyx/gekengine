@@ -7,8 +7,6 @@
 
 namespace Gek
 {
-    interface ComponentType;
-
     GEK_INTERFACE(Component)
     {
         virtual const wchar_t *getName(void) const = 0;
