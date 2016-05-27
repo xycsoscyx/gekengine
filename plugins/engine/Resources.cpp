@@ -140,11 +140,11 @@ namespace Gek
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+            requestLoad(handle, [this, handle](TypePtr data) -> void
             {
                 auto &resource = globalResourceMap[handle];
                 resource.set(data);
-            }, handle, std::placeholders::_1));
+            });
             return handle;
         }
 
@@ -152,11 +152,11 @@ namespace Gek
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+            requestLoad(handle, [this, handle](TypePtr data) -> void
             {
                 auto &resource = localResourceMap[handle];
                 resource.set(data);
-            }, handle, std::placeholders::_1));
+            });
             return handle;
         }
 
@@ -164,16 +164,16 @@ namespace Gek
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+            requestLoad(handle, [this, handle](TypePtr data) -> void
             {
                 auto &resource = readWriteResourceMap[handle];
                 resource.setRead(data);
-            }, handle, std::placeholders::_1));
-            requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+            });
+            requestLoad(handle, [this, handle](TypePtr data) -> void
             {
                 auto &resource = readWriteResourceMap[handle];
                 resource.setWrite(data);
-            }, handle, std::placeholders::_1));
+            });
             return handle;
         }
 
@@ -193,11 +193,11 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+                requestLoad(handle, [this, handle](TypePtr data) -> void
                 {
                     auto &resource = localResourceMap[handle];
                     resource.set(data);
-                }, handle, std::placeholders::_1));
+                });
             }
 
             return handle;
@@ -219,16 +219,16 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+                requestLoad(handle, [this, handle](TypePtr data) -> void
                 {
                     auto &resource = readWriteResourceMap[handle];
                     resource.setRead(data);
-                }, handle, std::placeholders::_1));
-                requestLoad(handle, std::bind([this](HANDLE handle, TypePtr data) -> void
+                });
+                requestLoad(handle, [this, handle](TypePtr data) -> void
                 {
                     auto &resource = readWriteResourceMap[handle];
                     resource.setWrite(data);
-                }, handle, std::placeholders::_1));
+                });
             }
 
             return handle;
@@ -390,9 +390,9 @@ namespace Gek
             return materialManager.getResource(handle, false);
         }
 
-        PluginHandle loadPlugin(const wchar_t *fileName)
+        PluginHandle loadPlugin(const wstring &fileName)
         {
-            auto load = [this, wstring(fileName)](PluginHandle handle) -> PluginPtr
+            auto load = [this, fileName](PluginHandle handle) -> PluginPtr
             {
                 return getContext()->createClass<Plugin>(L"PluginSystem");
             };
@@ -405,35 +405,35 @@ namespace Gek
             return pluginManager.getGlobalHandle(request);
         }
 
-        MaterialHandle loadMaterial(const wchar_t *fileName)
+        MaterialHandle loadMaterial(const wstring &fileName)
         {
-            auto load = std::bind([this](MaterialHandle handle, wstring fileName) -> MaterialPtr
+            auto load = [this, fileName](MaterialHandle handle) -> MaterialPtr
             {
                 return getContext()->createClass<Material>(L"MaterialSystem");
-            }, std::placeholders::_1, fileName);
+            };
 
-            auto request = std::bind([this](MaterialHandle handle, std::function<void(MaterialPtr)> set, std::function<MaterialPtr(MaterialHandle)> load) -> void
+            auto request = [this, load](MaterialHandle handle, std::function<void(MaterialPtr)> set) -> void
             {
                 MaterialPtr material = load(handle);
                 materialShaderMap[handle] = material->getShader();
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = std::hash<wstring>()(fileName);
             return materialManager.getHandle(hash, request);
         }
 
-        ShaderHandle loadShader(const wchar_t *fileName)
+        ShaderHandle loadShader(const wstring &fileName)
         {
-            auto load = std::bind([this](ShaderHandle handle, wstring fileName) -> ShaderPtr
+            auto load = [this, fileName](ShaderHandle handle) -> ShaderPtr
             {
                 return getContext()->createClass<Shader>(L"ShaderSystem");
-            }, std::placeholders::_1, fileName);
+            };
 
-            auto request = std::bind([this](ShaderHandle handle, std::function<void(ShaderPtr)> set, std::function<ShaderPtr(ShaderHandle)> load) -> void
+            auto request = [this, load](ShaderHandle handle, std::function<void(ShaderPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = std::hash<wstring>()(fileName);
             return shaderManager.getHandle(hash, request);
@@ -450,15 +450,15 @@ namespace Gek
 
         RenderStateHandle createRenderState(const Video::RenderState &renderState)
         {
-            auto load = std::bind([this](RenderStateHandle handle, Video::RenderState renderState) -> VideoObjectPtr
+            auto load = [this, renderState](RenderStateHandle handle) -> VideoObjectPtr
             {
                 return video->createRenderState(renderState);
-            }, std::placeholders::_1, renderState);
+            };
 
-            auto request = std::bind([this](RenderStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(RenderStateHandle)> load) -> void
+            auto request = [this, load](RenderStateHandle handle, std::function<void(VideoObjectPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = std::hash_combine(static_cast<UINT8>(renderState.fillMode),
                 static_cast<UINT8>(renderState.cullMode),
@@ -475,15 +475,15 @@ namespace Gek
 
         DepthStateHandle createDepthState(const Video::DepthState &depthState)
         {
-            auto load = std::bind([this](DepthStateHandle handle, Video::DepthState depthState) -> VideoObjectPtr
+            auto load = [this, depthState](DepthStateHandle handle) -> VideoObjectPtr
             {
                 return video->createDepthState(depthState);
-            }, std::placeholders::_1, depthState);
+            };
 
-            auto request = std::bind([this](DepthStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(DepthStateHandle)> load) -> void
+            auto request = [this, load](DepthStateHandle handle, std::function<void(VideoObjectPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = std::hash_combine(depthState.enable,
                 static_cast<UINT8>(depthState.writeMask),
@@ -504,15 +504,15 @@ namespace Gek
 
         BlendStateHandle createBlendState(const Video::UnifiedBlendState &blendState)
         {
-            auto load = std::bind([this](BlendStateHandle handle, Video::UnifiedBlendState blendState) -> VideoObjectPtr
+            auto load = [this, blendState](BlendStateHandle handle) -> VideoObjectPtr
             {
                 return video->createBlendState(blendState);
-            }, std::placeholders::_1, blendState);
+            };
 
-            auto request = std::bind([this](BlendStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(BlendStateHandle)> load) -> void
+            auto request = [this, load](BlendStateHandle handle, std::function<void(VideoObjectPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = std::hash_combine(blendState.enable,
                 static_cast<UINT8>(blendState.colorSource),
@@ -527,15 +527,15 @@ namespace Gek
 
         BlendStateHandle createBlendState(const Video::IndependentBlendState &blendState)
         {
-            auto load = std::bind([this](BlendStateHandle handle, Video::IndependentBlendState blendState) -> VideoObjectPtr
+            auto load = [this, blendState](BlendStateHandle handle) -> VideoObjectPtr
             {
                 return video->createBlendState(blendState);
-            }, std::placeholders::_1, blendState);
+            };
 
-            auto request = std::bind([this](BlendStateHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(BlendStateHandle)> load) -> void
+            auto request = [this, load](BlendStateHandle handle, std::function<void(VideoObjectPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = 0;
             for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
@@ -558,15 +558,15 @@ namespace Gek
 
         ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
         {
-            auto load = std::bind([this](ResourceHandle handle, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps) -> VideoTexturePtr
+            auto load = [this, format, width, height, depth, flags, mipmaps](ResourceHandle handle) -> VideoTexturePtr
             {
                 return video->createTexture(format, width, height, depth, flags, mipmaps);
-            }, std::placeholders::_1, format, width, height, depth, flags, mipmaps);
+            };
 
-            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoTexturePtr)> set, std::function<VideoTexturePtr(ResourceHandle)> load) -> void
+            auto request = [this, load](ResourceHandle handle, std::function<void(VideoTexturePtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             if (name)
             {
@@ -588,15 +588,15 @@ namespace Gek
 
         ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            auto load = std::bind([this](ResourceHandle handle, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoBufferPtr
+            auto load = [this, stride, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
                 return video->createBuffer(stride, count, type, flags, staticData);
-            }, std::placeholders::_1, stride, count, type, flags, staticData);
+            };
 
-            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoBufferPtr)> set, std::function<VideoBufferPtr(ResourceHandle)> load) -> void
+            auto request = [this, load](ResourceHandle handle, std::function<void(VideoBufferPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             if (name)
             {
@@ -618,15 +618,15 @@ namespace Gek
 
         ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
         {
-            auto load = std::bind([this](ResourceHandle handle, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData) -> VideoBufferPtr
+            auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
                 return video->createBuffer(format, count, type, flags, staticData);
-            }, std::placeholders::_1, format, count, type, flags, staticData);
+            };
 
-            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoBufferPtr)> set, std::function<VideoBufferPtr(ResourceHandle)> load) -> void
+            auto request = [this, load](ResourceHandle handle, std::function<void(VideoBufferPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             if (name)
             {
@@ -784,12 +784,14 @@ namespace Gek
                         return video->loadTexture(fullFileName, flags);
                     }
                 }
+
+                return nullptr;
             }
         }
 
-        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags)
+        ResourceHandle loadTexture(const wstring &fileName, const wstring &fallback, UINT32 flags)
         {
-            auto load = std::bind([this](ResourceHandle handle, wstring fileName, wstring fallback, UINT32 flags) -> VideoTexturePtr
+            auto load = [this, fileName, fallback, flags](ResourceHandle handle) -> VideoTexturePtr
             {
                 VideoTexturePtr texture = loadTexture(fileName, flags);
                 if (!texture)
@@ -798,43 +800,43 @@ namespace Gek
                 }
 
                 return texture;
-            }, std::placeholders::_1, fileName, fallback, flags);
+            };
 
-            auto request = std::bind([this](ResourceHandle handle, std::function<void(VideoTexturePtr)> set, std::function<VideoTexturePtr(ResourceHandle)> load) -> void
+            auto request = [this, load](ResourceHandle handle, std::function<void(VideoTexturePtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             std::size_t hash = std::hash<wstring>()(fileName);
             return resourceManager.getHandle(hash, request);
         }
 
-        ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
         {
-            auto load = std::bind([this](ProgramHandle handle, wstring fileName, string entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, std::unordered_map<string, string> defineList) -> VideoObjectPtr
+            auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
                 return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
-            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList);
+            };
 
-            auto request = std::bind([this](ProgramHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(ProgramHandle)> load) -> void
+            auto request = [this, load](ProgramHandle handle, std::function<void(VideoObjectPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             return programManager.getUniqueHandle(request);
         }
 
-        ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
         {
-            auto load = std::bind([this](ProgramHandle handle, wstring fileName, string entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, std::unordered_map<string, string> defineList) -> VideoObjectPtr
+            auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
                 return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
-            }, std::placeholders::_1, fileName, entryFunction, onInclude, defineList);
+            };
 
-            auto request = std::bind([this](ProgramHandle handle, std::function<void(VideoObjectPtr)> set, std::function<VideoObjectPtr(ProgramHandle)> load) -> void
+            auto request = [this, load](ProgramHandle handle, std::function<void(VideoObjectPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             return programManager.getUniqueHandle(request);
         }

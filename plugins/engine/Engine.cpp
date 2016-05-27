@@ -21,6 +21,7 @@
 namespace Gek
 {
     class EngineImplementation
+
         : public ContextRegistration<EngineImplementation, HWND>
         , public ObservableMixin<EngineImplementation>
         , public Engine
