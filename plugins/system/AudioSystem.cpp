@@ -143,16 +143,16 @@ namespace Gek
             GEK_REQUIRE(window);
 
             HRESULT resultValue = DirectSoundCreate8(nullptr, &directSound, nullptr);
-            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to initialize DirectSound8: %", resultValue);
+            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to initialize DirectSound8: %v", resultValue);
 
             resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
-            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to set cooperative level: %", resultValue);
+            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to set cooperative level: %v", resultValue);
 
             DSBUFFERDESC primaryBufferDescription = { 0 };
             primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
             primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
             resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
-            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to create primary sound buffer: %", resultValue);
+            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to create primary sound buffer: %v", resultValue);
 
             WAVEFORMATEX primaryBufferFormat;
             ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
@@ -163,10 +163,10 @@ namespace Gek
             primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
             primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
             resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
-            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to set primary sound buffer format: %", resultValue);
+            GEK_THROW_ERROR(FAILED(resultValue), Audio::Exception, "Unable to set primary sound buffer format: %v", resultValue);
 
             directSoundListener = primarySoundBuffer;
-            GEK_THROW_ERROR(!directSoundListener, Audio::Exception, "Unable to query for primary sound listener: %", resultValue);
+            GEK_THROW_ERROR(!directSoundListener, Audio::Exception, "Unable to query for primary sound listener: %v", resultValue);
 
             setMasterVolume(1.0f);
             setDistanceFactor(1.0f);
@@ -232,7 +232,7 @@ namespace Gek
 
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
             HRESULT resultValue = directSound->DuplicateSoundBuffer(static_cast<IDirectSoundBuffer *>(source->getBuffer()), &directSoundBuffer);
-            GEK_THROW_ERROR(!directSoundBuffer, Audio::Exception, "Unable to duplicate sound buffer: %", resultValue);
+            GEK_THROW_ERROR(!directSoundBuffer, Audio::Exception, "Unable to duplicate sound buffer: %v", resultValue);
 
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
             GEK_THROW_ERROR(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
@@ -247,7 +247,7 @@ namespace Gek
 
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
             HRESULT resultValue = directSound->DuplicateSoundBuffer(static_cast<IDirectSoundBuffer *>(source->getBuffer()), &directSoundBuffer);
-            GEK_THROW_ERROR(!directSoundBuffer, Audio::Exception, "Unable to duplicate sound buffer: %", resultValue);
+            GEK_THROW_ERROR(!directSoundBuffer, Audio::Exception, "Unable to duplicate sound buffer: %v", resultValue);
 
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
             GEK_THROW_ERROR(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
@@ -299,11 +299,11 @@ namespace Gek
 
             CComPtr<IDirectSoundBuffer> directSoundBuffer;
             HRESULT resultValue = directSound->CreateSoundBuffer(&bufferDescription, &directSoundBuffer, nullptr);
-            GEK_THROW_ERROR(!directSoundBuffer, Audio::Exception, "Unable create sound buffer for audio file: %", resultValue);
+            GEK_THROW_ERROR(!directSoundBuffer, Audio::Exception, "Unable create sound buffer for audio file: %v", resultValue);
 
             void *sampleData = nullptr;
             resultValue = directSoundBuffer->Lock(0, sampleLength, &sampleData, &sampleLength, 0, 0, DSBLOCK_ENTIREBUFFER);
-            GEK_THROW_ERROR(!sampleData, Audio::Exception, "Unable to lock sound buffer: %", resultValue);
+            GEK_THROW_ERROR(!sampleData, Audio::Exception, "Unable to lock sound buffer: %v", resultValue);
 
             audiereSample->read((sampleLength / bufferFormat.nBlockAlign), sampleData);
             directSoundBuffer->Unlock(sampleData, sampleLength, 0, 0);

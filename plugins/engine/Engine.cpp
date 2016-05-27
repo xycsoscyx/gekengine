@@ -21,7 +21,6 @@
 namespace Gek
 {
     class EngineImplementation
-
         : public ContextRegistration<EngineImplementation, HWND>
         , public ObservableMixin<EngineImplementation>
         , public Engine
@@ -58,7 +57,7 @@ namespace Gek
         concurrency::concurrent_unordered_map<wstring, OptionGroup> options;
         concurrency::concurrent_unordered_map<wstring, OptionGroup> newOptions;
 
-        Gek::Timer timer;
+        Timer timer;
         double updateAccumulator;
         POINT lastCursorPosition;
         float mouseSensitivity;
@@ -174,25 +173,33 @@ namespace Gek
                 result = sciter::value(true);
             };
 
-            XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
-            Gek::XmlNode xmlConfigNode = xmlDocument.getRoot();
-            if (xmlConfigNode && xmlConfigNode.getType().compare(L"config") == 0)
+            XmlDocumentPtr document;
+            XmlNodePtr configurationNode;
+            try
             {
-                Gek::XmlNode xmlConfigValue = xmlConfigNode.firstChildElement();
-                while (xmlConfigValue)
-                {
-                    auto &group = options[xmlConfigValue.getType()];
-                    xmlConfigValue.listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
-                    {
-                        group[name] = value;
-                    });
-
-                    xmlConfigValue = xmlConfigValue.nextSiblingElement();
-                };
+                document = XmlDocument::load(L"$root\\config.xml");
+                configurationNode = document->getRoot(L"config");
             }
+            catch (BaseException exception)
+            {
+                document = XmlDocument::create(L"config");
+                configurationNode = document->getRoot(L"config");
+            };
+
+            XmlNodePtr valueNode = configurationNode->firstChildElement();
+            while (valueNode->isValid())
+            {
+                auto &group = options[valueNode->getType()];
+                valueNode->listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
+                {
+                    group[name] = value;
+                });
+
+                valueNode = valueNode->nextSiblingElement();
+            };
 
             HRESULT resultValue = CoInitialize(nullptr);
-            GEK_THROW_ERROR(FAILED(resultValue), BaseException, "Unable to initialize COM: %", resultValue);
+            GEK_THROW_ERROR(FAILED(resultValue), BaseException, "Unable to initialize COM: %v", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
             resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
@@ -244,6 +251,9 @@ namespace Gek
             video = nullptr;
             CoUninitialize();
         }
+
+        using ObservableMixin::addObserver;
+        using ObservableMixin::removeObserver;
 
         // Options
         const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const

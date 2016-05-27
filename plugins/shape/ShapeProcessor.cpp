@@ -511,8 +511,8 @@ namespace Gek
                     geoSphere.generate(divisionCount);
 
                     shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%", &shape), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String::format(L"shape:index:%", &shape), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    shape.vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%v", &shape), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                    shape.indexBuffer = resources->createBuffer(String::format(L"shape:index:%v", &shape), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
                     break;
                 }
             };
@@ -598,12 +598,13 @@ namespace Gek
         };
 
         // PopulationObserver
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
+        void onLoadSucceeded(void)
         {
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
+        }
+
+        void onLoadFailed(void)
+        {
+            onFree();
         }
 
         STDMETHODIMP_(void) onFree(void)

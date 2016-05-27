@@ -71,12 +71,13 @@ namespace Gek
         {
         }
 
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
+        void onLoadSucceeded(void)
         {
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
+        }
+
+        void onLoadFailed(void)
+        {
+            onFree();
         }
 
         STDMETHODIMP_(void) onFree(void)

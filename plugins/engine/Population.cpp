@@ -112,6 +112,9 @@ namespace Gek
             componentList.clear();
         }
 
+        using ObservableMixin::addObserver;
+        using ObservableMixin::removeObserver;
+
         // Population
         float getFrameTime(void) const
         {
@@ -178,72 +181,72 @@ namespace Gek
         }
 
         std::function<void(void)> loadScene;
-        void load(const wchar_t *fileName)
+        void load(const wstring &fileName)
         {
-            loadScene = std::bind([&](const wstring &fileName) -> HRESULT
+            loadScene = [this, fileName](void) -> void
             {
-                HRESULT resultValue = E_FAIL;
-
-                free();
-                sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
-
-                Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\scenes\\%.xml", fileName)));
-                Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
-                //if (xmlWorldNode && xmlWorldNode.getType().CompareNoCase(L"world") == 0)
-
-                Gek::XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
-
-                Gek::XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
-                while (xmlEntityNode)
+                try
                 {
-                    EntityDefinition entityDefinition;
-                    Gek::XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
-                    while (xmlComponentNode)
-                    {
-                        auto &componentData = entityDefinition[xmlComponentNode.getType()];
-                        xmlComponentNode.listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
-                        {
-                            componentData.unordered_map::insert(std::make_pair(name, value));
-                        });
+                    free();
+                    sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-                        if (!xmlComponentNode.getText().empty())
+                    Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\scenes\\%v.xml", fileName)));
+                    Gek::XmlNodePtr worldNode = document->getRoot(L"world");
+                    Gek::XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
+                    Gek::XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
+                    while (entityNode->isValid())
+                    {
+                        EntityDefinition entityDefinition;
+                        Gek::XmlNodePtr componentNode = entityNode->firstChildElement();
+                        while (componentNode)
                         {
-                            componentData.assign(xmlComponentNode.getText());
+                            auto &componentData = entityDefinition[componentNode->getType()];
+                            componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                            {
+                                componentData.unordered_map::insert(std::make_pair(name, value));
+                            });
+
+                            if (!componentNode->getText().empty())
+                            {
+                                componentData.assign(componentNode->getText());
+                            }
+
+                            componentNode = componentNode->nextSiblingElement();
+                        };
+
+                        if (entityNode->hasAttribute(L"name"))
+                        {
+                            createEntity(entityDefinition, entityNode->getAttribute(L"name"));
+                        }
+                        else
+                        {
+                            createEntity(entityDefinition, nullptr);
                         }
 
-                        xmlComponentNode = xmlComponentNode.nextSiblingElement();
+                        entityNode = entityNode->nextSiblingElement(L"entity");
                     };
 
-                    if (xmlEntityNode.hasAttribute(L"name"))
-                    {
-                        createEntity(entityDefinition, xmlEntityNode.getAttribute(L"name"));
-                    }
-                    else
-                    {
-                        createEntity(entityDefinition, nullptr);
-                    }
-
-                    xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
+                    frameTime = 0.0f;
+                    worldTime = 0.0f;
+                    sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
+                }
+                catch (BaseException exception)
+                {
+                    sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
                 };
-
-                frameTime = 0.0f;
-                worldTime = 0.0f;
-                sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadEnd, std::placeholders::_1, resultValue)));
-                return resultValue;
-            }, wstring(fileName));
+            };
         }
 
         void save(const wchar_t *fileName)
         {
-            Gek::XmlDocument xmlDocument(XmlDocument::create(L"world"));
-
-            Gek::XmlNode xmlWorldNode = xmlDocument.getRoot();
-            Gek::XmlNode xmlPopulationNode = xmlWorldNode.createChildElement(L"population");
+            Gek::XmlDocumentPtr document(XmlDocument::create(L"world"));
+            Gek::XmlNodePtr worldNode = document->getRoot(L"world");
+            Gek::XmlNodePtr populationNode = worldNode->createChildElement(L"population");
             for (auto &entity : entityList)
             {
             }
 
-            xmlDocument.save(Gek::String::format(L"$root\\data\\saves\\%.xml", fileName));
+            document->save(Gek::String::format(L"$root\\data\\saves\\%v.xml", fileName));
         }
 
         void free(void)

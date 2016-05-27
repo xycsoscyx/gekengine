@@ -318,9 +318,6 @@ namespace Gek
 
         void requestLoad(std::function<void(void)> load)
         {
-            static UINT32 count = 0;
-            OutputDebugString(String::format(L"request: %\r\n", ++count));
-
             loadResourceQueue.push(load);
             if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
@@ -330,7 +327,6 @@ namespace Gek
                     std::function<void(void)> function;
                     while (loadResourceQueue.try_pop(function))
                     {
-                        OutputDebugString(String::format(L"load: %\r\n", --count));
                         function();
                     };
 
@@ -778,7 +774,7 @@ namespace Gek
 
                 for (auto &format : formatList)
                 {
-                    wstring fullFileName(FileSystem::expandPath(String::format(L"$root\\data\\textures\\%%", fileName, format)));
+                    wstring fullFileName(FileSystem::expandPath(String::format(L"$root\\data\\textures\\%v%v", fileName, format)));
                     if (PathFileExists(fullFileName))
                     {
                         return video->loadTexture(fullFileName, flags);

@@ -103,29 +103,24 @@ namespace Gek
             GEK_REQUIRE(video);
             GEK_REQUIRE(fileName);
 
-            Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\plugins\\%.xml", fileName)));
+            Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\plugins\\%v.xml", fileName)));
+            Gek::XmlNodePtr pluginNode = document->getRoot(L"plugin");
 
-            Gek::XmlNode xmlPluginNode = xmlDocument.getRoot();
-            //if (xmlPluginNode && xmlPluginNode.getType().compare(L"plugin") == 0)
-
-            Gek::XmlNode xmlLayoutNode = xmlPluginNode.firstChildElement(L"layout");
-
-            Gek::XmlNode xmlGeometryNode = xmlPluginNode.firstChildElement(L"geometry");
-            if (xmlGeometryNode)
+            try
             {
-                Gek::XmlNode xmlProgramNode = xmlGeometryNode.firstChildElement(L"program");
-                //if (xmlProgramNode && xmlProgramNode.hasAttribute(L"source") && xmlProgramNode.hasAttribute(L"entry"))
-
-                wstring programFileName = xmlProgramNode.getAttribute(L"source");
-                string programEntryPoint(String::from<char>(xmlProgramNode.getAttribute(L"entry")));
-                geometryProgram = video->loadGeometryProgram(String::format(L"$root\\data\\programs\\%.hlsl", programFileName), programEntryPoint);
+                Gek::XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
+                Gek::XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
+                wstring programFileName = programNode->getAttribute(L"source");
+                string programEntryPoint(String::from<char>(programNode->getAttribute(L"entry")));
+                geometryProgram = video->loadGeometryProgram(String::format(L"$root\\data\\programs\\v%.hlsl", programFileName), programEntryPoint);
             }
+            catch (BaseException exception)
+            {
+            };
 
-            Gek::XmlNode xmlVertexNode = xmlPluginNode.firstChildElement(L"vertex");
-
-            Gek::XmlNode xmlProgramNode = xmlVertexNode.firstChildElement(L"program");
-
-            wstring programPath(String::format(L"$root\\data\\programs\\%.hlsl", xmlProgramNode.getText()));
+            Gek::XmlNodePtr xmlVertexNode = pluginNode->firstChildElement(L"vertex");
+            Gek::XmlNodePtr programNode = xmlVertexNode->firstChildElement(L"program");
+            wstring programPath(String::format(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
 
             string progamScript;
             Gek::FileSystem::load(programPath, progamScript);
@@ -135,43 +130,44 @@ namespace Gek
 
             std::vector<string> elementNameList;
             std::vector<Video::InputElement> elementList;
-            Gek::XmlNode xmlElementNode = xmlLayoutNode.firstChildElement();
-            while (xmlElementNode)
+            Gek::XmlNodePtr layoutNode = pluginNode->firstChildElement(L"layout");
+            Gek::XmlNodePtr elementNode = layoutNode->firstChildElement();
+            while (elementNode->isValid())
             {
-                if (xmlElementNode.getType().compare(L"instanceIndex") == 0)
+                if (elementNode->getType().compare(L"instanceIndex") == 0)
                 {
                     engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
                 }
-                else if (xmlElementNode.getType().compare(L"vertexIndex") == 0)
+                else if (elementNode->getType().compare(L"vertexIndex") == 0)
                 {
                     engineData += ("    uint vertexIndex : SV_VertexId;\r\n");
                 }
-                else if (xmlElementNode.getType().compare(L"isFrontFace") == 0)
+                else if (elementNode->getType().compare(L"isFrontFace") == 0)
                 {
                     engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
                 }
-                else if (xmlElementNode.hasAttribute(L"format") &&
-                    xmlElementNode.hasAttribute(L"name") &&
-                    xmlElementNode.hasAttribute(L"index"))
+                else if (elementNode->hasAttribute(L"format") &&
+                    elementNode->hasAttribute(L"name") &&
+                    elementNode->hasAttribute(L"index"))
                 {
-                    string semanticName(String::from<char>(xmlElementNode.getAttribute(L"name")));
+                    string semanticName(String::from<char>(elementNode->getAttribute(L"name")));
                     elementNameList.push_back(semanticName.c_str());
 
-                    wstring format(xmlElementNode.getAttribute(L"format"));
+                    wstring format(elementNode->getAttribute(L"format"));
 
                     Video::InputElement element;
                     element.semanticName = elementNameList.back().c_str();
-                    element.semanticIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"index"));
-                    if (xmlElementNode.hasAttribute(L"slotclass") &&
-                        xmlElementNode.hasAttribute(L"slotindex"))
+                    element.semanticIndex = Gek::String::to<UINT32>(elementNode->getAttribute(L"index"));
+                    if (elementNode->hasAttribute(L"slotclass") &&
+                        elementNode->hasAttribute(L"slotindex"))
                     {
-                        element.slotClass = getElementType(xmlElementNode.getAttribute(L"slotclass"));
-                        element.slotIndex = Gek::String::to<UINT32>(xmlElementNode.getAttribute(L"slotindex"));
+                        element.slotClass = getElementType(elementNode->getAttribute(L"slotclass"));
+                        element.slotIndex = Gek::String::to<UINT32>(elementNode->getAttribute(L"slotindex"));
                     }
 
                     if (format.compare(L"float4x4") == 0)
                     {
-                        engineData += String::format("    float4x4 % : %%;\r\n", xmlElementNode.getType(), semanticName, element.semanticIndex);
+                        engineData += String::format("    float4x4 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
                         element.format = Video::Format::Float4;
                         elementList.push_back(element);
                         element.semanticIndex++;
@@ -183,7 +179,7 @@ namespace Gek
                     }
                     else if (format.compare(L"float4x3") == 0)
                     {
-                        engineData += String::format("    float4x3 % : %%;\r\n", xmlElementNode.getType(), semanticName, element.semanticIndex);
+                        engineData += String::format("    float4x3 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
                         element.format = Video::Format::Float4;
                         elementList.push_back(element);
                         element.semanticIndex++;
@@ -194,7 +190,7 @@ namespace Gek
                     else
                     {
                         element.format = getFormat(format);
-                        engineData += String::format("    % % : %%;\r\n", getFormatType(element.format), xmlElementNode.getType(), semanticName, element.semanticIndex);
+                        engineData += String::format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode->getType(), semanticName, element.semanticIndex);
                         elementList.push_back(element);
                     }
                 }
@@ -203,7 +199,7 @@ namespace Gek
                     break;
                 }
 
-                xmlElementNode = xmlElementNode.nextSiblingElement();
+                elementNode = elementNode->nextSiblingElement();
             };
 
             engineData +=

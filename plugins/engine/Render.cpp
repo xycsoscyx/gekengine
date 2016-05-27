@@ -249,6 +249,9 @@ namespace Gek
             population->removeObserver((PopulationObserver *)this);
         }
 
+        using ObservableMixin::addObserver;
+        using ObservableMixin::removeObserver;
+
         // Render
         void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw)
         {
@@ -414,12 +417,13 @@ namespace Gek
         {
         }
 
-        void onLoadEnd(HRESULT resultValue)
+        void onLoadSucceeded(void)
         {
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
+        }
+
+        void onLoadFailed(void)
+        {
+            onFree();
         }
 
         void onFree(void)

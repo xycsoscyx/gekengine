@@ -67,7 +67,8 @@ namespace Gek
         : public Observer
     {
         virtual void onLoadBegin(void) { };
-        virtual void onLoadEnd(HRESULT resultValue) { };
+        virtual void onLoadSucceeded(void) { };
+        virtual void onLoadFailed(void) { };
         virtual void onFree(void) { };
 
         virtual void onEntityCreated(Entity *entity) { };

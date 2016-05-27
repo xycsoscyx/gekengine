@@ -31,20 +31,20 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
     CoInitialize(nullptr);
     try
     {
-        XmlDocument xmlDocument(XmlDocument::load(fileNameInput));
+        XmlDocumentPtr xmlDocument(XmlDocument::load(fileNameInput));
 
-        XmlNode xmlWorldNode = xmlDocument.getRoot();
+        XmlNodePtr xmlWorldNode = xmlDocument.getRoot();
         GEK_THROW_ERROR(!xmlWorldNode, BaseException, "XML document missing root node");
         GEK_THROW_ERROR(xmlWorldNode.getText().CompareNoCase(L"world") == 0, BaseException, "XML document root node not 'world'");
 
-        XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
+        XmlNodePtr xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
         GEK_THROW_ERROR(!xmlPopulationNode, BaseException, "XML document missing population node");
 
-        XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
+        XmlNodePtr xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
         while (xmlEntityNode)
         {
             Population::EntityDefinition entityData;
-            XmlNode xmlComponentNode = xmlEntityNode.firstChildElement();
+            XmlNodePtr xmlComponentNode = xmlEntityNode.firstChildElement();
             while (xmlComponentNode)
             {
                 Population::ComponentDefinition &componentData = entityData[xmlComponentNode.getType()];

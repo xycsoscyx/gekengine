@@ -17,32 +17,8 @@ namespace Gek
     template<class ELEMENT, class TRAITS = std::char_traits<ELEMENT>, class ALLOCATOR = std::allocator<ELEMENT>>
     class baseString : public std::basic_string<ELEMENT, TRAITS, ALLOCATOR>
     {
-    private:
-        void print(baseString<char> &target, const char *formatting, va_list variableList)
-        {
-            target.resize(std::vsprintf(nullptr, formatting, variableList) + 1);
-            std::vsprintf(&target.front(), formatting, variableList);
-        }
-
-        void print(baseString<char> &target, const wchar_t *formatting, va_list variableList)
-        {
-            print(target, String::from<char>(formatting), variableList);
-        }
-
-        void print(baseString<wchar_t> &target, const char *formatting, va_list variableList)
-        {
-            print(target, String::from<wchar_t>(formatting), variableList);
-        }
-
-        void print(baseString<wchar_t> &target, const wchar_t *formatting, va_list variableList)
-        {
-            target.resize(std::vswprintf(nullptr, 0, formatting, variableList) + 1);
-            std::vswprintf(&target.front(), target.size(), formatting, variableList);
-        }
-
     public:
         using basic_string::basic_string;
-        using basic_string::operator =;
 
         baseString(void)
         {
@@ -52,6 +28,19 @@ namespace Gek
         {
             assign(string);
         }
+
+        baseString(const basic_string &string)
+        {
+            assign(string);
+        }
+
+        template<typename... ARGUMENTS>
+        baseString(const ELEMENT *formatting, ARGUMENTS... arguments)
+        {
+            format(formatting, arguments...);
+        }
+
+        using basic_string::operator =;
 
         operator const ELEMENT * () const
         {
@@ -66,6 +55,11 @@ namespace Gek
         operator const std::basic_string<ELEMENT> & () const
         {
             return *(std::basic_string *)this;
+        }
+
+        baseString subString(size_t position = 0, size_t length = std::string::npos) const
+        {
+            return baseString(substr(position, length));
         }
 
         bool replace(const baseString &from, const baseString &to)
@@ -98,27 +92,27 @@ namespace Gek
             trimRight();
         }
 
-        void makeLower(void)
+        void toLower(void)
         {
             std::transform(begin(), end(), begin(), ::tolower);
         }
 
-        void makeUpper(void)
+        void toUpper(void)
         {
             std::transform(begin(), end(), begin(), ::toupper);
         }
 
         baseString<ELEMENT> getLower(void) const
         {
-            baseString transformed(*this);
-            std::transform(transformed.begin(), transformed.end(), transformed.begin(), ::tolower);
+            baseString transformed(length(), ' ');
+            std::transform(begin(), end(), transformed.begin(), ::tolower);
             return transformed;
         }
 
         baseString<ELEMENT> getUpper(void) const
         {
-            baseString transformed(*this);
-            std::transform(transformed.begin(), transformed.end(), transformed.begin(), ::toupper);
+            baseString transformed(length(), ' ');
+            std::transform(begin(), end(), transformed.begin(), ::toupper);
             return transformed;
         }
 
@@ -135,38 +129,38 @@ namespace Gek
             return tokens;
         }
 
-        baseString<ELEMENT> getAppended(const ELEMENT *string) const
+        template<typename TYPE, typename... ARGUMENTS>
+        void format(const ELEMENT *formatting, TYPE value, ARGUMENTS... arguments)
         {
-            baseString concatenated(c_str());
-            concatenated.append(string);
-            return concatenated;
-        }
-
-        template <typename SOURCE>
-        void format(const SOURCE *formatting, va_list variableList)
-        {
-            print(*this, formatting, variableList);
-        }
-
-        template <typename SOURCE>
-        void appendFormat(const SOURCE *formatting, va_list variableList)
-        {
-            baseString formatted;
-            print(formatted, formatting, variableList);
-            append(formatted);
-        }
-
-        baseString<ELEMENT> getExtension(void) const
-        {
-            size_t position = find_last_of('.');
-            if (position == std::string::npos)
+            while (formatting && *formatting)
             {
-                return nullptr;
-            }
-            else
-            {
-                return &at(position);
-            }
+                if (*formatting == '%')
+                {
+                    const ELEMENT *percent = formatting++;
+                    const ELEMENT *character = formatting++;
+                    if (character && *character == '%')
+                    {
+                        // %%
+                        append(character, 1);
+                    }
+                    else if (character && *character == 'v')
+                    {
+                        // %v
+                        append(String::from<ELEMENT>(value));
+                        append(wstring(formatting, arguments...));
+                        return;
+                    }
+                    else
+                    {
+                        // %(other)
+                        append(percent, 2);
+                    }
+                }
+                else
+                {
+                    append(formatting++, 1);
+                }
+            };
         }
     };
 
@@ -623,7 +617,7 @@ namespace Gek
         template <typename ELEMENT, typename SOURCE>
         baseString<ELEMENT> from(const SOURCE *source)
         {
-            return string_cast_imp<baseString<ELEMENT>, typename string_type_of<const SOURCE *>::wrap>::cast(source);
+            return (source ? string_cast_imp<baseString<ELEMENT>, typename string_type_of<const SOURCE *>::wrap>::cast(source) : nullptr);
         }
 
         template <typename ELEMENT>
@@ -638,30 +632,30 @@ namespace Gek
             baseString<ELEMENT> result;
             while (*formatting)
             {
-                if (*formatting == '\\')
+                if (*formatting == '%')
                 {
-                    const ELEMENT *slash = formatting++;
+                    const ELEMENT *percent = formatting++;
                     if (formatting)
                     {
-                        if (*formatting == '%')
+                        switch (*formatting)
                         {
+                        case '%':
                             result += *formatting++;
-                        }
-                        else
-                        {
-                            result += *slash;
-                        }
+                            break;
+
+                        case 'v':
+                            result += from<ELEMENT>(value);
+                            break;
+
+                        };
+
+                        result += format(++formatting, arguments...);
+                        break;
                     }
                     else
                     {
-                        result += *slash;
+                        result += *percent;
                     }
-                }
-                else if (*formatting == '%')
-                {
-                    result += from<ELEMENT>(value);
-                    result += format(++formatting, arguments...);
-                    break;
                 }
                 else
                 {

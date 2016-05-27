@@ -22,34 +22,23 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
     case WM_INITDIALOG:
     {
-        UINT32 width = 800;
-        UINT32 height = 600;
-        bool fullscreen = false;
-
-        XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
-
-        XmlNode xmlConfigNode = xmlDocument.getRoot();
-        if (xmlConfigNode && xmlConfigNode.getType().compare(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
+        XmlDocumentPtr document;
+        XmlNodePtr configurationNode;
+        try
         {
-            XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
-            if (xmlDisplayNode)
-            {
-                if (xmlDisplayNode.hasAttribute(L"width"))
-                {
-                    width = String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
-                }
-
-                if (xmlDisplayNode.hasAttribute(L"height"))
-                {
-                    height = String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
-                }
-
-                if (xmlDisplayNode.hasAttribute(L"fullscreen"))
-                {
-                    fullscreen = String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
-                }
-            }
+            document = XmlDocument::load(L"$root\\config.xml");
+            configurationNode = document->getRoot(L"config");
         }
+        catch(BaseException exception)
+        {
+            document = XmlDocument::create(L"config");
+            configurationNode = document->getRoot(L"config");
+        };
+
+        XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
+        UINT32 width = String::to<UINT32>(displayNode->getAttribute(L"width", L"800"));
+        UINT32 height = String::to<UINT32>(displayNode->getAttribute(L"height", L"600"));
+        bool fullscreen = String::to<bool>(displayNode->getAttribute(L"fullscreen", L"false"));
 
         UINT32 selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
@@ -72,7 +61,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 break;
             };
 
-            wstring modeString(String::format(L"%x%%", mode.width, mode.height, aspectRatio));
+            wstring modeString(String::format(L"%vx%v%v", mode.width, mode.height, aspectRatio));
             int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.c_str());
             if (mode.width == width && mode.height == height)
             {
@@ -97,25 +86,24 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             UINT32 selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
             auto &mode = modeList[selectIndex];
 
-            XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
-
-            XmlNode xmlConfigNode = xmlDocument.getRoot();
-            if (!xmlConfigNode || xmlConfigNode.getType().getLower().compare(L"config") != 0)
+            XmlDocumentPtr document;
+            XmlNodePtr configurationNode;
+            try
             {
-                xmlDocument = XmlDocument::create(L"config");
-                xmlConfigNode = xmlDocument.getRoot();
+                document = XmlDocument::load(L"$root\\config.xml");
+                configurationNode = document->getRoot(L"config");
             }
-
-            XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
-            if (!xmlDisplayNode)
+            catch (BaseException exception)
             {
-                xmlDisplayNode = xmlConfigNode.createChildElement(L"display");
-            }
+                document = XmlDocument::create(L"config");
+                configurationNode = document->getRoot(L"config");
+            };
 
-            xmlDisplayNode.setAttribute(L"width", L"%", mode.width);
-            xmlDisplayNode.setAttribute(L"height", L"%", mode.height);
-            xmlDisplayNode.setAttribute(L"fullscreen", L"%", (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false"));
-            xmlDocument.save(L"$root\\config.xml");
+            XmlNodePtr displayNode = configurationNode->firstChildElement(L"display", true);
+            displayNode->setAttribute(L"width", String::from<wchar_t>(mode.width));
+            displayNode->setAttribute(L"height", String::from<wchar_t>(mode.height));
+            displayNode->setAttribute(L"fullscreen", SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
+            document->save(L"$root\\config.xml");
 
             EndDialog(dialog, IDOK);
             return TRUE;
@@ -163,124 +151,11 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
 {
-    static const wchar_t *materialFormat = \
-        L"<?xml version=\"1.0\"?>\r\n" \
-        L"<material>\r\n" \
-        L"    <shader>standard</shader>\r\n" \
-        L"    <maps>\r\n" \
-        L"        <albedo>schulz/old_tiles/old_tiles_a</albedo>\r\n" \
-        L"        <normal>schulz/old_tiles/old_tiles_n</normal>\r\n" \
-        L"        <roughness>*color:%f</roughness>\r\n" \
-        L"        <metalness>*color:%f</metalness>\r\n" \
-        L"    </maps>\r\n" \
-        L"</material>";
-
-    static const wchar_t *entityFormat = \
-        L"        <entity>\r\n" \
-        L"            <transform position=\"(%f,2.0,%f)\" scale=\"(0.5,0.5,0.5)\" />\r\n" \
-        L"            <!--color>lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),lerp(.5,1,arand(1)),1</color-->\r\n" \
-        L"            <shape skin=\"debug//r%d_m%\" parameters=\"1\">sphere</shape>\r\n" \
-        L"        </entity>\r\n";
-
-    static const wchar_t *materialLibraryFormat = \
-        L"    <effect id=\"debug_%name%\">\r\n" \
-        L"      <profile_COMMON>\r\n" \
-        L"        <newparam sid=\"%name%_png-surface\">\r\n" \
-        L"          <surface type=\"2D\">\r\n" \
-        L"            <init_from>%name%_png</init_from>\r\n" \
-        L"          </surface>\r\n" \
-        L"        </newparam>\r\n" \
-        L"        <newparam sid=\"%name%_png-sampler\">\r\n" \
-        L"          <sampler2D>\r\n" \
-        L"            <source>%name%_png-surface</source>\r\n" \
-        L"          </sampler2D>\r\n" \
-        L"        </newparam>\r\n" \
-        L"        <technique sid=\"common\">\r\n" \
-        L"          <blinn>\r\n" \
-        L"            <emission>\r\n" \
-        L"              <color>0 0 0 1</color>\r\n" \
-        L"            </emission>\r\n" \
-        L"            <ambient>\r\n" \
-        L"              <color>0.5882353 0.5882353 0.5882353 1</color>\r\n" \
-        L"            </ambient>\r\n" \
-        L"            <diffuse>\r\n" \
-        L"              <texture texture=\"%name%_png-sampler\" texcoord=\"CHANNEL1\"/>\r\n" \
-        L"            </diffuse>\r\n" \
-        L"            <specular>\r\n" \
-        L"              <color>0.9 0.9 0.9 1</color>\r\n" \
-        L"            </specular>\r\n" \
-        L"            <shininess>\r\n" \
-        L"              <float>0</float>\r\n" \
-        L"            </shininess>\r\n" \
-        L"            <reflective>\r\n" \
-        L"              <color>0 0 0 1</color>\r\n" \
-        L"            </reflective>\r\n" \
-        L"            <transparent opaque=\"A_ONE\">\r\n" \
-        L"              <color>1 1 1 1</color>\r\n" \
-        L"            </transparent>\r\n" \
-        L"            <transparency>\r\n" \
-        L"              <float>1</float>\r\n" \
-        L"            </transparency>\r\n" \
-        L"          </blinn>\r\n" \
-        L"        </technique>\r\n" \
-        L"      </profile_COMMON>\r\n" \
-        L"      <extra>\r\n" \
-        L"        <technique profile=\"OpenCOLLADA3dsMax\">\r\n" \
-        L"          <extended_shader>\r\n" \
-        L"            <apply_reflection_dimming>0</apply_reflection_dimming>\r\n" \
-        L"            <dim_level>0</dim_level>\r\n" \
-        L"            <falloff_type>0</falloff_type>\r\n" \
-        L"            <index_of_refraction>1.5</index_of_refraction>\r\n" \
-        L"            <opacity_type>0</opacity_type>\r\n" \
-        L"            <reflection_level>3</reflection_level>\r\n" \
-        L"            <wire_size>1</wire_size>\r\n" \
-        L"            <wire_units>0</wire_units>\r\n" \
-        L"          </extended_shader>\r\n" \
-        L"          <shader>\r\n" \
-        L"            <ambient_diffuse_lock>1</ambient_diffuse_lock>\r\n" \
-        L"            <ambient_diffuse_texture_lock>1</ambient_diffuse_texture_lock>\r\n" \
-        L"            <diffuse_specular_lock>0</diffuse_specular_lock>\r\n" \
-        L"            <soften>0.1</soften>\r\n" \
-        L"            <use_self_illum_color>0</use_self_illum_color>\r\n" \
-        L"          </shader>\r\n" \
-        L"        </technique>\r\n" \
-        L"      </extra>\r\n" \
-        L"    </effect>\r\n";
-
-    static const wchar_t *fileLibraryFormat = \
-        L"    <image id=\"%name%_png\">\r\n" \
-        L"      <init_from>../textures/debug/%name%.png</init_from>\r\n" \
-        L"    </image>\r\n";
-
-    wstring entities;
-    wstring materialLibrary;
-    wstring fileLibrary;
-    for (UINT32 roughness = 0; roughness < 10; roughness++)
-    {
-        for (UINT32 metalness = 0; metalness < 10; metalness++)
-        {
-            wstring material(String::format(materialFormat, (float(roughness) / 9.0f), (float(metalness) / 9.0f)));
-            wstring fileName(String::format(L"r%d_m%", roughness, metalness));
-            FileSystem::save(String::format(L"$root\\data\\materials\\debug\\%.xml", fileName), material);
-
-            entities += String::format(entityFormat, (float(roughness) - 4.5f), (float(metalness) - 4.5f), roughness, metalness);
-            //CopyFile(FileSystem::expandPath(L"$root\\data\\textures\\debug\\r0_m0.png"), FileSystem::expandPath(L"$root\\data\\textures\\debug\\") + fileName + L".png", false);
-
-            materialLibrary += [&](void) -> wstring { wstring data(materialLibraryFormat); data.replace(L"%name%", fileName); return data; }();
-            fileLibrary += [&](void) -> wstring { wstring data(fileLibraryFormat); data.replace(L"%name%", fileName); return data; }();
-        }
-    }
-
     traceInitialize();
-    Xml::initialize();
     if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
     {
         try
         {
-            //_clearfp();
-            //unsigned unused_current_word = 0;
-            //_controlfp_s(&unused_current_word, 0, _EM_ZERODIVIDE | _EM_INVALID);
-
             std::vector<wstring> searchPathList;
 
 #ifdef _DEBUG
@@ -293,47 +168,37 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
             ContextPtr context(Context::create(searchPathList));
 
-            WNDCLASS kClass;
-            kClass.style = 0;
-            kClass.lpfnWndProc = WindowProc;
-            kClass.cbClsExtra = 0;
-            kClass.cbWndExtra = 0;
-            kClass.hInstance = GetModuleHandle(nullptr);
-            kClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
-            kClass.hCursor = nullptr;
-            kClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-            kClass.lpszMenuName = nullptr;
-            kClass.lpszClassName = L"GEKvX_Engine_Demo";
-            ATOM classAtom = RegisterClass(&kClass);
-            GEK_THROW_ERROR(!classAtom, BaseException, "Unable to register window class: %", GetLastError());
-            UINT32 width = 800;
-            UINT32 height = 600;
-            bool fullscreen = false;
+            WNDCLASS windowClass;
+            windowClass.style = 0;
+            windowClass.lpfnWndProc = WindowProc;
+            windowClass.cbClsExtra = 0;
+            windowClass.cbWndExtra = 0;
+            windowClass.hInstance = GetModuleHandle(nullptr);
+            windowClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
+            windowClass.hCursor = nullptr;
+            windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+            windowClass.lpszMenuName = nullptr;
+            windowClass.lpszClassName = L"GEKvX_Engine_Demo";
+            ATOM classAtom = RegisterClass(&windowClass);
+            GEK_THROW_ERROR(!classAtom, BaseException, "Unable to register window class: %v", GetLastError());
 
-            XmlDocument xmlDocument(XmlDocument::load(L"$root\\config.xml"));
-
-            XmlNode xmlConfigNode = xmlDocument.getRoot();
-            if (xmlConfigNode && xmlConfigNode.getType().compare(L"config") == 0 && xmlConfigNode.hasChildElement(L"display"))
+            XmlDocumentPtr document;
+            XmlNodePtr configurationNode;
+            try
             {
-                XmlNode xmlDisplayNode = xmlConfigNode.firstChildElement(L"display");
-                if (xmlDisplayNode)
-                {
-                    if (xmlDisplayNode.hasAttribute(L"width"))
-                    {
-                        width = String::to<UINT32>(xmlDisplayNode.getAttribute(L"width"));
-                    }
-
-                    if (xmlDisplayNode.hasAttribute(L"height"))
-                    {
-                        height = String::to<UINT32>(xmlDisplayNode.getAttribute(L"height"));
-                    }
-
-                    if (xmlDisplayNode.hasAttribute(L"fullscreen"))
-                    {
-                        fullscreen = String::to<bool>(xmlDisplayNode.getAttribute(L"fullscreen"));
-                    }
-                }
+                document = XmlDocument::load(L"$root\\config.xml");
+                configurationNode = document->getRoot(L"config");
             }
+            catch (BaseException exception)
+            {
+                document = XmlDocument::create(L"config");
+                configurationNode = document->getRoot(L"config");
+            };
+
+            XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
+            UINT32 width = String::to<UINT32>(displayNode->getAttribute(L"width", L"800"));
+            UINT32 height = String::to<UINT32>(displayNode->getAttribute(L"height", L"600"));
+            bool fullscreen = String::to<bool>(displayNode->getAttribute(L"fullscreen", L"false"));
 
             RECT clientRect;
             clientRect.left = 0;
@@ -346,7 +211,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
             int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
             HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
-            GEK_THROW_ERROR(window == nullptr, BaseException, "Unable to create window: %", GetLastError());
+            GEK_THROW_ERROR(window == nullptr, BaseException, "Unable to create window: %v", GetLastError());
 
             EnginePtr engineCore(context->createClass<Engine>(L"EngineSystem", window));
 
@@ -380,7 +245,6 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
     }
 
-    Xml::shutdown();
     traceShutDown();
     return 0;
 }

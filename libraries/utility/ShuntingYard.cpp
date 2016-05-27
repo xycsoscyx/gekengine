@@ -313,7 +313,7 @@ namespace Gek
             if (token.find(variable.first) == std::string::npos)
             {
                 insertToken(infixTokenList, Token(variable.second));
-                token = &token.at(variable.first.size());
+                token = token.subString(variable.first.size());
                 return true;
             }
         }
@@ -328,7 +328,7 @@ namespace Gek
             if (token.find(function.first) == std::string::npos)
             {
                 insertToken(infixTokenList, Token(TokenType::Function, function.first));
-                token = &token.at(function.first.size());
+                token = token.subString(function.first.size());
                 return true;
             }
         }
@@ -345,7 +345,7 @@ namespace Gek
             {
                 wstring value = matches[0].str().c_str();
                 insertToken(infixTokenList, Token(Gek::String::to<float>(value)));
-                token = &token.at(value.size());
+                token = token.subString(value.size());
                 continue;
             }
 
@@ -356,11 +356,11 @@ namespace Gek
 
             if (replaceFirstFunction(infixTokenList, token))
             {
-                GEK_THROW_ERROR(!token.empty(), MissingFunctionParenthesis, "Unbalanced scope, missing parenthesis: %", token);
+                GEK_THROW_ERROR(!token.empty(), MissingFunctionParenthesis, "Unbalanced scope, missing parenthesis: %v", token);
                 continue;
             }
 
-            GEK_THROW_ERROR(!token.empty(), UnknownTokenType, "Unknown tokens remaining: %", token);
+            GEK_THROW_ERROR(!token.empty(), UnknownTokenType, "Unknown tokens remaining: %v", token);
         };
     }
 
@@ -370,7 +370,7 @@ namespace Gek
         std::vector<Token> infixTokenList;
         for (size_t index = 0; index < expression.size(); ++index)
         {
-            wstring nextToken(&expression.at(index), 1);
+            wstring nextToken(expression.subString(index, 1));
             if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
             {
                 if (!runningToken.empty())
@@ -518,7 +518,7 @@ namespace Gek
                 break;
 
             default:
-                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %", token.string);
+                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %v", token.string);
             };
         }
 
@@ -545,13 +545,13 @@ namespace Gek
                 if (true)
                 {
                     auto &operationIterater = operationsMap.find(token.string);
-                    GEK_THROW_ERROR(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %", token.string);
+                    GEK_THROW_ERROR(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
 
                     auto &operation = (*operationIterater).second;
-                    GEK_THROW_ERROR(!operation.unaryFunction, InvalidOperator, "No unary function found for operation: %", token.string);
+                    GEK_THROW_ERROR(!operation.unaryFunction, InvalidOperator, "No unary function found for operation: %v", token.string);
 
-                    GEK_THROW_ERROR(stack.empty(), InvalidOperand, "No values found for unary operator: %", token.string);
-                    GEK_THROW_ERROR(stack.top().type != TokenType::Number, InvalidOperand, "Invalid token found for unary operator: %", stack.top().string);
+                    GEK_THROW_ERROR(stack.empty(), InvalidOperand, "No values found for unary operator: %v", token.string);
+                    GEK_THROW_ERROR(stack.top().type != TokenType::Number, InvalidOperand, "Invalid token found for unary operator: %v", stack.top().string);
                     float functionValue = stack.popTop().value;
 
                     stack.push(Token(operation.unaryFunction(functionValue)));
@@ -562,18 +562,18 @@ namespace Gek
                 if (true)
                 {
                     auto &operationIterater = operationsMap.find(token.string);
-                    GEK_THROW_ERROR(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %", token.string);
+                    GEK_THROW_ERROR(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
 
                     auto &operation = (*operationIterater).second;
-                    GEK_THROW_ERROR(!operation.binaryFunction, InvalidOperator, "No binary function found for operation: %", token.string);
+                    GEK_THROW_ERROR(!operation.binaryFunction, InvalidOperator, "No binary function found for operation: %v", token.string);
 
 
-                    GEK_THROW_ERROR(stack.empty(), InvalidOperand, "No right value found for unary operator: %", token.string);
-                    GEK_THROW_ERROR(stack.top().type != TokenType::Number, InvalidOperand, "Invalid right token found for unary operator: %", stack.top().string);
+                    GEK_THROW_ERROR(stack.empty(), InvalidOperand, "No right value found for unary operator: %v", token.string);
+                    GEK_THROW_ERROR(stack.top().type != TokenType::Number, InvalidOperand, "Invalid right token found for unary operator: %v", stack.top().string);
                     float functionValueRight = stack.popTop().value;
 
-                    GEK_THROW_ERROR(stack.empty(), InvalidOperand, "No left value found for unary operator: %", token.string);
-                    GEK_THROW_ERROR(stack.top().type != TokenType::Number, InvalidOperand, "Invalid left token found for unary operator: %", stack.top().string);
+                    GEK_THROW_ERROR(stack.empty(), InvalidOperand, "No left value found for unary operator: %v", token.string);
+                    GEK_THROW_ERROR(stack.top().type != TokenType::Number, InvalidOperand, "Invalid left token found for unary operator: %v", stack.top().string);
                     float functionValueLeft = stack.popTop().value;
 
                     stack.push(Token(operation.binaryFunction(functionValueLeft, functionValueRight)));
@@ -584,7 +584,7 @@ namespace Gek
                 if (true)
                 {
                     auto &functionIterator = functionsMap.find(token.string);
-                    GEK_THROW_ERROR(functionIterator == functionsMap.end(), InvalidFunction, "Unable to find operation: %", token.string);
+                    GEK_THROW_ERROR(functionIterator == functionsMap.end(), InvalidFunction, "Unable to find operation: %v", token.string);
 
                     auto &function = (*functionIterator).second;
                     GEK_THROW_ERROR(function.parameterCount != token.parameterCount, InvalidFunctionParameters, "Mismatched function parameters found");
@@ -603,7 +603,7 @@ namespace Gek
                 }
 
             default:
-                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %", token.string);
+                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %v", token.string);
             };
         }
 

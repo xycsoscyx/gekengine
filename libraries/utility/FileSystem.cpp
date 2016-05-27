@@ -34,11 +34,12 @@ namespace Gek
         void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
         {
             wstring expandedFileName(expandPath(fileName));
-            //PathAddBackslashW(expandedFileName.GetBuffer(MAX_PATH + 1));
+
+            std::experimental::filesystem::path expandedPath(expandedFileName);
+            expandedPath.concat(filterTypes);
 
             WIN32_FIND_DATA findData;
-            wstring expandedFileNameFilter(expandedFileName.getAppended(filterTypes).c_str());
-            HANDLE findHandle = FindFirstFile(expandedFileNameFilter, &findData);
+            HANDLE findHandle = FindFirstFile(expandedPath.c_str(), &findData);
             if (findHandle != INVALID_HANDLE_VALUE)
             {
                 do
@@ -47,12 +48,12 @@ namespace Gek
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            find(expandedFileName.getAppended(findData.cFileName).c_str(), filterTypes, searchRecursively, onFileFound);
+                            find((expandedFileName + findData.cFileName).c_str(), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        if (!onFileFound(expandedFileName.getAppended(findData.cFileName).c_str()))
+                        if (!onFileFound((expandedFileName + findData.cFileName[0]).c_str()))
                         {
                             break;
                         }
@@ -71,7 +72,7 @@ namespace Gek
         {
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %", fileName);
+            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %v", fileName);
 
             DWORD fileSize = GetFileSize(fileHandle, nullptr);
             if (fileSize > 0)
@@ -87,8 +88,8 @@ namespace Gek
 
                 DWORD bytesRead = 0;
                 BOOL success = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr);
-                GEK_THROW_ERROR(!success, FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
-                GEK_THROW_ERROR(bytesRead != buffer.size(), FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
+                GEK_THROW_ERROR(!success, FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
+                GEK_THROW_ERROR(bytesRead != buffer.size(), FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
             }
 
             CloseHandle(fileHandle);
@@ -113,12 +114,12 @@ namespace Gek
         {
             wstring expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %", fileName);
+            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %v", fileName);
 
             DWORD bytesWritten = 0;
             BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-            GEK_THROW_ERROR(!success, FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
-            GEK_THROW_ERROR(bytesWritten != buffer.size(), FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
+            GEK_THROW_ERROR(!success, FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
+            GEK_THROW_ERROR(bytesWritten != buffer.size(), FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
             CloseHandle(fileHandle);
         }
 

@@ -21,7 +21,7 @@ namespace std
         }
         catch (std::bad_alloc badAllocation)
         {
-            GEK_THROW_EXCEPTION(Gek::BaseException, "Unable to allocate new object: %", badAllocation.what());
+            GEK_THROW_EXCEPTION(Gek::BaseException, "Unable to allocate new object: %v", badAllocation.what());
         };
 
         std::shared_ptr<RETURN> remadeObject(std::dynamic_pointer_cast<RETURN>(baseObject));

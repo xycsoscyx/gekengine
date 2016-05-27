@@ -176,7 +176,7 @@ namespace Gek
                         else
                         {
                             DWORD error = GetLastError();
-                            OutputDebugStringW(String::format(L"error: %", error));
+                            OutputDebugStringW(wstring(L"error: %v", error));
                         }
                     };
 

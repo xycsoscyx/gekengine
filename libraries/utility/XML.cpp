@@ -8,274 +8,341 @@
 
 namespace Gek
 {
-    static xmlNodePtr dummyNode = nullptr;
-    namespace Xml
+    struct XmlConstString
     {
-        void initialize(void)
+        const xmlChar *text;
+
+        XmlConstString(const xmlChar *text)
+            : text(text)
         {
-            dummyNode = xmlNewNode(nullptr, BAD_CAST "");
         }
 
-        void shutdown(void)
+        operator wstring () const
         {
-            if (dummyNode)
-            {
-                xmlFreeNode(dummyNode);
-                dummyNode = nullptr;
-            }
+            return String::from<wchar_t>(reinterpret_cast<const char *>(text));
         }
     };
 
-    XmlNode::XmlNode(void)
-        : node(dummyNode)
+    struct XmlString
     {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Gek::Xml::initialize() not called");
-    }
+        xmlChar *text;
 
-    XmlNode::XmlNode(LPVOID node)
-        : node(node)
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-    }
-
-    XmlNode::~XmlNode(void)
-    {
-    }
-
-    XmlNode XmlNode::create(const wchar_t *type)
-    {
-        xmlNodePtr node = xmlNewNode(nullptr, BAD_CAST static_cast<const char *>(CW2A(type, CP_UTF8)));
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Unable to create node: %", type);
-        return XmlNode(node);
-    }
-
-    XmlNode::operator bool() const
-    {
-        return (node != dummyNode);
-    }
-
-    wstring XmlNode::getType(void) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-        return static_cast<const wchar_t *>(CA2W(reinterpret_cast<const char *>(static_cast<xmlNodePtr>(node)->name), CP_UTF8));
-    }
-
-    wstring XmlNode::getText(void) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        xmlChar *content = xmlNodeGetContent(static_cast<xmlNodePtr>(node));
-        GEK_THROW_ERROR(content == nullptr, Xml::Exception, "Unable to get node content");
-
-        CA2W text(reinterpret_cast<const char *>(content), CP_UTF8);
-        xmlFree(content);
-        return static_cast<const wchar_t *>(text);
-    }
-
-    void XmlNode::setText(const wchar_t *formatting, ...)
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        wstring text;
-        if (formatting != nullptr)
+        XmlString(xmlChar *text)
+            : text(text)
         {
-            va_list variableList;
-            va_start(variableList, formatting);
-            text.format(formatting, variableList);
-            va_end(variableList);
         }
 
-        xmlNodeSetContent(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(text, CP_UTF8)));
-    }
-
-    bool XmlNode::hasAttribute(const wchar_t *name) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-        return (xmlHasProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8))) ? true : false);
-    }
-
-    wstring XmlNode::getAttribute(const wchar_t *name) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        xmlChar *attribute = xmlGetProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8)));
-        GEK_THROW_ERROR(attribute == nullptr, Xml::Exception, "Unable to get node attribute: %", name);
-
-        CA2W value(reinterpret_cast<const char *>(attribute), CP_UTF8);
-        xmlFree(attribute);
-        return static_cast<const wchar_t *>(value);
-    }
-
-    void XmlNode::setAttribute(const wchar_t *name, const wchar_t *formatting, ...)
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        wstring value;
-        if (formatting != nullptr)
+        ~XmlString(void)
         {
-            va_list variableList;
-            va_start(variableList, formatting);
-            value.format(formatting, variableList);
-            va_end(variableList);
+            xmlFree(text);
         }
 
-        if (hasAttribute(name))
+        operator wstring () const
         {
-            xmlSetProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8)), BAD_CAST static_cast<const char *>(CW2A(value, CP_UTF8)));
+            return String::from<wchar_t>(reinterpret_cast<const char *>(text));
         }
-        else
-        {
-            xmlNewProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8)), BAD_CAST static_cast<const char *>(CW2A(value, CP_UTF8)));
-        }
-    }
+    };
 
-    void XmlNode::listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const
+    struct XmlCast
     {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        for (xmlAttrPtr attribute = static_cast<xmlNodePtr>(node)->properties; attribute != nullptr; attribute = attribute->next)
+        string text;
+        XmlCast(const wchar_t *text)
         {
-            CA2W name(reinterpret_cast<const char *>(attribute->name), CP_UTF8);
-            onAttribute(name, getAttribute(name));
-        }
-    }
-
-    bool XmlNode::hasSiblingElement(const wchar_t *type) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        bool hasSiblingElement = false;
-        CW2A typeUtf8(type, CP_UTF8);
-        for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
-        {
-            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, reinterpret_cast<const char *>(checkingNode->name)) == 0))
+            if (text)
             {
-                hasSiblingElement = true;
-                break;
+                this->text = String::from<char>(text);
             }
         }
 
-        return hasSiblingElement;
+        operator const xmlChar *() const
+        {
+            return BAD_CAST text.c_str();
+        }
+    };
+
+    int compare(const char *source, const xmlChar *destination)
+    {
+        return strcmp(source, reinterpret_cast<const char *>(destination));
     }
 
-    XmlNode XmlNode::nextSiblingElement(const wchar_t *type) const
+    class XmlDummyNode
+        : public XmlNode
     {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        CW2A typeUtf8(type, CP_UTF8);
-        for (xmlNodePtr checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
+        bool isValid(void) const
         {
-            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, reinterpret_cast<const char *>(checkingNode->name)) == 0))
+            return false;
+        }
+
+        wstring getType(void) const
+        {
+            return nullptr;
+        }
+
+        wstring getText(void) const
+        {
+            return nullptr;
+        }
+
+        void setText(const wchar_t *text)
+        {
+        }
+
+        bool hasAttribute(const wchar_t *name) const
+        {
+            return false;
+        }
+
+        wstring getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const
+        {
+            return defaultValue;
+        }
+
+        void setAttribute(const wchar_t *name, const wchar_t *value)
+        {
+        }
+
+        void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const
+        {
+        }
+
+        bool hasSiblingElement(const wchar_t *type) const
+        {
+            return false;
+        }
+
+        XmlNodePtr nextSiblingElement(const wchar_t *type) const
+        {
+            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+        }
+
+        bool hasChildElement(const wchar_t *type) const
+        {
+            return false;
+        }
+
+        XmlNodePtr firstChildElement(const wchar_t *type, bool create)
+        {
+            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+        }
+
+        XmlNodePtr createChildElement(const wchar_t *type, const wchar_t *content)
+        {
+            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+        }
+    };
+
+    class XmlNodeImplementation
+        : public XmlNode
+    {
+    private:
+        xmlNodePtr node;
+
+    public:
+        XmlNodeImplementation(xmlNodePtr node)
+            : node(node)
+        {
+            GEK_REQUIRE(node);
+        }
+
+        ~XmlNodeImplementation(void)
+        {
+        }
+
+        bool isValid(void) const
+        {
+            return true;
+        }
+
+        wstring getType(void) const
+        {
+            return XmlConstString(node->name);
+        }
+
+        wstring getText(void) const
+        {
+            return XmlString(xmlNodeGetContent(node));
+        }
+
+        void setText(const wchar_t *text)
+        {
+            xmlNodeSetContent(node, XmlCast(text));
+        }
+
+        bool hasAttribute(const wchar_t *name) const
+        {
+            return (xmlHasProp(node, XmlCast(name)) ? true : false);
+        }
+
+        wstring getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const
+        {
+            if (hasAttribute(name))
             {
-                return XmlNode(checkingNode);
+                return XmlString(xmlGetProp(node, XmlCast(name)));
+            }
+            else
+            {
+                return defaultValue;
             }
         }
 
-        return XmlNode();
-    }
-
-    bool XmlNode::hasChildElement(const wchar_t *type) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        bool hasChildElement = false;
-        CW2A typeUtf8(type, CP_UTF8);
-        for (xmlNode *checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
+        void setAttribute(const wchar_t *name, const wchar_t *value)
         {
-            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, reinterpret_cast<const char *>(checkingNode->name)) == 0))
+            if (hasAttribute(name))
             {
-                hasChildElement = true;
-                break;
+                xmlSetProp(node, XmlCast(name), XmlCast(value));
+            }
+            else
+            {
+                xmlNewProp(node, XmlCast(name), XmlCast(value));
             }
         }
 
-        return hasChildElement;
-    }
-
-    XmlNode XmlNode::firstChildElement(const wchar_t *type) const
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        CW2A typeUtf8(type, CP_UTF8);
-        for (xmlNodePtr checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
+        void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const
         {
-            if (checkingNode->type == XML_ELEMENT_NODE && (!type || strcmp(typeUtf8, reinterpret_cast<const char *>(checkingNode->name)) == 0))
+            for (xmlAttrPtr attribute = node->properties; attribute != nullptr; attribute = attribute->next)
             {
-                return XmlNode(checkingNode);
+                wstring name(XmlConstString(attribute->name));
+                onAttribute(name, getAttribute(name));
             }
         }
 
-        return XmlNode();
-    }
-
-    XmlNode XmlNode::createChildElement(const wchar_t *type, const wchar_t *formatting, ...)
-    {
-        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
-
-        wstring content;
-        if (formatting != nullptr)
+        bool hasSiblingElement(const wchar_t *type) const
         {
-            va_list variableList;
-            va_start(variableList, formatting);
-            content.format(formatting, variableList);
-            va_end(variableList);
+            string typeUTF8(String::from<char>(type));
+            for (xmlNode *checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
+            {
+                if (checkingNode->type == XML_ELEMENT_NODE && (!type || compare(typeUTF8, checkingNode->name) == 0))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
-        xmlNodePtr childNode = xmlNewChild(static_cast<xmlNodePtr>(node), nullptr, BAD_CAST static_cast<const char *>(CW2A(type, CP_UTF8)), BAD_CAST static_cast<const char *>(CW2A(content, CP_UTF8)));
-        GEK_THROW_ERROR(childNode == nullptr, Xml::Exception, "Unable to create new child node: % (%)", type, content);
-
-        xmlAddChild(static_cast<xmlNodePtr>(node), childNode);
-
-        return XmlNode(childNode);
-    }
-
-    XmlDocument::XmlDocument(void *document)
-        : document(document)
-    {
-    }
-
-    XmlDocument::~XmlDocument(void)
-    {
-        if (document != nullptr)
+        XmlNodePtr nextSiblingElement(const wchar_t *type) const
         {
-            xmlFreeDoc(static_cast<xmlDocPtr>(document));
+            string typeUTF8(String::from<char>(type));
+            for (xmlNodePtr checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
+            {
+                if (checkingNode->type == XML_ELEMENT_NODE && (!type || compare(typeUTF8, checkingNode->name) == 0))
+                {
+                    return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(checkingNode));
+                }
+            }
+
+            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
         }
+
+        bool hasChildElement(const wchar_t *type) const
+        {
+            string typeUTF8(String::from<char>(type));
+            for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
+            {
+                if (checkingNode->type == XML_ELEMENT_NODE && (!type || compare(typeUTF8, checkingNode->name) == 0))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        XmlNodePtr firstChildElement(const wchar_t *type, bool create)
+        {
+            string typeUTF8(String::from<char>(type));
+            for (xmlNodePtr checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
+            {
+                if (checkingNode->type == XML_ELEMENT_NODE && (!type || compare(typeUTF8, checkingNode->name) == 0))
+                {
+                    return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(checkingNode));
+                }
+            }
+
+            if (create)
+            {
+                return createChildElement(type);
+            }
+            else
+            {
+                return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+            }
+        }
+
+        XmlNodePtr createChildElement(const wchar_t *type, const wchar_t *content = nullptr)
+        {
+            xmlNodePtr childNode = xmlNewChild(node, nullptr, XmlCast(type), XmlCast(content));
+            GEK_THROW_ERROR(childNode == nullptr, Xml::Exception, "Unable to create new child node: %v (%v)", type, content);
+
+            xmlAddChild(node, childNode);
+
+            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(childNode));
+        }
+    };
+
+    XmlNodePtr XmlNode::create(const wchar_t *type)
+    {
+        xmlNodePtr node = xmlNewNode(nullptr, XmlCast(type));
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Unable to create node: %v", type);
+
+        return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(node));
     }
 
-    XmlDocument XmlDocument::create(const wchar_t *rootType)
+    class XmlDocumentImplementation
+        : public XmlDocument
+    {
+    private:
+        xmlDocPtr document;
+
+    public:
+        XmlDocumentImplementation(xmlDocPtr document)
+            : document(document)
+        {
+            GEK_REQUIRE(document);
+        }
+
+        ~XmlDocumentImplementation(void)
+        {
+            xmlFreeDoc(document);
+        }
+
+        void save(const wchar_t *fileName)
+        {
+            wstring expandedFileName(Gek::FileSystem::expandPath(fileName));
+            xmlSaveFormatFileEnc(String::from<char>(fileName), document, "UTF-8", 1);
+        }
+
+        XmlNodePtr getRoot(const wchar_t *type) const
+        {
+            xmlNodePtr root = xmlDocGetRootElement(document);
+            GEK_THROW_ERROR(root == nullptr, Xml::Exception, "Unable to get document root node");
+
+            wstring rootType(XmlConstString(root->name));
+            GEK_THROW_ERROR(rootType.compare(type) != 0, Xml::Exception, "Document root node type doesn't match: (%v vs %v)", type, rootType);
+
+            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(root));
+        }
+    };
+
+    XmlDocumentPtr XmlDocument::create(const wchar_t *type)
     {
         xmlDocPtr document = xmlNewDoc(BAD_CAST "1.0");
         GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Unable to create new document");
 
-        xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST static_cast<const char *>(CW2A(rootType, CP_UTF8)));
-        GEK_THROW_ERROR(rootNode == nullptr, Xml::Exception, "Unable to create root node: %", rootType);
+        xmlNodePtr rootNode = xmlNewNode(nullptr, XmlCast(type));
+        GEK_THROW_ERROR(rootNode == nullptr, Xml::Exception, "Unable to create root node: %v", type);
 
         xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
 
-        return XmlDocument(document);
+        return std::dynamic_pointer_cast<XmlDocument>(std::make_shared<XmlDocumentImplementation>(document));
     }
 
-    XmlDocument XmlDocument::load(const wchar_t *fileName, bool validateDTD)
+    XmlDocumentPtr XmlDocument::load(const wchar_t *fileName, bool validateDTD)
     {
-        wstring expandedFileName(Gek::FileSystem::expandPath(fileName));
-        xmlDocPtr document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
-        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Unable to load document: %", fileName);
+        string fileNameUTF8(String::from<char>(Gek::FileSystem::expandPath(fileName)));
+        xmlDocPtr document = xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
+        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Unable to load document: %v", fileName);
 
-        return XmlDocument(document);
-    }
-
-    void XmlDocument::save(const wchar_t *fileName)
-    {
-        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Invalid document encountered");
-
-        wstring expandedFileName(Gek::FileSystem::expandPath(fileName));
-        xmlSaveFormatFileEnc(CW2A(expandedFileName, CP_UTF8), static_cast<xmlDocPtr>(document), "UTF-8", 1);
-    }
-
-    XmlNode XmlDocument::getRoot(void) const
-    {
-        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Invalid document encountered");
-
-        return XmlNode(xmlDocGetRootElement(static_cast<xmlDocPtr>(document)));
+        return std::dynamic_pointer_cast<XmlDocument>(std::make_shared<XmlDocumentImplementation>(document));
     }
 }; // namespace Gek

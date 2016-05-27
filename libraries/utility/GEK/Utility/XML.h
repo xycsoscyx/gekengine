@@ -9,62 +9,47 @@ namespace Gek
     namespace Xml
     {
         GEK_BASE_EXCEPTION();
-
-        void initialize(void);
-        void shutdown(void);
     }; // namespace Xml
 
-    class XmlNode
+    struct XmlNode;
+    typedef std::shared_ptr<XmlNode> XmlNodePtr;
+    struct XmlNode
     {
-    private:
-        void *node;
+        virtual ~XmlNode(void) = default;
 
-    private:
-        friend class XmlDocument;
-        XmlNode(void);
-        XmlNode(void *node);
+        static XmlNodePtr create(const wchar_t *type);
 
-    public:
-        virtual ~XmlNode(void);
+        virtual bool isValid(void) const = 0;
 
-        static XmlNode create(const wchar_t *type);
+        virtual wstring getType(void) const = 0;
 
-        operator bool() const;
+        virtual wstring getText(void) const = 0;
+        virtual void setText(const wchar_t *text) = 0;
 
-        wstring getType(void) const;
+        virtual bool hasAttribute(const wchar_t *name) const = 0;
+        virtual wstring getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const = 0;
+        virtual void setAttribute(const wchar_t *name, const wchar_t *value) = 0;
+        virtual void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const = 0;
 
-        wstring getText(void) const;
-        void setText(const wchar_t *formatting, ...);
+        virtual bool hasChildElement(const wchar_t *type = nullptr) const = 0;
+        virtual XmlNodePtr firstChildElement(const wchar_t *type = nullptr, bool create = false) = 0;
+        virtual XmlNodePtr createChildElement(const wchar_t *type, const wchar_t *content = nullptr) = 0;
 
-        bool hasAttribute(const wchar_t *name) const;
-        wstring getAttribute(const wchar_t *name) const;
-        void setAttribute(const wchar_t *name, const wchar_t *formatting, ...);
-        void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const;
-
-        bool hasChildElement(const wchar_t *type = nullptr) const;
-        XmlNode firstChildElement(const wchar_t *type = nullptr) const;
-        XmlNode createChildElement(const wchar_t *type, const wchar_t *formatting = nullptr, ...);
-
-        bool hasSiblingElement(const wchar_t *type = nullptr) const;
-        XmlNode nextSiblingElement(const wchar_t *type = nullptr) const;
+        virtual bool hasSiblingElement(const wchar_t *type = nullptr) const = 0;
+        virtual XmlNodePtr nextSiblingElement(const wchar_t *type = nullptr) const = 0;
     };
 
-    class XmlDocument
+    struct XmlDocument;
+    typedef std::shared_ptr<XmlDocument> XmlDocumentPtr;
+    struct XmlDocument
     {
-    private:
-        void *document;
+        virtual ~XmlDocument(void) = default;
 
-    private:
-        XmlDocument(void *document);
+        static XmlDocumentPtr create(const wchar_t *type);
+        static XmlDocumentPtr load(const wchar_t *fileName, bool validateDTD = false);
 
-    public:
-        virtual ~XmlDocument(void);
+        virtual void save(const wchar_t *fileName) = 0;;
 
-        static XmlDocument create(const wchar_t *rootType);
-        static XmlDocument load(const wchar_t *fileName, bool validateDTD = false);
-
-        void save(const wchar_t *fileName);
-
-        XmlNode getRoot(void) const;
+        virtual XmlNodePtr getRoot(const wchar_t *type) const = 0;
     };
 }; // namespace Gek

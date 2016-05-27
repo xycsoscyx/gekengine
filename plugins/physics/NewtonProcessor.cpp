@@ -130,15 +130,15 @@ namespace Gek
 
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
-                Gek::XmlDocument xmlDocument;
-                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName))))
+                Gek::XmlDocumentPtr xmlDocument;
+                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%v.xml", fileName))))
                 {
-                    Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
+                    Gek::XmlNodePtr xmlMaterialNode = xmlDocument.getRoot();
                     if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
                     {
                         if (xmlMaterialNode.hasChildElement(L"surface"))
                         {
-                            Gek::XmlNode xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
+                            Gek::XmlNodePtr xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
                             if (xmlSurfaceNode)
                             {
                                 Surface surface;
@@ -323,7 +323,20 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
+        void onLoadSucceeded(void)
+        {
+            if (newtonStaticScene)
+            {
+                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                if (SUCCEEDED(resultValue))
+                {
+                    newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+                    NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
+                }
+            }
+        }
+
+        void onLoadFailed(void)
         {
             if (newtonStaticScene)
             {
@@ -335,10 +348,11 @@ namespace Gek
                 }
             }
 
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
+            onFree();
+        }
+
+        STDMETHODIMP_(void) onLoadSucceeded(HRESULT resultValue)
+        {
         }
 
         STDMETHODIMP_(void) onFree(void)
@@ -551,7 +565,7 @@ namespace Gek
                 }
                 else
                 {
-                    wstring fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%.bin", shape.GetString())));
+                    wstring fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%v.bin", shape.GetString())));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");

@@ -29,7 +29,7 @@
 namespace Gek
 {
     class ModelProcessorImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ModelProcessorImplementation, Population *, PluginResources *, Render *>
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -116,9 +116,9 @@ namespace Gek
         };
 
     private:
+        Population *population;
         PluginResources *resources;
         Render *render;
-        Population *population;
 
         PluginHandle plugin;
         ResourceHandle constantBuffer;
@@ -137,209 +137,142 @@ namespace Gek
         VisibleList visibleList;
 
     public:
-        ModelProcessorImplementation(void)
-            : resources(nullptr)
-            , render(nullptr)
-            , population(nullptr)
+        ModelProcessorImplementation(Context *context, Population *population, PluginResources *resources, Render *render)
+            : ContextRegistration(context)
+            , population(population)
+            , resources(resources)
+            , render(render)
         {
+            population->addObserver((PopulationObserver *)this);
+            render->addObserver((RenderObserver *)this);
+
+            plugin = resources->loadPlugin(L"model");
+
+            constantBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
         }
 
         ~ModelProcessorImplementation(void)
         {
-            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
-            ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
+            render->removeObserver((RenderObserver *)this);
+            population->removeObserver((PopulationObserver *)this);
         }
 
-        HRESULT loadBoundingBox(Model &model, const wstring &name)
+        void loadBoundingBox(Model &model, const wstring &name)
         {
             static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
 
             HRESULT resultValue = E_FAIL;
 
-            model.fileName.Format(L"$root\\data\\models\\%.gek", name.GetString());
+            model.fileName = String::format(L"$root\\data\\models\\%v.gek", name);
 
             std::vector<UINT8> fileData;
-            resultValue = Gek::FileSystem::load(model.fileName, fileData, PreReadSize);
-            if (SUCCEEDED(resultValue))
+            Gek::FileSystem::load(model.fileName, fileData, PreReadSize);
+
+            UINT8 *rawFileData = fileData.data();
+            UINT32 gekIdentifier = *((UINT32 *)rawFileData);
+            GEK_THROW_ERROR(gekIdentifier != *(UINT32 *)"GEKX", BaseException, "Invalid model idetifier found: %v", gekIdentifier);
+            rawFileData += sizeof(UINT32);
+
+            UINT16 gekModelType = *((UINT16 *)rawFileData);
+            GEK_THROW_ERROR(gekModelType != 0, BaseException, "Invalid model type found: %v", gekModelType);
+            rawFileData += sizeof(UINT16);
+
+            UINT16 gekModelVersion = *((UINT16 *)rawFileData);
+            GEK_THROW_ERROR(gekModelVersion != 3, BaseException, "Invalid model version found: %v", gekModelVersion);
+            rawFileData += sizeof(UINT16);
+
+            model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
+        }
+
+        void loadModelWorker(Model &model)
+        {
+            std::vector<UINT8> fileData;
+            Gek::FileSystem::load(model.fileName, fileData);
+
+            UINT8 *rawFileData = fileData.data();
+            UINT32 gekIdentifier = *((UINT32 *)rawFileData);
+            GEK_THROW_ERROR(gekIdentifier != *(UINT32 *)"GEKX", BaseException, "Invalid model idetifier found: %v", gekIdentifier);
+            rawFileData += sizeof(UINT32);
+
+            UINT16 gekModelType = *((UINT16 *)rawFileData);
+            GEK_THROW_ERROR(gekModelType != 0, BaseException, "Invalid model type found: %v", gekModelType);
+            rawFileData += sizeof(UINT16);
+
+            UINT16 gekModelVersion = *((UINT16 *)rawFileData);
+            GEK_THROW_ERROR(gekModelVersion != 3, BaseException, "Invalid model version found: %v", gekModelVersion);
+            rawFileData += sizeof(UINT16);
+
+            model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
+            rawFileData += sizeof(Shapes::AlignedBox);
+
+            UINT32 subModelCount = *((UINT32 *)rawFileData);
+            rawFileData += sizeof(UINT32);
+
+            model.subModelList.resize(subModelCount);
+            for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
             {
-                UINT8 *rawFileData = fileData.data();
-                UINT32 gekIdentifier = *((UINT32 *)rawFileData);
-                rawFileData += sizeof(UINT32);
+                wstring materialName = (const wchar_t *)rawFileData;
+                rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
 
-                UINT16 gekModelType = *((UINT16 *)rawFileData);
-                rawFileData += sizeof(UINT16);
-
-                UINT16 gekModelVersion = *((UINT16 *)rawFileData);
-                rawFileData += sizeof(UINT16);
-
-                resultValue = E_INVALIDARG;
-                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
+                SubModel &subModel = model.subModelList[modelIndex];
+                if (materialName.compare(L"skin") == 0)
                 {
-                    model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
-                    resultValue = S_OK;
+                    subModel.skin = true;
                 }
                 else
                 {
+                    subModel.material = resources->loadMaterial(materialName);
                 }
-            }
 
-            return resultValue;
-        }
-
-        HRESULT loadModelWorker(Model &model)
-        {
-            HRESULT resultValue = E_FAIL;
-
-            std::vector<UINT8> fileData;
-            resultValue = Gek::FileSystem::load(model.fileName, fileData);
-            if (SUCCEEDED(resultValue))
-            {
-                UINT8 *rawFileData = fileData.data();
-                UINT32 gekIdentifier = *((UINT32 *)rawFileData);
+                UINT32 vertexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
-                UINT16 gekModelType = *((UINT16 *)rawFileData);
-                rawFileData += sizeof(UINT16);
+                subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%v", &subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                rawFileData += (sizeof(Vertex) * vertexCount);
 
-                UINT16 gekModelVersion = *((UINT16 *)rawFileData);
-                rawFileData += sizeof(UINT16);
+                UINT32 indexCount = *((UINT32 *)rawFileData);
+                rawFileData += sizeof(UINT32);
 
-                resultValue = E_INVALIDARG;
-                if (gekIdentifier == *(UINT32 *)"GEKX" && gekModelType == 0 && gekModelVersion == 3)
-                {
-                    model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
-                    rawFileData += sizeof(Shapes::AlignedBox);
-
-                    UINT32 subModelCount = *((UINT32 *)rawFileData);
-                    rawFileData += sizeof(UINT32);
-
-                    resultValue = S_OK;
-                    model.subModelList.resize(subModelCount);
-                    for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
-                    {
-                        wstring materialName = const wchar_t *(rawFileData);
-                        rawFileData += ((materialName.GetLength() + 1) * sizeof(wchar_t));
-
-                        SubModel &subModel = model.subModelList[modelIndex];
-                        if (materialName.CompareNoCase(L"skin") == 0)
-                        {
-                            subModel.skin = true;
-                        }
-                        else
-                        {
-                            subModel.material = resources->loadMaterial(materialName);
-                            if (!subModel.material)
-                            {
-                                resultValue = E_FAIL;
-                                break;
-                            }
-                        }
-
-                        UINT32 vertexCount = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-
-                        subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%", &subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
-                        rawFileData += (sizeof(Vertex) * vertexCount);
-
-                        UINT32 indexCount = *((UINT32 *)rawFileData);
-                        rawFileData += sizeof(UINT32);
-
-                        subModel.indexCount = indexCount;
-                        subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%", &subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
-                        rawFileData += (sizeof(UINT16) * indexCount);
-                    }
-                }
+                subModel.indexCount = indexCount;
+                subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%v", &subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                rawFileData += (sizeof(UINT16) * indexCount);
             }
 
-            if (SUCCEEDED(resultValue))
-            {
-                model.loaded = true;
-            }
-
-            return resultValue;
+            model.loaded = true;
         }
 
-        HRESULT loadModel(Model &model)
+        void loadModel(Model &model)
         {
             std::size_t hash = std::hash<wstring>()(model.fileName);
-            if (loadModelSet.count(hash) > 0)
+            if (loadModelSet.count(hash) == 0)
             {
-                return S_OK;
-            }
-
-            loadModelSet.insert(std::make_pair(hash, true));
-            loadModelQueue.push(std::bind(&ModelProcessorImplementation::loadModelWorker, this, std::ref(model)));
-            if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
-            {
-                loadModelRunning = std::async(std::launch::async, [&](void) -> void
+                loadModelSet.insert(std::make_pair(hash, true));
+                loadModelQueue.push(std::bind(&ModelProcessorImplementation::loadModelWorker, this, std::ref(model)));
+                if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
                 {
-                    CoInitialize(nullptr);
-                    std::function<void(void)> function;
-                    while (loadModelQueue.try_pop(function))
+                    loadModelRunning = std::async(std::launch::async, [&](void) -> void
                     {
-                        function();
-                    };
-
-                    CoUninitialize();
-                });
+                        std::function<void(void)> function;
+                        while (loadModelQueue.try_pop(function))
+                        {
+                            function();
+                        };
+                    });
+                }
             }
-
-            return S_OK;
         }
-
-        // System::Interface
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<PluginResources> resources(initializerContext);
-            CComQIPtr<Render> render(initializerContext);
-            CComQIPtr<Population> population(initializerContext);
-            if (resources && render && population)
-            {
-                this->resources = resources;
-                this->render = render;
-                this->population = population;
-                resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                plugin = resources->loadPlugin(L"model");
-                if (!plugin)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                constantBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                if (!constantBuffer)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            return resultValue;
-        };
 
         // PopulationObserver
-        STDMETHODIMP_(void) onLoadEnd(HRESULT resultValue)
+        void onLoadSucceeded(void)
         {
-            if (FAILED(resultValue))
-            {
-                onFree();
-            }
         }
 
-        STDMETHODIMP_(void) onFree(void)
+        void onLoadFailed(void)
+        {
+            onFree();
+        }
+
+        void onFree(void)
         {
             loadModelSet.clear();
             loadModelQueue.clear();
@@ -352,7 +285,7 @@ namespace Gek
             entityDataList.clear();
         }
 
-        STDMETHODIMP_(void) onEntityCreated(Entity *entity)
+        void onEntityCreated(Entity *entity)
         {
             GEK_REQUIRE(resources);
             GEK_REQUIRE(entity);
@@ -377,7 +310,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Entity *entity)
         {
             GEK_REQUIRE(entity);
 
@@ -404,7 +337,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);

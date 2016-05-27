@@ -27,32 +27,24 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(fileName);
 
-            Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName)));
+            Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%v.xml", fileName)));
+            Gek::XmlNodePtr materialNode = document->getRoot(L"material");
 
-            Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
-            GEK_THROW_ERROR(!xmlMaterialNode, BaseException, "XML doesn't contain root node: %", fileName);
-            GEK_THROW_ERROR(xmlMaterialNode.getType().compare(L"material") != 0, BaseException, "XML doesn't contain root material node: %", fileName);
-
-            Gek::XmlNode xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
-            GEK_THROW_ERROR(!xmlShaderNode, BaseException, "Unable to locate shader node in material: %", fileName);
-
-            wstring shaderFileName = xmlShaderNode.getText();
+            Gek::XmlNodePtr shaderNode = materialNode->firstChildElement(L"shader");
+            wstring shaderFileName = shaderNode->getText();
             shader = resources->loadShader(shaderFileName);
 
             std::unordered_map<wstring, wstring> resourceMap;
-            Gek::XmlNode xmlMapsNode = xmlMaterialNode.firstChildElement(L"maps");
-            if (xmlMapsNode)
+            Gek::XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
+            Gek::XmlNodePtr mapNode = mapsNode->firstChildElement();
+            while (mapNode->isValid())
             {
-                Gek::XmlNode xmlMapNode = xmlMapsNode.firstChildElement();
-                while (xmlMapNode)
-                {
-                    wstring name(xmlMapNode.getType());
-                    wstring source(xmlMapNode.getText());
-                    resourceMap[name] = source;
+                wstring name(mapNode->getType());
+                wstring source(mapNode->getText());
+                resourceMap[name] = source;
 
-                    xmlMapNode = xmlMapNode.nextSiblingElement();
-                };
-            }
+                mapNode = mapNode->nextSiblingElement();
+            };
 
             resources->loadResourceList(shader, fileName, resourceMap, resourceList);
         }
