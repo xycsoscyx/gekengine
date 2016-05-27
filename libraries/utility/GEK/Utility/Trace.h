@@ -128,7 +128,7 @@ namespace Gek
     #define GEK_TRACE_FUNCTION(...)                                 Gek::trace("i", "Function", GetTickCount64(), __FUNCTION__, __VA_ARGS__)
     #define GEK_TRACE_EVENT(MESSAGE, ...)                           Gek::trace("i", "Event", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
     #define GEK_TRACE_ERROR(MESSAGE, ...)                           Gek::trace("i", "Error", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-    #define GEK_CHECK_EXCEPTION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::String::format(MESSAGE, __VA_ARGS__));
+    #define GEK_THROW_ERROR(CONDITION, EXCEPTION, MESSAGE, ...)     if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::String::format(MESSAGE, __VA_ARGS__));
     #define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::String::format(MESSAGE, __VA_ARGS__));
 #else
     #define GEK_PARAMETER(NAME)

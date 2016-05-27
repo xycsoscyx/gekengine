@@ -10,8 +10,8 @@ namespace Gek
     {
         GEK_BASE_EXCEPTION();
 
-        static void initialize(void);
-        static void shutdown(void);
+        void initialize(void);
+        void shutdown(void);
     }; // namespace Xml
 
     class XmlNode

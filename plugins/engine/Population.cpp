@@ -86,14 +86,10 @@ namespace Gek
             getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
             {
                 ComponentPtr component(context->createClass<Component>(className));
-
-                wstring lowerCaseName(component->getName());
-                lowerCaseName.makeLower();
-
                 auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
                 if (identifierIterator.second)
                 {
-                    if (!componentNameList.insert(std::make_pair(lowerCaseName, component->getIdentifier())).second)
+                    if (!componentNameList.insert(std::make_pair(component->getName(), component->getIdentifier())).second)
                     {
                         componentList.erase(identifierIterator.first);
                     }

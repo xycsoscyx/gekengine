@@ -29,13 +29,13 @@ namespace Gek
     XmlNode::XmlNode(void)
         : node(dummyNode)
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Gek::Xml::initialize() not called");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Gek::Xml::initialize() not called");
     }
 
     XmlNode::XmlNode(LPVOID node)
         : node(node)
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
     }
 
     XmlNode::~XmlNode(void)
@@ -45,27 +45,27 @@ namespace Gek
     XmlNode XmlNode::create(const wchar_t *type)
     {
         xmlNodePtr node = xmlNewNode(nullptr, BAD_CAST static_cast<const char *>(CW2A(type, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Unable to create node: %", type);
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Unable to create node: %", type);
         return XmlNode(node);
     }
 
     XmlNode::operator bool() const
     {
-        return (node == dummyNode);
+        return (node != dummyNode);
     }
 
     wstring XmlNode::getType(void) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
         return static_cast<const wchar_t *>(CA2W(reinterpret_cast<const char *>(static_cast<xmlNodePtr>(node)->name), CP_UTF8));
     }
 
     wstring XmlNode::getText(void) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         xmlChar *content = xmlNodeGetContent(static_cast<xmlNodePtr>(node));
-        GEK_CHECK_EXCEPTION(content == nullptr, Xml::Exception, "Unable to get node content");
+        GEK_THROW_ERROR(content == nullptr, Xml::Exception, "Unable to get node content");
 
         CA2W text(reinterpret_cast<const char *>(content), CP_UTF8);
         xmlFree(content);
@@ -74,7 +74,7 @@ namespace Gek
 
     void XmlNode::setText(const wchar_t *formatting, ...)
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         wstring text;
         if (formatting != nullptr)
@@ -90,16 +90,16 @@ namespace Gek
 
     bool XmlNode::hasAttribute(const wchar_t *name) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
         return (xmlHasProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8))) ? true : false);
     }
 
     wstring XmlNode::getAttribute(const wchar_t *name) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         xmlChar *attribute = xmlGetProp(static_cast<xmlNodePtr>(node), BAD_CAST static_cast<const char *>(CW2A(name, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(attribute == nullptr, Xml::Exception, "Unable to get node attribute: %", name);
+        GEK_THROW_ERROR(attribute == nullptr, Xml::Exception, "Unable to get node attribute: %", name);
 
         CA2W value(reinterpret_cast<const char *>(attribute), CP_UTF8);
         xmlFree(attribute);
@@ -108,7 +108,7 @@ namespace Gek
 
     void XmlNode::setAttribute(const wchar_t *name, const wchar_t *formatting, ...)
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         wstring value;
         if (formatting != nullptr)
@@ -131,7 +131,7 @@ namespace Gek
 
     void XmlNode::listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         for (xmlAttrPtr attribute = static_cast<xmlNodePtr>(node)->properties; attribute != nullptr; attribute = attribute->next)
         {
@@ -142,7 +142,7 @@ namespace Gek
 
     bool XmlNode::hasSiblingElement(const wchar_t *type) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         bool hasSiblingElement = false;
         CW2A typeUtf8(type, CP_UTF8);
@@ -160,7 +160,7 @@ namespace Gek
 
     XmlNode XmlNode::nextSiblingElement(const wchar_t *type) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         CW2A typeUtf8(type, CP_UTF8);
         for (xmlNodePtr checkingNode = static_cast<xmlNodePtr>(node)->next; checkingNode; checkingNode = checkingNode->next)
@@ -176,7 +176,7 @@ namespace Gek
 
     bool XmlNode::hasChildElement(const wchar_t *type) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         bool hasChildElement = false;
         CW2A typeUtf8(type, CP_UTF8);
@@ -194,7 +194,7 @@ namespace Gek
 
     XmlNode XmlNode::firstChildElement(const wchar_t *type) const
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         CW2A typeUtf8(type, CP_UTF8);
         for (xmlNodePtr checkingNode = static_cast<xmlNodePtr>(node)->children; checkingNode; checkingNode = checkingNode->next)
@@ -210,7 +210,7 @@ namespace Gek
 
     XmlNode XmlNode::createChildElement(const wchar_t *type, const wchar_t *formatting, ...)
     {
-        GEK_CHECK_EXCEPTION(node == nullptr, Xml::Exception, "Invalid node encountered");
+        GEK_THROW_ERROR(node == nullptr, Xml::Exception, "Invalid node encountered");
 
         wstring content;
         if (formatting != nullptr)
@@ -222,7 +222,7 @@ namespace Gek
         }
 
         xmlNodePtr childNode = xmlNewChild(static_cast<xmlNodePtr>(node), nullptr, BAD_CAST static_cast<const char *>(CW2A(type, CP_UTF8)), BAD_CAST static_cast<const char *>(CW2A(content, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(childNode == nullptr, Xml::Exception, "Unable to create new child node: % (%)", type, content);
+        GEK_THROW_ERROR(childNode == nullptr, Xml::Exception, "Unable to create new child node: % (%)", type, content);
 
         xmlAddChild(static_cast<xmlNodePtr>(node), childNode);
 
@@ -245,10 +245,10 @@ namespace Gek
     XmlDocument XmlDocument::create(const wchar_t *rootType)
     {
         xmlDocPtr document = xmlNewDoc(BAD_CAST "1.0");
-        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to create new document");
+        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Unable to create new document");
 
         xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST static_cast<const char *>(CW2A(rootType, CP_UTF8)));
-        GEK_CHECK_EXCEPTION(rootNode == nullptr, Xml::Exception, "Unable to create root node: %", rootType);
+        GEK_THROW_ERROR(rootNode == nullptr, Xml::Exception, "Unable to create root node: %", rootType);
 
         xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
 
@@ -259,14 +259,14 @@ namespace Gek
     {
         wstring expandedFileName(Gek::FileSystem::expandPath(fileName));
         xmlDocPtr document = xmlReadFile(CW2A(expandedFileName, CP_UTF8), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
-        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Unable to load document: %", fileName);
+        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Unable to load document: %", fileName);
 
         return XmlDocument(document);
     }
 
     void XmlDocument::save(const wchar_t *fileName)
     {
-        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Invalid document encountered");
+        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Invalid document encountered");
 
         wstring expandedFileName(Gek::FileSystem::expandPath(fileName));
         xmlSaveFormatFileEnc(CW2A(expandedFileName, CP_UTF8), static_cast<xmlDocPtr>(document), "UTF-8", 1);
@@ -274,7 +274,7 @@ namespace Gek
 
     XmlNode XmlDocument::getRoot(void) const
     {
-        GEK_CHECK_EXCEPTION(document == nullptr, Xml::Exception, "Invalid document encountered");
+        GEK_THROW_ERROR(document == nullptr, Xml::Exception, "Invalid document encountered");
 
         return XmlNode(xmlDocGetRootElement(static_cast<xmlDocPtr>(document)));
     }

@@ -34,11 +34,11 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
         XmlDocument xmlDocument(XmlDocument::load(fileNameInput));
 
         XmlNode xmlWorldNode = xmlDocument.getRoot();
-        GEK_CHECK_EXCEPTION(!xmlWorldNode, BaseException, "XML document missing root node");
-        GEK_CHECK_EXCEPTION(xmlWorldNode.getText().CompareNoCase(L"world") == 0, BaseException, "XML document root node not 'world'");
+        GEK_THROW_ERROR(!xmlWorldNode, BaseException, "XML document missing root node");
+        GEK_THROW_ERROR(xmlWorldNode.getText().CompareNoCase(L"world") == 0, BaseException, "XML document root node not 'world'");
 
         XmlNode xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
-        GEK_CHECK_EXCEPTION(!xmlPopulationNode, BaseException, "XML document missing population node");
+        GEK_THROW_ERROR(!xmlPopulationNode, BaseException, "XML document missing population node");
 
         XmlNode xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
         while (xmlEntityNode)

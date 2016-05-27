@@ -392,15 +392,15 @@ namespace Gek
 
         PluginHandle loadPlugin(const wchar_t *fileName)
         {
-            auto load = std::bind([this](PluginHandle handle, wstring fileName) -> PluginPtr
+            auto load = [this, wstring(fileName)](PluginHandle handle) -> PluginPtr
             {
                 return getContext()->createClass<Plugin>(L"PluginSystem");
-            }, std::placeholders::_1, fileName);
+            };
 
-            auto request = std::bind([this](PluginHandle handle, std::function<void(PluginPtr)> set, std::function<PluginPtr(PluginHandle)> load) -> void
+            auto request = [this, load](PluginHandle handle, std::function<void(PluginPtr)> set) -> void
             {
                 set(load(handle));
-            }, std::placeholders::_1, std::placeholders::_2, load);
+            };
 
             return pluginManager.getGlobalHandle(request);
         }
@@ -650,7 +650,7 @@ namespace Gek
         {
             VideoTexturePtr texture;
             std::vector<wstring> tokenList(parameters.getLower().split(L':'));
-            GEK_CHECK_EXCEPTION(tokenList.size() != 2, BaseException, "Invalid number of parameters passed to create texture");
+            GEK_THROW_ERROR(tokenList.size() != 2, BaseException, "Invalid number of parameters passed to create texture");
             if (tokenList[0].compare(L"color") == 0)
             {
                 UINT32 colorPitch = 0;
@@ -707,8 +707,8 @@ namespace Gek
                     };
                 };
 
-                GEK_CHECK_EXCEPTION(!texture, BaseException, "Unable to create texture");
-                GEK_CHECK_EXCEPTION(colorPitch == 0, BaseException, "Unable to evaluate color format");
+                GEK_THROW_ERROR(!texture, BaseException, "Unable to create texture");
+                GEK_THROW_ERROR(colorPitch == 0, BaseException, "Unable to evaluate color format");
                 video->updateTexture(texture.get(), colorData, colorPitch);
             }
             else if (tokenList[0].compare(L"normal") == 0)

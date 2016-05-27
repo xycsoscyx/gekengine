@@ -30,11 +30,11 @@ namespace Gek
             Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%.xml", fileName)));
 
             Gek::XmlNode xmlMaterialNode = xmlDocument.getRoot();
-            GEK_CHECK_EXCEPTION(!xmlMaterialNode, BaseException, "XML doesn't contain root node: %", fileName);
-            GEK_CHECK_EXCEPTION(xmlMaterialNode.getType().compare(L"material") != 0, BaseException, "XML doesn't contain root material node: %", fileName);
+            GEK_THROW_ERROR(!xmlMaterialNode, BaseException, "XML doesn't contain root node: %", fileName);
+            GEK_THROW_ERROR(xmlMaterialNode.getType().compare(L"material") != 0, BaseException, "XML doesn't contain root material node: %", fileName);
 
             Gek::XmlNode xmlShaderNode = xmlMaterialNode.firstChildElement(L"shader");
-            GEK_CHECK_EXCEPTION(!xmlShaderNode, BaseException, "Unable to locate shader node in material: %", fileName);
+            GEK_THROW_ERROR(!xmlShaderNode, BaseException, "Unable to locate shader node in material: %", fileName);
 
             wstring shaderFileName = xmlShaderNode.getText();
             shader = resources->loadShader(shaderFileName);

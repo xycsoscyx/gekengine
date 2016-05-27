@@ -13,10 +13,9 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
+#include <experimental\filesystem>
 #include <concurrent_vector.h>
 #include <ppl.h>
-#include <experimental\filesystem>
-#include <regex>
 #include <set>
 
 namespace Gek
@@ -558,14 +557,9 @@ namespace Gek
         bool replaceDefines(wstring &value)
         {
             bool foundDefine = false;
-            for (auto &definePair : globalDefinesList)
+            for (auto &define : globalDefinesList)
             {
-                std::wsmatch match;
-                std::wregex regex(L"\\" + definePair.first);
-                if (foundDefine = std::regex_search(value, match, regex))
-                {
-                    value = std::regex_replace(value, regex, definePair.second);
-                }
+                foundDefine = (foundDefine | value.replace(define.first, define.second));
             }
 
             return foundDefine;
@@ -574,8 +568,8 @@ namespace Gek
         wstring evaluate(const wchar_t *value, bool integer = false)
         {
             wstring finalValue(value);
-            finalValue = std::regex_replace(finalValue, std::wregex(L"\\displayWidth"), String::format(L"%", video->getBackBuffer()->getWidth()));
-            finalValue = std::regex_replace(finalValue, std::wregex(L"\\displayHeight"), String::format(L"%", video->getBackBuffer()->getHeight()));
+            finalValue.replace(L"displayWidth", String::format(L"%", video->getBackBuffer()->getWidth()));
+            finalValue.replace(L"displayHeight", String::format(L"%", video->getBackBuffer()->getHeight()));
             while (replaceDefines(finalValue));
 
             if (finalValue.find(L"float2") != std::string::npos)
@@ -619,7 +613,7 @@ namespace Gek
             Gek::XmlDocument xmlDocument(XmlDocument::load(Gek::String::format(L"$root\\data\\shaders\\%.xml", fileName)));
 
             Gek::XmlNode xmlShaderNode = xmlDocument.getRoot();
-            GEK_CHECK_EXCEPTION(xmlShaderNode.getType().compare(L"shader") != 0, BaseException, "XML missing shader root node: %", fileName);
+            GEK_THROW_ERROR(xmlShaderNode.getType().compare(L"shader") != 0, BaseException, "XML missing shader root node: %", fileName);
 
             priority = String::to<UINT32>(xmlShaderNode.getAttribute(L"priority"));
 
@@ -838,7 +832,7 @@ namespace Gek
             {
                 BlockData block;
                 block.lighting = String::to<bool>(xmlBlockNode.getAttribute(L"lighting"));
-                GEK_CHECK_EXCEPTION(block.lighting && lightsPerPass <= 0, BaseException, "Lighting enabled without any lights per pass");
+                GEK_THROW_ERROR(block.lighting && lightsPerPass <= 0, BaseException, "Lighting enabled without any lights per pass");
 
                 Gek::XmlNode xmlClearNode = xmlBlockNode.firstChildElement(L"clear");
                 if (xmlClearNode)
@@ -854,7 +848,7 @@ namespace Gek
                 Gek::XmlNode xmlPassNode = xmlBlockNode.firstChildElement(L"pass");
                 while (xmlPassNode)
                 {
-                    GEK_CHECK_EXCEPTION(!xmlPassNode.hasChildElement(L"program"), BaseException, "Pass node requires program child node");
+                    GEK_THROW_ERROR(!xmlPassNode.hasChildElement(L"program"), BaseException, "Pass node requires program child node");
 
                     PassData pass;
                     if (xmlPassNode.hasAttribute(L"mode"))
@@ -899,8 +893,7 @@ namespace Gek
                             if (xmlResourceNode.hasAttribute(L"actions"))
                             {
                                 auto &actionMap = pass.actionMap[xmlResourceNode.getType()];
-                                wstring actions(xmlResourceNode.getAttribute(L"actions").getLower());
-                                std::vector<wstring> actionList(actions.split(L','));
+                                std::vector<wstring> actionList(xmlResourceNode.getAttribute(L"actions").getLower().split(L','));
                                 for(auto &action : actionList)
                                 {
                                     action.trim();
@@ -1182,9 +1175,9 @@ namespace Gek
                 if (dataIterator != materialDataMap.end())
                 {
                     wstring dataName = (*dataIterator).second.getLower();
-                    dataName = std::regex_replace(dataName, std::wregex(L"\\$directory"), filePath);
-                    dataName = std::regex_replace(dataName, std::wregex(L"\\$filename"), fileSpec);
-                    dataName = std::regex_replace(dataName, std::wregex(L"\\$material"), materialName);
+                    dataName.replace(L"$directory", filePath);
+                    dataName.replace(L"$filename", fileSpec);
+                    dataName.replace(L"$material", materialName);
                     resource = resources->loadTexture(dataName, mapValue.defaultValue, mapValue.flags);
                 }
 

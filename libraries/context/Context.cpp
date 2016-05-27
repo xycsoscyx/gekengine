@@ -73,10 +73,10 @@ namespace Gek
         }
 
         // Context
-        ContextUserPtr createClass(const wchar_t *name, void *parameters) const
+        ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const
         {
             auto classIterator = classMap.find(name);
-            GEK_CHECK_EXCEPTION(classIterator == classMap.end(), BaseException, "Unable to find requested class creator: %", name);
+            GEK_THROW_ERROR(classIterator == classMap.end(), BaseException, "Unable to find requested class creator: %", name);
             return (*classIterator).second((Context *)this, parameters);
         }
 

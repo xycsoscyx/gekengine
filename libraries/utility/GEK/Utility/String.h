@@ -68,6 +68,20 @@ namespace Gek
             return *(std::basic_string *)this;
         }
 
+        bool replace(const baseString &from, const baseString &to)
+        {
+            bool replaced = false;
+            size_t position = 0;
+            while ((position = find(from, position)) != std::string::npos)
+            {
+                basic_string::replace(position, from.size(), to);
+                position += to.length();
+                replaced = true;
+            };
+
+            return true;
+        }
+
         void trimLeft(void)
         {
             erase(begin(), std::find_if(begin(), end(), [](char ch) { return !std::isspace<char>(ch, std::locale::classic()); }));
@@ -624,18 +638,30 @@ namespace Gek
             baseString<ELEMENT> result;
             while (*formatting)
             {
-                if (*formatting == '%')
+                if (*formatting == '\\')
                 {
-                    if (*formatting == '%')
+                    const ELEMENT *slash = formatting++;
+                    if (formatting)
                     {
-                        result += *formatting++;
+                        if (*formatting == '%')
+                        {
+                            result += *formatting++;
+                        }
+                        else
+                        {
+                            result += *slash;
+                        }
                     }
                     else
                     {
-                        result += from<ELEMENT>(value);
-                        result += format(formatting, arguments...);
-                        break;
+                        result += *slash;
                     }
+                }
+                else if (*formatting == '%')
+                {
+                    result += from<ELEMENT>(value);
+                    result += format(++formatting, arguments...);
+                    break;
                 }
                 else
                 {

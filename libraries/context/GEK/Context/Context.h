@@ -25,7 +25,7 @@ namespace std
         };
 
         std::shared_ptr<RETURN> remadeObject(std::dynamic_pointer_cast<RETURN>(baseObject));
-        GEK_CHECK_EXCEPTION(remadeObject, Gek::BaseException, "Unable to cast base object to alternate type");
+        GEK_THROW_ERROR(!remadeObject, Gek::BaseException, "Unable to cast base object to alternate type");
 
         return remadeObject;
     }
@@ -39,13 +39,13 @@ namespace Gek
     {
         static ContextPtr create(const std::vector<wstring> &searchPathList);
 
-        virtual ContextUserPtr createClass(const wchar_t *name, void *parameters) const = 0;
+        virtual ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const = 0;
 
         template <typename TYPE, typename... ARGUMENTS>
         std::shared_ptr<TYPE> createClass(const wchar_t *name, ARGUMENTS... arguments) const
         {
             std::tuple<ARGUMENTS...> tuple(arguments...);
-            return std::dynamic_pointer_cast<TYPE>(createClass(name, &tuple));
+            return std::dynamic_pointer_cast<TYPE>(createBaseClass(name, static_cast<void *>(&tuple)));
         }
 
         virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const = 0;

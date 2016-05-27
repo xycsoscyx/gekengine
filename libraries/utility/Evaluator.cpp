@@ -6,7 +6,6 @@
 #include <functional>
 #include <random>
 #include <stack>
-#include <regex>
 
 namespace Gek
 {

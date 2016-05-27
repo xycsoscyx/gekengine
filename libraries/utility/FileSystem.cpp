@@ -1,4 +1,5 @@
 #include "GEK\Utility\FileSystem.h"
+#include <experimental\filesystem>
 #include <atlbase.h>
 #include <atlpath.h>
 
@@ -8,29 +9,26 @@ namespace Gek
     {
         wstring expandPath(const wchar_t *fileName)
         {
-            CStringW expandedFileName(fileName);
-            if (expandedFileName.Find(L"$root") >= 0)
+            wstring expandedFileName(fileName);
+            if (expandedFileName.find(L"$root") != std::string::npos)
             {
-                CStringW currentModuleName;
-                GetModuleFileName(nullptr, currentModuleName.GetBuffer(MAX_PATH + 1), MAX_PATH);
-                currentModuleName.ReleaseBuffer();
+                wstring currentModuleName(MAX_PATH + 1, L' ');
+                GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+                currentModuleName.trimRight();
 
-                CPathW currentModulePath;
-                CStringW &currentModulePathString = currentModulePath;
-                GetFullPathName(currentModuleName, MAX_PATH, currentModulePathString.GetBuffer(MAX_PATH + 1), nullptr);
-                currentModulePathString.ReleaseBuffer();
+                wstring expandedModuleName(MAX_PATH + 1, L' ');
+                GetFullPathName(currentModuleName, MAX_PATH, &expandedModuleName.at(0), nullptr);
+                expandedModuleName.trimRight();
 
-                // Remove filename from path
-                currentModulePath.RemoveFileSpec();
+                std::experimental::filesystem::path currentModulePath(expandedModuleName);
+                currentModulePath.remove_filename();
+                currentModulePath.remove_filename();
 
-                // Remove debug/release form path
-                currentModulePath.RemoveFileSpec();
-
-                expandedFileName.Replace(L"$root", currentModulePath);
+                expandedFileName.replace(L"$root", currentModulePath.c_str());
             }
 
-            expandedFileName.Replace(L"/", L"\\");
-            return expandedFileName.GetString();
+            expandedFileName.replace(L"/", L"\\");
+            return expandedFileName;
         }
 
         void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
@@ -73,7 +71,7 @@ namespace Gek
         {
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %", fileName);
+            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %", fileName);
 
             DWORD fileSize = GetFileSize(fileHandle, nullptr);
             if (fileSize > 0)
@@ -89,8 +87,8 @@ namespace Gek
 
                 DWORD bytesRead = 0;
                 BOOL success = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr);
-                GEK_CHECK_EXCEPTION(!success, FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
-                GEK_CHECK_EXCEPTION(bytesRead != buffer.size(), FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
+                GEK_THROW_ERROR(!success, FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
+                GEK_THROW_ERROR(bytesRead != buffer.size(), FileReadError, "Unable to read % bytes from file: %", buffer.size(), fileName);
             }
 
             CloseHandle(fileHandle);
@@ -115,12 +113,12 @@ namespace Gek
         {
             wstring expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_CHECK_EXCEPTION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %", fileName);
+            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %", fileName);
 
             DWORD bytesWritten = 0;
             BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-            GEK_CHECK_EXCEPTION(!success, FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
-            GEK_CHECK_EXCEPTION(bytesWritten != buffer.size(), FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
+            GEK_THROW_ERROR(!success, FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
+            GEK_THROW_ERROR(bytesWritten != buffer.size(), FileWriteError, "Unable to write % bytes from file: %", buffer.size(), fileName);
             CloseHandle(fileHandle);
         }
 
