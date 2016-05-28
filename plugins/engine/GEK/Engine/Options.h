@@ -6,7 +6,7 @@
 namespace Gek
 {
     GEK_INTERFACE(Options)
-        : public Observable
+        : virtual public Observable
     {
         virtual const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const = 0;
 
@@ -16,7 +16,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(OptionsObserver)
-        : public Observer
+        : virtual public Observer
     {
         virtual void onChanged(void) { };
     };

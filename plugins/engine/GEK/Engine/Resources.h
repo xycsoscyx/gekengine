@@ -77,8 +77,8 @@ namespace Gek
         virtual ResourceHandle loadTexture(const wstring &fileName, const wstring &fallback, UINT32 flags) = 0;
 
         virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) = 0;
-        virtual ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) = 0;
-        virtual ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData = nullptr) = 0;
+        virtual ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData = nullptr) = 0;
+        virtual ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData = nullptr) = 0;
 
         virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
         virtual void unmapBuffer(ResourceHandle buffer) = 0;

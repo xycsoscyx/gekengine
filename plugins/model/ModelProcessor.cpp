@@ -227,14 +227,14 @@ namespace Gek
                 UINT32 vertexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
-                subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%v", &subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%v", (const void *)&subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                 rawFileData += (sizeof(Vertex) * vertexCount);
 
                 UINT32 indexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
                 subModel.indexCount = indexCount;
-                subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%v", &subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%v", (const void *)&subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                 rawFileData += (sizeof(UINT16) * indexCount);
             }
 
@@ -297,11 +297,11 @@ namespace Gek
                 auto pair = dataMap.insert(std::make_pair(hash, Model()));
                 if (pair.second)
                 {
-                    loadBoundingBox(pair.first->second, modelComponent);
+                    loadBoundingBox(pair.first->second, modelComponent.value);
                 }
 
                 MaterialHandle skinMaterial;
-                if (!modelComponent.skin.IsEmpty())
+                if (!modelComponent.skin.empty())
                 {
                     skinMaterial = resources->loadMaterial(modelComponent.skin);
                 }
@@ -325,16 +325,14 @@ namespace Gek
         static void drawCall(RenderContext *renderContext, PluginResources *resources, const SubModel &subModel, const InstanceData *instance, ResourceHandle constantBuffer)
         {
             InstanceData *instanceData = nullptr;
-            if (SUCCEEDED(resources->mapBuffer(constantBuffer, (void **)&instanceData)))
-            {
-                memcpy(instanceData, instance, sizeof(InstanceData));
-                resources->unmapBuffer(constantBuffer);
+            resources->mapBuffer(constantBuffer, (void **)&instanceData);
+            memcpy(instanceData, instance, sizeof(InstanceData));
+            resources->unmapBuffer(constantBuffer);
 
-                resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-                resources->setVertexBuffer(renderContext, 0, subModel.vertexBuffer, 0);
-                resources->setIndexBuffer(renderContext, subModel.indexBuffer, 0);
-                renderContext->getContext()->drawIndexedPrimitive(subModel.indexCount, 0, 0);
-            }
+            resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
+            resources->setVertexBuffer(renderContext, 0, subModel.vertexBuffer, 0);
+            resources->setIndexBuffer(renderContext, subModel.indexBuffer, 0);
+            renderContext->getContext()->drawIndexedPrimitive(subModel.indexCount, 0, 0);
         }
 
         void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
@@ -391,5 +389,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(ModelProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(ModelProcessorImplementation)
 }; // namespace Gek

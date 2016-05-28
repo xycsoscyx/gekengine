@@ -86,7 +86,7 @@ namespace Gek
         }
 
     private:
-        IUnknown *actionProvider;
+        //Action *actionProvider;
         NewtonProcessor *newtonProcessor;
         NewtonWorld *newtonWorld;
 
@@ -117,12 +117,12 @@ namespace Gek
         bool isJumpingState;
 
     public:
-        PlayerNewtonBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity,
+        PlayerNewtonBody(INewtonWorld *newtonWorld, Entity *entity,
             PlayerBodyComponent &playerBodyComponent,
             TransformComponent &transformComponent,
             MassComponent &massComponent)
-            : actionProvider(actionProvider)
-            , newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
+            //: actionProvider(actionProvider)
+            : newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
@@ -221,13 +221,8 @@ namespace Gek
             NewtonDestroyCollision(newtonCastingShape);
             NewtonDestroyCollision(newtonSupportShape);
             NewtonDestroyCollision(newtonUpperBodyShape);
-            ObservableMixin::removeObserver(actionProvider, getClass<ActionObserver>());
+            //actionProvider->removeObserver((ActionObserver *)this);
         }
-
-        // IUnknown
-        BEGIN_INTERFACE_LIST(PlayerNewtonBody)
-            INTERFACE_LIST_ENTRY_COM(ActionObserver);
-        END_INTERFACE_LIST_UNKNOWN
 
         void addPlayerVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed)
         {
@@ -254,7 +249,7 @@ namespace Gek
         }
 
         // ActionObserver
-        STDMETHODIMP_(void) onAction(const wchar_t *name, const ActionParam &param)
+        void onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"turn") == 0)
             {
@@ -271,22 +266,22 @@ namespace Gek
         }
 
         // NewtonEntity
-        STDMETHODIMP_(Entity *) getEntity(void) const
+        Entity * const getEntity(void) const
         {
             return entity;
         }
 
-        STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
+        NewtonBody * const getNewtonBody(void) const
         {
             return newtonBody;
         }
 
-        STDMETHODIMP_(UINT32) getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+        UINT32 getSurface(const Math::Float3 &position, const Math::Float3 &normal)
         {
             return 0;
         }
 
-        STDMETHODIMP_(void) onPreUpdate(float frameTime, int threadHandle)
+        void onPreUpdate(float frameTime, int threadHandle)
         {
             forwardSpeed = 0.0f;
             lateralSpeed = 0.0f;
@@ -308,7 +303,7 @@ namespace Gek
             setDesiredVelocity(matrix, frameTime);
         }
 
-        STDMETHODIMP_(void) onPostUpdate(float frameTime, int threadHandle)
+        void onPostUpdate(float frameTime, int threadHandle)
         {
             // get the body motion state 
             Math::Float4x4 matrix;
@@ -870,10 +865,10 @@ namespace Gek
         return new FallingState(playerBody);
     }
 
-    NewtonEntity *createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent)
+    NewtonEntity *createPlayerBody(NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent)
     {
-        PlayerNewtonBody *playerBody = new PlayerNewtonBody(actionProvider, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent);
-        ObservableMixin::addObserver(actionProvider, playerBody->getClass<ActionObserver>());
+        PlayerNewtonBody *playerBody = new PlayerNewtonBody(newtonWorld, entity, playerBodyComponent, transformComponent, massComponent);
+        ObservableMixin::addObserver(playerBody->getClass<ActionObserver>());
         return playerBody;
     }
 
@@ -904,24 +899,21 @@ namespace Gek
     }
 
     class PlayerBodyImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<PlayerBodyImplementation>
         , public ComponentMixin<PlayerBodyComponent>
     {
     public:
-        PlayerBodyImplementation(void)
+        PlayerBodyImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(PlayerBodyImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-            END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"player_body";
         }
     };
 
-    REGISTER_CLASS(PlayerBodyImplementation)
+    GEK_REGISTER_CONTEXT_USER(PlayerBodyImplementation)
 }; // namespace Gek

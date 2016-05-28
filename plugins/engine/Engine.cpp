@@ -22,7 +22,7 @@ namespace Gek
 {
     class EngineImplementation
         : public ContextRegistration<EngineImplementation, HWND>
-        , public ObservableMixin<EngineImplementation>
+        , virtual public ObservableMixin
         , public Engine
         , public RenderObserver
         , public PopulationObserver
@@ -204,7 +204,7 @@ namespace Gek
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
             resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
             population = getContext()->createClass<Population>(L"PopulationSystem");
-            render = getContext()->createClass<Render>(L"RenderSystem", population, resources);
+            render = getContext()->createClass<Render>(L"RenderSystem", population.get(), resources.get());
 
             updateHandle = population->setUpdatePriority(this, 0);
             render->addObserver((RenderObserver *)this);
@@ -251,9 +251,6 @@ namespace Gek
             video = nullptr;
             CoUninitialize();
         }
-
-        using ObservableMixin::addObserver;
-        using ObservableMixin::removeObserver;
 
         // Options
         const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const

@@ -32,24 +32,21 @@ namespace Gek
     }
 
     class ParticlesImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ParticlesImplementation>
         , public ComponentMixin<ParticlesComponent>
     {
     public:
-        ParticlesImplementation(void)
+        ParticlesImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(ParticlesImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"particles";
         }
     };
 
-    REGISTER_CLASS(ParticlesImplementation)
+    GEK_REGISTER_CONTEXT_USER(ParticlesImplementation)
 }; // namespace Gek

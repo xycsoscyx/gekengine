@@ -23,24 +23,21 @@ namespace Gek
     }
 
     class StaticBodyImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<StaticBodyImplementation>
         , public ComponentMixin<StaticBodyComponent>
     {
     public:
-        StaticBodyImplementation(void)
+        StaticBodyImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(StaticBodyImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"static_body";
         }
     };
 
-    REGISTER_CLASS(StaticBodyImplementation)
+    GEK_REGISTER_CONTEXT_USER(StaticBodyImplementation)
 }; // namespace Gek

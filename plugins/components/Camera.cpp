@@ -72,45 +72,39 @@ namespace Gek
     }
 
     class FirstPersonCameraImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<FirstPersonCameraImplementation>
         , public ComponentMixin<FirstPersonCameraComponent>
     {
     public:
-        FirstPersonCameraImplementation(void)
+        FirstPersonCameraImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(FirstPersonCameraImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"first_person_camera";
         }
     };
 
     class ThirdPersonCameraImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ThirdPersonCameraImplementation>
         , public ComponentMixin<ThirdPersonCameraComponent>
     {
     public:
-        ThirdPersonCameraImplementation(void)
+        ThirdPersonCameraImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(ThirdPersonCameraImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"third_person_camera";
         }
     };
 
-    REGISTER_CLASS(FirstPersonCameraImplementation)
-    REGISTER_CLASS(ThirdPersonCameraImplementation)
+    GEK_REGISTER_CONTEXT_USER(FirstPersonCameraImplementation);
+    GEK_REGISTER_CONTEXT_USER(ThirdPersonCameraImplementation);
 }; // namespace Gek

@@ -13,7 +13,7 @@
 namespace Gek
 {
     class CameraProcessorImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<CameraProcessorImplementation>
         , public PopulationObserver
         , public Processor
     {
@@ -25,11 +25,14 @@ namespace Gek
         Render *render;
 
     public:
-        CameraProcessorImplementation(void)
-            : population(nullptr)
+        CameraProcessorImplementation(Context *context)
+            : ContextRegistration(context)
+            , population(nullptr)
             , updateHandle(0)
             , render(nullptr)
         {
+            population->addObserver((PopulationObserver *)this);
+            updateHandle = population->setUpdatePriority(this, 90);
         }
 
         ~CameraProcessorImplementation(void)
@@ -42,32 +45,8 @@ namespace Gek
             population->removeObserver((PopulationObserver *)this);
         }
 
-        BEGIN_INTERFACE_LIST(CameraProcessorImplementation)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_COM(Processor)
-        END_INTERFACE_LIST_USER
-
-        // System::Interface
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<Population> population(initializerContext);
-            CComQIPtr<Render> render(initializerContext);
-            if (render)
-            {
-                this->render = render;
-                this->population = population;
-                resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-                updateHandle = population->setUpdatePriority(this, 90);
-            }
-
-            return resultValue;
-        };
-
         // PopulationObserver
-        STDMETHODIMP_(void) onLoadBegin(void)
+        void onLoadBegin(void)
         {
         }
 
@@ -80,20 +59,20 @@ namespace Gek
             onFree();
         }
 
-        STDMETHODIMP_(void) onFree(void)
+        void onFree(void)
         {
         }
 
-        STDMETHODIMP_(void) onEntityCreated(Entity *head)
+        void onEntityCreated(Entity *head)
         {
             GEK_REQUIRE(population);
         }
 
-        STDMETHODIMP_(void) onEntityDestroyed(Entity *head)
+        void onEntityDestroyed(Entity *head)
         {
         }
 
-        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(UINT32 handle, bool isIdle)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(render);
@@ -113,5 +92,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(CameraProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(CameraProcessorImplementation);
 }; // namespace Gek

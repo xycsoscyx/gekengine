@@ -14,21 +14,5 @@ namespace Gek
         ShapeComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;
         HRESULT load(const Population::ComponentDefinition &componentData);
-
-        inline operator const wchar_t *() const
-        {
-            return value.GetString();
-        }
-
-        inline operator wstring () const
-        {
-            return value;
-        }
-
-        inline wstring &operator = (const wchar_t *value)
-        {
-            this->value = value;
-            return this->value;
-        }
     };
 }; // namespace Gek

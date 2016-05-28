@@ -12,7 +12,7 @@ namespace Gek
 
     HRESULT ColorComponent::save(Population::ComponentDefinition &componentData) const
     {
-        saveParameter(componentData, L"", value);
+        saveParameter(componentData, nullptr, value);
         return S_OK;
     }
 
@@ -22,24 +22,21 @@ namespace Gek
     }
 
     class ColorImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ColorImplementation>
         , public ComponentMixin<ColorComponent>
     {
     public:
-        ColorImplementation(void)
+        ColorImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(ColorImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"color";
         }
     };
 
-    REGISTER_CLASS(ColorImplementation)
+    GEK_REGISTER_CONTEXT_USER(ColorImplementation);
 }; // namespace Gek

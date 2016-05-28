@@ -26,24 +26,21 @@ namespace Gek
     }
 
     class ShapeImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ShapeImplementation>
         , public ComponentMixin<ShapeComponent>
     {
     public:
-        ShapeImplementation(void)
+        ShapeImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(ShapeImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"shape";
         }
     };
 
-    REGISTER_CLASS(ShapeImplementation)
+    GEK_REGISTER_CONTEXT_USER(ShapeImplementation)
 }; // namespace Gek

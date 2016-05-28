@@ -67,7 +67,7 @@ namespace Gek
 
     class RenderImplementation
         : public ContextRegistration<RenderImplementation, VideoSystem *, Resources *, Population *>
-        , public ObservableMixin<RenderImplementation>
+        , virtual public ObservableMixin
         , public PopulationObserver
         , public Render
     {
@@ -248,9 +248,6 @@ namespace Gek
 
             population->removeObserver((PopulationObserver *)this);
         }
-
-        using ObservableMixin::addObserver;
-        using ObservableMixin::removeObserver;
 
         // Render
         void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw)

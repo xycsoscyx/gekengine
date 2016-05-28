@@ -36,7 +36,7 @@ namespace Gek
             wstring expandedFileName(expandPath(fileName));
 
             std::experimental::filesystem::path expandedPath(expandedFileName);
-            expandedPath.concat(filterTypes);
+            expandedPath.append(filterTypes);
 
             WIN32_FIND_DATA findData;
             HANDLE findHandle = FindFirstFile(expandedPath.c_str(), &findData);
@@ -44,16 +44,19 @@ namespace Gek
             {
                 do
                 {
+                    std::experimental::filesystem::path foundPath(expandedFileName);
+                    foundPath.append(findData.cFileName);
+
                     if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
                     {
                         if (searchRecursively && findData.cFileName[0] != L'.')
                         {
-                            find((expandedFileName + findData.cFileName).c_str(), filterTypes, searchRecursively, onFileFound);
+                            find(foundPath.c_str(), filterTypes, searchRecursively, onFileFound);
                         }
                     }
                     else
                     {
-                        if (!onFileFound((expandedFileName + findData.cFileName[0]).c_str()))
+                        if (!onFileFound(foundPath.c_str()))
                         {
                             break;
                         }

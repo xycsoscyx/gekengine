@@ -363,7 +363,7 @@ namespace Gek
     };
 
     class ShapeProcessorImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ShapeProcessorImplementation>
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -454,52 +454,40 @@ namespace Gek
         VisibleList visibleList;
 
     public:
-        ShapeProcessorImplementation(void)
-            : resources(nullptr)
+        ShapeProcessorImplementation(Context *context)
+            : ContextRegistration(context)
+            , resources(nullptr)
             , render(nullptr)
             , population(nullptr)
         {
+            population->addObserver((PopulationObserver *)this);
+            render->addObserver((RenderObserver *)this);
+
+            plugin = resources->loadPlugin(L"model");
+ 
+            constantBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
         }
 
         ~ShapeProcessorImplementation(void)
         {
-            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
-            ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
+            render->removeObserver((RenderObserver *)this);
+            population->removeObserver((PopulationObserver *)this);
         }
 
-        BEGIN_INTERFACE_LIST(ShapeProcessorImplementation)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_COM(RenderObserver)
-            INTERFACE_LIST_ENTRY_COM(Processor)
-        END_INTERFACE_LIST_USER
-
-        HRESULT loadBoundingBox(Shape &shape, const wstring &name, const wstring &parameters)
+        void loadBoundingBox(Shape &shape, const wstring &name, const wstring &parameters)
         {
-            HRESULT resultValue = E_FAIL;
-            if (name.CompareNoCase(L"sphere") == 0)
+            if (name.compare(L"sphere") == 0)
             {
                 shape.type = ShapeType::Sphere;
                 shape.parameters = parameters;
-                resultValue = S_OK;
-            }
-            else
-            {
-                resultValue = E_FAIL;
             }
 
-            if (SUCCEEDED(resultValue))
-            {
-                shape.alignedBox.minimum = Math::Float3(-1.0f);
-                shape.alignedBox.maximum = Math::Float3(1.0f);
-            }
-
-            return resultValue;
+            shape.alignedBox.minimum = Math::Float3(-1.0f);
+            shape.alignedBox.maximum = Math::Float3(1.0f);
         }
 
-        HRESULT loadShapeWorker(Shape &shape)
+        void loadShapeWorker(Shape &shape)
         {
-            HRESULT resultValue = E_FAIL;
-
             int position = 0;
             switch (shape.type)
             {
@@ -511,91 +499,38 @@ namespace Gek
                     geoSphere.generate(divisionCount);
 
                     shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%v", &shape), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String::format(L"shape:index:%v", &shape), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    shape.vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%v", (const void *)&shape), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                    shape.indexBuffer = resources->createBuffer(String::format(L"shape:index:%v", (const void *)&shape), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
                     break;
                 }
             };
 
-            resultValue = ((shape.vertexBuffer && shape.indexBuffer) ? S_OK : E_FAIL);
-            if (SUCCEEDED(resultValue))
-            {
-                shape.loaded = true;
-            }
-
-            return resultValue;
+            shape.loaded = true;
         }
 
-        HRESULT loadShape(Shape &shape)
+        void loadShape(Shape &shape)
         {
-            std::size_t hash = std::hash<LPCVOID>()(&shape);
-            if (loadShapeSet.count(hash) > 0)
+            std::size_t hash = std::hash<const void *>()(&shape);
+            if (loadShapeSet.count(hash) == 0)
             {
-                return S_OK;
-            }
-
-            loadShapeSet.insert(std::make_pair(hash, true));
-            loadShapeQueue.push(std::bind(&ShapeProcessorImplementation::loadShapeWorker, this, std::ref(shape)));
-            if (!loadShapeRunning.valid() || (loadShapeRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
-            {
-                loadShapeRunning = std::async(std::launch::async, [&](void) -> void
+                loadShapeSet.insert(std::make_pair(hash, true));
+                loadShapeQueue.push(std::bind(&ShapeProcessorImplementation::loadShapeWorker, this, std::ref(shape)));
+                if (!loadShapeRunning.valid() || (loadShapeRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
                 {
-                    CoInitialize(nullptr);
-                    std::function<void(void)> function;
-                    while (loadShapeQueue.try_pop(function))
+                    loadShapeRunning = std::async(std::launch::async, [&](void) -> void
                     {
-                        function();
-                    };
+                        CoInitialize(nullptr);
+                        std::function<void(void)> function;
+                        while (loadShapeQueue.try_pop(function))
+                        {
+                            function();
+                        };
 
-                    CoUninitialize();
-                });
+                        CoUninitialize();
+                    });
+                }
             }
-
-            return S_OK;
         }
-
-        // System::Interface
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<PluginResources> resources(initializerContext);
-            CComQIPtr<Render> render(initializerContext);
-            CComQIPtr<Population> population(initializerContext);
-            if (resources && render && population)
-            {
-                this->resources = resources;
-                this->render = render;
-                this->population = population;
-                resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                plugin = resources->loadPlugin(L"model");
-                if (!plugin)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                constantBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                if (!constantBuffer)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            return resultValue;
-        };
 
         // PopulationObserver
         void onLoadSucceeded(void)
@@ -607,7 +542,7 @@ namespace Gek
             onFree();
         }
 
-        STDMETHODIMP_(void) onFree(void)
+        void onFree(void)
         {
             loadShapeSet.clear();
             loadShapeQueue.clear();
@@ -620,7 +555,7 @@ namespace Gek
             entityDataList.clear();
         }
 
-        STDMETHODIMP_(void) onEntityCreated(Entity *entity)
+        void onEntityCreated(Entity *entity)
         {
             GEK_REQUIRE(resources);
             GEK_REQUIRE(entity);
@@ -628,7 +563,7 @@ namespace Gek
             if (entity->hasComponents<ShapeComponent, TransformComponent>())
             {
                 auto &shapeComponent = entity->getComponent<ShapeComponent>();
-                std::size_t hash = std::hash<CStringW>()(shapeComponent.parameters + shapeComponent.value);
+                std::size_t hash = std::hash_combine(shapeComponent.parameters, shapeComponent.value);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {
@@ -639,7 +574,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Entity *entity)
         {
             GEK_REQUIRE(entity);
 
@@ -654,19 +589,17 @@ namespace Gek
         static void drawCall(RenderContext *renderContext, PluginResources *resources, const Shape *shape, const InstanceData *instance, ResourceHandle constantBuffer)
         {
             InstanceData *instanceData = nullptr;
-            if (SUCCEEDED(resources->mapBuffer(constantBuffer, (void **)&instanceData)))
-            {
-                memcpy(instanceData, instance, sizeof(InstanceData));
-                resources->unmapBuffer(constantBuffer);
+            resources->mapBuffer(constantBuffer, (void **)&instanceData);
+            memcpy(instanceData, instance, sizeof(InstanceData));
+            resources->unmapBuffer(constantBuffer);
 
-                resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-                resources->setVertexBuffer(renderContext, 0, shape->vertexBuffer, 0);
-                resources->setIndexBuffer(renderContext, shape->indexBuffer, 0);
-                renderContext->getContext()->drawIndexedPrimitive(shape->indexCount, 0, 0);
-            }
+            resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
+            resources->setVertexBuffer(renderContext, 0, shape->vertexBuffer, 0);
+            resources->setIndexBuffer(renderContext, shape->indexBuffer, 0);
+            renderContext->getContext()->drawIndexedPrimitive(shape->indexCount, 0, 0);
         }
 
-        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
@@ -688,7 +621,7 @@ namespace Gek
                     Gek::Math::Color color(1.0f);
                     if (entity->hasComponent<ColorComponent>())
                     {
-                        color = entity->getComponent<ColorComponent>();
+                        color = entity->getComponent<ColorComponent>().value;
                     }
 
                     auto &materialList = visibleList[&shape];
@@ -717,5 +650,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(ShapeProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(ShapeProcessorImplementation)
 }; // namespace Gek

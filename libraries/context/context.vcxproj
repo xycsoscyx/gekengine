@@ -16,6 +16,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Context.cpp" />
+    <ClCompile Include="ObservableMixin.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\utility\GEK\Utility\Allocator.h" />

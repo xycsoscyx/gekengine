@@ -292,7 +292,6 @@ namespace Gek
         , public Resources
     {
     private:
-        IUnknown *initializerContext;
         VideoSystem *video;
 
         ResourceManager<ProgramHandle, VideoObject> programManager;
@@ -582,7 +581,7 @@ namespace Gek
             }
         }
 
-        ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
+        ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData)
         {
             auto load = [this, stride, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
@@ -612,7 +611,7 @@ namespace Gek
             }
         }
 
-        ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, LPCVOID staticData)
+        ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData)
         {
             auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {

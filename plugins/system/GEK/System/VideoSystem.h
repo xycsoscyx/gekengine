@@ -517,11 +517,11 @@ namespace Gek
         virtual VideoTexturePtr createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1) = 0;
         virtual VideoTexturePtr loadTexture(const wchar_t *fileName, UINT32 flags) = 0;
         virtual VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], UINT32 flags) = 0;
-        virtual void updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) = 0;
+        virtual void updateTexture(VideoTexture *texture, const void *data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) = 0;
 
-        virtual VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
-        virtual VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID staticData = nullptr) = 0;
-        virtual void updateBuffer(VideoBuffer *buffer, LPCVOID data) = 0;
+        virtual VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, const void *staticData = nullptr) = 0;
+        virtual VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, const void *staticData = nullptr) = 0;
+        virtual void updateBuffer(VideoBuffer *buffer, const void *data) = 0;
         virtual void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
         virtual void unmapBuffer(VideoBuffer *buffer) = 0;
 

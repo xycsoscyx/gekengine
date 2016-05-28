@@ -25,24 +25,21 @@ namespace Gek
     }
 
     class MassImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<MassImplementation>
         , public ComponentMixin<MassComponent>
     {
     public:
-        MassImplementation(void)
+        MassImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(MassImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"mass";
         }
     };
 
-    REGISTER_CLASS(MassImplementation)
+    GEK_REGISTER_CONTEXT_USER(MassImplementation)
 }; // namespace Gek

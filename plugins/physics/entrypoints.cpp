@@ -1,18 +1,23 @@
 #include "GEK\Context\ContextUser.h"
 
-GEK_CONTEXT_BEGIN(Components)
-    GEK_CONTEXT_ADD_CLASS(Gek::MassRegistration, Gek::MassImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ComponentType)
+namespace Gek
+{
+    GEK_DECLARE_CONTEXT_USER(MassImplementation);
+    GEK_DECLARE_CONTEXT_USER(RigidBodyImplementation);
+    GEK_DECLARE_CONTEXT_USER(StaticBodyImplementation);
+    GEK_DECLARE_CONTEXT_USER(PlayerBodyImplementation);
+    GEK_DECLARE_CONTEXT_USER(NewtonProcessorImplementation);
 
-    GEK_CONTEXT_ADD_CLASS(Gek::RigidBodyRegistration, Gek::RigidBodyImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ComponentType)
-
-    GEK_CONTEXT_ADD_CLASS(Gek::StaticBodyRegistration, Gek::StaticBodyImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ComponentType)
-
-    GEK_CONTEXT_ADD_CLASS(Gek::PlayerBodyRegistration, Gek::PlayerBodyImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ComponentType)
-
-    GEK_CONTEXT_ADD_CLASS(Gek::NewtonProcessorRegistration, Gek::NewtonProcessorImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ProcessorType)
-GEK_CONTEXT_END()
+    GEK_CONTEXT_BEGIN(Engine);
+        GEK_CONTEXT_ADD_CLASS(Mass, MassImplementation);
+            GEK_CONTEXT_ADD_TYPE(ComponentType)
+        GEK_CONTEXT_ADD_CLASS(RigidBody, RigidBodyImplementation);
+            GEK_CONTEXT_ADD_TYPE(ComponentType)
+        GEK_CONTEXT_ADD_CLASS(StaticBody, StaticBodyImplementation);
+            GEK_CONTEXT_ADD_TYPE(ComponentType)
+        GEK_CONTEXT_ADD_CLASS(PlayerBody, PlayerBodyImplementation);
+            GEK_CONTEXT_ADD_TYPE(ComponentType)
+        GEK_CONTEXT_ADD_CLASS(NewtonProcessor, NewtonProcessorImplementation);
+            GEK_CONTEXT_ADD_TYPE(ProcessorType);
+    GEK_CONTEXT_END()
+}; // namespace Gek

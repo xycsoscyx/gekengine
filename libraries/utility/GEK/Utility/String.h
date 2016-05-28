@@ -617,7 +617,7 @@ namespace Gek
         template <typename ELEMENT, typename SOURCE>
         baseString<ELEMENT> from(const SOURCE *source)
         {
-            return (source ? string_cast_imp<baseString<ELEMENT>, typename string_type_of<const SOURCE *>::wrap>::cast(source) : nullptr);
+            return (source ? string_cast_imp<baseString<ELEMENT>, typename string_type_of<const SOURCE *>::wrap>::cast(source) : baseString<ELEMENT>());
         }
 
         template <typename ELEMENT>

@@ -13,8 +13,7 @@
 namespace Gek
 {
     class RigidNewtonBody
-        : public UnknownMixin
-        , public NewtonEntity
+        : public NewtonEntity
     {
     private:
         NewtonProcessor *newtonProcessor;
@@ -45,27 +44,23 @@ namespace Gek
             NewtonDestroyBody(newtonBody);
         }
 
-        // IUnknown
-        BEGIN_INTERFACE_LIST(RigidNewtonBody)
-        END_INTERFACE_LIST_UNKNOWN
-
         // NewtonEntity
-        STDMETHODIMP_(Entity *) getEntity(void) const
+        Entity * const getEntity(void) const
         {
             return entity;
         }
 
-        STDMETHODIMP_(NewtonBody *) getNewtonBody(void) const
+        NewtonBody * const getNewtonBody(void) const
         {
             return newtonBody;
         }
 
-        STDMETHODIMP_(UINT32) getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+        UINT32 getSurface(const Math::Float3 &position, const Math::Float3 &normal)
         {
             return 0;
         }
 
-        STDMETHODIMP_(void) onPreUpdate(dFloat frameTime, int threadHandle)
+        void onPreUpdate(dFloat frameTime, int threadHandle)
         {
             NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
 
@@ -73,7 +68,7 @@ namespace Gek
             NewtonBodyAddForce(newtonBody, (gravity * (float)massComponent).data);
         }
 
-        STDMETHODIMP_(void) onSetTransform(const dFloat* const matrixData, int threadHandle)
+        void onSetTransform(const dFloat* const matrixData, int threadHandle)
         {
             Math::Float4x4 matrix(matrixData);
             transformComponent.position = matrix.translation;
@@ -105,24 +100,21 @@ namespace Gek
     }
 
     class RigidBodyImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<RigidBodyImplementation>
         , public ComponentMixin<RigidBodyComponent>
     {
     public:
-        RigidBodyImplementation(void)
+        RigidBodyImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(RigidBodyImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"rigid_body";
         }
     };
 
-    REGISTER_CLASS(RigidBodyImplementation)
+    GEK_REGISTER_CONTEXT_USER(RigidBodyImplementation)
 }; // namespace Gek

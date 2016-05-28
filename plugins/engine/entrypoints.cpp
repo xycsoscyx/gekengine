@@ -11,12 +11,12 @@ namespace Gek
     GEK_DECLARE_CONTEXT_USER(EngineImplementation);
 
     GEK_CONTEXT_BEGIN(Engine);
-        GEK_CONTEXT_ADD_CLASS(L"PopulationSystem", PopulationImplementation);
-        GEK_CONTEXT_ADD_CLASS(L"RenderSystem", RenderImplementation);
-        GEK_CONTEXT_ADD_CLASS(L"ResourcesSystem", ResourcesImplementation);
-        GEK_CONTEXT_ADD_CLASS(L"PluginSystem", PluginImplementation);
-        GEK_CONTEXT_ADD_CLASS(L"MaterialSystem", MaterialImplementation);
-        GEK_CONTEXT_ADD_CLASS(L"ShaderSystem", ShaderImplementation);
-        GEK_CONTEXT_ADD_CLASS(L"EngineSystem", EngineImplementation);
+        GEK_CONTEXT_ADD_CLASS(PopulationSystem, PopulationImplementation);
+        GEK_CONTEXT_ADD_CLASS(RenderSystem, RenderImplementation);
+        GEK_CONTEXT_ADD_CLASS(ResourcesSystem, ResourcesImplementation);
+        GEK_CONTEXT_ADD_CLASS(PluginSystem, PluginImplementation);
+        GEK_CONTEXT_ADD_CLASS(MaterialSystem, MaterialImplementation);
+        GEK_CONTEXT_ADD_CLASS(ShaderSystem, ShaderImplementation);
+        GEK_CONTEXT_ADD_CLASS(EngineSystem, EngineImplementation);
     GEK_CONTEXT_END()
 }; // namespace Gek

@@ -7,9 +7,8 @@
 
 namespace Gek
 {
-    template <typename TYPE>
     class ObservableMixin
-        : public Observable
+        : virtual public Observable
     {
     public:
         struct BaseEvent
@@ -40,35 +39,12 @@ namespace Gek
         std::unordered_set<Observer *> observerList;
 
     public:
-        virtual ~ObservableMixin(void)
-        {
-        }
+        virtual ~ObservableMixin(void);
 
-        void sendEvent(const BaseEvent &event) const
-        {
-            for (auto &observer : observerList)
-            {
-                event(observer);
-            }
-        }
+        void sendEvent(const BaseEvent &event) const;
 
         // Observable
-        void addObserver(Observer *observer)
-        {
-            auto observerIterator = observerList.find(observer);
-            if (observerIterator == observerList.end())
-            {
-                observerList.insert(observer);
-            }
-        }
-
-        void removeObserver(Observer *observer)
-        {
-            auto observerIterator = observerList.find(observer);
-            if (observerIterator != observerList.end())
-            {
-                observerList.erase(observerIterator);
-            }
-        }
+        void addObserver(Observer *observer);
+        void removeObserver(Observer *observer);
     };
 }; // namespace Gek

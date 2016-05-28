@@ -30,7 +30,7 @@ namespace Gek
                     if (module)
                     {
                         typedef void(*InitializePlugin)(std::function<void(const wchar_t *, std::function<ContextUserPtr(Context *, void *)>)> addClass, std::function<void(const wchar_t *, const wchar_t *)> addType);
-                        InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "GEKInitializePlugin");
+                        InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
                         if (initializePlugin)
                         {
                             GEK_TRACE_EVENT("Plugin found: %v", GEK_PARAMETER(fileName));
@@ -49,6 +49,12 @@ namespace Gek
                             {
                                 typeMap.insert(std::make_pair(typeName, className));
                             });
+
+                            moduleList.push_back(module);
+                        }
+                        else
+                        {
+                            FreeLibrary(module);
                         }
                     }
                     else

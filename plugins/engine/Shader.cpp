@@ -1031,7 +1031,7 @@ namespace Gek
                                 try
                                 {
                                     std::experimental::filesystem::path shaderPath(L"$root\\data\\programs");
-                                    shaderPath.concat(fileName);
+                                    shaderPath.append(fileName);
                                     Gek::FileSystem::load(shaderPath.c_str(), data);
                                     resultValue = S_OK;
                                 }

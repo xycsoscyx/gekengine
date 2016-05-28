@@ -59,66 +59,57 @@ namespace Gek
     }
 
     class PointLightImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<PointLightImplementation>
         , public ComponentMixin<PointLightComponent>
     {
     public:
-        PointLightImplementation(void)
+        PointLightImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(PointLightImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"point_light";
         }
     };
 
     class SpotLightImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<SpotLightImplementation>
         , public ComponentMixin<SpotLightComponent>
     {
     public:
-        SpotLightImplementation(void)
+        SpotLightImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(SpotLightImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"spot_light";
         }
     };
 
     class DirectionalLightImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<DirectionalLightImplementation>
         , public ComponentMixin<DirectionalLightComponent>
     {
     public:
-        DirectionalLightImplementation(void)
+        DirectionalLightImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(DirectionalLightImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"directional_light";
         }
     };
 
-    REGISTER_CLASS(PointLightImplementation)
-    REGISTER_CLASS(SpotLightImplementation)
-    REGISTER_CLASS(DirectionalLightImplementation)
+    GEK_REGISTER_CONTEXT_USER(PointLightImplementation);
+    GEK_REGISTER_CONTEXT_USER(SpotLightImplementation);
+    GEK_REGISTER_CONTEXT_USER(DirectionalLightImplementation);
 }; // namespace Gek

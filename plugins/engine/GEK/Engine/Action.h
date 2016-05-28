@@ -24,7 +24,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(ActionObserver)
-        : public Observer
+        : virtual public Observer
     {
         virtual void onAction(const wchar_t *name, const ActionParam &param) { };
     };

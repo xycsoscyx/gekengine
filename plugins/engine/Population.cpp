@@ -26,7 +26,7 @@ namespace Gek
         {
             for (auto &componentPair : componentList)
             {
-                componentPair.second.first->destroy(componentPair.second.second);
+                componentPair.second.first->destroyData(componentPair.second.second);
             }
         }
 
@@ -40,7 +40,7 @@ namespace Gek
             auto componentPair = componentList.find(type);
             if (componentPair != componentList.end())
             {
-                componentPair->second.first->destroy(componentPair->second.second);
+                componentPair->second.first->destroyData(componentPair->second.second);
                 componentList.erase(componentPair);
             }
         }
@@ -59,7 +59,7 @@ namespace Gek
 
     class PopulationImplementation
         : public ContextRegistration<PopulationImplementation>
-        , public ObservableMixin<PopulationImplementation>
+        , virtual public ObservableMixin
         , public Population
     {
     private:
@@ -111,9 +111,6 @@ namespace Gek
             componentNameList.clear();
             componentList.clear();
         }
-
-        using ObservableMixin::addObserver;
-        using ObservableMixin::removeObserver;
 
         // Population
         float getFrameTime(void) const
@@ -208,7 +205,7 @@ namespace Gek
 
                             if (!componentNode->getText().empty())
                             {
-                                componentData.assign(componentNode->getText());
+                                componentData.value = componentNode->getText();
                             }
 
                             componentNode = componentNode->nextSiblingElement();
@@ -237,7 +234,7 @@ namespace Gek
             };
         }
 
-        void save(const wchar_t *fileName)
+        void save(const wstring &fileName)
         {
             Gek::XmlDocumentPtr document(XmlDocument::create(L"world"));
             Gek::XmlNodePtr worldNode = document->getRoot(L"world");
@@ -272,7 +269,7 @@ namespace Gek
                     if (componentPair != componentList.end())
                     {
                         Component *componentManager = componentPair->second.get();
-                        LPVOID component = componentManager->create(componentData);
+                        LPVOID component = componentManager->createData(componentData);
                         if (component)
                         {
                             entity->addComponent(componentManager, component);
@@ -361,5 +358,5 @@ namespace Gek
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(PopulationImplementation)
+    GEK_REGISTER_CONTEXT_USER(PopulationImplementation);
 }; // namespace Gek

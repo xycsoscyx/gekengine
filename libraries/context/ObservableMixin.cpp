@@ -15,7 +15,7 @@ namespace Gek
         }
     }
 
-    // Interface
+    // Observable
     void ObservableMixin::addObserver(Observer *observer)
     {
         auto observerIterator = observerList.find(observer);

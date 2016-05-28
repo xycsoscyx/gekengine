@@ -6,7 +6,7 @@
 namespace Gek
 {
     GEK_INTERFACE(NewtonProcessor)
-        : public Observable
+        : virtual public Observable
     {
         struct Surface
         {
@@ -33,7 +33,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(NewtonObserver)
-        : public Observer
+        : virtual public Observer
     {
         virtual void onCollision(Entity *entity0, Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) { };
     };

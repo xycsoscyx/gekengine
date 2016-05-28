@@ -65,5 +65,5 @@ namespace Gek
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(MaterialImplementation)
+    GEK_REGISTER_CONTEXT_USER(MaterialImplementation);
 }; // namespace Gek

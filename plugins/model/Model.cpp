@@ -24,24 +24,21 @@ namespace Gek
     }
 
     class ModelImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ModelImplementation>
         , public ComponentMixin<ModelComponent>
     {
     public:
-        ModelImplementation(void)
+        ModelImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(ModelImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-        END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"model";
         }
     };
 
-    REGISTER_CLASS(ModelImplementation)
+    GEK_REGISTER_CONTEXT_USER(ModelImplementation)
 }; // namespace Gek

@@ -604,7 +604,7 @@ namespace Gek
                 try
                 {
                     std::experimental::filesystem::path shaderPath(shaderFilePath);
-                    shaderPath.concat(fileName.c_str());
+                    shaderPath.append(fileName.c_str());
                     FileSystem::load(shaderPath.c_str(), includeBuffer);
                 }
                 catch (FileSystem::Exception)
@@ -1424,7 +1424,7 @@ namespace Gek
             return std::remake_shared<VideoObject, SamplerState>(d3dStates);
         }
 
-        VideoBufferPtr createBuffer(Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
+        VideoBufferPtr createBuffer(Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, const void *data)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(stride > 0);
@@ -1539,18 +1539,18 @@ namespace Gek
             return std::remake_shared<VideoBuffer, ViewBuffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);
         }
 
-        VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
+        VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, const void *data)
         {
             return createBuffer(Video::Format::Unknown, stride, count, type, flags, data);
         }
 
-        VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, LPCVOID data)
+        VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, const void *data)
         {
             UINT32 stride = DirectX::FormatStrideList[static_cast<UINT8>(format)];
             return createBuffer(format, stride, count, type, flags, data);
         }
 
-        void updateBuffer(VideoBuffer *buffer, LPCVOID data)
+        void updateBuffer(VideoBuffer *buffer, const void *data)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(data);
@@ -2150,7 +2150,7 @@ namespace Gek
             return std::remake_shared<VideoTexture, ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1);
         }
 
-        void updateTexture(VideoTexture *texture, LPCVOID data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
+        void updateTexture(VideoTexture *texture, const void *data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(texture);

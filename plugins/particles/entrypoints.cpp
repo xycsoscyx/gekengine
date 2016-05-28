@@ -1,9 +1,14 @@
 #include "GEK\Context\ContextUser.h"
 
-GEK_CONTEXT_BEGIN(Components)
-    GEK_CONTEXT_ADD_CLASS(Gek::ParticlesRegistration, Gek::ParticlesImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ComponentType)
+namespace Gek
+{
+    GEK_DECLARE_CONTEXT_USER(ParticlesImplementation);
+    GEK_DECLARE_CONTEXT_USER(ParticlesProcessorImplementation);
 
-    GEK_CONTEXT_ADD_CLASS(Gek::ParticlesProcessorRegistration, Gek::ParticlesProcessorImplementation)
-        GEK_CONTEXT_ADD_TYPE(Gek::ProcessorType)
-GEK_CONTEXT_END()
+    GEK_CONTEXT_BEGIN(Engine);
+        GEK_CONTEXT_ADD_CLASS(Particles, ParticlesImplementation);
+            GEK_CONTEXT_ADD_TYPE(ComponentType)
+        GEK_CONTEXT_ADD_CLASS(ParticlesProcessor, ParticlesProcessorImplementation);
+            GEK_CONTEXT_ADD_TYPE(ProcessorType);
+    GEK_CONTEXT_END()
+}; // namespace Gek

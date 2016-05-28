@@ -17,12 +17,12 @@ namespace Gek
     GEK_PREDECLARE(PopulationObserver);
 
     GEK_INTERFACE(Population)
-        : public Observable
+        : virtual public Observable
     {
         struct ComponentDefinition
             : public std::unordered_map<wstring, wstring>
-            , public wstring
         {
+            wstring value;
         };
 
         struct EntityDefinition
@@ -35,8 +35,8 @@ namespace Gek
 
         virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
 
-        virtual void load(const wchar_t *fileName) = 0;
-        virtual void save(const wchar_t *fileName) = 0;
+        virtual void load(const wstring &fileName) = 0;
+        virtual void save(const wstring &fileName) = 0;
         virtual void free(void) = 0;
 
         virtual Entity *createEntity(const EntityDefinition &entityParameterList, const wchar_t *name = nullptr) = 0;
@@ -64,7 +64,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(PopulationObserver)
-        : public Observer
+        : virtual public Observer
     {
         virtual void onLoadBegin(void) { };
         virtual void onLoadSucceeded(void) { };

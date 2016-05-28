@@ -258,7 +258,7 @@ namespace Gek
                         try
                         {
                             std::experimental::filesystem::path path(L"$root\\data\\programs");
-                            path.concat(fileName);
+                            path.append(fileName);
                             Gek::FileSystem::load(path.c_str(), data);
                             return S_OK;
                         }
@@ -286,5 +286,5 @@ namespace Gek
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(PluginImplementation)
+    GEK_REGISTER_CONTEXT_USER(PluginImplementation);
 }; // namespace Gek

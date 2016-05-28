@@ -6,7 +6,7 @@
 #define GEK_REGISTER_CONTEXT_USER(CLASS)                                                                                \
 ContextUserPtr CLASS##CreateInstance(Context *context, void *parameters)                                                \
 {                                                                                                                       \
-    return CLASS::create(context, parameters);                                                                          \
+    return CLASS::createObject(context, parameters);                                                                    \
 }
 
 #define GEK_DECLARE_CONTEXT_USER(CLASS)                                                                                 \
@@ -40,6 +40,7 @@ namespace Gek
 
     template <typename TYPE, typename... ARGUMENTS>
     struct ContextRegistration
+        : public ContextUser
     {
     private:
         Context *context;
@@ -75,7 +76,7 @@ namespace Gek
             return createUnpack(context, *tuple, std::index_sequence_for<ARGUMENTS...>());
         }
 
-        static ContextUserPtr create(Context *context, void *parameters)
+        static ContextUserPtr createObject(Context *context, void *parameters)
         {
             return createPacked(context, parameters);
         }

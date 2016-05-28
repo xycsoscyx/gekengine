@@ -15,7 +15,7 @@ namespace Gek
         }
         else
         {
-            componentData.SetString(String::from<wchar_t>(value));
+            componentData.value = String::from<wchar_t>(value);
         }
     }
 
@@ -32,9 +32,9 @@ namespace Gek
                 return true;
             }
         }
-        else if(!componentData.IsEmpty())
+        else if(!componentData.value.empty())
         {
-            value = Evaluator::get<TYPE>(componentData.GetString());
+            value = Evaluator::get<TYPE>(componentData.value);
         }
 
         return false;
@@ -59,7 +59,7 @@ namespace Gek
             return typeid(DATA);
         }
 
-        void *create(const Population::ComponentDefinition &componentData)
+        void *createData(const Population::ComponentDefinition &componentData)
         {
             DATA *data = new DATA();
             if (data)
@@ -70,7 +70,7 @@ namespace Gek
             return data;
         }
 
-        void destroy(void *data)
+        void destroyData(void *data)
         {
             delete static_cast<DATA *>(data);
         }

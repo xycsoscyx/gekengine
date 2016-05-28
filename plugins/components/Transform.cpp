@@ -30,24 +30,21 @@ namespace Gek
     }
 
     class TransformImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<TransformImplementation>
         , public ComponentMixin<TransformComponent>
     {
     public:
-        TransformImplementation(void)
+        TransformImplementation(Context *context)
+            : ContextRegistration(context)
         {
         }
 
-        BEGIN_INTERFACE_LIST(TransformImplementation)
-            INTERFACE_LIST_ENTRY_COM(Component)
-            END_INTERFACE_LIST_USER
-
         // Component
-        const char *getName(void) const
+        const wchar_t * const getName(void) const
         {
             return L"transform";
         }
     };
 
-    REGISTER_CLASS(TransformImplementation)
+    GEK_REGISTER_CONTEXT_USER(TransformImplementation);
 }; // namespace Gek

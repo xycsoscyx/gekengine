@@ -38,7 +38,7 @@ namespace Gek
 
     class NewtonProcessorImplementation
         : public ContextRegistration<NewtonProcessorImplementation>
-        , public ObservableMixin
+        , virtual public ObservableMixin
         , public PopulationObserver
         , public Processor
         , public NewtonProcessor
@@ -76,8 +76,9 @@ namespace Gek
         std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
     public:
-        NewtonProcessorImplementation(void)
-            : population(nullptr)
+        NewtonProcessorImplementation(Context *context)
+            : ContextRegistration(context)
+            , population(nullptr)
             , updateHandle(0)
             , actionProvider(nullptr)
             , newtonWorld(nullptr)
@@ -97,14 +98,6 @@ namespace Gek
 
             ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
-
-        // IUnknown
-        BEGIN_INTERFACE_LIST(NewtonProcessorImplementation)
-            INTERFACE_LIST_ENTRY_COM(Observable)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_COM(Processor)
-            INTERFACE_LIST_ENTRY_COM(NewtonProcessor)
-        END_INTERFACE_LIST_USER
 
         // NewtonProcessor
         STDMETHODIMP_(Math::Float3) getGravity(const Math::Float3 &position)
@@ -623,5 +616,5 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(NewtonProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(NewtonProcessorImplementation)
 }; // namespace Gek

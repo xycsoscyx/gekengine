@@ -27,14 +27,14 @@ namespace Gek
     };
 
     GEK_INTERFACE(Render)
-        : public Observable
+        : virtual public Observable
     {
         virtual void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance) = 0;
         virtual void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw) = 0;
     };
 
     GEK_INTERFACE(RenderObserver)
-        : public Observer
+        : virtual public Observer
     {
         virtual void onRenderBackground(void) { };
         virtual void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) { };

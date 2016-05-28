@@ -36,7 +36,7 @@ namespace Gek
     static const UINT32 ParticleBufferCount = 1000;
 
     class ParticlesProcessorImplementation
-        : public ContextUserMixin
+        : public ContextRegistration<ParticlesProcessorImplementation>
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -123,77 +123,31 @@ namespace Gek
         VisibleList visibleList;
 
     public:
-        ParticlesProcessorImplementation(void)
-            : resources(nullptr)
+        ParticlesProcessorImplementation(Context *context)
+            : ContextRegistration(context)
+            , resources(nullptr)
             , render(nullptr)
             , population(nullptr)
             , updateHandle(0)
         {
+            population->addObserver((PopulationObserver *)this);
+            updateHandle = population->setUpdatePriority(this, 60);
+            render->addObserver((RenderObserver *)this);
+
+            plugin = resources->loadPlugin(L"particles");
+
+            particleBuffer = resources->createBuffer(nullptr, sizeof(ParticleData), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
         }
 
         ~ParticlesProcessorImplementation(void)
         {
-            ObservableMixin::removeObserver(render, getClass<RenderObserver>());
+            render->removeObserver((RenderObserver *)this);
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
+                population->removeObserver((PopulationObserver *)this);
             }
-
-            ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
-
-        BEGIN_INTERFACE_LIST(ParticlesProcessorImplementation)
-            INTERFACE_LIST_ENTRY_COM(PopulationObserver)
-            INTERFACE_LIST_ENTRY_COM(RenderObserver)
-            INTERFACE_LIST_ENTRY_COM(Processor)
-        END_INTERFACE_LIST_USER
-
-        // System::Interface
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<PluginResources> resources(initializerContext);
-            CComQIPtr<Render> render(initializerContext);
-            CComQIPtr<Population> population(initializerContext);
-            if (resources && render && population)
-            {
-                this->resources = resources;
-                this->render = render;
-                this->population = population;
-                resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-                if (SUCCEEDED(resultValue))
-                {
-                    updateHandle = population->setUpdatePriority(this, 60);
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = ObservableMixin::addObserver(render, getClass<RenderObserver>());
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                plugin = resources->loadPlugin(L"particles");
-                if (!plugin)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            if (SUCCEEDED(resultValue))
-            {
-                particleBuffer = resources->createBuffer(nullptr, sizeof(ParticleData), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                if (!particleBuffer)
-                {
-                    resultValue = E_FAIL;
-                }
-            }
-
-            return resultValue;
-        };
 
         // PopulationObserver
         void onLoadSucceeded(void)
@@ -205,7 +159,7 @@ namespace Gek
             onFree();
         }
 
-        STDMETHODIMP_(void) onFree(void)
+        void onFree(void)
         {
             entityDataList.clear();
         }
@@ -231,7 +185,7 @@ namespace Gek
             }
         };
 
-        STDMETHODIMP_(void) onEntityCreated(Entity *entity)
+        void onEntityCreated(Entity *entity)
         {
             GEK_REQUIRE(resources);
             GEK_REQUIRE(entity);
@@ -261,7 +215,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Entity *entity)
         {
             GEK_REQUIRE(entity);
 
@@ -272,7 +226,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(UINT32 handle, bool isIdle)
         {
             if (!isIdle)
             {
@@ -364,7 +318,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
@@ -390,6 +344,6 @@ namespace Gek
         }
     };
 
-    REGISTER_CLASS(ParticlesProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(ParticlesProcessorImplementation)
 }; // namespace Gek
 
