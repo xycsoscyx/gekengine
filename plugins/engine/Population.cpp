@@ -2,6 +2,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Entity.h"
@@ -58,11 +59,13 @@ namespace Gek
     };
 
     class PopulationImplementation
-        : public ContextRegistration<PopulationImplementation>
+        : public ContextRegistration<PopulationImplementation, EngineContext *>
         , virtual public ObservableMixin
         , public Population
     {
     private:
+        EngineContext *engine;
+
         float worldTime;
         float frameTime;
 
@@ -80,8 +83,9 @@ namespace Gek
         std::map<UINT32, UpdatePriorityMap::value_type *> updateHandleMap;
 
     public:
-        PopulationImplementation(Context *context)
+        PopulationImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
+            , engine(engine)
         {
             getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
             {
@@ -101,7 +105,7 @@ namespace Gek
 
             getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
             {
-                processorList.push_back(context->createClass<Processor>(className));
+                processorList.push_back(context->createClass<Processor>(className, engine));
             });
         }
 

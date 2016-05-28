@@ -239,9 +239,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         }
         catch (BaseException exception)
         {
+            MessageBox(NULL, String::format(L"%v\r\n%v: %v", exception.what(), exception.where(), exception.when()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
         }
         catch (...)
         {
+            MessageBox(NULL, L"Unhandled Exception", L"GEK Runtime Error", MB_OK | MB_ICONERROR);
         }
     }
 

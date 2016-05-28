@@ -1,17 +1,17 @@
-#include "GEK\Newton\PlayerBody.h"
-#include "GEK\Newton\NewtonProcessor.h"
+#include "GEK\Math\Common.h"
+#include "GEK\Math\Float4x4.h"
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\Evaluator.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\ComponentMixin.h"
-#include "GEK\Engine\Action.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Newton\NewtonEntity.h"
 #include "GEK\Newton\PlayerBody.h"
 #include "GEK\Newton\Mass.h"
-#include "GEK\Utility\Evaluator.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
+#include "GEK\Newton\PlayerBody.h"
+#include "GEK\Newton\NewtonProcessor.h"
 #include <Newton.h>
 #include <memory>
 #include <stack>
@@ -71,7 +71,7 @@ namespace Gek
     State *createFallingState(PlayerNewtonBody *playerBody);
 
     class PlayerNewtonBody
-        : public ActionObserver
+        : public EngineObserver
         , public NewtonEntity
     {
     public:
@@ -86,7 +86,7 @@ namespace Gek
         }
 
     private:
-        //Action *actionProvider;
+        EngineContext *engine;
         NewtonProcessor *newtonProcessor;
         NewtonWorld *newtonWorld;
 
@@ -117,12 +117,14 @@ namespace Gek
         bool isJumpingState;
 
     public:
-        PlayerNewtonBody(INewtonWorld *newtonWorld, Entity *entity,
+        PlayerNewtonBody(EngineContext *engine, 
+            NewtonWorld *newtonWorld,
+            Entity *entity,
             PlayerBodyComponent &playerBodyComponent,
             TransformComponent &transformComponent,
             MassComponent &massComponent)
-            //: actionProvider(actionProvider)
-            : newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
+            : engine(engine)
+            , newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
@@ -221,7 +223,7 @@ namespace Gek
             NewtonDestroyCollision(newtonCastingShape);
             NewtonDestroyCollision(newtonSupportShape);
             NewtonDestroyCollision(newtonUpperBodyShape);
-            //actionProvider->removeObserver((ActionObserver *)this);
+            engine->removeObserver((EngineObserver *)this);
         }
 
         void addPlayerVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed)
@@ -248,7 +250,7 @@ namespace Gek
             return (velocity.y < 0.0f);
         }
 
-        // ActionObserver
+        // EngineObserver
         void onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"turn") == 0)
@@ -865,11 +867,11 @@ namespace Gek
         return new FallingState(playerBody);
     }
 
-    NewtonEntity *createPlayerBody(NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent)
+    NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent)
     {
-        PlayerNewtonBody *playerBody = new PlayerNewtonBody(newtonWorld, entity, playerBodyComponent, transformComponent, massComponent);
-        ObservableMixin::addObserver(playerBody->getClass<ActionObserver>());
-        return playerBody;
+        std::shared_ptr<PlayerNewtonBody> player(std::make_shared<PlayerNewtonBody>(engine, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent));
+        engine->addObserver((EngineObserver *)player.get());
+        return std::dynamic_pointer_cast<NewtonEntity>(player);
     }
 
     PlayerBodyComponent::PlayerBodyComponent(void)

@@ -4,6 +4,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
 #include "GEK\Context\ContextUser.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Plugin.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"
@@ -288,7 +289,7 @@ namespace Gek
     };
 
     class ResourcesImplementation 
-        : public ContextRegistration<ResourcesImplementation, VideoSystem *>
+        : public ContextRegistration<ResourcesImplementation, EngineContext *>
         , public Resources
     {
     private:
@@ -309,9 +310,9 @@ namespace Gek
         concurrency::concurrent_queue<std::function<void(void)>> loadResourceQueue;
 
     public:
-        ResourcesImplementation(Context *context, VideoSystem *video)
+        ResourcesImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , video(video)
+            , video(engine->getRender()->getVideoSystem())
         {
         }
 

@@ -7,6 +7,7 @@
 
 namespace Gek
 {
+    GEK_PREDECLARE(VideoSystem);
     GEK_PREDECLARE(VideoPipeline);
     GEK_PREDECLARE(VideoContext);
     GEK_PREDECLARE(Entity);
@@ -29,6 +30,8 @@ namespace Gek
     GEK_INTERFACE(Render)
         : virtual public Observable
     {
+        virtual VideoSystem * getVideoSystem(void) const = 0;
+
         virtual void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance) = 0;
         virtual void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw) = 0;
     };

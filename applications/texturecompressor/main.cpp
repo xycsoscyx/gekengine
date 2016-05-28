@@ -2,207 +2,183 @@
 #include "GEK\Math\Float3.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
+#include <Shlwapi.h>
 #include <DirectXTex.h>
-#include <atlpath.h>
+#include <experimental\filesystem>
+#include <unordered_map>
 #include <algorithm>
 #include <vector>
-#include <unordered_map>
 #include <map>
 
-class CompressorException
-{
-public:
-    CStringW message;
-    int line;
-
-public:
-    CompressorException(int line, const wchar_t *formatting, ...)
-        : line(line)
-    {
-        va_list variableList;
-        va_start(variableList, formatting);
-        message.FormatV(formatting, variableList);
-        va_end(variableList);
-    }
-};
+using namespace Gek;
 
 #include <conio.h>
-int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
+int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *environmentVariableList)
 {
     printf("GEK Texture Compressor\r\n");
 
-    CStringW fileNameInput;
-    CStringW fileNameOutput;
-
-    CStringW format;
-    bool overwrite = false;
-    bool sRGBIn = false;
-    bool sRGBOut = false;
-    for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
-    {
-        CStringW argument(argumentList[argumentIndex]);
-
-        int position = 0;
-        CStringW operation(argument.Tokenize(L":", position));
-        if (operation.CompareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
-        {
-            fileNameInput = argumentList[argumentIndex];
-        }
-        else if (operation.CompareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
-        {
-            fileNameOutput = argumentList[argumentIndex];
-        }
-        else if (operation.CompareNoCase(L"-format") == 0)
-        {
-            format = argument.Tokenize(L":", position);
-        }
-        else if (operation.CompareNoCase(L"-overwrite") == 0)
-        {
-            overwrite = true;
-        }
-        else if (operation.CompareNoCase(L"-sRGB") == 0)
-        {
-            CStringW parameter(argument.Tokenize(L":", position));
-            if (parameter.CompareNoCase(L"in") == 0)
-            {
-                sRGBIn = true;
-            }
-            else if (parameter.CompareNoCase(L"out") == 0)
-            {
-                sRGBOut = true;
-            }
-            else if (parameter.CompareNoCase(L"both") == 0)
-            {
-                sRGBIn = true;
-                sRGBOut = true;
-            }
-        }
-    }
-
-    if (format.IsEmpty())
-    {
-        printf("[error] Compression format required\r\n");
-        return -1;
-    }
-    else if (!PathFileExists(fileNameInput))
-    {
-        printf("[error] Input file does not exist: %\r\n", fileNameInput.GetString());
-        return -2;
-    }
-    else if (!overwrite && PathFileExists(fileNameOutput))
-    {
-        printf("[error] Output file already exists: %\r\n", fileNameOutput.GetString());
-        return -3;
-    }
-
-    DeleteFile(fileNameOutput);
-    printf("Compressing: -> %\r\n", fileNameInput.GetString());
-    printf("             <- %\r\n", fileNameOutput.GetString());
-    printf("Format: %\r\n", format.GetString());
-    printf("In: %, Out: %\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
-
     try
     {
-        printf("Progress...");
-        HRESULT resultValue = E_FAIL;
+        wstring fileNameInput;
+        wstring fileNameOutput;
 
-        ::DirectX::ScratchImage inputImage;
-        ::DirectX::TexMetadata textureMetaData;
-        if (FAILED(resultValue = ::DirectX::LoadFromDDSFile(fileNameInput, 0, &textureMetaData, inputImage)))
+        wstring format;
+        bool overwrite = false;
+        bool sRGBIn = false;
+        bool sRGBOut = false;
+        for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
-            if (FAILED(resultValue = ::DirectX::LoadFromTGAFile(fileNameInput, &textureMetaData, inputImage)))
+            wstring argument(argumentList[argumentIndex]);
+            std::vector<wstring> arguments(argument.split(L':'));
+            GEK_THROW_ERROR(arguments.empty(), BaseException, "Invalid argument encountered: %v", argumentList[argumentIndex]);
+            if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
-                static const DWORD formatList[] =
+                fileNameInput = argumentList[argumentIndex];
+            }
+            else if (arguments[0].compareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
+            {
+                fileNameOutput = argumentList[argumentIndex];
+            }
+            else if (arguments[0].compareNoCase(L"-format") == 0)
+            {
+                GEK_THROW_ERROR(arguments.size() != 2, BaseException, "Invalid values specified for mode");
+                format = arguments[1];
+            }
+            else if (arguments[0].compareNoCase(L"-overwrite") == 0)
+            {
+                overwrite = true;
+            }
+            else if (arguments[0].compareNoCase(L"-sRGB") == 0)
+            {
+                GEK_THROW_ERROR(arguments.size() != 2, BaseException, "Invalid values specified for mode");
+                if (arguments[1].compareNoCase(L"in") == 0)
                 {
-                    ::DirectX::WIC_CODEC_PNG,              // Portable Network Graphics (.png)
-                    ::DirectX::WIC_CODEC_BMP,              // Windows Bitmap (.bmp)
-                    ::DirectX::WIC_CODEC_JPEG,             // Joint Photographic Experts Group (.jpg, .jpeg)
-                };
-
-                for (UINT32 format = 0; format < _ARRAYSIZE(formatList); format++)
-                {
-                    if (SUCCEEDED(resultValue = ::DirectX::LoadFromWICFile(fileNameInput, formatList[format], &textureMetaData, inputImage)))
-                    {
-                        break;
-                    }
+                    sRGBIn = true;
                 }
-            }
-
-            if (FAILED(resultValue))
-            {
-                throw CompressorException(__LINE__, L"Unable to load input file");
-            }
-
-            ::DirectX::ScratchImage mipMapChain;
-            if (SUCCEEDED(resultValue = ::DirectX::GenerateMipMaps(inputImage.GetImages(), inputImage.GetImageCount(), inputImage.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain)))
-            {
-                inputImage = std::move(mipMapChain);
-                printf(".mipmapped.");
-            }
-            else
-            {
-                throw CompressorException(__LINE__, L"Unable to generate mipmaps");
+                else if (arguments[1].compareNoCase(L"out") == 0)
+                {
+                    sRGBOut = true;
+                }
+                else if (arguments[1].compareNoCase(L"both") == 0)
+                {
+                    sRGBIn = true;
+                    sRGBOut = true;
+                }
             }
         }
 
+        GEK_THROW_ERROR(format.empty(), BaseException, "Compression format required");
+        GEK_THROW_ERROR(!PathFileExists(fileNameInput), BaseException, "Input file not found: %v", fileNameInput);
+        GEK_THROW_ERROR(!overwrite && PathFileExists(fileNameOutput), BaseException, "Output already exists (must specify overwrite): %v", fileNameOutput);
+
+        DeleteFile(fileNameOutput);
+        printf("Compressing: -> %S\r\n", fileNameInput.c_str());
+        printf("             <- %S\r\n", fileNameOutput.c_str());
+        printf("Format: %S\r\n", format.c_str());
+        printf("In: %s, Out: %s\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
+        printf("Progress...");
+
+        std::vector<UINT8> fileData;
+        FileSystem::load(fileNameInput, fileData);
+
+        wstring extension(std::experimental::filesystem::path(fileNameInput).extension().c_str());
+        std::function<HRESULT(UINT8*, size_t, ::DirectX::ScratchImage &)> load;
+        if (extension.compare(L".dds") == 0)
+        {
+            load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
+        }
+        else if (extension.compare(L".tga") == 0)
+        {
+            load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, nullptr, std::placeholders::_3);
+        }
+        else if (extension.compare(L".png") == 0)
+        {
+            load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, nullptr, std::placeholders::_3);
+        }
+        else if (extension.compare(L".bmp") == 0)
+        {
+            load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, nullptr, std::placeholders::_3);
+        }
+        else if (extension.compare(L".jpg") == 0 ||
+            extension.compare(L".jpeg") == 0)
+        {
+            load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, nullptr, std::placeholders::_3);
+        }
+
+        GEK_THROW_ERROR(!load, BaseException, "Invalid file type: %v", extension);
+
+        ::DirectX::ScratchImage image;
+        HRESULT resultValue = load(fileData.data(), fileData.size(), image);
+        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileNameInput);
         printf(".loaded.");
+
+        ::DirectX::ScratchImage mipMapChain;
+        resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
+        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to generate mipmap chain: %v", resultValue);
+        image = std::move(mipMapChain);
+        printf(".mipmapped.");
 
         DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
         if (sRGBOut)
         {
-            if (format.CompareNoCase(L"BC1") == 0)
+            if (format.compareNoCase(L"BC1") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
             }
-            else if (format.CompareNoCase(L"BC2") == 0)
+            else if (format.compareNoCase(L"BC2") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC2_UNORM_SRGB;
             }
-            else if (format.CompareNoCase(L"BC3") == 0)
+            else if (format.compareNoCase(L"BC3") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC3_UNORM_SRGB;
             }
-            else if (format.CompareNoCase(L"BC7") == 0)
+            else if (format.compareNoCase(L"BC7") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
+            }
+            else
+            {
+                GEK_THROW_EXCEPTION(BaseException, "Invalid format specified: %v", format);
             }
         }
         else
         {
-            if (format.CompareNoCase(L"BC1") == 0)
+            if (format.compareNoCase(L"BC1") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC1_UNORM;
             }
-            else if (format.CompareNoCase(L"BC2") == 0)
+            else if (format.compareNoCase(L"BC2") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC2_UNORM;
             }
-            else if (format.CompareNoCase(L"BC3") == 0)
+            else if (format.compareNoCase(L"BC3") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC3_UNORM;
             }
-            else if (format.CompareNoCase(L"BC4") == 0)
+            else if (format.compareNoCase(L"BC4") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC4_UNORM;
             }
-            else if (format.CompareNoCase(L"BC5") == 0)
+            else if (format.compareNoCase(L"BC5") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC5_UNORM;
             }
-            else if (format.CompareNoCase(L"BC6") == 0)
+            else if (format.compareNoCase(L"BC6") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC6H_UF16;
             }
-            else if (format.CompareNoCase(L"BC7") == 0)
+            else if (format.compareNoCase(L"BC7") == 0)
             {
                 outputFormat = DXGI_FORMAT_BC7_UNORM;
             }
-        }
-
-        if (outputFormat == DXGI_FORMAT_UNKNOWN)
-        {
-            throw CompressorException(__LINE__, L"Unknown format specified: %", format.GetString());
+            else
+            {
+                GEK_THROW_EXCEPTION(BaseException, "Invalid format specified: %v", format);
+            }
         }
 
         UINT32 flags = ::DirectX::TEX_COMPRESS_PARALLEL;
@@ -216,23 +192,18 @@ int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariab
             flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
         }
 
-        ::DirectX::ScratchImage outputImage;
-        if (FAILED(::DirectX::Compress(inputImage.GetImages(), inputImage.GetImageCount(), inputImage.GetMetadata(), outputFormat, flags, 0.5f, outputImage)))
-        {
-            throw CompressorException(__LINE__, L"Unable to compress to format: %", format.GetString());
-        }
-
+        ::DirectX::ScratchImage output;
+        resultValue = ::DirectX::Compress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
+        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to compress image: %v", resultValue);
         printf(".compressed.");
-        if (FAILED(::DirectX::SaveToDDSFile(outputImage.GetImages(), outputImage.GetImageCount(), outputImage.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameOutput)))
-        {
-            throw CompressorException(__LINE__, L"Unable to save to output file");
-        }
 
+        resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameOutput);
+        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to compress image: %v", resultValue);
         printf(".done!\r\n");
     }
-    catch (CompressorException exception)
+    catch (BaseException exception)
     {
-        printf("\r\n[error] Error (%): %", exception.line, exception.message.GetString());
+        printf("\r\n[error] Error (%d): %s", exception.when(), exception.what());
     }
     catch (...)
     {

@@ -8,6 +8,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
@@ -29,7 +30,7 @@
 namespace Gek
 {
     class ModelProcessorImplementation
-        : public ContextRegistration<ModelProcessorImplementation, Population *, PluginResources *, Render *>
+        : public ContextRegistration<ModelProcessorImplementation, EngineContext *>
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -137,11 +138,11 @@ namespace Gek
         VisibleList visibleList;
 
     public:
-        ModelProcessorImplementation(Context *context, Population *population, PluginResources *resources, Render *render)
+        ModelProcessorImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , population(population)
-            , resources(resources)
-            , render(render)
+            , population(engine->getPopulation())
+            , resources(engine->getResources())
+            , render(engine->getRender())
         {
             population->addObserver((PopulationObserver *)this);
             render->addObserver((RenderObserver *)this);
@@ -357,7 +358,7 @@ namespace Gek
                     Gek::Math::Color color(1.0f);
                     if (entity->hasComponent<ColorComponent>())
                     {
-                        color = entity->getComponent<ColorComponent>();
+                        color = entity->getComponent<ColorComponent>().value;
                     }
 
                     auto &materialList = visibleList[&data];

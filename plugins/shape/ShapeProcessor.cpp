@@ -8,6 +8,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
@@ -363,7 +364,7 @@ namespace Gek
     };
 
     class ShapeProcessorImplementation
-        : public ContextRegistration<ShapeProcessorImplementation>
+        : public ContextRegistration<ShapeProcessorImplementation, EngineContext *>
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -433,9 +434,9 @@ namespace Gek
         };
 
     private:
+        Population *population;
         PluginResources *resources;
         Render *render;
-        Population *population;
 
         PluginHandle plugin;
         ResourceHandle constantBuffer;
@@ -454,11 +455,11 @@ namespace Gek
         VisibleList visibleList;
 
     public:
-        ShapeProcessorImplementation(Context *context)
+        ShapeProcessorImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , resources(nullptr)
-            , render(nullptr)
-            , population(nullptr)
+            , population(engine->getPopulation())
+            , resources(engine->getResources())
+            , render(engine->getRender())
         {
             population->addObserver((PopulationObserver *)this);
             render->addObserver((RenderObserver *)this);

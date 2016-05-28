@@ -6,7 +6,6 @@
 #include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Options.h"
 #include "GEK\Engine\Population.h"
-#include "GEK\Engine\Action.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Context\ContextUser.h"
@@ -202,9 +201,9 @@ namespace Gek
             GEK_THROW_ERROR(FAILED(resultValue), BaseException, "Unable to initialize COM: %v", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
-            resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
-            population = getContext()->createClass<Population>(L"PopulationSystem");
-            render = getContext()->createClass<Render>(L"RenderSystem", population.get(), resources.get());
+            resources = getContext()->createClass<Resources>(L"ResourcesSystem", (EngineContext *)this);
+            population = getContext()->createClass<Population>(L"PopulationSystem", (EngineContext *)this);
+            render = getContext()->createClass<Render>(L"RenderSystem", (EngineContext *)this);
 
             updateHandle = population->setUpdatePriority(this, 0);
             render->addObserver((RenderObserver *)this);
@@ -303,6 +302,22 @@ namespace Gek
                     }
                 }
             }
+        }
+
+        // EngineContext
+        Population * getPopulation(void) const
+        {
+            return population.get();
+        }
+
+        Resources * getResources(void) const
+        {
+            return resources.get();
+        }
+
+        Render * getRender(void) const
+        {
+            return render.get();
         }
 
         // Engine
@@ -428,8 +443,8 @@ namespace Gek
             INT32 cursorMovementY = INT32(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
             if (cursorMovementX != 0 || cursorMovementY != 0)
             {
-                sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
             }
 
             lastCursorPosition = currentCursorPosition;
@@ -441,30 +456,30 @@ namespace Gek
                 {
                 case 'W':
                 case VK_UP:
-                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
+                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
                     break;
 
                 case 'S':
                 case VK_DOWN:
-                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
+                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
                     break;
 
                 case 'A':
                 case VK_LEFT:
-                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
+                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
                     break;
 
                 case 'D':
                 case VK_RIGHT:
-                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
+                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
                     break;
 
                 case VK_SPACE:
-                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"jump", action.second)));
+                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", action.second)));
                     break;
 
                 case VK_LCONTROL:
-                    sendEvent(Event<ActionObserver>(std::bind(&ActionObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
+                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
                     break;
                 };
             }

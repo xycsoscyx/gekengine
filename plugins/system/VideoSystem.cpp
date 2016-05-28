@@ -1990,9 +1990,7 @@ namespace Gek
             ::DirectX::ScratchImage scratchImage;
             ::DirectX::TexMetadata textureMetaData;
 
-            std::experimental::filesystem::path path(fileName);
-            wstring extension(path.extension().c_str());
-
+            wstring extension(std::experimental::filesystem::path(fileName).extension().c_str());
             std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
             if (extension.compare(L".dds") == 0)
             {
@@ -2068,9 +2066,7 @@ namespace Gek
                 std::vector<UINT8> fileData;
                 Gek::FileSystem::load(fileNameList[side], fileData);
 
-                std::experimental::filesystem::path path(fileNameList[side]);
-                wstring extension(path.extension().c_str());
-
+                wstring extension(std::experimental::filesystem::path(fileNameList[side]).extension().c_str());
                 std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
                 if (extension.compare(L".dds") == 0)
                 {

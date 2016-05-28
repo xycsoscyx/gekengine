@@ -25,17 +25,17 @@ namespace Gek
 
     public:
         RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity,
-            TransformComponent &transformComponent,
+            TransformComponent *transformComponent,
             MassComponent &massComponent)
             : newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
             , entity(entity)
-            , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, transformComponent.getMatrix().data))
-            , transformComponent(transformComponent)
+            , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, transformComponent->getMatrix().data))
+            , transformComponent(*transformComponent)
             , massComponent(massComponent)
         {
             GEK_REQUIRE(newtonBody);
             NewtonBodySetMassProperties(newtonBody, massComponent, newtonCollision);
-            NewtonBodySetMatrix(newtonBody, transformComponent.getMatrix().data);
+            NewtonBodySetMatrix(newtonBody, transformComponent->getMatrix().data);
             NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
         }
 
@@ -76,9 +76,9 @@ namespace Gek
         }
     };
 
-    NewtonEntity *createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent)
+    NewtonEntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent)
     {
-        return new RigidNewtonBody(newtonWorld, newtonCollision, entity, transformComponent, massComponent);
+        return std::remake_shared<NewtonEntity, RigidNewtonBody>(newtonWorld, newtonCollision, entity, &transformComponent, massComponent);
     }
 
     RigidBodyComponent::RigidBodyComponent(void)

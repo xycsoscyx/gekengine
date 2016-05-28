@@ -9,6 +9,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoSystem.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
@@ -36,7 +37,7 @@ namespace Gek
     static const UINT32 ParticleBufferCount = 1000;
 
     class ParticlesProcessorImplementation
-        : public ContextRegistration<ParticlesProcessorImplementation>
+        : public ContextRegistration<ParticlesProcessorImplementation, EngineContext *>
         , public PopulationObserver
         , public RenderObserver
         , public Processor
@@ -107,10 +108,10 @@ namespace Gek
         };
 
     private:
-        PluginResources *resources;
-        Render *render;
         Population *population;
         UINT32 updateHandle;
+        PluginResources *resources;
+        Render *render;
 
         PluginHandle plugin;
         ResourceHandle particleBuffer;
@@ -123,12 +124,12 @@ namespace Gek
         VisibleList visibleList;
 
     public:
-        ParticlesProcessorImplementation(Context *context)
+        ParticlesProcessorImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , resources(nullptr)
-            , render(nullptr)
-            , population(nullptr)
+            , population(engine->getPopulation())
             , updateHandle(0)
+            , resources(engine->getResources())
+            , render(engine->getRender())
         {
             population->addObserver((PopulationObserver *)this);
             updateHandle = population->setUpdatePriority(this, 60);

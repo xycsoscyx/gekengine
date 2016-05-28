@@ -4,6 +4,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Plugin.h"
@@ -66,7 +67,7 @@ namespace Gek
     };
 
     class RenderImplementation
-        : public ContextRegistration<RenderImplementation, VideoSystem *, Resources *, Population *>
+        : public ContextRegistration<RenderImplementation, EngineContext *>
         , virtual public ObservableMixin
         , public PopulationObserver
         , public Render
@@ -164,7 +165,6 @@ namespace Gek
         };
 
     private:
-        IUnknown *initializerContext;
         VideoSystem *video;
         Resources *resources;
         Population *population;
@@ -182,11 +182,11 @@ namespace Gek
         DrawCallList drawCallList;
 
     public:
-        RenderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population)
+        RenderImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , video(video)
-            , resources(resources)
-            , population(population)
+            , video(engine->getRender()->getVideoSystem())
+            , resources(engine->getResources())
+            , population(engine->getPopulation())
             , backgroundUpdateHandle(0)
             , foregroundUpdateHandle(0)
         {
@@ -250,6 +250,11 @@ namespace Gek
         }
 
         // Render
+        VideoSystem * getVideoSystem(void) const
+        {
+            return video;
+        }
+
         void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw)
         {
             if (plugin && material && draw)

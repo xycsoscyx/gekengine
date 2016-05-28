@@ -5,67 +5,58 @@
 
 using namespace Gek;
 
-int wmain(int argumentCount, wchar_t *argumentList[], wchar_t *environmentVariableList)
+int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *environmentVariableList)
 {
-    printf("GEK Scene Converter\r\n");
-
-    CStringW fileNameInput;
-    CStringW fileNameOutput;
-
-    for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
-    {
-        CStringW argument(argumentList[argumentIndex]);
-
-        int position = 0;
-        CStringW operation(argument.Tokenize(L":", position));
-        if (operation.CompareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
-        {
-            fileNameInput = argumentList[argumentIndex];
-        }
-        else if (operation.CompareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
-        {
-            fileNameOutput = argumentList[argumentIndex];
-        }
-    }
-
     CoInitialize(nullptr);
     try
     {
-        XmlDocumentPtr xmlDocument(XmlDocument::load(fileNameInput));
+        printf("GEK Scene Converter\r\n");
 
-        XmlNodePtr xmlWorldNode = xmlDocument.getRoot();
-        GEK_THROW_ERROR(!xmlWorldNode, BaseException, "XML document missing root node");
-        GEK_THROW_ERROR(xmlWorldNode.getText().CompareNoCase(L"world") == 0, BaseException, "XML document root node not 'world'");
+        wstring fileNameInput;
+        wstring fileNameOutput;
+        for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
+        {
+            wstring argument(argumentList[argumentIndex]);
+            if (argument.compare(L"-input") == 0 && ++argumentIndex < argumentCount)
+            {
+                fileNameInput = argumentList[argumentIndex];
+            }
+            else if (argument.compare(L"-output") == 0 && ++argumentIndex < argumentCount)
+            {
+                fileNameOutput = argumentList[argumentIndex];
+            }
+        }
 
-        XmlNodePtr xmlPopulationNode = xmlWorldNode.firstChildElement(L"population");
-        GEK_THROW_ERROR(!xmlPopulationNode, BaseException, "XML document missing population node");
-
-        XmlNodePtr xmlEntityNode = xmlPopulationNode.firstChildElement(L"entity");
-        while (xmlEntityNode)
+        XmlDocumentPtr document(XmlDocument::load(fileNameInput));
+        XmlNodePtr worldNode = document->getRoot(L"world");
+        XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
+        XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
+        while (entityNode->isValid())
         {
             Population::EntityDefinition entityData;
-            XmlNodePtr xmlComponentNode = xmlEntityNode.firstChildElement();
-            while (xmlComponentNode)
+            XmlNodePtr componentNode = entityNode->firstChildElement();
+            while (componentNode->isValid())
             {
-                Population::ComponentDefinition &componentData = entityData[xmlComponentNode.getType()];
-                xmlComponentNode.listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                Population::ComponentDefinition &componentData = entityData[componentNode->getType()];
+                componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
                 {
                     componentData.insert(std::make_pair(name, value));
                 });
 
-                if (!xmlComponentNode.getText().IsEmpty())
+                if (!componentNode->getText().empty())
                 {
-                    componentData.SetString(xmlComponentNode.getText());
+                    componentData.value = componentNode->getText();
                 }
-                xmlComponentNode = xmlComponentNode.nextSiblingElement();
+
+                componentNode = componentNode->nextSiblingElement();
             };
 
-            xmlEntityNode = xmlEntityNode.nextSiblingElement(L"entity");
+            entityNode = entityNode->nextSiblingElement(L"entity");
         };
     }
     catch (BaseException exception)
     {
-        printf("[error] Error (%): %", exception.when(), exception.what());
+        printf("[error] Error (%d): %s", exception.when(), exception.what());
     }
     catch (...)
     {

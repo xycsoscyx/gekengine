@@ -1,4 +1,5 @@
 ﻿#include "GEK\Context\ContextUser.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Render.h"
@@ -13,7 +14,7 @@
 namespace Gek
 {
     class CameraProcessorImplementation
-        : public ContextRegistration<CameraProcessorImplementation>
+        : public ContextRegistration<CameraProcessorImplementation, EngineContext *>
         , public PopulationObserver
         , public Processor
     {
@@ -25,11 +26,11 @@ namespace Gek
         Render *render;
 
     public:
-        CameraProcessorImplementation(Context *context)
+        CameraProcessorImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , population(nullptr)
+            , population(engine->getPopulation())
             , updateHandle(0)
-            , render(nullptr)
+            , render(engine->getRender())
         {
             population->addObserver((PopulationObserver *)this);
             updateHandle = population->setUpdatePriority(this, 90);
@@ -40,9 +41,8 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
+                population->removeObserver((PopulationObserver *)this);
             }
-
-            population->removeObserver((PopulationObserver *)this);
         }
 
         // PopulationObserver

@@ -4,8 +4,8 @@
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Engine\Engine.h"
 #include "GEK\Engine\Processor.h"
-#include "GEK\Engine\Action.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
@@ -33,11 +33,11 @@ static void deSerializeCollision(void* const serializeHandle, void* const buffer
 
 namespace Gek
 {
-    extern NewtonEntityPtr createPlayerBody(IUnknown *actionProvider, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
+    extern NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
     extern NewtonEntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
 
     class NewtonProcessorImplementation
-        : public ContextRegistration<NewtonProcessorImplementation>
+        : public ContextRegistration<NewtonProcessorImplementation, EngineContext *>
         , virtual public ObservableMixin
         , public PopulationObserver
         , public Processor
@@ -59,10 +59,9 @@ namespace Gek
         };
 
     private:
+        EngineContext *engine;
         Population *population;
         UINT32 updateHandle;
-
-        IUnknown *actionProvider;
 
         NewtonWorld *newtonWorld;
         NewtonCollision *newtonStaticScene;
@@ -76,16 +75,18 @@ namespace Gek
         std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
     public:
-        NewtonProcessorImplementation(Context *context)
+        NewtonProcessorImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
-            , population(nullptr)
+            , engine(engine)
+            , population(engine->getPopulation())
             , updateHandle(0)
-            , actionProvider(nullptr)
             , newtonWorld(nullptr)
             , newtonStaticScene(nullptr)
             , newtonStaticBody(nullptr)
             , gravity(0.0f, -32.174f, 0.0f)
         {
+            updateHandle = population->setUpdatePriority(this, 50);
+            population->addObserver((PopulationObserver *)this);
         }
 
         ~NewtonProcessorImplementation(void)
@@ -94,19 +95,18 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
+                population->removeObserver((PopulationObserver *)this);
             }
-
-            ObservableMixin::removeObserver(population, getClass<PopulationObserver>());
         }
 
         // NewtonProcessor
-        STDMETHODIMP_(Math::Float3) getGravity(const Math::Float3 &position)
+        Math::Float3 getGravity(const Math::Float3 &position)
         {
             const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
             return Gravity;
         }
 
-        STDMETHODIMP_(UINT32) loadSurface(const wchar_t *fileName)
+        UINT32 loadSurface(const wchar_t *fileName)
         {
             GEK_REQUIRE(fileName);
 
@@ -123,74 +123,47 @@ namespace Gek
 
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
-                Gek::XmlDocumentPtr xmlDocument;
-                if (SUCCEEDED(resultValue = xmlDocument.load(Gek::String::format(L"$root\\data\\materials\\%v.xml", fileName))))
+                Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%v.xml", fileName)));
+                Gek::XmlNodePtr materialNode = document->getRoot(L"material");
+                Gek::XmlNodePtr surfaceNode = materialNode->firstChildElement(L"surface");
+                if (surfaceNode->isValid())
                 {
-                    Gek::XmlNodePtr xmlMaterialNode = xmlDocument.getRoot();
-                    if (xmlMaterialNode && xmlMaterialNode.getType().CompareNoCase(L"material") == 0)
+                    Surface surface;
+                    surface.ghost = String::to<bool>(surfaceNode->getAttribute(L"ghost"));
+                    if (surfaceNode->hasAttribute(L"staticfriction"))
                     {
-                        if (xmlMaterialNode.hasChildElement(L"surface"))
-                        {
-                            Gek::XmlNodePtr xmlSurfaceNode = xmlMaterialNode.firstChildElement(L"surface");
-                            if (xmlSurfaceNode)
-                            {
-                                Surface surface;
-                                surface.ghost = String::to<bool>(xmlSurfaceNode.getAttribute(L"ghost"));
-                                if (xmlSurfaceNode.hasAttribute(L"staticfriction"))
-                                {
-                                    surface.staticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"staticfriction"));
-                                }
-
-                                if (xmlSurfaceNode.hasAttribute(L"kineticfriction"))
-                                {
-                                    surface.kineticFriction = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"kineticfriction"));
-                                }
-
-                                if (xmlSurfaceNode.hasAttribute(L"elasticity"))
-                                {
-                                    surface.elasticity = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"elasticity"));
-                                }
-
-                                if (xmlSurfaceNode.hasAttribute(L"softness"))
-                                {
-                                    surface.softness = Gek::String::to<float>(xmlSurfaceNode.getAttribute(L"softness"));
-                                }
-
-                                surfaceIndex = surfaceList.size();
-                                surfaceList.push_back(surface);
-                            }
-                        }
+                        surface.staticFriction = Gek::String::to<float>(surfaceNode->getAttribute(L"staticfriction"));
                     }
+
+                    if (surfaceNode->hasAttribute(L"kineticfriction"))
+                    {
+                        surface.kineticFriction = Gek::String::to<float>(surfaceNode->getAttribute(L"kineticfriction"));
+                    }
+
+                    if (surfaceNode->hasAttribute(L"elasticity"))
+                    {
+                        surface.elasticity = Gek::String::to<float>(surfaceNode->getAttribute(L"elasticity"));
+                    }
+
+                    if (surfaceNode->hasAttribute(L"softness"))
+                    {
+                        surface.softness = Gek::String::to<float>(surfaceNode->getAttribute(L"softness"));
+                    }
+
+                    surfaceIndex = surfaceList.size();
+                    surfaceList.push_back(surface);
                 }
             }
 
             return surfaceIndex;
         }
 
-        STDMETHODIMP_(const Surface &) getSurface(UINT32 surfaceIndex) const
+        const Surface & getSurface(UINT32 surfaceIndex) const
         {
             return surfaceList[surfaceIndex];
         }
 
         // Processor
-        STDMETHODIMP initialize(IUnknown *initializerContext)
-        {
-            GEK_REQUIRE(initializerContext);
-
-            HRESULT resultValue = E_FAIL;
-            CComQIPtr<Population> population(initializerContext);
-            if (population)
-            {
-                this->actionProvider = initializerContext;
-                this->population = population;
-
-                updateHandle = population->setUpdatePriority(this, 50);
-                resultValue = ObservableMixin::addObserver(population, getClass<PopulationObserver>());
-            }
-
-            return resultValue;
-        };
-
         static void newtonPreUpdateTask(NewtonWorld* const world, void* const userData, int threadIndex)
         {
             auto updatePair = (std::pair<NewtonEntity *, float> *)userData;
@@ -296,7 +269,7 @@ namespace Gek
         }
 
         // PopulationObserver
-        STDMETHODIMP_(void) onLoadBegin(void)
+        void onLoadBegin(void)
         {
             surfaceList.push_back(Surface());
 
@@ -321,11 +294,8 @@ namespace Gek
             if (newtonStaticScene)
             {
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                if (SUCCEEDED(resultValue))
-                {
-                    newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                    NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
-                }
+                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+                NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
             }
         }
 
@@ -334,21 +304,16 @@ namespace Gek
             if (newtonStaticScene)
             {
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                if (SUCCEEDED(resultValue))
-                {
-                    newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                    NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
-                }
             }
 
             onFree();
         }
 
-        STDMETHODIMP_(void) onLoadSucceeded(HRESULT resultValue)
+        void onLoadSucceeded(HRESULT resultValue)
         {
         }
 
-        STDMETHODIMP_(void) onFree(void)
+        void onFree(void)
         {
             if (newtonWorld)
             {
@@ -384,7 +349,7 @@ namespace Gek
             GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
         }
 
-        STDMETHODIMP_(void) onEntityCreated(Entity *entity)
+        void onEntityCreated(Entity *entity)
         {
             GEK_REQUIRE(entity);
 
@@ -423,7 +388,7 @@ namespace Gek
                     else if (entity->hasComponent<PlayerBodyComponent>())
                     {
                         auto &playerBodyComponent = entity->getComponent<PlayerBodyComponent>();
-                        NewtonEntityPtr playerBody(createPlayerBody(actionProvider, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent));
+                        NewtonEntityPtr playerBody(createPlayerBody(engine, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent));
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
@@ -434,7 +399,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Entity *entity)
         {
             auto entityIterator = entityMap.find(entity);
             if (entityIterator != entityMap.end())
@@ -443,7 +408,7 @@ namespace Gek
             }
         }
 
-        STDMETHODIMP_(void) onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(UINT32 handle, bool isIdle)
         {
             GEK_REQUIRE(population);
 
@@ -469,7 +434,7 @@ namespace Gek
 
         NewtonCollision *createCollision(Entity *entity, const wstring &shape)
         {
-            GEK_REQUIRE(population, nullptr);
+            GEK_REQUIRE(population);
 
             NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<wstring>()(shape);
@@ -483,56 +448,54 @@ namespace Gek
             }
             else
             {
-                int position = 0;
-                wstring shapeType(shape.Tokenize(L"|", position));
-                wstring parameters(shape.Tokenize(L"|", position));
-
                 collisionList[collisionHash] = nullptr;
-                if (shapeType.CompareNoCase(L"*cube") == 0)
+
+                std::vector<wstring> parameters(shape.split(L'|'));
+                GEK_THROW_ERROR(parameters.size() != 2, BaseException, "Invalid parameters passed for shape: %v", shape);
+
+                if (parameters[0].compareNoCase(L"*cube") == 0)
                 {
-                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
+                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
                     newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*sphere") == 0)
+                else if (parameters[0].compareNoCase(L"*sphere") == 0)
                 {
-                    float size = Evaluator::get<float>(parameters);
+                    float size = Evaluator::get<float>(parameters[1]);
                     newtonCollision = NewtonCreateSphere(newtonWorld, size, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*cone") == 0)
+                else if (parameters[0].compareNoCase(L"*cone") == 0)
                 {
-                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
                     newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*capsule") == 0)
+                else if (parameters[0].compareNoCase(L"*capsule") == 0)
                 {
-                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
                     newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*cylinder") == 0)
+                else if (parameters[0].compareNoCase(L"*cylinder") == 0)
                 {
-                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
                     newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*tapered_capsule") == 0)
+                else if (parameters[0].compareNoCase(L"*tapered_capsule") == 0)
                 {
-                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
+                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
                     newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*tapered_cylinder") == 0)
+                else if (parameters[0].compareNoCase(L"*tapered_cylinder") == 0)
                 {
-                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters));
+                    Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
                     newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
-                else if (shapeType.CompareNoCase(L"*chamfer_cylinder") == 0)
+                else if (parameters[0].compareNoCase(L"*chamfer_cylinder") == 0)
                 {
-                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters));
+                    Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
                     newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
 
-                if (newtonCollision)
-                {
-                    collisionList[collisionHash] = newtonCollision;
-                }
+                GEK_THROW_ERROR(newtonCollision == nullptr, BaseException, "Unable to create newton collision shape: %v", shape);
+                collisionList[collisionHash] = newtonCollision;
             }
 
             return newtonCollision;
@@ -541,7 +504,7 @@ namespace Gek
         NewtonCollision *loadCollision(Entity *entity, const wstring &shape)
         {
             NewtonCollision *newtonCollision = nullptr;
-            if (shape.GetAt(0) == L'*')
+            if (shape.at(0) == L'*')
             {
                 newtonCollision = createCollision(entity, shape);
             }
@@ -558,57 +521,55 @@ namespace Gek
                 }
                 else
                 {
-                    wstring fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%v.bin", shape.GetString())));
+                    collisionList[shapeHash] = nullptr;
+
+                    wstring fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%v.bin", shape)));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");
-                    if (file)
+                    GEK_THROW_ERROR(file == nullptr, FileSystem::Exception, "Unable to load collision model: %v", fileName);
+
+                    UINT32 gekIdentifier = 0;
+                    fread(&gekIdentifier, sizeof(UINT32), 1, file);
+                    GEK_THROW_ERROR(gekIdentifier != *(UINT32 *)"GEKX", BaseException, "Invalid model idetifier found: %v", gekIdentifier);
+
+                    UINT16 gekModelType = 0;
+                    fread(&gekModelType, sizeof(UINT16), 1, file);
+
+                    UINT16 gekModelVersion = 0;
+                    fread(&gekModelVersion, sizeof(UINT16), 1, file);
+
+                    if (gekModelType == 1 && gekModelVersion == 0)
                     {
-                        UINT32 gekIdentifier = 0;
-                        fread(&gekIdentifier, sizeof(UINT32), 1, file);
-
-                        UINT16 gekModelType = 0;
-                        fread(&gekModelType, sizeof(UINT16), 1, file);
-
-                        UINT16 gekModelVersion = 0;
-                        fread(&gekModelVersion, sizeof(UINT16), 1, file);
-
-                        if (gekIdentifier == *(UINT32 *)"GEKX")
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
+                    }
+                    else if (gekModelType == 2 && gekModelVersion == 0)
+                    {
+                        UINT32 materialCount = 0;
+                        fread(&materialCount, sizeof(UINT32), 1, file);
+                        for (UINT32 materialIndex = 0; materialIndex < materialCount; materialIndex++)
                         {
-                            if (gekModelType == 1 && gekModelVersion == 0)
+                            wstring materialName;
+                            wchar_t letter = 0;
+                            do
                             {
-                                newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
-                            }
-                            else if (gekModelType == 2 && gekModelVersion == 0)
-                            {
-                                UINT32 materialCount = 0;
-                                fread(&materialCount, sizeof(UINT32), 1, file);
-                                for (UINT32 materialIndex = 0; materialIndex < materialCount; materialIndex++)
-                                {
-                                    wstring materialName;
-                                    wchar_t letter = 0;
-                                    do
-                                    {
-                                        fread(&letter, sizeof(wchar_t), 1, file);
-                                        materialName += letter;
-                                    } while (letter != 0);
+                                fread(&letter, sizeof(wchar_t), 1, file);
+                                materialName += letter;
+                            } while (letter != 0);
 
-                                    staticSurfaceMap[materialIndex] = loadSurface(materialName);
-                                }
-
-                                newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
-                            }
+                            staticSurfaceMap[materialIndex] = loadSurface(materialName);
                         }
 
-                        fclose(file);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
                     }
-
-                    collisionList[shapeHash] = nullptr;
-
-                    if (newtonCollision)
+                    else
                     {
-                        collisionList[shapeHash] = newtonCollision;
+                        GEK_THROW_EXCEPTION(BaseException, "Invalid model format/version specified: %v, %v", gekModelType, gekModelVersion);
                     }
+
+                    fclose(file);
+                    GEK_THROW_ERROR(newtonCollision == nullptr, BaseException, "Unable to create newton collision shape: %v", shape);
+                    collisionList[shapeHash] = newtonCollision;
                 }
             }
 

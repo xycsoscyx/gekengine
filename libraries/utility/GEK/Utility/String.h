@@ -129,6 +129,11 @@ namespace Gek
             return tokens;
         }
 
+        int compareNoCase(const ELEMENT *string)
+        {
+            return getLower().compare(string);
+        }
+
         template<typename TYPE, typename... ARGUMENTS>
         void format(const ELEMENT *formatting, TYPE value, ARGUMENTS... arguments)
         {
