@@ -63,6 +63,12 @@ namespace Gek
         virtual void removeUpdatePriority(UINT32 updateHandle) = 0;
     };
 
+    GEK_INTERFACE(PopulationSystem)
+        : public Population
+    {
+        virtual void loadPlugins(void) = 0;
+    };
+
     GEK_INTERFACE(PopulationObserver)
         : virtual public Observer
     {

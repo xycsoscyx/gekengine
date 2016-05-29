@@ -103,7 +103,7 @@ namespace Gek
     }
 
     class ShaderImplementation
-        : public ContextRegistration<ShaderImplementation, VideoSystem *, Resources *, Population *, const wchar_t *>
+        : public ContextRegistration<ShaderImplementation, VideoSystem *, Resources *, Population *, const wstring &>
         , public Shader
     {
     public:
@@ -583,7 +583,7 @@ namespace Gek
         }
 
     public:
-        ShaderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population, const wchar_t *fileName)
+        ShaderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population, const wstring &fileName)
             : ContextRegistration(context)
             , video(video)
             , resources(resources)
@@ -594,7 +594,6 @@ namespace Gek
             GEK_REQUIRE(video);
             GEK_REQUIRE(resources);
             GEK_REQUIRE(population);
-            GEK_REQUIRE(fileName);
 
             shaderConstantBuffer = video->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
 

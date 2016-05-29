@@ -87,7 +87,7 @@ namespace Gek
     }
 
     class PluginImplementation
-        : public ContextRegistration<PluginImplementation, VideoSystem *, const wchar_t *>
+        : public ContextRegistration<PluginImplementation, VideoSystem *, const wstring &>
         , public Plugin
     {
     private:
@@ -96,12 +96,11 @@ namespace Gek
         VideoObjectPtr vertexProgram;
 
     public:
-        PluginImplementation(Context *context, VideoSystem *video, const wchar_t *fileName)
+        PluginImplementation(Context *context, VideoSystem *video, const wstring &fileName)
             : ContextRegistration(context)
             , video(video)
         {
             GEK_REQUIRE(video);
-            GEK_REQUIRE(fileName);
 
             Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\plugins\\%v.xml", fileName)));
             Gek::XmlNodePtr pluginNode = document->getRoot(L"plugin");

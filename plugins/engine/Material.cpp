@@ -11,7 +11,7 @@
 namespace Gek
 {
     class MaterialImplementation 
-        : public ContextRegistration<MaterialImplementation, Resources *, const wchar_t *>
+        : public ContextRegistration<MaterialImplementation, Resources *, const wstring &>
         , public Material
     {
     private:
@@ -20,12 +20,11 @@ namespace Gek
         ShaderHandle shader;
 
     public:
-        MaterialImplementation(Context *context, Resources *resources, const wchar_t *fileName)
+        MaterialImplementation(Context *context, Resources *resources, const wstring &fileName)
             : ContextRegistration(context)
             , resources(resources)
         {
             GEK_REQUIRE(resources);
-            GEK_REQUIRE(fileName);
 
             Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%v.xml", fileName)));
             Gek::XmlNodePtr materialNode = document->getRoot(L"material");

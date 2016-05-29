@@ -61,7 +61,7 @@ namespace Gek
     class PopulationImplementation
         : public ContextRegistration<PopulationImplementation, EngineContext *>
         , virtual public ObservableMixin
-        , public Population
+        , public PopulationSystem
     {
     private:
         EngineContext *engine;
@@ -87,9 +87,21 @@ namespace Gek
             : ContextRegistration(context)
             , engine(engine)
         {
+        }
+
+        ~PopulationImplementation(void)
+        {
+            processorList.clear();
+            componentNameList.clear();
+            componentList.clear();
+        }
+
+        // PopulationSystem
+        void loadPlugins(void)
+        {
             getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
             {
-                ComponentPtr component(context->createClass<Component>(className));
+                ComponentPtr component(getContext()->createClass<Component>(className));
                 auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
                 if (identifierIterator.second)
                 {
@@ -105,15 +117,8 @@ namespace Gek
 
             getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
             {
-                processorList.push_back(context->createClass<Processor>(className, engine));
+                processorList.push_back(getContext()->createClass<Processor>(className, engine));
             });
-        }
-
-        ~PopulationImplementation(void)
-        {
-            processorList.clear();
-            componentNameList.clear();
-            componentList.clear();
         }
 
         // Population

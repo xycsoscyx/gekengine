@@ -64,7 +64,7 @@ namespace Gek
         VideoSystemPtr video;
         ResourcesPtr resources;
         RenderPtr render;
-        PopulationPtr population;
+        PopulationSystemPtr population;
 
         UINT32 updateHandle;
         ActionQueue actionQueue;
@@ -201,9 +201,10 @@ namespace Gek
             GEK_THROW_ERROR(FAILED(resultValue), BaseException, "Unable to initialize COM: %v", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
-            resources = getContext()->createClass<Resources>(L"ResourcesSystem", (EngineContext *)this);
-            population = getContext()->createClass<Population>(L"PopulationSystem", (EngineContext *)this);
-            render = getContext()->createClass<Render>(L"RenderSystem", (EngineContext *)this);
+            resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
+            population = getContext()->createClass<PopulationSystem>(L"PopulationSystem", (EngineContext *)this);
+            render = getContext()->createClass<Render>(L"RenderSystem", video.get(), (Population *)population.get(), resources.get());
+            population->loadPlugins();
 
             updateHandle = population->setUpdatePriority(this, 0);
             render->addObserver((RenderObserver *)this);
@@ -307,7 +308,7 @@ namespace Gek
         // EngineContext
         Population * getPopulation(void) const
         {
-            return population.get();
+            return (Population *)population.get();
         }
 
         Resources * getResources(void) const

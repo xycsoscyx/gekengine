@@ -289,7 +289,7 @@ namespace Gek
     };
 
     class ResourcesImplementation 
-        : public ContextRegistration<ResourcesImplementation, EngineContext *>
+        : public ContextRegistration<ResourcesImplementation, VideoSystem *>
         , public Resources
     {
     private:
@@ -310,9 +310,9 @@ namespace Gek
         concurrency::concurrent_queue<std::function<void(void)>> loadResourceQueue;
 
     public:
-        ResourcesImplementation(Context *context, EngineContext *engine)
+        ResourcesImplementation(Context *context, VideoSystem *video)
             : ContextRegistration(context)
-            , video(engine->getRender()->getVideoSystem())
+            , video(video)
         {
         }
 
@@ -390,7 +390,7 @@ namespace Gek
         {
             auto load = [this, fileName](PluginHandle handle) -> PluginPtr
             {
-                return getContext()->createClass<Plugin>(L"PluginSystem");
+                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName);
             };
 
             auto request = [this, load](PluginHandle handle, std::function<void(PluginPtr)> set) -> void
@@ -405,7 +405,7 @@ namespace Gek
         {
             auto load = [this, fileName](MaterialHandle handle) -> MaterialPtr
             {
-                return getContext()->createClass<Material>(L"MaterialSystem");
+                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName);
             };
 
             auto request = [this, load](MaterialHandle handle, std::function<void(MaterialPtr)> set) -> void
@@ -423,7 +423,7 @@ namespace Gek
         {
             auto load = [this, fileName](ShaderHandle handle) -> ShaderPtr
             {
-                return getContext()->createClass<Shader>(L"ShaderSystem");
+                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, nullptr, fileName);
             };
 
             auto request = [this, load](ShaderHandle handle, std::function<void(ShaderPtr)> set) -> void

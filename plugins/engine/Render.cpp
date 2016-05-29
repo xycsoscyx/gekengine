@@ -67,7 +67,7 @@ namespace Gek
     };
 
     class RenderImplementation
-        : public ContextRegistration<RenderImplementation, EngineContext *>
+        : public ContextRegistration<RenderImplementation, VideoSystem *, Population *, Resources *>
         , virtual public ObservableMixin
         , public PopulationObserver
         , public Render
@@ -166,10 +166,10 @@ namespace Gek
 
     private:
         VideoSystem *video;
-        Resources *resources;
         Population *population;
         UINT32 backgroundUpdateHandle;
         UINT32 foregroundUpdateHandle;
+        Resources *resources;
 
         VideoObjectPtr pointSamplerState;
         VideoObjectPtr linearClampSamplerState;
@@ -182,13 +182,13 @@ namespace Gek
         DrawCallList drawCallList;
 
     public:
-        RenderImplementation(Context *context, EngineContext *engine)
+        RenderImplementation(Context *context, VideoSystem *video, Population *population, Resources *resources)
             : ContextRegistration(context)
-            , video(engine->getRender()->getVideoSystem())
-            , resources(engine->getResources())
-            , population(engine->getPopulation())
+            , video(video)
+            , population(population)
             , backgroundUpdateHandle(0)
             , foregroundUpdateHandle(0)
+            , resources(resources)
         {
             population->addObserver((PopulationObserver *)this);
             backgroundUpdateHandle = population->setUpdatePriority(this, 10);
