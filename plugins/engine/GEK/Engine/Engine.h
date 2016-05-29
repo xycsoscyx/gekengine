@@ -14,6 +14,12 @@ namespace Gek
         virtual Population * getPopulation(void) const = 0;
         virtual Resources * getResources(void) const = 0;
         virtual Render * getRender(void) const = 0;
+
+        virtual const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const = 0;
+
+        virtual void beginChanges(void) = 0;
+        virtual void setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value) = 0;
+        virtual void finishChanges(bool commit) = 0;
     };
 
     GEK_INTERFACE(Engine)
@@ -46,6 +52,8 @@ namespace Gek
     GEK_INTERFACE(EngineObserver)
         : virtual public Observer
     {
+        virtual void onChanged(void) { };
+
         virtual void onAction(const wchar_t *name, const ActionParam &param) { };
     };
 }; // namespace Gek

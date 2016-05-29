@@ -60,7 +60,7 @@ namespace Gek
 
     class PopulationImplementation
         : public ContextRegistration<PopulationImplementation, EngineContext *>
-        , virtual public ObservableMixin
+        , virtual public ObservableMixin<PopulationObserver>
         , public PopulationSystem
     {
     private:
@@ -91,9 +91,6 @@ namespace Gek
 
         ~PopulationImplementation(void)
         {
-            processorList.clear();
-            componentNameList.clear();
-            componentList.clear();
         }
 
         // PopulationSystem
@@ -119,6 +116,13 @@ namespace Gek
             {
                 processorList.push_back(getContext()->createClass<Processor>(className, engine));
             });
+        }
+
+        void freePlugins(void)
+        {
+            processorList.clear();
+            componentNameList.clear();
+            componentList.clear();
         }
 
         // Population
@@ -194,7 +198,7 @@ namespace Gek
                 try
                 {
                     free();
-                    sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
+                    sendEvent(Event(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
                     Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\scenes\\%v.xml", fileName)));
                     Gek::XmlNodePtr worldNode = document->getRoot(L"world");
@@ -234,11 +238,11 @@ namespace Gek
 
                     frameTime = 0.0f;
                     worldTime = 0.0f;
-                    sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
+                    sendEvent(Event(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
                 }
                 catch (BaseException exception)
                 {
-                    sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
+                    sendEvent(Event(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
                 };
             };
         }
@@ -257,7 +261,7 @@ namespace Gek
 
         void free(void)
         {
-            sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onFree, std::placeholders::_1)));
+            sendEvent(Event(std::bind(&PopulationObserver::onFree, std::placeholders::_1)));
             namedEntityList.clear();
             killEntityList.clear();
             entityList.clear();
@@ -290,7 +294,7 @@ namespace Gek
             EntityPtr baseEntity(std::dynamic_pointer_cast<Entity>(entity));
 
             entityList.push_back(baseEntity);
-            sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, baseEntity.get())));
+            sendEvent(Event(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, baseEntity.get())));
             if (name)
             {
                 namedEntityList[name] = baseEntity.get();
@@ -301,7 +305,7 @@ namespace Gek
 
         void killEntity(Entity *entity)
         {
-            sendEvent(Event<PopulationObserver>(std::bind(&PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
+            sendEvent(Event(std::bind(&PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
             killEntityList.push_back(entity);
         }
 

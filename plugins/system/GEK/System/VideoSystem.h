@@ -497,6 +497,7 @@ namespace Gek
         virtual void setSize(UINT32 width, UINT32 height, Video::Format format) = 0;
         virtual void resize(void) = 0;
 
+        virtual void * const getSwapChain(void) = 0;
         virtual VideoTarget * const getBackBuffer(void) = 0;
         virtual VideoContext * const getDefaultContext(void) = 0;
 

@@ -87,7 +87,7 @@ namespace Gek
     }
 
     class PluginImplementation
-        : public ContextRegistration<PluginImplementation, VideoSystem *, const wstring &>
+        : public ContextRegistration<PluginImplementation, VideoSystem *, const wchar_t *>
         , public Plugin
     {
     private:
@@ -96,7 +96,7 @@ namespace Gek
         VideoObjectPtr vertexProgram;
 
     public:
-        PluginImplementation(Context *context, VideoSystem *video, const wstring &fileName)
+        PluginImplementation(Context *context, VideoSystem *video, const wchar_t *fileName)
             : ContextRegistration(context)
             , video(video)
         {
@@ -117,8 +117,8 @@ namespace Gek
             {
             };
 
-            Gek::XmlNodePtr xmlVertexNode = pluginNode->firstChildElement(L"vertex");
-            Gek::XmlNodePtr programNode = xmlVertexNode->firstChildElement(L"program");
+            Gek::XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
+            Gek::XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
             wstring programPath(String::format(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
 
             string progamScript;
@@ -127,7 +127,7 @@ namespace Gek
                 "struct PluginVertex                                    \r\n" \
                 "{                                                      \r\n";
 
-            std::vector<string> elementNameList;
+            std::list<string> elementNameList;
             std::vector<Video::InputElement> elementList;
             Gek::XmlNodePtr layoutNode = pluginNode->firstChildElement(L"layout");
             Gek::XmlNodePtr elementNode = layoutNode->firstChildElement();
@@ -150,7 +150,7 @@ namespace Gek
                     elementNode->hasAttribute(L"index"))
                 {
                     string semanticName(String::from<char>(elementNode->getAttribute(L"name")));
-                    elementNameList.push_back(semanticName.c_str());
+                    elementNameList.push_back(semanticName);
 
                     wstring format(elementNode->getAttribute(L"format"));
 
@@ -195,7 +195,7 @@ namespace Gek
                 }
                 else
                 {
-                    break;
+                    GEK_THROW_EXCEPTION(BaseException, "Invalid vertex layout element found");
                 }
 
                 elementNode = elementNode->nextSiblingElement();

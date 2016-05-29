@@ -68,7 +68,7 @@ namespace Gek
 
     class RenderImplementation
         : public ContextRegistration<RenderImplementation, VideoSystem *, Population *, Resources *>
-        , virtual public ObservableMixin
+        , virtual public ObservableMixin<RenderObserver>
         , public PopulationObserver
         , public Render
     {
@@ -291,7 +291,7 @@ namespace Gek
             const Shapes::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
 
             drawCallList.clear();
-            sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &cameraConstantData.viewMatrix, &viewFrustum)));
+            sendEvent(Event(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &cameraConstantData.viewMatrix, &viewFrustum)));
             if (!drawCallList.empty())
             {
                 VideoContext *videoContext = video->getDefaultContext();
@@ -439,11 +439,11 @@ namespace Gek
         {
             if (handle == backgroundUpdateHandle)
             {
-                sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderBackground, std::placeholders::_1)));
+                sendEvent(Event(std::bind(&RenderObserver::onRenderBackground, std::placeholders::_1)));
             }
             else if (handle == foregroundUpdateHandle)
             {
-                sendEvent(Event<RenderObserver>(std::bind(&RenderObserver::onRenderForeground, std::placeholders::_1)));
+                sendEvent(Event(std::bind(&RenderObserver::onRenderForeground, std::placeholders::_1)));
                 video->present(false);
             }
         }

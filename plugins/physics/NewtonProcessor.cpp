@@ -38,7 +38,7 @@ namespace Gek
 
     class NewtonProcessorImplementation
         : public ContextRegistration<NewtonProcessorImplementation, EngineContext *>
-        , virtual public ObservableMixin
+        , virtual public ObservableMixin<NewtonObserver>
         , public PopulationObserver
         , public Processor
         , public NewtonProcessor
@@ -251,7 +251,7 @@ namespace Gek
                 const Surface &surface0 = getSurface(surfaceIndex0);
                 const Surface &surface1 = getSurface(surfaceIndex1);
 
-                ObservableMixin::sendEvent(Event<NewtonObserver>(std::bind(&NewtonObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
+                ObservableMixin::sendEvent(Event(std::bind(&NewtonObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
                 if (surface0.ghost || surface1.ghost)
                 {
                     NewtonContactJointRemoveContact(contactJoint, newtonContact);

@@ -67,6 +67,7 @@ namespace Gek
         : public Population
     {
         virtual void loadPlugins(void) = 0;
+        virtual void freePlugins(void) = 0;
     };
 
     GEK_INTERFACE(PopulationObserver)

@@ -27,7 +27,7 @@ namespace Gek
         virtual void setText(const wchar_t *text) = 0;
 
         virtual bool hasAttribute(const wchar_t *name) const = 0;
-        virtual wstring getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const = 0;
+        virtual wstring getAttribute(const wchar_t *name, const wstring &defaultValue = wstring()) const = 0;
         virtual void setAttribute(const wchar_t *name, const wchar_t *value) = 0;
         virtual void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const = 0;
 

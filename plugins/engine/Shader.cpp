@@ -103,7 +103,7 @@ namespace Gek
     }
 
     class ShaderImplementation
-        : public ContextRegistration<ShaderImplementation, VideoSystem *, Resources *, Population *, const wstring &>
+        : public ContextRegistration<ShaderImplementation, VideoSystem *, Resources *, Population *, const wchar_t *>
         , public Shader
     {
     public:
@@ -583,7 +583,7 @@ namespace Gek
         }
 
     public:
-        ShaderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population, const wstring &fileName)
+        ShaderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population, const wchar_t *fileName)
             : ContextRegistration(context)
             , video(video)
             , resources(resources)

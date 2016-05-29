@@ -4,7 +4,6 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Timer.h"
 #include "GEK\Engine\Engine.h"
-#include "GEK\Engine\Options.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Render.h"
@@ -21,11 +20,10 @@ namespace Gek
 {
     class EngineImplementation
         : public ContextRegistration<EngineImplementation, HWND>
-        , virtual public ObservableMixin
+        , virtual public ObservableMixin<EngineObserver>
         , public Engine
         , public RenderObserver
         , public PopulationObserver
-        , public Options
     {
     public:
         class ActionQueue
@@ -209,54 +207,67 @@ namespace Gek
             updateHandle = population->setUpdatePriority(this, 0);
             render->addObserver((RenderObserver *)this);
 
-            if (SUCCEEDED(resultValue))
-            {
-                resultValue = E_FAIL;
-                CComQIPtr<IDXGISwapChain> dxSwapChain;//(video);
-                if (dxSwapChain)
-                {
-                    if (SciterCreateOnDirectXWindow(window, dxSwapChain))
-                    {
-                        SciterSetupDebugOutput(window, this, sciterDebugOutput);
-                        SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
-                        SciterSetCallback(window, sciterHostCallback, this);
-                        SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
-                        resultValue = S_OK;
+            IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(video->getSwapChain());
 
-                        SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
-                        root = sciter::dom::element::root_element(window);
-                        background = root.find_first("section#back-layer");
-                        foreground = root.find_first("section#fore-layer");
-                    }
-                }
-            }
+            BOOL success = SciterCreateOnDirectXWindow(window, dxSwapChain);
+            GEK_THROW_ERROR(!success, BaseException, "Unable to initialize Sciter system");
 
-            if (SUCCEEDED(resultValue))
-            {
-                windowActive = true;
-            }
+            SciterSetupDebugOutput(window, this, sciterDebugOutput);
+            SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
+            SciterSetCallback(window, sciterHostCallback, this);
+            SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
+
+            success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
+            GEK_THROW_ERROR(!success, BaseException, "Unable to load system UI HTML");
+
+            root = sciter::dom::element::root_element(window);
+            background = root.find_first("section#back-layer");
+            foreground = root.find_first("section#fore-layer");
+
+            windowActive = true;
         }
 
         ~EngineImplementation(void)
         {
-            render->removeObserver((RenderObserver *)this);
-            render = nullptr;
-            resources = nullptr;
             if (population)
             {
+                population->free();
+                population->freePlugins();
                 population->removeUpdatePriority(updateHandle);
             }
 
+            if (render)
+            {
+                render->removeObserver((RenderObserver *)this);
+            }
+
+            render = nullptr;
+            resources = nullptr;
             population = nullptr;
             video = nullptr;
             CoUninitialize();
         }
 
-        // Options
+        // EngineContext
+        Population * getPopulation(void) const
+        {
+            return (Population *)population.get();
+        }
+
+        Resources * getResources(void) const
+        {
+            return resources.get();
+        }
+
+        Render * getRender(void) const
+        {
+            return render.get();
+        }
+
         const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const
         {
             auto &group = options.find(name);
-            if(group != options.end())
+            if (group != options.end())
             {
                 auto &value = (*group).second.find(attribute);
                 if (value != (*group).second.end())
@@ -284,7 +295,7 @@ namespace Gek
             if (commit)
             {
                 options = std::move(newOptions);
-                sendEvent(Event<OptionsObserver>(std::bind(&OptionsObserver::onChanged, std::placeholders::_1)));
+                sendEvent(Event(std::bind(&EngineObserver::onChanged, std::placeholders::_1)));
 
                 auto &display = options.find(L"display");
                 if (display != options.end())
@@ -303,22 +314,6 @@ namespace Gek
                     }
                 }
             }
-        }
-
-        // EngineContext
-        Population * getPopulation(void) const
-        {
-            return (Population *)population.get();
-        }
-
-        Resources * getResources(void) const
-        {
-            return resources.get();
-        }
-
-        Render * getRender(void) const
-        {
-            return render.get();
         }
 
         // Engine
@@ -444,8 +439,8 @@ namespace Gek
             INT32 cursorMovementY = INT32(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
             if (cursorMovementX != 0 || cursorMovementY != 0)
             {
-                sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
+                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
             }
 
             lastCursorPosition = currentCursorPosition;
@@ -457,30 +452,30 @@ namespace Gek
                 {
                 case 'W':
                 case VK_UP:
-                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
                     break;
 
                 case 'S':
                 case VK_DOWN:
-                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
                     break;
 
                 case 'A':
                 case VK_LEFT:
-                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
                     break;
 
                 case 'D':
                 case VK_RIGHT:
-                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
                     break;
 
                 case VK_SPACE:
-                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", action.second)));
                     break;
 
                 case VK_LCONTROL:
-                    sendEvent(Event<EngineObserver>(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
                     break;
                 };
             }

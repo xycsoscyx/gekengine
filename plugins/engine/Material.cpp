@@ -11,7 +11,7 @@
 namespace Gek
 {
     class MaterialImplementation 
-        : public ContextRegistration<MaterialImplementation, Resources *, const wstring &>
+        : public ContextRegistration<MaterialImplementation, Resources *, const wchar_t *>
         , public Material
     {
     private:
@@ -20,7 +20,7 @@ namespace Gek
         ShaderHandle shader;
 
     public:
-        MaterialImplementation(Context *context, Resources *resources, const wstring &fileName)
+        MaterialImplementation(Context *context, Resources *resources, const wchar_t *fileName)
             : ContextRegistration(context)
             , resources(resources)
         {

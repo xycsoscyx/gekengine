@@ -390,7 +390,7 @@ namespace Gek
         {
             auto load = [this, fileName](PluginHandle handle) -> PluginPtr
             {
-                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName);
+                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName.c_str());
             };
 
             auto request = [this, load](PluginHandle handle, std::function<void(PluginPtr)> set) -> void
@@ -405,7 +405,7 @@ namespace Gek
         {
             auto load = [this, fileName](MaterialHandle handle) -> MaterialPtr
             {
-                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName);
+                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str());
             };
 
             auto request = [this, load](MaterialHandle handle, std::function<void(MaterialPtr)> set) -> void
@@ -423,7 +423,7 @@ namespace Gek
         {
             auto load = [this, fileName](ShaderHandle handle) -> ShaderPtr
             {
-                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, nullptr, fileName);
+                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, nullptr, fileName.c_str());
             };
 
             auto request = [this, load](ShaderHandle handle, std::function<void(ShaderPtr)> set) -> void

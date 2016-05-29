@@ -1181,6 +1181,11 @@ namespace Gek
             GEK_THROW_ERROR(FAILED(resultValue), Video::Exception, "Unable to resize swap chain buffers: %v", resultValue);
         }
 
+        void * const getSwapChain(void)
+        {
+            return static_cast<void *>(dxSwapChain.p);
+        }
+
         VideoTarget * const getBackBuffer(void)
         {
             if (!backBuffer)

@@ -7,44 +7,62 @@
 
 namespace Gek
 {
+    template <class OBSERVER>
     class ObservableMixin
         : virtual public Observable
     {
     public:
-        struct BaseEvent
-        {
-            virtual void operator () (Observer *observer) const = 0;
-        };
-
-        template <typename INTERFACE>
         struct Event
-            : public BaseEvent
         {
         private:
-            const std::function<void(INTERFACE *)> &onEvent;
+            const std::function<void(OBSERVER *)> &onEvent;
 
         public:
-            Event(const std::function<void(INTERFACE *)> &onEvent) :
+            Event(const std::function<void(OBSERVER *)> &onEvent) :
                 onEvent(onEvent)
             {
             }
 
-            void operator () (Observer *observer) const
+            void operator () (OBSERVER *observer) const
             {
-                onEvent(reinterpret_cast<INTERFACE *>(observer));
+                onEvent(observer);
             }
         };
 
     private:
-        std::unordered_set<Observer *> observerList;
+        std::unordered_set<OBSERVER *> observerList;
 
     public:
-        virtual ~ObservableMixin(void);
+        virtual ~ObservableMixin(void)
+        {
+        }
 
-        void sendEvent(const BaseEvent &event) const;
+        // ObservableMixin
+        void sendEvent(const Event &event) const
+        {
+            for (auto &observer : observerList)
+            {
+                event(observer);
+            }
+        }
 
         // Observable
-        void addObserver(Observer *observer);
-        void removeObserver(Observer *observer);
+        void addObserver(Observer *observer)
+        {
+            auto observerIterator = observerList.find(dynamic_cast<OBSERVER *>(observer));
+            if (observerIterator == observerList.end())
+            {
+                observerList.insert(dynamic_cast<OBSERVER *>(observer));
+            }
+        }
+
+        void removeObserver(Observer *observer)
+        {
+            auto observerIterator = observerList.find(dynamic_cast<OBSERVER *>(observer));
+            if (observerIterator != observerList.end())
+            {
+                observerList.erase(observerIterator);
+            }
+        }
     };
 }; // namespace Gek

@@ -92,7 +92,7 @@ namespace Gek
             return false;
         }
 
-        wstring getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const
+        wstring getAttribute(const wchar_t *name, const wstring &defaultValue) const
         {
             return defaultValue;
         }
@@ -173,7 +173,7 @@ namespace Gek
             return (xmlHasProp(node, XmlCast(name)) ? true : false);
         }
 
-        wstring getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const
+        wstring getAttribute(const wchar_t *name, const wstring &defaultValue) const
         {
             if (hasAttribute(name))
             {
@@ -202,7 +202,8 @@ namespace Gek
             for (xmlAttrPtr attribute = node->properties; attribute != nullptr; attribute = attribute->next)
             {
                 wstring name(XmlConstString(attribute->name));
-                onAttribute(name, getAttribute(name));
+                wstring value(XmlString(xmlGetProp(node, attribute->name)));
+                onAttribute(name, value);
             }
         }
 

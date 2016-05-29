@@ -162,7 +162,6 @@
     <ClInclude Include="GEK\Engine\Engine.h" />
     <ClInclude Include="GEK\Engine\Entity.h" />
     <ClInclude Include="GEK\Engine\Material.h" />
-    <ClInclude Include="GEK\Engine\Options.h" />
     <ClInclude Include="GEK\Engine\Plugin.h" />
     <ClInclude Include="GEK\Engine\Population.h" />
     <ClInclude Include="GEK\Engine\Processor.h" />
