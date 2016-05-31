@@ -140,26 +140,43 @@ namespace Gek
             virtual ~Exception(void) = default;
         };
     }; // namespace Trace
+
+    template <typename RETURN, typename CREATE, typename... ARGUMENTS>
+    std::shared_ptr<RETURN> makeShared(ARGUMENTS... arguments)
+    {
+        std::shared_ptr<CREATE> baseObject;
+        try
+        {
+            baseObject = std::make_shared<CREATE>(arguments...);
+        }
+        catch (std::bad_alloc badAllocation)
+        {
+            throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), badAllocation.what()));
+        };
+
+        std::shared_ptr<RETURN> remadeObject;
+        try
+        {
+            remadeObject = std::dynamic_pointer_cast<RETURN>(baseObject);
+        }
+        catch (std::bad_cast badCast)
+        {
+            throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to cast to requested type: %v (%v)", typeid(RETURN).name(), badCast.what()));
+        };
+
+        return remadeObject;
+    }
 }; // namespace Gek
 
-#define GEK_BASE_EXCEPTION()                                        class Exception : public Gek::Exception { public: using Gek::Exception::Exception; };
-#define GEK_EXCEPTION(TYPE)                                         class TYPE : public Exception { public: using Exception::Exception; };
-#define GEK_REQUIRE(CHECK)                                          do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
+#define GEK_BASE_EXCEPTION()                                    class Exception : public Gek::Exception { public: using Gek::Exception::Exception; };
+#define GEK_EXCEPTION(TYPE)                                     class TYPE : public Exception { public: using Exception::Exception; };
+#define GEK_REQUIRE(CHECK)                                      do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
 
-#define _ENABLE_TRACE
+#define GEK_PARAMETER(NAME)                                     Trace::Parameter<decltype(NAME)>(#NAME, NAME)
+#define GEK_TRACE_SCOPE(...)                                    Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
+#define GEK_TRACE_FUNCTION(...)                                 Trace::log("i", "Function", GetTickCount64(), __FUNCTION__, __VA_ARGS__)
+#define GEK_TRACE_EVENT(MESSAGE, ...)                           Trace::log("i", "Event", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+#define GEK_TRACE_ERROR(MESSAGE, ...)                           Trace::log("i", "Error", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
 
-#ifdef _ENABLE_TRACE
-    #define GEK_PARAMETER(NAME)                                     Trace::Parameter<decltype(NAME)>(#NAME, NAME)
-    #define GEK_TRACE_SCOPE(...)                                    Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
-    #define GEK_TRACE_FUNCTION(...)                                 Trace::log("i", "Function", GetTickCount64(), __FUNCTION__, __VA_ARGS__)
-    #define GEK_TRACE_EVENT(MESSAGE, ...)                           Trace::log("i", "Event", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-    #define GEK_TRACE_ERROR(MESSAGE, ...)                           Trace::log("i", "Error", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-    #define GEK_CHECK_CONDITION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::string(MESSAGE, __VA_ARGS__));
-    #define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::string(MESSAGE, __VA_ARGS__));
-#else
-    #define GEK_PARAMETER(NAME)
-    #define GEK_TRACE_SCOPE(...)
-    #define GEK_TRACE_FUNCTION(...)
-    #define GEK_TRACE_EVENT(MESSAGE, ...)
-    #define GEK_TRACE_ERROR(MESSAGE, ...)
-#endif
+#define GEK_CHECK_CONDITION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::string(MESSAGE, __VA_ARGS__));
+#define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::string(MESSAGE, __VA_ARGS__));

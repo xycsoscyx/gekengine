@@ -51,10 +51,10 @@ namespace Gek
     public:
         RenderContextImplementation(VideoContext *videoContext)
             : videoContext(videoContext)
-            , computePipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->computePipeline()))
-            , vertexPipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->vertexPipeline()))
-            , geometryPipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->geometryPipeline()))
-            , pixelPipelineHandler(std::remake_shared<RenderPipeline, RenderPipelineImplementation>(videoContext->pixelPipeline()))
+            , computePipelineHandler(makeShared<RenderPipeline, RenderPipelineImplementation>(videoContext->computePipeline()))
+            , vertexPipelineHandler(makeShared<RenderPipeline, RenderPipelineImplementation>(videoContext->vertexPipeline()))
+            , geometryPipelineHandler(makeShared<RenderPipeline, RenderPipelineImplementation>(videoContext->geometryPipeline()))
+            , pixelPipelineHandler(makeShared<RenderPipeline, RenderPipelineImplementation>(videoContext->pixelPipeline()))
         {
         }
 
@@ -295,7 +295,7 @@ namespace Gek
             if (!drawCallList.empty())
             {
                 VideoContext *videoContext = video->getDefaultContext();
-                RenderContextPtr renderContext(std::remake_shared<RenderContext, RenderContextImplementation>(videoContext));
+                RenderContextPtr renderContext(makeShared<RenderContext, RenderContextImplementation>(videoContext));
 
                 video->updateBuffer(engineConstantBuffer.get(), &engineConstantData);
                 videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);

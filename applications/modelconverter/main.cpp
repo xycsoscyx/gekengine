@@ -455,7 +455,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             GEK_THROW_EXCEPTION(Trace::Exception, "Invalid conversion mode specified: %v", mode);
         }
     }
-    catch (Trace::Exception exception)
+    catch (Exception exception)
     {
         printf("[error] Error (%d): %s", exception.when(), exception.what());
     }

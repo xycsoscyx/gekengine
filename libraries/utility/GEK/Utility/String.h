@@ -25,77 +25,58 @@ namespace Gek
         template <>
         struct traits<char>
         {
-            static std::wstring convert(const char *input)
+            static void convert(std::basic_string<wchar_t> &result, const char *input)
             {
                 std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-                return convert.from_bytes(input);
+                result.assign(convert.from_bytes(input));
             }
         };
 
         template <>
         struct traits<wchar_t>
         {
-            static std::string convert(const wchar_t *input)
+            static void convert(std::basic_string<char> &result, const wchar_t *input)
             {
                 std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-                return convert.to_bytes(input);
+                result.assign(convert.to_bytes(input));
             }
         };
 
         template <typename DESTINATION, typename SOURCE>
         struct converter
         {
-            static baseString<DESTINATION> convert(const SOURCE *string)
+            static void convert(std::basic_string<DESTINATION> &result, const SOURCE *string)
             {
-                return traits<SOURCE>::convert(string);
+               traits<SOURCE>::convert(result, string);
             }
         };
 
         template <typename DESTINATION>
         struct converter<DESTINATION, DESTINATION>
         {
-            static baseString<DESTINATION> convert(const DESTINATION *string)
+            static void convert(std::basic_string<DESTINATION> &result, const DESTINATION *string)
             {
-                return string;
+                result.assign(string);
             }
         };
-
-        template<typename CONVERSION>
-        void convert(const basic_string<CONVERSION> &string)
-        {
-            assign(converter<ELEMENT, CONVERSION>::convert(string.c_str()));
-        }
-
-        template<typename CONVERSION>
-        void convert(const baseString<CONVERSION> &string)
-        {
-            assign(converter<ELEMENT, CONVERSION>::convert(string.c_str()));
-        }
-
-        template<typename CONVERSION>
-        void convert(const CONVERSION *string)
-        {
-            if (string)
-            {
-                assign(converter<ELEMENT, CONVERSION>::convert(string));
-            }
-        }
 
     public:
         baseString(void)
         {
         }
 
-        template<typename CONVERSION>
-        baseString(const basic_string<CONVERSION> &string)
-            : basic_string(converter<ELEMENT, CONVERSION>::convert(string.c_str()))
+        baseString(ELEMENT character, size_t length = 1)
+            : basic_string(length, character)
         {
         }
 
-        template<typename CONVERSION>
-        baseString(const baseString<CONVERSION> &string)
-            : basic_string(converter<ELEMENT, CONVERSION>::convert(string.c_str()))
+        template<typename TYPE, typename... ARGUMENTS>
+        baseString(const ELEMENT *formatting, const TYPE &value, ARGUMENTS... arguments)
         {
+            if (formatting)
+            {
+                format(formatting, value, arguments...);
+            }
         }
 
         template<typename CONVERSION>
@@ -103,19 +84,26 @@ namespace Gek
         {
             if (string)
             {
-                assign(converter<ELEMENT, CONVERSION>::convert(string));
+                converter<ELEMENT, CONVERSION>::convert(*this, string);
             }
         }
 
-        template<typename... ARGUMENTS>
-        baseString(const ELEMENT *formatting, ARGUMENTS... arguments)
+        template<typename CONVERSION>
+        baseString(const basic_string<CONVERSION> &string)
         {
-            format(formatting, arguments...);
+            if (!string.empty())
+            {
+                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+            }
         }
 
-        baseString(ELEMENT character, size_t length = 1)
-            : basic_string(length, character)
+        template<typename CONVERSION>
+        baseString(const baseString<CONVERSION> &string)
         {
+            if (!string.empty())
+            {
+                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+            }
         }
 
         baseString subString(size_t position = 0, size_t length = std::string::npos) const
@@ -201,20 +189,20 @@ namespace Gek
         }
 
         template<typename TYPE, typename... ARGUMENTS>
-        void format(const ELEMENT *formatting, TYPE value, ARGUMENTS... arguments)
+        void format(const ELEMENT *formatting, const TYPE &value, ARGUMENTS... arguments)
         {
             while (formatting && *formatting)
             {
-                if (*formatting == '%')
+                ELEMENT currentCharacter = *formatting++;
+                if (currentCharacter == '%' && formatting && *formatting)
                 {
-                    ELEMENT percent = *formatting++;
-                    ELEMENT character = *formatting++;
-                    if (character == '%')
+                    ELEMENT nextCharacter = *formatting++;
+                    if (nextCharacter == '%')
                     {
                         // %%
-                        (*this) += character;
+                        (*this) += nextCharacter;
                     }
-                    else if (character == 'v')
+                    else if (nextCharacter == 'v')
                     {
                         // %v
                         (*this) += value;
@@ -224,15 +212,22 @@ namespace Gek
                     else
                     {
                         // %(other)
-                        (*this) += percent;
-                        (*this) += character;
+                        (*this) += currentCharacter;
+                        (*this) += nextCharacter;
                     }
                 }
                 else
                 {
-                    (*this) += *formatting++;
+                    (*this) += currentCharacter;
                 }
             };
+        }
+
+        baseString<ELEMENT> &operator = (const ELEMENT &value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << value;
+            return static_cast<baseString &>(assign(stream.str()));
         }
 
         baseString<ELEMENT> &operator = (const bool &value)
@@ -248,7 +243,6 @@ namespace Gek
             stream << std::showpoint << value;
             return static_cast<baseString &>(assign(stream.str()));
         }
-
 
         baseString<ELEMENT> &operator = (const INT8 &value)
         {
@@ -356,29 +350,55 @@ namespace Gek
         }
 
         template <typename CONVERSION>
-        baseString<ELEMENT> &operator = (const baseString<CONVERSION> &string)
+        baseString<ELEMENT> &operator = (const CONVERSION *string)
         {
-            return static_cast<baseString &>(assign(converter<ELEMENT, CONVERSION>::convert(string.c_str())));
+            if (string)
+            {
+                converter<ELEMENT, CONVERSION>::convert(*this, string);
+            }
+            else
+            {
+                empty();
+            }
+
+            return (*this);
         }
 
         template <typename CONVERSION>
         baseString<ELEMENT> &operator = (const basic_string<CONVERSION> &string)
         {
-            return static_cast<baseString &>(assign(converter<ELEMENT, CONVERSION>::convert(string.c_str())));
-        }
-
-        template <typename CONVERSION>
-        baseString<ELEMENT> &operator = (const CONVERSION *string)
-        {
-            if (string)
+            if (string.empty())
             {
-                return static_cast<baseString &>(assign(converter<ELEMENT, CONVERSION>::convert(string)));
+                empty();
             }
             else
             {
-                empty();
-                return (*this);
+                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
             }
+
+            return (*this);
+        }
+
+        template <typename CONVERSION>
+        baseString<ELEMENT> &operator = (const baseString<CONVERSION> &string)
+        {
+            if (string.empty())
+            {
+                empty();
+            }
+            else
+            {
+                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+            }
+
+            return (*this);
+        }
+
+        void operator += (const ELEMENT &value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << value;
+            append(stream.str());
         }
 
         void operator += (const bool &value)
@@ -501,21 +521,21 @@ namespace Gek
         }
 
         template <typename CONVERSION>
-        void operator += (const baseString<CONVERSION> &string)
+        void operator += (const CONVERSION *string)
         {
-            append(converter<ELEMENT, CONVERSION>::convert(string.c_str()));
+            append(baseString(string));
         }
 
         template <typename CONVERSION>
         void operator += (const basic_string<CONVERSION> &string)
         {
-            append(converter<ELEMENT, CONVERSION>::convert(string.c_str()));
+            append(baseString(string));
         }
 
         template <typename CONVERSION>
-        void operator += (const CONVERSION *string)
+        void operator += (const baseString<CONVERSION> &string)
         {
-            append(converter<ELEMENT, CONVERSION>::convert(string));
+            append(baseString(string));
         }
 
         operator bool() const

@@ -113,7 +113,7 @@ namespace Gek
                 string programEntryPoint(programNode->getAttribute(L"entry"));
                 geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\v%.hlsl", programFileName), programEntryPoint);
             }
-            catch (Trace::Exception exception)
+            catch (Exception exception)
             {
             };
 

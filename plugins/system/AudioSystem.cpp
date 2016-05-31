@@ -237,7 +237,7 @@ namespace Gek
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
             GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
 
-            return std::remake_shared<AudioEffect, EffectImplementation>(directSound8Buffer.p);
+            return makeShared<AudioEffect, EffectImplementation>(directSound8Buffer.p);
         }
 
         AudioSoundPtr copySound(AudioSound *source)
@@ -255,7 +255,7 @@ namespace Gek
             CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
             GEK_CHECK_CONDITION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
 
-            return std::remake_shared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
+            return makeShared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
         }
 
         CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, DWORD flags, GUID soundAlgorithm)
@@ -321,7 +321,7 @@ namespace Gek
             CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
             GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
 
-            return std::remake_shared<AudioEffect, EffectImplementation>(directSound8Buffer.p);
+            return makeShared<AudioEffect, EffectImplementation>(directSound8Buffer.p);
         }
 
         AudioSoundPtr loadSound(const wchar_t *fileName)
@@ -337,7 +337,7 @@ namespace Gek
             CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
             GEK_CHECK_CONDITION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
 
-            return std::remake_shared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
+            return makeShared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
         }
     };
 

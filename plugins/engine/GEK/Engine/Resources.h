@@ -130,9 +130,9 @@ namespace Gek
 namespace std
 {
     template <typename TYPE, int UNIQUE>
-    struct hash<Handle<TYPE, UNIQUE>>
+    struct hash<Gek::Handle<TYPE, UNIQUE>>
     {
-        size_t operator()(const Handle<TYPE, UNIQUE> &value) const
+        size_t operator()(const Gek::Handle<TYPE, UNIQUE> &value) const
         {
             return value.identifier;
         }

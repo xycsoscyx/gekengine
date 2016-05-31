@@ -751,13 +751,11 @@ namespace Gek
             return texture;
         }
 
-        VideoTexturePtr loadTexture(const wchar_t *fileName, UINT32 flags)
+        VideoTexturePtr loadTexture(const wstring &fileName, UINT32 flags)
         {
-            GEK_REQUIRE(fileName);
-
-            if (*fileName == L'*')
+            if (fileName.at(0) == L'*')
             {
-                return createTexture(&fileName[1], flags);
+                return createTexture(fileName.subString(1), flags);
             }
             else
             {
@@ -790,7 +788,7 @@ namespace Gek
             auto load = [this, fileName, fallback, flags](ResourceHandle handle) -> VideoTexturePtr
             {
                 VideoTexturePtr texture = loadTexture(fileName, flags);
-                if (!texture)
+                if (!texture && !fallback.empty())
                 {
                     texture = loadTexture(fallback, flags);
                 }

@@ -83,6 +83,7 @@ namespace Gek
         {
             auto classIterator = classMap.find(name);
             GEK_CHECK_CONDITION(classIterator == classMap.end(), Trace::Exception, "Unable to find requested class creator: %v", name);
+
             return (*classIterator).second((Context *)this, parameters);
         }
 
@@ -102,6 +103,6 @@ namespace Gek
     ContextPtr Context::create(const std::vector<wstring> &searchPathList)
     {
         GEK_TRACE_FUNCTION();
-        return std::remake_shared<Context, ContextImplementation>(searchPathList);
+        return makeShared<Context, ContextImplementation>(searchPathList);
     }
 };

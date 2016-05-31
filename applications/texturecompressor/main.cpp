@@ -201,7 +201,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image: %v", resultValue);
         printf(".done!\r\n");
     }
-    catch (Trace::Exception exception)
+    catch (Exception exception)
     {
         printf("\r\n[error] Error (%d): %s", exception.when(), exception.what());
     }

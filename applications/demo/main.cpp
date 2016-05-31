@@ -29,7 +29,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             document = XmlDocument::load(L"$root\\config.xml");
             configurationNode = document->getRoot(L"config");
         }
-        catch (Trace::Exception exception)
+        catch (Exception exception)
         {
             document = XmlDocument::create(L"config");
             configurationNode = document->getRoot(L"config");
@@ -93,7 +93,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (Trace::Exception exception)
+            catch (Exception exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -189,7 +189,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (Trace::Exception exception)
+            catch (Exception exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -238,7 +238,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             SetWindowLongPtr(window, GWLP_USERDATA, 0);
         }
     }
-    catch (Trace::Exception exception)
+    catch (Exception exception)
     {
         MessageBox(nullptr, wstring(L"%v\r\n%v: %v", exception.what(), exception.where(), exception.when()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
     }

@@ -152,7 +152,7 @@ namespace Gek
         } } });
     }
 
-    void ShuntingYard::evaluteTokenList(const wchar_t *expression, std::vector<Token> &rpnTokenList)
+    void ShuntingYard::evaluteTokenList(const wstring &expression, std::vector<Token> &rpnTokenList)
     {
         std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
         convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
@@ -163,7 +163,7 @@ namespace Gek
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    void ShuntingYard::evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(const wstring &expression, float *value, UINT32 valueSize)
     {
         std::vector<Token> rpnTokenList;
         evaluteTokenList(expression, rpnTokenList);

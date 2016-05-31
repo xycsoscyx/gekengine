@@ -93,7 +93,7 @@ namespace Gek
     public:
         ShuntingYard(void);
 
-        void evaluteTokenList(const wchar_t *expression, std::vector<Token> &rpnTokenList);
+        void evaluteTokenList(const wstring &expression, std::vector<Token> &rpnTokenList);
 
         inline void evaluate(std::vector<Token> &rpnTokenList, float &value)
         {
@@ -112,19 +112,19 @@ namespace Gek
             evaluate(rpnTokenList, value.data);
         }
 
-        inline void evaluate(const wchar_t *expression, float &value)
+        inline void evaluate(const wstring &expression, float &value)
         {
             evaluateValue(expression, &value, 1);
         }
 
         template <std::size_t SIZE>
-        void evaluate(const wchar_t *expression, float(&value)[SIZE])
+        void evaluate(const wstring &expression, float(&value)[SIZE])
         {
             evaluateValue(expression, value, SIZE);
         }
 
         template <class TYPE>
-        void evaluate(const wchar_t *expression, TYPE &value)
+        void evaluate(const wstring &expression, TYPE &value)
         {
             evaluate(expression, value.data);
         }
@@ -157,6 +157,6 @@ namespace Gek
         }
 
         void evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
-        void evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize);
+        void evaluateValue(const wstring &expression, float *value, UINT32 valueSize);
     };
 }; // namespace Gek

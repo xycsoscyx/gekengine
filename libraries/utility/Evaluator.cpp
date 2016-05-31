@@ -14,7 +14,7 @@ namespace Gek
         static ShuntingYard shuntingYard;
 
         template <typename TYPE>
-        void castResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)
+        void castResult(const wstring &expression, TYPE &result, TYPE defaultValue)
         {
             try
             {
@@ -25,12 +25,12 @@ namespace Gek
             catch (ShuntingYard::Exception exception)
             {
                 result = defaultValue;
-                GEK_THROW_EXCEPTION(Exception, "Unable to parse expression");
+                throw Exception(exception.where(), exception.when(), exception.what());
             };
         }
 
         template <typename TYPE>
-        void getResult(const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
+        void getResult(const wstring &expression, TYPE &result, const TYPE &defaultValue)
         {
             try
             {
@@ -39,51 +39,51 @@ namespace Gek
             catch (ShuntingYard::Exception exception)
             {
                 result = defaultValue;
-                GEK_THROW_EXCEPTION(Exception, "Unable to parse expression");
+                throw Exception(exception.where(), exception.when(), exception.what());
             };
         }
 
-        void get(const wchar_t *expression, INT32 &result, INT32 defaultValue)
+        void get(const wstring &expression, INT32 &result, INT32 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, UINT32 &result, UINT32 defaultValue)
+        void get(const wstring &expression, UINT32 &result, UINT32 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, INT64 &result, INT64 defaultValue)
+        void get(const wstring &expression, INT64 &result, INT64 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, UINT64 &result, UINT64 defaultValue)
+        void get(const wstring &expression, UINT64 &result, UINT64 defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, float &result, float defaultValue)
+        void get(const wstring &expression, float &result, float defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
+        void get(const wstring &expression, Math::Float2 &result, const Math::Float2 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
+        void get(const wstring &expression, Math::Float3 &result, const Math::Float3 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
+        void get(const wstring &expression, Math::Float4 &result, const Math::Float4 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Color &result, const Math::Color &defaultValue)
+        void get(const wstring &expression, Math::Color &result, const Math::Color &defaultValue)
         {
             try
             {
@@ -104,7 +104,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
+        void get(const wstring &expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
         {
             try
             {
@@ -125,7 +125,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, wstring &result)
+        void get(const wstring &expression, wstring &result)
         {
             result = expression;
         }

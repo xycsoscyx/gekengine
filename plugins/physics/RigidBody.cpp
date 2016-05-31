@@ -78,7 +78,7 @@ namespace Gek
 
     NewtonEntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent)
     {
-        return std::remake_shared<NewtonEntity, RigidNewtonBody>(newtonWorld, newtonCollision, entity, &transformComponent, massComponent);
+        return makeShared<NewtonEntity, RigidNewtonBody>(newtonWorld, newtonCollision, entity, &transformComponent, massComponent);
     }
 
     RigidBodyComponent::RigidBodyComponent(void)

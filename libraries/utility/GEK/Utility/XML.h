@@ -31,12 +31,12 @@ namespace Gek
         virtual void setAttribute(const wstring &name, const wstring &value) = 0;
         virtual void listAttributes(std::function<void(const wstring &, const wstring &)> onAttribute) const = 0;
 
-        virtual bool hasChildElement(const wstring &type = nullptr) const = 0;
-        virtual XmlNodePtr firstChildElement(const wstring &type = nullptr, bool create = false) = 0;
+        virtual bool hasChildElement(const wstring &type = wstring()) const = 0;
+        virtual XmlNodePtr firstChildElement(const wstring &type = wstring(), bool create = false) = 0;
         virtual XmlNodePtr createChildElement(const wstring &type, const wstring &content = wstring()) = 0;
 
-        virtual bool hasSiblingElement(const wstring &type = nullptr) const = 0;
-        virtual XmlNodePtr nextSiblingElement(const wstring &type = nullptr) const = 0;
+        virtual bool hasSiblingElement(const wstring &type = wstring()) const = 0;
+        virtual XmlNodePtr nextSiblingElement(const wstring &type = wstring()) const = 0;
     };
 
     struct XmlDocument;
