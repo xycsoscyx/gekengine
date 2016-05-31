@@ -19,9 +19,9 @@ namespace Gek
             _mm_free(data);
         }
 
-        Gek::Math::Float3 position;
-        Gek::Math::Quaternion rotation;
-        Gek::Math::Float3 scale;
+        Math::Float3 position;
+        Math::Quaternion rotation;
+        Math::Float3 scale;
 
         TransformComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;

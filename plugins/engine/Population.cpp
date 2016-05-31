@@ -200,14 +200,14 @@ namespace Gek
                     free();
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-                    Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\scenes\\%v.xml", fileName)));
-                    Gek::XmlNodePtr worldNode = document->getRoot(L"world");
-                    Gek::XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
-                    Gek::XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
+                    XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\scenes\\%v.xml", fileName)));
+                    XmlNodePtr worldNode = document->getRoot(L"world");
+                    XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
+                    XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
                     while (entityNode->isValid())
                     {
                         EntityDefinition entityDefinition;
-                        Gek::XmlNodePtr componentNode = entityNode->firstChildElement();
+                        XmlNodePtr componentNode = entityNode->firstChildElement();
                         while (componentNode)
                         {
                             auto &componentData = entityDefinition[componentNode->getType()];
@@ -240,7 +240,7 @@ namespace Gek
                     worldTime = 0.0f;
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
                 }
-                catch (BaseException exception)
+                catch (Trace::Exception exception)
                 {
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
                 };
@@ -249,14 +249,14 @@ namespace Gek
 
         void save(const wstring &fileName)
         {
-            Gek::XmlDocumentPtr document(XmlDocument::create(L"world"));
-            Gek::XmlNodePtr worldNode = document->getRoot(L"world");
-            Gek::XmlNodePtr populationNode = worldNode->createChildElement(L"population");
+            XmlDocumentPtr document(XmlDocument::create(L"world"));
+            XmlNodePtr worldNode = document->getRoot(L"world");
+            XmlNodePtr populationNode = worldNode->createChildElement(L"population");
             for (auto &entity : entityList)
             {
             }
 
-            document->save(Gek::String::format(L"$root\\data\\saves\\%v.xml", fileName));
+            document->save(wstring(L"$root\\data\\saves\\%v.xml", fileName));
         }
 
         void free(void)

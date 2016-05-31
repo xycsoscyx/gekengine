@@ -38,7 +38,7 @@ namespace Gek
 
         Float2 Float2::lerp(const Float2 &vector, float factor) const
         {
-            return Gek::Math::lerp((*this), vector, factor);
+            return Math::lerp((*this), vector, factor);
         }
 
         bool Float2::operator < (const Float2 &vector) const

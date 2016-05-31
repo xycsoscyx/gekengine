@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Windows.h>
+#include "GEK\Utility\Trace.h"
 #include "GEK\Utility\String.h"
 #include <functional>
 #include <memory>
@@ -11,6 +11,8 @@
 
 namespace std
 {
+    using namespace Gek;
+
     template <typename RETURN, typename CREATE, typename... ARGUMENTS>
     std::shared_ptr<RETURN> remake_shared(ARGUMENTS... arguments)
     {
@@ -21,11 +23,11 @@ namespace std
         }
         catch (std::bad_alloc badAllocation)
         {
-            GEK_THROW_EXCEPTION(Gek::BaseException, "Unable to allocate new object: %v", badAllocation.what());
+            GEK_THROW_EXCEPTION(Gek::Exception, "Unable to allocate new object: %v", badAllocation.what());
         };
 
         std::shared_ptr<RETURN> remadeObject(std::dynamic_pointer_cast<RETURN>(baseObject));
-        GEK_THROW_ERROR(!remadeObject, Gek::BaseException, "Unable to cast base object to alternate type");
+        GEK_CHECK_CONDITION(!remadeObject, Gek::Exception, "Unable to cast base object to alternate type");
 
         return remadeObject;
     }

@@ -164,22 +164,22 @@ namespace Gek
 
             HRESULT resultValue = E_FAIL;
 
-            model.fileName = String::format(L"$root\\data\\models\\%v.gek", name);
+            model.fileName = wstring(L"$root\\data\\models\\%v.gek", name);
 
             std::vector<UINT8> fileData;
-            Gek::FileSystem::load(model.fileName, fileData, PreReadSize);
+            FileSystem::load(model.fileName, fileData, PreReadSize);
 
             UINT8 *rawFileData = fileData.data();
             UINT32 gekIdentifier = *((UINT32 *)rawFileData);
-            GEK_THROW_ERROR(gekIdentifier != *(UINT32 *)"GEKX", BaseException, "Invalid model idetifier found: %v", gekIdentifier);
+            GEK_CHECK_CONDITION(gekIdentifier != *(UINT32 *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
             rawFileData += sizeof(UINT32);
 
             UINT16 gekModelType = *((UINT16 *)rawFileData);
-            GEK_THROW_ERROR(gekModelType != 0, BaseException, "Invalid model type found: %v", gekModelType);
+            GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
             rawFileData += sizeof(UINT16);
 
             UINT16 gekModelVersion = *((UINT16 *)rawFileData);
-            GEK_THROW_ERROR(gekModelVersion != 3, BaseException, "Invalid model version found: %v", gekModelVersion);
+            GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
             rawFileData += sizeof(UINT16);
 
             model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
@@ -188,19 +188,19 @@ namespace Gek
         void loadModelWorker(Model &model)
         {
             std::vector<UINT8> fileData;
-            Gek::FileSystem::load(model.fileName, fileData);
+            FileSystem::load(model.fileName, fileData);
 
             UINT8 *rawFileData = fileData.data();
             UINT32 gekIdentifier = *((UINT32 *)rawFileData);
-            GEK_THROW_ERROR(gekIdentifier != *(UINT32 *)"GEKX", BaseException, "Invalid model idetifier found: %v", gekIdentifier);
+            GEK_CHECK_CONDITION(gekIdentifier != *(UINT32 *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
             rawFileData += sizeof(UINT32);
 
             UINT16 gekModelType = *((UINT16 *)rawFileData);
-            GEK_THROW_ERROR(gekModelType != 0, BaseException, "Invalid model type found: %v", gekModelType);
+            GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
             rawFileData += sizeof(UINT16);
 
             UINT16 gekModelVersion = *((UINT16 *)rawFileData);
-            GEK_THROW_ERROR(gekModelVersion != 3, BaseException, "Invalid model version found: %v", gekModelVersion);
+            GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
             rawFileData += sizeof(UINT16);
 
             model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
@@ -228,14 +228,14 @@ namespace Gek
                 UINT32 vertexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
-                subModel.vertexBuffer = resources->createBuffer(String::format(L"model:vertex:%v", (const void *)&subModel), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                subModel.vertexBuffer = resources->createBuffer(wstring(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                 rawFileData += (sizeof(Vertex) * vertexCount);
 
                 UINT32 indexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
                 subModel.indexCount = indexCount;
-                subModel.indexBuffer = resources->createBuffer(String::format(L"model:index:%v", (const void *)&subModel), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                subModel.indexBuffer = resources->createBuffer(wstring(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                 rawFileData += (sizeof(UINT16) * indexCount);
             }
 
@@ -355,7 +355,7 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    Gek::Math::Color color(1.0f);
+                    Math::Color color(1.0f);
                     if (entity->hasComponent<ColorComponent>())
                     {
                         color = entity->getComponent<ColorComponent>().value;

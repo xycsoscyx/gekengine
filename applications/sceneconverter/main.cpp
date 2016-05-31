@@ -54,7 +54,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             entityNode = entityNode->nextSiblingElement(L"entity");
         };
     }
-    catch (BaseException exception)
+    catch (Trace::Exception exception)
     {
         printf("[error] Error (%d): %s", exception.when(), exception.what());
     }

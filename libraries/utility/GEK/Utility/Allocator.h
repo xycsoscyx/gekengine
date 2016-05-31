@@ -76,7 +76,7 @@ namespace Gek
         {
             if (size == 0)
             {
-                return NULL;
+                return nullptr;
             }
 
             if (size > max_size())
@@ -85,7 +85,7 @@ namespace Gek
             }
 
             void *const nebulous = _mm_malloc(size * sizeof(TYPE), ALIGNMENT);
-            if (nebulous == NULL)
+            if (nebulous == nullptr)
             {
                 throw std::bad_alloc();
             }

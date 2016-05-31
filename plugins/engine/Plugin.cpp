@@ -102,35 +102,35 @@ namespace Gek
         {
             GEK_REQUIRE(video);
 
-            Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\plugins\\%v.xml", fileName)));
-            Gek::XmlNodePtr pluginNode = document->getRoot(L"plugin");
+            XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\plugins\\%v.xml", fileName)));
+            XmlNodePtr pluginNode = document->getRoot(L"plugin");
 
             try
             {
-                Gek::XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
-                Gek::XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
+                XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
+                XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
                 wstring programFileName = programNode->getAttribute(L"source");
-                string programEntryPoint(String::from<char>(programNode->getAttribute(L"entry")));
-                geometryProgram = video->loadGeometryProgram(String::format(L"$root\\data\\programs\\v%.hlsl", programFileName), programEntryPoint);
+                string programEntryPoint(programNode->getAttribute(L"entry"));
+                geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\v%.hlsl", programFileName), programEntryPoint);
             }
-            catch (BaseException exception)
+            catch (Trace::Exception exception)
             {
             };
 
-            Gek::XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
-            Gek::XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
-            wstring programPath(String::format(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
+            XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
+            XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
+            wstring programPath(wstring(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
 
             string progamScript;
-            Gek::FileSystem::load(programPath, progamScript);
+            FileSystem::load(programPath, progamScript);
             string engineData =
                 "struct PluginVertex                                    \r\n" \
                 "{                                                      \r\n";
 
             std::list<string> elementNameList;
             std::vector<Video::InputElement> elementList;
-            Gek::XmlNodePtr layoutNode = pluginNode->firstChildElement(L"layout");
-            Gek::XmlNodePtr elementNode = layoutNode->firstChildElement();
+            XmlNodePtr layoutNode = pluginNode->firstChildElement(L"layout");
+            XmlNodePtr elementNode = layoutNode->firstChildElement();
             while (elementNode->isValid())
             {
                 if (elementNode->getType().compare(L"instanceIndex") == 0)
@@ -149,24 +149,24 @@ namespace Gek
                     elementNode->hasAttribute(L"name") &&
                     elementNode->hasAttribute(L"index"))
                 {
-                    string semanticName(String::from<char>(elementNode->getAttribute(L"name")));
+                    string semanticName(elementNode->getAttribute(L"name"));
                     elementNameList.push_back(semanticName);
 
                     wstring format(elementNode->getAttribute(L"format"));
 
                     Video::InputElement element;
                     element.semanticName = elementNameList.back().c_str();
-                    element.semanticIndex = Gek::String::to<UINT32>(elementNode->getAttribute(L"index"));
+                    element.semanticIndex = elementNode->getAttribute(L"index");
                     if (elementNode->hasAttribute(L"slotclass") &&
                         elementNode->hasAttribute(L"slotindex"))
                     {
                         element.slotClass = getElementType(elementNode->getAttribute(L"slotclass"));
-                        element.slotIndex = Gek::String::to<UINT32>(elementNode->getAttribute(L"slotindex"));
+                        element.slotIndex = elementNode->getAttribute(L"slotindex");
                     }
 
                     if (format.compare(L"float4x4") == 0)
                     {
-                        engineData += String::format("    float4x4 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
+                        engineData += string("    float4x4 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
                         element.format = Video::Format::Float4;
                         elementList.push_back(element);
                         element.semanticIndex++;
@@ -178,7 +178,7 @@ namespace Gek
                     }
                     else if (format.compare(L"float4x3") == 0)
                     {
-                        engineData += String::format("    float4x3 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
+                        engineData += string("    float4x3 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
                         element.format = Video::Format::Float4;
                         elementList.push_back(element);
                         element.semanticIndex++;
@@ -189,13 +189,13 @@ namespace Gek
                     else
                     {
                         element.format = getFormat(format);
-                        engineData += String::format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode->getType(), semanticName, element.semanticIndex);
+                        engineData += string("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode->getType(), semanticName, element.semanticIndex);
                         elementList.push_back(element);
                     }
                 }
                 else
                 {
-                    GEK_THROW_EXCEPTION(BaseException, "Invalid vertex layout element found");
+                    GEK_THROW_EXCEPTION(Trace::Exception, "Invalid vertex layout element found");
                 }
 
                 elementNode = elementNode->nextSiblingElement();
@@ -249,7 +249,7 @@ namespace Gek
                 {
                     try
                     {
-                        Gek::FileSystem::load(String::from<wchar_t>(fileName), data);
+                        FileSystem::load(fileName, data);
                         return S_OK;
                     }
                     catch (FileSystem::Exception exception)
@@ -258,7 +258,7 @@ namespace Gek
                         {
                             std::experimental::filesystem::path path(L"$root\\data\\programs");
                             path.append(fileName);
-                            Gek::FileSystem::load(path.c_str(), data);
+                            FileSystem::load(path.c_str(), data);
                             return S_OK;
                         }
                         catch (FileSystem::Exception exception)

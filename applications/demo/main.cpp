@@ -29,16 +29,16 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             document = XmlDocument::load(L"$root\\config.xml");
             configurationNode = document->getRoot(L"config");
         }
-        catch(BaseException exception)
+        catch (Trace::Exception exception)
         {
             document = XmlDocument::create(L"config");
             configurationNode = document->getRoot(L"config");
         };
 
         XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
-        UINT32 width = String::to<UINT32>(displayNode->getAttribute(L"width", L"800"));
-        UINT32 height = String::to<UINT32>(displayNode->getAttribute(L"height", L"600"));
-        bool fullscreen = String::to<bool>(displayNode->getAttribute(L"fullscreen", L"false"));
+        UINT32 width = displayNode->getAttribute(L"width", L"800");
+        UINT32 height = displayNode->getAttribute(L"height", L"600");
+        bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
 
         UINT32 selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
@@ -61,7 +61,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 break;
             };
 
-            wstring modeString(String::format(L"%vx%v%v", mode.width, mode.height, aspectRatio));
+            wstring modeString(wstring(L"%vx%v%v", mode.width, mode.height, aspectRatio));
             int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.c_str());
             if (mode.width == width && mode.height == height)
             {
@@ -93,15 +93,15 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (BaseException exception)
+            catch (Trace::Exception exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
             };
 
             XmlNodePtr displayNode = configurationNode->firstChildElement(L"display", true);
-            displayNode->setAttribute(L"width", String::from<wchar_t>(mode.width));
-            displayNode->setAttribute(L"height", String::from<wchar_t>(mode.height));
+            displayNode->setAttribute(L"width", mode.width);
+            displayNode->setAttribute(L"height", mode.height);
             displayNode->setAttribute(L"fullscreen", SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
             document->save(L"$root\\config.xml");
 
@@ -151,11 +151,11 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
 {
-    traceInitialize();
-    if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
+    try
     {
-        try
+        if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
         {
+            Trace::initialize();
             std::vector<wstring> searchPathList;
 
 #ifdef _DEBUG
@@ -180,7 +180,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             windowClass.lpszMenuName = nullptr;
             windowClass.lpszClassName = L"GEKvX_Engine_Demo";
             ATOM classAtom = RegisterClass(&windowClass);
-            GEK_THROW_ERROR(!classAtom, BaseException, "Unable to register window class: %v", GetLastError());
+            GEK_CHECK_CONDITION(!classAtom, Trace::Exception, "Unable to register window class: %v", GetLastError());
 
             XmlDocumentPtr document;
             XmlNodePtr configurationNode;
@@ -189,16 +189,16 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (BaseException exception)
+            catch (Trace::Exception exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
             };
 
             XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
-            UINT32 width = String::to<UINT32>(displayNode->getAttribute(L"width", L"800"));
-            UINT32 height = String::to<UINT32>(displayNode->getAttribute(L"height", L"600"));
-            bool fullscreen = String::to<bool>(displayNode->getAttribute(L"fullscreen", L"false"));
+            UINT32 width = displayNode->getAttribute(L"width", L"800");
+            UINT32 height = displayNode->getAttribute(L"height", L"600");
+            bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
 
             RECT clientRect;
             clientRect.left = 0;
@@ -211,7 +211,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
             int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
             HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
-            GEK_THROW_ERROR(window == nullptr, BaseException, "Unable to create window: %v", GetLastError());
+            GEK_CHECK_CONDITION(window == nullptr, Trace::Exception, "Unable to create window: %v", GetLastError());
 
             EnginePtr engineCore(context->createClass<Engine>(L"EngineSystem", window));
 
@@ -237,16 +237,23 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             DestroyWindow(window);
             SetWindowLongPtr(window, GWLP_USERDATA, 0);
         }
-        catch (BaseException exception)
-        {
-            MessageBox(NULL, String::format(L"%v\r\n%v: %v", exception.what(), exception.where(), exception.when()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
-        }
-        catch (...)
-        {
-            MessageBox(NULL, L"Unhandled Exception", L"GEK Runtime Error", MB_OK | MB_ICONERROR);
-        }
     }
+    catch (Trace::Exception exception)
+    {
+        MessageBox(nullptr, wstring(L"%v\r\n%v: %v", exception.what(), exception.where(), exception.when()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
+    }
+    catch (...)
+    {
+        MessageBox(nullptr, L"Unhandled Exception", L"GEK Runtime Error", MB_OK | MB_ICONERROR);
+    };
 
-    traceShutDown();
+    try
+    {
+        Trace::shutdown();
+    }
+    catch (...)
+    {
+    };
+
     return 0;
 }

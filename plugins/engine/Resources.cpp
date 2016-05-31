@@ -646,7 +646,7 @@ namespace Gek
         {
             VideoTexturePtr texture;
             std::vector<wstring> tokenList(parameters.getLower().split(L':'));
-            GEK_THROW_ERROR(tokenList.size() != 2, BaseException, "Invalid number of parameters passed to create texture");
+            GEK_CHECK_CONDITION(tokenList.size() != 2, Trace::Exception, "Invalid number of parameters passed to create texture");
             if (tokenList[0].compare(L"color") == 0)
             {
                 UINT32 colorPitch = 0;
@@ -703,8 +703,8 @@ namespace Gek
                     };
                 };
 
-                GEK_THROW_ERROR(!texture, BaseException, "Unable to create texture");
-                GEK_THROW_ERROR(colorPitch == 0, BaseException, "Unable to evaluate color format");
+                GEK_CHECK_CONDITION(!texture, Trace::Exception, "Unable to create texture");
+                GEK_CHECK_CONDITION(colorPitch == 0, Trace::Exception, "Unable to evaluate color format");
                 video->updateTexture(texture.get(), colorData, colorPitch);
             }
             else if (tokenList[0].compare(L"normal") == 0)
@@ -774,7 +774,7 @@ namespace Gek
 
                 for (auto &format : formatList)
                 {
-                    wstring fullFileName(FileSystem::expandPath(String::format(L"$root\\data\\textures\\%v%v", fileName, format)));
+                    wstring fullFileName(FileSystem::expandPath(wstring(L"$root\\data\\textures\\%v%v", fileName, format)));
                     if (PathFileExists(fullFileName))
                     {
                         return video->loadTexture(fullFileName, flags);

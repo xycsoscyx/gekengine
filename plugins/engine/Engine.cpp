@@ -127,7 +127,7 @@ namespace Gek
                 bool commit = false;
                 if (parameters.size() == 1)
                 {
-                    commit = String::to<bool>(parameters[0]);
+                    commit = parameters[0];
                 }
 
                 this->finishChanges(commit);
@@ -177,7 +177,7 @@ namespace Gek
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (BaseException exception)
+            catch (Trace::Exception exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -196,7 +196,7 @@ namespace Gek
             };
 
             HRESULT resultValue = CoInitialize(nullptr);
-            GEK_THROW_ERROR(FAILED(resultValue), BaseException, "Unable to initialize COM: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Trace::Exception, "Unable to initialize COM: %v", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
             resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
@@ -210,7 +210,7 @@ namespace Gek
             IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(video->getSwapChain());
 
             BOOL success = SciterCreateOnDirectXWindow(window, dxSwapChain);
-            GEK_THROW_ERROR(!success, BaseException, "Unable to initialize Sciter system");
+            GEK_CHECK_CONDITION(!success, Trace::Exception, "Unable to initialize Sciter system");
 
             SciterSetupDebugOutput(window, this, sciterDebugOutput);
             SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
@@ -218,7 +218,7 @@ namespace Gek
             SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
 
             success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
-            GEK_THROW_ERROR(!success, BaseException, "Unable to load system UI HTML");
+            GEK_CHECK_CONDITION(!success, Trace::Exception, "Unable to load system UI HTML");
 
             root = sciter::dom::element::root_element(window);
             background = root.find_first("section#back-layer");
@@ -304,13 +304,13 @@ namespace Gek
                     auto &height = (*display).second.find(L"height");
                     if (width != (*display).second.end() && height != (*display).second.end())
                     {
-                        video->setSize(String::to<UINT32>((*width).second), String::to<UINT32>((*height).second), Video::Format::sRGBA);
+                        video->setSize((*width).second, (*height).second, Video::Format::sRGBA);
                     }
 
                     auto &fullscreen = (*display).second.find(L"fullscreen");
                     if (fullscreen != (*display).second.end())
                     {
-                        video->setFullScreen(String::to<bool>((*fullscreen).second));
+                        video->setFullScreen((*fullscreen).second);
                     }
                 }
             }
@@ -626,7 +626,7 @@ namespace Gek
 
         BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
         {
-            wstring command(String::from<wchar_t>(parameters->name));
+            wstring command(parameters->name);
 
             std::vector<wstring> parameterList;
             for (UINT32 parameter = 0; parameter < parameters->argc; parameter++)

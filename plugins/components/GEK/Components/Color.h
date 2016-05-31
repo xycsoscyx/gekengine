@@ -7,7 +7,7 @@ namespace Gek
 {
     struct ColorComponent
     {
-        Gek::Math::Color value;
+        Math::Color value;
 
         ColorComponent(void);
         HRESULT save(Population::ComponentDefinition &componentData) const;

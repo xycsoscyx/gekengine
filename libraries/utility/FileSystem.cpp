@@ -7,16 +7,16 @@ namespace Gek
 {
     namespace FileSystem
     {
-        wstring expandPath(const wchar_t *fileName)
+        wstring expandPath(const wstring &fileName)
         {
             wstring expandedFileName(fileName);
             if (expandedFileName.find(L"$root") != std::string::npos)
             {
-                wstring currentModuleName(MAX_PATH + 1, L' ');
+                wstring currentModuleName(L' ', MAX_PATH + 1);
                 GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
                 currentModuleName.trimRight();
 
-                wstring expandedModuleName(MAX_PATH + 1, L' ');
+                wstring expandedModuleName(L' ', MAX_PATH + 1);
                 GetFullPathName(currentModuleName, MAX_PATH, &expandedModuleName.at(0), nullptr);
                 expandedModuleName.trimRight();
 
@@ -31,7 +31,7 @@ namespace Gek
             return expandedFileName;
         }
 
-        void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
+        void find(const wstring &fileName, const wstring &filterTypes, bool searchRecursively, std::function<bool(const wstring &)> onFileFound)
         {
             wstring expandedFileName(expandPath(fileName));
 
@@ -66,16 +66,16 @@ namespace Gek
             }
         }
 
-        HMODULE loadLibrary(const wchar_t *fileName)
+        HMODULE loadLibrary(const wstring &fileName)
         {
             return LoadLibraryW(expandPath(fileName));
         }
 
-        void load(const wchar_t *fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
+        void load(const wstring &fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
         {
             CStringW expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %v", fileName);
+            GEK_CHECK_CONDITION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %v", fileName);
 
             DWORD fileSize = GetFileSize(fileHandle, nullptr);
             if (fileSize > 0)
@@ -91,14 +91,14 @@ namespace Gek
 
                 DWORD bytesRead = 0;
                 BOOL success = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr);
-                GEK_THROW_ERROR(!success, FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
-                GEK_THROW_ERROR(bytesRead != buffer.size(), FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
+                GEK_CHECK_CONDITION(!success, FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
+                GEK_CHECK_CONDITION(bytesRead != buffer.size(), FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
             }
 
             CloseHandle(fileHandle);
         }
 
-        void load(const wchar_t *fileName, string &fileData)
+        void load(const wstring &fileName, string &fileData)
         {
             std::vector<UINT8> buffer;
             load(fileName, buffer);
@@ -106,38 +106,36 @@ namespace Gek
             fileData = reinterpret_cast<const char *>(buffer.data());
         }
 
-        void load(const wchar_t *fileName, wstring &fileData, bool convertUTF8)
+        void load(const wstring &fileName, wstring &fileData, bool convertUTF8)
         {
             string rawFileData;
             load(fileName, rawFileData);
-            fileData = String::from<wchar_t>(rawFileData);
+            fileData = rawFileData;
         }
 
-        void save(const wchar_t *fileName, const std::vector<UINT8> &buffer)
+        void save(const wstring &fileName, const std::vector<UINT8> &buffer)
         {
             wstring expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_THROW_ERROR(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %v", fileName);
+            GEK_CHECK_CONDITION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %v", fileName);
 
             DWORD bytesWritten = 0;
             BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-            GEK_THROW_ERROR(!success, FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
-            GEK_THROW_ERROR(bytesWritten != buffer.size(), FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
+            GEK_CHECK_CONDITION(!success, FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
+            GEK_CHECK_CONDITION(bytesWritten != buffer.size(), FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
             CloseHandle(fileHandle);
         }
 
-        void save(const wchar_t *fileName, const char *fileData)
+        void save(const wstring &fileName, const string &fileData)
         {
-            UINT32 stringLength = strlen(fileData);
-            std::vector<UINT8> buffer(stringLength);
-            std::copy_n(fileData, stringLength, buffer.begin());
+            std::vector<UINT8> buffer(fileData.length());
+            std::copy(fileData.begin(), fileData.end(), buffer.begin());
             save(fileName, buffer);
         }
 
-        void save(const wchar_t *fileName, const wchar_t *fileData, bool convertUTF8)
+        void save(const wstring &fileName, const wstring &fileData, bool convertUTF8)
         {
-            string rawString(String::from<char>(fileData));
-            save(fileName, rawString.c_str());
+            save(fileName, string(fileData));
         }
     } // namespace FileSystem
 }; // namespace Gek

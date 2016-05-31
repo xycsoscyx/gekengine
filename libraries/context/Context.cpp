@@ -24,7 +24,7 @@ namespace Gek
             searchPathList.push_back(L"$root");
             for (auto &searchPath : searchPathList)
             {
-                Gek::FileSystem::find(searchPath.c_str(), L"*.dll", false, [&](const wchar_t *fileName) -> bool
+                FileSystem::find(searchPath.c_str(), L"*.dll", false, [&](const wchar_t *fileName) -> bool
                 {
                     HMODULE module = LoadLibrary(fileName);
                     if (module)
@@ -82,7 +82,7 @@ namespace Gek
         ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const
         {
             auto classIterator = classMap.find(name);
-            GEK_THROW_ERROR(classIterator == classMap.end(), BaseException, "Unable to find requested class creator: %v", name);
+            GEK_CHECK_CONDITION(classIterator == classMap.end(), Trace::Exception, "Unable to find requested class creator: %v", name);
             return (*classIterator).second((Context *)this, parameters);
         }
 

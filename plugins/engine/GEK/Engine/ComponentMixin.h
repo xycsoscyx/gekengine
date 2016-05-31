@@ -11,11 +11,11 @@ namespace Gek
     {
         if (name)
         {
-            componentData[name] = String::from<wchar_t>(value);
+            componentData[name] = value;
         }
         else
         {
-            componentData.value = String::from<wchar_t>(value);
+            componentData.value = value;
         }
     }
 
@@ -27,14 +27,13 @@ namespace Gek
             auto iterator = componentData.find(name);
             if (iterator != componentData.end())
             {
-                value = Evaluator::get<TYPE>((*iterator).second);
-                //value = String::to<TYPE>((*iterator).second);
+                value = static_cast<TYPE>((*iterator).second);
                 return true;
             }
         }
         else if(!componentData.value.empty())
         {
-            value = Evaluator::get<TYPE>(componentData.value);
+            value = static_cast<TYPE>(componentData.value);
         }
 
         return false;

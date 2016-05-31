@@ -496,12 +496,12 @@ namespace Gek
                 if (true)
                 {
                     GeoSphere geoSphere;
-                    UINT32 divisionCount = String::to<UINT32>(shape.parameters);
+                    UINT32 divisionCount = shape.parameters;
                     geoSphere.generate(divisionCount);
 
                     shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(String::format(L"shape:vertex:%v", (const void *)&shape), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String::format(L"shape:index:%v", (const void *)&shape), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    shape.vertexBuffer = resources->createBuffer(wstring(L"shape:vertex:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                    shape.indexBuffer = resources->createBuffer(wstring(L"shape:index:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
                     break;
                 }
             };
@@ -619,7 +619,7 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    Gek::Math::Color color(1.0f);
+                    Math::Color color(1.0f);
                     if (entity->hasComponent<ColorComponent>())
                     {
                         color = entity->getComponent<ColorComponent>().value;

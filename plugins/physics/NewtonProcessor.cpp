@@ -123,31 +123,31 @@ namespace Gek
 
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
-                Gek::XmlDocumentPtr document(XmlDocument::load(Gek::String::format(L"$root\\data\\materials\\%v.xml", fileName)));
-                Gek::XmlNodePtr materialNode = document->getRoot(L"material");
-                Gek::XmlNodePtr surfaceNode = materialNode->firstChildElement(L"surface");
+                XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\materials\\%v.xml", fileName)));
+                XmlNodePtr materialNode = document->getRoot(L"material");
+                XmlNodePtr surfaceNode = materialNode->firstChildElement(L"surface");
                 if (surfaceNode->isValid())
                 {
                     Surface surface;
-                    surface.ghost = String::to<bool>(surfaceNode->getAttribute(L"ghost"));
+                    surface.ghost = surfaceNode->getAttribute(L"ghost");
                     if (surfaceNode->hasAttribute(L"staticfriction"))
                     {
-                        surface.staticFriction = Gek::String::to<float>(surfaceNode->getAttribute(L"staticfriction"));
+                        surface.staticFriction = surfaceNode->getAttribute(L"staticfriction");
                     }
 
                     if (surfaceNode->hasAttribute(L"kineticfriction"))
                     {
-                        surface.kineticFriction = Gek::String::to<float>(surfaceNode->getAttribute(L"kineticfriction"));
+                        surface.kineticFriction = surfaceNode->getAttribute(L"kineticfriction");
                     }
 
                     if (surfaceNode->hasAttribute(L"elasticity"))
                     {
-                        surface.elasticity = Gek::String::to<float>(surfaceNode->getAttribute(L"elasticity"));
+                        surface.elasticity = surfaceNode->getAttribute(L"elasticity");
                     }
 
                     if (surfaceNode->hasAttribute(L"softness"))
                     {
-                        surface.softness = Gek::String::to<float>(surfaceNode->getAttribute(L"softness"));
+                        surface.softness = surfaceNode->getAttribute(L"softness");
                     }
 
                     surfaceIndex = surfaceList.size();
@@ -451,7 +451,7 @@ namespace Gek
                 collisionList[collisionHash] = nullptr;
 
                 std::vector<wstring> parameters(shape.split(L'|'));
-                GEK_THROW_ERROR(parameters.size() != 2, BaseException, "Invalid parameters passed for shape: %v", shape);
+                GEK_CHECK_CONDITION(parameters.size() != 2, Trace::Exception, "Invalid parameters passed for shape: %v", shape);
 
                 if (parameters[0].compareNoCase(L"*cube") == 0)
                 {
@@ -494,7 +494,7 @@ namespace Gek
                     newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
 
-                GEK_THROW_ERROR(newtonCollision == nullptr, BaseException, "Unable to create newton collision shape: %v", shape);
+                GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create newton collision shape: %v", shape);
                 collisionList[collisionHash] = newtonCollision;
             }
 
@@ -523,15 +523,15 @@ namespace Gek
                 {
                     collisionList[shapeHash] = nullptr;
 
-                    wstring fileName(FileSystem::expandPath(String::format(L"$root\\data\\models\\%v.bin", shape)));
+                    wstring fileName(FileSystem::expandPath(wstring(L"$root\\data\\models\\%v.bin", shape)));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");
-                    GEK_THROW_ERROR(file == nullptr, FileSystem::Exception, "Unable to load collision model: %v", fileName);
+                    GEK_CHECK_CONDITION(file == nullptr, FileSystem::Exception, "Unable to load collision model: %v", fileName);
 
                     UINT32 gekIdentifier = 0;
                     fread(&gekIdentifier, sizeof(UINT32), 1, file);
-                    GEK_THROW_ERROR(gekIdentifier != *(UINT32 *)"GEKX", BaseException, "Invalid model idetifier found: %v", gekIdentifier);
+                    GEK_CHECK_CONDITION(gekIdentifier != *(UINT32 *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
 
                     UINT16 gekModelType = 0;
                     fread(&gekModelType, sizeof(UINT16), 1, file);
@@ -564,11 +564,11 @@ namespace Gek
                     }
                     else
                     {
-                        GEK_THROW_EXCEPTION(BaseException, "Invalid model format/version specified: %v, %v", gekModelType, gekModelVersion);
+                        GEK_THROW_EXCEPTION(Trace::Exception, "Invalid model format/version specified: %v, %v", gekModelType, gekModelVersion);
                     }
 
                     fclose(file);
-                    GEK_THROW_ERROR(newtonCollision == nullptr, BaseException, "Unable to create newton collision shape: %v", shape);
+                    GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create newton collision shape: %v", shape);
                     collisionList[shapeHash] = newtonCollision;
                 }
             }

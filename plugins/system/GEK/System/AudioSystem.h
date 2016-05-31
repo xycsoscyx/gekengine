@@ -30,7 +30,7 @@ namespace Gek
         : public AudioSample
     {
         virtual void setDistance(float minimum, float maximum) = 0;
-        virtual void play(const Gek::Math::Float3 &origin, bool loop) = 0;
+        virtual void play(const Math::Float3 &origin, bool loop) = 0;
     };
 
     GEK_INTERFACE(AudioSystem)
@@ -38,7 +38,7 @@ namespace Gek
         virtual void setMasterVolume(float volume) = 0;
         virtual float getMasterVolume(void) = 0;
 
-        virtual void setListener(const Gek::Math::Float4x4 &matrix) = 0;
+        virtual void setListener(const Math::Float4x4 &matrix) = 0;
         virtual void setDistanceFactor(float factor) = 0;
         virtual void setDopplerFactor(float factor) = 0;
         virtual void setRollOffFactor(float factor) = 0;

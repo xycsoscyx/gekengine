@@ -188,17 +188,17 @@ typedef SH<Math::Float4, 9> SH9Color;
         load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, nullptr, std::placeholders::_3);
     }
 
-    GEK_THROW_ERROR(!load, BaseException, "Invalid file type: %v", extension);
+    GEK_CHECK_CONDITION(!load, Trace::Exception, "Invalid file type: %v", extension);
 
     ::DirectX::ScratchImage image;
     HRESULT resultValue = load(fileData.data(), fileData.size(), image);
-    GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileName);
+    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileName);
 
     if (::DirectX::IsCompressed(image.GetMetadata().format))
     {
         ::DirectX::ScratchImage decompressedImage;
         resultValue = ::DirectX::Decompress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM, decompressedImage);
-        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to decompress image to raw RGBA: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to decompress image to raw RGBA: %v", resultValue);
         image = std::move(decompressedImage);
     }
 
@@ -206,7 +206,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
         ::DirectX::ScratchImage rgbImage;
         resultValue = ::DirectX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0.0f, rgbImage);
-        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to convert image to float: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to convert image to float: %v", resultValue);
         image = std::move(rgbImage);
     }
 
@@ -214,7 +214,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
         ::DirectX::ScratchImage resized;
         resultValue = ::DirectX::Resize(image.GetImages()[0], 256, 256, 0, resized);
-        GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to resize image to 256x256: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to resize image to 256x256: %v", resultValue);
         image = std::move(resized);
     }
 
@@ -236,13 +236,13 @@ typedef SH<Math::Float4, 9> SH9Color;
             L"negz",
         };
 
-        FileSystem::find(directory, String::format(L"%.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
+        FileSystem::find(directory, wstring(L"%v.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
         {
             try
             {
                 cubeMapList[face] = loadTexture(fileName);
             }
-            catch (BaseException exception)
+            catch (Trace::Exception exception)
             {
                 return true;
             };
@@ -263,7 +263,7 @@ typedef SH<Math::Float4, 9> SH9Color;
 
     ::DirectX::ScratchImage image;
     HRESULT resultValue = image.InitializeCubeFromImages(imageList, 6, 0);
-    GEK_THROW_ERROR(FAILED(resultValue), FileSystem::Exception, "Unable to initialize cubemap from face list: %v", resultValue);
+    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to initialize cubemap from face list: %v", resultValue);
     return image;
 }
 
@@ -425,27 +425,27 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         try
         {
             image = loadTexture(fileNameInput);
-            GEK_THROW_ERROR(!image.GetMetadata().IsCubemap(), BaseException, "Image not cubemap format: %v", fileNameInput);
+            GEK_CHECK_CONDITION(!image.GetMetadata().IsCubemap(), Trace::Exception, "Image not cubemap format: %v", fileNameInput);
         }
-        catch (BaseException exception)
+        catch (Trace::Exception exception)
         {
             image = loadIntoCubeMap(fileNameInput);
         };
 
-        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, String::format(L"%v\\cubemap.dds", fileNameInput));
+        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, wstring(L"%v\\cubemap.dds", fileNameInput));
 
         SH9Color sphericalHarmonics = ProjectCubeMapToSH(image);
 
         string output;
         for (int i = 0; i < 9; i++)
         {
-            output += String::format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
+            output += string("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
         }
 
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
         printf(output);
     }
-    catch (BaseException exception)
+    catch (Trace::Exception exception)
     {
         printf("[error] Error (%d): %s", exception.when(), exception.what());
     }
