@@ -556,8 +556,8 @@ namespace Gek
         wstring evaluate(const wchar_t *value, bool integer = false)
         {
             wstring finalValue(value);
-            finalValue.replace(L"displayWidth", wstring(video->getBackBuffer()->getWidth()));
-            finalValue.replace(L"displayHeight", wstring(video->getBackBuffer()->getHeight()));
+            finalValue.replace(L"displayWidth", wstring(L"%v", video->getBackBuffer()->getWidth()));
+            finalValue.replace(L"displayHeight", wstring(L"%v", video->getBackBuffer()->getHeight()));
             while (replaceDefines(finalValue));
 
             if (finalValue.find(L"float2") != std::string::npos)

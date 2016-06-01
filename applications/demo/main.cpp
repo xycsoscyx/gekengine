@@ -100,8 +100,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             };
 
             XmlNodePtr displayNode = configurationNode->firstChildElement(L"display", true);
-            displayNode->setAttribute(L"width", mode.width);
-            displayNode->setAttribute(L"height", mode.height);
+            displayNode->setAttribute(L"width", wstring(L"%v", mode.width));
+            displayNode->setAttribute(L"height", wstring(L"%v", mode.height));
             displayNode->setAttribute(L"fullscreen", SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
             document->save(L"$root\\config.xml");
 

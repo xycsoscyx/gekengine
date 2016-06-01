@@ -65,7 +65,7 @@ namespace Gek
         {
         }
 
-        baseString(ELEMENT character, size_t length = 1)
+        baseString(ELEMENT character, size_t length)
             : basic_string(length, character)
         {
         }

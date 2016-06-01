@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <config>
-  <display width="ŀ" height="È" fullscreen="false"/>
+  <display width="800" height="600" fullscreen="false"></display>
 </config>
