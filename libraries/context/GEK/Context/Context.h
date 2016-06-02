@@ -30,7 +30,7 @@ namespace Gek
             {
                 castClass = std::dynamic_pointer_cast<TYPE>(baseClass);
             }
-            catch (std::bad_cast badCast)
+            catch (const std::bad_cast &badCast)
             {
                 throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to cast to requested type: %v (%v)", typeid(TYPE).name(), badCast.what()));
             };

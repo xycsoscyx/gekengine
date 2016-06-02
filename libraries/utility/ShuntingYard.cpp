@@ -11,6 +11,11 @@
 
 namespace Gek
 {
+    #define SEARCH_NUMBER L"([+-]?(?:(?:\\d+(?:\\.\\d*)?)|(?:\\.\\d+))(?:e\\d+)?)"
+
+    static const std::wregex SearchNumber(SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
+    static const std::wregex SearchWord(L"([a-z]+)|" SEARCH_NUMBER, std::regex::ECMAScript | std::regex::icase | std::regex::optimize);
+
     ShuntingYard::Token::Token(ShuntingYard::TokenType type)
         : type(type)
         , parameterCount(0)
@@ -27,6 +32,7 @@ namespace Gek
     ShuntingYard::Token::Token(float value)
         : type(TokenType::Number)
         , value(value)
+        , parameterCount(1)
     {
     }
     
@@ -152,27 +158,31 @@ namespace Gek
         } } });
     }
 
-    void ShuntingYard::evaluteTokenList(const wstring &expression, std::vector<Token> &rpnTokenList)
+    UINT32 ShuntingYard::getReturnSize(const TokenList &rpnTokenList)
     {
-        std::vector<Token> infixTokenList = convertExpressionToInfix(expression);
-        convertInfixToReversePolishNotation(infixTokenList, rpnTokenList);
+        return rpnTokenList.back().parameterCount;
     }
 
-    void ShuntingYard::evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
+    ShuntingYard::TokenList ShuntingYard::getTokenList(const wstring &expression)
+    {
+        TokenList infixTokenList = convertExpressionToInfix(expression);
+        return convertInfixToReversePolishNotation(infixTokenList);
+    }
+
+    void ShuntingYard::evaluateValue(TokenList &rpnTokenList, float *value, UINT32 valueSize)
     {
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
     void ShuntingYard::evaluateValue(const wstring &expression, float *value, UINT32 valueSize)
     {
-        std::vector<Token> rpnTokenList;
-        evaluteTokenList(expression, rpnTokenList);
+        TokenList rpnTokenList(getTokenList(expression));
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
     bool ShuntingYard::isNumber(const wstring &token)
     {
-        return std::regex_match(token.c_str(), std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?$"));
+        return std::regex_search(token.c_str(), SearchNumber);
     }
 
     bool ShuntingYard::isOperation(const wstring &token)
@@ -220,19 +230,7 @@ namespace Gek
 
     ShuntingYard::TokenType ShuntingYard::getTokenType(const wstring &token)
     {
-        if (isNumber(token))
-        {
-            return TokenType::Number;
-        }
-        else if (isOperation(token))
-        {
-            return TokenType::BinaryOperation;
-        }
-        else if (isFunction(token))
-        {
-            return TokenType::Function;
-        }
-        else if (isSeparator(token))
+        if (isSeparator(token))
         {
             return TokenType::Separator;
         }
@@ -244,11 +242,38 @@ namespace Gek
         {
             return TokenType::RightParenthesis;
         }
+        else if (isOperation(token))
+        {
+            return TokenType::BinaryOperation;
+        }
+        else if (isFunction(token))
+        {
+            return TokenType::Function;
+        }
+        else if (isNumber(token))
+        {
+            return TokenType::Number;
+        }
 
         return TokenType::Unknown;
     }
 
-    void ShuntingYard::insertToken(std::vector<Token> &infixTokenList, Token &token)
+    bool ShuntingYard::isValidReturnType(const Token &token)
+    {
+        switch (token.type)
+        {
+        case TokenType::Number:
+        case TokenType::Vector:
+        case TokenType::Function:
+        case TokenType::UnaryOperation:
+            return true;
+
+        default:
+            return false;
+        };
+    }
+
+    void ShuntingYard::insertToken(TokenList &infixTokenList, Token &token)
     {
         if (!infixTokenList.empty())
         {
@@ -306,11 +331,11 @@ namespace Gek
         infixTokenList.push_back(token);
     }
 
-    bool ShuntingYard::replaceFirstVariable(std::vector<Token> &infixTokenList, wstring &token)
+    bool ShuntingYard::replaceFirstVariable(TokenList &infixTokenList, wstring &token)
     {
         for (auto &variable : variableMap)
         {
-            if (token.find(variable.first) == std::string::npos)
+            if (token.find(variable.first) == 0)
             {
                 insertToken(infixTokenList, Token(variable.second));
                 token = token.subString(variable.first.size());
@@ -321,11 +346,11 @@ namespace Gek
         return false;
     }
 
-    bool ShuntingYard::replaceFirstFunction(std::vector<Token> &infixTokenList, wstring &token)
+    bool ShuntingYard::replaceFirstFunction(TokenList &infixTokenList, wstring &token)
     {
         for (auto &function : functionsMap)
         {
-            if (token.find(function.first) == std::string::npos)
+            if (token.find(function.first) == 0)
             {
                 insertToken(infixTokenList, Token(TokenType::Function, function.first));
                 token = token.subString(function.first.size());
@@ -336,40 +361,43 @@ namespace Gek
         return false;
     }
 
-    void ShuntingYard::parseSubTokens(std::vector<Token> &infixTokenList, wstring token)
+    void ShuntingYard::parseSubTokens(TokenList &infixTokenList, wstring token)
     {
-        while (!token.empty())
+        std::wstring &baseToken = token;
+        for (std::wsregex_iterator current(baseToken.begin(), baseToken.end(), SearchWord), end; current != end; ++current)
         {
-            std::wcmatch matches;
-            if (std::regex_search(token.c_str(), matches, std::wregex(L"^[-+]?[0-9]*\\.?[0-9]+([eE][-+]?[0-9]+)?")))
+            auto match = *current;
+            if (match[1].matched) // variable
             {
-                wstring match = matches[0].str().c_str();
-                token = token.subString(match.size());
+                wstring value = match.str(1);
+                auto variable = variableMap.find(value);
+                if (variable != variableMap.end())
+                {
+                    insertToken(infixTokenList, Token((*variable).second));
+                    continue;
+                }
 
-                float value = match;
+                auto function = functionsMap.find(value);
+                if (function != functionsMap.end())
+                {
+                    insertToken(infixTokenList, Token(TokenType::Function, (*function).first));
+                    continue;
+                }
+
+                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token found while parsing equation: %v", match.str());
+            }
+            else if(match[2].matched) // number
+            {
+                float value = wstring(match.str(2));
                 insertToken(infixTokenList, Token(value));
-                continue;
             }
-
-            if (replaceFirstVariable(infixTokenList, token))
-            {
-                continue;
-            }
-
-            if (replaceFirstFunction(infixTokenList, token))
-            {
-                GEK_CHECK_CONDITION(!token.empty(), MissingFunctionParenthesis, "Unbalanced scope, missing parenthesis: %v", token);
-                continue;
-            }
-
-            GEK_CHECK_CONDITION(!token.empty(), UnknownTokenType, "Unknown tokens remaining: %v", token);
-        };
+        }
     }
 
-    std::vector<ShuntingYard::Token> ShuntingYard::convertExpressionToInfix(const wstring &expression)
+    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(const wstring &expression)
     {
         wstring runningToken;
-        std::vector<Token> infixTokenList;
+        TokenList infixTokenList;
         for (size_t index = 0; index < expression.size(); ++index)
         {
             wstring nextToken(expression.subString(index, 1));
@@ -408,8 +436,12 @@ namespace Gek
         return infixTokenList;
     }
 
-    void ShuntingYard::convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList)
+    ShuntingYard::TokenList ShuntingYard::convertInfixToReversePolishNotation(const TokenList &infixTokenList)
     {
+        TokenList rpnTokenList;
+
+        bool hasVector = false;
+
         Stack<Token> stack;
         Stack<bool> parameterExistsStack;
         Stack<UINT32> parameterCountStack;
@@ -470,6 +502,9 @@ namespace Gek
                 stack.pop();
                 if (stack.empty())
                 {
+                    GEK_CHECK_CONDITION(hasVector, VectorUsedAsParameter, "Vector only supported as return value");
+                    hasVector = true;
+
                     Token vector(TokenType::Vector);
                     vector.parameterCount = parameterCountStack.popTop();
                     if (parameterExistsStack.popTop())
@@ -530,10 +565,15 @@ namespace Gek
             GEK_CHECK_CONDITION(stack.top().type == TokenType::RightParenthesis, UnbalancedParenthesis, "Unused right parenthesis found while unwinding the stack");
             rpnTokenList.push_back(stack.popTop());
         };
+
+        GEK_CHECK_CONDITION(rpnTokenList.empty(), InvalidEquation, "Empty equation found");
+        return rpnTokenList;
     }
 
-    void ShuntingYard::evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, UINT32 valueSize)
     {
+        bool hasVector = false;
+
         Stack<Token> stack;
         for (auto &token : rpnTokenList)
         {
@@ -597,20 +637,20 @@ namespace Gek
                 }
 
             case TokenType::Vector:
-                GEK_CHECK_CONDITION(token.parameterCount != valueSize, InvalidVector, "Mismatched vector type found");
-                GEK_CHECK_CONDITION(stack.size() != valueSize, InvalidVector, "Not enough values for required vector found");
-                for (UINT32 axis = valueSize; axis > 0; axis--)
-                {
-                    value[axis - 1] = stack.popTop().value;
-                }
+                GEK_CHECK_CONDITION(hasVector, VectorUsedAsParameter, "Vector only supported as return value");
+                hasVector = true;
+                break;
 
             default:
                 GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %v", token.string);
             };
         }
 
-        GEK_CHECK_CONDITION(valueSize != 1, InvalidEquation, "Returning too many values for requested type");
-        GEK_CHECK_CONDITION(stack.size() != valueSize, InvalidEquation, "Returning too many values for requested type");
-        (*value) = stack.top().value;
+        GEK_CHECK_CONDITION(rpnTokenList.empty(), InvalidEquation, "Empty equation found");
+        GEK_CHECK_CONDITION(stack.size() != valueSize, InvalidVector, "Not enough parameters for requested return value");
+        for (UINT32 axis = valueSize; axis > 0; axis--)
+        {
+            value[axis - 1] = stack.popTop().value;
+        }
     }
 }; // namespace Gek

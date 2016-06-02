@@ -240,7 +240,7 @@ namespace Gek
                     worldTime = 0.0f;
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
                 }
-                catch (Exception exception)
+                catch (const Exception &exception)
                 {
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
                 };

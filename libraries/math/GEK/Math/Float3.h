@@ -54,6 +54,13 @@ namespace Gek
                 this->z = z;
             }
 
+            inline void set(float value)
+            {
+                this->x = value;
+                this->y = value;
+                this->z = value;
+            }
+
             float getLengthSquared(void) const;
             float getLength(void) const;
             float getDistance(const Float3 &vector) const;

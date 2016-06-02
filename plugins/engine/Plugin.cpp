@@ -105,17 +105,20 @@ namespace Gek
             XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\plugins\\%v.xml", fileName)));
             XmlNodePtr pluginNode = document->getRoot(L"plugin");
 
-            try
+            XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
+            if (geometryNode->isValid())
             {
-                XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
-                XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
-                wstring programFileName = programNode->getAttribute(L"source");
-                string programEntryPoint(programNode->getAttribute(L"entry"));
-                geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
+                try
+                {
+                    XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
+                    wstring programFileName = programNode->getAttribute(L"source");
+                    string programEntryPoint(programNode->getAttribute(L"entry"));
+                    geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
+                }
+                catch (const Exception &exception)
+                {
+                };
             }
-            catch (Exception exception)
-            {
-            };
 
             XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
             XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
@@ -263,7 +266,7 @@ namespace Gek
                         else
                         {
                             std::experimental::filesystem::path rootPath(L"$root\\data\\programs");
-                            rootPath.append(fileName);
+                            rootPath.append(resourceName);
                             rootPath = FileSystem::expandPath(rootPath.wstring());
                             if (std::experimental::filesystem::is_regular_file(rootPath))
                             {

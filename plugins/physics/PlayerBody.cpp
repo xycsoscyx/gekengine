@@ -1,7 +1,6 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Utility\String.h"
-#include "GEK\Utility\Evaluator.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Engine.h"
@@ -866,7 +865,7 @@ namespace Gek
         {
             player = std::make_shared<PlayerNewtonBody>(engine, newtonWorld, entity);
         }
-        catch (std::bad_alloc badAllocation)
+        catch (const std::bad_alloc &badAllocation)
         {
             GEK_THROW_EXCEPTION(Trace::Exception, "Unable to allocate new player object: %v", badAllocation.what());
         };
@@ -878,7 +877,7 @@ namespace Gek
         {
             castEntity = std::dynamic_pointer_cast<NewtonEntity>(player);
         }
-        catch (std::bad_cast badCast)
+        catch (const std::bad_cast &badCast)
         {
             GEK_THROW_EXCEPTION(Trace::Exception, "Unable to cast to newton entity: %v", badCast.what());
         };

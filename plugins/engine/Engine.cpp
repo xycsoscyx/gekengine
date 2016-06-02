@@ -177,7 +177,7 @@ namespace Gek
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (Exception exception)
+            catch (const Exception &exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");

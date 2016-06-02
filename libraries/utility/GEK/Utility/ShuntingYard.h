@@ -15,6 +15,7 @@ namespace Gek
         GEK_BASE_EXCEPTION();
         GEK_EXCEPTION(UnknownTokenType);
         GEK_EXCEPTION(UnbalancedParenthesis);
+        GEK_EXCEPTION(InvalidReturnType);
         GEK_EXCEPTION(InvalidVector);
         GEK_EXCEPTION(InvalidEquation);
         GEK_EXCEPTION(InvalidOperator);
@@ -24,6 +25,7 @@ namespace Gek
         GEK_EXCEPTION(NotEnoughFunctionParameters);
         GEK_EXCEPTION(MissingFunctionParenthesis);
         GEK_EXCEPTION(MisplacedSeparator);
+        GEK_EXCEPTION(VectorUsedAsParameter);
 
     public:
         enum class Associations : UINT8
@@ -56,6 +58,8 @@ namespace Gek
             Token(TokenType type, const wstring &string, UINT32 parameterCount = 0);
             Token(float value);
         };
+
+        typedef std::vector<Token> TokenList;
 
     private:
         template <typename DATA>
@@ -93,21 +97,22 @@ namespace Gek
     public:
         ShuntingYard(void);
 
-        void evaluteTokenList(const wstring &expression, std::vector<Token> &rpnTokenList);
+        TokenList getTokenList(const wstring &expression);
+        UINT32 getReturnSize(const TokenList &rpnTokenList);
 
-        inline void evaluate(std::vector<Token> &rpnTokenList, float &value)
+        inline void evaluate(TokenList &rpnTokenList, float &value)
         {
             evaluateValue(rpnTokenList, &value, 1);
         }
 
         template <std::size_t SIZE>
-        void evaluate(std::vector<Token> &rpnTokenList, float(&value)[SIZE])
+        void evaluate(TokenList &rpnTokenList, float(&value)[SIZE])
         {
             evaluateValue(rpnTokenList, value, SIZE);
         }
 
         template <class TYPE>
-        void evaluate(std::vector<Token> &rpnTokenList, TYPE &value)
+        void evaluate(TokenList &rpnTokenList, TYPE &value)
         {
             evaluate(rpnTokenList, value.data);
         }
@@ -140,23 +145,24 @@ namespace Gek
         bool isAssociative(const wstring &token, const Associations &type);
         int comparePrecedence(const wstring &token1, const wstring &token2);
         TokenType getTokenType(const wstring &token);
+        bool isValidReturnType(const Token &token);
 
     private:
-        void insertToken(std::vector<Token> &infixTokenList, Token &token);
-        bool replaceFirstVariable(std::vector<Token> &infixTokenList, wstring &token);
-        bool replaceFirstFunction(std::vector<Token> &infixTokenList, wstring &token);
-        void parseSubTokens(std::vector<Token> &infixTokenList, wstring token);
-        std::vector<Token> convertExpressionToInfix(const wstring &expression);
-        void convertInfixToReversePolishNotation(const std::vector<Token> &infixTokenList, std::vector<Token> &rpnTokenList);
-        void evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
+        void insertToken(TokenList &infixTokenList, Token &token);
+        bool replaceFirstVariable(TokenList &infixTokenList, wstring &token);
+        bool replaceFirstFunction(TokenList &infixTokenList, wstring &token);
+        void parseSubTokens(TokenList &infixTokenList, wstring token);
+        TokenList convertExpressionToInfix(const wstring &expression);
+        TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
+        void evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, UINT32 valueSize);
 
         template <std::size_t SIZE>
-        void evaluateReversePolishNotation(const std::vector<Token> &rpnTokenList, float(&value)[SIZE])
+        void evaluateReversePolishNotation(const TokenList &rpnTokenList, float(&value)[SIZE])
         {
             evaluateReversePolishNotation(rpnTokenList, value, SIZE);
         }
 
-        void evaluateValue(std::vector<Token> &rpnTokenList, float *value, UINT32 valueSize);
+        void evaluateValue(TokenList &rpnTokenList, float *value, UINT32 valueSize);
         void evaluateValue(const wstring &expression, float *value, UINT32 valueSize);
     };
 }; // namespace Gek

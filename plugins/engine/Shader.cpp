@@ -1032,7 +1032,7 @@ namespace Gek
                                 else
                                 {
                                     std::experimental::filesystem::path rootPath(L"$root\\data\\programs");
-                                    rootPath.append(fileName);
+                                    rootPath.append(resourceName);
                                     rootPath = FileSystem::expandPath(rootPath.wstring());
                                     if (std::experimental::filesystem::is_regular_file(rootPath))
                                     {

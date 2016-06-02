@@ -61,6 +61,14 @@ namespace Gek
                 simd = _mm_setr_ps(x, y, z, w);
             }
 
+            inline void set(float value)
+            {
+                this->x = value;
+                this->y = value;
+                this->z = value;
+                this->w = value;
+            }
+
             float getLengthSquared(void) const;
             float getLength(void) const;
             float getDistance(const Float4 &vector) const;

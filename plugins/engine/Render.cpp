@@ -1,5 +1,4 @@
 ﻿#include "GEK\Utility\String.h"
-#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"

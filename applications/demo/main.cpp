@@ -2,7 +2,6 @@
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
-#include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
@@ -29,7 +28,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             document = XmlDocument::load(L"$root\\config.xml");
             configurationNode = document->getRoot(L"config");
         }
-        catch (Exception exception)
+        catch (const Exception &exception)
         {
             document = XmlDocument::create(L"config");
             configurationNode = document->getRoot(L"config");
@@ -93,7 +92,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (Exception exception)
+            catch (const Exception &exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -189,7 +188,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (Exception exception)
+            catch (const Exception &exception)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -238,9 +237,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             SetWindowLongPtr(window, GWLP_USERDATA, 0);
         }
     }
-    catch (Exception exception)
+    catch (const Exception &exception)
     {
-        MessageBox(nullptr, wstring(L"%v\r\n%v: %v", exception.what(), exception.where(), exception.when()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
+        MessageBox(nullptr, wstring(L"%v\r\n%v: %v", exception.what(), exception.in(), exception.at()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
     }
     catch (...)
     {

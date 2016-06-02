@@ -303,14 +303,14 @@ namespace Gek
         baseString<ELEMENT> &operator = (const HRESULT &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << "0x" << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
             return static_cast<baseString &>(assign(stream.str()));
         }
 
         baseString<ELEMENT> &operator = (const DWORD &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << "0x" << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
             return static_cast<baseString &>(assign(stream.str()));
         }
 
@@ -474,14 +474,14 @@ namespace Gek
         void operator += (const HRESULT &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << "0x" << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
             append(stream.str());
         }
 
         void operator += (const DWORD &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << "0x" << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
             append(stream.str());
         }
 

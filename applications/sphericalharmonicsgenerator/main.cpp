@@ -242,7 +242,7 @@ typedef SH<Math::Float4, 9> SH9Color;
             {
                 cubeMapList[face] = loadTexture(fileName);
             }
-            catch (Exception exception)
+            catch (const Exception &exception)
             {
                 return true;
             };
@@ -427,7 +427,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             image = loadTexture(fileNameInput);
             GEK_CHECK_CONDITION(!image.GetMetadata().IsCubemap(), Trace::Exception, "Image not cubemap format: %v", fileNameInput);
         }
-        catch (Exception exception)
+        catch (const Exception &exception)
         {
             image = loadIntoCubeMap(fileNameInput);
         };
@@ -445,9 +445,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
         printf(output);
     }
-    catch (Exception exception)
+    catch (const Exception &exception)
     {
-        printf("[error] Error (%d): %s", exception.when(), exception.what());
+        printf("[error] Error (%d): %s", exception.at(), exception.what());
     }
     catch (...)
     {

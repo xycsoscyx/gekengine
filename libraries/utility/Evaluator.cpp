@@ -22,10 +22,9 @@ namespace Gek
                 shuntingYard.evaluate(expression, value);
                 result = TYPE(value);
             }
-            catch (ShuntingYard::Exception exception)
+            catch (const ShuntingYard::Exception &exception)
             {
                 result = defaultValue;
-                throw Exception(exception.where(), exception.when(), exception.what());
             };
         }
 
@@ -34,12 +33,28 @@ namespace Gek
         {
             try
             {
-                shuntingYard.evaluate(expression, result);
+                ShuntingYard::TokenList rpnTokenList(shuntingYard.getTokenList(expression));
+                switch (shuntingYard.getReturnSize(rpnTokenList))
+                {
+                case 1:
+                    if(true)
+                    {
+                        float value;
+                        shuntingYard.evaluate(expression, value);
+                        result.set(value);
+                    }
+
+                    break;
+
+                default:
+                    shuntingYard.evaluate(expression, result);
+                    break;
+                };
+
             }
-            catch (ShuntingYard::Exception exception)
+            catch (const ShuntingYard::Exception &exception)
             {
                 result = defaultValue;
-                throw Exception(exception.where(), exception.when(), exception.what());
             };
         }
 
@@ -87,20 +102,37 @@ namespace Gek
         {
             try
             {
-                shuntingYard.evaluate(expression, result);
-            }
-            catch (ShuntingYard::Exception exception)
-            {
-                try
+                ShuntingYard::TokenList rpnTokenList(shuntingYard.getTokenList(expression));
+                switch (shuntingYard.getReturnSize(rpnTokenList))
                 {
-                    Math::Float3 rgbValue;
-                    shuntingYard.evaluate(expression, rgbValue);
-                    result.set(rgbValue);
-                }
-                catch (ShuntingYard::Exception exception)
-                {
-                    result = defaultValue;
+                case 1:
+                    if (true)
+                    {
+                        float value;
+                        shuntingYard.evaluate(expression, value);
+                        result.set(value);
+                    }
+
+                    break;
+
+                case 3:
+                    if (true)
+                    {
+                        Math::Float3 rgbValue;
+                        shuntingYard.evaluate(expression, rgbValue);
+                        result.set(rgbValue);
+                    }
+
+                    break;
+
+                default:
+                    shuntingYard.evaluate(expression, result);
+                    break;
                 };
+            }
+            catch (const ShuntingYard::Exception &exception)
+            {
+                result = defaultValue;
             };
         }
 
@@ -108,20 +140,27 @@ namespace Gek
         {
             try
             {
-                shuntingYard.evaluate(expression, result);
-            }
-            catch (ShuntingYard::Exception exception)
-            {
-                try
+                ShuntingYard::TokenList rpnTokenList(shuntingYard.getTokenList(expression));
+                switch (shuntingYard.getReturnSize(rpnTokenList))
                 {
-                    Math::Float3 euler;
-                    shuntingYard.evaluate(expression, euler);
-                    result.setEulerRotation(euler.x, euler.y, euler.z);
-                }
-                catch (ShuntingYard::Exception exception)
-                {
-                    result = defaultValue;
+                case 3:
+                    if (true)
+                    {
+                        Math::Float3 euler;
+                        shuntingYard.evaluate(expression, euler);
+                        result.setEulerRotation(euler.x, euler.y, euler.z);
+                    }
+
+                    break;
+
+                default:
+                    shuntingYard.evaluate(expression, result);
+                    break;
                 };
+            }
+            catch (const ShuntingYard::Exception &exception)
+            {
+                result = defaultValue;
             };
         }
 

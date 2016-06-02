@@ -50,6 +50,12 @@ namespace Gek
                 this->y = y;
             }
 
+            inline void set(float value)
+            {
+                this->x = value;
+                this->y = value;
+            }
+
             float getLengthSquared(void) const;
             float getLength(void) const;
             float getDistance(const Float2 &vector) const;

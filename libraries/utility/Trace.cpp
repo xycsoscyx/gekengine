@@ -14,12 +14,12 @@ namespace Gek
     {
     }
 
-    const char *Exception::where(void)
+    const char *Exception::in(void) const
     {
         return function;
     }
 
-    UINT32 Exception::when(void)
+    UINT32 Exception::at(void) const
     {
         return line;
     }

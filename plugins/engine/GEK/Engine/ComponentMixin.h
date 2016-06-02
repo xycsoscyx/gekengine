@@ -27,12 +27,14 @@ namespace Gek
             auto iterator = componentData.find(name);
             if (iterator != componentData.end())
             {
-                value = static_cast<TYPE>((*iterator).second);
+                value = Evaluator::get<TYPE>((*iterator).second);
+                //value = static_cast<TYPE>((*iterator).second);
             }
         }
         else if(!componentData.value.empty())
         {
-            value = static_cast<TYPE>(componentData.value);
+            value = Evaluator::get<TYPE>(componentData.value);
+            //value = static_cast<TYPE>(componentData.value);
         }
     }
 

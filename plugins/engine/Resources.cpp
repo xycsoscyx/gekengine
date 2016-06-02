@@ -661,7 +661,7 @@ namespace Gek
                     colorData[0] = UINT8(color1 * 255.0f);
                     colorPitch = 1;
                 }
-                catch (Evaluator::Exception exception)
+                catch (const Evaluator::Exception &exception)
                 {
                     try
                     {
@@ -672,7 +672,7 @@ namespace Gek
                         colorData[1] = UINT8(color2.y * 255.0f);
                         colorPitch = 2;
                     }
-                    catch (Evaluator::Exception exception)
+                    catch (const Evaluator::Exception &exception)
                     {
                         try
                         {
@@ -685,7 +685,7 @@ namespace Gek
                             colorData[3] = 255;
                             colorPitch = 4;
                         }
-                        catch (Evaluator::Exception exception)
+                        catch (const Evaluator::Exception &exception)
                         {
                             try
                             {
@@ -698,7 +698,7 @@ namespace Gek
                                 colorData[3] = UINT8(color4.w * 255.0f);
                                 colorPitch = 4;
                             }
-                            catch (Evaluator::Exception exception)
+                            catch (const Evaluator::Exception &exception)
                             {
                             };
                         };

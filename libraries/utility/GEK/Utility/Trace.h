@@ -17,8 +17,8 @@ namespace Gek
         Exception(const char *function, UINT32 line, const char *message);
         virtual ~Exception(void) = default;
 
-        const char *where(void);
-        UINT32 when(void);
+        const char *in(void) const;
+        UINT32 at(void) const;
     };
 
     namespace Trace
@@ -149,7 +149,7 @@ namespace Gek
         {
             baseObject = std::make_shared<CREATE>(arguments...);
         }
-        catch (std::bad_alloc badAllocation)
+        catch (const std::bad_alloc &badAllocation)
         {
             throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), badAllocation.what()));
         };
@@ -159,7 +159,7 @@ namespace Gek
         {
             remadeObject = std::dynamic_pointer_cast<RETURN>(baseObject);
         }
-        catch (std::bad_cast badCast)
+        catch (const std::bad_cast &badCast)
         {
             throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to cast to requested type: %v (%v)", typeid(RETURN).name(), badCast.what()));
         };
