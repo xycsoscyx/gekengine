@@ -199,7 +199,7 @@ namespace Gek
             GEK_CHECK_CONDITION(FAILED(resultValue), Trace::Exception, "Unable to initialize COM: %v", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
-            resources = getContext()->createClass<Resources>(L"ResourcesSystem", video.get());
+            resources = getContext()->createClass<Resources>(L"ResourcesSystem", (EngineContext *)this, video.get());
             population = getContext()->createClass<PopulationSystem>(L"PopulationSystem", (EngineContext *)this);
             render = getContext()->createClass<Render>(L"RenderSystem", video.get(), (Population *)population.get(), resources.get());
             population->loadPlugins();

@@ -24,8 +24,8 @@ namespace Gek
         Math::Float3 scale;
 
         TransformComponent(void);
-        HRESULT save(Population::ComponentDefinition &componentData) const;
-        HRESULT load(const Population::ComponentDefinition &componentData);
+        void save(Population::ComponentDefinition &componentData) const;
+        void load(const Population::ComponentDefinition &componentData);
 
         inline Math::Float4x4 getMatrix(void) const
         {

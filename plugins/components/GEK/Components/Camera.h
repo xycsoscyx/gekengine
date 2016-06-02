@@ -26,16 +26,16 @@ namespace Gek
         };
 
         CameraComponent(void);
-        HRESULT save(Population::ComponentDefinition &componentData) const;
-        HRESULT load(const Population::ComponentDefinition &componentData);
+        void save(Population::ComponentDefinition &componentData) const;
+        void load(const Population::ComponentDefinition &componentData);
     };
 
     struct FirstPersonCameraComponent
         : public CameraComponent
     {
         FirstPersonCameraComponent(void);
-        HRESULT save(Population::ComponentDefinition &componentData) const;
-        HRESULT load(const Population::ComponentDefinition &componentData);
+        void save(Population::ComponentDefinition &componentData) const;
+        void load(const Population::ComponentDefinition &componentData);
     };
 
     struct ThirdPersonCameraComponent
@@ -46,7 +46,7 @@ namespace Gek
         Math::Float3 distance;
 
         ThirdPersonCameraComponent(void);
-        HRESULT save(Population::ComponentDefinition &componentData) const;
-        HRESULT load(const Population::ComponentDefinition &componentData);
+        void save(Population::ComponentDefinition &componentData) const;
+        void load(const Population::ComponentDefinition &componentData);
     };
 }; // namespace Gek

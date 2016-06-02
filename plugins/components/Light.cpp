@@ -10,52 +10,48 @@ namespace Gek
     {
     }
 
-    HRESULT PointLightComponent::save(Population::ComponentDefinition &componentData) const
+    void PointLightComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, L"range", range);
         saveParameter(componentData, L"radius", radius);
-        return S_OK;
     }
 
-    HRESULT PointLightComponent::load(const Population::ComponentDefinition &componentData)
+    void PointLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return (loadParameter(componentData, L"range", range) &&
-            loadParameter(componentData, L"radius", radius) ? S_OK : E_INVALIDARG);
+        loadParameter(componentData, L"range", range);
+        loadParameter(componentData, L"radius", radius);
     }
 
     SpotLightComponent::SpotLightComponent(void)
     {
     }
 
-    HRESULT SpotLightComponent::save(Population::ComponentDefinition &componentData) const
+    void SpotLightComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, L"range", range);
         saveParameter(componentData, L"radius", radius);
         saveParameter(componentData, L"inner_angle", innerAngle);
         saveParameter(componentData, L"outer_angle", outerAngle);
-        return S_OK;
     }
 
-    HRESULT SpotLightComponent::load(const Population::ComponentDefinition &componentData)
+    void SpotLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return (loadParameter(componentData, L"range", range) &&
-            loadParameter(componentData, L"radius", radius) &&
-            loadParameter(componentData, L"inner_angle", innerAngle) &&
-            loadParameter(componentData, L"outer_angle", outerAngle) ? S_OK : E_INVALIDARG);
+        loadParameter(componentData, L"range", range);
+        loadParameter(componentData, L"radius", radius);
+        loadParameter(componentData, L"inner_angle", innerAngle);
+        loadParameter(componentData, L"outer_angle", outerAngle);
     }
 
     DirectionalLightComponent::DirectionalLightComponent(void)
     {
     }
 
-    HRESULT DirectionalLightComponent::save(Population::ComponentDefinition &componentData) const
+    void DirectionalLightComponent::save(Population::ComponentDefinition &componentData) const
     {
-        return E_NOTIMPL;
     }
 
-    HRESULT DirectionalLightComponent::load(const Population::ComponentDefinition &componentData)
+    void DirectionalLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return S_OK;
     }
 
     class PointLightImplementation

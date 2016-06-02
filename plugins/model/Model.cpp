@@ -9,18 +9,16 @@ namespace Gek
     {
     }
 
-    HRESULT ModelComponent::save(Population::ComponentDefinition &componentData) const
+    void ModelComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, value);
         saveParameter(componentData, L"skin", skin);
-        return S_OK;
     }
 
-    HRESULT ModelComponent::load(const Population::ComponentDefinition &componentData)
+    void ModelComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, nullptr, value);
         loadParameter(componentData, L"skin", skin);
-        return S_OK;
     }
 
     class ModelImplementation

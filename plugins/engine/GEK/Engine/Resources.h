@@ -104,8 +104,8 @@ namespace Gek
 
         virtual ShaderHandle loadShader(const wstring &fileName) = 0;
         virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<wstring, wstring> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
-        virtual ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
-        virtual ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
 
         virtual RenderStateHandle createRenderState(const Video::RenderState &renderState) = 0;
         virtual DepthStateHandle createDepthState(const Video::DepthState &depthState) = 0;

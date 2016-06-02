@@ -11,24 +11,22 @@ namespace Gek
     {
     }
 
-    HRESULT ParticlesComponent::save(Population::ComponentDefinition &componentData) const
+    void ParticlesComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, material);
         saveParameter(componentData, L"density", density);
         saveParameter(componentData, L"color_map", colorMap);
         saveParameter(componentData, L"life_expectancy", lifeExpectancy);
         saveParameter(componentData, L"size", size);
-        return S_OK;
     }
 
-    HRESULT ParticlesComponent::load(const Population::ComponentDefinition &componentData)
+    void ParticlesComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, nullptr, material);
         loadParameter(componentData, L"density", density);
         loadParameter(componentData, L"color_map", colorMap);
         loadParameter(componentData, L"life_expectancy", lifeExpectancy);
         loadParameter(componentData, L"size", size);
-        return S_OK;
     }
 
     class ParticlesImplementation

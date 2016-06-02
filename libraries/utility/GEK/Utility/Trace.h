@@ -168,7 +168,7 @@ namespace Gek
     }
 }; // namespace Gek
 
-#define GEK_BASE_EXCEPTION()                                    class Exception : public Gek::Exception { public: using Gek::Exception::Exception; };
+#define GEK_BASE_EXCEPTION()                                    class Exception : public Gek::Trace::Exception { public: using Gek::Trace::Exception::Exception; };
 #define GEK_EXCEPTION(TYPE)                                     class TYPE : public Exception { public: using Exception::Exception; };
 #define GEK_REQUIRE(CHECK)                                      do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
 

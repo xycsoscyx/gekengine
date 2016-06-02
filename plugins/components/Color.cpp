@@ -10,15 +10,14 @@ namespace Gek
     {
     }
 
-    HRESULT ColorComponent::save(Population::ComponentDefinition &componentData) const
+    void ColorComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, value);
-        return S_OK;
     }
 
-    HRESULT ColorComponent::load(const Population::ComponentDefinition &componentData)
+    void ColorComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return (loadParameter(componentData, nullptr, value) ? S_OK : E_INVALIDARG);
+        loadParameter(componentData, nullptr, value);
     }
 
     class ColorImplementation

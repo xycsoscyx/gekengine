@@ -122,7 +122,7 @@ namespace Gek
                 replaced = true;
             };
 
-            return true;
+            return replaced;
         }
 
         void trimLeft(void)

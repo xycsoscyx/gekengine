@@ -8,7 +8,7 @@ namespace Gek
     GEK_INTERFACE(Entity)
     {
         virtual bool hasComponent(const std::type_index &type) = 0;
-        virtual LPVOID getComponent(const std::type_index &type) = 0;
+        virtual void *getComponent(const std::type_index &type) = 0;
 
         template <typename CLASS>
         bool hasComponent(void)

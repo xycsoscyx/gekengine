@@ -11,7 +11,7 @@ namespace Gek
         wstring skin;
 
         ModelComponent(void);
-        HRESULT save(Population::ComponentDefinition &componentData) const;
-        HRESULT load(const Population::ComponentDefinition &componentData);
+        void save(Population::ComponentDefinition &componentData) const;
+        void load(const Population::ComponentDefinition &componentData);
     };
 }; // namespace Gek

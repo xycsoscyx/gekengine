@@ -13,20 +13,18 @@ namespace Gek
     {
     }
 
-    HRESULT TransformComponent::save(Population::ComponentDefinition &componentData) const
+    void TransformComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, L"position", position);
         saveParameter(componentData, L"rotation", rotation);
         saveParameter(componentData, L"scale", scale);
-        return S_OK;
     }
 
-    HRESULT TransformComponent::load(const Population::ComponentDefinition &componentData)
+    void TransformComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, L"position", position);
         loadParameter(componentData, L"rotation", rotation);
         loadParameter(componentData, L"scale", scale);
-        return S_OK;
     }
 
     class TransformImplementation

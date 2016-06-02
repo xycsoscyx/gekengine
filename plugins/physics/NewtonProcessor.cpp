@@ -33,8 +33,8 @@ static void deSerializeCollision(void* const serializeHandle, void* const buffer
 
 namespace Gek
 {
-    extern NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity, PlayerBodyComponent &playerBodyComponent, TransformComponent &transformComponent, MassComponent &massComponent);
-    extern NewtonEntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent);
+    extern NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity);
+    extern NewtonEntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity);
 
     class NewtonProcessorImplementation
         : public ContextRegistration<NewtonProcessorImplementation, EngineContext *>
@@ -377,7 +377,7 @@ namespace Gek
                         NewtonCollision *newtonCollision = loadCollision(entity, rigidBodyComponent.shape);
                         if (newtonCollision != nullptr)
                         {
-                            NewtonEntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity, transformComponent, massComponent));
+                            NewtonEntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
                             if (rigidBody)
                             {
                                 entityMap[entity] = rigidBody;
@@ -388,7 +388,7 @@ namespace Gek
                     else if (entity->hasComponent<PlayerBodyComponent>())
                     {
                         auto &playerBodyComponent = entity->getComponent<PlayerBodyComponent>();
-                        NewtonEntityPtr playerBody(createPlayerBody(engine, newtonWorld, entity, playerBodyComponent, transformComponent, massComponent));
+                        NewtonEntityPtr playerBody(createPlayerBody(engine, newtonWorld, entity));
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;

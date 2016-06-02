@@ -16,7 +16,7 @@ namespace Gek
         : public Entity
     {
     private:
-        std::unordered_map<std::type_index, std::pair<Component *, LPVOID>> componentList;
+        std::unordered_map<std::type_index, std::pair<Component *, void *>> componentList;
 
     public:
         EntityImplementation(void)
@@ -31,7 +31,7 @@ namespace Gek
             }
         }
 
-        void addComponent(Component *component, LPVOID data)
+        void addComponent(Component *component, void *data)
         {
             componentList[component->getIdentifier()] = std::make_pair(component, data);
         }
@@ -52,7 +52,7 @@ namespace Gek
             return (componentList.count(type) > 0);
         }
 
-        LPVOID getComponent(const std::type_index &type)
+        void *getComponent(const std::type_index &type)
         {
             return componentList[type].second;
         }
@@ -208,7 +208,7 @@ namespace Gek
                     {
                         EntityDefinition entityDefinition;
                         XmlNodePtr componentNode = entityNode->firstChildElement();
-                        while (componentNode)
+                        while (componentNode->isValid())
                         {
                             auto &componentData = entityDefinition[componentNode->getType()];
                             componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void

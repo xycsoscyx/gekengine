@@ -961,7 +961,6 @@ namespace Gek
                     }
 
                     XmlNodePtr programNode = passNode->firstChildElement(L"program");
-                    //if (programNode->hasChildElement(L"source") && programNode->hasChildElement(L"entry"))
                     auto addDefine = [&engineData](const wstring &name, const wstring &value) -> void
                     {
                         if (value.find(L"float2") != std::string::npos)
@@ -987,18 +986,15 @@ namespace Gek
                     };
 
                     XmlNodePtr definesNode = passNode->firstChildElement(L"defines");
-                    if (definesNode)
+                    XmlNodePtr defineNode = definesNode->firstChildElement();
+                    while (defineNode->isValid())
                     {
-                        XmlNodePtr defineNode = definesNode->firstChildElement();
-                        while (defineNode)
-                        {
-                            wstring name = defineNode->getType();
-                            wstring value = evaluate(defineNode->getText());
-                            addDefine(name, value);
+                        wstring name = defineNode->getType();
+                        wstring value = evaluate(defineNode->getText());
+                        addDefine(name, value);
 
-                            defineNode = defineNode->nextSiblingElement();
-                        };
-                    }
+                        defineNode = defineNode->nextSiblingElement();
+                    };
 
                     for (auto &globalDefine : globalDefinesList)
                     {
@@ -1008,43 +1004,47 @@ namespace Gek
                     }
 
                     wstring programFileName = programNode->firstChildElement(L"source")->getText();
+                    wstring programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
                     string programEntryPoint(programNode->firstChildElement(L"entry")->getText());
-                    auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
+                    auto onInclude = [&](const char *resourceName, std::vector<UINT8> &data) -> void
                     {
-                        HRESULT resultValue = E_FAIL;
-                        if (_stricmp(fileName, "GEKEngine") == 0)
+                        if (_stricmp(resourceName, "GEKEngine") == 0)
                         {
                             data.resize(engineData.size());
                             memcpy(data.data(), engineData, data.size());
-                            resultValue = S_OK;
                         }
                         else
                         {
-                            try
+                            if (std::experimental::filesystem::is_regular_file(resourceName))
                             {
-                                FileSystem::load(fileName, data);
-                                resultValue = S_OK;
+                                FileSystem::load(resourceName, data);
                             }
-                            catch (FileSystem::Exception exception)
+                            else
                             {
-                                try
+                                std::experimental::filesystem::path filePath(programFilePath);
+                                filePath.remove_filename();
+                                filePath.append(resourceName);
+                                filePath = FileSystem::expandPath(filePath.wstring());
+                                if (std::experimental::filesystem::is_regular_file(filePath))
                                 {
-                                    std::experimental::filesystem::path shaderPath(L"$root\\data\\programs");
-                                    shaderPath.append(fileName);
-                                    FileSystem::load(shaderPath.c_str(), data);
-                                    resultValue = S_OK;
+                                    FileSystem::load(filePath.wstring(), data);
                                 }
-                                catch (FileSystem::Exception exception)
+                                else
                                 {
-                                };
-                            };
+                                    std::experimental::filesystem::path rootPath(L"$root\\data\\programs");
+                                    rootPath.append(fileName);
+                                    rootPath = FileSystem::expandPath(rootPath.wstring());
+                                    if (std::experimental::filesystem::is_regular_file(rootPath))
+                                    {
+                                        FileSystem::load(rootPath.c_str(), data);
+                                    }
+                                }
+                            }
                         }
-
-                        return resultValue;
                     };
 
                     XmlNodePtr computeNode = programNode->firstChildElement(L"compute");
-                    if (computeNode)
+                    if (computeNode->isValid())
                     {
                         pass.dispatchWidth = std::max((UINT32)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
                         pass.dispatchHeight = std::max((UINT32)evaluate(computeNode->firstChildElement(L"height")->getText()), 1U);
@@ -1075,7 +1075,7 @@ namespace Gek
                                 "                                                       \r\n";
                         }
 
-                        pass.program = resources->loadComputeProgram(wstring(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint, getIncludeData);
+                        pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, onInclude);
                     }
                     else
                     {
@@ -1101,7 +1101,7 @@ namespace Gek
                                 "                                                       \r\n";
                         }
 
-                        pass.program = resources->loadPixelProgram(wstring(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint, getIncludeData);
+                        pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, onInclude);
                     }
 
                     block.passList.push_back(pass);

@@ -13,20 +13,18 @@ namespace Gek
     {
     }
 
-    HRESULT CameraComponent::save(Population::ComponentDefinition &componentData) const
+    void CameraComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, L"field_of_view", fieldOfView);
         saveParameter(componentData, L"minimum_distance", minimumDistance);
         saveParameter(componentData, L"maximum_distance", maximumDistance);
-        return S_OK;
     }
 
-    HRESULT CameraComponent::load(const Population::ComponentDefinition &componentData)
+    void CameraComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, L"field_of_view", fieldOfView);
         loadParameter(componentData, L"minimum_distance", minimumDistance);
         loadParameter(componentData, L"maximum_distance", maximumDistance);
-        return S_OK;
     }
 
     FirstPersonCameraComponent::FirstPersonCameraComponent(void)
@@ -34,14 +32,14 @@ namespace Gek
     {
     }
 
-    HRESULT FirstPersonCameraComponent::save(Population::ComponentDefinition &componentData) const
+    void FirstPersonCameraComponent::save(Population::ComponentDefinition &componentData) const
     {
-        return CameraComponent::save(componentData);
+        CameraComponent::save(componentData);
     }
 
-    HRESULT FirstPersonCameraComponent::load(const Population::ComponentDefinition &componentData)
+    void FirstPersonCameraComponent::load(const Population::ComponentDefinition &componentData)
     {
-        return CameraComponent::load(componentData);
+        CameraComponent::load(componentData);
     }
 
     ThirdPersonCameraComponent::ThirdPersonCameraComponent(void)
@@ -51,24 +49,20 @@ namespace Gek
     {
     }
 
-    HRESULT ThirdPersonCameraComponent::save(Population::ComponentDefinition &componentData) const
+    void ThirdPersonCameraComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, L"body", body);
         saveParameter(componentData, L"offset", offset);
         saveParameter(componentData, L"distance", distance);
-        return CameraComponent::save(componentData);
+        CameraComponent::save(componentData);
     }
 
-    HRESULT ThirdPersonCameraComponent::load(const Population::ComponentDefinition &componentData)
+    void ThirdPersonCameraComponent::load(const Population::ComponentDefinition &componentData)
     {
-        if (!loadParameter(componentData, L"body", body))
-        {
-            return E_INVALIDARG;
-        }
-
+        loadParameter(componentData, L"body", body);
         loadParameter(componentData, L"offset", offset);
         loadParameter(componentData, L"distance", distance);
-        return CameraComponent::load(componentData);
+        CameraComponent::load(componentData);
     }
 
     class FirstPersonCameraImplementation

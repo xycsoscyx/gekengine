@@ -289,10 +289,11 @@ namespace Gek
     };
 
     class ResourcesImplementation 
-        : public ContextRegistration<ResourcesImplementation, VideoSystem *>
+        : public ContextRegistration<ResourcesImplementation, EngineContext *, VideoSystem *>
         , public Resources
     {
     private:
+        EngineContext *engine;
         VideoSystem *video;
 
         ResourceManager<ProgramHandle, VideoObject> programManager;
@@ -310,8 +311,9 @@ namespace Gek
         concurrency::concurrent_queue<std::function<void(void)>> loadResourceQueue;
 
     public:
-        ResourcesImplementation(Context *context, VideoSystem *video)
+        ResourcesImplementation(Context *context, EngineContext *engine, VideoSystem *video)
             : ContextRegistration(context)
+            , engine(engine)
             , video(video)
         {
         }
@@ -423,7 +425,7 @@ namespace Gek
         {
             auto load = [this, fileName](ShaderHandle handle) -> ShaderPtr
             {
-                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, nullptr, fileName.c_str());
+                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName.c_str());
             };
 
             auto request = [this, load](ShaderHandle handle, std::function<void(ShaderPtr)> set) -> void
@@ -805,7 +807,7 @@ namespace Gek
             return resourceManager.getHandle(hash, request);
         }
 
-        ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
         {
             auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
@@ -820,7 +822,7 @@ namespace Gek
             return programManager.getUniqueHandle(request);
         }
 
-        ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<HRESULT(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
         {
             auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {

@@ -9,20 +9,18 @@ namespace Gek
     {
     }
 
-    HRESULT ShapeComponent::save(Population::ComponentDefinition &componentData) const
+    void ShapeComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, value);
         saveParameter(componentData, L"parameters", parameters);
         saveParameter(componentData, L"skin", skin);
-        return S_OK;
     }
 
-    HRESULT ShapeComponent::load(const Population::ComponentDefinition &componentData)
+    void ShapeComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, nullptr, value);
         loadParameter(componentData, L"parameters", parameters);
         loadParameter(componentData, L"skin", skin);
-        return S_OK;
     }
 
     class ShapeImplementation

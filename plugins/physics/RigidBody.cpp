@@ -20,22 +20,23 @@ namespace Gek
 
         Entity *entity;
         NewtonBody *newtonBody;
-        TransformComponent &transformComponent;
-        MassComponent &massComponent;
 
     public:
-        RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity,
-            TransformComponent *transformComponent,
-            MassComponent &massComponent)
+        RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity)
             : newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
             , entity(entity)
-            , newtonBody(NewtonCreateDynamicBody(newtonWorld, newtonCollision, transformComponent->getMatrix().data))
-            , transformComponent(*transformComponent)
-            , massComponent(massComponent)
+            , newtonBody(nullptr)
         {
-            GEK_REQUIRE(newtonBody);
-            NewtonBodySetMassProperties(newtonBody, massComponent, newtonCollision);
-            NewtonBodySetMatrix(newtonBody, transformComponent->getMatrix().data);
+            GEK_REQUIRE(newtonProcessor);
+            GEK_REQUIRE(entity);
+
+            auto &mass = entity->getComponent<MassComponent>();
+            auto &transform = entity->getComponent<TransformComponent>();
+            Math::Float4x4 matrix = transform.getMatrix();
+
+            newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
+            NewtonBodySetMassProperties(newtonBody, mass.value, newtonCollision);
+            NewtonBodySetMatrix(newtonBody, matrix.data);
             NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
         }
 
@@ -62,41 +63,44 @@ namespace Gek
 
         void onPreUpdate(dFloat frameTime, int threadHandle)
         {
-            NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transformComponent.scale.x, transformComponent.scale.y, transformComponent.scale.z);
+            auto &mass = entity->getComponent<MassComponent>();
+            auto &transform = entity->getComponent<TransformComponent>();
 
-            Math::Float3 gravity(newtonProcessor->getGravity(transformComponent.position));
-            NewtonBodyAddForce(newtonBody, (gravity * (float)massComponent).data);
+            NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transform.scale.x, transform.scale.y, transform.scale.z);
+
+            Math::Float3 gravity(newtonProcessor->getGravity(transform.position));
+            NewtonBodyAddForce(newtonBody, (gravity * mass.value).data);
         }
 
         void onSetTransform(const dFloat* const matrixData, int threadHandle)
         {
+            auto &transform = entity->getComponent<TransformComponent>();
+
             Math::Float4x4 matrix(matrixData);
-            transformComponent.position = matrix.translation;
-            transformComponent.rotation = matrix.getQuaternion();
+            transform.position = matrix.translation;
+            transform.rotation = matrix.getQuaternion();
         }
     };
 
-    NewtonEntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity, TransformComponent &transformComponent, MassComponent &massComponent)
+    NewtonEntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity)
     {
-        return makeShared<NewtonEntity, RigidNewtonBody>(newtonWorld, newtonCollision, entity, &transformComponent, massComponent);
+        return makeShared<NewtonEntity, RigidNewtonBody>(newtonWorld, newtonCollision, entity);
     }
 
     RigidBodyComponent::RigidBodyComponent(void)
     {
     }
 
-    HRESULT RigidBodyComponent::save(Population::ComponentDefinition &componentData) const
+    void RigidBodyComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, shape);
         saveParameter(componentData, L"surface", surface);
-        return S_OK;
     }
 
-    HRESULT RigidBodyComponent::load(const Population::ComponentDefinition &componentData)
+    void RigidBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, nullptr, shape);
         loadParameter(componentData, L"surface", surface);
-        return S_OK;
     }
 
     class RigidBodyImplementation

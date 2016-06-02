@@ -20,7 +20,7 @@ namespace Gek
     }
 
     template <typename TYPE>
-    bool loadParameter(const Population::ComponentDefinition &componentData, const wchar_t *name, TYPE &value)
+    void loadParameter(const Population::ComponentDefinition &componentData, const wchar_t *name, TYPE &value)
     {
         if (name)
         {
@@ -28,15 +28,12 @@ namespace Gek
             if (iterator != componentData.end())
             {
                 value = static_cast<TYPE>((*iterator).second);
-                return true;
             }
         }
         else if(!componentData.value.empty())
         {
             value = static_cast<TYPE>(componentData.value);
         }
-
-        return false;
     }
 
     template <class DATA>
@@ -61,16 +58,16 @@ namespace Gek
         void *createData(const Population::ComponentDefinition &componentData)
         {
             DATA *data = new DATA();
-            if (data)
-            {
-                data->load(componentData);
-            }
+            GEK_CHECK_CONDITION(data == nullptr, Trace::Exception, "Unable to create component data: %v", typeid(DATA).name());
+
+            data->load(componentData);
 
             return data;
         }
 
         void destroyData(void *data)
         {
+            GEK_REQUIRE(data);
             delete static_cast<DATA *>(data);
         }
     };

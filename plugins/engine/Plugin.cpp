@@ -111,7 +111,7 @@ namespace Gek
                 XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
                 wstring programFileName = programNode->getAttribute(L"source");
                 string programEntryPoint(programNode->getAttribute(L"entry"));
-                geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\v%.hlsl", programFileName), programEntryPoint);
+                geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
             }
             catch (Exception exception)
             {
@@ -237,40 +237,44 @@ namespace Gek
                 "}                                                                                                          \r\n" \
                 "                                                                                                           \r\n";
 
-            auto getIncludeData = [&](const char *fileName, std::vector<UINT8> &data) -> HRESULT
+            auto onInclude = [&](const char *resourceName, std::vector<UINT8> &data) -> void
             {
-                if (_stricmp(fileName, "GEKPlugin") == 0)
+                if (_stricmp(resourceName, "GEKPlugin") == 0)
                 {
                     data.resize(progamScript.size());
                     memcpy(data.data(), progamScript.c_str(), data.size());
-                    return S_OK;
                 }
                 else
                 {
-                    try
+                    if (std::experimental::filesystem::is_regular_file(resourceName))
                     {
-                        FileSystem::load(fileName, data);
-                        return S_OK;
+                        FileSystem::load(resourceName, data);
                     }
-                    catch (FileSystem::Exception exception)
+                    else
                     {
-                        try
+                        std::experimental::filesystem::path filePath(programPath);
+                        filePath.remove_filename();
+                        filePath.append(resourceName);
+                        filePath = FileSystem::expandPath(filePath.wstring());
+                        if (std::experimental::filesystem::is_regular_file(filePath))
                         {
-                            std::experimental::filesystem::path path(L"$root\\data\\programs");
-                            path.append(fileName);
-                            FileSystem::load(path.c_str(), data);
-                            return S_OK;
+                            FileSystem::load(filePath.wstring(), data);
                         }
-                        catch (FileSystem::Exception exception)
+                        else
                         {
-                        };
-                    };
+                            std::experimental::filesystem::path rootPath(L"$root\\data\\programs");
+                            rootPath.append(fileName);
+                            rootPath = FileSystem::expandPath(rootPath.wstring());
+                            if (std::experimental::filesystem::is_regular_file(rootPath))
+                            {
+                                FileSystem::load(rootPath.c_str(), data);
+                            }
+                        }
+                    }
                 }
-
-                return E_FAIL;
             };
 
-            vertexProgram = video->compileVertexProgram(engineData, "mainVertexProgram", elementList, getIncludeData);
+            vertexProgram = video->compileVertexProgram(engineData, "mainVertexProgram", elementList, onInclude);
         }
 
         ~PluginImplementation(void)

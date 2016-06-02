@@ -12,16 +12,14 @@ namespace Gek
     {
     }
 
-    HRESULT MassComponent::save(Population::ComponentDefinition &componentData) const
+    void MassComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, value);
-        return S_OK;
     }
 
-    HRESULT MassComponent::load(const Population::ComponentDefinition &componentData)
+    void MassComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, nullptr, value);
-        return S_OK;
     }
 
     class MassImplementation

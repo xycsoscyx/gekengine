@@ -10,16 +10,14 @@ namespace Gek
     {
     }
 
-    HRESULT StaticBodyComponent::save(Population::ComponentDefinition &componentData) const
+    void StaticBodyComponent::save(Population::ComponentDefinition &componentData) const
     {
         saveParameter(componentData, nullptr, shape);
-        return S_OK;
     }
 
-    HRESULT StaticBodyComponent::load(const Population::ComponentDefinition &componentData)
+    void StaticBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
         loadParameter(componentData, nullptr, shape);
-        return S_OK;
     }
 
     class StaticBodyImplementation
