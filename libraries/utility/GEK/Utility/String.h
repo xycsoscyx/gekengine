@@ -190,8 +190,8 @@ namespace Gek
         {
             return std::equal(begin(), end(), string, [](const ELEMENT &left, const ELEMENT &right) -> bool
             {
-                return std::toupper(left) == std::toupper(right);
-            });
+                return (std::toupper(left) == std::toupper(right));
+            }) ? 0 : 1;
         }
 
         void format(const ELEMENT *formatting)
