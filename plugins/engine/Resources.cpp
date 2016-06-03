@@ -373,9 +373,9 @@ namespace Gek
 
         PluginHandle loadPlugin(const wchar_t *fileName)
         {
-            auto load = [this, fileName](PluginHandle handle) -> PluginPtr
+            auto load = [this, fileName = String(fileName)](PluginHandle handle) -> PluginPtr
             {
-                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName);
+                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName.c_str());
             };
 
             auto request = [this, load](PluginHandle handle, std::function<void(PluginPtr)> set) -> void
@@ -388,9 +388,9 @@ namespace Gek
 
         MaterialHandle loadMaterial(const wchar_t *fileName)
         {
-            auto load = [this, fileName](MaterialHandle handle) -> MaterialPtr
+            auto load = [this, fileName = String(fileName)](MaterialHandle handle) -> MaterialPtr
             {
-                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName);
+                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str());
             };
 
             auto request = [this, load](MaterialHandle handle, std::function<void(MaterialPtr)> set) -> void
@@ -406,9 +406,9 @@ namespace Gek
 
         ShaderHandle loadShader(const wchar_t *fileName)
         {
-            auto load = [this, fileName](ShaderHandle handle) -> ShaderPtr
+            auto load = [this, fileName = String(fileName)](ShaderHandle handle) -> ShaderPtr
             {
-                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName);
+                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName.c_str());
             };
 
             auto request = [this, load](ShaderHandle handle, std::function<void(ShaderPtr)> set) -> void
@@ -793,7 +793,7 @@ namespace Gek
 
         ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags)
         {
-            auto load = [this, fileName, fallback, flags](ResourceHandle handle) -> VideoTexturePtr
+            auto load = [this, fileName = String(fileName), fallback = String(fallback), flags](ResourceHandle handle) -> VideoTexturePtr
             {
                 VideoTexturePtr texture = loadTexture(fileName, flags);
                 if (!texture && fallback)
@@ -815,7 +815,7 @@ namespace Gek
 
         ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
-            auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
+            auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
                 return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
             };
@@ -830,7 +830,7 @@ namespace Gek
 
         ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
-            auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
+            auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
                 return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
             };

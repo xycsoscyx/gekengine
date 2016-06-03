@@ -193,7 +193,7 @@ namespace Gek
         std::function<void(void)> loadScene;
         void load(const wchar_t *fileName)
         {
-            loadScene = [this, fileName](void) -> void
+            loadScene = [this, fileName = String(fileName)](void) -> void
             {
                 try
                 {
