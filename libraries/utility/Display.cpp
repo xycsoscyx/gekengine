@@ -1,15 +1,16 @@
 #include "GEK\Utility\Display.h"
 #include <algorithm>
 #include "GEK\Utility\Trace.h"
+#include <Windows.h>
 
 namespace Gek
 {
-    AspectRatio getAspectRatio(UINT32 width, UINT32 height)
+    AspectRatio getAspectRatio(uint32_t width, uint32_t height)
     {
-        const float AspectRatio4x3 = (float(INT32((4.0f / 3.0f) * 100.0f)) / 100.0f);
-        const float AspectRatio16x9 = (float(INT32((16.0f / 9.0f) * 100.0f)) / 100.0f);
-        const float AspectRatio16x10 = (float(INT32((16.0f / 10.0f) * 100.0f)) / 100.0f);
-        float aspectRatio = (float(INT32((float(width) / float(height)) * 100.0f)) / 100.0f);
+        const float AspectRatio4x3 = (float(int32_t((4.0f / 3.0f) * 100.0f)) / 100.0f);
+        const float AspectRatio16x9 = (float(int32_t((16.0f / 9.0f) * 100.0f)) / 100.0f);
+        const float AspectRatio16x10 = (float(int32_t((16.0f / 10.0f) * 100.0f)) / 100.0f);
+        float aspectRatio = (float(int32_t((float(width) / float(height)) * 100.0f)) / 100.0f);
         if (aspectRatio == AspectRatio4x3)
         {
             return AspectRatio::_4x3;
@@ -28,11 +29,11 @@ namespace Gek
         }
     }
 
-    std::map<UINT32, std::vector<DisplayMode>> getDisplayModes(void)
+    std::map<uint32_t, std::vector<DisplayMode>> getDisplayModes(void)
     {
-        UINT32 displayMode = 0;
+        uint32_t displayMode = 0;
         DEVMODE displayModeData = { 0 };
-        std::map<UINT32, std::vector<DisplayMode>> availbleModeList;
+        std::map<uint32_t, std::vector<DisplayMode>> availbleModeList;
         while (EnumDisplaySettings(0, displayMode++, &displayModeData))
         {
             std::vector<DisplayMode> &currentModeList = availbleModeList[displayModeData.dmBitsPerPel];

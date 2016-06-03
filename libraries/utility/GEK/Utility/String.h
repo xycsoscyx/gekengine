@@ -6,7 +6,6 @@
 #include "GEK\Math\Color.h"
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Utility\Trace.h"
-#include <Windows.h>
 #include <functional>
 #include <sstream>
 #include <codecvt>
@@ -255,73 +254,17 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const INT8 &value)
+        BaseString<ELEMENT> &operator = (const long &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const UINT8 &value)
+        BaseString<ELEMENT> &operator = (const unsigned long &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const INT16 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const UINT16 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const INT32 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const UINT32 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const INT64 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const UINT64 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const HRESULT &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString<ELEMENT> &operator = (const DWORD &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
@@ -372,6 +315,14 @@ namespace Gek
             }
 
             return (*this);
+        }
+
+        template <typename TYPE>
+        BaseString<ELEMENT> &operator = (const TYPE &value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << value;
+            return static_cast<BaseString &>(assign(stream.str()));
         }
 
         template <typename CONVERSION>
@@ -440,73 +391,17 @@ namespace Gek
             append(stream.str());
         }
 
-        void operator += (const INT8 &value)
+        void operator += (const long &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
             append(stream.str());
         }
 
-        void operator += (const UINT8 &value)
+        void operator += (const unsigned long &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const INT16 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const UINT16 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const INT32 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const UINT32 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const INT64 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const UINT64 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << value;
-            append(stream.str());
-        }
-
-        void operator += (const HRESULT &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
-            append(stream.str());
-        }
-
-        void operator += (const DWORD &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(4) << std::hex << value;
+            stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
             append(stream.str());
         }
 
@@ -553,6 +448,14 @@ namespace Gek
             }
         }
 
+        template <typename TYPE>
+        void operator += (const TYPE &value)
+        {
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
+            stream << value;
+            append(stream.str());
+        }
+
         template <typename CONVERSION>
         void operator += (const CONVERSION *string)
         {
@@ -587,33 +490,17 @@ namespace Gek
             return (stream.fail() ? 0.0f : value);
         }
 
-        operator INT32 () const
+        operator int32_t () const
         {
-            INT32 value;
+            int32_t value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> value;
             return (stream.fail() ? 0 : value);
         }
 
-        operator UINT32 () const
+        operator uint32_t () const
         {
-            UINT32 value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> value;
-            return (stream.fail() ? 0 : value);
-        }
-
-        operator INT64 () const
-        {
-            INT64 value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> value;
-            return (stream.fail() ? 0 : value);
-        }
-
-        operator UINT64 () const
-        {
-            UINT64 value;
+            uint32_t value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> value;
             return (stream.fail() ? 0 : value);

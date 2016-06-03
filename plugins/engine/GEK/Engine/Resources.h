@@ -24,7 +24,7 @@ namespace Gek
         {
         }
 
-        void assign(UINT64 identifier)
+        void assign(uint64_t identifier)
         {
             this->identifier = TYPE(identifier);
         }
@@ -50,14 +50,14 @@ namespace Gek
         }
     };
 
-    using RenderStateHandle = Handle<UINT8, __LINE__>;
-    using DepthStateHandle = Handle<UINT8, __LINE__>;
-    using BlendStateHandle = Handle<UINT8, __LINE__>;
-    using ProgramHandle = Handle<UINT16, __LINE__>;
-    using PluginHandle = Handle<UINT8, __LINE__>;
-    using ShaderHandle = Handle<UINT8, __LINE__>;
-    using MaterialHandle = Handle<UINT16, __LINE__>;
-    using ResourceHandle = Handle<UINT32, __LINE__>;
+    using RenderStateHandle = Handle<uint8_t, __LINE__>;
+    using DepthStateHandle = Handle<uint8_t, __LINE__>;
+    using BlendStateHandle = Handle<uint8_t, __LINE__>;
+    using ProgramHandle = Handle<uint16_t, __LINE__>;
+    using PluginHandle = Handle<uint8_t, __LINE__>;
+    using ShaderHandle = Handle<uint8_t, __LINE__>;
+    using MaterialHandle = Handle<uint16_t, __LINE__>;
+    using ResourceHandle = Handle<uint32_t, __LINE__>;
 
     namespace TextureFlags
     {
@@ -74,20 +74,20 @@ namespace Gek
     {
         virtual PluginHandle loadPlugin(const wchar_t *fileName) = 0;
         virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
-        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags) = 0;
+        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags) = 0;
 
-        virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) = 0;
-        virtual ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData = nullptr) = 0;
-        virtual ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData = nullptr) = 0;
+        virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps = 1) = 0;
+        virtual ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
+        virtual ResourceHandle createBuffer(const wchar_t *name, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
 
         virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
         virtual void unmapBuffer(ResourceHandle buffer) = 0;
 
-        virtual void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) = 0;
-        virtual void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) = 0;
-        virtual void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage) = 0;
-        virtual void setVertexBuffer(RenderContext *renderContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset) = 0;
-        virtual void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, UINT32 offset) = 0;
+        virtual void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+        virtual void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+        virtual void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+        virtual void setVertexBuffer(RenderContext *renderContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset) = 0;
+        virtual void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
     };
 
     GEK_INTERFACE(Resources)
@@ -104,8 +104,8 @@ namespace Gek
 
         virtual ShaderHandle loadShader(const wchar_t *fileName) = 0;
         virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, String> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
-        virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 
         virtual RenderStateHandle createRenderState(const Video::RenderState &renderState) = 0;
         virtual DepthStateHandle createDepthState(const Video::DepthState &depthState) = 0;
@@ -117,12 +117,12 @@ namespace Gek
         virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
         virtual void setRenderState(RenderContext *renderContext, RenderStateHandle renderStateHandle) = 0;
-        virtual void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference) = 0;
-        virtual void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask) = 0;
+        virtual void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
+        virtual void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
         virtual void setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle) = 0;
-        virtual void setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle *depthBuffer) = 0;
+        virtual void setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer) = 0;
         virtual void clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle  , const Math::Color &color) = 0;
-        virtual void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear) = 0;
+        virtual void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear) = 0;
         virtual void setBackBuffer(RenderContext *renderContext, ResourceHandle *depthBuffer) = 0;
     };
 }; // namespace Gek

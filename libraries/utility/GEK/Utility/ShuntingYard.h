@@ -28,13 +28,13 @@ namespace Gek
         GEK_EXCEPTION(VectorUsedAsParameter);
 
     public:
-        enum class Associations : UINT8
+        enum class Associations : uint8_t
         {
             Left = 0,
             Right,
         };
 
-        enum class TokenType : UINT8
+        enum class TokenType : uint8_t
         {
             Unknown = 0,
             Number,
@@ -50,12 +50,12 @@ namespace Gek
         struct Token
         {
             TokenType type;
-            UINT32 parameterCount;
+            uint32_t parameterCount;
             String string;
             float value;
 
             Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, const wchar_t *string, UINT32 parameterCount = 0);
+            Token(TokenType type, const wchar_t *string, uint32_t parameterCount = 0);
             Token(float value);
         };
 
@@ -84,7 +84,7 @@ namespace Gek
 
         struct Function
         {
-            UINT32 parameterCount;
+            uint32_t parameterCount;
             std::function<float(Stack<Token> &)> function;
         };
 
@@ -98,7 +98,7 @@ namespace Gek
         ShuntingYard(void);
 
         TokenList getTokenList(const wchar_t *expression);
-        UINT32 getReturnSize(const TokenList &rpnTokenList);
+        uint32_t getReturnSize(const TokenList &rpnTokenList);
 
         inline void evaluate(TokenList &rpnTokenList, float &value)
         {
@@ -152,7 +152,7 @@ namespace Gek
         void parseSubTokens(TokenList &infixTokenList, const String &token);
         TokenList convertExpressionToInfix(const String &expression);
         TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
-        void evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, UINT32 valueSize);
+        void evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, uint32_t valueSize);
 
         template <std::size_t SIZE>
         void evaluateReversePolishNotation(const TokenList &rpnTokenList, float(&value)[SIZE])
@@ -160,7 +160,7 @@ namespace Gek
             evaluateReversePolishNotation(rpnTokenList, value, SIZE);
         }
 
-        void evaluateValue(TokenList &rpnTokenList, float *value, UINT32 valueSize);
-        void evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize);
+        void evaluateValue(TokenList &rpnTokenList, float *value, uint32_t valueSize);
+        void evaluateValue(const wchar_t *expression, float *value, uint32_t valueSize);
     };
 }; // namespace Gek

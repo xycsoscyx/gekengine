@@ -1,9 +1,5 @@
 #pragma once
 
-#include <Windows.h>
-#include <algorithm>
-#include <string>
-
 namespace std
 {
     inline size_t hash_combine(const size_t upper, const size_t lower)

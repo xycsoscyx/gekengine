@@ -12,7 +12,7 @@ namespace Gek
         String colorMap;
         Math::Float2 lifeExpectancy;
         Math::Float2 size;
-        UINT32 density;
+        uint32_t density;
 
         ParticlesComponent(void);
         void save(Population::ComponentDefinition &componentData) const;

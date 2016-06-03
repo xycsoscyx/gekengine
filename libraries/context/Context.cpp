@@ -3,6 +3,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
+#include <Windows.h>
 #include <unordered_map>
 #include <list>
 

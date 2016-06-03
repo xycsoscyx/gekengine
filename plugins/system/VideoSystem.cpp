@@ -52,7 +52,7 @@ namespace Gek
             DXGI_FORMAT_D32_FLOAT,
         };
 
-        static_assert(ARRAYSIZE(TextureFormatList) == static_cast<UINT8>(Video::Format::NumFormats), "New format added without adding to all TextureFormatList.");
+        static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all TextureFormatList.");
 
         static const DXGI_FORMAT BufferFormatList[] =
         {
@@ -83,24 +83,24 @@ namespace Gek
             DXGI_FORMAT_UNKNOWN,
         };
 
-        static_assert(ARRAYSIZE(BufferFormatList) == static_cast<UINT8>(Video::Format::NumFormats), "New format added without adding to all BufferFormatList.");
+        static_assert(ARRAYSIZE(BufferFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all BufferFormatList.");
 
-        static const UINT32 FormatStrideList[] =
+        static const uint32_t FormatStrideList[] =
         {
             0,
-            sizeof(UINT8),
-            (sizeof(UINT8) * 2),
-            (sizeof(UINT8) * 4),
-            (sizeof(UINT8) * 4),
-            (sizeof(UINT8) * 4),
-            (sizeof(UINT8) * 4),
-            sizeof(UINT16),
-            (sizeof(UINT16) * 2),
-            (sizeof(UINT16) * 4),
-            sizeof(UINT32),
-            (sizeof(UINT32) * 2),
-            (sizeof(UINT32) * 3),
-            (sizeof(UINT32) * 4),
+            sizeof(uint8_t),
+            (sizeof(uint8_t) * 2),
+            (sizeof(uint8_t) * 4),
+            (sizeof(uint8_t) * 4),
+            (sizeof(uint8_t) * 4),
+            (sizeof(uint8_t) * 4),
+            sizeof(uint16_t),
+            (sizeof(uint16_t) * 2),
+            (sizeof(uint16_t) * 4),
+            sizeof(uint32_t),
+            (sizeof(uint32_t) * 2),
+            (sizeof(uint32_t) * 3),
+            (sizeof(uint32_t) * 4),
             (sizeof(float) / 2),
             ((sizeof(float) / 2) * 3),
             ((sizeof(float) / 2) * 2),
@@ -109,12 +109,12 @@ namespace Gek
             (sizeof(float) * 2),
             (sizeof(float) * 3),
             (sizeof(float) * 4),
-            sizeof(UINT16),
-            sizeof(UINT32),
-            sizeof(UINT32),
+            sizeof(uint16_t),
+            sizeof(uint32_t),
+            sizeof(uint32_t),
         };
 
-        static_assert(ARRAYSIZE(FormatStrideList) == static_cast<UINT8>(Video::Format::NumFormats), "New format added without adding to all FormatStrideList.");
+        static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all FormatStrideList.");
 
         static const D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
         {
@@ -409,11 +409,11 @@ namespace Gek
     public:
         CComPtr<ID3D11Buffer> d3dBuffer;
         Video::Format format;
-        UINT32 stride;
-        UINT32 count;
+        uint32_t stride;
+        uint32_t count;
 
     public:
-        BaseBuffer(ID3D11Buffer *d3dBuffer, Video::Format format, UINT32 stride, UINT32 count)
+        BaseBuffer(ID3D11Buffer *d3dBuffer, Video::Format format, uint32_t stride, uint32_t count)
             : Resource(d3dBuffer)
             , d3dBuffer(d3dBuffer)
             , format(format)
@@ -428,12 +428,12 @@ namespace Gek
             return format;
         }
 
-        UINT32 getStride(void)
+        uint32_t getStride(void)
         {
             return stride;
         }
 
-        UINT32 getCount(void)
+        uint32_t getCount(void)
         {
             return stride;
         }
@@ -445,7 +445,7 @@ namespace Gek
         , public UnorderedAccessView
     {
     public:
-        ViewBuffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 stride, UINT32 count)
+        ViewBuffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t stride, uint32_t count)
             : BaseBuffer(d3dBuffer, format, stride, count)
             , ResourceView(d3dShaderResourceView)
             , UnorderedAccessView(d3dUnorderedAccessView)
@@ -459,13 +459,13 @@ namespace Gek
     {
     public:
         Video::Format format;
-        UINT32 width;
-        UINT32 height;
-        UINT32 depth;
+        uint32_t width;
+        uint32_t height;
+        uint32_t depth;
         Video::ViewPort viewPort;
 
     public:
-        BaseTexture(ID3D11Resource *d3dResource, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+        BaseTexture(ID3D11Resource *d3dResource, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
             : Resource(d3dResource)
             , format(format)
             , width(width)
@@ -480,17 +480,17 @@ namespace Gek
             return format;
         }
 
-        UINT32 getWidth(void)
+        uint32_t getWidth(void)
         {
             return width;
         }
 
-        UINT32 getHeight(void)
+        uint32_t getHeight(void)
         {
             return height;
         }
 
-        UINT32 getDepth(void)
+        uint32_t getDepth(void)
         {
             return depth;
         }
@@ -502,7 +502,7 @@ namespace Gek
         , public UnorderedAccessView
     {
     public:
-        ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+        ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
             : BaseTexture(d3dResource, format, width, height, depth)
             , ResourceView(d3dShaderResourceView)
             , UnorderedAccessView(d3dUnorderedAccessView)
@@ -519,7 +519,7 @@ namespace Gek
         Video::ViewPort viewPort;
 
     public:
-        TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+        TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
             : BaseTexture(d3dResource, format, width, height, depth)
             , d3dRenderTargetView(d3dRenderTargetView)
             , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
@@ -543,7 +543,7 @@ namespace Gek
         Video::ViewPort viewPort;
 
     public:
-        TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+        TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
             : TargetTexture(d3dResource, d3dRenderTargetView, format, width, height, depth)
             , ResourceView(d3dShaderResourceView)
             , UnorderedAccessView(d3dUnorderedAccessView)
@@ -560,7 +560,7 @@ namespace Gek
         CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
 
     public:
-        DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, UINT32 width, UINT32 height, UINT32 depth)
+        DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
             : BaseTexture(d3dResource, format, width, height, depth)
             , ResourceView(d3dShaderResourceView)
             , UnorderedAccessView(d3dUnorderedAccessView)
@@ -573,11 +573,11 @@ namespace Gek
         : public ID3DInclude
     {
     public:
-        std::function<void(const char *, std::vector<UINT8> &)> onInclude;
-        std::vector<UINT8> includeBuffer;
+        std::function<void(const char *, std::vector<uint8_t> &)> onInclude;
+        std::vector<uint8_t> includeBuffer;
 
     public:
-        IncludeImplementation(std::function<void(const char *, std::vector<UINT8> &)> onInclude)
+        IncludeImplementation(std::function<void(const char *, std::vector<uint8_t> &)> onInclude)
             : onInclude(onInclude)
         {
         }
@@ -633,28 +633,28 @@ namespace Gek
             d3dDeviceContext->CSSetShader(program ? reinterpret_cast<ComputeProgram *>(program)->d3dShader : nullptr, nullptr, 0);
         }
 
-        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->CSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        void setSamplerState(VideoObject *samplerState, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->CSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        void setResource(VideoObject *resource, UINT32 stage)
+        void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->CSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
 
-        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage)
+        void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
@@ -681,28 +681,28 @@ namespace Gek
             d3dDeviceContext->IASetInputLayout(program ? reinterpret_cast<VertexProgram *>(program)->d3dInputLayout : nullptr);
         }
 
-        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->VSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        void setSamplerState(VideoObject *samplerState, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->VSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        void setResource(VideoObject *resource, UINT32 stage)
+        void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->VSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
 
-        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage)
+        void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
             GEK_THROW_EXCEPTION(Video::Exception, "Unable to set vertex shader unordered access")
         }
@@ -726,28 +726,28 @@ namespace Gek
             d3dDeviceContext->GSSetShader(program ? reinterpret_cast<GeometryProgram *>(program)->d3dShader : nullptr, nullptr, 0);
         }
 
-        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->GSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        void setSamplerState(VideoObject *samplerState, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->GSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        void setResource(VideoObject *resource, UINT32 stage)
+        void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->GSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
 
-        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage)
+        void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
             GEK_THROW_EXCEPTION(Video::Exception, "Unable to set geometry shader unordered access")
         }
@@ -771,28 +771,28 @@ namespace Gek
             d3dDeviceContext->PSSetShader(program ? reinterpret_cast<PixelProgram *>(program)->d3dShader : nullptr, nullptr, 0);
         }
 
-        void setConstantBuffer(VideoBuffer *buffer, UINT32 stage)
+        void setConstantBuffer(VideoBuffer *buffer, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->PSSetConstantBuffers(stage, 1, &(buffer ? reinterpret_cast<BaseBuffer *>(buffer)->d3dBuffer : nullptr));
         }
 
-        void setSamplerState(VideoObject *samplerState, UINT32 stage)
+        void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->PSSetSamplers(stage, 1, &(samplerState ? reinterpret_cast<SamplerState *>(samplerState)->d3dSamplerState : nullptr));
         }
 
-        void setResource(VideoObject *resource, UINT32 stage)
+        void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->PSSetShaderResources(stage, 1, &(resource ? reinterpret_cast<ResourceView *>(resource)->d3dShaderResourceView : nullptr));
         }
 
-        void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage)
+        void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
             GEK_THROW_EXCEPTION(Video::Exception, "Unable to set pixel shader unordered access")
         }
@@ -874,7 +874,7 @@ namespace Gek
             d3dDeviceContext->OMSetRenderTargets(D3D11_SIMULTANEOUS_RENDER_TARGET_COUNT, d3dRenderTargetViewList, nullptr);
         }
 
-        void setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount)
+        void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(viewPortList);
@@ -883,7 +883,7 @@ namespace Gek
             d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
         }
 
-        void setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount)
+        void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(rectangleList);
@@ -900,7 +900,7 @@ namespace Gek
             d3dDeviceContext->ClearRenderTargetView(reinterpret_cast<TargetTexture *>(renderTarget)->d3dRenderTargetView, colorClear.data);
         }
 
-        void clearDepthStencilTarget(VideoObject *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear)
+        void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(depthBuffer);
@@ -912,12 +912,12 @@ namespace Gek
         }
 
         ID3D11RenderTargetView *d3dRenderTargetViewList[8];
-        void setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, VideoObject *depthBuffer)
+        void setRenderTargets(VideoTarget **renderTargetList, uint32_t renderTargetCount, VideoObject *depthBuffer)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(renderTargetList);
 
-            for (UINT32 renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
+            for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
             {
                 d3dRenderTargetViewList[renderTarget] = reinterpret_cast<TargetTexture *>(renderTargetList[renderTarget])->d3dRenderTargetView;
             }
@@ -933,7 +933,7 @@ namespace Gek
             d3dDeviceContext->RSSetState(reinterpret_cast<RenderState *>(renderState)->d3dRenderState);
         }
 
-        void setDepthState(VideoObject *depthState, UINT32 stencilReference)
+        void setDepthState(VideoObject *depthState, uint32_t stencilReference)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(depthState);
@@ -941,7 +941,7 @@ namespace Gek
             d3dDeviceContext->OMSetDepthStencilState(reinterpret_cast<DepthState *>(depthState)->d3dDepthState, stencilReference);
         }
 
-        void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, UINT32 mask)
+        void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, uint32_t mask)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(blendState);
@@ -949,16 +949,16 @@ namespace Gek
             d3dDeviceContext->OMSetBlendState(reinterpret_cast<BlendState *>(blendState)->d3dBlendState, blendFactor.data, mask);
         }
 
-        void setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset)
+        void setVertexBuffer(uint32_t slot, VideoBuffer *vertexBuffer, uint32_t offset)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(vertexBuffer);
 
-            UINT32 stride = vertexBuffer->getStride();
+            uint32_t stride = vertexBuffer->getStride();
             d3dDeviceContext->IASetVertexBuffers(slot, 1, &reinterpret_cast<BaseBuffer *>(vertexBuffer)->d3dBuffer, &stride, &offset);
         }
 
-        void setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset)
+        void setIndexBuffer(VideoBuffer *indexBuffer, uint32_t offset)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(indexBuffer);
@@ -971,38 +971,38 @@ namespace Gek
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<UINT8>(primitiveType)]);
+            d3dDeviceContext->IASetPrimitiveTopology(DirectX::TopologList[static_cast<uint8_t>(primitiveType)]);
         }
 
-        void drawPrimitive(UINT32 vertexCount, UINT32 firstVertex)
+        void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->Draw(vertexCount, firstVertex);
         }
 
-        void drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex)
+        void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->DrawInstanced(vertexCount, instanceCount, firstVertex, firstInstance);
         }
 
-        void drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+        void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->DrawIndexed(indexCount, firstIndex, firstVertex);
         }
 
-        void drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex)
+        void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
             d3dDeviceContext->DrawIndexedInstanced(indexCount, instanceCount, firstIndex, firstVertex, firstInstance);
         }
 
-        void dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ)
+        void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
@@ -1051,7 +1051,7 @@ namespace Gek
             DXGI_SWAP_CHAIN_DESC swapChainDescription;
             swapChainDescription.BufferDesc.Width = 0;
             swapChainDescription.BufferDesc.Height = 0;
-            swapChainDescription.BufferDesc.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
+            swapChainDescription.BufferDesc.Format = DirectX::TextureFormatList[static_cast<uint8_t>(format)];
             swapChainDescription.BufferDesc.RefreshRate.Numerator = 60;
             swapChainDescription.BufferDesc.RefreshRate.Denominator = 1;
             swapChainDescription.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
@@ -1114,7 +1114,7 @@ namespace Gek
             }
         }
 
-        void setSize(UINT32 width, UINT32 height, Video::Format format)
+        void setSize(uint32_t width, uint32_t height, Video::Format format)
         {
             GEK_REQUIRE(dxSwapChain);
 
@@ -1123,14 +1123,14 @@ namespace Gek
             dxSwapChain->GetDesc(&chainDescription);
             if (width != modeDescription.Width ||
                 height != modeDescription.Height ||
-                DirectX::TextureFormatList[static_cast<UINT8>(format)] != modeDescription.Format)
+                DirectX::TextureFormatList[static_cast<uint8_t>(format)] != modeDescription.Format)
             {
                 this->format = format;
 
                 DXGI_MODE_DESC description;
                 description.Width = width;
                 description.Height = height;
-                description.Format = DirectX::TextureFormatList[static_cast<UINT8>(format)];
+                description.Format = DirectX::TextureFormatList[static_cast<uint8_t>(format)];
                 description.RefreshRate.Numerator = 60;
                 description.RefreshRate.Denominator = 1;
                 description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
@@ -1225,8 +1225,8 @@ namespace Gek
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(event);
 
-            UINT32 isEventSet = 0;
-            if (FAILED(d3dDeviceContext->GetData(reinterpret_cast<Event *>(event)->d3dQuery, (LPVOID)&isEventSet, sizeof(UINT32), TRUE)))
+            uint32_t isEventSet = 0;
+            if (FAILED(d3dDeviceContext->GetData(reinterpret_cast<Event *>(event)->d3dQuery, (LPVOID)&isEventSet, sizeof(uint32_t), TRUE)))
             {
                 isEventSet = 0;
             }
@@ -1247,8 +1247,8 @@ namespace Gek
             rasterizerDescription.ScissorEnable = renderState.scissorEnable;
             rasterizerDescription.MultisampleEnable = renderState.multisampleEnable;
             rasterizerDescription.AntialiasedLineEnable = renderState.antialiasedLineEnable;
-            rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<UINT8>(renderState.fillMode)];
-            rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<UINT8>(renderState.cullMode)];
+            rasterizerDescription.FillMode = DirectX::FillModeList[static_cast<uint8_t>(renderState.fillMode)];
+            rasterizerDescription.CullMode = DirectX::CullModeList[static_cast<uint8_t>(renderState.cullMode)];
 
             CComPtr<ID3D11RasterizerState> d3dStates;
             HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
@@ -1263,19 +1263,19 @@ namespace Gek
 
             D3D11_DEPTH_STENCIL_DESC depthStencilDescription;
             depthStencilDescription.DepthEnable = depthState.enable;
-            depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthState.comparisonFunction)];
+            depthStencilDescription.DepthFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthState.comparisonFunction)];
             depthStencilDescription.StencilEnable = depthState.stencilEnable;
             depthStencilDescription.StencilReadMask = depthState.stencilReadMask;
             depthStencilDescription.StencilWriteMask = depthState.stencilWriteMask;
-            depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilFrontState.failOperation)];
-            depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilFrontState.depthFailOperation)];
-            depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilFrontState.passOperation)];
-            depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthState.stencilFrontState.comparisonFunction)];
-            depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilBackState.failOperation)];
-            depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilBackState.depthFailOperation)];
-            depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<UINT8>(depthState.stencilBackState.passOperation)];
-            depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(depthState.stencilBackState.comparisonFunction)];
-            depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<UINT8>(depthState.writeMask)];
+            depthStencilDescription.FrontFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilFrontState.failOperation)];
+            depthStencilDescription.FrontFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilFrontState.depthFailOperation)];
+            depthStencilDescription.FrontFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilFrontState.passOperation)];
+            depthStencilDescription.FrontFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthState.stencilFrontState.comparisonFunction)];
+            depthStencilDescription.BackFace.StencilFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilBackState.failOperation)];
+            depthStencilDescription.BackFace.StencilDepthFailOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation)];
+            depthStencilDescription.BackFace.StencilPassOp = DirectX::StencilOperationList[static_cast<uint8_t>(depthState.stencilBackState.passOperation)];
+            depthStencilDescription.BackFace.StencilFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction)];
+            depthStencilDescription.DepthWriteMask = DirectX::DepthWriteMaskList[static_cast<uint8_t>(depthState.writeMask)];
 
             CComPtr<ID3D11DepthStencilState> d3dStates;
             HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
@@ -1292,12 +1292,12 @@ namespace Gek
             blendDescription.AlphaToCoverageEnable = blendState.alphaToCoverage;
             blendDescription.IndependentBlendEnable = false;
             blendDescription.RenderTarget[0].BlendEnable = blendState.enable;
-            blendDescription.RenderTarget[0].SrcBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.colorSource)];
-            blendDescription.RenderTarget[0].DestBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.colorDestination)];
-            blendDescription.RenderTarget[0].BlendOp = DirectX::BlendOperationList[static_cast<UINT8>(blendState.colorOperation)];
-            blendDescription.RenderTarget[0].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.alphaSource)];
-            blendDescription.RenderTarget[0].DestBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.alphaDestination)];
-            blendDescription.RenderTarget[0].BlendOpAlpha = DirectX::BlendOperationList[static_cast<UINT8>(blendState.alphaOperation)];
+            blendDescription.RenderTarget[0].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.colorSource)];
+            blendDescription.RenderTarget[0].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.colorDestination)];
+            blendDescription.RenderTarget[0].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.colorOperation)];
+            blendDescription.RenderTarget[0].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.alphaSource)];
+            blendDescription.RenderTarget[0].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.alphaDestination)];
+            blendDescription.RenderTarget[0].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.alphaOperation)];
             blendDescription.RenderTarget[0].RenderTargetWriteMask = 0;
             if (blendState.writeMask & Video::ColorMask::R)
             {
@@ -1333,15 +1333,15 @@ namespace Gek
             D3D11_BLEND_DESC blendDescription;
             blendDescription.AlphaToCoverageEnable = blendState.alphaToCoverage;
             blendDescription.IndependentBlendEnable = true;
-            for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
+            for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
                 blendDescription.RenderTarget[renderTarget].BlendEnable = blendState.targetStates[renderTarget].enable;
-                blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].colorSource)];
-                blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].colorDestination)];
-                blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<UINT8>(blendState.targetStates[renderTarget].colorOperation)];
-                blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].alphaSource)];
-                blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<UINT8>(blendState.targetStates[renderTarget].alphaDestination)];
-                blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<UINT8>(blendState.targetStates[renderTarget].alphaOperation)];
+                blendDescription.RenderTarget[renderTarget].SrcBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource)];
+                blendDescription.RenderTarget[renderTarget].DestBlend = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination)];
+                blendDescription.RenderTarget[renderTarget].BlendOp = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation)];
+                blendDescription.RenderTarget[renderTarget].SrcBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaSource)];
+                blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaDestination)];
+                blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaOperation)];
                 blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
                 if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::R)
                 {
@@ -1376,19 +1376,19 @@ namespace Gek
             GEK_REQUIRE(d3dDevice);
 
             D3D11_SAMPLER_DESC samplerDescription;
-            samplerDescription.AddressU = DirectX::AddressModeList[static_cast<UINT8>(samplerState.addressModeU)];
-            samplerDescription.AddressV = DirectX::AddressModeList[static_cast<UINT8>(samplerState.addressModeV)];
-            samplerDescription.AddressW = DirectX::AddressModeList[static_cast<UINT8>(samplerState.addressModeW)];
+            samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(samplerState.addressModeU)];
+            samplerDescription.AddressV = DirectX::AddressModeList[static_cast<uint8_t>(samplerState.addressModeV)];
+            samplerDescription.AddressW = DirectX::AddressModeList[static_cast<uint8_t>(samplerState.addressModeW)];
             samplerDescription.MipLODBias = samplerState.mipLevelBias;
             samplerDescription.MaxAnisotropy = samplerState.maximumAnisotropy;
-            samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<UINT8>(samplerState.comparisonFunction)];
+            samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(samplerState.comparisonFunction)];
             samplerDescription.BorderColor[0] = samplerState.borderColor.r;
             samplerDescription.BorderColor[1] = samplerState.borderColor.g;
             samplerDescription.BorderColor[2] = samplerState.borderColor.b;
             samplerDescription.BorderColor[3] = samplerState.borderColor.a;
             samplerDescription.MinLOD = samplerState.minimumMipLevel;
             samplerDescription.MaxLOD = samplerState.maximumMipLevel;
-            samplerDescription.Filter = DirectX::FilterList[static_cast<UINT8>(samplerState.filterMode)];
+            samplerDescription.Filter = DirectX::FilterList[static_cast<uint8_t>(samplerState.filterMode)];
 
             CComPtr<ID3D11SamplerState> d3dStates;
             HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
@@ -1397,7 +1397,7 @@ namespace Gek
             return makeShared<VideoObject, SamplerState>(d3dStates);
         }
 
-        VideoBufferPtr createBuffer(Video::Format format, UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, const void *data)
+        VideoBufferPtr createBuffer(Video::Format format, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(stride > 0);
@@ -1487,7 +1487,7 @@ namespace Gek
             if (flags & Video::BufferFlags::Resource)
             {
                 D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
+                viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(format)];
                 viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                 viewDescription.Buffer.FirstElement = 0;
                 viewDescription.Buffer.NumElements = count;
@@ -1499,7 +1499,7 @@ namespace Gek
             if (flags & Video::BufferFlags::UnorderedAccess)
             {
                 D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                viewDescription.Format = DirectX::BufferFormatList[static_cast<UINT8>(format)];
+                viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(format)];
                 viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                 viewDescription.Buffer.FirstElement = 0;
                 viewDescription.Buffer.NumElements = count;
@@ -1512,14 +1512,14 @@ namespace Gek
             return makeShared<VideoBuffer, ViewBuffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);
         }
 
-        VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, const void *data)
+        VideoBufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
         {
             return createBuffer(Video::Format::Unknown, stride, count, type, flags, data);
         }
 
-        VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, const void *data)
+        VideoBufferPtr createBuffer(Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
         {
-            UINT32 stride = DirectX::FormatStrideList[static_cast<UINT8>(format)];
+            uint32_t stride = DirectX::FormatStrideList[static_cast<uint8_t>(format)];
             return createBuffer(format, stride, count, type, flags, data);
         }
 
@@ -1536,7 +1536,7 @@ namespace Gek
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(data);
 
-            D3D11_MAP d3dMapping = DirectX::MapList[static_cast<UINT8>(mapping)];
+            D3D11_MAP d3dMapping = DirectX::MapList[static_cast<uint8_t>(mapping)];
 
             D3D11_MAPPED_SUBRESOURCE mappedSubResource;
             mappedSubResource.pData = nullptr;
@@ -1572,7 +1572,7 @@ namespace Gek
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1605,7 +1605,7 @@ namespace Gek
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1664,7 +1664,7 @@ namespace Gek
                         break;
                     };
 
-                    elementDesc.Format = DirectX::BufferFormatList[static_cast<UINT8>(element.format)];
+                    elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
                     inputElementList.push_back(elementDesc);
                 }
 
@@ -1681,7 +1681,7 @@ namespace Gek
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1714,7 +1714,7 @@ namespace Gek
             GEK_REQUIRE(programScript);
             GEK_REQUIRE(entryFunction);
 
-            UINT32 flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+            uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #ifdef _DEBUG
             flags |= D3DCOMPILE_DEBUG;
 #endif
@@ -1741,31 +1741,31 @@ namespace Gek
             return makeShared<VideoObject, PixelProgram>(d3dShader);
         }
 
-        VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compileComputeProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, defineList, &includeHandler);
         }
 
-        VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compileGeometryProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compilePixelProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
@@ -1776,7 +1776,7 @@ namespace Gek
             return compileComputeProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
@@ -1787,7 +1787,7 @@ namespace Gek
             return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
@@ -1798,7 +1798,7 @@ namespace Gek
             return compileGeometryProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
@@ -1809,11 +1809,11 @@ namespace Gek
             return compilePixelProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoTexturePtr createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps)
+        VideoTexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps)
         {
             GEK_REQUIRE(d3dDevice);
 
-            UINT32 bindFlags = 0;
+            uint32_t bindFlags = 0;
             if (flags & Video::TextureFlags::RenderTarget)
             {
                 GEK_CHECK_CONDITION(flags & Video::TextureFlags::DepthTarget, Video::Exception, "Render/DepthTarget flags are mutually exclusive");
@@ -1837,7 +1837,7 @@ namespace Gek
                 bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
             }
 
-            DXGI_FORMAT d3dFormat = DirectX::TextureFormatList[static_cast<UINT8>(format)];;
+            DXGI_FORMAT d3dFormat = DirectX::TextureFormatList[static_cast<uint8_t>(format)];;
             CComQIPtr<ID3D11Resource> d3dResource;
             if (depth == 1)
             {
@@ -1952,19 +1952,19 @@ namespace Gek
             }
         }
 
-        VideoTexturePtr loadTexture(const wchar_t *fileName, UINT32 flags)
+        VideoTexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(fileName);
 
-            std::vector<UINT8> fileData;
+            std::vector<uint8_t> fileData;
             FileSystem::load(fileName, fileData);
 
             ::DirectX::ScratchImage scratchImage;
             ::DirectX::TexMetadata textureMetaData;
 
             String extension(FileSystem::Path(fileName).getExtension());
-            std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
+            std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
             if (extension.compare(L".dds") == 0)
             {
                 load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, std::placeholders::_3, std::placeholders::_4);
@@ -2028,19 +2028,19 @@ namespace Gek
             return makeShared<VideoTexture, ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth);
         }
 
-        VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], UINT32 flags)
+        VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], uint32_t flags)
         {
             GEK_REQUIRE(d3dDevice);
 
             ::DirectX::ScratchImage cubeMapList[6];
             ::DirectX::TexMetadata cubeMapMetaData;
-            for (UINT32 side = 0; side < 6; side++)
+            for (uint32_t side = 0; side < 6; side++)
             {
-                std::vector<UINT8> fileData;
+                std::vector<uint8_t> fileData;
                 FileSystem::load(fileNameList[side], fileData);
 
                 String extension(FileSystem::Path(fileNameList[side]).getExtension());
-                std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
+                std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
                 if (extension.compare(L".dds") == 0)
                 {
                     load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, std::placeholders::_3, std::placeholders::_4);
@@ -2119,7 +2119,7 @@ namespace Gek
             return makeShared<VideoTexture, ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1);
         }
 
-        void updateTexture(VideoTexture *texture, const void *data, UINT32 pitch, Shapes::Rectangle<UINT32> *destinationRectangle)
+        void updateTexture(VideoTexture *texture, const void *data, uint32_t pitch, Shapes::Rectangle<uint32_t> *destinationRectangle)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(texture);

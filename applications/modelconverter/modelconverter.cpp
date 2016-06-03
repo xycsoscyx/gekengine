@@ -30,7 +30,7 @@ struct Vertex
 
 struct Model
 {
-    std::vector<UINT16> indexList;
+    std::vector<uint16_t> indexList;
     std::vector<Vertex> vertexList;
 };
 
@@ -40,9 +40,9 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
     if (node->mNumMeshes > 0)
     {
         GEK_CHECK_CONDITION(node->mMeshes == nullptr, Trace::Exception, "Node missing mesh data");
-        for (UINT32 meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
+        for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
         {
-            UINT32 nodeMeshIndex = node->mMeshes[meshIndex];
+            uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
             GEK_CHECK_CONDITION(nodeMeshIndex >= scene->mNumMeshes, Trace::Exception, "Node mesh index out of range : %v (of %v)", nodeMeshIndex, scene->mNumMeshes);
 
             const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
@@ -68,7 +68,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
                 }
 
                 Model model;
-                for (UINT32 faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
+                for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
                 {
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices == 3)
@@ -83,7 +83,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
                     }
                 }
 
-                for (UINT32 vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
+                for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
                     Vertex vertex;
                     vertex.position.set(
@@ -121,7 +121,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
     if (node->mNumChildren > 0)
     {
         GEK_CHECK_CONDITION(node->mChildren == nullptr, Trace::Exception, "Node missing child data");
-        for (UINT32 childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
+        for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
             getMeshes(scene, node->mChildren[childIndex], modelList, boundingBox);
         }
@@ -314,7 +314,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 {
                     for (auto &index : model.indexList)
                     {
-                        sortedModel.indexList.push_back(UINT16(index + sortedModel.vertexList.size()));
+                        sortedModel.indexList.push_back(uint16_t(index + sortedModel.vertexList.size()));
                     }
 
                     sortedModel.vertexList.insert(sortedModel.vertexList.end(), model.vertexList.begin(), model.vertexList.end());
@@ -325,15 +325,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             _wfopen_s(&file, fileNameOutput, L"wb");
             GEK_CHECK_CONDITION(file == nullptr, Trace::Exception, "Unable to open output file: %v", fileNameOutput);
 
-            UINT32 gekMagic = *(UINT32 *)"GEKX";
-            UINT16 gekModelType = 0;
-            UINT16 gekModelVersion = 3;
-            UINT32 modelCount = sortedModelList.size();
-            fwrite(&gekMagic, sizeof(UINT32), 1, file);
-            fwrite(&gekModelType, sizeof(UINT16), 1, file);
-            fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
+            uint32_t gekMagic = *(uint32_t *)"GEKX";
+            uint16_t gekModelType = 0;
+            uint16_t gekModelVersion = 3;
+            uint32_t modelCount = sortedModelList.size();
+            fwrite(&gekMagic, sizeof(uint32_t), 1, file);
+            fwrite(&gekModelType, sizeof(uint16_t), 1, file);
+            fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
             fwrite(&boundingBox, sizeof(Shapes::AlignedBox), 1, file);
-            fwrite(&modelCount, sizeof(UINT32), 1, file);
+            fwrite(&modelCount, sizeof(uint32_t), 1, file);
 
             printf("> Num. Models: %d\r\n", modelCount);
             for (auto &model : sortedModelList)
@@ -341,13 +341,13 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 String materialName = model.first;
                 fwrite(materialName.c_str(), ((materialName.length() + 1) * sizeof(wchar_t)), 1, file);
 
-                UINT32 vertexCount = model.second.vertexList.size();
-                fwrite(&vertexCount, sizeof(UINT32), 1, file);
+                uint32_t vertexCount = model.second.vertexList.size();
+                fwrite(&vertexCount, sizeof(uint32_t), 1, file);
                 fwrite(model.second.vertexList.data(), sizeof(Vertex), model.second.vertexList.size(), file);
 
-                UINT32 indexCount = model.second.indexList.size();
-                fwrite(&indexCount, sizeof(UINT32), 1, file);
-                fwrite(model.second.indexList.data(), sizeof(UINT16), model.second.indexList.size(), file);
+                uint32_t indexCount = model.second.indexList.size();
+                fwrite(&indexCount, sizeof(uint32_t), 1, file);
+                fwrite(model.second.indexList.data(), sizeof(uint16_t), model.second.indexList.size(), file);
 
                 printf("-  %S\r\n", materialName.c_str());
                 printf("    %d vertices\r\n", model.second.vertexList.size());
@@ -379,12 +379,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             _wfopen_s(&file, fileNameOutput, L"wb");
             GEK_CHECK_CONDITION(file == nullptr, Trace::Exception, "Unable to open output file: %v", fileNameOutput);
 
-            UINT32 gekMagic = *(UINT32 *)"GEKX";
-            UINT16 gekModelType = 1;
-            UINT16 gekModelVersion = 0;
-            fwrite(&gekMagic, sizeof(UINT32), 1, file);
-            fwrite(&gekModelType, sizeof(UINT16), 1, file);
-            fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
+            uint32_t gekMagic = *(uint32_t *)"GEKX";
+            uint16_t gekModelType = 1;
+            uint16_t gekModelVersion = 0;
+            fwrite(&gekMagic, sizeof(uint32_t), 1, file);
+            fwrite(&gekModelType, sizeof(uint16_t), 1, file);
+            fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
 
             NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
             fclose(file);
@@ -417,7 +417,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                         faceVertexList.push_back(vertexList[index].position);
                     }
 
-                    for (UINT32 index = 0; index < faceVertexList.size(); index += 3)
+                    for (uint32_t index = 0; index < faceVertexList.size(); index += 3)
                     {
                         NewtonTreeCollisionAddFace(newtonCollision, 3, faceVertexList[index].data, sizeof(Math::Float3), materialIdentifier);
                     }
@@ -432,14 +432,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             _wfopen_s(&file, fileNameOutput, L"wb");
             GEK_CHECK_CONDITION(file == nullptr, Trace::Exception, "Unable to open output file: %v", fileNameOutput);
 
-            UINT32 gekMagic = *(UINT32 *)"GEKX";
-            UINT16 gekModelType = 2;
-            UINT16 gekModelVersion = 0;
-            UINT32 materialCount = modelList.size();
-            fwrite(&gekMagic, sizeof(UINT32), 1, file);
-            fwrite(&gekModelType, sizeof(UINT16), 1, file);
-            fwrite(&gekModelVersion, sizeof(UINT16), 1, file);
-            fwrite(&materialCount, sizeof(UINT32), 1, file);
+            uint32_t gekMagic = *(uint32_t *)"GEKX";
+            uint16_t gekModelType = 2;
+            uint16_t gekModelVersion = 0;
+            uint32_t materialCount = modelList.size();
+            fwrite(&gekMagic, sizeof(uint32_t), 1, file);
+            fwrite(&gekModelType, sizeof(uint16_t), 1, file);
+            fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
+            fwrite(&materialCount, sizeof(uint32_t), 1, file);
             for (auto &material : modelList)
             {
                 fwrite(material.first.c_str(), ((material.first.length() + 1) * sizeof(wchar_t)), 1, file);

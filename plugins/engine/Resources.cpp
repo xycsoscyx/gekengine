@@ -37,7 +37,7 @@ namespace Gek
 
         struct AtomicResource
         {
-            enum class State : UINT8
+            enum class State : uint8_t
             {
                 Empty = 0,
                 Loading,
@@ -441,8 +441,8 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash_combine(static_cast<UINT8>(renderState.fillMode),
-                static_cast<UINT8>(renderState.cullMode),
+            std::size_t hash = std::hash_combine(static_cast<uint8_t>(renderState.fillMode),
+                static_cast<uint8_t>(renderState.cullMode),
                 renderState.frontCounterClockwise,
                 renderState.depthBias,
                 renderState.depthBiasClamp,
@@ -467,19 +467,19 @@ namespace Gek
             };
 
             std::size_t hash = std::hash_combine(depthState.enable,
-                static_cast<UINT8>(depthState.writeMask),
-                static_cast<UINT8>(depthState.comparisonFunction),
+                static_cast<uint8_t>(depthState.writeMask),
+                static_cast<uint8_t>(depthState.comparisonFunction),
                 depthState.stencilEnable,
                 depthState.stencilReadMask,
                 depthState.stencilWriteMask,
-                static_cast<UINT8>(depthState.stencilFrontState.failOperation),
-                static_cast<UINT8>(depthState.stencilFrontState.depthFailOperation),
-                static_cast<UINT8>(depthState.stencilFrontState.passOperation),
-                static_cast<UINT8>(depthState.stencilFrontState.comparisonFunction),
-                static_cast<UINT8>(depthState.stencilBackState.failOperation),
-                static_cast<UINT8>(depthState.stencilBackState.depthFailOperation),
-                static_cast<UINT8>(depthState.stencilBackState.passOperation),
-                static_cast<UINT8>(depthState.stencilBackState.comparisonFunction));
+                static_cast<uint8_t>(depthState.stencilFrontState.failOperation),
+                static_cast<uint8_t>(depthState.stencilFrontState.depthFailOperation),
+                static_cast<uint8_t>(depthState.stencilFrontState.passOperation),
+                static_cast<uint8_t>(depthState.stencilFrontState.comparisonFunction),
+                static_cast<uint8_t>(depthState.stencilBackState.failOperation),
+                static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation),
+                static_cast<uint8_t>(depthState.stencilBackState.passOperation),
+                static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction));
             return depthStateManager.getHandle(hash, request);
         }
 
@@ -496,12 +496,12 @@ namespace Gek
             };
 
             std::size_t hash = std::hash_combine(blendState.enable,
-                static_cast<UINT8>(blendState.colorSource),
-                static_cast<UINT8>(blendState.colorDestination),
-                static_cast<UINT8>(blendState.colorOperation),
-                static_cast<UINT8>(blendState.alphaSource),
-                static_cast<UINT8>(blendState.alphaDestination),
-                static_cast<UINT8>(blendState.alphaOperation),
+                static_cast<uint8_t>(blendState.colorSource),
+                static_cast<uint8_t>(blendState.colorDestination),
+                static_cast<uint8_t>(blendState.colorOperation),
+                static_cast<uint8_t>(blendState.alphaSource),
+                static_cast<uint8_t>(blendState.alphaDestination),
+                static_cast<uint8_t>(blendState.alphaOperation),
                 blendState.writeMask);
             return blendStateManager.getHandle(hash, request);
         }
@@ -519,17 +519,17 @@ namespace Gek
             };
 
             std::size_t hash = 0;
-            for (UINT32 renderTarget = 0; renderTarget < 8; ++renderTarget)
+            for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
             {
                 if (blendState.targetStates[renderTarget].enable)
                 {
                     std::hash_combine(hash, std::hash_combine(renderTarget,
-                        static_cast<UINT8>(blendState.targetStates[renderTarget].colorSource),
-                        static_cast<UINT8>(blendState.targetStates[renderTarget].colorDestination),
-                        static_cast<UINT8>(blendState.targetStates[renderTarget].colorOperation),
-                        static_cast<UINT8>(blendState.targetStates[renderTarget].alphaSource),
-                        static_cast<UINT8>(blendState.targetStates[renderTarget].alphaDestination),
-                        static_cast<UINT8>(blendState.targetStates[renderTarget].alphaOperation),
+                        static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource),
+                        static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination),
+                        static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation),
+                        static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaSource),
+                        static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaDestination),
+                        static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaOperation),
                         blendState.targetStates[renderTarget].writeMask));
                 }
             }
@@ -537,7 +537,7 @@ namespace Gek
             return blendStateManager.getHandle(hash, request);
         }
 
-        ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps)
+        ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps)
         {
             auto load = [this, format, width, height, depth, flags, mipmaps](ResourceHandle handle) -> VideoTexturePtr
             {
@@ -567,7 +567,7 @@ namespace Gek
             }
         }
 
-        ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData)
+        ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData)
         {
             auto load = [this, stride, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
@@ -597,7 +597,7 @@ namespace Gek
             }
         }
 
-        ResourceHandle createBuffer(const wchar_t *name, Video::Format format, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData)
+        ResourceHandle createBuffer(const wchar_t *name, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData)
         {
             auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
@@ -627,15 +627,15 @@ namespace Gek
             }
         }
 
-        VideoTexturePtr createTexture(String parameters, UINT32 flags)
+        VideoTexturePtr createTexture(String parameters, uint32_t flags)
         {
             VideoTexturePtr texture;
             std::vector<String> tokenList(parameters.getLower().split(L':'));
             GEK_CHECK_CONDITION(tokenList.size() != 2, Trace::Exception, "Invalid number of parameters passed to create texture");
             if (tokenList[0].compare(L"color") == 0)
             {
-                UINT32 colorPitch = 0;
-                UINT8 colorData[4] = { 0, 0, 0, 0 };
+                uint32_t colorPitch = 0;
+                uint8_t colorData[4] = { 0, 0, 0, 0 };
                 
                 try
                 {
@@ -648,7 +648,7 @@ namespace Gek
                             float color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             texture = video->createTexture(Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color * 255.0f);
+                            colorData[0] = uint8_t(color * 255.0f);
                             colorPitch = 1;
                         }
 
@@ -660,8 +660,8 @@ namespace Gek
                             Math::Float2 color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             texture = video->createTexture(Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color.x * 255.0f);
-                            colorData[1] = UINT8(color.y * 255.0f);
+                            colorData[0] = uint8_t(color.x * 255.0f);
+                            colorData[1] = uint8_t(color.y * 255.0f);
                             colorPitch = 2;
                         }
 
@@ -673,9 +673,9 @@ namespace Gek
                             Math::Float3 color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color.x * 255.0f);
-                            colorData[1] = UINT8(color.y * 255.0f);
-                            colorData[2] = UINT8(color.z * 255.0f);
+                            colorData[0] = uint8_t(color.x * 255.0f);
+                            colorData[1] = uint8_t(color.y * 255.0f);
+                            colorData[2] = uint8_t(color.z * 255.0f);
                             colorData[3] = 255;
                             colorPitch = 4;
                         }
@@ -688,10 +688,10 @@ namespace Gek
                             Math::Float4 color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color.x * 255.0f);
-                            colorData[1] = UINT8(color.y * 255.0f);
-                            colorData[2] = UINT8(color.z * 255.0f);
-                            colorData[3] = UINT8(color.w * 255.0f);
+                            colorData[0] = uint8_t(color.x * 255.0f);
+                            colorData[1] = uint8_t(color.y * 255.0f);
+                            colorData[2] = uint8_t(color.z * 255.0f);
+                            colorData[3] = uint8_t(color.w * 255.0f);
                             colorPitch = 4;
                         }
 
@@ -718,11 +718,11 @@ namespace Gek
                     normal.set(0.0f, 0.0f, 0.0f);
                 }
 
-                UINT8 normalData[4] = 
+                uint8_t normalData[4] = 
                 {
-                    UINT8(normal.x * 255.0f),
-                    UINT8(normal.y * 255.0f),
-                    UINT8(normal.z * 255.0f),
+                    uint8_t(normal.x * 255.0f),
+                    uint8_t(normal.y * 255.0f),
+                    uint8_t(normal.z * 255.0f),
                     255,
                 };
 
@@ -733,7 +733,7 @@ namespace Gek
             {
                 if (tokenList[1].compare(L"debug") == 0)
                 {
-                    UINT8 data[] =
+                    uint8_t data[] =
                     {
                         255, 0, 255, 255,
                     };
@@ -743,7 +743,7 @@ namespace Gek
                 }
                 else if (tokenList[1].compare(L"flat") == 0)
                 {
-                    UINT8 normalData[4] =
+                    uint8_t normalData[4] =
                     {
                         127,
                         127,
@@ -759,7 +759,7 @@ namespace Gek
             return texture;
         }
 
-        VideoTexturePtr loadTexture(const String &fileName, UINT32 flags)
+        VideoTexturePtr loadTexture(const String &fileName, uint32_t flags)
         {
             if (fileName.at(0) == L'*')
             {
@@ -791,7 +791,7 @@ namespace Gek
             }
         }
 
-        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags)
+        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags)
         {
             auto load = [this, fileName, fallback, flags](ResourceHandle handle) -> VideoTexturePtr
             {
@@ -813,7 +813,7 @@ namespace Gek
             return resourceManager.getHandle(hash, request);
         }
 
-        ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
@@ -828,7 +828,7 @@ namespace Gek
             return programManager.getUniqueHandle(request);
         }
 
-        ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+        ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
@@ -873,27 +873,27 @@ namespace Gek
             renderContext->getContext()->setRenderState(renderStateManager.getResource(renderStateHandle));
         }
 
-        void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, UINT32 stencilReference)
+        void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
         {
             renderContext->getContext()->setDepthState(depthStateManager.getResource(depthStateHandle), stencilReference);
         }
 
-        void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, UINT32 sampleMask)
+        void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask)
         {
             renderContext->getContext()->setBlendState(blendStateManager.getResource(blendStateHandle), blendFactor, sampleMask);
         }
 
-        void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
             renderPipeline->getPipeline()->setResource(resourceManager.getResource(resourceHandle), stage);
         }
 
-        void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
             renderPipeline->getPipeline()->setUnorderedAccess(resourceManager.getResource(resourceHandle, true), stage);
         }
 
-        void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, UINT32 stage)
+        void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
             renderPipeline->getPipeline()->setConstantBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), stage);
         }
@@ -903,12 +903,12 @@ namespace Gek
             renderPipeline->getPipeline()->setProgram(programManager.getResource(programHandle));
         }
 
-        void setVertexBuffer(RenderContext *renderContext, UINT32 slot, ResourceHandle resourceHandle, UINT32 offset)
+        void setVertexBuffer(RenderContext *renderContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset)
         {
             renderContext->getContext()->setVertexBuffer(slot, reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
-        void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, UINT32 offset)
+        void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, uint32_t offset)
         {
             renderContext->getContext()->setIndexBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
@@ -918,16 +918,16 @@ namespace Gek
             renderContext->getContext()->clearRenderTarget(reinterpret_cast<VideoTarget *>(resourceManager.getResource(resourceHandle, true)), color);
         }
 
-        void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, DWORD flags, float depthClear, UINT32 stencilClear)
+        void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear)
         {
             renderContext->getContext()->clearDepthStencilTarget(resourceManager.getResource(depthBuffer), flags, depthClear, stencilClear);
         }
 
         Video::ViewPort viewPortList[8];
         VideoTarget *renderTargetList[8];
-        void setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, UINT32 renderTargetHandleCount, ResourceHandle *depthBuffer)
+        void setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer)
         {
-            for (UINT32 renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
+            for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
                 renderTargetList[renderTarget] = reinterpret_cast<VideoTarget *>(resourceManager.getResource(renderTargetHandleList[renderTarget], true));
                 if (renderTargetList[renderTarget])

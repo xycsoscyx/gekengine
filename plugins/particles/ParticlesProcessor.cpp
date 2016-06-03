@@ -34,7 +34,7 @@ static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
 
 namespace Gek
 {
-    static const UINT32 ParticleBufferCount = 1000;
+    static const uint32_t ParticleBufferCount = 1000;
 
     class ParticlesProcessorImplementation
         : public ContextRegistration<ParticlesProcessorImplementation, EngineContext *>
@@ -78,7 +78,7 @@ namespace Gek
                 UINT64 value;
                 struct
                 {
-                    UINT8 buffer;
+                    uint8_t buffer;
                     ResourceHandle colorMap;
                     MaterialHandle material;
                 };
@@ -109,7 +109,7 @@ namespace Gek
 
     private:
         Population *population;
-        UINT32 updateHandle;
+        uint32_t updateHandle;
         PluginResources *resources;
         Render *render;
 
@@ -227,7 +227,7 @@ namespace Gek
             }
         }
 
-        void onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(uint32_t handle, bool isIdle)
         {
             if (!isIdle)
             {
@@ -283,21 +283,21 @@ namespace Gek
             resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
             resources->setResource(renderContext->vertexPipeline(), colorMap, 1);
 
-            UINT32 bufferCopied = 0;
+            uint32_t bufferCopied = 0;
             ParticleData *bufferData = nullptr;
             resources->mapBuffer(particleBuffer, (void **)&bufferData);
             for (auto emitterIterator = begin; emitterIterator != end; ++emitterIterator)
             {
                 const auto &emitter = emitterIterator->second->second;
 
-                UINT32 particlesCopied = 0;
-                UINT32 particlesCount = emitter.particles.size();
+                uint32_t particlesCopied = 0;
+                uint32_t particlesCount = emitter.particles.size();
                 const ParticleData *particleData = emitter.particles.data();
                 while (particlesCopied < particlesCount)
                 {
-                    UINT32 bufferRemaining = (ParticleBufferCount - bufferCopied);
-                    UINT32 particlesRemaining = (particlesCount - particlesCopied);
-                    UINT32 copyCount = std::min(bufferRemaining, particlesRemaining);
+                    uint32_t bufferRemaining = (ParticleBufferCount - bufferCopied);
+                    uint32_t particlesRemaining = (particlesCount - particlesCopied);
+                    uint32_t copyCount = std::min(bufferRemaining, particlesRemaining);
                     memcpy(&bufferData[bufferCopied], &particleData[particlesCopied], (sizeof(ParticleData) * copyCount));
 
                     bufferCopied += copyCount;

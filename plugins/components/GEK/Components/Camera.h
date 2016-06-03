@@ -10,7 +10,7 @@ namespace Gek
 {
     struct CameraComponent
     {
-        enum class Mode : UINT8
+        enum class Mode : uint8_t
         {
             Perspective = 0,
             Orthographic,

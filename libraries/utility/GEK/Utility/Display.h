@@ -1,12 +1,11 @@
 #pragma once
 
-#include <Windows.h>
 #include <vector>
 #include <map>
 
 namespace Gek
 {
-    enum class AspectRatio : UINT8
+    enum class AspectRatio : uint8_t
     {
         None = 0,
         _4x3,
@@ -16,11 +15,11 @@ namespace Gek
 
     struct DisplayMode
     {
-        UINT32 width;
-        UINT32 height;
+        uint32_t width;
+        uint32_t height;
         AspectRatio aspectRatio;
 
-        DisplayMode(UINT32 width, UINT32 height, AspectRatio aspectRatio)
+        DisplayMode(uint32_t width, uint32_t height, AspectRatio aspectRatio)
             : width(width)
             , height(height)
             , aspectRatio(aspectRatio)
@@ -28,5 +27,5 @@ namespace Gek
         }
     };
 
-    std::map<UINT32, std::vector<DisplayMode>> getDisplayModes(void);
+    std::map<uint32_t, std::vector<DisplayMode>> getDisplayModes(void);
 }; // namespace Gek

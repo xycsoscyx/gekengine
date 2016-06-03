@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Context\Observable.h"
+#include <Windows.h>
 
 namespace Gek
 {
@@ -25,7 +26,7 @@ namespace Gek
     GEK_INTERFACE(Engine)
         : public EngineContext
     {
-        virtual LRESULT windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam) = 0;
+        virtual LRESULT windowEvent(uint32_t message, WPARAM wParam, LPARAM lParam) = 0;
 
         virtual bool update(void) = 0;
     };

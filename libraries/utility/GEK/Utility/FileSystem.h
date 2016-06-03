@@ -41,11 +41,11 @@ namespace Gek
 
         void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
 
-        void load(const wchar_t *fileName, std::vector<UINT8> &buffer, size_t limitReadSize = 0);
+        void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, size_t limitReadSize = 0);
         void load(const wchar_t *fileName, StringUTF8 &string);
         void load(const wchar_t *fileName, String &string);
 
-        void save(const wchar_t *fileName, const std::vector<UINT8> &buffer);
+        void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer);
         void save(const wchar_t *fileName, const StringUTF8 &string);
         void save(const wchar_t *fileName, const String &string);
     }; // namespace File

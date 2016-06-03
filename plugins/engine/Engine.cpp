@@ -64,7 +64,7 @@ namespace Gek
         RenderPtr render;
         PopulationSystemPtr population;
 
-        UINT32 updateHandle;
+        uint32_t updateHandle;
         ActionQueue actionQueue;
 
         String currentCommand;
@@ -317,7 +317,7 @@ namespace Gek
         }
 
         // Engine
-        LRESULT windowEvent(UINT32 message, WPARAM wParam, LPARAM lParam)
+        LRESULT windowEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
         {
             BOOL handled = false;
             LRESULT lResult = SciterProcND(window, message, wParam, lParam, &handled);
@@ -381,7 +381,7 @@ namespace Gek
             case WM_MOUSEWHEEL:
                 if (true)
                 {
-                    INT32 mouseWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+                    int32_t mouseWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
                 }
 
                 return 1;
@@ -412,7 +412,7 @@ namespace Gek
                 //population->update(false, float(updateAccumulator));
                 //return engineRunning;
 
-                UINT32 frameCount = 3;
+                uint32_t frameCount = 3;
                 while (updateAccumulator > (1.0 / 30.0))
                 {
                     population->update(false, 1.0f / 30.0f);
@@ -431,12 +431,12 @@ namespace Gek
         }
 
         // PopulationObserver
-        void onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(uint32_t handle, bool isIdle)
         {
             POINT currentCursorPosition;
             GetCursorPos(&currentCursorPosition);
-            INT32 cursorMovementX = INT32(float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
-            INT32 cursorMovementY = INT32(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
+            int32_t cursorMovementX = int32_t(float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
+            int32_t cursorMovementY = int32_t(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
             if (cursorMovementX != 0 || cursorMovementY != 0)
             {
                 sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
@@ -629,7 +629,7 @@ namespace Gek
             String command(parameters->name);
 
             std::vector<String> parameterList;
-            for (UINT32 parameter = 0; parameter < parameters->argc; parameter++)
+            for (uint32_t parameter = 0; parameter < parameters->argc; parameter++)
             {
                 parameterList.push_back(parameters->argv[parameter].to_string());
             }

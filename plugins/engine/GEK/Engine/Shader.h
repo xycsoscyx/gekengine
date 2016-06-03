@@ -17,7 +17,7 @@ namespace Gek
 
         GEK_INTERFACE(Pass)
         {
-            enum class Mode : UINT8
+            enum class Mode : uint8_t
             {
                 Forward = 0,
                 Deferred,
@@ -39,7 +39,7 @@ namespace Gek
             virtual bool prepare(void) = 0;
         };
 
-        virtual UINT32 getPriority(void) = 0;
+        virtual uint32_t getPriority(void) = 0;
 
         virtual void loadResourceList(const wchar_t *materialName, std::unordered_map<String, String> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
         virtual void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) = 0;

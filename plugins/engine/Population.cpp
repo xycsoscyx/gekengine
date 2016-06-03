@@ -77,10 +77,10 @@ namespace Gek
         std::unordered_map<String, Entity *> namedEntityList;
         std::vector<Entity *> killEntityList;
 
-        typedef std::multimap<UINT32, std::pair<UINT32, PopulationObserver *>> UpdatePriorityMap;
+        typedef std::multimap<uint32_t, std::pair<uint32_t, PopulationObserver *>> UpdatePriorityMap;
         UpdatePriorityMap updatePriorityMap;
 
-        std::map<UINT32, UpdatePriorityMap::value_type *> updateHandleMap;
+        std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
 
     public:
         PopulationImplementation(Context *context, EngineContext *engine)
@@ -339,22 +339,22 @@ namespace Gek
             });
         }
 
-        UINT32 setUpdatePriority(PopulationObserver *observer, UINT32 priority)
+        uint32_t setUpdatePriority(PopulationObserver *observer, uint32_t priority)
         {
-            static UINT32 nextHandle = 0;
-            UINT32 updateHandle = InterlockedIncrement(&nextHandle);
+            static uint32_t nextHandle = 0;
+            uint32_t updateHandle = InterlockedIncrement(&nextHandle);
             auto pair = std::make_pair(priority, std::make_pair(updateHandle, observer));
             auto updateIterator = updatePriorityMap.insert(pair);
             updateHandleMap[updateHandle] = &(*updateIterator);
             return updateHandle;
         }
 
-        void removeUpdatePriority(UINT32 updateHandle)
+        void removeUpdatePriority(uint32_t updateHandle)
         {
             auto handleIterator = updateHandleMap.find(updateHandle);
             if (handleIterator != updateHandleMap.end())
             {
-                UINT32 priority = handleIterator->second->first;
+                uint32_t priority = handleIterator->second->first;
                 auto priorityRange = updatePriorityMap.equal_range(priority);
                 auto priorityIterator = std::find_if(priorityRange.first, priorityRange.second, [&](auto &priorityPair) -> bool
                 {

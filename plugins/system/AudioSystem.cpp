@@ -40,7 +40,7 @@ namespace Gek
             return static_cast<void *>(directSoundBuffer.p);
         }
 
-        void setFrequency(UINT32 frequency)
+        void setFrequency(uint32_t frequency)
         {
             GEK_REQUIRE(directSoundBuffer);
 
@@ -58,7 +58,7 @@ namespace Gek
         {
             GEK_REQUIRE(directSoundBuffer);
 
-            directSoundBuffer->SetVolume(UINT32((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
+            directSoundBuffer->SetVolume(uint32_t((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
         }
     };
 
@@ -75,7 +75,7 @@ namespace Gek
         void setPan(float pan)
         {
             GEK_REQUIRE(directSoundBuffer);
-            directSoundBuffer->SetPan(UINT32((DSBPAN_RIGHT - DSBPAN_LEFT) * pan) + DSBPAN_LEFT);
+            directSoundBuffer->SetPan(uint32_t((DSBPAN_RIGHT - DSBPAN_LEFT) * pan) + DSBPAN_LEFT);
         }
 
         void play(bool loop)
@@ -179,7 +179,7 @@ namespace Gek
         {
             GEK_REQUIRE(primarySoundBuffer);
 
-            primarySoundBuffer->SetVolume(UINT32((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
+            primarySoundBuffer->SetVolume(uint32_t((DSBVOLUME_MAX - DSBVOLUME_MIN) * volume) + DSBVOLUME_MIN);
         }
 
         float getMasterVolume(void)
@@ -258,12 +258,12 @@ namespace Gek
             return makeShared<AudioSound, SoundImplementation>(directSound8Buffer.p, directSound8Buffer3D.p);
         }
 
-        CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, DWORD flags, GUID soundAlgorithm)
+        CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, uint32_t flags, GUID soundAlgorithm)
         {
             GEK_REQUIRE(directSound);
             GEK_REQUIRE(fileName);
 
-            std::vector<UINT8> fileData;
+            std::vector<uint8_t> fileData;
             FileSystem::load(fileName, fileData);
 
             audiere::RefPtr<audiere::File> audiereFile(audiere::CreateMemoryFile(fileData.data(), fileData.size()));

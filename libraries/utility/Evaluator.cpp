@@ -58,22 +58,12 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, INT32 &result, INT32 defaultValue)
+        void get(const wchar_t *expression, int32_t &result, int32_t defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, UINT32 &result, UINT32 defaultValue)
-        {
-            castResult(expression, result, defaultValue);
-        }
-
-        void get(const wchar_t *expression, INT64 &result, INT64 defaultValue)
-        {
-            castResult(expression, result, defaultValue);
-        }
-
-        void get(const wchar_t *expression, UINT64 &result, UINT64 defaultValue)
+        void get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
         {
             castResult(expression, result, defaultValue);
         }

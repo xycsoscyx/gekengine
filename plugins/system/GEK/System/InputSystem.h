@@ -174,8 +174,8 @@ namespace Gek
     {
         virtual void update(void) = 0;
 
-        virtual UINT32 getButtonCount(void) const = 0;
-        virtual UINT8 getButtonState(UINT32 buttonIndex) const = 0;
+        virtual uint32_t getButtonCount(void) const = 0;
+        virtual uint8_t getButtonState(uint32_t buttonIndex) const = 0;
 
         virtual Math::Float3 getAxis(void) const = 0;
         virtual Math::Float3 getRotation(void) const = 0;
@@ -187,8 +187,8 @@ namespace Gek
         virtual InputDevice * const getKeyboard(void) = 0;
         virtual InputDevice * const getMouse(void) = 0;
 
-        virtual UINT32 getJoystickCount(void) = 0;
-        virtual InputDevice * const getJoystick(UINT32 deviceIndex) = 0;
+        virtual uint32_t getJoystickCount(void) = 0;
+        virtual InputDevice * const getJoystick(uint32_t deviceIndex) = 0;
 
         virtual void update(void) = 0;
     };

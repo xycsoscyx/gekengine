@@ -49,7 +49,7 @@ namespace Gek
             MaterialHandle material;
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
-            UINT32 indexCount;
+            uint32_t indexCount;
 
             SubModel(void)
                 : skin(false)
@@ -160,57 +160,57 @@ namespace Gek
 
         void loadBoundingBox(Model &model, const String &name)
         {
-            static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
+            static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
 
             HRESULT resultValue = E_FAIL;
 
             model.fileName = String(L"$root\\data\\models\\%v.gek", name);
 
-            std::vector<UINT8> fileData;
+            std::vector<uint8_t> fileData;
             FileSystem::load(model.fileName, fileData, PreReadSize);
 
-            UINT8 *rawFileData = fileData.data();
-            UINT32 gekIdentifier = *((UINT32 *)rawFileData);
-            GEK_CHECK_CONDITION(gekIdentifier != *(UINT32 *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
-            rawFileData += sizeof(UINT32);
+            uint8_t *rawFileData = fileData.data();
+            uint32_t gekIdentifier = *((uint32_t *)rawFileData);
+            GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
+            rawFileData += sizeof(uint32_t);
 
-            UINT16 gekModelType = *((UINT16 *)rawFileData);
+            uint16_t gekModelType = *((uint16_t *)rawFileData);
             GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
-            rawFileData += sizeof(UINT16);
+            rawFileData += sizeof(uint16_t);
 
-            UINT16 gekModelVersion = *((UINT16 *)rawFileData);
+            uint16_t gekModelVersion = *((uint16_t *)rawFileData);
             GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
-            rawFileData += sizeof(UINT16);
+            rawFileData += sizeof(uint16_t);
 
             model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
         }
 
         void loadModelWorker(Model &model)
         {
-            std::vector<UINT8> fileData;
+            std::vector<uint8_t> fileData;
             FileSystem::load(model.fileName, fileData);
 
-            UINT8 *rawFileData = fileData.data();
-            UINT32 gekIdentifier = *((UINT32 *)rawFileData);
-            GEK_CHECK_CONDITION(gekIdentifier != *(UINT32 *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
-            rawFileData += sizeof(UINT32);
+            uint8_t *rawFileData = fileData.data();
+            uint32_t gekIdentifier = *((uint32_t *)rawFileData);
+            GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
+            rawFileData += sizeof(uint32_t);
 
-            UINT16 gekModelType = *((UINT16 *)rawFileData);
+            uint16_t gekModelType = *((uint16_t *)rawFileData);
             GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
-            rawFileData += sizeof(UINT16);
+            rawFileData += sizeof(uint16_t);
 
-            UINT16 gekModelVersion = *((UINT16 *)rawFileData);
+            uint16_t gekModelVersion = *((uint16_t *)rawFileData);
             GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
-            rawFileData += sizeof(UINT16);
+            rawFileData += sizeof(uint16_t);
 
             model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
             rawFileData += sizeof(Shapes::AlignedBox);
 
-            UINT32 subModelCount = *((UINT32 *)rawFileData);
-            rawFileData += sizeof(UINT32);
+            uint32_t subModelCount = *((uint32_t *)rawFileData);
+            rawFileData += sizeof(uint32_t);
 
             model.subModelList.resize(subModelCount);
-            for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
+            for (uint32_t modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
             {
                 String materialName = (const wchar_t *)rawFileData;
                 rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
@@ -225,18 +225,18 @@ namespace Gek
                     subModel.material = resources->loadMaterial(materialName);
                 }
 
-                UINT32 vertexCount = *((UINT32 *)rawFileData);
-                rawFileData += sizeof(UINT32);
+                uint32_t vertexCount = *((uint32_t *)rawFileData);
+                rawFileData += sizeof(uint32_t);
 
                 subModel.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                 rawFileData += (sizeof(Vertex) * vertexCount);
 
-                UINT32 indexCount = *((UINT32 *)rawFileData);
-                rawFileData += sizeof(UINT32);
+                uint32_t indexCount = *((uint32_t *)rawFileData);
+                rawFileData += sizeof(uint32_t);
 
                 subModel.indexCount = indexCount;
                 subModel.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
-                rawFileData += (sizeof(UINT16) * indexCount);
+                rawFileData += (sizeof(uint16_t) * indexCount);
             }
 
             model.loaded = true;

@@ -80,11 +80,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         printf("In: %s, Out: %s\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
         printf("Progress...");
 
-        std::vector<UINT8> fileData;
+        std::vector<uint8_t> fileData;
         FileSystem::load(fileNameInput, fileData);
 
         String extension(FileSystem::Path(fileNameInput).getExtension());
-        std::function<HRESULT(UINT8*, size_t, ::DirectX::ScratchImage &)> load;
+        std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
         if (extension.compare(L".dds") == 0)
         {
             load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
@@ -180,7 +180,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
         }
 
-        UINT32 flags = ::DirectX::TEX_COMPRESS_PARALLEL;
+        uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
         if (sRGBIn)
         {
             flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;

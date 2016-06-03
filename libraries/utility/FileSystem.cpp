@@ -1,4 +1,5 @@
 #include "GEK\Utility\FileSystem.h"
+#include <Windows.h>
 
 namespace Gek
 {
@@ -154,7 +155,7 @@ namespace Gek
             }
         }
 
-        void load(const wchar_t *fileName, std::vector<UINT8> &buffer, size_t limitReadSize)
+        void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, size_t limitReadSize)
         {
             String expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -183,7 +184,7 @@ namespace Gek
 
         void load(const wchar_t *fileName, StringUTF8 &fileData)
         {
-            std::vector<UINT8> buffer;
+            std::vector<uint8_t> buffer;
             load(fileName, buffer);
             buffer.push_back('\0');
             fileData = reinterpret_cast<const char *>(buffer.data());
@@ -196,7 +197,7 @@ namespace Gek
             fileData = rawFileData;
         }
 
-        void save(const wchar_t *fileName, const std::vector<UINT8> &buffer)
+        void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
         {
             String expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -211,7 +212,7 @@ namespace Gek
 
         void save(const wchar_t *fileName, const StringUTF8 &fileData)
         {
-            std::vector<UINT8> buffer(fileData.length());
+            std::vector<uint8_t> buffer(fileData.length());
             std::copy(fileData.begin(), fileData.end(), buffer.begin());
             save(fileName, buffer);
         }

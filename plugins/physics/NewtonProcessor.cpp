@@ -53,24 +53,24 @@ namespace Gek
 
         struct Material
         {
-            UINT32 firstVertex;
-            UINT32 firstIndex;
-            UINT32 indexCount;
+            uint32_t firstVertex;
+            uint32_t firstIndex;
+            uint32_t indexCount;
         };
 
     private:
         EngineContext *engine;
         Population *population;
-        UINT32 updateHandle;
+        uint32_t updateHandle;
 
         NewtonWorld *newtonWorld;
         NewtonCollision *newtonStaticScene;
         NewtonBody *newtonStaticBody;
-        std::unordered_map<UINT32, UINT32> staticSurfaceMap;
+        std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
 
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
-        std::unordered_map<std::size_t, UINT32> surfaceIndexList;
+        std::unordered_map<std::size_t, uint32_t> surfaceIndexList;
         std::unordered_map<Entity *, NewtonEntityPtr> entityMap;
         std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
@@ -106,11 +106,11 @@ namespace Gek
             return Gravity;
         }
 
-        UINT32 loadSurface(const wchar_t *fileName)
+        uint32_t loadSurface(const wchar_t *fileName)
         {
             GEK_REQUIRE(fileName);
 
-            UINT32 surfaceIndex = 0;
+            uint32_t surfaceIndex = 0;
             std::size_t fileNameHash = std::hash<String>()(fileName);
             auto surfaceIterator = surfaceIndexList.find(fileNameHash);
             if (surfaceIterator != surfaceIndexList.end())
@@ -158,7 +158,7 @@ namespace Gek
             return surfaceIndex;
         }
 
-        const Surface & getSurface(UINT32 surfaceIndex) const
+        const Surface & getSurface(uint32_t surfaceIndex) const
         {
             return surfaceList[surfaceIndex];
         }
@@ -246,8 +246,8 @@ namespace Gek
 
                 Math::Float3 position, normal;
                 NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
-                UINT32 surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : getStaticSceneSurface(position, normal));
-                UINT32 surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : getStaticSceneSurface(position, normal));
+                uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : getStaticSceneSurface(position, normal));
+                uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : getStaticSceneSurface(position, normal));
                 const Surface &surface0 = getSurface(surfaceIndex0);
                 const Surface &surface1 = getSurface(surfaceIndex1);
 
@@ -408,7 +408,7 @@ namespace Gek
             }
         }
 
-        void onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(uint32_t handle, bool isIdle)
         {
             GEK_REQUIRE(population);
 
@@ -419,14 +419,14 @@ namespace Gek
         }
 
     private:
-        UINT32 getStaticSceneSurface(const Math::Float3 &position, const Math::Float3 &normal)
+        uint32_t getStaticSceneSurface(const Math::Float3 &position, const Math::Float3 &normal)
         {
             dLong surfaceAttribute = 0;
             Math::Float3 collisionNormal;
             NewtonCollisionRayCast(newtonStaticScene, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
             if (surfaceAttribute > 0)
             {
-                return staticSurfaceMap[UINT32(surfaceAttribute)];
+                return staticSurfaceMap[uint32_t(surfaceAttribute)];
             }
 
             return 0;
@@ -529,15 +529,15 @@ namespace Gek
                     _wfopen_s(&file, fileName, L"rb");
                     GEK_CHECK_CONDITION(file == nullptr, FileSystem::Exception, "Unable to load collision model: %v", fileName);
 
-                    UINT32 gekIdentifier = 0;
-                    fread(&gekIdentifier, sizeof(UINT32), 1, file);
-                    GEK_CHECK_CONDITION(gekIdentifier != *(UINT32 *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
+                    uint32_t gekIdentifier = 0;
+                    fread(&gekIdentifier, sizeof(uint32_t), 1, file);
+                    GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
 
-                    UINT16 gekModelType = 0;
-                    fread(&gekModelType, sizeof(UINT16), 1, file);
+                    uint16_t gekModelType = 0;
+                    fread(&gekModelType, sizeof(uint16_t), 1, file);
 
-                    UINT16 gekModelVersion = 0;
-                    fread(&gekModelVersion, sizeof(UINT16), 1, file);
+                    uint16_t gekModelVersion = 0;
+                    fread(&gekModelVersion, sizeof(uint16_t), 1, file);
 
                     if (gekModelType == 1 && gekModelVersion == 0)
                     {
@@ -545,9 +545,9 @@ namespace Gek
                     }
                     else if (gekModelType == 2 && gekModelVersion == 0)
                     {
-                        UINT32 materialCount = 0;
-                        fread(&materialCount, sizeof(UINT32), 1, file);
-                        for (UINT32 materialIndex = 0; materialIndex < materialCount; materialIndex++)
+                        uint32_t materialCount = 0;
+                        fread(&materialCount, sizeof(uint32_t), 1, file);
+                        for (uint32_t materialIndex = 0; materialIndex < materialCount; materialIndex++)
                         {
                             String materialName;
                             wchar_t letter = 0;

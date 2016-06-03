@@ -40,9 +40,9 @@ namespace Gek
     {
     protected:
         CComPtr<IDirectInputDevice8> device;
-        UINT32 buttonCount;
+        uint32_t buttonCount;
 
-        std::vector<UINT8> buttonStateList;
+        std::vector<uint8_t> buttonStateList;
 
         Math::Float3 axisValues;
         Math::Float3 rotationValues;
@@ -59,12 +59,12 @@ namespace Gek
         {
         }
 
-        UINT32 getButtonCount(void) const
+        uint32_t getButtonCount(void) const
         {
             return buttonCount;
         }
 
-        UINT8 getButtonState(UINT32 buttonIndex) const
+        uint8_t getButtonState(uint32_t buttonIndex) const
         {
             return buttonStateList[buttonIndex];
         }
@@ -111,7 +111,7 @@ namespace Gek
         {
             HRESULT resultValue = E_FAIL;
 
-            UINT32 retryCount = 5;
+            uint32_t retryCount = 5;
             unsigned char rawKeyBuffer[256] = { 0 };
             do
             {
@@ -124,7 +124,7 @@ namespace Gek
 
             if (SUCCEEDED(resultValue))
             {
-                for (UINT32 keyIndex = 0; keyIndex < 256; keyIndex++)
+                for (uint32_t keyIndex = 0; keyIndex < 256; keyIndex++)
                 {
                     if (rawKeyBuffer[keyIndex] & 0x80 ? true : false)
                     {
@@ -188,7 +188,7 @@ namespace Gek
         {
             HRESULT resultValue = S_OK;
 
-            UINT32 retryCount = 5;
+            uint32_t retryCount = 5;
             DIMOUSESTATE2 mouseStates;
             do
             {
@@ -204,7 +204,7 @@ namespace Gek
                 axisValues.x = float(mouseStates.lX);
                 axisValues.y = float(mouseStates.lY);
                 axisValues.z = float(mouseStates.lZ);
-                for (UINT32 buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
+                for (uint32_t buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
                 {
                     if (mouseStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                     {
@@ -268,7 +268,7 @@ namespace Gek
         {
             HRESULT resultValue = S_OK;
 
-            UINT32 retryCount = 5;
+            uint32_t retryCount = 5;
             DIJOYSTATE2 joystickStates;
             do
             {
@@ -301,7 +301,7 @@ namespace Gek
                 rotationValues.x = float(joystickStates.lRx);
                 rotationValues.y = float(joystickStates.lRy);
                 rotationValues.z = float(joystickStates.lRz);
-                for (UINT32 buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
+                for (uint32_t buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
                 {
                     if (joystickStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                     {
@@ -400,12 +400,12 @@ namespace Gek
             return mouseDevice.get();
         }
 
-        UINT32 getJoystickCount(void)
+        uint32_t getJoystickCount(void)
         {
             return joystickDeviceList.size();
         }
 
-        InputDevice * const getJoystick(UINT32 deviceIndex)
+        InputDevice * const getJoystick(uint32_t deviceIndex)
         {
             if (deviceIndex < joystickDeviceList.size())
             {

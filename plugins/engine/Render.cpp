@@ -95,7 +95,7 @@ namespace Gek
         {
             union
             {
-                UINT32 value;
+                uint32_t value;
                 struct
                 {
                     MaterialHandle material;
@@ -166,8 +166,8 @@ namespace Gek
     private:
         VideoSystem *video;
         Population *population;
-        UINT32 backgroundUpdateHandle;
-        UINT32 foregroundUpdateHandle;
+        uint32_t backgroundUpdateHandle;
+        uint32_t foregroundUpdateHandle;
         Resources *resources;
 
         VideoObjectPtr pointSamplerState;
@@ -434,7 +434,7 @@ namespace Gek
             resources->clearLocal();
         }
 
-        void onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(uint32_t handle, bool isIdle)
         {
             if (handle == backgroundUpdateHandle)
             {

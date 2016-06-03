@@ -28,8 +28,8 @@ namespace Gek
 
         virtual Math::Float3 getGravity(const Math::Float3 &position) = 0;
 
-        virtual UINT32 loadSurface(const wchar_t *fileName) = 0;
-        virtual const Surface &getSurface(UINT32 surfaceIndex) const = 0;
+        virtual uint32_t loadSurface(const wchar_t *fileName) = 0;
+        virtual const Surface &getSurface(uint32_t surfaceIndex) const = 0;
     };
 
     GEK_INTERFACE(NewtonObserver)

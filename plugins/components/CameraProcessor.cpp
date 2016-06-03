@@ -22,7 +22,7 @@ namespace Gek
 
     private:
         Population *population;
-        UINT32 updateHandle;
+        uint32_t updateHandle;
         Render *render;
 
     public:
@@ -72,7 +72,7 @@ namespace Gek
         {
         }
 
-        void onUpdate(UINT32 handle, bool isIdle)
+        void onUpdate(uint32_t handle, bool isIdle)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(render);

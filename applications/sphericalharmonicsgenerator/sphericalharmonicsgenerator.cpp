@@ -160,11 +160,11 @@ typedef SH<Math::Float4, 9> SH9Color;
 
 ::DirectX::ScratchImage loadTexture(const wchar_t *fileName)
 {
-    std::vector<UINT8> fileData;
+    std::vector<uint8_t> fileData;
     FileSystem::load(fileName, fileData);
 
     String extension(FileSystem::Path(fileName).getExtension());
-    std::function<HRESULT(UINT8*, size_t, ::DirectX::ScratchImage &)> load;
+    std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
     if (extension.compare(L".dds") == 0)
     {
         load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
@@ -223,7 +223,7 @@ typedef SH<Math::Float4, 9> SH9Color;
 ::DirectX::ScratchImage loadIntoCubeMap(const wchar_t *directory)
 {
     ::DirectX::ScratchImage cubeMapList[6];
-    for (UINT32 face = 0; face < 6; face++)
+    for (uint32_t face = 0; face < 6; face++)
     {
         static const wchar_t *directions[] =
         {

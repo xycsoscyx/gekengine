@@ -18,7 +18,7 @@ namespace Gek
     {
         GEK_BASE_EXCEPTION();
 
-        enum class Format : UINT8
+        enum class Format : uint8_t
         {
             Unknown = 0,
             Byte,
@@ -48,32 +48,32 @@ namespace Gek
             NumFormats
         };
 
-        enum class ElementType : UINT8
+        enum class ElementType : uint8_t
         {
             Vertex = 0,
             Instance,
         };
 
-        enum class FillMode : UINT8
+        enum class FillMode : uint8_t
         {
             WireFrame = 0,
             Solid,
         };
 
-        enum class CullMode : UINT8
+        enum class CullMode : uint8_t
         {
             None = 0,
             Front,
             Back,
         };
 
-        enum class DepthWrite : UINT8
+        enum class DepthWrite : uint8_t
         {
             Zero = 0,
             All,
         };
 
-        enum class ComparisonFunction : UINT8
+        enum class ComparisonFunction : uint8_t
         {
             Always = 0,
             Never,
@@ -85,7 +85,7 @@ namespace Gek
             GreaterEqual,
         };
 
-        enum class StencilOperation : UINT8
+        enum class StencilOperation : uint8_t
         {
             Zero = 0,
             Keep,
@@ -97,7 +97,7 @@ namespace Gek
             DecreaseSaturated,
         };
 
-        enum class BlendSource : UINT8
+        enum class BlendSource : uint8_t
         {
             Zero = 0,
             One,
@@ -118,7 +118,7 @@ namespace Gek
             InverseSecondarySourceAlpha,
         };
 
-        enum class BlendOperation : UINT8
+        enum class BlendOperation : uint8_t
         {
             Add = 0,
             Subtract,
@@ -140,7 +140,7 @@ namespace Gek
             };
         }; // namespace ColorMask
 
-        enum class PrimitiveType : UINT8
+        enum class PrimitiveType : uint8_t
         {
             PointList = 0,
             LineList,
@@ -149,7 +149,7 @@ namespace Gek
             TriangleStrip,
         };
 
-        enum class FilterMode : UINT8
+        enum class FilterMode : uint8_t
         {
             AllPoint = 0,
             MinMagPointMipLinear,
@@ -162,7 +162,7 @@ namespace Gek
             Anisotropic,
         };
 
-        enum class AddressMode : UINT8
+        enum class AddressMode : uint8_t
         {
             Clamp = 0,
             Wrap,
@@ -171,7 +171,7 @@ namespace Gek
             Border,
         };
 
-        enum class Map : UINT8
+        enum class Map : uint8_t
         {
             Read = 0,
             Write,
@@ -180,7 +180,7 @@ namespace Gek
             WriteNoOverwrite,
         };
 
-        enum class BufferType : UINT8
+        enum class BufferType : uint8_t
         {
             Raw = 0,
             Vertex,
@@ -253,7 +253,7 @@ namespace Gek
             FillMode fillMode;
             CullMode cullMode;
             bool frontCounterClockwise;
-            UINT32 depthBias;
+            uint32_t depthBias;
             float depthBiasClamp;
             float slopeScaledDepthBias;
             bool depthClipEnable;
@@ -298,8 +298,8 @@ namespace Gek
             DepthWrite writeMask;
             ComparisonFunction comparisonFunction;
             bool stencilEnable;
-            UINT8 stencilReadMask;
-            UINT8 stencilWriteMask;
+            uint8_t stencilReadMask;
+            uint8_t stencilWriteMask;
             StencilState stencilFrontState;
             StencilState stencilBackState;
 
@@ -323,7 +323,7 @@ namespace Gek
             BlendSource alphaSource;
             BlendSource alphaDestination;
             BlendOperation alphaOperation;
-            UINT8 writeMask;
+            uint8_t writeMask;
 
             TargetBlendState(void)
                 : enable(false)
@@ -367,7 +367,7 @@ namespace Gek
             AddressMode addressModeV;
             AddressMode addressModeW;
             float mipLevelBias;
-            UINT32 maximumAnisotropy;
+            uint32_t maximumAnisotropy;
             ComparisonFunction comparisonFunction;
             Math::Color borderColor;
             float minimumMipLevel;
@@ -392,9 +392,9 @@ namespace Gek
         {
             Format format;
             const char *semanticName;
-            UINT32 semanticIndex;
+            uint32_t semanticIndex;
             ElementType slotClass;
-            UINT32 slotIndex;
+            uint32_t slotIndex;
 
             InputElement(void)
                 : format(Format::Unknown)
@@ -405,7 +405,7 @@ namespace Gek
             {
             }
 
-            InputElement(Format format, const char *semanticName, UINT32 semanticIndex, ElementType slotClass = ElementType::Vertex, UINT32 slotIndex = 0)
+            InputElement(Format format, const char *semanticName, uint32_t semanticIndex, ElementType slotClass = ElementType::Vertex, uint32_t slotIndex = 0)
                 : format(format)
                 , semanticName(semanticName)
                 , semanticIndex(semanticIndex)
@@ -425,17 +425,17 @@ namespace Gek
         : virtual public VideoObject
     {
         virtual Video::Format getFormat(void) = 0;
-        virtual UINT32 getStride(void) = 0;
-        virtual UINT32 getCount(void) = 0;
+        virtual uint32_t getStride(void) = 0;
+        virtual uint32_t getCount(void) = 0;
     };
 
     GEK_INTERFACE(VideoTexture)
         : virtual public VideoObject
     {
         virtual Video::Format getFormat(void) = 0;
-        virtual UINT32 getWidth(void) = 0;
-        virtual UINT32 getHeight(void) = 0;
-        virtual UINT32 getDepth(void) = 0;
+        virtual uint32_t getWidth(void) = 0;
+        virtual uint32_t getHeight(void) = 0;
+        virtual uint32_t getDepth(void) = 0;
     };
 
     GEK_INTERFACE(VideoTarget)
@@ -447,10 +447,10 @@ namespace Gek
     GEK_INTERFACE(VideoPipeline)
     {
         virtual void setProgram(VideoObject *program) = 0;
-        virtual void setConstantBuffer(VideoBuffer *constantBuffer, UINT32 stage) = 0;
-        virtual void setSamplerState(VideoObject *samplerState, UINT32 stage) = 0;
-        virtual void setResource(VideoObject *resource, UINT32 stage) = 0;
-        virtual void setUnorderedAccess(VideoObject *unorderedAccess, UINT32 stage) = 0;
+        virtual void setConstantBuffer(VideoBuffer *constantBuffer, uint32_t stage) = 0;
+        virtual void setSamplerState(VideoObject *samplerState, uint32_t stage) = 0;
+        virtual void setResource(VideoObject *resource, uint32_t stage) = 0;
+        virtual void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage) = 0;
     };
 
     GEK_INTERFACE(VideoContext)
@@ -464,28 +464,28 @@ namespace Gek
 
         virtual void clearResources(void) = 0;
 
-        virtual void setViewports(Video::ViewPort *viewPortList, UINT32 viewPortCount) = 0;
-        virtual void setScissorRect(Shapes::Rectangle<UINT32> *rectangleList, UINT32 rectangleCount) = 0;
+        virtual void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
+        virtual void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
 
         virtual void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear) = 0;
-        virtual void clearDepthStencilTarget(VideoObject *depthBuffer, UINT32 flags, float depthClear, UINT32 stencilClear) = 0;
-        virtual void setRenderTargets(VideoTarget **renderTargetList, UINT32 renderTargetCount, VideoObject *depthBuffer) = 0;
+        virtual void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear) = 0;
+        virtual void setRenderTargets(VideoTarget **renderTargetList, uint32_t renderTargetCount, VideoObject *depthBuffer) = 0;
 
         virtual void setRenderState(VideoObject *renderState) = 0;
-        virtual void setDepthState(VideoObject *depthState, UINT32 stencilReference) = 0;
-        virtual void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, UINT32 sampleMask) = 0;
+        virtual void setDepthState(VideoObject *depthState, uint32_t stencilReference) = 0;
+        virtual void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
 
-        virtual void setVertexBuffer(UINT32 slot, VideoBuffer *vertexBuffer, UINT32 offset) = 0;
-        virtual void setIndexBuffer(VideoBuffer *indexBuffer, UINT32 offset) = 0;
+        virtual void setVertexBuffer(uint32_t slot, VideoBuffer *vertexBuffer, uint32_t offset) = 0;
+        virtual void setIndexBuffer(VideoBuffer *indexBuffer, uint32_t offset) = 0;
         virtual void setPrimitiveType(Video::PrimitiveType type) = 0;
 
-        virtual void drawPrimitive(UINT32 vertexCount, UINT32 firstVertex) = 0;
-        virtual void drawInstancedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 vertexCount, UINT32 firstVertex) = 0;
+        virtual void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex) = 0;
+        virtual void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
 
-        virtual void drawIndexedPrimitive(UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) = 0;
-        virtual void drawInstancedIndexedPrimitive(UINT32 instanceCount, UINT32 firstInstance, UINT32 indexCount, UINT32 firstIndex, UINT32 firstVertex) = 0;
+        virtual void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
+        virtual void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
 
-        virtual void dispatch(UINT32 threadGroupCountX, UINT32 threadGroupCountY, UINT32 threadGroupCountZ) = 0;
+        virtual void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
 
         virtual VideoObjectPtr finishCommandList(void) = 0;
     };
@@ -494,7 +494,7 @@ namespace Gek
     {
     public:
         virtual void setFullScreen(bool fullScreen) = 0;
-        virtual void setSize(UINT32 width, UINT32 height, Video::Format format) = 0;
+        virtual void setSize(uint32_t width, uint32_t height, Video::Format format) = 0;
         virtual void resize(void) = 0;
 
         virtual void * const getSwapChain(void) = 0;
@@ -515,28 +515,28 @@ namespace Gek
         virtual VideoObjectPtr createBlendState(const Video::IndependentBlendState &blendState) = 0;
         virtual VideoObjectPtr createSamplerState(const Video::SamplerState &samplerState) = 0;
 
-        virtual VideoTexturePtr createTexture(Video::Format format, UINT32 width, UINT32 height, UINT32 depth, UINT32 flags, UINT32 mipmaps = 1) = 0;
-        virtual VideoTexturePtr loadTexture(const wchar_t *fileName, UINT32 flags) = 0;
-        virtual VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], UINT32 flags) = 0;
-        virtual void updateTexture(VideoTexture *texture, const void *data, UINT32 pitch, Shapes::Rectangle<UINT32> *rectangle = nullptr) = 0;
+        virtual VideoTexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps = 1) = 0;
+        virtual VideoTexturePtr loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
+        virtual VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], uint32_t flags) = 0;
+        virtual void updateTexture(VideoTexture *texture, const void *data, uint32_t pitch, Shapes::Rectangle<uint32_t> *rectangle = nullptr) = 0;
 
-        virtual VideoBufferPtr createBuffer(UINT32 stride, UINT32 count, Video::BufferType type, UINT32 flags, const void *staticData = nullptr) = 0;
-        virtual VideoBufferPtr createBuffer(Video::Format format, UINT32 count, Video::BufferType type, UINT32 flags, const void *staticData = nullptr) = 0;
+        virtual VideoBufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
+        virtual VideoBufferPtr createBuffer(Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
         virtual void updateBuffer(VideoBuffer *buffer, const void *data) = 0;
         virtual void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
         virtual void unmapBuffer(VideoBuffer *buffer) = 0;
 
         virtual void copyResource(VideoObject *destination, VideoObject *source) = 0;
 
-        virtual VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 
-        virtual VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-        virtual VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout = std::vector<Video::InputElement>(), std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 
         virtual void executeCommandList(VideoObject *commandList) = 0;
 

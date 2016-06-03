@@ -6,6 +6,7 @@
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\Engine.h"
+#include <Windows.h>
 #include <CommCtrl.h>
 #include "resource.h"
 
@@ -35,11 +36,11 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         };
 
         XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
-        UINT32 width = displayNode->getAttribute(L"width", L"800");
-        UINT32 height = displayNode->getAttribute(L"height", L"600");
+        uint32_t width = displayNode->getAttribute(L"width", L"800");
+        uint32_t height = displayNode->getAttribute(L"height", L"600");
         bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
 
-        UINT32 selectIndex = 0;
+        uint32_t selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
         std::vector<DisplayMode> modeList = getDisplayModes()[32];
         for (auto &mode : modeList)
@@ -82,7 +83,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         case IDOK:
         {
             std::vector<DisplayMode> modeList = getDisplayModes()[32];
-            UINT32 selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
+            uint32_t selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
             auto &mode = modeList[selectIndex];
 
             XmlDocumentPtr document;
@@ -119,7 +120,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
     return FALSE;
 }
 
-LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT resultValue = 0;
     Engine *engineCore = reinterpret_cast<Engine *>(GetWindowLongPtr(window, GWLP_USERDATA));
@@ -127,7 +128,11 @@ LRESULT CALLBACK WindowProc(HWND window, UINT32 message, WPARAM wParam, LPARAM l
     {
     case WM_CLOSE:
     case WM_DESTROY:
-        engineCore->windowEvent(message, wParam, lParam);
+        if (engineCore)
+        {
+            engineCore->windowEvent(message, wParam, lParam);
+        }
+
         PostQuitMessage(0);
         break;
 
@@ -195,8 +200,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             };
 
             XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
-            UINT32 width = displayNode->getAttribute(L"width", L"800");
-            UINT32 height = displayNode->getAttribute(L"height", L"600");
+            uint32_t width = displayNode->getAttribute(L"width", L"800");
+            uint32_t height = displayNode->getAttribute(L"height", L"600");
             bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
 
             RECT clientRect;

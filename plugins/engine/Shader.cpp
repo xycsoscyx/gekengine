@@ -106,7 +106,7 @@ namespace Gek
         , public Shader
     {
     public:
-        enum class MapType : UINT8
+        enum class MapType : uint8_t
         {
             Texture1D = 0,
             Texture2D,
@@ -115,7 +115,7 @@ namespace Gek
             Buffer,
         };
 
-        enum class BindType : UINT8
+        enum class BindType : uint8_t
         {
             Float = 0,
             Float2,
@@ -138,9 +138,9 @@ namespace Gek
             String defaultValue;
             MapType mapType;
             BindType bindType;
-            UINT32 flags;
+            uint32_t flags;
 
-            Map(const wchar_t *name, const wchar_t *defaultValue, MapType mapType, BindType bindType, UINT32 flags)
+            Map(const wchar_t *name, const wchar_t *defaultValue, MapType mapType, BindType bindType, uint32_t flags)
                 : name(name)
                 , defaultValue(defaultValue)
                 , mapType(mapType)
@@ -154,9 +154,9 @@ namespace Gek
         {
             Pass::Mode mode;
             bool enableDepth;
-            UINT32 depthClearFlags;
+            uint32_t depthClearFlags;
             float depthClearValue;
-            UINT32 stencilClearValue;
+            uint32_t stencilClearValue;
             DepthStateHandle depthState;
             RenderStateHandle renderState;
             Math::Color blendFactor;
@@ -167,9 +167,9 @@ namespace Gek
             std::unordered_map<String, String> copyResourceMap;
             std::unordered_map<String, String> unorderedAccessList;
             ProgramHandle program;
-            UINT32 dispatchWidth;
-            UINT32 dispatchHeight;
-            UINT32 dispatchDepth;
+            uint32_t dispatchWidth;
+            uint32_t dispatchHeight;
+            uint32_t dispatchDepth;
 
             PassData(void)
                 : mode(Pass::Mode::Forward)
@@ -207,8 +207,8 @@ namespace Gek
         __declspec(align(16))
             struct LightConstantData
         {
-            UINT32 count;
-            UINT32 padding[3];
+            uint32_t count;
+            uint32_t padding[3];
         };
 
         struct LightType
@@ -223,7 +223,7 @@ namespace Gek
 
         struct LightData
         {
-            UINT32 type;
+            uint32_t type;
             Math::Float3 position;
             Math::Float3 direction;
             Math::Float3 color;
@@ -266,11 +266,11 @@ namespace Gek
         Resources *resources;
         Population *population;
 
-        UINT32 priority;
+        uint32_t priority;
 
         VideoBufferPtr shaderConstantBuffer;
 
-        UINT32 lightsPerPass;
+        uint32_t lightsPerPass;
         VideoBufferPtr lightConstantBuffer;
         VideoBufferPtr lightDataBuffer;
         std::vector<LightData> lightList;
@@ -348,9 +348,9 @@ namespace Gek
             return L"float4";
         }
 
-        static UINT32 getTextureLoadFlags(const String &loadFlags)
+        static uint32_t getTextureLoadFlags(const String &loadFlags)
         {
-            UINT32 flags = 0;
+            uint32_t flags = 0;
             int position = 0;
             std::vector<String> flagList(loadFlags.getLower().split(L','));
             for (auto &flag : flagList)
@@ -364,9 +364,9 @@ namespace Gek
             return flags;
         }
 
-        static UINT32 getTextureCreateFlags(const String &createFlags)
+        static uint32_t getTextureCreateFlags(const String &createFlags)
         {
-            UINT32 flags = 0;
+            uint32_t flags = 0;
             int position = 0;
             std::vector<String> flagList(createFlags.getLower().split(L','));
             for (auto &flag : flagList)
@@ -573,7 +573,7 @@ namespace Gek
             }
             else if (integer)
             {
-                return String(L"%v", Evaluator::get<UINT32>(finalValue));
+                return String(L"%v", Evaluator::get<uint32_t>(finalValue));
             }
             else
             {
@@ -611,7 +611,7 @@ namespace Gek
                 String defaultValue(mapNode->getAttribute(L"default"));
                 MapType mapType = getMapType(mapNode->getText());
                 BindType bindType = getBindType(mapNode->getAttribute(L"bind"));
-                UINT32 flags = getTextureLoadFlags(mapNode->getAttribute(L"flags"));
+                uint32_t flags = getTextureLoadFlags(mapNode->getAttribute(L"flags"));
                 mapList.push_back(Map(name, defaultValue, mapType, bindType, flags));
                 mapNode = mapNode->nextSiblingElement();
             };
@@ -722,7 +722,7 @@ namespace Gek
                     }
 
                     Video::Format format = getFormat(textureNode->getText());
-                    UINT32 flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
+                    uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
                     resourceMap[name] = resources->createTexture(String(L"%v:%v", fileName, name), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
                 }
 
@@ -736,7 +736,7 @@ namespace Gek
             {
                 String name(bufferNode->getType());
                 Video::Format format = getFormat(bufferNode->getText());
-                UINT32 size = evaluate(bufferNode->getAttribute(L"size"), true);
+                uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
                 resourceMap[name] = resources->createBuffer(String(L"%v:buffer:%v", fileName, name), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                 switch (format)
                 {
@@ -901,7 +901,7 @@ namespace Gek
                         engineData += lightingData;
                     }
 
-                    UINT32 stage = 0;
+                    uint32_t stage = 0;
                     StringUTF8 outputData;
                     for (auto &resourcePair : pass.renderTargetList)
                     {
@@ -923,7 +923,7 @@ namespace Gek
                     }
 
                     StringUTF8 resourceData;
-                    UINT32 resourceStage(block.lighting ? 1 : 0);
+                    uint32_t resourceStage(block.lighting ? 1 : 0);
                     if (pass.mode == Pass::Mode::Forward)
                     {
                         for (auto &mapNode : mapList)
@@ -998,7 +998,7 @@ namespace Gek
                     String programFileName = programNode->firstChildElement(L"source")->getText();
                     String programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
                     StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
-                    auto onInclude = [&](const char *resourceName, std::vector<UINT8> &data) -> void
+                    auto onInclude = [&](const char *resourceName, std::vector<uint8_t> &data) -> void
                     {
                         if (_stricmp(resourceName, "GEKEngine") == 0)
                         {
@@ -1038,14 +1038,14 @@ namespace Gek
                     XmlNodePtr computeNode = programNode->firstChildElement(L"compute");
                     if (computeNode->isValid())
                     {
-                        pass.dispatchWidth = std::max((UINT32)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
-                        pass.dispatchHeight = std::max((UINT32)evaluate(computeNode->firstChildElement(L"height")->getText()), 1U);
-                        pass.dispatchDepth = std::max((UINT32)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
+                        pass.dispatchWidth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
+                        pass.dispatchHeight = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"height")->getText()), 1U);
+                        pass.dispatchDepth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
                     }
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        UINT32 stage = 0;
+                        uint32_t stage = 0;
                         StringUTF8 unorderedAccessData;
                         for (auto &resourcePair : pass.unorderedAccessList)
                         {
@@ -1071,7 +1071,7 @@ namespace Gek
                     else
                     {
                         StringUTF8 unorderedAccessData;
-                        UINT32 stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                        uint32_t stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
                         for (auto &resourcePair : pass.unorderedAccessList)
                         {
                             auto resourceIterator = resourceList.find(resourcePair.first);
@@ -1108,7 +1108,7 @@ namespace Gek
         }
 
         // Shader
-        UINT32 getPriority(void)
+        uint32_t getPriority(void)
         {
             return priority;
         }
@@ -1139,7 +1139,7 @@ namespace Gek
         {
             renderContext->getContext()->clearResources();
 
-            UINT32 stage = 0;
+            uint32_t stage = 0;
             RenderPipeline *renderPipeline = (pass.mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             if (block.lighting)
             {
@@ -1235,7 +1235,7 @@ namespace Gek
                 }
                 else
                 {
-                    UINT32 stage = 0;
+                    uint32_t stage = 0;
                     for (auto &resourcePair : pass.renderTargetList)
                     {
                         ResourceHandle renderTargetHandle;
@@ -1274,7 +1274,7 @@ namespace Gek
             return pass.mode;
         }
 
-        bool prepareBlock(UINT32 &base, RenderContext *renderContext, BlockData &block)
+        bool prepareBlock(uint32_t &base, RenderContext *renderContext, BlockData &block)
         {
             if (base == 0)
             {
@@ -1293,8 +1293,8 @@ namespace Gek
             {
                 if (base < lightList.size())
                 {
-                    UINT32 lightListCount = lightList.size();
-                    UINT32 lightPassCount = std::min((lightListCount - base), lightsPerPass);
+                    uint32_t lightListCount = lightList.size();
+                    uint32_t lightPassCount = std::min((lightListCount - base), lightsPerPass);
 
                     LightConstantData *lightConstants = nullptr;
                     video->mapBuffer(lightConstantBuffer.get(), (void **)&lightConstants);
@@ -1357,7 +1357,7 @@ namespace Gek
             RenderContext *renderContext;
             ShaderImplementation *shaderNode;
             std::list<ShaderImplementation::BlockData>::iterator current, end;
-            UINT32 base;
+            uint32_t base;
 
         public:
             BlockImplementation(RenderContext *renderContext, ShaderImplementation *shaderNode, std::list<ShaderImplementation::BlockData>::iterator current, std::list<ShaderImplementation::BlockData>::iterator end)
@@ -1392,7 +1392,7 @@ namespace Gek
             GEK_REQUIRE(block);
             GEK_REQUIRE(pass);
 
-            UINT32 firstStage = 0;
+            uint32_t firstStage = 0;
             if (static_cast<BlockImplementation *>(block)->current->lighting)
             {
                 firstStage = 1;

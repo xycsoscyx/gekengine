@@ -22,7 +22,7 @@ namespace Gek
     {
     }
 
-    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const wchar_t *string, UINT32 parameterCount)
+    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const wchar_t *string, uint32_t parameterCount)
         : type(type)
         , string(string)
         , parameterCount(parameterCount)
@@ -158,7 +158,7 @@ namespace Gek
         } } });
     }
 
-    UINT32 ShuntingYard::getReturnSize(const TokenList &rpnTokenList)
+    uint32_t ShuntingYard::getReturnSize(const TokenList &rpnTokenList)
     {
         return rpnTokenList.back().parameterCount;
     }
@@ -169,12 +169,12 @@ namespace Gek
         return convertInfixToReversePolishNotation(infixTokenList);
     }
 
-    void ShuntingYard::evaluateValue(TokenList &rpnTokenList, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(TokenList &rpnTokenList, float *value, uint32_t valueSize)
     {
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    void ShuntingYard::evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(const wchar_t *expression, float *value, uint32_t valueSize)
     {
         TokenList rpnTokenList(getTokenList(expression));
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
@@ -413,7 +413,7 @@ namespace Gek
 
         Stack<Token> stack;
         Stack<bool> parameterExistsStack;
-        Stack<UINT32> parameterCountStack;
+        Stack<uint32_t> parameterCountStack;
         for (auto &token : infixTokenList)
         {
             switch (token.type)
@@ -539,7 +539,7 @@ namespace Gek
         return rpnTokenList;
     }
 
-    void ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, uint32_t valueSize)
     {
         bool hasVector = false;
 
@@ -617,7 +617,7 @@ namespace Gek
 
         GEK_CHECK_CONDITION(rpnTokenList.empty(), InvalidEquation, "Empty equation found");
         GEK_CHECK_CONDITION(stack.size() != valueSize, InvalidVector, "Not enough parameters for requested return value");
-        for (UINT32 axis = valueSize; axis > 0; axis--)
+        for (uint32_t axis = valueSize; axis > 0; axis--)
         {
             value[axis - 1] = stack.popTop().value;
         }

@@ -11,10 +11,8 @@ namespace Gek
 {
     namespace Evaluator
     {
-        void get(const wchar_t *expression, INT32 &result, INT32 defaultValue = 0);
-        void get(const wchar_t *expression, UINT32 &result, UINT32 defaultValue = 0);
-        void get(const wchar_t *expression, INT64 &result, INT64 defaultValue = 0);
-        void get(const wchar_t *expression, UINT64 &result, UINT64 defaultValue = 0);
+        void get(const wchar_t *expression, int32_t &result, int32_t defaultValue = 0);
+        void get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue = 0);
         void get(const wchar_t *expression, float &result, float defaultValue = 0);
         void get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue = Math::Float2(0.0f, 0.0f));
         void get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue = Math::Float3(0.0f, 0.0f, 0.0f));

@@ -59,8 +59,8 @@ namespace Gek
 
         virtual void listProcessors(std::function<void(Processor *)> onProcessor) const = 0;
 
-        virtual UINT32 setUpdatePriority(PopulationObserver *observer, UINT32 priority) = 0;
-        virtual void removeUpdatePriority(UINT32 updateHandle) = 0;
+        virtual uint32_t setUpdatePriority(PopulationObserver *observer, uint32_t priority) = 0;
+        virtual void removeUpdatePriority(uint32_t updateHandle) = 0;
     };
 
     GEK_INTERFACE(PopulationSystem)
@@ -81,6 +81,6 @@ namespace Gek
         virtual void onEntityCreated(Entity *entity) { };
         virtual void onEntityDestroyed(Entity *entity) { };
 
-        virtual void onUpdate(UINT32 handle, bool isIdle) { };
+        virtual void onUpdate(uint32_t handle, bool isIdle) { };
     };
 }; // namespace Gek

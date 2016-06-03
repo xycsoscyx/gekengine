@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Utility\String.h"
-#include <Windows.h>
+#include <chrono>
 #include <json.hpp>
 
 namespace Gek
@@ -11,14 +11,14 @@ namespace Gek
     {
     private:
         const char *function;
-        UINT32 line;
+        uint32_t line;
 
     public:
-        Exception(const char *function, UINT32 line, const char *message);
+        Exception(const char *function, uint32_t line, const char *message);
         virtual ~Exception(void) = default;
 
         const char *in(void) const;
-        UINT32 at(void) const;
+        uint32_t at(void) const;
     };
 
     namespace Trace
@@ -40,68 +40,38 @@ namespace Gek
             }
         };
 
-        void inline getParameters(nlohmann::json &json)
+        void inline getParameters(nlohmann::json &jsonArguments)
         {
         }
 
         template<typename VALUE, typename... ARGUMENTS>
-        void getParameters(nlohmann::json &json, Parameter<VALUE> &pair, ARGUMENTS&... arguments)
+        void getParameters(nlohmann::json &jsonArguments, Parameter<VALUE> &pair, ARGUMENTS&... arguments)
         {
-            StringUTF8 value;
-            value = pair.value;
-            json["arguments"][pair.name] = static_cast<std::string &>(value);
-            getParameters(json, arguments...);
+            jsonArguments[pair.name] = StringUTF8("%v", pair.value).c_str();
+            getParameters(jsonArguments, arguments...);
         }
 
-        void inline log(const char *type, const char *category, ULONGLONG timeStamp, const char *function)
-        {
-            nlohmann::json profileData = {
-                { "name", function },
-                { "cat", category },
-                { "ph", type },
-                { "ts", timeStamp },
-                { "pid", GetCurrentProcessId() },
-                { "tid", GetCurrentThreadId() },
-            };
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, nlohmann::json *jsonArguments = nullptr);
 
-            log((profileData.dump(4) + ",\r\n").c_str());
+        template<typename... ARGUMENTS>
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, ARGUMENTS&... arguments)
+        {
+            nlohmann::json jsonArguments;
+            getParameters(jsonArguments, arguments...);
+            log(type, category, timeStamp, function, &jsonArguments);
         }
 
         template<typename... ARGUMENTS>
-        void log(const char *type, const char *category, ULONGLONG timeStamp, const char *function, ARGUMENTS&... arguments)
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, const char *message, ARGUMENTS&... arguments)
         {
-            nlohmann::json profileData = {
-                { "name", function },
-                { "cat", category },
-                { "ph", type },
-                { "ts", timeStamp },
-                { "pid", GetCurrentProcessId() },
-                { "tid", GetCurrentThreadId() },
-            };
-
-            getParameters(profileData, arguments...);
-            log((profileData.dump(4) + ",\r\n").c_str());
-        }
-
-        template<typename... ARGUMENTS>
-        void log(const char *type, const char *category, ULONGLONG timeStamp, const char *function, const char *message, ARGUMENTS&... arguments)
-        {
-            nlohmann::json profileData = {
-                { "name", function },
-                { "cat", category },
-                { "ph", type },
-                { "ts", timeStamp },
-                { "pid", GetCurrentProcessId() },
-                { "tid", GetCurrentThreadId() },
-            };
-
-            getParameters(profileData, arguments...);
+            nlohmann::json jsonArguments;
+            getParameters(jsonArguments, arguments...);
             if (message)
             {
-                profileData["arguments"]["message"] = message;
+                jsonArguments["message"] = message;
             }
 
-            log((profileData.dump(4) + ",\r\n").c_str());
+            log(type, category, timeStamp, function, &jsonArguments);
         }
 
         class Scope
@@ -115,7 +85,7 @@ namespace Gek
                 : category(category)
                 , function(function)
             {
-                log("B", category, GetTickCount64(), function);
+                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function);
             }
 
             template<typename... ARGUMENTS>
@@ -123,12 +93,12 @@ namespace Gek
                 : category(category)
                 , function(function)
             {
-                log("B", category, GetTickCount64(), function, arguments...);
+                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function, arguments...);
             }
 
             ~Scope(void)
             {
-                log("E", category, GetTickCount64(), function);
+                log("E", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function);
             }
         };
 
@@ -136,7 +106,7 @@ namespace Gek
             : public Gek::Exception
         {
         public:
-            Exception(const char *function, UINT32 line, const char *message);
+            Exception(const char *function, uint32_t line, const char *message);
             virtual ~Exception(void) = default;
         };
     }; // namespace Trace
@@ -174,9 +144,9 @@ namespace Gek
 
 #define GEK_PARAMETER(NAME)                                     Trace::Parameter<decltype(NAME)>(#NAME, NAME)
 #define GEK_TRACE_SCOPE(...)                                    Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
-#define GEK_TRACE_FUNCTION(...)                                 Trace::log("i", "Function", GetTickCount64(), __FUNCTION__, __VA_ARGS__)
-#define GEK_TRACE_EVENT(MESSAGE, ...)                           Trace::log("i", "Event", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-#define GEK_TRACE_ERROR(MESSAGE, ...)                           Trace::log("i", "Error", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+#define GEK_TRACE_FUNCTION(...)                                 Trace::log("i", "Function", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, __VA_ARGS__)
+#define GEK_TRACE_EVENT(MESSAGE, ...)                           Trace::log("i", "Event", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+#define GEK_TRACE_ERROR(MESSAGE, ...)                           Trace::log("i", "Error", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
 
 #define GEK_CHECK_CONDITION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::StringUTF8(MESSAGE, __VA_ARGS__));
 #define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::StringUTF8(MESSAGE, __VA_ARGS__));

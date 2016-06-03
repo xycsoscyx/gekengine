@@ -268,7 +268,7 @@ namespace Gek
             return newtonBody;
         }
 
-        UINT32 getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+        uint32_t getSurface(const Math::Float3 &position, const Math::Float3 &normal)
         {
             return 0;
         }

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Windows.h>
 #include "GEK\Engine\Entity.h"
 #include <Newton.h>
 
@@ -12,7 +11,7 @@ namespace Gek
 
         virtual NewtonBody * const getNewtonBody(void) const = 0;
 
-        virtual UINT32 getSurface(const Math::Float3 &position, const Math::Float3 &normal) = 0;
+        virtual uint32_t getSurface(const Math::Float3 &position, const Math::Float3 &normal) = 0;
 
         // Called before the update phase to set the frame data for the body
         // Applies to rigid and player bodies

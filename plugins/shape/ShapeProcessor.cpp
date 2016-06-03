@@ -126,7 +126,7 @@ namespace Gek
         std::vector <Triangle> triangles;
         std::vector <Triangle> newTriangles;
 
-        std::vector <UINT16> indices;
+        std::vector <uint16_t> indices;
         float inscriptionRadiusMultiplier;
 
         void splitEdge(Edge & e)
@@ -341,9 +341,9 @@ namespace Gek
             indices.reserve(trianglesCount * 3);
             for (size_t i = 0; i < trianglesCount; ++i)
             {
-                indices.push_back((UINT16)triangles[i].vertices[0]);
-                indices.push_back((UINT16)triangles[i].vertices[1]);
-                indices.push_back((UINT16)triangles[i].vertices[2]);
+                indices.push_back((uint16_t)triangles[i].vertices[0]);
+                indices.push_back((uint16_t)triangles[i].vertices[1]);
+                indices.push_back((uint16_t)triangles[i].vertices[2]);
             }
         }
 
@@ -352,7 +352,7 @@ namespace Gek
             return vertices;
         }
 
-        const std::vector <UINT16> & getIndices() const
+        const std::vector <uint16_t> & getIndices() const
         {
             return indices;
         }
@@ -370,7 +370,7 @@ namespace Gek
         , public Processor
     {
     public:
-        enum class ShapeType : UINT8
+        enum class ShapeType : uint8_t
         {
             Unknown = 0,
             Sphere,
@@ -384,7 +384,7 @@ namespace Gek
             Shapes::AlignedBox alignedBox;
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
-            UINT32 indexCount;
+            uint32_t indexCount;
 
             Shape(void)
                 : type(ShapeType::Unknown)
@@ -496,12 +496,12 @@ namespace Gek
                 if (true)
                 {
                     GeoSphere geoSphere;
-                    UINT32 divisionCount = shape.parameters;
+                    uint32_t divisionCount = shape.parameters;
                     geoSphere.generate(divisionCount);
 
                     shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
                     break;
                 }
             };

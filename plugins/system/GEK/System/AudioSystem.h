@@ -15,7 +15,7 @@ namespace Gek
     GEK_INTERFACE(AudioSample)
     {
         virtual void * const getBuffer(void) = 0;
-        virtual void setFrequency(UINT32 frequency) = 0;
+        virtual void setFrequency(uint32_t frequency) = 0;
         virtual void setVolume(float volume) = 0;
     };
 

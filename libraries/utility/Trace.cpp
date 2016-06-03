@@ -1,13 +1,14 @@
 #include "GEK\Utility\Trace.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
+#include <Windows.h>
 #include <thread>
 #include <mutex>
 #include <concurrent_vector.h>
 
 namespace Gek
 {
-    Exception::Exception(const char *function, UINT32 line, const char *message)
+    Exception::Exception(const char *function, uint32_t line, const char *message)
         : std::exception(message)
         , function(function)
         , line(line)
@@ -19,17 +20,17 @@ namespace Gek
         return function;
     }
 
-    UINT32 Exception::at(void) const
+    uint32_t Exception::at(void) const
     {
         return line;
     }
 
     namespace Trace
     {
-        Exception::Exception(const char *function, UINT32 line, const char *message)
+        Exception::Exception(const char *function, uint32_t line, const char *message)
             : Gek::Exception(function, line, message)
         {
-            log("i", "exception", GetTickCount64(), function, message);
+            log("i", "exception", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function, message);
         }
 
         class Logger
@@ -143,7 +144,8 @@ namespace Gek
                         OutputDebugStringW(String(L"Error creating named pipe: %v", error));
                     }
 
-                    nlohmann::json profileData = {
+                    nlohmann::json profileData =
+                    {
                         { "name", "traceShutDown" },
                         { "cat", "Trace" },
                         { "ph", "i" },
@@ -178,6 +180,26 @@ namespace Gek
                 server->join();
                 server = nullptr;
             }
+        }
+
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, nlohmann::json *jsonArguments)
+        {
+            nlohmann::json profileData =
+            {
+                { "name", function },
+                { "cat", category },
+                { "ph", type },
+                { "ts", timeStamp },
+                { "pid", GetCurrentProcessId() },
+                { "tid", GetCurrentThreadId() },
+            };
+
+            if (jsonArguments)
+            {
+                profileData["arguments"] = (*jsonArguments);
+            }
+
+            log((profileData.dump(4) + ",\r\n").c_str());
         }
 
         void log(const char *string)

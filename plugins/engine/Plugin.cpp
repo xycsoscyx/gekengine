@@ -241,7 +241,7 @@ namespace Gek
             StringUTF8 progamScript;
             FileSystem::load(programPath, progamScript);
 
-            auto onInclude = [&](const char *resourceName, std::vector<UINT8> &data) -> void
+            auto onInclude = [&](const char *resourceName, std::vector<uint8_t> &data) -> void
             {
                 if (_stricmp(resourceName, "GEKPlugin") == 0)
                 {
