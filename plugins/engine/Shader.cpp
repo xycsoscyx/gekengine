@@ -603,8 +603,8 @@ namespace Gek
             priority = shaderNode->getAttribute(L"priority");
 
             std::unordered_map<wstring, std::pair<MapType, BindType>> resourceList;
-            XmlNodePtr materialNode = shaderNode->firstChildElement(L"materialNode");
-            XmlNodePtr mapsNode = materialNode->firstChildElement(L"mapsNode");
+            XmlNodePtr materialNode = shaderNode->firstChildElement(L"material");
+            XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
             XmlNodePtr mapNode = mapsNode->firstChildElement();
             while (mapNode->isValid())
             {
