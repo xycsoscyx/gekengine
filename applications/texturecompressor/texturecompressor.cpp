@@ -7,7 +7,6 @@
 #include "GEK\Utility\FileSystem.h"
 #include <Shlwapi.h>
 #include <DirectXTex.h>
-#include <experimental\filesystem>
 #include <unordered_map>
 #include <algorithm>
 #include <vector>
@@ -22,17 +21,17 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
     try
     {
-        wstring fileNameInput;
-        wstring fileNameOutput;
+        FileSystem::Path fileNameInput;
+        FileSystem::Path fileNameOutput;
 
-        wstring format;
+        String format;
         bool overwrite = false;
         bool sRGBIn = false;
         bool sRGBOut = false;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
-            wstring argument(argumentList[argumentIndex]);
-            std::vector<wstring> arguments(argument.split(L':'));
+            String argument(argumentList[argumentIndex]);
+            std::vector<String> arguments(argument.split(L':'));
             GEK_CHECK_CONDITION(arguments.empty(), Trace::Exception, "Invalid argument encountered: %v", argumentList[argumentIndex]);
             if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
@@ -71,8 +70,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         GEK_CHECK_CONDITION(format.empty(), Trace::Exception, "Compression format required");
-        GEK_CHECK_CONDITION(!PathFileExists(fileNameInput), Trace::Exception, "Input file not found: %v", fileNameInput);
-        GEK_CHECK_CONDITION(!overwrite && PathFileExists(fileNameOutput), Trace::Exception, "Output already exists (must specify overwrite): %v", fileNameOutput);
+        GEK_CHECK_CONDITION(!fileNameInput.isFile(), Trace::Exception, "Input file not found: %v", fileNameInput.string());
+        GEK_CHECK_CONDITION(!overwrite && fileNameOutput.isFile(), Trace::Exception, "Output already exists (must specify overwrite): %v", fileNameOutput.string());
 
         DeleteFile(fileNameOutput);
         printf("Compressing: -> %S\r\n", fileNameInput.c_str());
@@ -84,7 +83,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         std::vector<UINT8> fileData;
         FileSystem::load(fileNameInput, fileData);
 
-        wstring extension(std::experimental::filesystem::path(fileNameInput).extension().c_str());
+        String extension(FileSystem::Path(fileNameInput).getExtension());
         std::function<HRESULT(UINT8*, size_t, ::DirectX::ScratchImage &)> load;
         if (extension.compare(L".dds") == 0)
         {
@@ -112,7 +111,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         ::DirectX::ScratchImage image;
         HRESULT resultValue = load(fileData.data(), fileData.size(), image);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileNameInput);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileNameInput.string());
         printf(".loaded.");
 
         ::DirectX::ScratchImage mipMapChain;

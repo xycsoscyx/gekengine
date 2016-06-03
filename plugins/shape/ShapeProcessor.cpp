@@ -379,7 +379,7 @@ namespace Gek
         struct Shape
         {
             ShapeType type;
-            wstring parameters;
+            String parameters;
             std::atomic<bool> loaded;
             Shapes::AlignedBox alignedBox;
             ResourceHandle vertexBuffer;
@@ -475,7 +475,7 @@ namespace Gek
             population->removeObserver((PopulationObserver *)this);
         }
 
-        void loadBoundingBox(Shape &shape, const wstring &name, const wstring &parameters)
+        void loadBoundingBox(Shape &shape, const String &name, const String &parameters)
         {
             if (name.compare(L"sphere") == 0)
             {
@@ -500,8 +500,8 @@ namespace Gek
                     geoSphere.generate(divisionCount);
 
                     shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(wstring(L"shape:vertex:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(wstring(L"shape:index:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
+                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<UINT8>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
                     break;
                 }
             };

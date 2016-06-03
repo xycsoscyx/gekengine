@@ -15,7 +15,7 @@ namespace Gek
         virtual Resources * getResources(void) const = 0;
         virtual Render * getRender(void) const = 0;
 
-        virtual const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const = 0;
+        virtual const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = L"") const = 0;
 
         virtual void beginChanges(void) = 0;
         virtual void setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value) = 0;

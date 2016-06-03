@@ -155,9 +155,6 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj">
       <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
     </ProjectReference>
@@ -167,6 +164,9 @@
     <ProjectReference Include="..\..\libraries\utility\utility.vcxproj">
       <Project>{be4f1e7f-e045-4d30-aed6-02a60c83bd97}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="texturecompressor.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

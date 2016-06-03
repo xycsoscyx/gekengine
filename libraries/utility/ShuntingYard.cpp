@@ -22,7 +22,7 @@ namespace Gek
     {
     }
 
-    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const wstring &string, UINT32 parameterCount)
+    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const wchar_t *string, UINT32 parameterCount)
         : type(type)
         , string(string)
         , parameterCount(parameterCount)
@@ -163,7 +163,7 @@ namespace Gek
         return rpnTokenList.back().parameterCount;
     }
 
-    ShuntingYard::TokenList ShuntingYard::getTokenList(const wstring &expression)
+    ShuntingYard::TokenList ShuntingYard::getTokenList(const wchar_t *expression)
     {
         TokenList infixTokenList = convertExpressionToInfix(expression);
         return convertInfixToReversePolishNotation(infixTokenList);
@@ -174,61 +174,61 @@ namespace Gek
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    void ShuntingYard::evaluateValue(const wstring &expression, float *value, UINT32 valueSize)
+    void ShuntingYard::evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize)
     {
         TokenList rpnTokenList(getTokenList(expression));
         evaluateReversePolishNotation(rpnTokenList, value, valueSize);
     }
 
-    bool ShuntingYard::isNumber(const wstring &token)
+    bool ShuntingYard::isNumber(const wchar_t *token)
     {
-        return std::regex_search(token.c_str(), SearchNumber);
+        return std::regex_search(token, SearchNumber);
     }
 
-    bool ShuntingYard::isOperation(const wstring &token)
+    bool ShuntingYard::isOperation(const wchar_t *token)
     {
         return (operationsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isFunction(const wstring &token)
+    bool ShuntingYard::isFunction(const wchar_t *token)
     {
         return (functionsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isLeftParenthesis(const wstring &token)
+    bool ShuntingYard::isLeftParenthesis(const wchar_t *token)
     {
-        return token.front() == L'(';
+        return (token && *token == L'(');
     }
 
-    bool ShuntingYard::isRightParenthesis(const wstring &token)
+    bool ShuntingYard::isRightParenthesis(const wchar_t *token)
     {
-        return token.front() == L')';
+        return (token && *token == L')');
     }
 
-    bool ShuntingYard::isParenthesis(const wstring &token)
+    bool ShuntingYard::isParenthesis(const wchar_t *token)
     {
         return (isLeftParenthesis(token) || isRightParenthesis(token));
     }
 
-    bool ShuntingYard::isSeparator(const wstring &token)
+    bool ShuntingYard::isSeparator(const wchar_t *token)
     {
-        return token.front() == L',';
+        return (token && *token == L',');
     }
 
-    bool ShuntingYard::isAssociative(const wstring &token, const Associations &type)
+    bool ShuntingYard::isAssociative(const wchar_t *token, const Associations &type)
     {
         auto &p = operationsMap.find(token)->second;
         return p.association == type;
     }
 
-    int ShuntingYard::comparePrecedence(const wstring &token1, const wstring &token2)
+    int ShuntingYard::comparePrecedence(const wchar_t *token1, const wchar_t *token2)
     {
         auto &p1 = operationsMap.find(token1)->second;
         auto &p2 = operationsMap.find(token2)->second;
         return p1.precedence - p2.precedence;
     }
 
-    ShuntingYard::TokenType ShuntingYard::getTokenType(const wstring &token)
+    ShuntingYard::TokenType ShuntingYard::getTokenType(const wchar_t *token)
     {
         if (isSeparator(token))
         {
@@ -331,45 +331,14 @@ namespace Gek
         infixTokenList.push_back(token);
     }
 
-    bool ShuntingYard::replaceFirstVariable(TokenList &infixTokenList, wstring &token)
+    void ShuntingYard::parseSubTokens(TokenList &infixTokenList, const String &token)
     {
-        for (auto &variable : variableMap)
-        {
-            if (token.find(variable.first) == 0)
-            {
-                insertToken(infixTokenList, Token(variable.second));
-                token = token.subString(variable.first.size());
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    bool ShuntingYard::replaceFirstFunction(TokenList &infixTokenList, wstring &token)
-    {
-        for (auto &function : functionsMap)
-        {
-            if (token.find(function.first) == 0)
-            {
-                insertToken(infixTokenList, Token(TokenType::Function, function.first));
-                token = token.subString(function.first.size());
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    void ShuntingYard::parseSubTokens(TokenList &infixTokenList, wstring token)
-    {
-        std::wstring &baseToken = token;
-        for (std::wsregex_iterator current(baseToken.begin(), baseToken.end(), SearchWord), end; current != end; ++current)
+        for (std::wsregex_iterator current(token.begin(), token.end(), SearchWord), end; current != end; ++current)
         {
             auto match = *current;
             if (match[1].matched) // variable
             {
-                wstring value = match.str(1);
+                String value = match.str(1);
                 auto variable = variableMap.find(value);
                 if (variable != variableMap.end())
                 {
@@ -388,19 +357,19 @@ namespace Gek
             }
             else if(match[2].matched) // number
             {
-                float value = wstring(match.str(2));
+                float value = String(match.str(2));
                 insertToken(infixTokenList, Token(value));
             }
         }
     }
 
-    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(const wstring &expression)
+    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(const String &expression)
     {
-        wstring runningToken;
+        String runningToken;
         TokenList infixTokenList;
         for (size_t index = 0; index < expression.size(); ++index)
         {
-            wstring nextToken(expression.subString(index, 1));
+            String nextToken(expression.subString(index, 1));
             if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
             {
                 if (!runningToken.empty())

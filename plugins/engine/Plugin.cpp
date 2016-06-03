@@ -4,7 +4,6 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoSystem.h"
 #include "GEK\Engine\Plugin.h"
-#include <experimental\filesystem>
 #include <ppl.h>
 #include <set>
 
@@ -102,7 +101,7 @@ namespace Gek
         {
             GEK_REQUIRE(video);
 
-            XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\plugins\\%v.xml", fileName)));
+            XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\plugins\\%v.xml", fileName)));
             XmlNodePtr pluginNode = document->getRoot(L"plugin");
 
             XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
@@ -111,40 +110,35 @@ namespace Gek
                 try
                 {
                     XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
-                    wstring programFileName = programNode->getAttribute(L"source");
-                    string programEntryPoint(programNode->getAttribute(L"entry"));
-                    geometryProgram = video->loadGeometryProgram(wstring(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
+                    String programFileName = programNode->getAttribute(L"source");
+                    StringUTF8 programEntryPoint(programNode->getAttribute(L"entry"));
+                    geometryProgram = video->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
                 }
-                catch (const Exception &exception)
+                catch (const Exception &)
                 {
                 };
             }
 
-            XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
-            XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
-            wstring programPath(wstring(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
-
-            string progamScript;
-            FileSystem::load(programPath, progamScript);
-            string engineData =
+            StringUTF8 engineData =
                 "struct PluginVertex                                    \r\n" \
                 "{                                                      \r\n";
 
-            std::list<string> elementNameList;
+            std::list<StringUTF8> elementNameList;
             std::vector<Video::InputElement> elementList;
             XmlNodePtr layoutNode = pluginNode->firstChildElement(L"layout");
             XmlNodePtr elementNode = layoutNode->firstChildElement();
             while (elementNode->isValid())
             {
-                if (elementNode->getType().compare(L"instanceIndex") == 0)
+                String elementType(elementNode->getType());
+                if (elementType.compareNoCase(L"instanceIndex") == 0)
                 {
                     engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
                 }
-                else if (elementNode->getType().compare(L"vertexIndex") == 0)
+                else if (elementType.compareNoCase(L"vertexIndex") == 0)
                 {
                     engineData += ("    uint vertexIndex : SV_VertexId;\r\n");
                 }
-                else if (elementNode->getType().compare(L"isFrontFace") == 0)
+                else if (elementType.compareNoCase(L"isFrontFace") == 0)
                 {
                     engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
                 }
@@ -152,13 +146,13 @@ namespace Gek
                     elementNode->hasAttribute(L"name") &&
                     elementNode->hasAttribute(L"index"))
                 {
-                    string semanticName(elementNode->getAttribute(L"name"));
+                    StringUTF8 semanticName(elementNode->getAttribute(L"name"));
                     elementNameList.push_back(semanticName);
 
-                    wstring format(elementNode->getAttribute(L"format"));
+                    String format(elementNode->getAttribute(L"format"));
 
                     Video::InputElement element;
-                    element.semanticName = elementNameList.back().c_str();
+                    element.semanticName = elementNameList.back();
                     element.semanticIndex = elementNode->getAttribute(L"index");
                     if (elementNode->hasAttribute(L"slotclass") &&
                         elementNode->hasAttribute(L"slotindex"))
@@ -167,9 +161,9 @@ namespace Gek
                         element.slotIndex = elementNode->getAttribute(L"slotindex");
                     }
 
-                    if (format.compare(L"float4x4") == 0)
+                    if (format.compareNoCase(L"float4x4") == 0)
                     {
-                        engineData += string("    float4x4 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
+                        engineData.format("    float4x4 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
                         element.format = Video::Format::Float4;
                         elementList.push_back(element);
                         element.semanticIndex++;
@@ -179,9 +173,9 @@ namespace Gek
                         element.semanticIndex++;
                         elementList.push_back(element);
                     }
-                    else if (format.compare(L"float4x3") == 0)
+                    else if (format.compareNoCase(L"float4x3") == 0)
                     {
-                        engineData += string("    float4x3 %v : %v%v;\r\n", elementNode->getType(), semanticName, element.semanticIndex);
+                        engineData.format("    float4x3 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
                         element.format = Video::Format::Float4;
                         elementList.push_back(element);
                         element.semanticIndex++;
@@ -192,7 +186,7 @@ namespace Gek
                     else
                     {
                         element.format = getFormat(format);
-                        engineData += string("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode->getType(), semanticName, element.semanticIndex);
+                        engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementType, semanticName, element.semanticIndex);
                         elementList.push_back(element);
                     }
                 }
@@ -240,6 +234,13 @@ namespace Gek
                 "}                                                                                                          \r\n" \
                 "                                                                                                           \r\n";
 
+            XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
+            XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
+            String programPath(String(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
+
+            StringUTF8 progamScript;
+            FileSystem::load(programPath, progamScript);
+
             auto onInclude = [&](const char *resourceName, std::vector<UINT8> &data) -> void
             {
                 if (_stricmp(resourceName, "GEKPlugin") == 0)
@@ -249,28 +250,29 @@ namespace Gek
                 }
                 else
                 {
-                    if (std::experimental::filesystem::is_regular_file(resourceName))
+                    FileSystem::Path resourcePath(resourceName);
+                    if (resourcePath.isFile())
                     {
-                        FileSystem::load(resourceName, data);
+                        FileSystem::load(resourcePath, data);
                     }
                     else
                     {
-                        std::experimental::filesystem::path filePath(programPath);
+                        FileSystem::Path filePath(programPath);
                         filePath.remove_filename();
                         filePath.append(resourceName);
-                        filePath = FileSystem::expandPath(filePath.wstring());
-                        if (std::experimental::filesystem::is_regular_file(filePath))
+                        filePath = FileSystem::expandPath(filePath);
+                        if (filePath.isFile())
                         {
-                            FileSystem::load(filePath.wstring(), data);
+                            FileSystem::load(filePath, data);
                         }
                         else
                         {
-                            std::experimental::filesystem::path rootPath(L"$root\\data\\programs");
+                            FileSystem::Path rootPath(L"$root\\data\\programs");
                             rootPath.append(resourceName);
-                            rootPath = FileSystem::expandPath(rootPath.wstring());
-                            if (std::experimental::filesystem::is_regular_file(rootPath))
+                            rootPath = FileSystem::expandPath(rootPath);
+                            if (rootPath.isFile())
                             {
-                                FileSystem::load(rootPath.c_str(), data);
+                                FileSystem::load(rootPath, data);
                             }
                         }
                     }

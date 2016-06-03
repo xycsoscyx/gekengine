@@ -50,9 +50,9 @@ namespace Gek
         HWND window;
         bool windowActive;
         bool engineRunning;
-        typedef concurrency::concurrent_unordered_map<wstring, wstring> OptionGroup;
-        concurrency::concurrent_unordered_map<wstring, OptionGroup> options;
-        concurrency::concurrent_unordered_map<wstring, OptionGroup> newOptions;
+        typedef concurrency::concurrent_unordered_map<String, String> OptionGroup;
+        concurrency::concurrent_unordered_map<String, OptionGroup> options;
+        concurrency::concurrent_unordered_map<String, OptionGroup> newOptions;
 
         Timer timer;
         double updateAccumulator;
@@ -67,9 +67,9 @@ namespace Gek
         UINT32 updateHandle;
         ActionQueue actionQueue;
 
-        wstring currentCommand;
-        std::list<wstring> commandLog;
-        std::unordered_map<wstring, std::function<void(const std::vector<wstring> &, SCITER_VALUE &result)>> consoleCommands;
+        String currentCommand;
+        std::list<String> commandLog;
+        std::unordered_map<String, std::function<void(const std::vector<String> &, SCITER_VALUE &result)>> consoleCommands;
 
         sciter::dom::element root;
         sciter::dom::element background;
@@ -110,19 +110,19 @@ namespace Gek
             GEK_TRACE_FUNCTION();
             GEK_REQUIRE(window);
 
-            consoleCommands[L"quit"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"quit"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
             {
                 engineRunning = false;
                 result = sciter::value(true);
             };
 
-            consoleCommands[L"begin_options"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"begin_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
             {
                 this->beginChanges();
                 result = sciter::value(true);
             };
 
-            consoleCommands[L"finish_options"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"finish_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
             {
                 bool commit = false;
                 if (parameters.size() == 1)
@@ -134,7 +134,7 @@ namespace Gek
                 result = sciter::value(true);
             };
 
-            consoleCommands[L"set_option"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"set_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 3)
                 {
@@ -147,7 +147,7 @@ namespace Gek
                 }
             };
 
-            consoleCommands[L"get_option"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"get_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 2)
                 {
@@ -160,7 +160,7 @@ namespace Gek
                 }
             };
 
-            consoleCommands[L"load_level"] = [this](const std::vector<wstring> &parameters, SCITER_VALUE &result) -> void
+            consoleCommands[L"load_level"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
             {
                 if (parameters.size() == 1)
                 {
@@ -177,7 +177,7 @@ namespace Gek
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (const Exception &exception)
+            catch (const Exception &)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -264,7 +264,7 @@ namespace Gek
             return render.get();
         }
 
-        const wstring &getValue(const wchar_t *name, const wchar_t *attribute, const wstring &defaultValue = L"") const
+        const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = L"") const
         {
             auto &group = options.find(name);
             if (group != options.end())
@@ -626,12 +626,12 @@ namespace Gek
 
         BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
         {
-            wstring command(parameters->name);
+            String command(parameters->name);
 
-            std::vector<wstring> parameterList;
+            std::vector<String> parameterList;
             for (UINT32 parameter = 0; parameter < parameters->argc; parameter++)
             {
-                parameterList.push_back(parameters->argv[parameter].to_string().c_str());
+                parameterList.push_back(parameters->argv[parameter].to_string());
             }
 
             auto commandIterator = consoleCommands.find(command);

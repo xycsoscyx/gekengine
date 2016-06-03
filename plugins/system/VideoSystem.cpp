@@ -10,7 +10,6 @@
 #include <d3dcompiler.h>
 #include <DirectXTex.h>
 #include <wincodec.h>
-#include <experimental\filesystem>
 #include <algorithm>
 #include <memory>
 #include <ppl.h>
@@ -1567,7 +1566,7 @@ namespace Gek
             d3dDeviceContext->CopyResource(reinterpret_cast<Resource *>(destination)->d3dResource, reinterpret_cast<Resource *>(source)->d3dResource);
         }
 
-        VideoObjectPtr compileComputeProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<string, string> &defineList, ID3DInclude *includes)
+        VideoObjectPtr compileComputeProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(programScript);
@@ -1600,7 +1599,7 @@ namespace Gek
             return makeShared<VideoObject, ComputeProgram>(d3dShader);
         }
 
-        VideoObjectPtr compileVertexProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, const std::unordered_map<string, string> &defineList, ID3DInclude *includes)
+        VideoObjectPtr compileVertexProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(programScript);
@@ -1676,7 +1675,7 @@ namespace Gek
             return makeShared<VideoObject, VertexProgram>(d3dShader, d3dInputLayout);
         }
 
-        VideoObjectPtr compileGeometryProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<string, string> &defineList, ID3DInclude *includes)
+        VideoObjectPtr compileGeometryProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(programScript);
@@ -1709,7 +1708,7 @@ namespace Gek
             return makeShared<VideoObject, GeometryProgram>(d3dShader);
         }
 
-        VideoObjectPtr compilePixelProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<string, string> &defineList, ID3DInclude *includes)
+        VideoObjectPtr compilePixelProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
         {
             GEK_REQUIRE(d3dDevice);
             GEK_REQUIRE(programScript);
@@ -1742,68 +1741,68 @@ namespace Gek
             return makeShared<VideoObject, PixelProgram>(d3dShader);
         }
 
-        VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compileComputeProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, defineList, &includeHandler);
         }
 
-        VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr compileGeometryProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compileGeometryProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr compilePixelProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             IncludeImplementation includeHandler(onInclude);
             return compilePixelProgram(nullptr, programScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            string progamScript;
+            StringUTF8 progamScript;
             FileSystem::load(fileName, progamScript);
 
             IncludeImplementation includeHandler(onInclude);
             return compileComputeProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr loadVertexProgram(const wchar_t *fileName, const char *entryFunction, const std::vector<Video::InputElement> &elementLayout, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            string progamScript;
+            StringUTF8 progamScript;
             FileSystem::load(fileName, progamScript);
 
             IncludeImplementation includeHandler(onInclude);
             return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr loadGeometryProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            string progamScript;
+            StringUTF8 progamScript;
             FileSystem::load(fileName, progamScript);
 
             IncludeImplementation includeHandler(onInclude);
             return compileGeometryProgram(fileName, progamScript, entryFunction, defineList, &includeHandler);
         }
 
-        VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        VideoObjectPtr loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             GEK_REQUIRE(fileName);
 
-            string progamScript;
+            StringUTF8 progamScript;
             FileSystem::load(fileName, progamScript);
 
             IncludeImplementation includeHandler(onInclude);
@@ -1964,7 +1963,7 @@ namespace Gek
             ::DirectX::ScratchImage scratchImage;
             ::DirectX::TexMetadata textureMetaData;
 
-            wstring extension(std::experimental::filesystem::path(fileName).extension().c_str());
+            String extension(FileSystem::Path(fileName).getExtension());
             std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
             if (extension.compare(L".dds") == 0)
             {
@@ -2040,7 +2039,7 @@ namespace Gek
                 std::vector<UINT8> fileData;
                 FileSystem::load(fileNameList[side], fileData);
 
-                wstring extension(std::experimental::filesystem::path(fileNameList[side]).extension().c_str());
+                String extension(FileSystem::Path(fileNameList[side]).getExtension());
                 std::function<HRESULT(UINT8*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
                 if (extension.compare(L".dds") == 0)
                 {

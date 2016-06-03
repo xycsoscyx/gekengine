@@ -12,11 +12,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     {
         printf("GEK Scene Converter\r\n");
 
-        wstring fileNameInput;
-        wstring fileNameOutput;
+        String fileNameInput;
+        String fileNameOutput;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
-            wstring argument(argumentList[argumentIndex]);
+            String argument(argumentList[argumentIndex]);
             if (argument.compare(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];

@@ -7,8 +7,8 @@ namespace Gek
 {
     struct RigidBodyComponent
     {
-        wstring shape;
-        wstring surface;
+        String shape;
+        String surface;
 
         RigidBodyComponent(void);
         void save(Population::ComponentDefinition &componentData) const;

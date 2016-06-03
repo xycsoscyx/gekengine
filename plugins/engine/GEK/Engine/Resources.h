@@ -72,9 +72,9 @@ namespace Gek
 
     GEK_INTERFACE(PluginResources)
     {
-        virtual PluginHandle loadPlugin(const wstring &fileName) = 0;
-        virtual MaterialHandle loadMaterial(const wstring &fileName) = 0;
-        virtual ResourceHandle loadTexture(const wstring &fileName, const wstring &fallback, UINT32 flags) = 0;
+        virtual PluginHandle loadPlugin(const wchar_t *fileName) = 0;
+        virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
+        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags) = 0;
 
         virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, UINT32 width, UINT32 height, UINT32 depth, DWORD flags, UINT32 mipmaps = 1) = 0;
         virtual ResourceHandle createBuffer(const wchar_t *name, UINT32 stride, UINT32 count, Video::BufferType type, DWORD flags, const void *staticData = nullptr) = 0;
@@ -102,10 +102,10 @@ namespace Gek
         virtual Plugin * const getPlugin(PluginHandle handle) const = 0;
         virtual Material * const getMaterial(MaterialHandle handle) const = 0;
 
-        virtual ShaderHandle loadShader(const wstring &fileName) = 0;
-        virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<wstring, wstring> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
-        virtual ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
-        virtual ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<string, string> &defineList = std::unordered_map<string, string>()) = 0;
+        virtual ShaderHandle loadShader(const wchar_t *fileName) = 0;
+        virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, String> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+        virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 
         virtual RenderStateHandle createRenderState(const Video::RenderState &renderState) = 0;
         virtual DepthStateHandle createDepthState(const Video::DepthState &depthState) = 0;

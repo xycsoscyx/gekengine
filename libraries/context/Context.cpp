@@ -13,18 +13,18 @@ namespace Gek
     {
     private:
         std::list<HMODULE> moduleList;
-        std::unordered_map<std::wstring, std::function<ContextUserPtr(Context *, void *)>> classMap;
-        std::unordered_multimap<std::wstring, std::wstring> typeMap;
+        std::unordered_map<String, std::function<ContextUserPtr(Context *, void *)>> classMap;
+        std::unordered_multimap<String, String> typeMap;
 
     public:
-        ContextImplementation(std::vector<wstring> searchPathList)
+        ContextImplementation(std::vector<String> searchPathList)
         {
             GEK_TRACE_FUNCTION();
 
             searchPathList.push_back(L"$root");
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::find(searchPath.c_str(), L"*.dll", false, [&](const wchar_t *fileName) -> bool
+                FileSystem::find(searchPath, L"*.dll", false, [&](const wchar_t *fileName) -> bool
                 {
                     HMODULE module = LoadLibrary(fileName);
                     if (module)
@@ -95,12 +95,12 @@ namespace Gek
             auto typeIterator = typeMap.equal_range(typeName);
             for (auto iterator = typeIterator.first; iterator != typeIterator.second; ++iterator)
             {
-                onType((*iterator).second.c_str());
+                onType((*iterator).second);
             }
         }
     };
 
-    ContextPtr Context::create(const std::vector<wstring> &searchPathList)
+    ContextPtr Context::create(const std::vector<String> &searchPathList)
     {
         GEK_TRACE_FUNCTION();
         return makeShared<Context, ContextImplementation>(searchPathList);

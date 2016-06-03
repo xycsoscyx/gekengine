@@ -69,12 +69,12 @@ namespace Gek
         float worldTime;
         float frameTime;
 
-        std::unordered_map<wstring, std::type_index> componentNameList;
+        std::unordered_map<String, std::type_index> componentNameList;
         std::unordered_map<std::type_index, ComponentPtr> componentList;
         std::list<ProcessorPtr> processorList;
 
         std::vector<EntityPtr> entityList;
-        std::unordered_map<wstring, Entity *> namedEntityList;
+        std::unordered_map<String, Entity *> namedEntityList;
         std::vector<Entity *> killEntityList;
 
         typedef std::multimap<UINT32, std::pair<UINT32, PopulationObserver *>> UpdatePriorityMap;
@@ -157,7 +157,7 @@ namespace Gek
 
             for (auto const &killEntity : killEntityList)
             {
-                auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const wstring, Entity *> &namedEntity) -> bool
+                auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const String, Entity *> &namedEntity) -> bool
                 {
                     return (namedEntity.second == killEntity);
                 });
@@ -191,7 +191,7 @@ namespace Gek
         }
 
         std::function<void(void)> loadScene;
-        void load(const wstring &fileName)
+        void load(const wchar_t *fileName)
         {
             loadScene = [this, fileName](void) -> void
             {
@@ -200,7 +200,7 @@ namespace Gek
                     free();
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-                    XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\scenes\\%v.xml", fileName)));
+                    XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", fileName)));
                     XmlNodePtr worldNode = document->getRoot(L"world");
                     XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
                     XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
@@ -240,14 +240,14 @@ namespace Gek
                     worldTime = 0.0f;
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
                 }
-                catch (const Exception &exception)
+                catch (const Exception &)
                 {
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
                 };
             };
         }
 
-        void save(const wstring &fileName)
+        void save(const wchar_t *fileName)
         {
             XmlDocumentPtr document(XmlDocument::create(L"world"));
             XmlNodePtr worldNode = document->getRoot(L"world");
@@ -256,7 +256,7 @@ namespace Gek
             {
             }
 
-            document->save(wstring(L"$root\\data\\saves\\%v.xml", fileName));
+            document->save(String(L"$root\\data\\saves\\%v.xml", fileName));
         }
 
         void free(void)

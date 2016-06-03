@@ -8,8 +8,8 @@ namespace Gek
 {
     struct ParticlesComponent
     {
-        wstring material;
-        wstring colorMap;
+        String material;
+        String colorMap;
         Math::Float2 lifeExpectancy;
         Math::Float2 size;
         UINT32 density;

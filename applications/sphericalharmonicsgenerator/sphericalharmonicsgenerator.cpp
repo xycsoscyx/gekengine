@@ -4,7 +4,6 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include <DirectXTex.h>
-#include <experimental\filesystem>
 #include <array>
 #include <ppl.h>
 
@@ -164,7 +163,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     std::vector<UINT8> fileData;
     FileSystem::load(fileName, fileData);
 
-    wstring extension(std::experimental::filesystem::path(fileName).extension().c_str());
+    String extension(FileSystem::Path(fileName).getExtension());
     std::function<HRESULT(UINT8*, size_t, ::DirectX::ScratchImage &)> load;
     if (extension.compare(L".dds") == 0)
     {
@@ -236,13 +235,13 @@ typedef SH<Math::Float4, 9> SH9Color;
             L"negz",
         };
 
-        FileSystem::find(directory, wstring(L"%v.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
+        FileSystem::find(directory, String(L"%v.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
         {
             try
             {
                 cubeMapList[face] = loadTexture(fileName);
             }
-            catch (const Exception &exception)
+            catch (const Exception &)
             {
                 return true;
             };
@@ -401,11 +400,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     CoInitialize(nullptr);
     try
     {
-        wstring fileNameInput;
-        wstring fileNameOutput;
+        String fileNameInput;
+        String fileNameOutput;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
-            wstring argument(argumentList[argumentIndex]);
+            String argument(argumentList[argumentIndex]);
             if (argument.compare(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];
@@ -427,19 +426,19 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             image = loadTexture(fileNameInput);
             GEK_CHECK_CONDITION(!image.GetMetadata().IsCubemap(), Trace::Exception, "Image not cubemap format: %v", fileNameInput);
         }
-        catch (const Exception &exception)
+        catch (const Exception &)
         {
             image = loadIntoCubeMap(fileNameInput);
         };
 
-        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, wstring(L"%v\\cubemap.dds", fileNameInput));
+        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, String(L"%v\\cubemap.dds", fileNameInput));
 
         SH9Color sphericalHarmonics = ProjectCubeMapToSH(image);
 
-        string output;
+        StringUTF8 output;
         for (int i = 0; i < 9; i++)
         {
-            output += string("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
+            output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
         }
 
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);

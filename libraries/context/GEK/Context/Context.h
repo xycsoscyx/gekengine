@@ -15,7 +15,7 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
-        static ContextPtr create(const std::vector<wstring> &searchPathList);
+        static ContextPtr create(const std::vector<String> &searchPathList);
 
         virtual ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const = 0;
 
@@ -32,7 +32,7 @@ namespace Gek
             }
             catch (const std::bad_cast &badCast)
             {
-                throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to cast to requested type: %v (%v)", typeid(TYPE).name(), badCast.what()));
+                throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to cast to requested type: %v (%v)", typeid(TYPE).name(), badCast.what()));
             };
 
             return castClass;

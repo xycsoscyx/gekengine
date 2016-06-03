@@ -28,7 +28,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             document = XmlDocument::load(L"$root\\config.xml");
             configurationNode = document->getRoot(L"config");
         }
-        catch (const Exception &exception)
+        catch (const Exception &)
         {
             document = XmlDocument::create(L"config");
             configurationNode = document->getRoot(L"config");
@@ -44,7 +44,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         std::vector<DisplayMode> modeList = getDisplayModes()[32];
         for (auto &mode : modeList)
         {
-            wstring aspectRatio(L"");
+            String aspectRatio(L"");
             switch (mode.aspectRatio)
             {
             case AspectRatio::_4x3:
@@ -60,7 +60,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 break;
             };
 
-            wstring modeString(wstring(L"%vx%v%v", mode.width, mode.height, aspectRatio));
+            String modeString(String(L"%vx%v%v", mode.width, mode.height, aspectRatio));
             int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.c_str());
             if (mode.width == width && mode.height == height)
             {
@@ -92,15 +92,15 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (const Exception &exception)
+            catch (const Exception &)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
             };
 
             XmlNodePtr displayNode = configurationNode->firstChildElement(L"display", true);
-            displayNode->setAttribute(L"width", wstring(L"%v", mode.width));
-            displayNode->setAttribute(L"height", wstring(L"%v", mode.height));
+            displayNode->setAttribute(L"width", String(L"%v", mode.width));
+            displayNode->setAttribute(L"height", String(L"%v", mode.height));
             displayNode->setAttribute(L"fullscreen", SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
             document->save(L"$root\\config.xml");
 
@@ -155,7 +155,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
         {
             Trace::initialize();
-            std::vector<wstring> searchPathList;
+            std::vector<String> searchPathList;
 
 #ifdef _DEBUG
             SetCurrentDirectory(FileSystem::expandPath(L"$root\\Debug"));
@@ -188,7 +188,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 document = XmlDocument::load(L"$root\\config.xml");
                 configurationNode = document->getRoot(L"config");
             }
-            catch (const Exception &exception)
+            catch (const Exception &)
             {
                 document = XmlDocument::create(L"config");
                 configurationNode = document->getRoot(L"config");
@@ -239,7 +239,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     }
     catch (const Exception &exception)
     {
-        MessageBox(nullptr, wstring(L"%v\r\n%v: %v", exception.what(), exception.in(), exception.at()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
+        MessageBox(nullptr, String(L"%v\r\n%v: %v", exception.what(), exception.in(), exception.at()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
     }
     catch (...)
     {

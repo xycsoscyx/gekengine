@@ -1,5 +1,5 @@
 ﻿#include "GEK\Utility\String.h"
-#include "GEK\Utility\Evaluator.h"
+#include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
@@ -27,24 +27,7 @@
 
 namespace Gek
 {
-    namespace String
-    {
-        template <typename CHAR>
-        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(Video::Format value)
-        {
-            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << static_cast<UINT8>(value);
-            return stream.str().c_str();
-        }
-
-        template <typename CHAR>
-        CStringT<CHAR, StrTraitATL<CHAR, ChTraitsCRT<CHAR>>> from(Video::BufferType value)
-        {
-            std::basic_stringstream<CHAR, std::char_traits<CHAR>, std::allocator<CHAR>> stream;
-            stream << static_cast<UINT8>(value);
-            return stream.str().c_str();
-        }
-    }; // namespace String
+    static ShuntingYard shuntingYard;
 
     template <class HANDLE, typename TYPE>
     class ResourceManager
@@ -369,7 +352,7 @@ namespace Gek
 
         ResourceHandle getResourceHandle(const wchar_t *name) const
         {
-            std::size_t hash = std::hash<wstring>()(name);
+            std::size_t hash = std::hash<String>()(name);
             return resourceManager.getHandle(hash);
         }
 
@@ -388,11 +371,11 @@ namespace Gek
             return materialManager.getResource(handle, false);
         }
 
-        PluginHandle loadPlugin(const wstring &fileName)
+        PluginHandle loadPlugin(const wchar_t *fileName)
         {
             auto load = [this, fileName](PluginHandle handle) -> PluginPtr
             {
-                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName.c_str());
+                return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName);
             };
 
             auto request = [this, load](PluginHandle handle, std::function<void(PluginPtr)> set) -> void
@@ -403,11 +386,11 @@ namespace Gek
             return pluginManager.getGlobalHandle(request);
         }
 
-        MaterialHandle loadMaterial(const wstring &fileName)
+        MaterialHandle loadMaterial(const wchar_t *fileName)
         {
             auto load = [this, fileName](MaterialHandle handle) -> MaterialPtr
             {
-                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str());
+                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName);
             };
 
             auto request = [this, load](MaterialHandle handle, std::function<void(MaterialPtr)> set) -> void
@@ -417,15 +400,15 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<wstring>()(fileName);
+            std::size_t hash = std::hash<String>()(fileName);
             return materialManager.getHandle(hash, request);
         }
 
-        ShaderHandle loadShader(const wstring &fileName)
+        ShaderHandle loadShader(const wchar_t *fileName)
         {
             auto load = [this, fileName](ShaderHandle handle) -> ShaderPtr
             {
-                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName.c_str());
+                return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName);
             };
 
             auto request = [this, load](ShaderHandle handle, std::function<void(ShaderPtr)> set) -> void
@@ -433,11 +416,11 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<wstring>()(fileName);
+            std::size_t hash = std::hash<String>()(fileName);
             return shaderManager.getHandle(hash, request);
         }
 
-        void loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<wstring, wstring> &resourceMap, std::list<ResourceHandle> &resourceList)
+        void loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, String> &resourceMap, std::list<ResourceHandle> &resourceList)
         {
             Shader *shader = shaderManager.getResource(shaderHandle);
             if (shader)
@@ -644,65 +627,79 @@ namespace Gek
             }
         }
 
-        VideoTexturePtr createTexture(wstring parameters, UINT32 flags)
+        VideoTexturePtr createTexture(String parameters, UINT32 flags)
         {
             VideoTexturePtr texture;
-            std::vector<wstring> tokenList(parameters.getLower().split(L':'));
+            std::vector<String> tokenList(parameters.getLower().split(L':'));
             GEK_CHECK_CONDITION(tokenList.size() != 2, Trace::Exception, "Invalid number of parameters passed to create texture");
             if (tokenList[0].compare(L"color") == 0)
             {
                 UINT32 colorPitch = 0;
                 UINT8 colorData[4] = { 0, 0, 0, 0 };
+                
                 try
                 {
-                    float color1;
-                    Evaluator::get(tokenList[1], color1);
-                    texture = video->createTexture(Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
-                    colorData[0] = UINT8(color1 * 255.0f);
-                    colorPitch = 1;
-                }
-                catch (const Evaluator::Exception &exception)
-                {
-                    try
+                    auto rpnTokenList = shuntingYard.getTokenList(tokenList[1]);
+                    switch (shuntingYard.getReturnSize(rpnTokenList))
                     {
-                        Math::Float2 color2;
-                        Evaluator::get(tokenList[1], color2);
-                        texture = video->createTexture(Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
-                        colorData[0] = UINT8(color2.x * 255.0f);
-                        colorData[1] = UINT8(color2.y * 255.0f);
-                        colorPitch = 2;
-                    }
-                    catch (const Evaluator::Exception &exception)
-                    {
-                        try
+                    case 1:
+                        if (true)
                         {
-                            Math::Float3 color3;
-                            Evaluator::get(tokenList[1], color3);
+                            float color;
+                            shuntingYard.evaluate(rpnTokenList, color);
+                            texture = video->createTexture(Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
+                            colorData[0] = UINT8(color * 255.0f);
+                            colorPitch = 1;
+                        }
+
+                        break;
+
+                    case 2:
+                        if (true)
+                        {
+                            Math::Float2 color;
+                            shuntingYard.evaluate(rpnTokenList, color);
+                            texture = video->createTexture(Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
+                            colorData[0] = UINT8(color.x * 255.0f);
+                            colorData[1] = UINT8(color.y * 255.0f);
+                            colorPitch = 2;
+                        }
+
+                        break;
+
+                    case 3:
+                        if (true)
+                        {
+                            Math::Float3 color;
+                            shuntingYard.evaluate(rpnTokenList, color);
                             texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = UINT8(color3.x * 255.0f);
-                            colorData[1] = UINT8(color3.y * 255.0f);
-                            colorData[2] = UINT8(color3.z * 255.0f);
+                            colorData[0] = UINT8(color.x * 255.0f);
+                            colorData[1] = UINT8(color.y * 255.0f);
+                            colorData[2] = UINT8(color.z * 255.0f);
                             colorData[3] = 255;
                             colorPitch = 4;
                         }
-                        catch (const Evaluator::Exception &exception)
+
+                        break;
+
+                    case 4:
+                        if (true)
                         {
-                            try
-                            {
-                                Math::Float4 color4;
-                                Evaluator::get(tokenList[1], color4);
-                                texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                                colorData[0] = UINT8(color4.x * 255.0f);
-                                colorData[1] = UINT8(color4.y * 255.0f);
-                                colorData[2] = UINT8(color4.z * 255.0f);
-                                colorData[3] = UINT8(color4.w * 255.0f);
-                                colorPitch = 4;
-                            }
-                            catch (const Evaluator::Exception &exception)
-                            {
-                            };
-                        };
+                            Math::Float4 color;
+                            shuntingYard.evaluate(rpnTokenList, color);
+                            texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
+                            colorData[0] = UINT8(color.x * 255.0f);
+                            colorData[1] = UINT8(color.y * 255.0f);
+                            colorData[2] = UINT8(color.z * 255.0f);
+                            colorData[3] = UINT8(color.w * 255.0f);
+                            colorPitch = 4;
+                        }
+
+                        break;
                     };
+                }
+                catch (const ShuntingYard::Exception &)
+                {
                 };
 
                 GEK_CHECK_CONDITION(!texture, Trace::Exception, "Unable to create texture");
@@ -711,7 +708,16 @@ namespace Gek
             }
             else if (tokenList[0].compare(L"normal") == 0)
             {
-                Math::Float3 normal((Evaluator::get<Math::Float3>(tokenList[1]).getNormal() + 1.0f) * 0.5f);
+                Math::Float3 normal;
+                try
+                {
+                    shuntingYard.evaluate(tokenList[1], normal);
+                }
+                catch (const ShuntingYard::Exception &)
+                {
+                    normal.set(0.0f, 0.0f, 0.0f);
+                }
+
                 UINT8 normalData[4] = 
                 {
                     UINT8(normal.x * 255.0f),
@@ -753,7 +759,7 @@ namespace Gek
             return texture;
         }
 
-        VideoTexturePtr loadTexture(const wstring &fileName, UINT32 flags)
+        VideoTexturePtr loadTexture(const String &fileName, UINT32 flags)
         {
             if (fileName.at(0) == L'*')
             {
@@ -774,10 +780,10 @@ namespace Gek
 
                 for (auto &format : formatList)
                 {
-                    wstring fullFileName(FileSystem::expandPath(wstring(L"$root\\data\\textures\\%v%v", fileName, format)));
-                    if (PathFileExists(fullFileName))
+                    FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
+                    if(filePath.isFile())
                     {
-                        return video->loadTexture(fullFileName, flags);
+                        return video->loadTexture(filePath, flags);
                     }
                 }
 
@@ -785,12 +791,12 @@ namespace Gek
             }
         }
 
-        ResourceHandle loadTexture(const wstring &fileName, const wstring &fallback, UINT32 flags)
+        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, UINT32 flags)
         {
             auto load = [this, fileName, fallback, flags](ResourceHandle handle) -> VideoTexturePtr
             {
                 VideoTexturePtr texture = loadTexture(fileName, flags);
-                if (!texture && !fallback.empty())
+                if (!texture && fallback)
                 {
                     texture = loadTexture(fallback, flags);
                 }
@@ -803,11 +809,11 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<wstring>()(fileName);
+            std::size_t hash = std::hash<String>()(fileName);
             return resourceManager.getHandle(hash, request);
         }
 
-        ProgramHandle loadComputeProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {
@@ -822,7 +828,7 @@ namespace Gek
             return programManager.getUniqueHandle(request);
         }
 
-        ProgramHandle loadPixelProgram(const wstring &fileName, const string &entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<string, string> &defineList)
+        ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<UINT8> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
             auto load = [this, fileName, entryFunction, onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
             {

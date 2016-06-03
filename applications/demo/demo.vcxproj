@@ -154,7 +154,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="demo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\libraries\context\context.vcxproj">

@@ -111,7 +111,7 @@ namespace Gek
             GEK_REQUIRE(fileName);
 
             UINT32 surfaceIndex = 0;
-            std::size_t fileNameHash = std::hash<wstring>()(fileName);
+            std::size_t fileNameHash = std::hash<String>()(fileName);
             auto surfaceIterator = surfaceIndexList.find(fileNameHash);
             if (surfaceIterator != surfaceIndexList.end())
             {
@@ -123,7 +123,7 @@ namespace Gek
 
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
-                XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\materials\\%v.xml", fileName)));
+                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", fileName)));
                 XmlNodePtr materialNode = document->getRoot(L"material");
                 XmlNodePtr surfaceNode = materialNode->firstChildElement(L"surface");
                 if (surfaceNode->isValid())
@@ -432,12 +432,12 @@ namespace Gek
             return 0;
         }
 
-        NewtonCollision *createCollision(Entity *entity, const wstring &shape)
+        NewtonCollision *createCollision(Entity *entity, const String &shape)
         {
             GEK_REQUIRE(population);
 
             NewtonCollision *newtonCollision = nullptr;
-            std::size_t collisionHash = std::hash<wstring>()(shape);
+            std::size_t collisionHash = std::hash<String>()(shape);
             auto collisionIterator = collisionList.find(collisionHash);
             if (collisionIterator != collisionList.end())
             {
@@ -450,7 +450,7 @@ namespace Gek
             {
                 collisionList[collisionHash] = nullptr;
 
-                std::vector<wstring> parameters(shape.split(L'|'));
+                std::vector<String> parameters(shape.split(L'|'));
                 GEK_CHECK_CONDITION(parameters.size() != 2, Trace::Exception, "Invalid parameters passed for shape: %v", shape);
 
                 if (parameters[0].compareNoCase(L"*cube") == 0)
@@ -501,7 +501,7 @@ namespace Gek
             return newtonCollision;
         }
 
-        NewtonCollision *loadCollision(Entity *entity, const wstring &shape)
+        NewtonCollision *loadCollision(Entity *entity, const String &shape)
         {
             NewtonCollision *newtonCollision = nullptr;
             if (shape.at(0) == L'*')
@@ -510,7 +510,7 @@ namespace Gek
             }
             else
             {
-                std::size_t shapeHash = std::hash<wstring>()(shape);
+                std::size_t shapeHash = std::hash<String>()(shape);
                 auto collisionIterator = collisionList.find(shapeHash);
                 if (collisionIterator != collisionList.end())
                 {
@@ -523,7 +523,7 @@ namespace Gek
                 {
                     collisionList[shapeHash] = nullptr;
 
-                    wstring fileName(FileSystem::expandPath(wstring(L"$root\\data\\models\\%v.bin", shape)));
+                    String fileName(FileSystem::expandPath(String(L"$root\\data\\models\\%v.bin", shape)));
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, fileName, L"rb");
@@ -549,7 +549,7 @@ namespace Gek
                         fread(&materialCount, sizeof(UINT32), 1, file);
                         for (UINT32 materialIndex = 0; materialIndex < materialCount; materialIndex++)
                         {
-                            wstring materialName;
+                            String materialName;
                             wchar_t letter = 0;
                             do
                             {

@@ -13,7 +13,6 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
-#include <experimental\filesystem>
 #include <concurrent_vector.h>
 #include <ppl.h>
 #include <set>
@@ -135,8 +134,8 @@ namespace Gek
 
         struct Map
         {
-            wstring name;
-            wstring defaultValue;
+            String name;
+            String defaultValue;
             MapType mapType;
             BindType bindType;
             UINT32 flags;
@@ -162,11 +161,11 @@ namespace Gek
             RenderStateHandle renderState;
             Math::Color blendFactor;
             BlendStateHandle blendState;
-            std::unordered_map<wstring, wstring> renderTargetList;
-            std::unordered_map<wstring, wstring> resourceList;
-            std::unordered_map<wstring, std::set<wstring>> actionMap;
-            std::unordered_map<wstring, wstring> copyResourceMap;
-            std::unordered_map<wstring, wstring> unorderedAccessList;
+            std::unordered_map<String, String> renderTargetList;
+            std::unordered_map<String, String> resourceList;
+            std::unordered_map<String, std::set<String>> actionMap;
+            std::unordered_map<String, String> copyResourceMap;
+            std::unordered_map<String, String> unorderedAccessList;
             ProgramHandle program;
             UINT32 dispatchWidth;
             UINT32 dispatchHeight;
@@ -189,7 +188,7 @@ namespace Gek
         struct BlockData
         {
             bool lighting;
-            std::unordered_map<wstring, Math::Color> renderTargetsClearList;
+            std::unordered_map<String, Math::Color> renderTargetsClearList;
             std::list<PassData> passList;
 
             BlockData(void)
@@ -276,12 +275,12 @@ namespace Gek
         VideoBufferPtr lightDataBuffer;
         std::vector<LightData> lightList;
 
-        std::unordered_map<wstring, wstring> globalDefinesList;
+        std::unordered_map<String, String> globalDefinesList;
 
         std::list<Map> mapList;
 
         ResourceHandle depthBuffer;
-        std::unordered_map<wstring, ResourceHandle> resourceMap;
+        std::unordered_map<String, ResourceHandle> resourceMap;
 
         std::list<BlockData> blockList;
 
@@ -349,14 +348,14 @@ namespace Gek
             return L"float4";
         }
 
-        static UINT32 getTextureLoadFlags(const wstring &loadFlags)
+        static UINT32 getTextureLoadFlags(const String &loadFlags)
         {
             UINT32 flags = 0;
             int position = 0;
-            std::vector<wstring> flagList(loadFlags.split(L','));
+            std::vector<String> flagList(loadFlags.getLower().split(L','));
             for (auto &flag : flagList)
             {
-                if (flag.compare(L"sRGB") == 0)
+                if (flag.compare(L"srgb") == 0)
                 {
                     flags |= Video::TextureLoadFlags::sRGB;
                 }
@@ -365,11 +364,11 @@ namespace Gek
             return flags;
         }
 
-        static UINT32 getTextureCreateFlags(const wstring &createFlags)
+        static UINT32 getTextureCreateFlags(const String &createFlags)
         {
             UINT32 flags = 0;
             int position = 0;
-            std::vector<wstring> flagList(createFlags.getLower().split(L','));
+            std::vector<String> flagList(createFlags.getLower().split(L','));
             for (auto &flag : flagList)
             {
                 flag.trim();
@@ -465,7 +464,7 @@ namespace Gek
             if (blendNode->hasChildElement(L"writemask"))
             {
                 blendState.writeMask = 0;
-                wstring writeMask(blendNode->firstChildElement(L"writemask")->getText().getLower());
+                String writeMask(blendNode->firstChildElement(L"writemask")->getText().getLower());
                 if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::ColorMask::R;
                 if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::ColorMask::G;
                 if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
@@ -522,14 +521,14 @@ namespace Gek
             }
         }
 
-        std::unordered_map<wstring, wstring> loadChildMap(XmlNodePtr parentNode)
+        std::unordered_map<String, String> loadChildMap(XmlNodePtr parentNode)
         {
-            std::unordered_map<wstring, wstring> childMap;
+            std::unordered_map<String, String> childMap;
             XmlNodePtr childNode = parentNode->firstChildElement();
             while (childNode->isValid())
             {
-                wstring type(childNode->getType());
-                wstring text(childNode->getText());
+                String type(childNode->getType());
+                String text(childNode->getText());
                 childMap.insert(std::make_pair(type, text.empty() ? type : text));
                 childNode = childNode->nextSiblingElement();
             };
@@ -537,12 +536,12 @@ namespace Gek
             return childMap;
         }
 
-        std::unordered_map<wstring, wstring> loadChildMap(XmlNodePtr rootNode, const wchar_t *name)
+        std::unordered_map<String, String> loadChildMap(XmlNodePtr rootNode, const wchar_t *name)
         {
             return loadChildMap(rootNode->firstChildElement(name));
         }
 
-        bool replaceDefines(wstring &value)
+        bool replaceDefines(String &value)
         {
             bool foundDefine = false;
             for (auto &define : globalDefinesList)
@@ -553,32 +552,32 @@ namespace Gek
             return foundDefine;
         }
 
-        wstring evaluate(const wchar_t *value, bool integer = false)
+        String evaluate(const wchar_t *value, bool integer = false)
         {
-            wstring finalValue(value);
-            finalValue.replace(L"displayWidth", wstring(L"%v", video->getBackBuffer()->getWidth()));
-            finalValue.replace(L"displayHeight", wstring(L"%v", video->getBackBuffer()->getHeight()));
+            String finalValue(value);
+            finalValue.replace(L"displayWidth", String(L"%v", video->getBackBuffer()->getWidth()));
+            finalValue.replace(L"displayHeight", String(L"%v", video->getBackBuffer()->getHeight()));
             while (replaceDefines(finalValue));
 
             if (finalValue.find(L"float2") != std::string::npos)
             {
-                return wstring(L"float2%v", Evaluator::get<Math::Float2>(finalValue.subString(6)));
+                return String(L"float2%v", Evaluator::get<Math::Float2>(finalValue.subString(6)));
             }
             else if (finalValue.find(L"float3") != std::string::npos)
             {
-                return wstring(L"float3%v", Evaluator::get<Math::Float3>(finalValue.subString(6)));
+                return String(L"float3%v", Evaluator::get<Math::Float3>(finalValue.subString(6)));
             }
             else if (finalValue.find(L"float4") != std::string::npos)
             {
-                return wstring(L"float4%v", Evaluator::get<Math::Float4>(finalValue.subString(6)));
+                return String(L"float4%v", Evaluator::get<Math::Float4>(finalValue.subString(6)));
             }
             else if (integer)
             {
-                return wstring(L"%v", Evaluator::get<UINT32>(finalValue));
+                return String(L"%v", Evaluator::get<UINT32>(finalValue));
             }
             else
             {
-                return wstring(L"%v", Evaluator::get<float>(finalValue));
+                return String(L"%v", Evaluator::get<float>(finalValue));
             }
         }
 
@@ -597,19 +596,19 @@ namespace Gek
 
             shaderConstantBuffer = video->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
 
-            XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\shaders\\%v.xml", fileName)));
+            XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\shaders\\%v.xml", fileName)));
 
             XmlNodePtr shaderNode = document->getRoot(L"shader");
             priority = shaderNode->getAttribute(L"priority");
 
-            std::unordered_map<wstring, std::pair<MapType, BindType>> resourceList;
+            std::unordered_map<String, std::pair<MapType, BindType>> resourceList;
             XmlNodePtr materialNode = shaderNode->firstChildElement(L"material");
             XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
             XmlNodePtr mapNode = mapsNode->firstChildElement();
             while (mapNode->isValid())
             {
-                wstring name(mapNode->getType());
-                wstring defaultValue(mapNode->getAttribute(L"default"));
+                String name(mapNode->getType());
+                String defaultValue(mapNode->getAttribute(L"default"));
                 MapType mapType = getMapType(mapNode->getText());
                 BindType bindType = getBindType(mapNode->getAttribute(L"bind"));
                 UINT32 flags = getTextureLoadFlags(mapNode->getAttribute(L"flags"));
@@ -617,7 +616,7 @@ namespace Gek
                 mapNode = mapNode->nextSiblingElement();
             };
 
-            string lightingData;
+            StringUTF8 lightingData;
             XmlNodePtr lightingNode = shaderNode->firstChildElement(L"lighting");
             if (lightingNode->isValid())
             {
@@ -629,7 +628,7 @@ namespace Gek
 
                     globalDefinesList[L"lightsPerPass"] = lightsPerPass;
 
-                    lightingData =
+                    lightingData.format(
                         "namespace Lighting                                         \r\n" \
                         "{                                                          \r\n" \
                         "    namespace Type                                         \r\n" \
@@ -657,14 +656,10 @@ namespace Gek
                         "        uint3   padding;                                   \r\n" \
                         "    };                                                     \r\n" \
                         "                                                           \r\n" \
-                        "    StructuredBuffer<Data> list : register(t0);            \r\n";
-
-                    lightingData += string(
-                        "    static const uint lightsPerPass = %v;                  \r\n", lightsPerPass);
-
-                    lightingData +=
+                        "    StructuredBuffer<Data> list : register(t0);            \r\n" \
+                        "    static const uint lightsPerPass = %v;                  \r\n" \
                         "};                                                         \r\n" \
-                        "                                                           \r\n";
+                        "                                                           \r\n", lightsPerPass);
                 }
             }
 
@@ -672,8 +667,8 @@ namespace Gek
             XmlNodePtr defineNode = definesNode->firstChildElement();
             while (defineNode->isValid())
             {
-                wstring name(defineNode->getType());
-                wstring value(defineNode->getText());
+                String name(defineNode->getType());
+                String value(defineNode->getText());
                 globalDefinesList[name] = evaluate(value, defineNode->getAttribute(L"integer"));
                 defineNode = defineNode->nextSiblingElement();
             };
@@ -688,7 +683,7 @@ namespace Gek
                 else
                 {
                     Video::Format format = getFormat(depthNode->getText());
-                    depthBuffer = resources->createTexture(wstring(L"%v:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                    depthBuffer = resources->createTexture(String(L"%v:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
                 }
             }
 
@@ -696,11 +691,11 @@ namespace Gek
             XmlNodePtr textureNode = texturesNode->firstChildElement();
             while (textureNode->isValid())
             {
-                wstring name(textureNode->getType());
+                String name(textureNode->getType());
                 BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                 if (textureNode->hasAttribute(L"source"))
                 {
-                    wstring source(textureNode->getAttribute(L"source"));
+                    String source(textureNode->getAttribute(L"source"));
                     if (!resourceMap.count(source))
                     {
                         resourceMap[name] = resources->getResourceHandle(source);
@@ -728,7 +723,7 @@ namespace Gek
 
                     Video::Format format = getFormat(textureNode->getText());
                     UINT32 flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
-                    resourceMap[name] = resources->createTexture(wstring(L"%v:%v", fileName, name), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
+                    resourceMap[name] = resources->createTexture(String(L"%v:%v", fileName, name), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
                 }
 
                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
@@ -739,10 +734,10 @@ namespace Gek
             XmlNodePtr bufferNode = buffersNode->firstChildElement();
             while (bufferNode->isValid())
             {
-                wstring name(bufferNode->getType());
+                String name(bufferNode->getType());
                 Video::Format format = getFormat(bufferNode->getText());
                 UINT32 size = evaluate(bufferNode->getAttribute(L"size"), true);
-                resourceMap[name] = resources->createBuffer(wstring(L"%v:buffer:%v", fileName, name), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                resourceMap[name] = resources->createBuffer(String(L"%v:buffer:%v", fileName, name), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                 switch (format)
                 {
                 case Video::Format::Byte:
@@ -814,7 +809,7 @@ namespace Gek
                     PassData pass;
                     if (passNode->hasAttribute(L"mode"))
                     {
-                        wstring modeString = passNode->getAttribute(L"mode");
+                        String modeString = passNode->getAttribute(L"mode");
                         if (modeString.compare(L"forward") == 0)
                         {
                             pass.mode = Pass::Mode::Forward;
@@ -848,13 +843,13 @@ namespace Gek
                         XmlNodePtr resourceNode = resourcesNode->firstChildElement();
                         while (resourceNode->isValid())
                         {
-                            wstring type(resourceNode->getType());
-                            wstring text(resourceNode->getText());
+                            String type(resourceNode->getType());
+                            String text(resourceNode->getText());
                             pass.resourceList.insert(std::make_pair(type, text.empty() ? type : text));
                             if (resourceNode->hasAttribute(L"actions"))
                             {
                                 auto &actionMap = pass.actionMap[resourceNode->getType()];
-                                std::vector<wstring> actionList(resourceNode->getAttribute(L"actions").getLower().split(L','));
+                                std::vector<String> actionList(resourceNode->getAttribute(L"actions").getLower().split(L','));
                                 for(auto &action : actionList)
                                 {
                                     action.trim();
@@ -873,7 +868,7 @@ namespace Gek
 
                     pass.unorderedAccessList = loadChildMap(passNode, L"unorderedaccess");
 
-                    string engineData;
+                    StringUTF8 engineData;
                     if (pass.mode != Pass::Mode::Compute)
                     {
                         engineData +=
@@ -907,34 +902,33 @@ namespace Gek
                     }
 
                     UINT32 stage = 0;
-                    string outputData;
+                    StringUTF8 outputData;
                     for (auto &resourcePair : pass.renderTargetList)
                     {
                         auto resourceIterator = resourceList.find(resourcePair.first);
                         if (resourceIterator != resourceList.end())
                         {
-                            outputData += string("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
+                            outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
                         }
                     }
 
                     if (!outputData.empty())
                     {
-                        engineData +=
+                        engineData.format(
                             "struct OutputPixel                                         \r\n" \
-                            "{                                                          \r\n";
-                        engineData += outputData;
-                        engineData +=
+                            "{                                                          \r\n" \
+                            "%v" \
                             "};                                                         \r\n" \
-                            "                                                           \r\n";
+                            "                                                           \r\n", outputData);
                     }
 
-                    string resourceData;
+                    StringUTF8 resourceData;
                     UINT32 resourceStage(block.lighting ? 1 : 0);
                     if (pass.mode == Pass::Mode::Forward)
                     {
                         for (auto &mapNode : mapList)
                         {
-                            resourceData += string("    %v<%v> %v : register(t%v);\r\n", getMapType(mapNode.mapType), getBindType(mapNode.bindType), mapNode.name, resourceStage++);
+                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(mapNode.mapType), getBindType(mapNode.bindType), mapNode.name, resourceStage++);
                         }
                     }
 
@@ -944,44 +938,42 @@ namespace Gek
                         if (resourceIterator != resourceList.end())
                         {
                             auto &resource = (*resourceIterator).second;
-                            resourceData += string("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, resourceStage++);
+                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, resourceStage++);
                         }
                     }
 
                     if (!resourceData.empty())
                     {
-                        engineData +=
+                        engineData.format(
                             "namespace Resources                                        \r\n" \
-                            "{                                                          \r\n";
-
-                        engineData += resourceData;
-                        engineData +=
+                            "{                                                          \r\n" \
+                            "%v" \
                             "};                                                         \r\n" \
-                            "                                                           \r\n";
+                            "                                                           \r\n", resourceData);
                     }
 
                     XmlNodePtr programNode = passNode->firstChildElement(L"program");
-                    auto addDefine = [&engineData](const wstring &name, const wstring &value) -> void
+                    auto addDefine = [&engineData](const String &name, const String &value) -> void
                     {
                         if (value.find(L"float2") != std::string::npos)
                         {
-                            engineData += string("static const float2 %v = %v;\r\n", name, value);
+                            engineData.format("static const float2 %v = %v;\r\n", name, value);
                         }
                         else if (value.find(L"float3") != std::string::npos)
                         {
-                            engineData += string("static const float3 %v = %v;\r\n", name, value);
+                            engineData.format("static const float3 %v = %v;\r\n", name, value);
                         }
                         else if (value.find(L"float4") != std::string::npos)
                         {
-                            engineData += string("static const float4 %v = %v;\r\n", name, value);
+                            engineData.format("static const float4 %v = %v;\r\n", name, value);
                         }
                         else if (value.find(L".") == std::string::npos)
                         {
-                            engineData += string("static const int %v = %v;\r\n", name, value);
+                            engineData.format("static const int %v = %v;\r\n", name, value);
                         }
                         else
                         {
-                            engineData += string("static const float %v = %v;\r\n", name, value);
+                            engineData.format("static const float %v = %v;\r\n", name, value);
                         }
                     };
 
@@ -989,8 +981,8 @@ namespace Gek
                     XmlNodePtr defineNode = definesNode->firstChildElement();
                     while (defineNode->isValid())
                     {
-                        wstring name = defineNode->getType();
-                        wstring value = evaluate(defineNode->getText());
+                        String name = defineNode->getType();
+                        String value = evaluate(defineNode->getText());
                         addDefine(name, value);
 
                         defineNode = defineNode->nextSiblingElement();
@@ -998,14 +990,14 @@ namespace Gek
 
                     for (auto &globalDefine : globalDefinesList)
                     {
-                        wstring name = globalDefine.first;
-                        wstring value = globalDefine.second;
+                        String name = globalDefine.first;
+                        String value = globalDefine.second;
                         addDefine(name, value);
                     }
 
-                    wstring programFileName = programNode->firstChildElement(L"source")->getText();
-                    wstring programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
-                    string programEntryPoint(programNode->firstChildElement(L"entry")->getText());
+                    String programFileName = programNode->firstChildElement(L"source")->getText();
+                    String programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
+                    StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
                     auto onInclude = [&](const char *resourceName, std::vector<UINT8> &data) -> void
                     {
                         if (_stricmp(resourceName, "GEKEngine") == 0)
@@ -1017,26 +1009,26 @@ namespace Gek
                         {
                             if (std::experimental::filesystem::is_regular_file(resourceName))
                             {
-                                FileSystem::load(resourceName, data);
+                                FileSystem::load(String(resourceName), data);
                             }
                             else
                             {
-                                std::experimental::filesystem::path filePath(programFilePath);
+                                FileSystem::Path filePath(programFilePath);
                                 filePath.remove_filename();
                                 filePath.append(resourceName);
-                                filePath = FileSystem::expandPath(filePath.wstring());
+                                filePath = FileSystem::expandPath(filePath);
                                 if (std::experimental::filesystem::is_regular_file(filePath))
                                 {
-                                    FileSystem::load(filePath.wstring(), data);
+                                    FileSystem::load(filePath, data);
                                 }
                                 else
                                 {
-                                    std::experimental::filesystem::path rootPath(L"$root\\data\\programs");
+                                    FileSystem::Path rootPath(L"$root\\data\\programs");
                                     rootPath.append(resourceName);
-                                    rootPath = FileSystem::expandPath(rootPath.wstring());
+                                    rootPath = FileSystem::expandPath(rootPath);
                                     if (std::experimental::filesystem::is_regular_file(rootPath))
                                     {
-                                        FileSystem::load(rootPath.c_str(), data);
+                                        FileSystem::load(rootPath, data);
                                     }
                                 }
                             }
@@ -1054,51 +1046,49 @@ namespace Gek
                     if (pass.mode == Pass::Mode::Compute)
                     {
                         UINT32 stage = 0;
-                        string unorderedAccessData;
+                        StringUTF8 unorderedAccessData;
                         for (auto &resourcePair : pass.unorderedAccessList)
                         {
                             auto resourceIterator = resourceList.find(resourcePair.first);
                             if (resourceIterator != resourceList.end())
                             {
-                                unorderedAccessData += string("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
+                                unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
                             }
                         }
 
                         if (!unorderedAccessData.empty())
                         {
-                            engineData +=
+                            engineData.format(
                                 "namespace UnorderedAccess                              \r\n" \
-                                "{                                                      \r\n";
-                            engineData += unorderedAccessData;
-                            engineData +=
+                                "{                                                      \r\n" \
+                                "%v" \
                                 "};                                                     \r\n" \
-                                "                                                       \r\n";
+                                "                                                       \r\n", unorderedAccessData);
                         }
 
                         pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, onInclude);
                     }
                     else
                     {
-                        string unorderedAccessData;
+                        StringUTF8 unorderedAccessData;
                         UINT32 stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
                         for (auto &resourcePair : pass.unorderedAccessList)
                         {
                             auto resourceIterator = resourceList.find(resourcePair.first);
                             if (resourceIterator != resourceList.end())
                             {
-                                unorderedAccessData += string("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
+                                unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
                             }
                         }
 
                         if (!unorderedAccessData.empty())
                         {
-                            engineData +=
+                            engineData.format(
                                 "namespace UnorderedAccess                              \r\n" \
-                                "{                                                      \r\n";
-                            engineData += unorderedAccessData;
-                            engineData +=
+                                "{                                                      \r\n" \
+                                "%v" \
                                 "};                                                     \r\n" \
-                                "                                                       \r\n";
+                                "                                                       \r\n", unorderedAccessData);
                         }
 
                         pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, onInclude);
@@ -1123,19 +1113,19 @@ namespace Gek
             return priority;
         }
 
-        void loadResourceList(const wchar_t *materialName, std::unordered_map<wstring, wstring> &materialDataMap, std::list<ResourceHandle> &resourceList)
+        void loadResourceList(const wchar_t *materialName, std::unordered_map<String, String> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
-            wstring filePath;
-            wstring fileSpec;
+            FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
+            String fileSpecifier(FileSystem::Path(materialName).getFileName());
             for (auto &mapValue : mapList)
             {
                 ResourceHandle resource;
                 auto dataIterator = materialDataMap.find(mapValue.name);
                 if (dataIterator != materialDataMap.end())
                 {
-                    wstring dataName = (*dataIterator).second.getLower();
+                    String dataName = (*dataIterator).second.getLower();
                     dataName.replace(L"$directory", filePath);
-                    dataName.replace(L"$filename", fileSpec);
+                    dataName.replace(L"$filename", fileSpecifier);
                     dataName.replace(L"$materialNode", materialName);
                     resource = resources->loadTexture(dataName, mapValue.defaultValue, mapValue.flags);
                 }
@@ -1192,7 +1182,7 @@ namespace Gek
                     auto copyResourceIterator = pass.copyResourceMap.find(resourcePair.first);
                     if (copyResourceIterator != pass.copyResourceMap.end())
                     {
-                        wstring &copyFrom = copyResourceIterator->second;
+                        String &copyFrom = copyResourceIterator->second;
                         auto copyIterator = resourceMap.find(copyFrom);
                         if (copyIterator != resourceMap.end())
                         {

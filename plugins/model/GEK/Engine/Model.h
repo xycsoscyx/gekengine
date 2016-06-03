@@ -7,8 +7,8 @@ namespace Gek
 {
     struct ModelComponent
     {
-        wstring value;
-        wstring skin;
+        String value;
+        String skin;
 
         ModelComponent(void);
         void save(Population::ComponentDefinition &componentData) const;

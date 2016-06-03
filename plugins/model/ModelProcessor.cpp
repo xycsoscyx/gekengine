@@ -70,7 +70,7 @@ namespace Gek
         struct Model
         {
             std::atomic<bool> loaded;
-            wstring fileName;
+            String fileName;
             Shapes::AlignedBox alignedBox;
             std::vector<SubModel> subModelList;
 
@@ -158,13 +158,13 @@ namespace Gek
             population->removeObserver((PopulationObserver *)this);
         }
 
-        void loadBoundingBox(Model &model, const wstring &name)
+        void loadBoundingBox(Model &model, const String &name)
         {
             static const UINT32 PreReadSize = (sizeof(UINT32) + sizeof(UINT16) + sizeof(UINT16) + sizeof(Shapes::AlignedBox));
 
             HRESULT resultValue = E_FAIL;
 
-            model.fileName = wstring(L"$root\\data\\models\\%v.gek", name);
+            model.fileName = String(L"$root\\data\\models\\%v.gek", name);
 
             std::vector<UINT8> fileData;
             FileSystem::load(model.fileName, fileData, PreReadSize);
@@ -212,7 +212,7 @@ namespace Gek
             model.subModelList.resize(subModelCount);
             for (UINT32 modelIndex = 0; modelIndex < subModelCount; ++modelIndex)
             {
-                wstring materialName = (const wchar_t *)rawFileData;
+                String materialName = (const wchar_t *)rawFileData;
                 rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
 
                 SubModel &subModel = model.subModelList[modelIndex];
@@ -228,14 +228,14 @@ namespace Gek
                 UINT32 vertexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
-                subModel.vertexBuffer = resources->createBuffer(wstring(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                subModel.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
                 rawFileData += (sizeof(Vertex) * vertexCount);
 
                 UINT32 indexCount = *((UINT32 *)rawFileData);
                 rawFileData += sizeof(UINT32);
 
                 subModel.indexCount = indexCount;
-                subModel.indexBuffer = resources->createBuffer(wstring(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                subModel.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
                 rawFileData += (sizeof(UINT16) * indexCount);
             }
 
@@ -244,7 +244,7 @@ namespace Gek
 
         void loadModel(Model &model)
         {
-            std::size_t hash = std::hash<wstring>()(model.fileName);
+            std::size_t hash = std::hash<String>()(model.fileName);
             if (loadModelSet.count(hash) == 0)
             {
                 loadModelSet.insert(std::make_pair(hash, true));
@@ -294,7 +294,7 @@ namespace Gek
             if (entity->hasComponents<ModelComponent, TransformComponent>())
             {
                 auto &modelComponent = entity->getComponent<ModelComponent>();
-                std::size_t hash = std::hash<wstring>()(modelComponent.value);
+                std::size_t hash = std::hash<String>()(modelComponent.value);
                 auto pair = dataMap.insert(std::make_pair(hash, Model()));
                 if (pair.second)
                 {

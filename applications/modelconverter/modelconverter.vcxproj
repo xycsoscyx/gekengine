@@ -155,9 +155,6 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\..\libraries\math\math.vcxproj">
       <Project>{80c85026-e106-47bf-91fa-43220b44141b}</Project>
     </ProjectReference>
@@ -169,7 +166,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Progressive Meshes\matrix.h" />
+    <ClCompile Include="modelconverter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

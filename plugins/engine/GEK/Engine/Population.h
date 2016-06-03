@@ -20,13 +20,13 @@ namespace Gek
         : virtual public Observable
     {
         struct ComponentDefinition
-            : public std::unordered_map<wstring, wstring>
+            : public std::unordered_map<String, String>
         {
-            wstring value;
+            String value;
         };
 
         struct EntityDefinition
-            : public std::unordered_map<wstring, ComponentDefinition>
+            : public std::unordered_map<String, ComponentDefinition>
         {
         };
 
@@ -35,8 +35,8 @@ namespace Gek
 
         virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
 
-        virtual void load(const wstring &fileName) = 0;
-        virtual void save(const wstring &fileName) = 0;
+        virtual void load(const wchar_t *fileName) = 0;
+        virtual void save(const wchar_t *fileName) = 0;
         virtual void free(void) = 0;
 
         virtual Entity *createEntity(const EntityDefinition &entityParameterList, const wchar_t *name = nullptr) = 0;

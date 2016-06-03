@@ -7,9 +7,9 @@ namespace Gek
 {
     struct ShapeComponent
     {
-        wstring value;
-        wstring parameters;
-        wstring skin;
+        String value;
+        String parameters;
+        String skin;
 
         ShapeComponent(void);
         void save(Population::ComponentDefinition &componentData) const;

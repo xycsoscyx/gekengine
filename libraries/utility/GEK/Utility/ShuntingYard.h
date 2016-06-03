@@ -51,11 +51,11 @@ namespace Gek
         {
             TokenType type;
             UINT32 parameterCount;
-            wstring string;
+            String string;
             float value;
 
             Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, const wstring &string, UINT32 parameterCount = 0);
+            Token(TokenType type, const wchar_t *string, UINT32 parameterCount = 0);
             Token(float value);
         };
 
@@ -89,15 +89,15 @@ namespace Gek
         };
 
     private:
-        std::unordered_map<wstring, float> variableMap;
-        std::unordered_map<wstring, Operation> operationsMap;
-        std::unordered_map<wstring, Function> functionsMap;
+        std::unordered_map<String, float> variableMap;
+        std::unordered_map<String, Operation> operationsMap;
+        std::unordered_map<String, Function> functionsMap;
         std::mt19937 mersineTwister;
 
     public:
         ShuntingYard(void);
 
-        TokenList getTokenList(const wstring &expression);
+        TokenList getTokenList(const wchar_t *expression);
         UINT32 getReturnSize(const TokenList &rpnTokenList);
 
         inline void evaluate(TokenList &rpnTokenList, float &value)
@@ -117,42 +117,40 @@ namespace Gek
             evaluate(rpnTokenList, value.data);
         }
 
-        inline void evaluate(const wstring &expression, float &value)
+        inline void evaluate(const wchar_t *expression, float &value)
         {
             evaluateValue(expression, &value, 1);
         }
 
         template <std::size_t SIZE>
-        void evaluate(const wstring &expression, float(&value)[SIZE])
+        void evaluate(const wchar_t *expression, float(&value)[SIZE])
         {
             evaluateValue(expression, value, SIZE);
         }
 
         template <class TYPE>
-        void evaluate(const wstring &expression, TYPE &value)
+        void evaluate(const wchar_t *expression, TYPE &value)
         {
             evaluate(expression, value.data);
         }
 
     private:
-        bool isNumber(const wstring &token);
-        bool isOperation(const wstring &token);
-        bool isFunction(const wstring &token);
-        bool isLeftParenthesis(const wstring &token);
-        bool isRightParenthesis(const wstring &token);
-        bool isParenthesis(const wstring &token);
-        bool isSeparator(const wstring &token);
-        bool isAssociative(const wstring &token, const Associations &type);
-        int comparePrecedence(const wstring &token1, const wstring &token2);
-        TokenType getTokenType(const wstring &token);
+        bool isNumber(const wchar_t *token);
+        bool isOperation(const wchar_t *token);
+        bool isFunction(const wchar_t *token);
+        bool isLeftParenthesis(const wchar_t *token);
+        bool isRightParenthesis(const wchar_t *token);
+        bool isParenthesis(const wchar_t *token);
+        bool isSeparator(const wchar_t *token);
+        bool isAssociative(const wchar_t *token, const Associations &type);
+        int comparePrecedence(const wchar_t *token1, const wchar_t *token2);
+        TokenType getTokenType(const wchar_t *token);
         bool isValidReturnType(const Token &token);
 
     private:
         void insertToken(TokenList &infixTokenList, Token &token);
-        bool replaceFirstVariable(TokenList &infixTokenList, wstring &token);
-        bool replaceFirstFunction(TokenList &infixTokenList, wstring &token);
-        void parseSubTokens(TokenList &infixTokenList, wstring token);
-        TokenList convertExpressionToInfix(const wstring &expression);
+        void parseSubTokens(TokenList &infixTokenList, const String &token);
+        TokenList convertExpressionToInfix(const String &expression);
         TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
         void evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, UINT32 valueSize);
 
@@ -163,6 +161,6 @@ namespace Gek
         }
 
         void evaluateValue(TokenList &rpnTokenList, float *value, UINT32 valueSize);
-        void evaluateValue(const wstring &expression, float *value, UINT32 valueSize);
+        void evaluateValue(const wchar_t *expression, float *value, UINT32 valueSize);
     };
 }; // namespace Gek

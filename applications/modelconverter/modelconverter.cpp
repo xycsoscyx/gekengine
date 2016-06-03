@@ -2,9 +2,9 @@
 #include "GEK\Math\Float3.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
-#include "GEK\Utility\String.h"
 #include "GEK\Utility\Trace.h"
-#include <experimental\filesystem>
+#include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
 #include <unordered_map>
 #include <algorithm>
 #include <vector>
@@ -34,7 +34,7 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<string, std::list<Model>> &modelList, Shapes::AlignedBox &boundingBox)
+void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &modelList, Shapes::AlignedBox &boundingBox)
 {
     GEK_CHECK_CONDITION(node == nullptr, Trace::Exception, "Missing node data");
     if (node->mNumMeshes > 0)
@@ -51,7 +51,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<stri
                 GEK_CHECK_CONDITION(mesh->mFaces == nullptr, Trace::Exception, "Mesh missing face data");
                 GEK_CHECK_CONDITION(mesh->mVertices == nullptr, Trace::Exception, "Mesh missing vertex data");
 
-                string material;
+                StringUTF8 material;
                 if (scene->mMaterials != nullptr)
                 {
                     const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
@@ -59,7 +59,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<stri
                     {
                         aiString sceneDiffuseMaterial;
                         sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                        string diffuseMaterial = sceneDiffuseMaterial.C_Str();
+                        StringUTF8 diffuseMaterial = sceneDiffuseMaterial.C_Str();
                         if (!diffuseMaterial.empty())
                         {
                             material = diffuseMaterial;
@@ -140,9 +140,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     {
         printf("GEK Model Converter\r\n");
 
-        wstring fileNameInput;
-        wstring fileNameOutput;
-        wstring mode(L"model");
+        String fileNameInput;
+        String fileNameOutput;
+        String mode(L"model");
 
         bool flipCoords = false;
         bool flipWinding = false;
@@ -151,8 +151,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         float smoothingAngle = 80.0f;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
-            wstring argument(argumentList[argumentIndex]);
-            std::vector<wstring> arguments(argument.split(L':'));
+            String argument(argumentList[argumentIndex]);
+            std::vector<String> arguments(argument.split(L':'));
             GEK_CHECK_CONDITION(arguments.empty(), Trace::Exception, "Invalid argument encountered: %v", argumentList[argumentIndex]);
             if (arguments[0].compare(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
@@ -252,25 +252,25 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        const aiScene* scene = aiImportFileExWithProperties(string(fileNameInput), importFlags, nullptr, propertyStore);
+        const aiScene* scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
         GEK_CHECK_CONDITION(scene == nullptr, Trace::Exception, "Unable to Load Input: %v", fileNameInput);
         GEK_CHECK_CONDITION(scene->mMeshes == nullptr, Trace::Exception, "No meshes found in scene: %v", fileNameInput);
 
         aiApplyPostProcessing(scene, postProcessFlags);
 
         Shapes::AlignedBox boundingBox;
-        std::unordered_map<string, std::list<Model>> modelListUTF8;
+        std::unordered_map<StringUTF8, std::list<Model>> modelListUTF8;
         getMeshes(scene, scene->mRootNode, modelListUTF8, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        std::unordered_map<wstring, std::list<Model>> modelList;
+        std::unordered_map<String, std::list<Model>> modelList;
         for (auto &material : modelListUTF8)
         {
-            wstring materialName = material.first;
+            String materialName = material.first;
             materialName.replace(L"/", L"\\");
-            materialName = std::experimental::filesystem::path(materialName).replace_extension().generic_wstring();
+            materialName = FileSystem::Path(materialName).replace_extension().generic_wstring();
 
             int texturesPathIndex = materialName.find(L"\\textures\\");
             if (texturesPathIndex != std::string::npos)
@@ -291,12 +291,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 materialName = materialName.subString(materialName.length() - 2);
             }
 
-            auto fileSpecifier = std::experimental::filesystem::path(materialName).filename();
-            auto folderName = std::experimental::filesystem::path(materialName).remove_filename().filename();
+            auto fileSpecifier = FileSystem::Path(materialName).filename();
+            auto folderName = FileSystem::Path(materialName).remove_filename().filename();
 
             if (fileSpecifier == folderName)
             {
-                materialName = std::experimental::filesystem::path(materialName).remove_filename().generic_wstring();
+                materialName = FileSystem::Path(materialName).remove_filename().generic_wstring();
             }
 
             modelList[materialName] = material.second;
@@ -306,7 +306,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
         if (mode.compare(L"model") == 0)
         {
-            std::unordered_map<wstring, Model> sortedModelList;
+            std::unordered_map<String, Model> sortedModelList;
             for (auto &material : modelList)
             {
                 Model &sortedModel = sortedModelList[material.first];
@@ -338,7 +338,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             printf("> Num. Models: %d\r\n", modelCount);
             for (auto &model : sortedModelList)
             {
-                wstring materialName = model.first;
+                String materialName = model.first;
                 fwrite(materialName.c_str(), ((materialName.length() + 1) * sizeof(wchar_t)), 1, file);
 
                 UINT32 vertexCount = model.second.vertexList.size();

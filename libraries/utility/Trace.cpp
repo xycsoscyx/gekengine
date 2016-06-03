@@ -140,7 +140,7 @@ namespace Gek
                     else
                     {
                         DWORD error = GetLastError();
-                        OutputDebugStringW(wstring(L"Error creating named pipe: %v", error));
+                        OutputDebugStringW(String(L"Error creating named pipe: %v", error));
                     }
 
                     nlohmann::json profileData = {

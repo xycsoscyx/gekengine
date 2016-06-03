@@ -26,20 +26,20 @@ namespace Gek
         {
             GEK_REQUIRE(resources);
 
-            XmlDocumentPtr document(XmlDocument::load(wstring(L"$root\\data\\materials\\%v.xml", fileName)));
+            XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", fileName)));
             XmlNodePtr materialNode = document->getRoot(L"material");
 
             XmlNodePtr shaderNode = materialNode->firstChildElement(L"shader");
-            wstring shaderFileName = shaderNode->getText();
+            String shaderFileName = shaderNode->getText();
             shader = resources->loadShader(shaderFileName);
 
-            std::unordered_map<wstring, wstring> resourceMap;
+            std::unordered_map<String, String> resourceMap;
             XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
             XmlNodePtr mapNode = mapsNode->firstChildElement();
             while (mapNode->isValid())
             {
-                wstring name(mapNode->getType());
-                wstring source(mapNode->getText());
+                String name(mapNode->getType());
+                String source(mapNode->getText());
                 resourceMap[name] = source;
 
                 mapNode = mapNode->nextSiblingElement();

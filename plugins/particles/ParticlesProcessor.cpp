@@ -198,8 +198,8 @@ namespace Gek
 
                 auto &emitter = entityDataList[entity];
                 emitter.particles.resize(particlesComponent.density);
-                emitter.material = resources->loadMaterial(L"Particles\\" + particlesComponent.material);
-                emitter.colorMap = resources->loadTexture(L"Particles\\" + particlesComponent.colorMap, wstring(), 0);
+                emitter.material = resources->loadMaterial(String(L"Particles\\%v", particlesComponent.material));
+                emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), nullptr, 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
                 emitter.size = std::uniform_real_distribution<float>(particlesComponent.size.x, particlesComponent.size.y);
                 concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void

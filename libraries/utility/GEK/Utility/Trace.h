@@ -47,7 +47,7 @@ namespace Gek
         template<typename VALUE, typename... ARGUMENTS>
         void getParameters(nlohmann::json &json, Parameter<VALUE> &pair, ARGUMENTS&... arguments)
         {
-            string value;
+            StringUTF8 value;
             value = pair.value;
             json["arguments"][pair.name] = static_cast<std::string &>(value);
             getParameters(json, arguments...);
@@ -151,7 +151,7 @@ namespace Gek
         }
         catch (const std::bad_alloc &badAllocation)
         {
-            throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), badAllocation.what()));
+            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), badAllocation.what()));
         };
 
         std::shared_ptr<RETURN> remadeObject;
@@ -161,7 +161,7 @@ namespace Gek
         }
         catch (const std::bad_cast &badCast)
         {
-            throw Gek::Exception(__FUNCTION__, __LINE__, string("Unable to cast to requested type: %v (%v)", typeid(RETURN).name(), badCast.what()));
+            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to cast to requested type: %v (%v)", typeid(RETURN).name(), badCast.what()));
         };
 
         return remadeObject;
@@ -178,5 +178,5 @@ namespace Gek
 #define GEK_TRACE_EVENT(MESSAGE, ...)                           Trace::log("i", "Event", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
 #define GEK_TRACE_ERROR(MESSAGE, ...)                           Trace::log("i", "Error", GetTickCount64(), __FUNCTION__, MESSAGE, __VA_ARGS__)
 
-#define GEK_CHECK_CONDITION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::string(MESSAGE, __VA_ARGS__));
-#define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::string(MESSAGE, __VA_ARGS__));
+#define GEK_CHECK_CONDITION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::StringUTF8(MESSAGE, __VA_ARGS__));
+#define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::StringUTF8(MESSAGE, __VA_ARGS__));

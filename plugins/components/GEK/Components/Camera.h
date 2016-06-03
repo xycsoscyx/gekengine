@@ -41,7 +41,7 @@ namespace Gek
     struct ThirdPersonCameraComponent
         : public CameraComponent
     {
-        wstring body;
+        String body;
         Math::Float3 offset;
         Math::Float3 distance;
 
