@@ -20,7 +20,7 @@ namespace Gek
 {
     class EngineImplementation
         : public ContextRegistration<EngineImplementation, HWND>
-        , virtual public ObservableMixin<EngineObserver>
+        , public ObservableMixin<EngineObserver>
         , public Engine
         , public RenderObserver
         , public PopulationObserver

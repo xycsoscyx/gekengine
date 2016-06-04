@@ -67,7 +67,7 @@ namespace Gek
 
     class RenderImplementation
         : public ContextRegistration<RenderImplementation, VideoSystem *, Population *, Resources *>
-        , virtual public ObservableMixin<RenderObserver>
+        , public ObservableMixin<RenderObserver>
         , public PopulationObserver
         , public Render
     {
@@ -296,13 +296,13 @@ namespace Gek
                 VideoContext *videoContext = video->getDefaultContext();
                 RenderContextPtr renderContext(makeShared<RenderContext, RenderContextImplementation>(videoContext));
 
-                video->updateBuffer(engineConstantBuffer.get(), &engineConstantData);
+                video->updateResource(engineConstantBuffer.get(), &engineConstantData);
                 videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
                 videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
                 videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
                 videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
 
-                video->updateBuffer(cameraConstantBuffer.get(), &cameraConstantData);
+                video->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
                 videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
                 videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
                 videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);

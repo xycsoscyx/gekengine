@@ -95,7 +95,7 @@ namespace Gek
         };
 
     private:
-        UINT64 nextIdentifier;
+        uint64_t nextIdentifier;
         concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
         concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
         concurrency::concurrent_unordered_map<HANDLE, AtomicResource> localResourceMap;
@@ -271,7 +271,7 @@ namespace Gek
         }
     };
 
-    class ResourcesImplementation 
+    class ResourcesImplementation
         : public ContextRegistration<ResourcesImplementation, EngineContext *, VideoSystem *>
         , public Resources
     {
@@ -373,7 +373,7 @@ namespace Gek
 
         PluginHandle loadPlugin(const wchar_t *fileName)
         {
-            auto load = [this, fileName = String(fileName)](PluginHandle handle) -> PluginPtr
+            auto load = [this, fileName = String(fileName)](PluginHandle handle)->PluginPtr
             {
                 return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName.c_str());
             };
@@ -388,7 +388,7 @@ namespace Gek
 
         MaterialHandle loadMaterial(const wchar_t *fileName)
         {
-            auto load = [this, fileName = String(fileName)](MaterialHandle handle) -> MaterialPtr
+            auto load = [this, fileName = String(fileName)](MaterialHandle handle)->MaterialPtr
             {
                 return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str());
             };
@@ -406,7 +406,7 @@ namespace Gek
 
         ShaderHandle loadShader(const wchar_t *fileName)
         {
-            auto load = [this, fileName = String(fileName)](ShaderHandle handle) -> ShaderPtr
+            auto load = [this, fileName = String(fileName)](ShaderHandle handle)->ShaderPtr
             {
                 return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName.c_str());
             };
@@ -551,7 +551,7 @@ namespace Gek
 
             if (name)
             {
-                std::size_t hash = std::hash<const wchar_t *>()(name);
+                std::size_t hash = std::hash<String>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
                     return resourceManager.getReadWriteHandle(hash, request);
@@ -581,7 +581,7 @@ namespace Gek
 
             if (name)
             {
-                std::size_t hash = std::hash<const wchar_t *>()(name);
+                std::size_t hash = std::hash<String>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
                     return resourceManager.getReadWriteHandle(hash, request);
@@ -611,7 +611,7 @@ namespace Gek
 
             if (name)
             {
-                std::size_t hash = std::hash<const wchar_t *>()(name);
+                std::size_t hash = std::hash<String>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
                     return resourceManager.getReadWriteHandle(hash, request);
@@ -634,77 +634,69 @@ namespace Gek
             GEK_CHECK_CONDITION(tokenList.size() != 2, Trace::Exception, "Invalid number of parameters passed to create texture");
             if (tokenList[0].compare(L"color") == 0)
             {
-                uint32_t colorPitch = 0;
-                uint8_t colorData[4] = { 0, 0, 0, 0 };
-                
                 try
                 {
                     auto rpnTokenList = shuntingYard.getTokenList(tokenList[1]);
-                    switch (shuntingYard.getReturnSize(rpnTokenList))
+                    uint32_t colorSize = shuntingYard.getReturnSize(rpnTokenList);
+                    if (colorSize == 1)
                     {
-                    case 1:
-                        if (true)
+                        float color;
+                        shuntingYard.evaluate(rpnTokenList, color);
+                        uint8_t colorData[4] =
                         {
-                            float color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            texture = video->createTexture(Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = uint8_t(color * 255.0f);
-                            colorPitch = 1;
-                        }
+                            uint8_t(color * 255.0f),
+                        };
 
-                        break;
-
-                    case 2:
-                        if (true)
+                        texture = video->createTexture(Video::Format::Byte, 1, 1, 1, Video::TextureFlags::Resource, 1, colorData);
+                    }
+                    else if (colorSize == 2)
+                    {
+                        Math::Float2 color;
+                        shuntingYard.evaluate(rpnTokenList, color);
+                        uint8_t colorData[4] =
                         {
-                            Math::Float2 color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            texture = video->createTexture(Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = uint8_t(color.x * 255.0f);
-                            colorData[1] = uint8_t(color.y * 255.0f);
-                            colorPitch = 2;
-                        }
+                            uint8_t(color.x * 255.0f),
+                            uint8_t(color.y * 255.0f),
+                        };
 
-                        break;
-
-                    case 3:
-                        if (true)
+                        texture = video->createTexture(Video::Format::Byte2, 1, 1, 1, Video::TextureFlags::Resource, 1, colorData);
+                    }
+                    else if (colorSize == 3)
+                    {
+                        Math::Float3 color;
+                        shuntingYard.evaluate(rpnTokenList, color);
+                        uint8_t colorData[4] =
                         {
-                            Math::Float3 color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = uint8_t(color.x * 255.0f);
-                            colorData[1] = uint8_t(color.y * 255.0f);
-                            colorData[2] = uint8_t(color.z * 255.0f);
-                            colorData[3] = 255;
-                            colorPitch = 4;
-                        }
+                            uint8_t(color.x * 255.0f),
+                            uint8_t(color.y * 255.0f),
+                            uint8_t(color.z * 255.0f),
+                            255,
+                        };
 
-                        break;
-
-                    case 4:
-                        if (true)
+                        texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, colorData);
+                    }
+                    else if (colorSize == 4)
+                    {
+                        Math::Float4 color;
+                        shuntingYard.evaluate(rpnTokenList, color);
+                        uint8_t colorData[4] =
                         {
-                            Math::Float4 color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                            colorData[0] = uint8_t(color.x * 255.0f);
-                            colorData[1] = uint8_t(color.y * 255.0f);
-                            colorData[2] = uint8_t(color.z * 255.0f);
-                            colorData[3] = uint8_t(color.w * 255.0f);
-                            colorPitch = 4;
-                        }
+                            uint8_t(color.x * 255.0f),
+                            uint8_t(color.y * 255.0f),
+                            uint8_t(color.z * 255.0f),
+                            uint8_t(color.w * 255.0f),
+                        };
 
-                        break;
-                    };
+                        texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, colorData);
+                    }
+                    else
+                    {
+                        GEK_THROW_EXCEPTION(Exception, "Invalid color size specified: %v", colorSize)
+                    }
                 }
                 catch (const ShuntingYard::Exception &)
                 {
                 };
-
-                GEK_CHECK_CONDITION(!texture, Trace::Exception, "Unable to create texture");
-                GEK_CHECK_CONDITION(colorPitch == 0, Trace::Exception, "Unable to evaluate color format");
-                video->updateTexture(texture.get(), colorData, colorPitch);
             }
             else if (tokenList[0].compare(L"normal") == 0)
             {
@@ -718,7 +710,7 @@ namespace Gek
                     normal.set(0.0f, 0.0f, 0.0f);
                 }
 
-                uint8_t normalData[4] = 
+                uint8_t normalData[4] =
                 {
                     uint8_t(normal.x * 255.0f),
                     uint8_t(normal.y * 255.0f),
@@ -726,8 +718,7 @@ namespace Gek
                     255,
                 };
 
-                texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                video->updateTexture(texture.get(), normalData, 4);
+                texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, normalData);
             }
             else if (tokenList[0].compare(L"pattern") == 0)
             {
@@ -738,8 +729,7 @@ namespace Gek
                         255, 0, 255, 255,
                     };
 
-                    texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                    video->updateTexture(texture.get(), data, 4);
+                    texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, data);
                 }
                 else if (tokenList[1].compare(L"flat") == 0)
                 {
@@ -751,9 +741,16 @@ namespace Gek
                         255,
                     };
 
-                    texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource);
-                    video->updateTexture(texture.get(), normalData, 4);
+                    texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, normalData);
                 }
+                else
+                {
+                    GEK_THROW_EXCEPTION(Exception, "Invalid pattern specified: %v", tokenList[1]);
+                }
+            }
+            else
+            {
+                GEK_THROW_EXCEPTION(Exception, "Invalid dynamic texture specified: %v", tokenList[0]);
             }
 
             return texture;
@@ -781,7 +778,7 @@ namespace Gek
                 for (auto &format : formatList)
                 {
                     FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
-                    if(filePath.isFile())
+                    if (filePath.isFile())
                     {
                         return video->loadTexture(filePath, flags);
                     }
@@ -793,10 +790,10 @@ namespace Gek
 
         ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags)
         {
-            auto load = [this, fileName = String(fileName), fallback = String(fallback), flags](ResourceHandle handle) -> VideoTexturePtr
+            auto load = [this, fileName = String(fileName), fallback = String(fallback), flags](ResourceHandle handle)->VideoTexturePtr
             {
                 VideoTexturePtr texture = loadTexture(fileName, flags);
-                if (!texture && fallback)
+                if (!texture && !fallback.empty())
                 {
                     texture = loadTexture(fallback, flags);
                 }
@@ -815,7 +812,7 @@ namespace Gek
 
         ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
-            auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
+            auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle)->VideoObjectPtr
             {
                 return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
             };
@@ -830,7 +827,7 @@ namespace Gek
 
         ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
-            auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle) -> VideoObjectPtr
+            auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle)->VideoObjectPtr
             {
                 return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
             };
@@ -845,12 +842,12 @@ namespace Gek
 
         void mapBuffer(ResourceHandle buffer, void **data)
         {
-            video->mapBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(buffer)), data);
+            video->mapBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(buffer)), data);
         }
 
         void unmapBuffer(ResourceHandle buffer)
         {
-            video->unmapBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(buffer)));
+            video->unmapBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(buffer)));
         }
 
         void flip(ResourceHandle resourceHandle)
@@ -860,7 +857,7 @@ namespace Gek
 
         void generateMipMaps(RenderContext *renderContext, ResourceHandle resourceHandle)
         {
-            renderContext->getContext()->generateMipMaps(reinterpret_cast<VideoTexture *>(resourceManager.getResource(resourceHandle)));
+            renderContext->getContext()->generateMipMaps(dynamic_cast<VideoTexture *>(resourceManager.getResource(resourceHandle)));
         }
 
         void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
@@ -895,7 +892,7 @@ namespace Gek
 
         void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
-            renderPipeline->getPipeline()->setConstantBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), stage);
+            renderPipeline->getPipeline()->setConstantBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), stage);
         }
 
         void setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle)
@@ -905,17 +902,17 @@ namespace Gek
 
         void setVertexBuffer(RenderContext *renderContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset)
         {
-            renderContext->getContext()->setVertexBuffer(slot, reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
+            renderContext->getContext()->setVertexBuffer(slot, dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
         void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, uint32_t offset)
         {
-            renderContext->getContext()->setIndexBuffer(reinterpret_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
+            renderContext->getContext()->setIndexBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
         void clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle, const Math::Color &color)
         {
-            renderContext->getContext()->clearRenderTarget(reinterpret_cast<VideoTarget *>(resourceManager.getResource(resourceHandle, true)), color);
+            renderContext->getContext()->clearRenderTarget(dynamic_cast<VideoTarget *>(resourceManager.getResource(resourceHandle, true)), color);
         }
 
         void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear)
@@ -929,7 +926,7 @@ namespace Gek
         {
             for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
             {
-                renderTargetList[renderTarget] = reinterpret_cast<VideoTarget *>(resourceManager.getResource(renderTargetHandleList[renderTarget], true));
+                renderTargetList[renderTarget] = dynamic_cast<VideoTarget *>(resourceManager.getResource(renderTargetHandleList[renderTarget], true));
                 if (renderTargetList[renderTarget])
                 {
                     viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
@@ -953,6 +950,6 @@ namespace Gek
             renderContext->getContext()->setViewports(viewPortList, 1);
         }
     };
-    
+
     GEK_REGISTER_CONTEXT_USER(ResourcesImplementation);
 }; // namespace Gek

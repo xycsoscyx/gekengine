@@ -37,7 +37,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(RenderObserver)
-        : virtual public Observer
+        : public Observer
     {
         virtual void onRenderBackground(void) { };
         virtual void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) { };

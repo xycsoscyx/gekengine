@@ -38,7 +38,7 @@ namespace Gek
 
     class NewtonProcessorImplementation
         : public ContextRegistration<NewtonProcessorImplementation, EngineContext *>
-        , virtual public ObservableMixin<NewtonObserver>
+        , public ObservableMixin<NewtonObserver>
         , public PopulationObserver
         , public Processor
         , public NewtonProcessor

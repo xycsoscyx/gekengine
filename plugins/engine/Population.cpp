@@ -60,7 +60,7 @@ namespace Gek
 
     class PopulationImplementation
         : public ContextRegistration<PopulationImplementation, EngineContext *>
-        , virtual public ObservableMixin<PopulationObserver>
+        , public ObservableMixin<PopulationObserver>
         , public PopulationSystem
     {
     private:
@@ -267,6 +267,18 @@ namespace Gek
             entityList.clear();
         }
 
+        Entity * addEntity(EntityPtr entity, const wchar_t *name)
+        {
+            entityList.push_back(entity);
+            sendEvent(Event(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, entity.get())));
+            if (name)
+            {
+                namedEntityList[name] = entity.get();
+            }
+
+            return entity.get();
+        }
+
         Entity * createEntity(const EntityDefinition &entityData, const wchar_t *name)
         {
             std::shared_ptr<EntityImplementation> entity = std::make_shared<EntityImplementation>();
@@ -291,16 +303,7 @@ namespace Gek
                 }
             }
 
-            EntityPtr baseEntity(std::dynamic_pointer_cast<Entity>(entity));
-
-            entityList.push_back(baseEntity);
-            sendEvent(Event(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, baseEntity.get())));
-            if (name)
-            {
-                namedEntityList[name] = baseEntity.get();
-            }
-
-            return baseEntity.get();
+            return addEntity(entity, name);
         }
 
         void killEntity(Entity *entity)

@@ -492,7 +492,6 @@ namespace Gek
 
     GEK_INTERFACE(VideoSystem)
     {
-    public:
         virtual void setFullScreen(bool fullScreen) = 0;
         virtual void setSize(uint32_t width, uint32_t height, Video::Format format) = 0;
         virtual void resize(void) = 0;
@@ -515,17 +514,16 @@ namespace Gek
         virtual VideoObjectPtr createBlendState(const Video::IndependentBlendState &blendState) = 0;
         virtual VideoObjectPtr createSamplerState(const Video::SamplerState &samplerState) = 0;
 
-        virtual VideoTexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps = 1) = 0;
+        virtual VideoTexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps = 1, const void *data = nullptr) = 0;
         virtual VideoTexturePtr loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
         virtual VideoTexturePtr loadCubeMap(const wchar_t *fileNameList[6], uint32_t flags) = 0;
-        virtual void updateTexture(VideoTexture *texture, const void *data, uint32_t pitch, Shapes::Rectangle<uint32_t> *rectangle = nullptr) = 0;
 
         virtual VideoBufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
         virtual VideoBufferPtr createBuffer(Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
-        virtual void updateBuffer(VideoBuffer *buffer, const void *data) = 0;
         virtual void mapBuffer(VideoBuffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
         virtual void unmapBuffer(VideoBuffer *buffer) = 0;
 
+        virtual void updateResource(VideoObject *buffer, const void *data) = 0;
         virtual void copyResource(VideoObject *destination, VideoObject *source) = 0;
 
         virtual VideoObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;

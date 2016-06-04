@@ -75,10 +75,10 @@ namespace Gek
         {
             union
             {
-                UINT64 value;
+                uint64_t value;
                 struct
                 {
-                    uint8_t buffer;
+                    uint16_t buffer;
                     ResourceHandle colorMap;
                     MaterialHandle material;
                 };
@@ -98,7 +98,7 @@ namespace Gek
 
             std::size_t operator()(const Properties &properties) const
             {
-                return std::hash<UINT64>()(properties.value);
+                return std::hash<uint64_t>()(properties.value);
             }
 
             bool operator == (const Properties &properties) const
@@ -235,7 +235,7 @@ namespace Gek
                 concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](DataEntityMap::value_type &dataEntity) -> void
                 {
                     Entity *entity = dataEntity.first;
-                    EmitterData &emitter = const_cast<EmitterData &>(dataEntity.second);
+                    EmitterData &emitter = dataEntity.second;
                     auto &transformComponent = entity->getComponent<TransformComponent>();
 
                     combinable<std::min<float>> minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };

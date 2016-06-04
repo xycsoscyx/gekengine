@@ -511,7 +511,7 @@ namespace Gek
 
         void loadShape(Shape &shape)
         {
-            std::size_t hash = std::hash<const void *>()(&shape);
+            std::size_t hash = reinterpret_cast<size_t>(&shape);
             if (loadShapeSet.count(hash) == 0)
             {
                 loadShapeSet.insert(std::make_pair(hash, true));

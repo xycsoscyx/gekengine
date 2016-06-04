@@ -71,7 +71,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(PopulationObserver)
-        : virtual public Observer
+        :  public Observer
     {
         virtual void onLoadBegin(void) { };
         virtual void onLoadSucceeded(void) { };

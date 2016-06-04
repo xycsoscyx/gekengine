@@ -624,7 +624,7 @@ namespace Gek
                 if (lightsPerPass > 0)
                 {
                     lightConstantBuffer = video->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                    lightConstantBuffer = video->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                    lightDataBuffer = video->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
 
                     globalDefinesList[L"lightsPerPass"] = lightsPerPass;
 
@@ -676,14 +676,14 @@ namespace Gek
             XmlNodePtr depthNode = shaderNode->firstChildElement(L"depth");
             if (depthNode->isValid())
             {
-                if (depthNode->hasAttribute(L"source"))
+                if (depthNode->hasAttribute(L"source") && depthNode->hasAttribute(L"name"))
                 {
-                    depthBuffer = resources->getResourceHandle(depthNode->getAttribute(L"source"));
+                    depthBuffer = resources->getResourceHandle(String(L"%v:%v", depthNode->getAttribute(L"name"), depthNode->getAttribute(L"source")));
                 }
                 else
                 {
                     Video::Format format = getFormat(depthNode->getText());
-                    depthBuffer = resources->createTexture(String(L"%v:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                    depthBuffer = resources->createTexture(String(L"depth:%v", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
                 }
             }
 
@@ -693,12 +693,12 @@ namespace Gek
             {
                 String name(textureNode->getType());
                 BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
-                if (textureNode->hasAttribute(L"source"))
+                if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
                 {
-                    String source(textureNode->getAttribute(L"source"));
-                    if (!resourceMap.count(source))
+                    String identity(L"%v:%v", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
+                    if (!resourceMap.count(identity))
                     {
-                        resourceMap[name] = resources->getResourceHandle(source);
+                        resourceMap[name] = resources->getResourceHandle(identity);
                     }
                 }
                 else
@@ -723,7 +723,7 @@ namespace Gek
 
                     Video::Format format = getFormat(textureNode->getText());
                     uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
-                    resourceMap[name] = resources->createTexture(String(L"%v:%v", fileName, name), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
+                    resourceMap[name] = resources->createTexture(String(L"%v:%v", name, fileName), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
                 }
 
                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
@@ -737,7 +737,7 @@ namespace Gek
                 String name(bufferNode->getType());
                 Video::Format format = getFormat(bufferNode->getText());
                 uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
-                resourceMap[name] = resources->createBuffer(String(L"%v:buffer:%v", fileName, name), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                resourceMap[name] = resources->createBuffer(String(L"%v:buffer:%v", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                 switch (format)
                 {
                 case Video::Format::Byte:
@@ -797,7 +797,8 @@ namespace Gek
                 XmlNodePtr clearTargetNode = clearNode->firstChildElement();
                 while (clearTargetNode->isValid())
                 {
-                    block.renderTargetsClearList[clearTargetNode->getType()] = static_cast<Math::Color>(clearTargetNode->getText());
+                    Math::Color clearColor = clearTargetNode->getText();
+                    block.renderTargetsClearList[clearTargetNode->getType()] = clearColor;
                     clearTargetNode = clearTargetNode->nextSiblingElement();
                 };
 
@@ -1261,7 +1262,7 @@ namespace Gek
                 break;
             };
 
-            video->updateBuffer(shaderConstantBuffer.get(), &shaderConstantData);
+            video->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
             renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
             renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
             renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
@@ -1346,7 +1347,7 @@ namespace Gek
 
             Mode prepare(void)
             {
-                return shaderNode->preparePass(renderContext, (*static_cast<BlockImplementation *>(block)->current), (*current));
+                return shaderNode->preparePass(renderContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
             }
         };
 
@@ -1393,12 +1394,12 @@ namespace Gek
             GEK_REQUIRE(pass);
 
             uint32_t firstStage = 0;
-            if (static_cast<BlockImplementation *>(block)->current->lighting)
+            if (dynamic_cast<BlockImplementation *>(block)->current->lighting)
             {
                 firstStage = 1;
             }
 
-            RenderPipeline *renderPipeline = (static_cast<PassImplementation *>(pass)->current->mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
+            RenderPipeline *renderPipeline = (dynamic_cast<PassImplementation *>(pass)->current->mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             for (auto &resource : resourceList)
             {
                 resources->setResource(renderPipeline, resource, firstStage++);

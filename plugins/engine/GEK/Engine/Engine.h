@@ -51,7 +51,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(EngineObserver)
-        : virtual public Observer
+        : public Observer
     {
         virtual void onChanged(void) { };
 

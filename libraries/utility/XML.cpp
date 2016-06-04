@@ -55,7 +55,7 @@ namespace Gek
 
         XmlNodePtr nextSiblingElement(const wchar_t *type) const
         {
-            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+            return makeShared<XmlNode, XmlDummyNode>();
         }
 
         bool hasChildElement(const wchar_t *type) const
@@ -65,12 +65,12 @@ namespace Gek
 
         XmlNodePtr firstChildElement(const wchar_t *type, bool create)
         {
-            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+            return makeShared<XmlNode, XmlDummyNode>();
         }
 
         XmlNodePtr createChildElement(const wchar_t *type, const wchar_t *content)
         {
-            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+            return makeShared<XmlNode, XmlDummyNode>();
         }
     };
 
@@ -182,11 +182,11 @@ namespace Gek
             {
                 if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8.compare(reinterpret_cast<const char *>(checkingNode->name)) == 0))
                 {
-                    return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(checkingNode));
+                    return makeShared<XmlNode, XmlNodeImplementation>(checkingNode);
                 }
             }
 
-            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+            return makeShared<XmlNode, XmlDummyNode>();
         }
 
         bool hasChildElement(const wchar_t *type) const
@@ -210,7 +210,7 @@ namespace Gek
             {
                 if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8.compare(reinterpret_cast<const char *>(checkingNode->name)) == 0))
                 {
-                    return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(checkingNode));
+                    return makeShared<XmlNode, XmlNodeImplementation>(checkingNode);
                 }
             }
 
@@ -220,7 +220,7 @@ namespace Gek
             }
             else
             {
-                return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlDummyNode>());
+                return makeShared<XmlNode, XmlDummyNode>();
             }
         }
 
@@ -229,7 +229,7 @@ namespace Gek
             xmlNodePtr childNode = xmlNewChild(node, nullptr, BAD_CAST StringUTF8(type).c_str(), BAD_CAST StringUTF8(content).c_str());
             GEK_CHECK_CONDITION(childNode == nullptr, Xml::Exception, "Unable to create new child node: %v (%v)", type, content);
 
-            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(childNode));
+            return makeShared<XmlNode, XmlNodeImplementation>(childNode);
         }
     };
 
@@ -238,7 +238,7 @@ namespace Gek
         xmlNodePtr node = xmlNewNode(nullptr, BAD_CAST StringUTF8(type).c_str());
         GEK_CHECK_CONDITION(node == nullptr, Xml::Exception, "Unable to create node: %v", type);
 
-        return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(node));
+        return makeShared<XmlNode, XmlNodeImplementation>(node);
     }
 
     class XmlDocumentImplementation
@@ -273,7 +273,7 @@ namespace Gek
             String rootType(reinterpret_cast<const char *>(root->name));
             GEK_CHECK_CONDITION(rootType.compare(type) != 0, Xml::Exception, "Document root node type doesn't match: (%v vs %v)", type, rootType);
 
-            return std::dynamic_pointer_cast<XmlNode>(std::make_shared<XmlNodeImplementation>(root));
+            return makeShared<XmlNode, XmlNodeImplementation>(root);
         }
     };
 
@@ -287,7 +287,7 @@ namespace Gek
 
         xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
 
-        return std::dynamic_pointer_cast<XmlDocument>(std::make_shared<XmlDocumentImplementation>(document));
+        return makeShared<XmlDocument, XmlDocumentImplementation>(document);
     }
 
     XmlDocumentPtr XmlDocument::load(const wchar_t *fileName, bool validateDTD)
@@ -296,6 +296,6 @@ namespace Gek
         xmlDocPtr document = xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
         GEK_CHECK_CONDITION(document == nullptr, Xml::Exception, "Unable to load document: %v", fileName);
 
-        return std::dynamic_pointer_cast<XmlDocument>(std::make_shared<XmlDocumentImplementation>(document));
+        return makeShared<XmlDocument, XmlDocumentImplementation>(document);
     }
 }; // namespace Gek

@@ -871,18 +871,7 @@ namespace Gek
         };
 
         engine->addObserver((EngineObserver *)player.get());
-
-        NewtonEntityPtr castEntity;
-        try
-        {
-            castEntity = std::dynamic_pointer_cast<NewtonEntity>(player);
-        }
-        catch (const std::bad_cast &badCast)
-        {
-            GEK_THROW_EXCEPTION(Trace::Exception, "Unable to cast to newton entity: %v", badCast.what());
-        };
-
-        return castEntity;
+        return player;
     }
 
     PlayerBodyComponent::PlayerBodyComponent(void)

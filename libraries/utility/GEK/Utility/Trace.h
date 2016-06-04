@@ -114,27 +114,17 @@ namespace Gek
     template <typename RETURN, typename CREATE, typename... ARGUMENTS>
     std::shared_ptr<RETURN> makeShared(ARGUMENTS... arguments)
     {
-        std::shared_ptr<CREATE> baseObject;
+        std::shared_ptr<CREATE> object;
         try
         {
-            baseObject = std::make_shared<CREATE>(arguments...);
+            object = std::make_shared<CREATE>(arguments...);
         }
         catch (const std::bad_alloc &badAllocation)
         {
             throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), badAllocation.what()));
         };
 
-        std::shared_ptr<RETURN> remadeObject;
-        try
-        {
-            remadeObject = std::dynamic_pointer_cast<RETURN>(baseObject);
-        }
-        catch (const std::bad_cast &badCast)
-        {
-            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to cast to requested type: %v (%v)", typeid(RETURN).name(), badCast.what()));
-        };
-
-        return remadeObject;
+        return object;
     }
 }; // namespace Gek
 

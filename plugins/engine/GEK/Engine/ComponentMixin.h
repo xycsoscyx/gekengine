@@ -28,13 +28,11 @@ namespace Gek
             if (iterator != componentData.end())
             {
                 value = Evaluator::get<TYPE>((*iterator).second);
-                //value = static_cast<TYPE>((*iterator).second);
             }
         }
         else if(!componentData.value.empty())
         {
             value = Evaluator::get<TYPE>(componentData.value);
-            //value = static_cast<TYPE>(componentData.value);
         }
     }
 

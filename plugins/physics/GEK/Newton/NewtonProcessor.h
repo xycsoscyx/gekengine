@@ -33,7 +33,7 @@ namespace Gek
     };
 
     GEK_INTERFACE(NewtonObserver)
-        : virtual public Observer
+        : public Observer
     {
         virtual void onCollision(Entity *entity0, Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) { };
     };
