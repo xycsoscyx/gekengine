@@ -17,11 +17,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
             String argument(argumentList[argumentIndex]);
-            if (argument.compare(L"-input") == 0 && ++argumentIndex < argumentCount)
+            if (argument.compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];
             }
-            else if (argument.compare(L"-output") == 0 && ++argumentIndex < argumentCount)
+            else if (argument.compareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameOutput = argumentList[argumentIndex];
             }

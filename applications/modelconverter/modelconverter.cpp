@@ -154,32 +154,32 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             String argument(argumentList[argumentIndex]);
             std::vector<String> arguments(argument.split(L':'));
             GEK_CHECK_CONDITION(arguments.empty(), Trace::Exception, "Invalid argument encountered: %v", argumentList[argumentIndex]);
-            if (arguments[0].compare(L"-input") == 0 && ++argumentIndex < argumentCount)
+            if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];
             }
-            else if (arguments[0].compare(L"-output") == 0 && ++argumentIndex < argumentCount)
+            else if (arguments[0].compareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameOutput = argumentList[argumentIndex];
             }
-            else if (arguments[0].compare(L"-mode") == 0)
+            else if (arguments[0].compareNoCase(L"-mode") == 0)
             {
                 GEK_CHECK_CONDITION(arguments.size() != 2, Trace::Exception, "Invalid values specified for mode");
                 mode = arguments[1];
             }
-            else if (arguments[0].compare(L"-flipCoords") == 0)
+            else if (arguments[0].compareNoCase(L"-flipCoords") == 0)
             {
                 flipCoords = true;
             }
-            else if (arguments[0].compare(L"-flipWinding") == 0)
+            else if (arguments[0].compareNoCase(L"-flipWinding") == 0)
             {
                 flipWinding = true;
             }
-            else if (arguments[0].compare(L"-generateNormals") == 0)
+            else if (arguments[0].compareNoCase(L"-generateNormals") == 0)
             {
                 generateNormals = true;
             }
-            else if (arguments[0].compare(L"-smoothNormals") == 0)
+            else if (arguments[0].compareNoCase(L"-smoothNormals") == 0)
             {
                 GEK_CHECK_CONDITION(arguments.size() != 2, Trace::Exception, "Invalid values specified for smoothNormals");
 
@@ -221,7 +221,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        if (mode.compare(L"model") == 0)
+        if (mode.compareNoCase(L"model") == 0)
         {
             importFlags |= aiProcess_GenUVCoords; // convert spherical, cylindrical, box and planar mapping to proper UVs
             importFlags |= aiProcess_TransformUVCoords; // preprocess UV transformations (scaling, translation …)
@@ -278,15 +278,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 materialName = materialName.subString(texturesPathIndex + 10);
             }
 
-            if (materialName.subString(materialName.length() - 9).compare(L".colormap") == 0)
+            if (materialName.subString(materialName.length() - 9).compareNoCase(L".colormap") == 0)
             {
                 materialName = materialName.subString(materialName.length() - 9);
             }
-            else if (materialName.subString(materialName.length() - 7).compare(L".albedo") == 0)
+            else if (materialName.subString(materialName.length() - 7).compareNoCase(L".albedo") == 0)
             {
                 materialName = materialName.subString(materialName.length() - 7);
             }
-            else if (materialName.subString(materialName.length() - 2).compare(L"_a") == 0)
+            else if (materialName.subString(materialName.length() - 2).compareNoCase(L"_a") == 0)
             {
                 materialName = materialName.subString(materialName.length() - 2);
             }
@@ -304,7 +304,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
-        if (mode.compare(L"model") == 0)
+        if (mode.compareNoCase(L"model") == 0)
         {
             std::unordered_map<String, Model> sortedModelList;
             for (auto &material : modelList)
@@ -356,7 +356,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             fclose(file);
         }
-        else  if (mode.compare(L"hull") == 0)
+        else  if (mode.compareNoCase(L"hull") == 0)
         {
             NewtonWorld *newtonWorld = NewtonCreate();
             std::vector<Math::Float3> pointCloudList;
@@ -391,7 +391,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             NewtonDestroyCollision(newtonCollision);
             NewtonDestroy(newtonWorld);
         }
-        else  if (mode.compare(L"tree") == 0)
+        else  if (mode.compareNoCase(L"tree") == 0)
         {
             printf("> Num. Materials: %d\r\n", modelList.size());
 

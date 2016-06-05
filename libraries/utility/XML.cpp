@@ -166,7 +166,7 @@ namespace Gek
             StringUTF8 typeUTF8(type);
             for (xmlNode *checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && typeUTF8.compare(reinterpret_cast<const char *>(checkingNode->name)) == 0)
+                if (checkingNode->type == XML_ELEMENT_NODE && typeUTF8.compareNoCase(reinterpret_cast<const char *>(checkingNode->name)) == 0)
                 {
                     return true;
                 }
@@ -180,7 +180,7 @@ namespace Gek
             StringUTF8 typeUTF8(type);
             for (xmlNodePtr checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8.compare(reinterpret_cast<const char *>(checkingNode->name)) == 0))
+                if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8.compareNoCase(reinterpret_cast<const char *>(checkingNode->name)) == 0))
                 {
                     return makeShared<XmlNode, XmlNodeImplementation>(checkingNode);
                 }
@@ -194,7 +194,7 @@ namespace Gek
             StringUTF8 typeUTF8(type);
             for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && typeUTF8.compare(reinterpret_cast<const char *>(checkingNode->name)) == 0)
+                if (checkingNode->type == XML_ELEMENT_NODE && typeUTF8.compareNoCase(reinterpret_cast<const char *>(checkingNode->name)) == 0)
                 {
                     return true;
                 }
@@ -208,7 +208,7 @@ namespace Gek
             StringUTF8 typeUTF8(type);
             for (xmlNodePtr checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
             {
-                if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8.compare(reinterpret_cast<const char *>(checkingNode->name)) == 0))
+                if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8.compareNoCase(reinterpret_cast<const char *>(checkingNode->name)) == 0))
                 {
                     return makeShared<XmlNode, XmlNodeImplementation>(checkingNode);
                 }
@@ -271,7 +271,7 @@ namespace Gek
             GEK_CHECK_CONDITION(root == nullptr, Xml::Exception, "Unable to get document root node");
 
             String rootType(reinterpret_cast<const char *>(root->name));
-            GEK_CHECK_CONDITION(rootType.compare(type) != 0, Xml::Exception, "Document root node type doesn't match: (%v vs %v)", type, rootType);
+            GEK_CHECK_CONDITION(rootType.compareNoCase(type) != 0, Xml::Exception, "Document root node type doesn't match: (%v vs %v)", type, rootType);
 
             return makeShared<XmlNode, XmlNodeImplementation>(root);
         }

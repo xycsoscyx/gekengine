@@ -165,24 +165,24 @@ typedef SH<Math::Float4, 9> SH9Color;
 
     String extension(FileSystem::Path(fileName).getExtension());
     std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
-    if (extension.compare(L".dds") == 0)
+    if (extension.compareNoCase(L".dds") == 0)
     {
         load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, nullptr, std::placeholders::_3);
     }
-    else if (extension.compare(L".tga") == 0)
+    else if (extension.compareNoCase(L".tga") == 0)
     {
         load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, nullptr, std::placeholders::_3);
     }
-    else if (extension.compare(L".png") == 0)
+    else if (extension.compareNoCase(L".png") == 0)
     {
         load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, nullptr, std::placeholders::_3);
     }
-    else if (extension.compare(L".bmp") == 0)
+    else if (extension.compareNoCase(L".bmp") == 0)
     {
         load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, nullptr, std::placeholders::_3);
     }
-    else if (extension.compare(L".jpg") == 0 ||
-        extension.compare(L".jpeg") == 0)
+    else if (extension.compareNoCase(L".jpg") == 0 ||
+        extension.compareNoCase(L".jpeg") == 0)
     {
         load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, nullptr, std::placeholders::_3);
     }
@@ -405,11 +405,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
             String argument(argumentList[argumentIndex]);
-            if (argument.compare(L"-input") == 0 && ++argumentIndex < argumentCount)
+            if (argument.compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];
             }
-            else if (argument.compare(L"-output") == 0 && ++argumentIndex < argumentCount)
+            else if (argument.compareNoCase(L"-output") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameOutput = argumentList[argumentIndex];
             }

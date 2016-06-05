@@ -185,7 +185,7 @@ namespace Gek
             return tokens;
         }
 
-        int compareNoCase(const ELEMENT *string)
+        int compareNoCase(const ELEMENT *string) const
         {
             return std::equal(begin(), end(), string, [](const ELEMENT &left, const ELEMENT &right) -> bool
             {

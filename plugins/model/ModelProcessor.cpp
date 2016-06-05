@@ -216,7 +216,7 @@ namespace Gek
                 rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
 
                 SubModel &subModel = model.subModelList[modelIndex];
-                if (materialName.compare(L"skin") == 0)
+                if (materialName.compareNoCase(L"skin") == 0)
                 {
                     subModel.skin = true;
                 }

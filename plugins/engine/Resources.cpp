@@ -630,9 +630,9 @@ namespace Gek
         VideoTexturePtr createTexture(String parameters, uint32_t flags)
         {
             VideoTexturePtr texture;
-            std::vector<String> tokenList(parameters.getLower().split(L':'));
+            std::vector<String> tokenList(parameters.split(L':'));
             GEK_CHECK_CONDITION(tokenList.size() != 2, Trace::Exception, "Invalid number of parameters passed to create texture");
-            if (tokenList[0].compare(L"color") == 0)
+            if (tokenList[0].compareNoCase(L"color") == 0)
             {
                 try
                 {
@@ -698,7 +698,7 @@ namespace Gek
                 {
                 };
             }
-            else if (tokenList[0].compare(L"normal") == 0)
+            else if (tokenList[0].compareNoCase(L"normal") == 0)
             {
                 Math::Float3 normal;
                 try
@@ -720,9 +720,9 @@ namespace Gek
 
                 texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, normalData);
             }
-            else if (tokenList[0].compare(L"pattern") == 0)
+            else if (tokenList[0].compareNoCase(L"pattern") == 0)
             {
-                if (tokenList[1].compare(L"debug") == 0)
+                if (tokenList[1].compareNoCase(L"debug") == 0)
                 {
                     uint8_t data[] =
                     {
@@ -731,7 +731,7 @@ namespace Gek
 
                     texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, data);
                 }
-                else if (tokenList[1].compare(L"flat") == 0)
+                else if (tokenList[1].compareNoCase(L"flat") == 0)
                 {
                     uint8_t normalData[4] =
                     {

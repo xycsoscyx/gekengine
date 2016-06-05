@@ -161,6 +161,7 @@ namespace Gek
             RenderStateHandle renderState;
             Math::Color blendFactor;
             BlendStateHandle blendState;
+            uint32_t width, height;
             std::unordered_map<String, String> renderTargetList;
             std::unordered_map<String, String> resourceList;
             std::unordered_map<String, std::set<String>> actionMap;
@@ -177,6 +178,8 @@ namespace Gek
                 , depthClearFlags(0)
                 , depthClearValue(1.0f)
                 , stencilClearValue(0)
+                , width(0)
+                , height(0)
                 , blendFactor(1.0f)
                 , dispatchWidth(0)
                 , dispatchHeight(0)
@@ -352,10 +355,10 @@ namespace Gek
         {
             uint32_t flags = 0;
             int position = 0;
-            std::vector<String> flagList(loadFlags.getLower().split(L','));
+            std::vector<String> flagList(loadFlags.split(L','));
             for (auto &flag : flagList)
             {
-                if (flag.compare(L"srgb") == 0)
+                if (flag.compareNoCase(L"sRGB") == 0)
                 {
                     flags |= Video::TextureLoadFlags::sRGB;
                 }
@@ -368,19 +371,19 @@ namespace Gek
         {
             uint32_t flags = 0;
             int position = 0;
-            std::vector<String> flagList(createFlags.getLower().split(L','));
+            std::vector<String> flagList(createFlags.split(L','));
             for (auto &flag : flagList)
             {
                 flag.trim();
-                if (flag.compare(L"target") == 0)
+                if (flag.compareNoCase(L"target") == 0)
                 {
                     flags |= Video::TextureFlags::RenderTarget;
                 }
-                else if (flag.compare(L"unorderedaccess") == 0)
+                else if (flag.compareNoCase(L"unorderedaccess") == 0)
                 {
                     flags |= Video::TextureFlags::UnorderedAccess;
                 }
-                else if (flag.compare(L"readwrite") == 0)
+                else if (flag.compareNoCase(L"readwrite") == 0)
                 {
                     flags |= TextureFlags::ReadWrite;
                 }
@@ -811,15 +814,15 @@ namespace Gek
                     if (passNode->hasAttribute(L"mode"))
                     {
                         String modeString = passNode->getAttribute(L"mode");
-                        if (modeString.compare(L"forward") == 0)
+                        if (modeString.compareNoCase(L"forward") == 0)
                         {
                             pass.mode = Pass::Mode::Forward;
                         }
-                        else if (modeString.compare(L"deferred") == 0)
+                        else if (modeString.compareNoCase(L"deferred") == 0)
                         {
                             pass.mode = Pass::Mode::Deferred;
                         }
-                        else if (modeString.compare(L"compute") == 0)
+                        else if (modeString.compareNoCase(L"compute") == 0)
                         {
                             pass.mode = Pass::Mode::Compute;
                         }
@@ -832,6 +835,18 @@ namespace Gek
                     if (passNode->hasChildElement(L"targets"))
                     {
                         pass.renderTargetList = loadChildMap(passNode, L"targets");
+                        for (auto &resourcePair : pass.renderTargetList)
+                        {
+                            auto resourceIterator = resourceMap.find(resourcePair.first);
+                            if (resourceIterator != resourceMap.end())
+                            {
+                            }
+                        }
+                    }
+                    else
+                    {
+                        pass.width = video->getBackBuffer()->getWidth();
+                        pass.height = video->getBackBuffer()->getHeight();
                     }
 
                     loadDepthState(pass, passNode->firstChildElement(L"depthstates"));
@@ -850,7 +865,7 @@ namespace Gek
                             if (resourceNode->hasAttribute(L"actions"))
                             {
                                 auto &actionMap = pass.actionMap[resourceNode->getType()];
-                                std::vector<String> actionList(resourceNode->getAttribute(L"actions").getLower().split(L','));
+                                std::vector<String> actionList(resourceNode->getAttribute(L"actions").split(L','));
                                 for(auto &action : actionList)
                                 {
                                     action.trim();
@@ -1228,11 +1243,11 @@ namespace Gek
                     resources->clearDepthStencilTarget(renderContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
                 }
 
+                shaderConstantData.targetSize.x = float(video->getBackBuffer()->getWidth());
+                shaderConstantData.targetSize.y = float(video->getBackBuffer()->getHeight());
                 if (pass.renderTargetList.empty())
                 {
                     resources->setBackBuffer(renderContext, (pass.enableDepth ? &depthBuffer : nullptr));
-                    shaderConstantData.targetSize.x = float(video->getBackBuffer()->getWidth());
-                    shaderConstantData.targetSize.y = float(video->getBackBuffer()->getHeight());
                 }
                 else
                 {
@@ -1244,13 +1259,6 @@ namespace Gek
                         if (resourceIterator != resourceMap.end())
                         {
                             renderTargetHandle = (*resourceIterator).second;
-                            /*
-                            VideoTarget *target = resources->getResource<VideoTarget>(renderTargetHandle);
-                            if (target)
-                            {
-                                shaderConstantData.targetSize.x = float(target->getWidth());
-                                shaderConstantData.targetSize.y = float(target->getHeight());
-                            }*/
                         }
 
                         renderTargetList[stage++] = renderTargetHandle;

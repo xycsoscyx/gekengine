@@ -477,7 +477,7 @@ namespace Gek
 
         void loadBoundingBox(Shape &shape, const String &name, const String &parameters)
         {
-            if (name.compare(L"sphere") == 0)
+            if (name.compareNoCase(L"sphere") == 0)
             {
                 shape.type = ShapeType::Sphere;
                 shape.parameters = parameters;

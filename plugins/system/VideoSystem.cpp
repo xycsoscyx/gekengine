@@ -1896,8 +1896,8 @@ namespace Gek
 
             D3D11_SUBRESOURCE_DATA resourceData;
             resourceData.pSysMem = data;
-            resourceData.SysMemPitch = 0;
-            resourceData.SysMemSlicePitch = 0;
+            resourceData.SysMemPitch = (DirectX::FormatStrideList[static_cast<uint8_t>(format)] * width);
+            resourceData.SysMemSlicePitch = (depth == 1 ? 0 : (resourceData.SysMemPitch * height));
 
             DXGI_FORMAT d3dFormat = DirectX::TextureFormatList[static_cast<uint8_t>(format)];;
             CComQIPtr<ID3D11Resource> d3dResource;
@@ -2041,24 +2041,24 @@ namespace Gek
 
             String extension(FileSystem::Path(fileName).getExtension());
             std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
-            if (extension.compare(L".dds") == 0)
+            if (extension.compareNoCase(L".dds") == 0)
             {
                 load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, std::placeholders::_3, std::placeholders::_4);
             }
-            else if (extension.compare(L".tga") == 0)
+            else if (extension.compareNoCase(L".tga") == 0)
             {
                 load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
             }
-            else if (extension.compare(L".png") == 0)
+            else if (extension.compareNoCase(L".png") == 0)
             {
                 load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, std::placeholders::_3, std::placeholders::_4);
             }
-            else if (extension.compare(L".bmp") == 0)
+            else if (extension.compareNoCase(L".bmp") == 0)
             {
                 load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, std::placeholders::_3, std::placeholders::_4);
             }
-            else if (extension.compare(L".jpg") == 0 ||
-                extension.compare(L".jpeg") == 0)
+            else if (extension.compareNoCase(L".jpg") == 0 ||
+                extension.compareNoCase(L".jpeg") == 0)
             {
                 load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, std::placeholders::_3, std::placeholders::_4);
             }
@@ -2117,24 +2117,24 @@ namespace Gek
 
                 String extension(FileSystem::Path(fileNameList[side]).getExtension());
                 std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
-                if (extension.compare(L".dds") == 0)
+                if (extension.compareNoCase(L".dds") == 0)
                 {
                     load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, std::placeholders::_3, std::placeholders::_4);
                 }
-                else if (extension.compare(L".tga") == 0)
+                else if (extension.compareNoCase(L".tga") == 0)
                 {
                     load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
                 }
-                else if (extension.compare(L".png") == 0)
+                else if (extension.compareNoCase(L".png") == 0)
                 {
                     load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, std::placeholders::_3, std::placeholders::_4);
                 }
-                else if (extension.compare(L".bmp") == 0)
+                else if (extension.compareNoCase(L".bmp") == 0)
                 {
                     load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, std::placeholders::_3, std::placeholders::_4);
                 }
-                else if (extension.compare(L".jpg") == 0 ||
-                    extension.compare(L".jpeg") == 0)
+                else if (extension.compareNoCase(L".jpg") == 0 ||
+                    extension.compareNoCase(L".jpeg") == 0)
                 {
                     load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, std::placeholders::_3, std::placeholders::_4);
                 }
