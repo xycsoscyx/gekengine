@@ -29,6 +29,11 @@ namespace Gek
 {
     static ShuntingYard shuntingYard;
 
+    GEK_INTERFACE(RequestLoader)
+    {
+        virtual void request(std::function<void(void)> load) = 0;
+    };
+
     template <class HANDLE, typename TYPE>
     class ResourceManager
     {
@@ -95,6 +100,8 @@ namespace Gek
         };
 
     private:
+        RequestLoader *loader;
+
         uint64_t nextIdentifier;
         concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
         concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
@@ -103,8 +110,9 @@ namespace Gek
         concurrency::concurrent_unordered_map<HANDLE, AtomicResource> globalResourceMap;
 
     public:
-        ResourceManager(void)
-            : nextIdentifier(0)
+        ResourceManager(RequestLoader *loader)
+            : loader(loader)
+            , nextIdentifier(0)
         {
         }
 
@@ -124,11 +132,15 @@ namespace Gek
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            requestLoad(handle, [this, handle](TypePtr data) -> void
+            loader->request([this, handle, requestLoad](void) -> void
             {
-                auto &resource = globalResourceMap[handle];
-                resource.set(data);
+                requestLoad(handle, [this, handle](TypePtr data) -> void
+                {
+                    auto &resource = globalResourceMap[handle];
+                    resource.set(data);
+                });
             });
+
             return handle;
         }
 
@@ -136,11 +148,15 @@ namespace Gek
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            requestLoad(handle, [this, handle](TypePtr data) -> void
+            loader->request([this, handle, requestLoad](void) -> void
             {
-                auto &resource = localResourceMap[handle];
-                resource.set(data);
+                requestLoad(handle, [this, handle](TypePtr data) -> void
+                {
+                    auto &resource = localResourceMap[handle];
+                    resource.set(data);
+                });
             });
+
             return handle;
         }
 
@@ -148,16 +164,21 @@ namespace Gek
         {
             HANDLE handle;
             handle.assign(InterlockedIncrement(&nextIdentifier));
-            requestLoad(handle, [this, handle](TypePtr data) -> void
+            loader->request([this, handle, requestLoad](void) -> void
             {
-                auto &resource = readWriteResourceMap[handle];
-                resource.setRead(data);
+                requestLoad(handle, [this, handle](TypePtr data) -> void
+                {
+                    auto &resource = readWriteResourceMap[handle];
+                    resource.setRead(data);
+                });
+
+                requestLoad(handle, [this, handle](TypePtr data) -> void
+                {
+                    auto &resource = readWriteResourceMap[handle];
+                    resource.setWrite(data);
+                });
             });
-            requestLoad(handle, [this, handle](TypePtr data) -> void
-            {
-                auto &resource = readWriteResourceMap[handle];
-                resource.setWrite(data);
-            });
+
             return handle;
         }
 
@@ -177,10 +198,13 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                requestLoad(handle, [this, handle](TypePtr data) -> void
+                loader->request([this, handle, requestLoad](void) -> void
                 {
-                    auto &resource = localResourceMap[handle];
-                    resource.set(data);
+                    requestLoad(handle, [this, handle](TypePtr data) -> void
+                    {
+                        auto &resource = localResourceMap[handle];
+                        resource.set(data);
+                    });
                 });
             }
 
@@ -203,15 +227,19 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                requestLoad(handle, [this, handle](TypePtr data) -> void
+                loader->request([this, handle, requestLoad](void) -> void
                 {
-                    auto &resource = readWriteResourceMap[handle];
-                    resource.setRead(data);
-                });
-                requestLoad(handle, [this, handle](TypePtr data) -> void
-                {
-                    auto &resource = readWriteResourceMap[handle];
-                    resource.setWrite(data);
+                    requestLoad(handle, [this, handle](TypePtr data) -> void
+                    {
+                        auto &resource = readWriteResourceMap[handle];
+                        resource.setRead(data);
+                    });
+
+                    requestLoad(handle, [this, handle](TypePtr data) -> void
+                    {
+                        auto &resource = readWriteResourceMap[handle];
+                        resource.setWrite(data);
+                    });
                 });
             }
 
@@ -274,6 +302,7 @@ namespace Gek
     class ResourcesImplementation
         : public ContextRegistration<ResourcesImplementation, EngineContext *, VideoSystem *>
         , public Resources
+        , public RequestLoader
     {
     private:
         EngineContext *engine;
@@ -298,11 +327,22 @@ namespace Gek
             : ContextRegistration(context)
             , engine(engine)
             , video(video)
+            , programManager(this)
+            , pluginManager(this)
+            , materialManager(this)
+            , shaderManager(this)
+            , resourceManager(this)
+            , renderStateManager(this)
+            , depthStateManager(this)
+            , blendStateManager(this)
         {
         }
 
-        void requestLoad(std::function<void(void)> load)
+        // RequestLoader
+        void request(std::function<void(void)> load)
         {
+            load();
+            return;
             loadResourceQueue.push(load);
             if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
@@ -373,6 +413,7 @@ namespace Gek
 
         PluginHandle loadPlugin(const wchar_t *fileName)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
             auto load = [this, fileName = String(fileName)](PluginHandle handle)->PluginPtr
             {
                 return getContext()->createClass<Plugin>(L"PluginSystem", video, fileName.c_str());
@@ -388,6 +429,7 @@ namespace Gek
 
         MaterialHandle loadMaterial(const wchar_t *fileName)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
             auto load = [this, fileName = String(fileName)](MaterialHandle handle)->MaterialPtr
             {
                 return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str());
@@ -406,6 +448,7 @@ namespace Gek
 
         ShaderHandle loadShader(const wchar_t *fileName)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
             auto load = [this, fileName = String(fileName)](ShaderHandle handle)->ShaderPtr
             {
                 return getContext()->createClass<Shader>(L"ShaderSystem", video, (Resources *)this, engine->getPopulation(), fileName.c_str());
@@ -431,6 +474,7 @@ namespace Gek
 
         RenderStateHandle createRenderState(const Video::RenderState &renderState)
         {
+            GEK_TRACE_FUNCTION();
             auto load = [this, renderState](RenderStateHandle handle) -> VideoObjectPtr
             {
                 return video->createRenderState(renderState);
@@ -456,6 +500,7 @@ namespace Gek
 
         DepthStateHandle createDepthState(const Video::DepthState &depthState)
         {
+            GEK_TRACE_FUNCTION();
             auto load = [this, depthState](DepthStateHandle handle) -> VideoObjectPtr
             {
                 return video->createDepthState(depthState);
@@ -485,6 +530,7 @@ namespace Gek
 
         BlendStateHandle createBlendState(const Video::UnifiedBlendState &blendState)
         {
+            GEK_TRACE_FUNCTION();
             auto load = [this, blendState](BlendStateHandle handle) -> VideoObjectPtr
             {
                 return video->createBlendState(blendState);
@@ -508,6 +554,7 @@ namespace Gek
 
         BlendStateHandle createBlendState(const Video::IndependentBlendState &blendState)
         {
+            GEK_TRACE_FUNCTION();
             auto load = [this, blendState](BlendStateHandle handle) -> VideoObjectPtr
             {
                 return video->createBlendState(blendState);
@@ -539,6 +586,7 @@ namespace Gek
 
         ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(name));
             auto load = [this, format, width, height, depth, flags, mipmaps](ResourceHandle handle) -> VideoTexturePtr
             {
                 return video->createTexture(format, width, height, depth, flags, mipmaps);
@@ -569,6 +617,7 @@ namespace Gek
 
         ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(name));
             auto load = [this, stride, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
                 return video->createBuffer(stride, count, type, flags, staticData);
@@ -599,6 +648,7 @@ namespace Gek
 
         ResourceHandle createBuffer(const wchar_t *name, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(name));
             auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> VideoBufferPtr
             {
                 return video->createBuffer(format, count, type, flags, staticData);
@@ -790,13 +840,18 @@ namespace Gek
 
         ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(fallback));
             auto load = [this, fileName = String(fileName), fallback = String(fallback), flags](ResourceHandle handle)->VideoTexturePtr
             {
-                VideoTexturePtr texture = loadTexture(fileName, flags);
-                if (!texture && !fallback.empty())
+                VideoTexturePtr texture;
+                try
+                {
+                    texture = loadTexture(fileName, flags);
+                }
+                catch (const Exception &)
                 {
                     texture = loadTexture(fallback, flags);
-                }
+                };
 
                 return texture;
             };
@@ -812,6 +867,7 @@ namespace Gek
 
         ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
             auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle)->VideoObjectPtr
             {
                 return video->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
@@ -827,6 +883,7 @@ namespace Gek
 
         ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
         {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
             auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle)->VideoObjectPtr
             {
                 return video->loadPixelProgram(fileName, entryFunction, onInclude, defineList);

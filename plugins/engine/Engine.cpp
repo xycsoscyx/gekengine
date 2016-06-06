@@ -107,7 +107,7 @@ namespace Gek
             , background(nullptr)
             , foreground(nullptr)
         {
-            GEK_TRACE_FUNCTION();
+            GEK_TRACE_SCOPE();
             GEK_REQUIRE(window);
 
             consoleCommands[L"quit"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void

@@ -189,6 +189,8 @@ namespace Gek
             , foregroundUpdateHandle(0)
             , resources(resources)
         {
+            GEK_TRACE_SCOPE();
+
             population->addObserver((PopulationObserver *)this);
             backgroundUpdateHandle = population->setUpdatePriority(this, 10);
             foregroundUpdateHandle = population->setUpdatePriority(this, 100);
@@ -268,6 +270,7 @@ namespace Gek
 
         void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
         {
+            GEK_TRACE_SCOPE();
             GEK_REQUIRE(population);
             GEK_REQUIRE(cameraEntity);
 

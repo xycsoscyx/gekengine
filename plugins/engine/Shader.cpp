@@ -593,6 +593,7 @@ namespace Gek
             , priority(0)
             , lightsPerPass(0)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
             GEK_REQUIRE(video);
             GEK_REQUIRE(resources);
             GEK_REQUIRE(population);

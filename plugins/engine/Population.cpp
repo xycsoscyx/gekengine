@@ -96,6 +96,7 @@ namespace Gek
         // PopulationSystem
         void loadPlugins(void)
         {
+            GEK_TRACE_SCOPE();
             getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
             {
                 ComponentPtr component(getContext()->createClass<Component>(className));
@@ -138,6 +139,7 @@ namespace Gek
 
         void update(bool isIdle, float frameTime)
         {
+            GEK_TRACE_SCOPE();
             if (!isIdle)
             {
                 this->frameTime = frameTime;
@@ -195,6 +197,7 @@ namespace Gek
         {
             loadScene = [this, fileName = String(fileName)](void) -> void
             {
+                GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
                 try
                 {
                     free();
@@ -249,6 +252,9 @@ namespace Gek
 
         void save(const wchar_t *fileName)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
+            GEK_REQUIRE(fileName);
+
             XmlDocumentPtr document(XmlDocument::create(L"world"));
             XmlNodePtr worldNode = document->getRoot(L"world");
             XmlNodePtr populationNode = worldNode->createChildElement(L"population");

@@ -24,6 +24,7 @@ namespace Gek
             : ContextRegistration(context)
             , resources(resources)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
             GEK_REQUIRE(resources);
 
             XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", fileName)));

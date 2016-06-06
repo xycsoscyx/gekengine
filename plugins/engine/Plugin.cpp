@@ -99,6 +99,7 @@ namespace Gek
             : ContextRegistration(context)
             , video(video)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
             GEK_REQUIRE(video);
 
             XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\plugins\\%v.xml", fileName)));

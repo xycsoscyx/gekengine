@@ -692,28 +692,32 @@ namespace Gek
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->CSSetConstantBuffers(stage, 1, (buffer ? &dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr));
+            ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr };
+            d3dDeviceContext->CSSetConstantBuffers(stage, 1, list);
         }
 
         void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->CSSetSamplers(stage, 1, (samplerState ? &dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr));
+            ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr };
+            d3dDeviceContext->CSSetSamplers(stage, 1, list);
         }
 
         void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->CSSetShaderResources(stage, 1, (resource ? &dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr));
+            ID3D11ShaderResourceView *list[1] = { resource ? dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr };
+            d3dDeviceContext->CSSetShaderResources(stage, 1, list);
         }
 
         void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, (unorderedAccess ? &dynamic_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView.p : nullptr), nullptr);
+            ID3D11UnorderedAccessView *list[1] = { unorderedAccess ? dynamic_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView.p : nullptr };
+            d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, list, nullptr);
         }
     };
 
@@ -740,21 +744,24 @@ namespace Gek
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->VSSetConstantBuffers(stage, 1, (buffer ? &dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr));
+            ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr };
+            d3dDeviceContext->VSSetConstantBuffers(stage, 1, list);
         }
 
         void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->VSSetSamplers(stage, 1, (samplerState ? &dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr));
+            ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr };
+            d3dDeviceContext->VSSetSamplers(stage, 1, list);
         }
 
         void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->VSSetShaderResources(stage, 1, (resource ? &dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr));
+            ID3D11ShaderResourceView *list[1] = { resource ? dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr };
+            d3dDeviceContext->VSSetShaderResources(stage, 1, list);
         }
 
         void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
@@ -785,21 +792,24 @@ namespace Gek
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->GSSetConstantBuffers(stage, 1, (buffer ? &dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr));
+            ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr };
+            d3dDeviceContext->GSSetConstantBuffers(stage, 1, list);
         }
 
         void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->GSSetSamplers(stage, 1, (samplerState ? &dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr));
+            ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr };
+            d3dDeviceContext->GSSetSamplers(stage, 1, list);
         }
 
         void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->GSSetShaderResources(stage, 1, (resource ? &dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr));
+            ID3D11ShaderResourceView *list[1] = { resource ? dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr };
+            d3dDeviceContext->GSSetShaderResources(stage, 1, list);
         }
 
         void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
@@ -830,21 +840,24 @@ namespace Gek
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->PSSetConstantBuffers(stage, 1, (buffer ? &dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr));
+            ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dBuffer.p : nullptr };
+            d3dDeviceContext->PSSetConstantBuffers(stage, 1, list);
         }
 
         void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->PSSetSamplers(stage, 1, (samplerState ? &dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr));
+            ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dSamplerState.p : nullptr };
+            d3dDeviceContext->PSSetSamplers(stage, 1, list);
         }
 
         void setResource(VideoObject *resource, uint32_t stage)
         {
             GEK_REQUIRE(d3dDeviceContext);
 
-            d3dDeviceContext->PSSetShaderResources(stage, 1, (resource ? &dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr));
+            ID3D11ShaderResourceView *list[1] = { resource ? dynamic_cast<ShaderResourceView *>(resource)->d3dShaderResourceView.p : nullptr };
+            d3dDeviceContext->PSSetShaderResources(stage, 1, list);
         }
 
         void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
