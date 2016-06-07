@@ -239,15 +239,11 @@ namespace Gek
             XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
             String programPath(String(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
 
-            StringUTF8 progamScript;
-            FileSystem::load(programPath, progamScript);
-
-            auto onInclude = [&](const char *resourceName, std::vector<uint8_t> &data) -> void
+            auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
             {
                 if (_stricmp(resourceName, "GEKPlugin") == 0)
                 {
-                    data.resize(progamScript.size());
-                    memcpy(data.data(), progamScript.c_str(), data.size());
+                    FileSystem::load(programPath, data);
                 }
                 else
                 {

@@ -29,6 +29,11 @@ namespace Gek
 {
     static ShuntingYard shuntingYard;
 
+    std::size_t reverseHash(const std::wstring &string)
+    {
+        return std::hash<std::wstring>()(std::wstring(string.rbegin(), string.rend()));
+    }
+
     GEK_INTERFACE(RequestLoader)
     {
         virtual void request(std::function<void(void)> load) = 0;
@@ -442,7 +447,7 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<String>()(fileName);
+            std::size_t hash = reverseHash(fileName);
             return materialManager.getHandle(hash, request);
         }
 
@@ -459,17 +464,8 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<String>()(fileName);
+            std::size_t hash = reverseHash(fileName);
             return shaderManager.getHandle(hash, request);
-        }
-
-        void loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, String> &resourceMap, std::list<ResourceHandle> &resourceList)
-        {
-            Shader *shader = shaderManager.getResource(shaderHandle);
-            if (shader)
-            {
-                shader->loadResourceList(materialName, resourceMap, resourceList);
-            }
         }
 
         RenderStateHandle createRenderState(const Video::RenderState &renderState)
@@ -677,7 +673,32 @@ namespace Gek
             }
         }
 
-        VideoTexturePtr createTexture(String parameters, uint32_t flags)
+        VideoTexturePtr loadTexture(const String &fileName, uint32_t flags)
+        {
+            // iterate over formats in case the texture name has no extension
+            static const wchar_t *formatList[] =
+            {
+                L"",
+                L".dds",
+                L".tga",
+                L".png",
+                L".jpg",
+                L".bmp",
+            };
+
+            for (auto &format : formatList)
+            {
+                FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
+                if (filePath.isFile())
+                {
+                    return video->loadTexture(filePath, flags);
+                }
+            }
+
+            return nullptr;
+        }
+
+        VideoTexturePtr createTextureData(const String &parameters)
         {
             VideoTexturePtr texture;
             std::vector<String> tokenList(parameters.split(L':'));
@@ -806,54 +827,37 @@ namespace Gek
             return texture;
         }
 
-        VideoTexturePtr loadTexture(const String &fileName, uint32_t flags)
+        VideoTexturePtr loadTextureData(const String &fileName, uint32_t flags)
         {
-            if (fileName.at(0) == L'*')
+            // iterate over formats in case the texture name has no extension
+            static const wchar_t *formatList[] =
             {
-                return createTexture(fileName.subString(1), flags);
-            }
-            else
-            {
-                // iterate over formats in case the texture name has no extension
-                static const wchar_t *formatList[] =
-                {
-                    L"",
-                    L".dds",
-                    L".tga",
-                    L".png",
-                    L".jpg",
-                    L".bmp",
-                };
+                L"",
+                L".dds",
+                L".tga",
+                L".png",
+                L".jpg",
+                L".bmp",
+            };
 
-                for (auto &format : formatList)
+            for (auto &format : formatList)
+            {
+                FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
+                if (filePath.isFile())
                 {
-                    FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
-                    if (filePath.isFile())
-                    {
-                        return video->loadTexture(filePath, flags);
-                    }
+                    return video->loadTexture(filePath, flags);
                 }
-
-                return nullptr;
             }
+
+            return nullptr;
         }
 
-        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags)
+        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *default, uint32_t flags)
         {
-            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(fallback));
-            auto load = [this, fileName = String(fileName), fallback = String(fallback), flags](ResourceHandle handle)->VideoTexturePtr
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
+            auto load = [this, fileName = String(fileName), default = String(default), flags](ResourceHandle handle)->VideoTexturePtr
             {
-                VideoTexturePtr texture;
-                try
-                {
-                    texture = loadTexture(fileName, flags);
-                }
-                catch (const Exception &)
-                {
-                    texture = loadTexture(fallback, flags);
-                };
-
-                return texture;
+                return loadTextureData(fileName, flags);
             };
 
             auto request = [this, load](ResourceHandle handle, std::function<void(VideoTexturePtr)> set) -> void
@@ -861,7 +865,25 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<String>()(fileName);
+            std::size_t hash = reverseHash(fileName);
+            return resourceManager.getHandle(hash, request);
+        }
+
+        ResourceHandle createTexture(const wchar_t *parameters)
+        {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(parameters));
+
+            auto load = [this, parameters = String(parameters)](ResourceHandle handle)->VideoTexturePtr
+            {
+                return createTextureData(parameters);
+            };
+
+            auto request = [this, load](ResourceHandle handle, std::function<void(VideoTexturePtr)> set) -> void
+            {
+                set(load(handle));
+            };
+
+            std::size_t hash = std::hash<String>()(parameters);
             return resourceManager.getHandle(hash, request);
         }
 

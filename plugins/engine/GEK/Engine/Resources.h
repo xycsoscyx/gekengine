@@ -74,7 +74,9 @@ namespace Gek
     {
         virtual PluginHandle loadPlugin(const wchar_t *fileName) = 0;
         virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
-        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *fallback, uint32_t flags) = 0;
+
+        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *default, uint32_t flags) = 0;
+        virtual ResourceHandle createTexture(const wchar_t *parameters) = 0;
 
         virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps = 1) = 0;
         virtual ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;

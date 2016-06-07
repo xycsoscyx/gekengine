@@ -969,6 +969,32 @@ namespace Gek
                             "                                                           \r\n", resourceData);
                     }
 
+                    uint32_t unorderedStage = 0;
+                    StringUTF8 unorderedAccessData;
+                    if (pass.mode != Pass::Mode::Compute)
+                    {
+                        unorderedStage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                    }
+
+                    for (auto &resourcePair : pass.unorderedAccessList)
+                    {
+                        auto resourceIterator = resourceList.find(resourcePair.first);
+                        if (resourceIterator != resourceList.end())
+                        {
+                            unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, unorderedStage++);
+                        }
+                    }
+
+                    if (!unorderedAccessData.empty())
+                    {
+                        engineData.format(
+                            "namespace UnorderedAccess                              \r\n" \
+                            "{                                                      \r\n" \
+                            "%v" \
+                            "};                                                     \r\n" \
+                            "                                                       \r\n", unorderedAccessData);
+                    }
+
                     XmlNodePtr programNode = passNode->firstChildElement(L"program");
                     auto addDefine = [&engineData](const String &name, const String &value) -> void
                     {
@@ -1012,10 +1038,18 @@ namespace Gek
                         addDefine(name, value);
                     }
 
+                    XmlNodePtr computeNode = programNode->firstChildElement(L"compute");
+                    if (computeNode->isValid())
+                    {
+                        pass.dispatchWidth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
+                        pass.dispatchHeight = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"height")->getText()), 1U);
+                        pass.dispatchDepth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
+                    }
+
                     String programFileName = programNode->firstChildElement(L"source")->getText();
                     String programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
                     StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
-                    auto onInclude = [&](const char *resourceName, std::vector<uint8_t> &data) -> void
+                    auto onInclude = [engineData, programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
                     {
                         if (_stricmp(resourceName, "GEKEngine") == 0)
                         {
@@ -1052,62 +1086,12 @@ namespace Gek
                         }
                     };
 
-                    XmlNodePtr computeNode = programNode->firstChildElement(L"compute");
-                    if (computeNode->isValid())
-                    {
-                        pass.dispatchWidth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
-                        pass.dispatchHeight = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"height")->getText()), 1U);
-                        pass.dispatchDepth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
-                    }
-
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        uint32_t stage = 0;
-                        StringUTF8 unorderedAccessData;
-                        for (auto &resourcePair : pass.unorderedAccessList)
-                        {
-                            auto resourceIterator = resourceList.find(resourcePair.first);
-                            if (resourceIterator != resourceList.end())
-                            {
-                                unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
-                            }
-                        }
-
-                        if (!unorderedAccessData.empty())
-                        {
-                            engineData.format(
-                                "namespace UnorderedAccess                              \r\n" \
-                                "{                                                      \r\n" \
-                                "%v" \
-                                "};                                                     \r\n" \
-                                "                                                       \r\n", unorderedAccessData);
-                        }
-
                         pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, onInclude);
                     }
                     else
                     {
-                        StringUTF8 unorderedAccessData;
-                        uint32_t stage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
-                        for (auto &resourcePair : pass.unorderedAccessList)
-                        {
-                            auto resourceIterator = resourceList.find(resourcePair.first);
-                            if (resourceIterator != resourceList.end())
-                            {
-                                unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceIterator).second.first), getBindType((*resourceIterator).second.second), resourcePair.second, stage++);
-                            }
-                        }
-
-                        if (!unorderedAccessData.empty())
-                        {
-                            engineData.format(
-                                "namespace UnorderedAccess                              \r\n" \
-                                "{                                                      \r\n" \
-                                "%v" \
-                                "};                                                     \r\n" \
-                                "                                                       \r\n", unorderedAccessData);
-                        }
-
                         pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, onInclude);
                     }
 
@@ -1130,7 +1114,7 @@ namespace Gek
             return priority;
         }
 
-        void loadResourceList(const wchar_t *materialName, std::unordered_map<String, String> &materialDataMap, std::list<ResourceHandle> &resourceList)
+        void loadResourceList(const wchar_t *materialName, std::unordered_map<String, Resource> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
             FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
             String fileSpecifier(FileSystem::Path(materialName).getFileName());

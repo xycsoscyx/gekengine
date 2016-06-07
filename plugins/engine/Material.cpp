@@ -34,14 +34,22 @@ namespace Gek
             String shaderFileName = shaderNode->getText();
             shader = resources->loadShader(shaderFileName);
 
-            std::unordered_map<String, String> resourceMap;
+            std::unordered_map<String, Shader::Resource> resourceMap;
             XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
             XmlNodePtr mapNode = mapsNode->firstChildElement();
             while (mapNode->isValid())
             {
-                String name(mapNode->getType());
-                String source(mapNode->getText());
-                resourceMap[name] = source;
+                auto &resource = resourceMap[mapNode->getType()];
+                if (mapNode->hasAttribute(L"file"))
+                {
+                    resource.type = Shader::Resource::Type::File;
+                    resource.fileName = mapNode->getAttribute(L"file");
+                }
+                else
+                {
+                    resource.type = Shader::Resource::Type::Data;
+                    resource.fileName = mapNode->getAttribute(L"data");
+                }
 
                 mapNode = mapNode->nextSiblingElement();
             };
