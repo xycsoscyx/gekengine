@@ -1124,8 +1124,9 @@ namespace Gek
             return priority;
         }
 
-        void loadResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &materialDataMap, std::list<ResourceHandle> &resourceList)
+        std::list<ResourceHandle> getResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &materialDataMap)
         {
+            std::list<ResourceHandle> resourceList;
             FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
             String fileSpecifier(FileSystem::Path(materialName).getFileName());
             for (auto &mapValue : mapList)
@@ -1163,6 +1164,8 @@ namespace Gek
 
                 resourceList.push_back(resource);
             }
+
+            return resourceList;
         }
 
         ResourceHandle renderTargetList[8];

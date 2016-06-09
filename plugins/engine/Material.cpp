@@ -52,7 +52,7 @@ namespace Gek
                 mapNode = mapNode->nextSiblingElement();
             };
 
-            resources->loadResourceList(shader, fileName, resourceMap, resourceList);
+            resourceList = resources->getResourceList(shader, fileName, resourceMap);
         }
 
         ~MaterialImplementation(void)

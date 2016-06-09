@@ -187,7 +187,7 @@ namespace Gek
             return handle;
         }
 
-        HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
+        HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad, bool threaded = true)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -203,14 +203,25 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                loader->request([this, handle, requestLoad](void) -> void
+                if (threaded)
+                {
+                    loader->request([this, handle, requestLoad](void) -> void
+                    {
+                        requestLoad(handle, [this, handle](TypePtr data) -> void
+                        {
+                            auto &resource = localResourceMap[handle];
+                            resource.set(data);
+                        });
+                    });
+                }
+                else
                 {
                     requestLoad(handle, [this, handle](TypePtr data) -> void
                     {
                         auto &resource = localResourceMap[handle];
                         resource.set(data);
                     });
-                });
+                }
             }
 
             return handle;
@@ -346,7 +357,14 @@ namespace Gek
         // RequestLoader
         void request(std::function<void(void)> load)
         {
-            load();
+            try
+            {
+                load();
+            }
+            catch (const Exception &)
+            {
+            };
+
             return;
             loadResourceQueue.push(load);
             if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
@@ -357,7 +375,13 @@ namespace Gek
                     std::function<void(void)> function;
                     while (loadResourceQueue.try_pop(function))
                     {
-                        function();
+                        try
+                        {
+                            function();
+                        }
+                        catch (const Exception &)
+                        {
+                        };
                     };
 
                     CoUninitialize();
@@ -465,16 +489,14 @@ namespace Gek
             };
 
             std::size_t hash = reverseHash(fileName);
-            return shaderManager.getHandle(hash, request);
+            return shaderManager.getHandle(hash, request, false);
         }
 
-        void loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap, std::list<ResourceHandle> &resourceList)
+        std::list<ResourceHandle> getResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap)
         {
             auto shader = shaderManager.getResource(shaderHandle);
-            if (shader)
-            {
-                shader->loadResourceList(materialName, resourceMap, resourceList);
-            }
+            GEK_CHECK_CONDITION(shader == nullptr, Exception, "Unable to find shader for material: %v", materialName);
+            return shader->getResourceList(materialName, resourceMap);
         }
 
         RenderStateHandle createRenderState(const Video::RenderState &renderState)

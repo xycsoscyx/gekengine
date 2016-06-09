@@ -151,7 +151,7 @@ namespace Gek
         virtual Material * const getMaterial(MaterialHandle handle) const = 0;
 
         virtual ShaderHandle loadShader(const wchar_t *fileName) = 0;
-        virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual std::list<ResourceHandle> getResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap) = 0;
         virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
         virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

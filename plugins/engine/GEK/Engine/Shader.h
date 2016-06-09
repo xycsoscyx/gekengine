@@ -41,7 +41,7 @@ namespace Gek
 
         virtual uint32_t getPriority(void) = 0;
 
-        virtual void loadResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual std::list<ResourceHandle> getResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap) = 0;
         virtual void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &materialMapList) = 0;
 
         virtual Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
