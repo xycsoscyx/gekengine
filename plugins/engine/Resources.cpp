@@ -682,7 +682,7 @@ namespace Gek
             }
         }
 
-        VideoTexturePtr loadTexture(const String &fileName, uint32_t flags)
+        VideoTexturePtr loadTextureData(const String &fileName, uint32_t flags)
         {
             // iterate over formats in case the texture name has no extension
             static const wchar_t *formatList[] =
@@ -834,31 +834,6 @@ namespace Gek
             return texture;
         }
 
-        VideoTexturePtr loadTextureData(const String &fileName, uint32_t flags)
-        {
-            // iterate over formats in case the texture name has no extension
-            static const wchar_t *formatList[] =
-            {
-                L"",
-                L".dds",
-                L".tga",
-                L".png",
-                L".jpg",
-                L".bmp",
-            };
-
-            for (auto &format : formatList)
-            {
-                FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
-                if (filePath.isFile())
-                {
-                    return video->loadTexture(filePath, flags);
-                }
-            }
-
-            return nullptr;
-        }
-
         ResourceHandle loadTexture(const wchar_t *fileName, ResourcePtr fallback, uint32_t flags)
         {
             GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
@@ -928,7 +903,7 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash_combine(pattern, parameters);
+            std::size_t hash = std::hash_combine<String, String>(pattern, parameters);
             return resourceManager.getHandle(hash, request);
         }
 

@@ -1144,7 +1144,7 @@ namespace Gek
                             String dataName = fileResource->fileName.getLower();
                             dataName.replace(L"$directory", filePath);
                             dataName.replace(L"$filename", fileSpecifier);
-                            dataName.replace(L"$materialNode", materialName);
+                            dataName.replace(L"$material", materialName);
                             resource = resources->loadTexture(dataName, mapValue.fallback, mapValue.flags);
                         }
 
