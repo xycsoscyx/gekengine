@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>*color:(7.0196, 8.90196, 8.43137)</albedo>
-        <normal>*pattern:flat</normal>
-        <roughness>*color:1</roughness>
-        <metalness>*color:0</metalness>
+        <albedo pattern="color" parameters="(7.0196, 8.90196, 8.43137)" />
+        <normal pattern="system" parameters="flat" />
+        <roughness pattern="color" parameters="1" />
+        <metalness pattern="color" parameters="0" />
     </maps>
 </material>

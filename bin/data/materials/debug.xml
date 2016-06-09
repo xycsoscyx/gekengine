@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>debug_a</albedo>
-        <normal>debug_n</normal>
-        <roughness>debug_r</roughness>
-        <metalness>debug_m</metalness>
+        <albedo file="debug_a" />
+        <normal file="debug_n" />
+        <roughness file="debug_r" />
+        <metalness file="debug_m" />
     </maps>
 </material>

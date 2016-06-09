@@ -34,7 +34,7 @@ namespace Gek
             String shaderFileName = shaderNode->getText();
             shader = resources->loadShader(shaderFileName);
 
-            std::unordered_map<String, Shader::Resource> resourceMap;
+            std::unordered_map<String, ResourcePtr> resourceMap;
             XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
             XmlNodePtr mapNode = mapsNode->firstChildElement();
             while (mapNode->isValid())
@@ -42,13 +42,11 @@ namespace Gek
                 auto &resource = resourceMap[mapNode->getType()];
                 if (mapNode->hasAttribute(L"file"))
                 {
-                    resource.type = Shader::Resource::Type::File;
-                    resource.fileName = mapNode->getAttribute(L"file");
+                    resource = std::make_shared<FileResource>(mapNode->getAttribute(L"file"));
                 }
-                else
+                else if(mapNode->hasAttribute(L"pattern"))
                 {
-                    resource.type = Shader::Resource::Type::Data;
-                    resource.fileName = mapNode->getAttribute(L"data");
+                    resource = std::make_shared<DataResource>(mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"));
                 }
 
                 mapNode = mapNode->nextSiblingElement();

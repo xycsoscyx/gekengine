@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>$directory\$filename\$filename_a</albedo>
-        <normal>$directory\$filename\$filename_n</normal>
-        <roughness>$directory\$filename\$filename_r</roughness>
-        <metalness>$directory\$filename\$filename_m</metalness>
+        <albedo file="$directory\$filename\$filename_a" />
+        <normal file="$directory\$filename\$filename_n" />
+        <roughness file="$directory\$filename\$filename_r" />
+        <metalness file="$directory\$filename\$filename_m" />
     </maps>
 </material>

@@ -6,10 +6,10 @@
 
     <material>
         <maps>
-            <albedo bind="float4" default="pattern:debug">Texture2D</albedo>
-            <normal bind="float2" default="pattern:flat">Texture2D</normal>
-            <roughness bind="float" default="color:.5">Texture2D</roughness>
-            <metalness bind="float" default="color:.5">Texture2D</metalness>
+            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
         </maps>
     </material>
 

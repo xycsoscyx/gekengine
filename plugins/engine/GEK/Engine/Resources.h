@@ -70,13 +70,59 @@ namespace Gek
     GEK_PREDECLARE(RenderPipeline);
     GEK_PREDECLARE(RenderContext);
 
+    struct Resource
+    {
+        enum class Type : uint8_t
+        {
+            Unknown = 0,
+            File = 1,
+            Data,
+        };
+
+        Type type;
+
+        virtual ~Resource(void) = default;
+
+    protected:
+        Resource(Type type)
+            : type(type)
+        {
+        }
+    };
+
+    typedef std::shared_ptr<Resource> ResourcePtr;
+
+    struct FileResource : public Resource
+    {
+        String fileName;
+
+        FileResource(const wchar_t *fileName)
+            : Resource(Type::File)
+            , fileName(fileName)
+        {
+        }
+    };
+
+    struct DataResource : public Resource
+    {
+        String pattern;
+        String parameters;
+
+        DataResource(const wchar_t *pattern, const wchar_t *parameters)
+            : Resource(Type::Data)
+            , pattern(pattern)
+            , parameters(parameters)
+        {
+        }
+    };
+
     GEK_INTERFACE(PluginResources)
     {
         virtual PluginHandle loadPlugin(const wchar_t *fileName) = 0;
         virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
 
-        virtual ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *default, uint32_t flags) = 0;
-        virtual ResourceHandle createTexture(const wchar_t *parameters) = 0;
+        virtual ResourceHandle loadTexture(const wchar_t *fileName, ResourcePtr fallback, uint32_t flags) = 0;
+        virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
 
         virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps = 1) = 0;
         virtual ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
@@ -105,7 +151,7 @@ namespace Gek
         virtual Material * const getMaterial(MaterialHandle handle) const = 0;
 
         virtual ShaderHandle loadShader(const wchar_t *fileName) = 0;
-        virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, String> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
+        virtual void loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap, std::list<ResourceHandle> &resourceList) = 0;
         virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
         virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

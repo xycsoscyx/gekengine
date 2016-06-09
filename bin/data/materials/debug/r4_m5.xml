@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>schulz/old_tiles/old_tiles_a</albedo>
-        <normal>schulz/old_tiles/old_tiles_n</normal>
-        <roughness>*color:0.444444</roughness>
-        <metalness>*color:0.555556</metalness>
+        <albedo file="schulz/old_tiles/old_tiles_a" />
+        <normal file="schulz/old_tiles/old_tiles_n" />
+        <roughness pattern="color" parameters="0.444444" />
+        <metalness pattern="color" parameters="0.555556" />
     </maps>
 </material>

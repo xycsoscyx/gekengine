@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>$material\$material.Albedo</albedo>
-        <normal>$material\$material.Normal</normal>
-        <roughness>$material\$material.Roughness</roughness>
-        <metalness>$material\$material.Metalness</metalness>
+        <albedo file="$material\$material.Albedo" />
+        <normal file="$material\$material.Normal" />
+        <roughness file="$material\$material.Roughness" />
+        <metalness file="$material\$material.Metalness" />
     </maps>
 </material>

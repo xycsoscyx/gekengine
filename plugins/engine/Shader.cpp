@@ -135,17 +135,17 @@ namespace Gek
         struct Map
         {
             String name;
-            String defaultValue;
             MapType mapType;
             BindType bindType;
             uint32_t flags;
+            ResourcePtr fallback;
 
-            Map(const wchar_t *name, const wchar_t *defaultValue, MapType mapType, BindType bindType, uint32_t flags)
+            Map(const wchar_t *name, MapType mapType, BindType bindType, uint32_t flags, const ResourcePtr &fallback)
                 : name(name)
-                , defaultValue(defaultValue)
                 , mapType(mapType)
                 , bindType(bindType)
                 , flags(flags)
+                , fallback(fallback)
             {
             }
         };
@@ -612,11 +612,21 @@ namespace Gek
             while (mapNode->isValid())
             {
                 String name(mapNode->getType());
-                String defaultValue(mapNode->getAttribute(L"default"));
                 MapType mapType = getMapType(mapNode->getText());
                 BindType bindType = getBindType(mapNode->getAttribute(L"bind"));
                 uint32_t flags = getTextureLoadFlags(mapNode->getAttribute(L"flags"));
-                mapList.push_back(Map(name, defaultValue, mapType, bindType, flags));
+
+                ResourcePtr fallback;
+                if (mapNode->hasAttribute(L"file"))
+                {
+                    fallback = std::make_shared<FileResource>(mapNode->getAttribute(L"file"));
+                }
+                else if (mapNode->hasAttribute(L"pattern"))
+                {
+                    fallback = std::make_shared<DataResource>(mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"));
+                }
+
+                mapList.push_back(Map(name, mapType, bindType, flags, fallback));
                 mapNode = mapNode->nextSiblingElement();
             };
 
@@ -1114,7 +1124,7 @@ namespace Gek
             return priority;
         }
 
-        void loadResourceList(const wchar_t *materialName, std::unordered_map<String, Resource> &materialDataMap, std::list<ResourceHandle> &resourceList)
+        void loadResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &materialDataMap, std::list<ResourceHandle> &resourceList)
         {
             FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
             String fileSpecifier(FileSystem::Path(materialName).getFileName());
@@ -1124,11 +1134,31 @@ namespace Gek
                 auto dataIterator = materialDataMap.find(mapValue.name);
                 if (dataIterator != materialDataMap.end())
                 {
-                    String dataName = (*dataIterator).second.getLower();
-                    dataName.replace(L"$directory", filePath);
-                    dataName.replace(L"$filename", fileSpecifier);
-                    dataName.replace(L"$materialNode", materialName);
-                    resource = resources->loadTexture(dataName, mapValue.defaultValue, mapValue.flags);
+                    auto &baseResource = (*dataIterator).second;
+                    switch (baseResource->type)
+                    {
+                    case Resource::Type::File:
+                        if (true)
+                        {
+                            auto fileResource = std::dynamic_pointer_cast<FileResource>(baseResource);
+                            String dataName = fileResource->fileName.getLower();
+                            dataName.replace(L"$directory", filePath);
+                            dataName.replace(L"$filename", fileSpecifier);
+                            dataName.replace(L"$materialNode", materialName);
+                            resource = resources->loadTexture(dataName, mapValue.fallback, mapValue.flags);
+                        }
+
+                        break;
+
+                    case Resource::Type::Data:
+                        if (true)
+                        {
+                            auto dataResource = std::dynamic_pointer_cast<DataResource>(baseResource);
+                            resource = resources->createTexture(dataResource->pattern, dataResource->parameters);
+                        }
+
+                        break;
+                    };
                 }
 
                 resourceList.push_back(resource);

@@ -2,9 +2,9 @@
 <material>
     <shader>standard</shader>
     <maps>
-        <albedo>*color:(0.550000, 0.556000, 0.554000)</albedo>
-        <normal>gradient_n</normal>
-        <roughness>gradient_r</roughness>
-        <metalness>gradient_m</metalness>
+        <albedo pattern="color" parameters="(0.550000, 0.556000, 0.554000)" />
+        <normal file="gradient_n" />
+        <roughness file="gradient_r" />
+        <metalness file="gradient_m" />
     </maps>
 </material>

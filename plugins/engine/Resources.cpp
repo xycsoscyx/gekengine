@@ -468,6 +468,15 @@ namespace Gek
             return shaderManager.getHandle(hash, request);
         }
 
+        void loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap, std::list<ResourceHandle> &resourceList)
+        {
+            auto shader = shaderManager.getResource(shaderHandle);
+            if (shader)
+            {
+                shader->loadResourceList(materialName, resourceMap, resourceList);
+            }
+        }
+
         RenderStateHandle createRenderState(const Video::RenderState &renderState)
         {
             GEK_TRACE_FUNCTION();
@@ -698,16 +707,14 @@ namespace Gek
             return nullptr;
         }
 
-        VideoTexturePtr createTextureData(const String &parameters)
+        VideoTexturePtr createTextureData(const String &pattern, const String &parameters)
         {
             VideoTexturePtr texture;
-            std::vector<String> tokenList(parameters.split(L':'));
-            GEK_CHECK_CONDITION(tokenList.size() != 2, Trace::Exception, "Invalid number of parameters passed to create texture");
-            if (tokenList[0].compareNoCase(L"color") == 0)
+            if (pattern.compareNoCase(L"color") == 0)
             {
                 try
                 {
-                    auto rpnTokenList = shuntingYard.getTokenList(tokenList[1]);
+                    auto rpnTokenList = shuntingYard.getTokenList(parameters);
                     uint32_t colorSize = shuntingYard.getReturnSize(rpnTokenList);
                     if (colorSize == 1)
                     {
@@ -769,12 +776,12 @@ namespace Gek
                 {
                 };
             }
-            else if (tokenList[0].compareNoCase(L"normal") == 0)
+            else if (pattern.compareNoCase(L"normal") == 0)
             {
                 Math::Float3 normal;
                 try
                 {
-                    shuntingYard.evaluate(tokenList[1], normal);
+                    shuntingYard.evaluate(parameters, normal);
                 }
                 catch (const ShuntingYard::Exception &)
                 {
@@ -791,9 +798,9 @@ namespace Gek
 
                 texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, normalData);
             }
-            else if (tokenList[0].compareNoCase(L"pattern") == 0)
+            else if (pattern.compareNoCase(L"system") == 0)
             {
-                if (tokenList[1].compareNoCase(L"debug") == 0)
+                if (parameters.compareNoCase(L"debug") == 0)
                 {
                     uint8_t data[] =
                     {
@@ -802,7 +809,7 @@ namespace Gek
 
                     texture = video->createTexture(Video::Format::Byte4, 1, 1, 1, Video::TextureFlags::Resource, 1, data);
                 }
-                else if (tokenList[1].compareNoCase(L"flat") == 0)
+                else if (parameters.compareNoCase(L"flat") == 0)
                 {
                     uint8_t normalData[4] =
                     {
@@ -816,12 +823,12 @@ namespace Gek
                 }
                 else
                 {
-                    GEK_THROW_EXCEPTION(Exception, "Invalid pattern specified: %v", tokenList[1]);
+                    GEK_THROW_EXCEPTION(Exception, "Invalid system pattern specified: %v", parameters);
                 }
             }
             else
             {
-                GEK_THROW_EXCEPTION(Exception, "Invalid dynamic texture specified: %v", tokenList[0]);
+                GEK_THROW_EXCEPTION(Exception, "Invalid dynamic pattern specified: %v", pattern);
             }
 
             return texture;
@@ -852,12 +859,50 @@ namespace Gek
             return nullptr;
         }
 
-        ResourceHandle loadTexture(const wchar_t *fileName, const wchar_t *default, uint32_t flags)
+        ResourceHandle loadTexture(const wchar_t *fileName, ResourcePtr fallback, uint32_t flags)
         {
             GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-            auto load = [this, fileName = String(fileName), default = String(default), flags](ResourceHandle handle)->VideoTexturePtr
+            auto load = [this, fileName = String(fileName), fallback, flags](ResourceHandle handle)->VideoTexturePtr
             {
-                return loadTextureData(fileName, flags);
+                VideoTexturePtr texture;
+                try
+                {
+                    texture = loadTextureData(fileName, flags);
+                }
+                catch (const Exception &)
+                {
+                    if (fallback)
+                    {
+                        try
+                        {
+                            switch (fallback->type)
+                            {
+                            case Resource::Type::File:
+                                if (true)
+                                {
+                                    auto fileResource = std::dynamic_pointer_cast<FileResource>(fallback);
+                                    texture = loadTextureData(fileResource->fileName, flags);
+                                }
+
+                                break;
+
+                            case Resource::Type::Data:
+                                if (true)
+                                {
+                                    auto dataResource = std::dynamic_pointer_cast<DataResource>(fallback);
+                                    texture = createTextureData(dataResource->pattern, dataResource->parameters);
+                                }
+
+                                break;
+                            };
+                        }
+                        catch (const Exception &)
+                        {
+                        };
+                    }
+                };
+
+                return texture;
             };
 
             auto request = [this, load](ResourceHandle handle, std::function<void(VideoTexturePtr)> set) -> void
@@ -869,13 +914,13 @@ namespace Gek
             return resourceManager.getHandle(hash, request);
         }
 
-        ResourceHandle createTexture(const wchar_t *parameters)
+        ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
         {
             GEK_TRACE_FUNCTION(GEK_PARAMETER(parameters));
 
-            auto load = [this, parameters = String(parameters)](ResourceHandle handle)->VideoTexturePtr
+            auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle handle)->VideoTexturePtr
             {
-                return createTextureData(parameters);
+                return createTextureData(pattern, parameters);
             };
 
             auto request = [this, load](ResourceHandle handle, std::function<void(VideoTexturePtr)> set) -> void
@@ -883,7 +928,7 @@ namespace Gek
                 set(load(handle));
             };
 
-            std::size_t hash = std::hash<String>()(parameters);
+            std::size_t hash = std::hash_combine(pattern, parameters);
             return resourceManager.getHandle(hash, request);
         }
 
