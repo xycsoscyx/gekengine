@@ -196,7 +196,7 @@ namespace Gek
             };
 
             HRESULT resultValue = CoInitialize(nullptr);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Trace::Exception, "Unable to initialize COM: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Trace::Exception, "Unable to initialize COM (error %v)", resultValue);
 
             video = getContext()->createClass<VideoSystem>(L"VideoSystem", window, false, Video::Format::sRGBA);
             resources = getContext()->createClass<Resources>(L"ResourcesSystem", (EngineContext *)this, video.get());

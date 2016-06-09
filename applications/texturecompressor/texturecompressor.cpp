@@ -111,12 +111,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         ::DirectX::ScratchImage image;
         HRESULT resultValue = load(fileData.data(), fileData.size(), image);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileNameInput.string());
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file, %v (error %v)", fileNameInput.string(), resultValue);
         printf(".loaded.");
 
         ::DirectX::ScratchImage mipMapChain;
         resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to generate mipmap chain: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to generate mipmap chain (error %v)", resultValue);
         image = std::move(mipMapChain);
         printf(".mipmapped.");
 
@@ -193,11 +193,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         ::DirectX::ScratchImage output;
         resultValue = ::DirectX::Compress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image (error %v)", resultValue);
         printf(".compressed.");
 
         resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameOutput);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image (error %v)", resultValue);
         printf(".done!\r\n");
     }
     catch (const Exception &exception)

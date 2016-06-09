@@ -191,13 +191,13 @@ typedef SH<Math::Float4, 9> SH9Color;
 
     ::DirectX::ScratchImage image;
     HRESULT resultValue = load(fileData.data(), fileData.size(), image);
-    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file: %v (%v)", resultValue, fileName);
+    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file, %v (error %v)", fileName, resultValue);
 
     if (::DirectX::IsCompressed(image.GetMetadata().format))
     {
         ::DirectX::ScratchImage decompressedImage;
         resultValue = ::DirectX::Decompress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM, decompressedImage);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to decompress image to raw RGBA: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to decompress image to raw RGBA (error %v)", resultValue);
         image = std::move(decompressedImage);
     }
 
@@ -205,7 +205,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
         ::DirectX::ScratchImage rgbImage;
         resultValue = ::DirectX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0.0f, rgbImage);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to convert image to float: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to convert image to float (error %v)", resultValue);
         image = std::move(rgbImage);
     }
 
@@ -213,7 +213,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
         ::DirectX::ScratchImage resized;
         resultValue = ::DirectX::Resize(image.GetImages()[0], 256, 256, 0, resized);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to resize image to 256x256: %v", resultValue);
+        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to resize image to 256x256 (error %v)", resultValue);
         image = std::move(resized);
     }
 
@@ -262,7 +262,7 @@ typedef SH<Math::Float4, 9> SH9Color;
 
     ::DirectX::ScratchImage image;
     HRESULT resultValue = image.InitializeCubeFromImages(imageList, 6, 0);
-    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to initialize cubemap from face list: %v", resultValue);
+    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to initialize cubemap from face list (error %v)", resultValue);
     return image;
 }
 

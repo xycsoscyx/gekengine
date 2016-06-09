@@ -94,17 +94,17 @@ namespace Gek
             buttonStateList.resize(256);
 
             HRESULT resultValue = directInput->CreateDevice(GUID_SysKeyboard, &device, nullptr);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create keyboard device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create keyboard device (error %v)", resultValue);
 
             resultValue = device->SetDataFormat(&c_dfDIKeyboard);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to set keyboard data format: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to set keyboard data format (error %v)", resultValue);
 
             DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
             resultValue = device->SetCooperativeLevel(window, flags);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to set keyboard cooperative level: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to set keyboard cooperative level (error %v)", resultValue);
 
             resultValue = device->Acquire();
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to acquire keyboard device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to acquire keyboard device (error %v)", resultValue);
         }
 
         void update(void)
@@ -160,28 +160,28 @@ namespace Gek
         MouseImplementation(IDirectInput8 *directInput, HWND window)
         {
             HRESULT resultValue = directInput->CreateDevice(GUID_SysMouse, &device, nullptr);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create mouse device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create mouse device (error %v)", resultValue);
 
             resultValue = device->SetDataFormat(&c_dfDIMouse2);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set mouse data format: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set mouse data format (error %v)", resultValue);
 
             DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
             resultValue = device->SetCooperativeLevel(window, flags);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set mouse cooperative level: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set mouse cooperative level (error %v)", resultValue);
 
             DIDEVCAPS deviceCaps = { 0 };
             deviceCaps.dwSize = sizeof(DIDEVCAPS);
             resultValue = device->GetCapabilities(&deviceCaps);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable get mouse capabilities: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable get mouse capabilities (error %v)", resultValue);
 
             resultValue = device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable enumerate mouse axis info: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable enumerate mouse axis info (error %v)", resultValue);
 
             buttonCount = deviceCaps.dwButtons;
             buttonStateList.resize(buttonCount);
 
             resultValue = device->Acquire();
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable acquire mouse device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable acquire mouse device (error %v)", resultValue);
         }
 
         void update(void)
@@ -240,28 +240,28 @@ namespace Gek
         JoystickImplementation(IDirectInput8 *directInput, HWND window, const GUID &deviceID)
         {
             HRESULT resultValue = directInput->CreateDevice(deviceID, &device, nullptr);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create joystick device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create joystick device (error %v)", resultValue);
 
             resultValue = device->SetDataFormat(&c_dfDIJoystick2);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set joystick data format: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set joystick data format (error %v)", resultValue);
 
             DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
             resultValue = device->SetCooperativeLevel(window, flags);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set joystick cooperative level: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable set joystick cooperative level (error %v)", resultValue);
 
             DIDEVCAPS deviceCaps = { 0 };
             deviceCaps.dwSize = sizeof(DIDEVCAPS);
             resultValue = device->GetCapabilities(&deviceCaps);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable get joystick capabilities: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable get joystick capabilities (error %v)", resultValue);
 
             resultValue = device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable enumerate joystick axis info: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable enumerate joystick axis info (error %v)", resultValue);
 
             buttonCount = deviceCaps.dwButtons;
             buttonStateList.resize(buttonCount);
 
             resultValue = device->Acquire();
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable acquire joystick device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable acquire joystick device (error %v)", resultValue);
         }
 
         void update(void)
@@ -375,7 +375,7 @@ namespace Gek
             this->window = window;
 
             HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
-            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create DirectInput device: %v", resultValue);
+            GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create DirectInput device (error %v)", resultValue);
 
             keyboardDevice = makeShared<InputDevice, KeyboardImplementation>(directInput, window);
             mouseDevice = makeShared<InputDevice, MouseImplementation>(directInput, window);
