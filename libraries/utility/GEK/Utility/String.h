@@ -59,6 +59,28 @@ namespace Gek
             }
         };
 
+        struct MustMatch
+        {
+            ELEMENT character;
+            MustMatch(ELEMENT character)
+                : character(character)
+            {
+            }
+
+            template <typename STREAM>
+            friend STREAM &operator >> (STREAM &stream, const MustMatch &match)
+            {
+                ELEMENT next;
+                stream.get(next);
+                if (next != match.character)
+                {
+                    stream.setstate(std::ios::failbit);
+                }
+
+                return stream;
+            }
+        };
+
     public:
         BaseString(void)
         {
@@ -508,81 +530,72 @@ namespace Gek
 
         operator Math::Float2 () const
         {
-            ELEMENT separator;
             Math::Float2 value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> separator >> value.x >> separator >> value.y >> separator; // ( X , Y )
-            return (stream.fail() ? Math::Float2(0.0f, 0.0f) : value);
+            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(')'); // ( X , Y )
+            return (stream.fail() ? Math::Float2::Zero : value);
         }
 
         operator Math::Float3 () const
         {
-            ELEMENT separator;
             Math::Float3 value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator; // ( x , Y , Z )
-            return (stream.fail() ? Math::Float3(0.0f, 0.0f, 0.0f) : value);
+            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(')'); // ( x , Y , Z )
+            return (stream.fail() ? Math::Float3::Zero : value);
         }
 
         operator Math::Float4 () const
         {
-            ELEMENT separator;
             Math::Float4 value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator >> value.w >> separator; // ( X , Y , Z , W )
-            return (stream.fail() ? Math::Float4(0.0f, 0.0f, 0.0f, 0.0f) : value);
+            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(',') >> value.w >> MustMatch(')'); // ( X , Y , Z , W )
+            return (stream.fail() ? Math::Float4::Zero : value);
         }
 
         operator Math::Color () const
         {
             Math::Color value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> value.r;
-            if (stream.fail())
+            if (stream.peek() == '(')
             {
-                ELEMENT separator;
-                stream >> separator >> value.r >> separator >> value.g >> separator >> value.b >> separator; // ( R , G , B ) or ( R , G , B ,
-                if (!stream.fail())
+                stream >> MustMatch('(') >> value.r >> MustMatch(',') >> value.g >> MustMatch(',') >> value.b;
+                switch (stream.peek())
                 {
-                    switch (separator)
-                    {
-                    case ')':
-                        value.a = 1.0f;
-                        break;
+                case ')':
+                    value.a = 1.0f;
+                    stream >> MustMatch(')');
+                    break;
 
-                    case ',':
-                        stream >> value.a >> separator;
-                        break;
-                    };
-                }
+                case ',':
+                    stream >> MustMatch(',') >> value.a >> MustMatch(')');
+                    break;
+                };
             }
             else
             {
+                stream >> value.r;
                 value.set(value.r);
             }
 
-            return (stream.fail() ? Math::Color(1.0f, 1.0f, 1.0f, 1.0f) : value);
+            return (stream.fail() ? Math::Color::White : value);
         }
 
         operator Math::Quaternion () const
         {
-            ELEMENT separator;
             Math::Quaternion value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> separator >> value.x >> separator >> value.y >> separator >> value.z >> separator;
-            if (!stream.fail())
+            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z;
+            switch (stream.peek())
             {
-                switch (separator)
-                {
-                case ')':
-                    value.setEulerRotation(value.x, value.y, value.z);
-                    break;
+            case ')':
+                value.setEulerRotation(value.x, value.y, value.z);
+                stream >> MustMatch(')');
+                break;
 
-                case ',':
-                    stream >> value.w >> separator;
-                    break;
-                };
-            }
+            case ',':
+                stream >> MustMatch(',') >> value.w >> MustMatch(')');
+                break;
+            };
 
             return (stream.fail() ? Math::Quaternion::Identity : value);
         }

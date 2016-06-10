@@ -7,6 +7,10 @@ namespace Gek
         struct Float2
         {
         public:
+            static const Float2 Zero;
+            static const Float2 One;
+
+        public:
             union
             {
                 struct { float x, y; };

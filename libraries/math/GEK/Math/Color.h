@@ -12,6 +12,10 @@ namespace Gek
         struct Color
         {
         public:
+            static const Color Black;
+            static const Color White;
+
+        public:
             union
             {
                 struct { float r, g, b, a; };

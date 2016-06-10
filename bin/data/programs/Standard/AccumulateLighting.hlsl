@@ -97,7 +97,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
         float NdotL = dot(surfaceNormal, lightProperties.direction);
         float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);
-        float3 diffuseLighting = diffuseAlbedo;//(diffuseAlbedo * Math::ReciprocalPi);
+        float3 diffuseLighting = (diffuseAlbedo * Math::ReciprocalPi);
         float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightProperties.direction, viewDirection, NdotL);
         surfaceColor += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightProperties.falloff * light.color);
     }

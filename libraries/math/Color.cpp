@@ -8,6 +8,9 @@ namespace Gek
 {
     namespace Math
     {
+        const Color Color::Black(0.0f, 0.0f, 0.0f, 0.0f);
+        const Color Color::White(1.0f, 1.0f, 1.0f, 1.0f);
+
         Color::Color(const Float3 &vector)
             : r(vector.x)
             , g(vector.y)

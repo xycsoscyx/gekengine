@@ -125,14 +125,15 @@ namespace Gek
             if (xmlHasProp(node, BAD_CAST nameUTF8.c_str()))
             {
                 xmlChar *textUTF8 = xmlGetProp(node, BAD_CAST nameUTF8.c_str());
-                String text(reinterpret_cast<const char *>(textUTF8));
-                xmlFree(textUTF8);
-                return text;
+                if (textUTF8)
+                {
+                    String text(reinterpret_cast<const char *>(textUTF8));
+                    xmlFree(textUTF8);
+                    return text;
+                }
             }
-            else
-            {
-                return defaultValue;
-            }
+
+            return defaultValue;
         }
 
         void setAttribute(const wchar_t *name, const wchar_t *value)

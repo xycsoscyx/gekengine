@@ -9,6 +9,10 @@ namespace Gek
         struct Float3
         {
         public:
+            static const Float3 Zero;
+            static const Float3 One;
+
+        public:
             union
             {
                 struct { float x, y, z; };

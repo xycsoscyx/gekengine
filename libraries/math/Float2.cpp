@@ -6,6 +6,9 @@ namespace Gek
 {
     namespace Math
     {
+        const Float2 Float2::Zero(0.0f, 0.0f);
+        const Float2 Float2::One(1.0f, 1.0f);
+
         float Float2::getLengthSquared(void) const
         {
             return ((x * x) + (y * y));
