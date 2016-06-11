@@ -1576,6 +1576,11 @@ namespace Gek
 
                 HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                 GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create buffer unordered access view (error %v)", resultValue);
+                if (data == nullptr)
+                {
+                    static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                    d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
+                }
             }
 
             return makeShared<VideoBuffer, Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);

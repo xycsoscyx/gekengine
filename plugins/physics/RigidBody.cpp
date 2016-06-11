@@ -61,7 +61,7 @@ namespace Gek
             return 0;
         }
 
-        void onPreUpdate(dFloat frameTime, int threadHandle)
+        void onPreUpdate(int threadHandle)
         {
             auto &mass = entity->getComponent<MassComponent>();
             auto &transform = entity->getComponent<TransformComponent>();
@@ -72,7 +72,7 @@ namespace Gek
             NewtonBodyAddForce(newtonBody, (gravity * mass.value).data);
         }
 
-        void onSetTransform(const dFloat* const matrixData, int threadHandle)
+        void onSetTransform(const float* const matrixData, int threadHandle)
         {
             auto &transform = entity->getComponent<TransformComponent>();
 

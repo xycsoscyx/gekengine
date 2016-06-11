@@ -68,6 +68,7 @@ namespace Gek
         NewtonBody *newtonStaticBody;
         std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
 
+        float frameTime;
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
         std::unordered_map<std::size_t, uint32_t> surfaceIndexList;
@@ -84,6 +85,7 @@ namespace Gek
             , newtonStaticScene(nullptr)
             , newtonStaticBody(nullptr)
             , gravity(0.0f, -32.174f, 0.0f)
+            , frameTime(0.0f)
         {
             updateHandle = population->setUpdatePriority(this, 50);
             population->addObserver((PopulationObserver *)this);
@@ -100,6 +102,11 @@ namespace Gek
         }
 
         // NewtonProcessor
+        float getFrameTime(void) const
+        {
+            return frameTime;
+        }
+
         Math::Float3 getGravity(const Math::Float3 &position)
         {
             const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
@@ -166,21 +173,22 @@ namespace Gek
         // Processor
         static void newtonPreUpdateTask(NewtonWorld* const world, void* const userData, int threadIndex)
         {
-            auto updatePair = (std::pair<NewtonEntity *, float> *)userData;
-            updatePair->first->onPreUpdate(updatePair->second, threadIndex);
+            NewtonEntity *entity = static_cast<NewtonEntity *>(userData);
+            entity->onPreUpdate(threadIndex);
         }
 
-        void onPreUpdate(dFloat frameTime)
+        void onPreUpdate(float frameTime)
         {
+            this->frameTime = frameTime;
             for (auto &entityPair : entityMap)
             {
-                NewtonDispachThreadJob(newtonWorld, newtonPreUpdateTask, &std::make_pair(entityPair.second, frameTime));
+                NewtonDispachThreadJob(newtonWorld, newtonPreUpdateTask, entityPair.second.get());
             }
 
             NewtonSyncThreadJobs(newtonWorld);
         }
 
-        static void newtonWorldPreUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat frameTime)
+        static void newtonWorldPreUpdate(const NewtonWorld* const world, void* const listenerUserData, float frameTime)
         {
             NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(listenerUserData);
             processor->onPreUpdate(frameTime);
@@ -188,27 +196,28 @@ namespace Gek
 
         static void newtonPostUpdateTask(NewtonWorld* const world, void* const userData, int threadIndex)
         {
-            auto updatePair = *(std::pair<NewtonEntity *, float> *)userData;
-            updatePair.first->onPostUpdate(updatePair.second, threadIndex);
+            NewtonEntity *entity = static_cast<NewtonEntity *>(userData);
+            entity->onPostUpdate(threadIndex);
         }
 
-        void onPostUpdate(dFloat frameTime)
+        void onPostUpdate(float frameTime)
         {
+            this->frameTime = frameTime;
             for (auto &entityPair : entityMap)
             {
-                NewtonDispachThreadJob(newtonWorld, newtonPostUpdateTask, &std::make_pair(entityPair.second, frameTime));
+                NewtonDispachThreadJob(newtonWorld, newtonPostUpdateTask, entityPair.second.get());
             }
 
             NewtonSyncThreadJobs(newtonWorld);
         }
 
-        static void newtonWorldPostUpdate(const NewtonWorld* const world, void* const listenerUserData, dFloat frameTime)
+        static void newtonWorldPostUpdate(const NewtonWorld* const world, void* const listenerUserData, float frameTime)
         {
             NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(listenerUserData);
             processor->onPostUpdate(frameTime);
         }
 
-        static void newtonSetTransform(const NewtonBody* const body, const dFloat* const matrixData, int threadHandle)
+        static void newtonSetTransform(const NewtonBody* const body, const float* const matrixData, int threadHandle)
         {
             NewtonEntity *newtonEntity = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body));
             newtonEntity->onSetTransform(matrixData, threadHandle);
@@ -219,7 +228,7 @@ namespace Gek
             return 1;
         }
 
-        static void newtonOnContactFriction(const NewtonJoint* contactJoint, dFloat frameTime, int threadHandle)
+        static void newtonOnContactFriction(const NewtonJoint* contactJoint, float frameTime, int threadHandle)
         {
             const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
             const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
@@ -230,7 +239,7 @@ namespace Gek
             processor->onContactFriction(contactJoint, frameTime, threadHandle);
         }
 
-        void onContactFriction(const NewtonJoint* contactJoint, dFloat frameTime, int threadHandle)
+        void onContactFriction(const NewtonJoint* contactJoint, float frameTime, int threadHandle)
         {
             const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
             const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);

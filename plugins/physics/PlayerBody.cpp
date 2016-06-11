@@ -58,8 +58,8 @@ namespace Gek
         virtual void onEnter(StatePtr previousState) { };
         virtual void onExit(StatePtr nextState) { };
 
-        StatePtr onUpdate(float frameTime) { return nullptr; };
-        StatePtr onAction(const wchar_t *name, const ActionParam &param) { return nullptr; };
+        virtual StatePtr onUpdate(float frameTime) { return nullptr; };
+        virtual StatePtr onAction(const wchar_t *name, const ActionParam &param) { return nullptr; };
     };
 
     class PlayerNewtonBody;
@@ -273,12 +273,12 @@ namespace Gek
             return 0;
         }
 
-        void onPreUpdate(float frameTime, int threadHandle)
+        void onPreUpdate(int threadHandle)
         {
             forwardSpeed = 0.0f;
             lateralSpeed = 0.0f;
             verticalSpeed = 0.0f;
-            StatePtr nextState(currentState ? currentState->onUpdate(frameTime) : nullptr);
+            StatePtr nextState(currentState ? currentState->onUpdate(newtonProcessor->getFrameTime()) : nullptr);
             if (nextState)
             {
                 currentState->onExit(nextState);
@@ -288,14 +288,14 @@ namespace Gek
 
             float rotation[4];
             NewtonBodyGetRotation(newtonBody, rotation);
-            setDesiredOmega(Math::Quaternion(rotation[1], rotation[2], rotation[3], rotation[0]), frameTime);
+            setDesiredOmega(Math::Quaternion(rotation[1], rotation[2], rotation[3], rotation[0]), newtonProcessor->getFrameTime());
 
             Math::Float4x4 matrix;
             NewtonBodyGetMatrix(newtonBody, matrix.data);
-            setDesiredVelocity(matrix, frameTime);
+            setDesiredVelocity(matrix, newtonProcessor->getFrameTime());
         }
 
-        void onPostUpdate(float frameTime, int threadHandle)
+        void onPostUpdate(int threadHandle)
         {
             auto &transform = entity->getComponent<TransformComponent>();
             auto &player = entity->getComponent<PlayerBodyComponent>();
@@ -308,15 +308,15 @@ namespace Gek
             NewtonBodyGetOmega(newtonBody, omega.data);
 
             // integrate body angular velocity
-            Math::Quaternion bodyRotation(integrateOmega(matrix.getQuaternion(), omega, frameTime));
+            Math::Quaternion bodyRotation(integrateOmega(matrix.getQuaternion(), omega, newtonProcessor->getFrameTime()));
             matrix = bodyRotation.getMatrix(matrix.translation);
 
             // integrate linear velocity
             Math::Float3 velocity;
             NewtonBodyGetVelocity(newtonBody, velocity.data);
             float normalizedTimeLeft = 1.0f;
-            float velocityStep = (frameTime * velocity.getLength());
-            float descreteframeTime = (frameTime * (1.0f / D_PLAYER_DESCRETE_MOTION_STEPS));
+            float velocityStep = (newtonProcessor->getFrameTime() * velocity.getLength());
+            float descreteframeTime = (newtonProcessor->getFrameTime() * (1.0f / D_PLAYER_DESCRETE_MOTION_STEPS));
             int previousContactCount = 0;
             ConvexCastPreFilter preFilterData(newtonBody);
             NewtonWorldConvexCastReturnInfo previousInfoList[D_PLAYER_CONTROLLER_MAX_CONTACTS];
@@ -343,11 +343,11 @@ namespace Gek
 
                 float timeToImpact = 0.0f;
                 NewtonWorldConvexCastReturnInfo currentInfoList[D_PLAYER_CONTROLLER_MAX_CONTACTS];
-                Math::Float3 destinationPosition(matrix.translation + (velocity * frameTime));
+                Math::Float3 destinationPosition(matrix.translation + (velocity * newtonProcessor->getFrameTime()));
                 int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destinationPosition.data, newtonUpperBodyShape, &timeToImpact, &preFilterData, ConvexCastPreFilter::preFilter, currentInfoList, ARRAYSIZE(currentInfoList), threadHandle);
                 if (contactCount)
                 {
-                    matrix.translation += (velocity * (timeToImpact * frameTime));
+                    matrix.translation += (velocity * (timeToImpact * newtonProcessor->getFrameTime()));
                     if (timeToImpact > 0.0f)
                     {
                         matrix.translation -= (velocity * (D_PLAYER_CONTACT_SKIN_THICKNESS / velocity.getLength()));
@@ -431,9 +431,9 @@ namespace Gek
                     float velocityMagnitudeSquared = velocityStep.getLengthSquared();
                     if (velocityMagnitudeSquared < PLAYER_EPSILON_SQUARED)
                     {
-                        float advanceTime = std::min(descreteframeTime, (normalizedTimeLeft * frameTime));
+                        float advanceTime = std::min(descreteframeTime, (normalizedTimeLeft * newtonProcessor->getFrameTime()));
                         matrix.translation += (velocity * advanceTime);
-                        normalizedTimeLeft -= (advanceTime / frameTime);
+                        normalizedTimeLeft -= (advanceTime / newtonProcessor->getFrameTime());
                     }
 
                     previousContactCount = contactCount;
@@ -458,7 +458,7 @@ namespace Gek
             }
             else
             {
-                velocityStep = std::abs(matrix.ny.dot(velocity * frameTime));
+                velocityStep = std::abs(matrix.ny.dot(velocity * newtonProcessor->getFrameTime()));
                 float castDist = ((groundNormal.getLengthSquared() > 0.0f) ? player.stairStep : velocityStep);
                 Math::Float3 destination(matrix.translation - (matrix.ny * (castDist * 2.0f)));
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
@@ -638,13 +638,13 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
+        StatePtr onUpdate(float frameTime)
         {
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
             return nullptr;
         }
 
-        STDMETHODIMP_(StatePtr) onAction(const wchar_t *name, const ActionParam &param)
+        StatePtr onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"crouch") == 0 && param.state)
             {
@@ -685,13 +685,13 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
+        StatePtr onUpdate(float frameTime)
         {
             playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
             return nullptr;
         }
 
-        STDMETHODIMP_(StatePtr) onAction(const wchar_t *name, const ActionParam &param)
+        StatePtr onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"crouch") == 0 && !param.state)
             {
@@ -723,7 +723,7 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
+        StatePtr onUpdate(float frameTime)
         {
             GEK_REQUIRE(playerBody);
 
@@ -734,7 +734,7 @@ namespace Gek
             return nullptr;
         }
 
-        STDMETHODIMP_(StatePtr) onAction(const wchar_t *name, const ActionParam &param)
+        StatePtr onAction(const wchar_t *name, const ActionParam &param)
         {
             if (_wcsicmp(name, L"move_forward") == 0)
             {
@@ -785,7 +785,7 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
+        StatePtr onUpdate(float frameTime)
         {
             GEK_REQUIRE(playerBody);
 
@@ -818,7 +818,7 @@ namespace Gek
         }
 
         // State
-        STDMETHODIMP_(StatePtr) onUpdate(float frameTime)
+        StatePtr onUpdate(float frameTime)
         {
             GEK_REQUIRE(playerBody);
 

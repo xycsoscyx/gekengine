@@ -435,12 +435,12 @@ namespace Gek
         {
             POINT currentCursorPosition;
             GetCursorPos(&currentCursorPosition);
-            int32_t cursorMovementX = int32_t(float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
-            int32_t cursorMovementY = int32_t(float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
-            if (cursorMovementX != 0 || cursorMovementY != 0)
+            float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
+            float cursorMovementY = (float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
+            if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
             {
-                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", float(cursorMovementX))));
-                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", float(cursorMovementY))));
+                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", ActionParam(cursorMovementX))));
+                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", ActionParam(cursorMovementY))));
             }
 
             lastCursorPosition = currentCursorPosition;
@@ -448,34 +448,35 @@ namespace Gek
             std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
             for (auto &action : actionCopy)
             {
+                ActionParam param(action.second);
                 switch (action.first)
                 {
                 case 'W':
                 case VK_UP:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", param)));
                     break;
 
                 case 'S':
                 case VK_DOWN:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", param)));
                     break;
 
                 case 'A':
                 case VK_LEFT:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", param)));
                     break;
 
                 case 'D':
                 case VK_RIGHT:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", param)));
                     break;
 
                 case VK_SPACE:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", param)));
                     break;
 
                 case VK_LCONTROL:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", action.second)));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", param)));
                     break;
                 };
             }

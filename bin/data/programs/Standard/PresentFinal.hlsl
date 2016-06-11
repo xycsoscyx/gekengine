@@ -34,5 +34,5 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 exposedColor = getExposedColor(baseColor, averageLuminance, exposure);
     float3 finalColor = getToneMapFilmicALU(exposedColor);
 
-    return finalColor;
+    return baseColor;
 }
