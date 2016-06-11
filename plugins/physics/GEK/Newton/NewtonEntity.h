@@ -15,11 +15,11 @@ namespace Gek
 
         // Called before the update phase to set the frame data for the body
         // Applies to rigid and player bodies
-        virtual void onPreUpdate(int threadHandle) { };
+        virtual void onPreUpdate(float frameTime, int threadHandle) { };
 
         // Called after the update phase to react to changes in the world
         // Applies to player bodies only
-        virtual void onPostUpdate(int threadHandle) { };
+        virtual void onPostUpdate(float frameTime, int threadHandle) { };
 
         // Called when setting the transformation matrix of the body
         // Applies to rigid bodies only

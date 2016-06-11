@@ -85,11 +85,10 @@ namespace Gek
         static std::unique_ptr<std::thread> server;
         void initialize(void)
         {
-            server.reset(new std::thread([](void) -> void
+            HANDLE shutdownEvent = CreateEvent(nullptr, true, false, L"GEK_Trace_Shutdown");
+            GEK_CHECK_CONDITION(shutdownEvent == nullptr, Gek::Exception, "Unable to create shutdown event: %v", GetLastError());
+            server.reset(new std::thread([shutdownEvent](void) -> void
             {
-                HANDLE shutdownEvent = CreateEvent(nullptr, true, false, L"GEK_Trace_Shutdown");
-                GEK_CHECK_CONDITION(shutdownEvent == nullptr, Gek::Exception, "Unable to create shutdown event: %v", GetLastError());
-
                 Logger file;
                 file.write("{\"traceEvents\":[\r\n");
                 while (WaitForSingleObject(shutdownEvent, 0) != WAIT_OBJECT_0)

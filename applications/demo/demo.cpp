@@ -157,9 +157,9 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
+        Trace::initialize();
         if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
         {
-            Trace::initialize();
             std::vector<String> searchPathList;
 
 #ifdef _DEBUG

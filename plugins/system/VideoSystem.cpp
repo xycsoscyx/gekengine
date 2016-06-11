@@ -1578,7 +1578,7 @@ namespace Gek
                 GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create buffer unordered access view (error %v)", resultValue);
                 if (data == nullptr)
                 {
-                    static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                    static const float zero[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
                     d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
                 }
             }

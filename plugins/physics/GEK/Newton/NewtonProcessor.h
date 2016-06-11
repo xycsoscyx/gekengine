@@ -26,8 +26,6 @@ namespace Gek
             }
         };
 
-        virtual float getFrameTime(void) const = 0;
-
         virtual Math::Float3 getGravity(const Math::Float3 &position) = 0;
 
         virtual uint32_t loadSurface(const wchar_t *fileName) = 0;
