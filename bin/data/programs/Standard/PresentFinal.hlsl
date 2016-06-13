@@ -26,6 +26,8 @@ float3 getToneMapFilmicALU(float3 color)
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float averageLuminance = Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0));
+    return averageLuminance;
+
     float3 baseColor = Resources::lightAccumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float ambientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     baseColor *= ambientOcclusion;
@@ -34,5 +36,5 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 exposedColor = getExposedColor(baseColor, averageLuminance, exposure);
     float3 finalColor = getToneMapFilmicALU(exposedColor);
 
-    return baseColor;
+    return finalColor;
 }

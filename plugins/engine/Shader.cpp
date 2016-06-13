@@ -875,13 +875,8 @@ namespace Gek
                             pass.resourceList.insert(std::make_pair(type, text.empty() ? type : text));
                             if (resourceNode->hasAttribute(L"actions"))
                             {
-                                auto &actionMap = pass.actionMap[resourceNode->getType()];
                                 std::vector<String> actionList(resourceNode->getAttribute(L"actions").split(L','));
-                                for(auto &action : actionList)
-                                {
-                                    action.trim();
-                                    actionMap.insert(action);
-                                }
+                                pass.actionMap[resourceNode->getType()].insert(actionList.begin(), actionList.end());
                             }
 
                             if (resourceNode->hasAttribute(L"copy"))
@@ -1202,14 +1197,16 @@ namespace Gek
                     if (actionIterator != pass.actionMap.end())
                     {
                         auto &actionMap = actionIterator->second;
-                        if (actionMap.count(L"generatemipmaps") > 0)
+                        for (auto &action : actionMap)
                         {
-                            resources->generateMipMaps(renderContext, resource);
-                        }
-
-                        if (actionMap.count(L"flip") > 0)
-                        {
-                            resources->flip(resource);
+                            if (action.compareNoCase(L"generatemipmaps") == 0)
+                            {
+                                resources->generateMipMaps(renderContext, resource);
+                            }
+                            else if (action.compareNoCase(L"flip") == 0)
+                            {
+                                resources->flip(resource);
+                            }
                         }
                     }
 

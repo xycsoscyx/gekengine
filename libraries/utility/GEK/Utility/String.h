@@ -194,13 +194,18 @@ namespace Gek
             return transformed;
         }
 
-        std::vector<BaseString<ELEMENT>> split(ELEMENT delimiter) const
+        std::vector<BaseString<ELEMENT>> split(ELEMENT delimiter, bool clearSpaces = true) const
         {
             BaseString current;
             std::vector<BaseString> tokens;
             std::basic_stringstream<ELEMENT, TRAITS, ALLOCATOR> stream(c_str());
             while (std::getline(stream, current, delimiter))
             {
+                if (clearSpaces)
+                {
+                    current.trim();
+                }
+
                 tokens.push_back(current);
             };
 

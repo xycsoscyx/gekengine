@@ -1578,8 +1578,45 @@ namespace Gek
                 GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create buffer unordered access view (error %v)", resultValue);
                 if (data == nullptr)
                 {
-                    static const float zero[4] = { 1.0f, 1.0f, 1.0f, 1.0f };
-                    d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
+                    switch (format)
+                    {
+                    case Video::Format::Byte:
+                    case Video::Format::Byte2:
+                    case Video::Format::Byte3:
+                    case Video::Format::Byte4:
+                    case Video::Format::BGRA:
+                    case Video::Format::sRGBA:
+                    case Video::Format::Short:
+                    case Video::Format::Short2:
+                    case Video::Format::Short4:
+                    case Video::Format::Int:
+                    case Video::Format::Int2:
+                    case Video::Format::Int3:
+                    case Video::Format::Int4:
+                    case Video::Format::Half:
+                    case Video::Format::Half2:
+                    case Video::Format::Half3:
+                    case Video::Format::Half4:
+                        if (true)
+                        {
+                            static const uint32_t zero[4] = { 0, 0, 0, 0 };
+                            d3dDeviceContext->ClearUnorderedAccessViewUint(d3dUnorderedAccessView.p, zero);
+                        }
+
+                        break;
+
+                    case Video::Format::Float:
+                    case Video::Format::Float2:
+                    case Video::Format::Float3:
+                    case Video::Format::Float4:
+                        if (true)
+                        {
+                            static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                            d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
+                        }
+
+                        break;
+                    };
                 }
             }
 
@@ -2001,6 +2038,48 @@ namespace Gek
 
                 HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                 GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create unordered access view (error %v)", resultValue);
+                if (data == nullptr)
+                {
+                    switch (format)
+                    {
+                    case Video::Format::Byte:
+                    case Video::Format::Byte2:
+                    case Video::Format::Byte3:
+                    case Video::Format::Byte4:
+                    case Video::Format::BGRA:
+                    case Video::Format::sRGBA:
+                    case Video::Format::Short:
+                    case Video::Format::Short2:
+                    case Video::Format::Short4:
+                    case Video::Format::Int:
+                    case Video::Format::Int2:
+                    case Video::Format::Int3:
+                    case Video::Format::Int4:
+                    case Video::Format::Half:
+                    case Video::Format::Half2:
+                    case Video::Format::Half3:
+                    case Video::Format::Half4:
+                        if (true)
+                        {
+                            static const uint32_t zero[4] = { 0, 0, 0, 0 };
+                            d3dDeviceContext->ClearUnorderedAccessViewUint(d3dUnorderedAccessView.p, zero);
+                        }
+
+                        break;
+
+                    case Video::Format::Float:
+                    case Video::Format::Float2:
+                    case Video::Format::Float3:
+                    case Video::Format::Float4:
+                        if (true)
+                        {
+                            static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+                            d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
+                        }
+
+                        break;
+                    };
+                }
             }
 
             if (flags & Video::TextureFlags::RenderTarget)

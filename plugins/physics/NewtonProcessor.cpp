@@ -217,13 +217,7 @@ namespace Gek
             NewtonWorld *newtonWorld = NewtonBodyGetWorld(body0);
             NewtonProcessor *processorBase = static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld));
             NewtonProcessorImplementation *processor = dynamic_cast<NewtonProcessorImplementation *>(processorBase);
-            processor->onContactFriction(contactJoint, frameTime, threadHandle);
-        }
 
-        void onContactFriction(const NewtonJoint* contactJoint, float frameTime, int threadHandle)
-        {
-            const NewtonBody* const body0 = NewtonJointGetBody0(contactJoint);
-            const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
             NewtonEntity *newtonEntity0 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body0));
             NewtonEntity *newtonEntity1 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body1));
             Entity *entity0 = (newtonEntity0 ? newtonEntity0->getEntity() : nullptr);
@@ -236,12 +230,12 @@ namespace Gek
 
                 Math::Float3 position, normal;
                 NewtonMaterialGetContactPositionAndNormal(newtonMaterial, body0, position.data, normal.data);
-                uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : getStaticSceneSurface(position, normal));
-                uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : getStaticSceneSurface(position, normal));
-                const Surface &surface0 = getSurface(surfaceIndex0);
-                const Surface &surface1 = getSurface(surfaceIndex1);
+                uint32_t surfaceIndex0 = (newtonEntity0 ? newtonEntity0->getSurface(position, normal) : processor->getStaticSceneSurface(position, normal));
+                uint32_t surfaceIndex1 = (newtonEntity1 ? newtonEntity1->getSurface(position, normal) : processor->getStaticSceneSurface(position, normal));
+                const Surface &surface0 = processor->getSurface(surfaceIndex0);
+                const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                ObservableMixin::sendEvent(Event(std::bind(&NewtonObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
+                processor->ObservableMixin::sendEvent(Event(std::bind(&NewtonObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
                 if (surface0.ghost || surface1.ghost)
                 {
                     NewtonContactJointRemoveContact(contactJoint, newtonContact);
@@ -297,10 +291,6 @@ namespace Gek
             }
 
             onFree();
-        }
-
-        void onLoadSucceeded(HRESULT resultValue)
-        {
         }
 
         void onFree(void)

@@ -4,7 +4,7 @@ namespace Math
     static const float Tau = (2.0 * Pi);
     static const float ReciprocalPi = rcp(Pi);
     static const float InversePi = (1.0 - Pi);
-    static const float Epsilon = 1e-4;
+    static const float Epsilon = 0.00001;
 };
 
 namespace Global
