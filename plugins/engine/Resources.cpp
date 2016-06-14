@@ -14,7 +14,6 @@
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Camera.h"
 #include "GEK\Components\Light.h"
 #include "GEK\Components\Color.h"
 #include "GEK\Context\ContextUser.h"

@@ -4,8 +4,8 @@
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Entity.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Spin.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include <map>
@@ -13,6 +13,38 @@
 
 namespace Gek
 {
+    struct SpinComponent
+    {
+        SpinComponent(void)
+        {
+        }
+
+        void save(Population::ComponentDefinition &componentData) const
+        {
+        }
+
+        void load(const Population::ComponentDefinition &componentData)
+        {
+        }
+    };
+
+    class SpinImplementation
+        : public ContextRegistration<SpinImplementation>
+        , public ComponentMixin<SpinComponent>
+    {
+    public:
+        SpinImplementation(Context *context)
+            : ContextRegistration(context)
+        {
+        }
+
+        // Component
+        const wchar_t * const getName(void) const
+        {
+            return L"spin";
+        }
+    };
+
     class SpinProcessorImplementation
         : public ContextRegistration<SpinProcessorImplementation, EngineContext *>
         , public PopulationObserver
@@ -83,5 +115,6 @@ namespace Gek
         }
     };
 
+    GEK_REGISTER_CONTEXT_USER(SpinImplementation);
     GEK_REGISTER_CONTEXT_USER(SpinProcessorImplementation);
 }; // namespace Gek

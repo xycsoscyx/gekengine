@@ -164,12 +164,10 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="CameraProcessor.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Light.cpp" />
-    <ClCompile Include="Spin.cpp" />
     <ClCompile Include="SpinProcessor.cpp" />
     <ClCompile Include="Transform.cpp" />
   </ItemGroup>
@@ -177,10 +175,8 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Components\Camera.h" />
     <ClInclude Include="GEK\Components\Color.h" />
     <ClInclude Include="GEK\Components\Light.h" />
-    <ClInclude Include="GEK\Components\Spin.h" />
     <ClInclude Include="GEK\Components\Transform.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

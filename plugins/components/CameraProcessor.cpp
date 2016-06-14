@@ -4,8 +4,8 @@
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Entity.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Camera.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include <map>
@@ -13,6 +13,51 @@
 
 namespace Gek
 {
+    struct FirstPersonCameraComponent
+    {
+        float fieldOfView;
+        float minimumDistance;
+        float maximumDistance;
+
+        FirstPersonCameraComponent(void)
+            : fieldOfView(Math::convertDegreesToRadians(90.0f))
+            , minimumDistance(1.0f)
+            , maximumDistance(100.0f)
+        {
+        }
+
+        void save(Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, L"field_of_view", fieldOfView);
+            saveParameter(componentData, L"minimum_distance", minimumDistance);
+            saveParameter(componentData, L"maximum_distance", maximumDistance);
+        }
+
+        void load(const Population::ComponentDefinition &componentData)
+        {
+            loadParameter(componentData, L"field_of_view", fieldOfView);
+            loadParameter(componentData, L"minimum_distance", minimumDistance);
+            loadParameter(componentData, L"maximum_distance", maximumDistance);
+        }
+    };
+
+    class FirstPersonCameraImplementation
+        : public ContextRegistration<FirstPersonCameraImplementation>
+        , public ComponentMixin<FirstPersonCameraComponent>
+    {
+    public:
+        FirstPersonCameraImplementation(Context *context)
+            : ContextRegistration(context)
+        {
+        }
+
+        // Component
+        const wchar_t * const getName(void) const
+        {
+            return L"first_person_camera";
+        }
+    };
+
     class CameraProcessorImplementation
         : public ContextRegistration<CameraProcessorImplementation, EngineContext *>
         , public PopulationObserver
@@ -92,5 +137,6 @@ namespace Gek
         }
     };
 
+    GEK_REGISTER_CONTEXT_USER(FirstPersonCameraImplementation);
     GEK_REGISTER_CONTEXT_USER(CameraProcessorImplementation);
 }; // namespace Gek

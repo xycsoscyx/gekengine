@@ -3,7 +3,6 @@
 namespace Gek
 {
     GEK_DECLARE_CONTEXT_USER(FirstPersonCameraImplementation);
-    GEK_DECLARE_CONTEXT_USER(ThirdPersonCameraImplementation);
     GEK_DECLARE_CONTEXT_USER(CameraProcessorImplementation);
     GEK_DECLARE_CONTEXT_USER(ColorImplementation);
     GEK_DECLARE_CONTEXT_USER(PointLightImplementation);
@@ -15,8 +14,6 @@ namespace Gek
 
     GEK_CONTEXT_BEGIN(System);
         GEK_CONTEXT_ADD_CLASS(FirstPersonCamera, FirstPersonCameraImplementation);
-            GEK_CONTEXT_ADD_TYPE(ComponentType);
-        GEK_CONTEXT_ADD_CLASS(ThirdPersonCamera, ThirdPersonCameraImplementation);
             GEK_CONTEXT_ADD_TYPE(ComponentType);
         GEK_CONTEXT_ADD_CLASS(CameraProcessor, CameraProcessorImplementation);
             GEK_CONTEXT_ADD_TYPE(ProcessorType);

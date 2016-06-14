@@ -13,7 +13,6 @@
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Camera.h"
 #include "GEK\Shapes\Sphere.h"
 #include <set>
 #include <ppl.h>
