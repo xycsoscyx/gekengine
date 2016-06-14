@@ -18,9 +18,9 @@ namespace Gek
 
     void ShapeComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, value);
-        loadParameter(componentData, L"parameters", parameters);
-        loadParameter(componentData, L"skin", skin);
+        value = loadParameter<String>(componentData, nullptr);
+        parameters = loadParameter<String>(componentData, L"parameters");
+        skin = loadParameter<String>(componentData, L"skin");
     }
 
     class ShapeImplementation

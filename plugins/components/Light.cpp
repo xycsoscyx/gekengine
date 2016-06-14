@@ -2,6 +2,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Math\Common.h"
 
 namespace Gek
 {
@@ -17,8 +18,8 @@ namespace Gek
 
     void PointLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, L"range", range);
-        loadParameter(componentData, L"radius", radius);
+        range = loadParameter(componentData, L"range", 10.0f);
+        radius = loadParameter(componentData, L"radius", 0.1f);
     }
 
     SpotLightComponent::SpotLightComponent(void)
@@ -29,16 +30,16 @@ namespace Gek
     {
         saveParameter(componentData, L"range", range);
         saveParameter(componentData, L"radius", radius);
-        saveParameter(componentData, L"inner_angle", innerAngle);
-        saveParameter(componentData, L"outer_angle", outerAngle);
+        saveParameter(componentData, L"inner_angle", Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
+        saveParameter(componentData, L"outer_angle", Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
     }
 
     void SpotLightComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, L"range", range);
-        loadParameter(componentData, L"radius", radius);
-        loadParameter(componentData, L"inner_angle", innerAngle);
-        loadParameter(componentData, L"outer_angle", outerAngle);
+        range = loadParameter(componentData, L"range", 10.0f);
+        radius = loadParameter(componentData, L"radius", 0.1f);
+        innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 45.0f)) * 0.5f);
+        outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 90.0f)) * 0.5f);
     }
 
     DirectionalLightComponent::DirectionalLightComponent(void)

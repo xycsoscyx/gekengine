@@ -16,7 +16,7 @@ namespace Gek
 
     void ColorComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, value);
+        value = loadParameter(componentData, nullptr, Math::Color::White);
     }
 
     class ColorImplementation

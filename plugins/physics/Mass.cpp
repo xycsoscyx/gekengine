@@ -7,7 +7,6 @@
 namespace Gek
 {
     MassComponent::MassComponent(void)
-        : value(0.0f)
     {
     }
 
@@ -18,7 +17,7 @@ namespace Gek
 
     void MassComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, value);
+        value = loadParameter(componentData, nullptr, 0.0f);
     }
 
     class MassImplementation

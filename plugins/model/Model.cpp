@@ -17,8 +17,8 @@ namespace Gek
 
     void ModelComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, value);
-        loadParameter(componentData, L"skin", skin);
+        value = loadParameter<String>(componentData, nullptr);
+        skin = loadParameter<String>(componentData, L"skin");
     }
 
     class ModelImplementation

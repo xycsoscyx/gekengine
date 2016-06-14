@@ -99,8 +99,8 @@ namespace Gek
 
     void RigidBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, shape);
-        loadParameter(componentData, L"surface", surface);
+        shape = loadParameter<String>(componentData, nullptr);
+        surface = loadParameter<String>(componentData, L"surface");
     }
 
     class RigidBodyImplementation

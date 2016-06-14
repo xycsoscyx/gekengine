@@ -20,20 +20,22 @@ namespace Gek
     }
 
     template <typename TYPE>
-    void loadParameter(const Population::ComponentDefinition &componentData, const wchar_t *name, TYPE &value)
+    TYPE loadParameter(const Population::ComponentDefinition &componentData, const wchar_t *name, const TYPE &defaultValue = TYPE())
     {
         if (name)
         {
             auto iterator = componentData.find(name);
             if (iterator != componentData.end())
             {
-                value = Evaluator::get<TYPE>((*iterator).second);
+                return Evaluator::get<TYPE>((*iterator).second);
             }
         }
-        else if(!componentData.value.empty())
+        else if (!componentData.value.empty())
         {
-            value = Evaluator::get<TYPE>(componentData.value);
+            return Evaluator::get<TYPE>(componentData.value);
         }
+
+        return defaultValue;
     }
 
     template <class DATA>

@@ -6,9 +6,6 @@
 namespace Gek
 {
     TransformComponent::TransformComponent(void)
-        : position(0.0f, 0.0f, 0.0f)
-        , rotation(0.0f, 0.0f, 0.0f, 1.0f)
-        , scale(1.0f, 1.0f, 1.0f)
     {
     }
 
@@ -21,9 +18,9 @@ namespace Gek
 
     void TransformComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, L"position", position);
-        loadParameter(componentData, L"rotation", rotation);
-        loadParameter(componentData, L"scale", scale);
+        position = loadParameter(componentData, L"position", Math::Float3::Zero);
+        rotation = loadParameter(componentData, L"rotation", Math::Quaternion::Identity);
+        scale = loadParameter(componentData, L"scale", Math::Float3::One);
     }
 
     class TransformImplementation

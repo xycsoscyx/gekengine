@@ -6,8 +6,6 @@
 namespace Gek
 {
     ParticlesComponent::ParticlesComponent(void)
-        : density(200)
-        , size(1.0f)
     {
     }
 
@@ -22,11 +20,11 @@ namespace Gek
 
     void ParticlesComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, material);
-        loadParameter(componentData, L"density", density);
-        loadParameter(componentData, L"color_map", colorMap);
-        loadParameter(componentData, L"life_expectancy", lifeExpectancy);
-        loadParameter(componentData, L"size", size);
+        material = loadParameter<String>(componentData, nullptr);
+        density = loadParameter(componentData, L"density", 100);
+        colorMap = loadParameter<String>(componentData, L"color_map");
+        lifeExpectancy = loadParameter(componentData, L"life_expectancy", 1.0f);
+        size = loadParameter(componentData, L"size", 1.0f);
     }
 
     class ParticlesImplementation

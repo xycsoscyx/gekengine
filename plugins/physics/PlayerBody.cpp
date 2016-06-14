@@ -875,10 +875,6 @@ namespace Gek
     }
 
     PlayerBodyComponent::PlayerBodyComponent(void)
-        : height(6.0f)
-        , outerRadius(1.5f)
-        , innerRadius(0.5f)
-        , stairStep(1.5f)
     {
     }
 
@@ -892,10 +888,10 @@ namespace Gek
 
     void PlayerBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, L"height", height);
-        loadParameter(componentData, L"outer_radius", outerRadius);
-        loadParameter(componentData, L"inner_radius", innerRadius);
-        loadParameter(componentData, L"stair_step", stairStep);
+        height = loadParameter(componentData, L"height", 6.0f);
+        outerRadius = loadParameter(componentData, L"outer_radius", 1.5f);
+        innerRadius = loadParameter(componentData, L"inner_radius", 0.5f);
+        stairStep = loadParameter(componentData, L"stair_step", 1.5f);
     }
 
     class PlayerBodyImplementation

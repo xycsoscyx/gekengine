@@ -17,7 +17,7 @@ namespace Gek
 
     void StaticBodyComponent::load(const Population::ComponentDefinition &componentData)
     {
-        loadParameter(componentData, nullptr, shape);
+        shape = loadParameter<String>(componentData, nullptr);
     }
 
     class StaticBodyImplementation

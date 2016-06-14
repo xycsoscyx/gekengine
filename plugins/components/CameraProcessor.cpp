@@ -20,24 +20,21 @@ namespace Gek
         float maximumDistance;
 
         FirstPersonCameraComponent(void)
-            : fieldOfView(Math::convertDegreesToRadians(90.0f))
-            , minimumDistance(1.0f)
-            , maximumDistance(100.0f)
         {
         }
 
         void save(Population::ComponentDefinition &componentData) const
         {
-            saveParameter(componentData, L"field_of_view", fieldOfView);
+            saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
             saveParameter(componentData, L"minimum_distance", minimumDistance);
             saveParameter(componentData, L"maximum_distance", maximumDistance);
         }
 
         void load(const Population::ComponentDefinition &componentData)
         {
-            loadParameter(componentData, L"field_of_view", fieldOfView);
-            loadParameter(componentData, L"minimum_distance", minimumDistance);
-            loadParameter(componentData, L"maximum_distance", maximumDistance);
+            fieldOfView = Math::convertDegreesToRadians(loadParameter(componentData, L"field_of_view", 90.0f));
+            minimumDistance = loadParameter(componentData, L"minimum_distance", 1.0f);
+            maximumDistance = loadParameter(componentData, L"maximum_distance", 100.0f);
         }
     };
 
