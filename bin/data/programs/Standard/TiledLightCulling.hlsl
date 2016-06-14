@@ -3,22 +3,29 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-static const uint   tileVolume = (tileSize * tileSize);
-groupshared uint    tileMinimumDepth;
-groupshared uint    tileMaximumDepth;
-groupshared uint    tileLightCount;
-groupshared uint    tileLightList[Lighting::lightsPerPass];
-groupshared float4  tileFrustum[6];
+namespace Defines
+{
+    static const uint   tileVolume = (Defines::tileSize * Defines::tileSize);
+};
 
-[numthreads(uint(tileSize), uint(tileSize), 1)]
+namespace Shared
+{
+    groupshared uint    tileMinimumDepth;
+    groupshared uint    tileMaximumDepth;
+    groupshared uint    tileLightCount;
+    groupshared uint    tileLightList[Lighting::lightsPerPass];
+    groupshared float4  tileFrustum[6];
+};
+
+[numthreads(uint(Defines::tileSize), uint(Defines::tileSize), 1)]
 void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePosition : SV_GroupID, uint pixelIndex : SV_GroupIndex)
 {
     [branch]
     if (pixelIndex == 0)
     {
-        tileLightCount = 0;
-        tileMinimumDepth = 0x7F7FFFFF;
-        tileMaximumDepth = 0;
+        Shared::tileLightCount = 0;
+        Shared::tileMinimumDepth = 0x7F7FFFFF;
+        Shared::tileMaximumDepth = 0;
     }
 
     float viewDepth = Resources::depthBuffer[screenPosition.xy] * Camera::maximumDistance;
@@ -26,8 +33,8 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
 
     GroupMemoryBarrierWithGroupSync();
 
-    InterlockedMin(tileMinimumDepth, viewDepthInteger);
-    InterlockedMax(tileMaximumDepth, viewDepthInteger);
+    InterlockedMin(Shared::tileMinimumDepth, viewDepthInteger);
+    InterlockedMax(Shared::tileMaximumDepth, viewDepthInteger);
 
     GroupMemoryBarrierWithGroupSync();
 
@@ -35,25 +42,25 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     if (pixelIndex == 0)
     {
         float2 depthBufferSize = Shader::targetSize;
-        float2 tileScale = (depthBufferSize * rcp(float(2.0 * tileSize)));
+        float2 tileScale = (depthBufferSize * rcp(float(2.0 * Defines::tileSize)));
         float2 tileBias = tileScale - float2(tilePosition.xy);
 
         float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0, tileBias.x);
         float3 frustumYPlane = float3(0.0, -Camera::projectionMatrix[1][1] * tileScale.y, tileBias.y);
         float3 frustumZPlane = float3(0.0, 0.0, 1.0);
 
-        tileFrustum[0] = float4(normalize(frustumZPlane - frustumXPlane), 0.0),
-        tileFrustum[1] = float4(normalize(frustumZPlane + frustumXPlane), 0.0),
-        tileFrustum[2] = float4(normalize(frustumZPlane - frustumYPlane), 0.0),
-        tileFrustum[3] = float4(normalize(frustumZPlane + frustumYPlane), 0.0),
-        tileFrustum[4] = float4(0.0, 0.0, 1.0, -asfloat(tileMinimumDepth));
-        tileFrustum[5] = float4(0.0, 0.0, -1.0, asfloat(tileMaximumDepth));
+        Shared::tileFrustum[0] = float4(normalize(frustumZPlane - frustumXPlane), 0.0),
+        Shared::tileFrustum[1] = float4(normalize(frustumZPlane + frustumXPlane), 0.0),
+        Shared::tileFrustum[2] = float4(normalize(frustumZPlane - frustumYPlane), 0.0),
+        Shared::tileFrustum[3] = float4(normalize(frustumZPlane + frustumYPlane), 0.0),
+        Shared::tileFrustum[4] = float4(0.0, 0.0, 1.0, -asfloat(Shared::tileMinimumDepth));
+        Shared::tileFrustum[5] = float4(0.0, 0.0, -1.0, asfloat(Shared::tileMaximumDepth));
     }
 
     GroupMemoryBarrierWithGroupSync();
 
     [loop]
-    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += tileVolume)
+    for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += Defines::tileVolume)
     {
         Lighting::Data light = Lighting::list[lightIndex];
         bool isLightVisible = true;
@@ -63,7 +70,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         case Lighting::Type::Point:
             for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
             {
-                float lightDistance = dot(tileFrustum[planeIndex], float4(light.position, 1.0));
+                float lightDistance = dot(Shared::tileFrustum[planeIndex], float4(light.position, 1.0));
                 isLightVisible = (isLightVisible && (lightDistance >= -light.range));
             }
 
@@ -81,8 +88,8 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         if (isLightVisible)
         {
             uint tileIndex;
-            InterlockedAdd(tileLightCount, 1, tileIndex);
-            tileLightList[tileIndex] = lightIndex;
+            InterlockedAdd(Shared::tileLightCount, 1, tileIndex);
+            Shared::tileLightList[tileIndex] = lightIndex;
         }
     }
 
@@ -91,15 +98,15 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     [branch]
     if (pixelIndex < Lighting::lightsPerPass)
     {
-        uint tileIndex = ((tilePosition.y * dispatchWidth) + tilePosition.x);
+        uint tileIndex = ((tilePosition.y * Defines::dispatchWidth) + tilePosition.x);
         uint bufferIndex = ((tileIndex * (Lighting::lightsPerPass + 1)) + pixelIndex);
 
         [branch]
         if (pixelIndex == 0)
         {
-            UnorderedAccess::tileIndexList[bufferIndex] = tileLightCount;
+            UnorderedAccess::tileIndexList[bufferIndex] = Shared::tileLightCount;
         }
 
-        UnorderedAccess::tileIndexList[bufferIndex + 1] = tileLightList[pixelIndex];
+        UnorderedAccess::tileIndexList[bufferIndex + 1] = Shared::tileLightList[pixelIndex];
     }
 }

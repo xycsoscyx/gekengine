@@ -1000,28 +1000,28 @@ namespace Gek
                             "                                                       \r\n", unorderedAccessData);
                     }
 
-                    XmlNodePtr programNode = passNode->firstChildElement(L"program");
-                    auto addDefine = [&engineData](const String &name, const String &value) -> void
+                    StringUTF8 defineData;
+                    auto addDefine = [&defineData](const String &name, const String &value) -> void
                     {
                         if (value.find(L"float2") != std::string::npos)
                         {
-                            engineData.format("static const float2 %v = %v;\r\n", name, value);
+                            defineData.format("static const float2 %v = %v;\r\n", name, value);
                         }
                         else if (value.find(L"float3") != std::string::npos)
                         {
-                            engineData.format("static const float3 %v = %v;\r\n", name, value);
+                            defineData.format("static const float3 %v = %v;\r\n", name, value);
                         }
                         else if (value.find(L"float4") != std::string::npos)
                         {
-                            engineData.format("static const float4 %v = %v;\r\n", name, value);
+                            defineData.format("static const float4 %v = %v;\r\n", name, value);
                         }
                         else if (value.find(L".") == std::string::npos)
                         {
-                            engineData.format("static const int %v = %v;\r\n", name, value);
+                            defineData.format("static const int %v = %v;\r\n", name, value);
                         }
                         else
                         {
-                            engineData.format("static const float %v = %v;\r\n", name, value);
+                            defineData.format("static const float %v = %v;\r\n", name, value);
                         }
                     };
 
@@ -1043,6 +1043,17 @@ namespace Gek
                         addDefine(name, value);
                     }
 
+                    if (!defineData.empty())
+                    {
+                        engineData.format(
+                            "namespace Defines                                         \r\n" \
+                            "{                                                         \r\n" \
+                            "%v" \
+                            "};                                                        \r\n" \
+                            "                                                          \r\n", defineData);
+                    }
+
+                    XmlNodePtr programNode = passNode->firstChildElement(L"program");
                     XmlNodePtr computeNode = programNode->firstChildElement(L"compute");
                     if (computeNode->isValid())
                     {

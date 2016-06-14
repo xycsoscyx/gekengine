@@ -24,7 +24,6 @@
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
         <gaussianSigma>1.3</gaussianSigma>
         <guassianRadius integer="true">7</guassianRadius>
-        <toneMappingThreshold>1.0</toneMappingThreshold>
     </defines>
 
     <depth>D32</depth>

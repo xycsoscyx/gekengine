@@ -3,12 +3,15 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-static const float inverseShadowTapCount = rcp(shadowTapCount);
+namespace Defines
+{
+    static const float inverseShadowTapCount = rcp(Defines::shadowTapCount);
+};
 
 float2 getTapLocation(float tap, float randomAngle)
 {
-    float alpha = ((tap + 0.5) * inverseShadowTapCount);
-    float angle = ((alpha * (shadowSpiralCount * Math::Tau)) + randomAngle);
+    float alpha = ((tap + 0.5) * Defines::inverseShadowTapCount);
+    float angle = ((alpha * (Defines::shadowSpiralCount * Math::Tau)) + randomAngle);
     return (alpha * float2(cos(angle), sin(angle)));
 }
 
@@ -21,12 +24,12 @@ float getShadowFactor(InputPixel inputPixel)
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
     float randomAngle = rand(inputPixel.position.xy);
-    float sampleRadius = (shadowRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x));
+    float sampleRadius = (Defines::shadowRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x));
 
     float totalOcclusion = 0.0;
 
     [unroll]
-    for (int tap = 0; tap < shadowTapCount; tap++)
+    for (int tap = 0; tap < Defines::shadowTapCount; tap++)
     {
         float2 tapOffset = getTapLocation(tap, randomAngle);
         float2 tapCoord = (inputPixel.texCoord + (tapOffset * sampleRadius));
@@ -39,7 +42,7 @@ float getShadowFactor(InputPixel inputPixel)
         totalOcclusion += (max(0.0, (deltaAngle + (surfaceDepth * 0.001))) / (deltaMagnitude + 0.1));
     }
 
-    totalOcclusion *= (Math::Tau * shadowRadius * shadowStrength / shadowTapCount);
+    totalOcclusion *= (Math::Tau * Defines::shadowRadius * Defines::shadowStrength / Defines::shadowTapCount);
     totalOcclusion = saturate(1.0 - totalOcclusion);
     return totalOcclusion;
 }
@@ -50,6 +53,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     OutputPixel output;
     output.ambientOcclusionBuffer = getShadowFactor(inputPixel);
-    output.luminanceBuffer = log2(getLuminance(pixelColor));
+    output.luminanceBuffer = log(getLuminance(pixelColor));
     return output;
 }
