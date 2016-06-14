@@ -250,8 +250,8 @@ namespace Gek
                 , direction(direction)
                 , range(light.range)
                 , radius(light.radius)
-                , innerAngle(light.innerAngle)
-                , outerAngle(light.outerAngle)
+                , innerAngle(std::cos(Math::convertDegreesToRadians(light.innerAngle * 0.5f)))
+                , outerAngle(std::cos(Math::convertDegreesToRadians(light.outerAngle * 0.5f)))
                 , color(color.value)
             {
             }

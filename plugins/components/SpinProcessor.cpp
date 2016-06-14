@@ -5,7 +5,7 @@
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Components\Camera.h"
+#include "GEK\Components\Spin.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include <map>
@@ -13,8 +13,8 @@
 
 namespace Gek
 {
-    class CameraProcessorImplementation
-        : public ContextRegistration<CameraProcessorImplementation, EngineContext *>
+    class SpinProcessorImplementation
+        : public ContextRegistration<SpinProcessorImplementation, EngineContext *>
         , public PopulationObserver
         , public Processor
     {
@@ -23,20 +23,18 @@ namespace Gek
     private:
         Population *population;
         uint32_t updateHandle;
-        Render *render;
 
     public:
-        CameraProcessorImplementation(Context *context, EngineContext *engine)
+        SpinProcessorImplementation(Context *context, EngineContext *engine)
             : ContextRegistration(context)
             , population(engine->getPopulation())
             , updateHandle(0)
-            , render(engine->getRender())
         {
             population->addObserver((PopulationObserver *)this);
-            updateHandle = population->setUpdatePriority(this, 90);
+            updateHandle = population->setUpdatePriority(this, 0);
         }
 
-        ~CameraProcessorImplementation(void)
+        ~SpinProcessorImplementation(void)
         {
             if (population)
             {
@@ -75,22 +73,15 @@ namespace Gek
         void onUpdate(uint32_t handle, bool isIdle)
         {
             GEK_REQUIRE(population);
-            GEK_REQUIRE(render);
 
-            population->listEntities<TransformComponent, FirstPersonCameraComponent>([&](Entity *entity) -> void
+            Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
+            population->listEntities<TransformComponent, SpinComponent>([&](Entity *entity) -> void
             {
-                auto &data = entity->getComponent<FirstPersonCameraComponent>();
-
-                float displayAspectRatio = (1280.0f / 800.0f);
-                float fieldOfView = Math::convertDegreesToRadians(data.fieldOfView);
-
-                Math::Float4x4 projectionMatrix;
-                projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, data.minimumDistance, data.maximumDistance);
-
-                render->render(entity, projectionMatrix, data.minimumDistance, data.maximumDistance);
+                auto &transform = entity->getComponent<TransformComponent>();
+                transform.rotation *= rotation;
             });
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(CameraProcessorImplementation);
+    GEK_REGISTER_CONTEXT_USER(SpinProcessorImplementation);
 }; // namespace Gek

@@ -10,6 +10,8 @@ namespace Gek
     GEK_DECLARE_CONTEXT_USER(SpotLightImplementation);
     GEK_DECLARE_CONTEXT_USER(DirectionalLightImplementation);
     GEK_DECLARE_CONTEXT_USER(TransformImplementation);
+    GEK_DECLARE_CONTEXT_USER(SpinImplementation);
+    GEK_DECLARE_CONTEXT_USER(SpinProcessorImplementation);
 
     GEK_CONTEXT_BEGIN(System);
         GEK_CONTEXT_ADD_CLASS(FirstPersonCamera, FirstPersonCameraImplementation);
@@ -28,5 +30,9 @@ namespace Gek
             GEK_CONTEXT_ADD_TYPE(ComponentType);
         GEK_CONTEXT_ADD_CLASS(Transform, TransformImplementation);
             GEK_CONTEXT_ADD_TYPE(ComponentType);
+        GEK_CONTEXT_ADD_CLASS(Spin, SpinImplementation);
+            GEK_CONTEXT_ADD_TYPE(ComponentType);
+        GEK_CONTEXT_ADD_CLASS(SpinProcessor, SpinProcessorImplementation);
+            GEK_CONTEXT_ADD_TYPE(ProcessorType);
     GEK_CONTEXT_END();
 }; // namespace Gek

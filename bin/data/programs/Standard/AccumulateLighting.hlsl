@@ -11,44 +11,78 @@ struct LightProperties
     float3 direction;
 };
 
-LightProperties getPointLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+namespace Punctual
 {
-    LightProperties lightProperties;
+    LightProperties getPointLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    {
+        LightProperties lightProperties;
 
-    float3 lightRay = (light.position.xyz - surfacePosition);
-    float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
-    float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
-    lightProperties.direction = normalize(closestPoint);
-    float lightDistance = length(closestPoint);
+        float3 lightRay = (light.position.xyz - surfacePosition);
+        float lightDistance = length(lightRay);
+        lightProperties.direction = (lightRay / lightDistance);
 
-    float distanceOverRange = (lightDistance / light.range);
-    float distanceOverRange2 = sqr(distanceOverRange);
-    float distanceOverRange4 = sqr(distanceOverRange2);
-    lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-    lightProperties.falloff /= (sqr(lightDistance) + 1.0);
+        float distanceOverRange = (lightDistance / light.range);
+        float distanceOverRange2 = sqr(distanceOverRange);
+        float distanceOverRange4 = sqr(distanceOverRange2);
+        lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
+        lightProperties.falloff /= (sqr(lightDistance) + 1.0);
 
-    return lightProperties;
-}
+        return lightProperties;
+    }
 
-LightProperties getSpotLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    LightProperties getSpotLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    {
+        LightProperties lightProperties;
+
+        float3 lightRay = (light.position.xyz - surfacePosition);
+        float lightDistance = length(lightRay);
+        lightProperties.direction = (lightRay / lightDistance);
+
+        float distanceOverRange = (lightDistance / light.range);
+        float distanceOverRange2 = sqr(distanceOverRange);
+        float distanceOverRange4 = sqr(distanceOverRange2);
+        lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
+        lightProperties.falloff /= (sqr(lightDistance) + 1.0);
+
+        float rho = saturate(dot(light.direction, -lightProperties.direction));
+        float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), 2.0);
+        lightProperties.falloff *= spotFactor;
+
+        return lightProperties;
+    }
+
+    LightProperties getDirectionalLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    {
+        LightProperties lightProperties;
+
+        lightProperties.direction = light.direction;
+        lightProperties.falloff = 1.0;
+
+        return lightProperties;
+    }
+};
+
+namespace Area
 {
-    LightProperties lightProperties;
+    LightProperties getPointLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    {
+        LightProperties lightProperties;
 
-    lightProperties.direction = 0.0;
-    lightProperties.falloff = 0.0;
+        float3 lightRay = (light.position.xyz - surfacePosition);
+        float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
+        float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
+        lightProperties.direction = normalize(closestPoint);
+        float lightDistance = length(closestPoint);
 
-    return lightProperties;
-}
+        float distanceOverRange = (lightDistance / light.range);
+        float distanceOverRange2 = sqr(distanceOverRange);
+        float distanceOverRange4 = sqr(distanceOverRange2);
+        lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
+        lightProperties.falloff /= (sqr(lightDistance) + 1.0);
 
-LightProperties getDirectionalLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
-{
-    LightProperties lightProperties;
-
-    lightProperties.direction = light.direction;
-    lightProperties.falloff = 1.0;
-
-    return lightProperties;
-}
+        return lightProperties;
+    }
+};
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
@@ -83,15 +117,15 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         switch (light.type)
         {
         case Lighting::Type::Point:
-            lightProperties = getPointLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+            lightProperties = Area::getPointLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
             break;
 
         case Lighting::Type::Spot:
-            lightProperties = getSpotLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+            lightProperties = Punctual::getSpotLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
             break;
 
         case Lighting::Type::Directional:
-            lightProperties = getDirectionalLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+            lightProperties = Punctual::getDirectionalLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
             break;
         };
 
