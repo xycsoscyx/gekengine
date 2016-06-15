@@ -234,6 +234,7 @@ namespace Gek
             float radius;
             float innerAngle;
             float outerAngle;
+            float falloff;
 
             LightData(const PointLightComponent &light, const ColorComponent &color, const Math::Float3 &position)
                 : type(LightType::Point)
@@ -250,8 +251,9 @@ namespace Gek
                 , direction(direction)
                 , range(light.range)
                 , radius(light.radius)
-                , innerAngle(std::cos(Math::convertDegreesToRadians(light.innerAngle * 0.5f)))
-                , outerAngle(std::cos(Math::convertDegreesToRadians(light.outerAngle * 0.5f)))
+                , innerAngle(light.innerAngle)
+                , outerAngle(light.outerAngle)
+                , falloff(light.falloff)
                 , color(color.value)
             {
             }
@@ -662,6 +664,7 @@ namespace Gek
                         "        float  radius;                                     \r\n" \
                         "        float  innerAngle;                                 \r\n" \
                         "        float  outerAngle;                                 \r\n" \
+                        "        float  falloff;                                    \r\n" \
                         "    };                                                     \r\n" \
                         "                                                           \r\n" \
                         "    cbuffer Parameters : register(b3)                      \r\n" \

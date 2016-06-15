@@ -124,10 +124,9 @@ namespace Gek
                 auto &data = entity->getComponent<FirstPersonCameraComponent>();
 
                 float displayAspectRatio = (1280.0f / 800.0f);
-                float fieldOfView = Math::convertDegreesToRadians(data.fieldOfView);
 
                 Math::Float4x4 projectionMatrix;
-                projectionMatrix.setPerspective(fieldOfView, displayAspectRatio, data.minimumDistance, data.maximumDistance);
+                projectionMatrix.setPerspective(data.fieldOfView, displayAspectRatio, data.minimumDistance, data.maximumDistance);
 
                 render->render(entity, projectionMatrix, data.minimumDistance, data.maximumDistance);
             });

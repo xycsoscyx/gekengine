@@ -20,6 +20,7 @@ namespace Gek
         float radius;
         float innerAngle;
         float outerAngle;
+        float falloff;
 
         SpotLightComponent(void);
         void save(Population::ComponentDefinition &componentData) const;

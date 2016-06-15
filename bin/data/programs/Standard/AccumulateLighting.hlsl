@@ -45,7 +45,7 @@ namespace Punctual
         lightProperties.falloff /= (sqr(lightDistance) + 1.0);
 
         float rho = saturate(dot(light.direction, -lightProperties.direction));
-        float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), 2.0);
+        float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
         lightProperties.falloff *= spotFactor;
 
         return lightProperties;

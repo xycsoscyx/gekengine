@@ -32,14 +32,16 @@ namespace Gek
         saveParameter(componentData, L"radius", radius);
         saveParameter(componentData, L"inner_angle", Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
         saveParameter(componentData, L"outer_angle", Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
+        saveParameter(componentData, L"falloff", falloff);
     }
 
     void SpotLightComponent::load(const Population::ComponentDefinition &componentData)
     {
         range = loadParameter(componentData, L"range", 10.0f);
         radius = loadParameter(componentData, L"radius", 0.1f);
-        innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 45.0f)) * 0.5f);
-        outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 90.0f)) * 0.5f);
+        innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 45.0f) * 0.5f));
+        outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 90.0f) * 0.5f));
+        falloff = loadParameter(componentData, L"falloff", 2.0f);
     }
 
     DirectionalLightComponent::DirectionalLightComponent(void)
