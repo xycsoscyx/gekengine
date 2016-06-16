@@ -20,6 +20,23 @@
 
 namespace Gek
 {
+    template <typename... ARGUMENTS, typename CLASS>
+    void checkCache(std::tuple<ARGUMENTS...> &cache, CLASS *classObject, void (CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
+    {
+        auto tuple = std::tie(arguments...);
+        if (tuple != cache)
+        {
+            cache = std::move(tuple);
+            (classObject->*function)(arguments...);
+        }
+    }
+
+    template <typename CLASS, typename RETURN, typename... ARGUMENTS>
+    struct FunctionTraits<RETURN(CLASS::*)(ARGUMENTS...) const>
+    {
+        typedef std::tuple<decltype(ARGUMENTS...)> arguments;
+    };
+
     class RenderPipelineImplementation
         : public RenderPipeline
     {
@@ -33,29 +50,34 @@ namespace Gek
         }
 
         // RenderPipeline
+        FunctionTraits<RenderPipelineImplementation::setProgram>::arguments setProgramCache;
         void setProgram(VideoObject *program)
         {
-            videoPipeline->setProgram(program);
+            checkCache(setProgramCache, videoPipeline, &VideoPipeline::setProgram, program);
         }
 
+        std::tuple<VideoBuffer *, uint32_t> setConstantBufferCache;
         void setConstantBuffer(VideoBuffer *constantBuffer, uint32_t stage)
         {
-            videoPipeline->setConstantBuffer(constantBuffer, stage);
+            checkCache(setConstantBufferCache, videoPipeline, &VideoPipeline::setConstantBuffer, constantBuffer, stage);
         }
 
+        std::tuple<VideoObject *, uint32_t> setSamplerStateCache;
         void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
-            videoPipeline->setSamplerState(samplerState, stage);
+            checkCache(setSamplerStateCache, videoPipeline, &VideoPipeline::setSamplerState, samplerState, stage);
         }
 
+        std::tuple<VideoObject *, uint32_t> setResourceCache;
         void setResource(VideoObject *resource, uint32_t stage)
         {
-            videoPipeline->setResource(resource, stage);
+            checkCache(setResourceCache, videoPipeline, &VideoPipeline::setResource, resource, stage);
         }
 
+        std::tuple<VideoObject *, uint32_t> setUnorderedAccessCache;
         void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
-            videoPipeline->setUnorderedAccess(unorderedAccess, stage);
+            checkCache(setUnorderedAccessCache, videoPipeline, &VideoPipeline::setUnorderedAccess, unorderedAccess, stage);
         }
     };
 
