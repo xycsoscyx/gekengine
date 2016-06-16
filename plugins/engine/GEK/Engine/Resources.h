@@ -170,7 +170,7 @@ namespace Gek
         virtual void setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle) = 0;
         virtual void setRenderTargets(RenderContext *renderContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer) = 0;
         virtual void clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle  , const Math::Color &color) = 0;
-        virtual void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear) = 0;
+        virtual void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
         virtual void setBackBuffer(RenderContext *renderContext, ResourceHandle *depthBuffer) = 0;
     };
 }; // namespace Gek

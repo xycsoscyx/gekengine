@@ -467,8 +467,8 @@ namespace Gek
         virtual void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
         virtual void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
 
-        virtual void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear) = 0;
-        virtual void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear) = 0;
+        virtual void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &clearColor) = 0;
+        virtual void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
         virtual void setRenderTargets(VideoTarget **renderTargetList, uint32_t renderTargetCount, VideoObject *depthBuffer) = 0;
 
         virtual void setRenderState(VideoObject *renderState) = 0;

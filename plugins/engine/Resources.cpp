@@ -977,7 +977,7 @@ namespace Gek
 
         void generateMipMaps(RenderContext *renderContext, ResourceHandle resourceHandle)
         {
-            renderContext->getContext()->generateMipMaps(dynamic_cast<VideoTexture *>(resourceManager.getResource(resourceHandle)));
+            renderContext->generateMipMaps(dynamic_cast<VideoTexture *>(resourceManager.getResource(resourceHandle)));
         }
 
         void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
@@ -987,57 +987,57 @@ namespace Gek
 
         void setRenderState(RenderContext *renderContext, RenderStateHandle renderStateHandle)
         {
-            renderContext->getContext()->setRenderState(renderStateManager.getResource(renderStateHandle));
+            renderContext->setRenderState(renderStateManager.getResource(renderStateHandle));
         }
 
         void setDepthState(RenderContext *renderContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
         {
-            renderContext->getContext()->setDepthState(depthStateManager.getResource(depthStateHandle), stencilReference);
+            renderContext->setDepthState(depthStateManager.getResource(depthStateHandle), stencilReference);
         }
 
         void setBlendState(RenderContext *renderContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask)
         {
-            renderContext->getContext()->setBlendState(blendStateManager.getResource(blendStateHandle), blendFactor, sampleMask);
+            renderContext->setBlendState(blendStateManager.getResource(blendStateHandle), blendFactor, sampleMask);
         }
 
         void setResource(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
-            renderPipeline->getPipeline()->setResource(resourceManager.getResource(resourceHandle), stage);
+            renderPipeline->setResource(resourceManager.getResource(resourceHandle), stage);
         }
 
         void setUnorderedAccess(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
-            renderPipeline->getPipeline()->setUnorderedAccess(resourceManager.getResource(resourceHandle, true), stage);
+            renderPipeline->setUnorderedAccess(resourceManager.getResource(resourceHandle, true), stage);
         }
 
         void setConstantBuffer(RenderPipeline *renderPipeline, ResourceHandle resourceHandle, uint32_t stage)
         {
-            renderPipeline->getPipeline()->setConstantBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), stage);
+            renderPipeline->setConstantBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), stage);
         }
 
         void setProgram(RenderPipeline *renderPipeline, ProgramHandle programHandle)
         {
-            renderPipeline->getPipeline()->setProgram(programManager.getResource(programHandle));
+            renderPipeline->setProgram(programManager.getResource(programHandle));
         }
 
         void setVertexBuffer(RenderContext *renderContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset)
         {
-            renderContext->getContext()->setVertexBuffer(slot, dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
+            renderContext->setVertexBuffer(slot, dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
         void setIndexBuffer(RenderContext *renderContext, ResourceHandle resourceHandle, uint32_t offset)
         {
-            renderContext->getContext()->setIndexBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
+            renderContext->setIndexBuffer(dynamic_cast<VideoBuffer *>(resourceManager.getResource(resourceHandle)), offset);
         }
 
         void clearRenderTarget(RenderContext *renderContext, ResourceHandle resourceHandle, const Math::Color &color)
         {
-            renderContext->getContext()->clearRenderTarget(dynamic_cast<VideoTarget *>(resourceManager.getResource(resourceHandle, true)), color);
+            renderContext->clearRenderTarget(dynamic_cast<VideoTarget *>(resourceManager.getResource(resourceHandle, true)), color);
         }
 
-        void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear)
+        void clearDepthStencilTarget(RenderContext *renderContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
         {
-            renderContext->getContext()->clearDepthStencilTarget(resourceManager.getResource(depthBuffer), flags, depthClear, stencilClear);
+            renderContext->clearDepthStencilTarget(resourceManager.getResource(depthBuffer), flags, clearDepth, clearStencil);
         }
 
         Video::ViewPort viewPortList[8];
@@ -1053,8 +1053,8 @@ namespace Gek
                 }
             }
 
-            renderContext->getContext()->setRenderTargets(renderTargetList, renderTargetHandleCount, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
-            renderContext->getContext()->setViewports(viewPortList, renderTargetHandleCount);
+            renderContext->setRenderTargets(renderTargetList, renderTargetHandleCount, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
+            renderContext->setViewports(viewPortList, renderTargetHandleCount);
         }
 
         void setBackBuffer(RenderContext *renderContext, ResourceHandle *depthBuffer)
@@ -1066,8 +1066,8 @@ namespace Gek
                 viewPortList[0] = renderTargetList[0]->getViewPort();
             }
 
-            renderContext->getContext()->setRenderTargets(renderTargetList, 1, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
-            renderContext->getContext()->setViewports(viewPortList, 1);
+            renderContext->setRenderTargets(renderTargetList, 1, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
+            renderContext->setViewports(viewPortList, 1);
         }
     };
 

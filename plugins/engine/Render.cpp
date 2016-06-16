@@ -33,7 +33,30 @@ namespace Gek
         }
 
         // RenderPipeline
-        VideoPipeline * const getPipeline(void) { return videoPipeline; };
+        void setProgram(VideoObject *program)
+        {
+            videoPipeline->setProgram(program);
+        }
+
+        void setConstantBuffer(VideoBuffer *constantBuffer, uint32_t stage)
+        {
+            videoPipeline->setConstantBuffer(constantBuffer, stage);
+        }
+
+        void setSamplerState(VideoObject *samplerState, uint32_t stage)
+        {
+            videoPipeline->setSamplerState(samplerState, stage);
+        }
+
+        void setResource(VideoObject *resource, uint32_t stage)
+        {
+            videoPipeline->setResource(resource, stage);
+        }
+
+        void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
+        {
+            videoPipeline->setUnorderedAccess(unorderedAccess, stage);
+        }
     };
 
     class RenderContextImplementation
@@ -57,11 +80,100 @@ namespace Gek
         }
 
         // RenderContext
-        VideoContext * const getContext(void) { return videoContext; };
         RenderPipeline * const computePipeline(void) { return computePipelineHandler.get(); };
         RenderPipeline * const vertexPipeline(void) { return vertexPipelineHandler.get(); };
         RenderPipeline * const geometryPipeline(void) { return geometryPipelineHandler.get(); };
         RenderPipeline * const pixelPipeline(void) { return pixelPipelineHandler.get(); };
+
+        void generateMipMaps(VideoTexture *texture)
+        {
+            videoContext->generateMipMaps(texture);
+        }
+
+        void clearResources(void)
+        {
+            videoContext->clearResources();
+        }
+
+        void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount)
+        {
+            videoContext->setViewports(viewPortList, viewPortCount);
+        }
+
+        void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
+        {
+            videoContext->setScissorRect(rectangleList, rectangleCount);
+        }
+
+        void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &clearColor)
+        {
+            videoContext->clearRenderTarget(renderTarget, clearColor);
+        }
+
+        void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
+        {
+            videoContext->clearDepthStencilTarget(depthBuffer, flags, clearDepth, clearStencil);
+        }
+
+        void setRenderTargets(VideoTarget **renderTargetList, uint32_t renderTargetCount, VideoObject *depthBuffer)
+        {
+            videoContext->setRenderTargets(renderTargetList, renderTargetCount, depthBuffer);
+        }
+
+        void setRenderState(VideoObject *renderState)
+        {
+            videoContext->setRenderState(renderState);
+        }
+
+        void setDepthState(VideoObject *depthState, uint32_t stencilReference)
+        {
+            videoContext->setDepthState(depthState, stencilReference);
+        }
+
+        void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, uint32_t sampleMask)
+        {
+            videoContext->setBlendState(blendState, blendFactor, sampleMask);
+        }
+
+        void setVertexBuffer(uint32_t slot, VideoBuffer *vertexBuffer, uint32_t offset)
+        {
+            videoContext->setVertexBuffer(slot, vertexBuffer, offset);
+        }
+
+        void setIndexBuffer(VideoBuffer *indexBuffer, uint32_t offset)
+        {
+            videoContext->setIndexBuffer(indexBuffer, offset);
+        }
+
+        void setPrimitiveType(Video::PrimitiveType type)
+        {
+            videoContext->setPrimitiveType(type);
+        }
+
+        void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
+        {
+            videoContext->drawPrimitive(vertexCount, firstVertex);
+        }
+
+        void drawInstancedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
+        {
+            videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
+        }
+
+        void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+        {
+            videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
+        }
+
+        void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
+        {
+            videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
+        }
+
+        void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
+        {
+            videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+        }
     };
 
     class RenderImplementation

@@ -333,7 +333,7 @@ namespace Gek
             resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
             resources->setVertexBuffer(renderContext, 0, subModel.vertexBuffer, 0);
             resources->setIndexBuffer(renderContext, subModel.indexBuffer, 0);
-            renderContext->getContext()->drawIndexedPrimitive(subModel.indexCount, 0, 0);
+            renderContext->drawIndexedPrimitive(subModel.indexCount, 0, 0);
         }
 
         void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)

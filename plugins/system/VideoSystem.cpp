@@ -960,16 +960,16 @@ namespace Gek
             d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
         }
 
-        void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &colorClear)
+        void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &clearColor)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(renderTarget);
 
             auto renderTargetView = dynamic_cast<TargetViewTexture *>(renderTarget);
-            d3dDeviceContext->ClearRenderTargetView(dynamic_cast<RenderTargetView *>(renderTarget)->d3dRenderTargetView, colorClear.data);
+            d3dDeviceContext->ClearRenderTargetView(dynamic_cast<RenderTargetView *>(renderTarget)->d3dRenderTargetView, clearColor.data);
         }
 
-        void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float depthClear, uint32_t stencilClear)
+        void clearDepthStencilTarget(VideoObject *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
         {
             GEK_REQUIRE(d3dDeviceContext);
             GEK_REQUIRE(depthBuffer);
@@ -977,7 +977,7 @@ namespace Gek
             d3dDeviceContext->ClearDepthStencilView(dynamic_cast<DepthTexture *>(depthBuffer)->d3dDepthStencilView,
                 ((flags & Video::ClearMask::Depth ? D3D11_CLEAR_DEPTH : 0) |
                  (flags & Video::ClearMask::Stencil ? D3D11_CLEAR_STENCIL : 0)),
-                  depthClear, stencilClear);
+                  clearDepth, clearStencil);
         }
 
         ID3D11RenderTargetView *d3dRenderTargetViewList[8];

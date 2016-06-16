@@ -305,7 +305,7 @@ namespace Gek
                     if (bufferCopied >= ParticleBufferCount)
                     {
                         resources->unmapBuffer(particleBuffer);
-                        renderContext->getContext()->drawPrimitive((ParticleBufferCount * 6), 0);
+                        renderContext->drawPrimitive((ParticleBufferCount * 6), 0);
                         resources->mapBuffer(particleBuffer, (void **)&bufferData);
                         bufferCopied = 0;
                     }
@@ -315,7 +315,7 @@ namespace Gek
             resources->unmapBuffer(particleBuffer);
             if (bufferCopied > 0)
             {
-                renderContext->getContext()->drawPrimitive((bufferCopied * 6), 0);
+                renderContext->drawPrimitive((bufferCopied * 6), 0);
             }
         }
 

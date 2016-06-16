@@ -597,7 +597,7 @@ namespace Gek
             resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
             resources->setVertexBuffer(renderContext, 0, shape->vertexBuffer, 0);
             resources->setIndexBuffer(renderContext, shape->indexBuffer, 0);
-            renderContext->getContext()->drawIndexedPrimitive(shape->indexCount, 0, 0);
+            renderContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
         }
 
         void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)

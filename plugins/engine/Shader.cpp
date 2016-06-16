@@ -1180,14 +1180,14 @@ namespace Gek
         ResourceHandle renderTargetList[8];
         Pass::Mode preparePass(RenderContext *renderContext, BlockData &block, PassData &pass)
         {
-            renderContext->getContext()->clearResources();
+            renderContext->clearResources();
 
             uint32_t stage = 0;
             RenderPipeline *renderPipeline = (pass.mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
             if (block.lighting)
             {
-                renderPipeline->getPipeline()->setResource(lightDataBuffer.get(), 0);
-                renderPipeline->getPipeline()->setConstantBuffer(lightConstantBuffer.get(), 3);
+                renderPipeline->setResource(lightDataBuffer.get(), 0);
+                renderPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
                 stage = 1;
             }
 
@@ -1300,13 +1300,13 @@ namespace Gek
             };
 
             video->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
-            renderContext->getContext()->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-            renderContext->getContext()->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-            renderContext->getContext()->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-            renderContext->getContext()->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+            renderContext->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
             if (pass.mode == Pass::Mode::Compute)
             {
-                renderContext->getContext()->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                renderContext->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
             }
 
             return pass.mode;
