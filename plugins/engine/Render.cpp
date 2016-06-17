@@ -18,6 +18,9 @@
 #include <ppl.h>
 #include <concurrent_vector.h>
 
+// Function Traits
+// http://stackoverflow.com/questions/2562320/specializing-a-template-on-a-lambda-in-c0x
+
 namespace Gek
 {
     template <typename... ARGUMENTS, typename CLASS>
@@ -31,10 +34,29 @@ namespace Gek
         }
     }
 
-    template <typename CLASS, typename RETURN, typename... ARGUMENTS>
-    struct FunctionTraits<RETURN(CLASS::*)(ARGUMENTS...) const>
+    template <typename CLASS>
+    struct FunctionCache
     {
-        typedef std::tuple<decltype(ARGUMENTS...)> arguments;
+        typedef typename FunctionCache<decltype(&CLASS::operator())>::ReturnType ReturnType;
+        typedef typename FunctionCache<decltype(&CLASS::operator())>::ArgumentTypes ArgumentTypes;
+    };
+
+    template <typename RETURN, typename CLASS, typename... ARGUMENTS>
+    struct FunctionCache<RETURN(CLASS::*)(ARGUMENTS...)>
+    {
+        typedef RETURN ReturnType;
+        typedef std::tuple<ARGUMENTS...> ArgumentTypes;
+
+        ArgumentTypes cache;
+        void operator()(CLASS *classObject, RETURN(CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
+        {
+            auto current = std::tie(arguments...);
+            if (current != cache)
+            {
+                cache = current;
+                (classObject->*function)(arguments...);
+            }
+        }
     };
 
     class RenderPipelineImplementation
@@ -50,34 +72,34 @@ namespace Gek
         }
 
         // RenderPipeline
-        FunctionTraits<RenderPipelineImplementation::setProgram>::arguments setProgramCache;
+        FunctionCache<decltype(&VideoPipeline::setProgram)> setProgramCache;
         void setProgram(VideoObject *program)
         {
-            checkCache(setProgramCache, videoPipeline, &VideoPipeline::setProgram, program);
+            setProgramCache(videoPipeline, &VideoPipeline::setProgram, program);
         }
 
-        std::tuple<VideoBuffer *, uint32_t> setConstantBufferCache;
+        FunctionCache<decltype(&VideoPipeline::setConstantBuffer)> setConstantBufferCache;
         void setConstantBuffer(VideoBuffer *constantBuffer, uint32_t stage)
         {
-            checkCache(setConstantBufferCache, videoPipeline, &VideoPipeline::setConstantBuffer, constantBuffer, stage);
+            setConstantBufferCache(videoPipeline, &VideoPipeline::setConstantBuffer, constantBuffer, stage);
         }
 
-        std::tuple<VideoObject *, uint32_t> setSamplerStateCache;
+        FunctionCache<decltype(&VideoPipeline::setSamplerState)> setSamplerStateCache;
         void setSamplerState(VideoObject *samplerState, uint32_t stage)
         {
-            checkCache(setSamplerStateCache, videoPipeline, &VideoPipeline::setSamplerState, samplerState, stage);
+            setSamplerStateCache(videoPipeline, &VideoPipeline::setSamplerState, samplerState, stage);
         }
 
-        std::tuple<VideoObject *, uint32_t> setResourceCache;
+        FunctionCache<decltype(&VideoPipeline::setResource)> setResourceCache;
         void setResource(VideoObject *resource, uint32_t stage)
         {
-            checkCache(setResourceCache, videoPipeline, &VideoPipeline::setResource, resource, stage);
+            setResourceCache(videoPipeline, &VideoPipeline::setResource, resource, stage);
         }
 
-        std::tuple<VideoObject *, uint32_t> setUnorderedAccessCache;
+        FunctionCache<decltype(&VideoPipeline::setUnorderedAccess)> setUnorderedAccessCache;
         void setUnorderedAccess(VideoObject *unorderedAccess, uint32_t stage)
         {
-            checkCache(setUnorderedAccessCache, videoPipeline, &VideoPipeline::setUnorderedAccess, unorderedAccess, stage);
+            setUnorderedAccessCache(videoPipeline, &VideoPipeline::setUnorderedAccess, unorderedAccess, stage);
         }
     };
 
@@ -142,34 +164,41 @@ namespace Gek
             videoContext->setRenderTargets(renderTargetList, renderTargetCount, depthBuffer);
         }
 
+        FunctionCache<decltype(&VideoContext::setRenderState)> setRenderStateCache;
         void setRenderState(VideoObject *renderState)
         {
-            videoContext->setRenderState(renderState);
+            setRenderStateCache(videoContext, &VideoContext::setRenderState, renderState);
         }
 
+        FunctionCache<decltype(&VideoContext::setDepthState)> setDepthStateCache;
         void setDepthState(VideoObject *depthState, uint32_t stencilReference)
         {
-            videoContext->setDepthState(depthState, stencilReference);
+            setDepthStateCache(videoContext, &VideoContext::setDepthState, depthState, stencilReference);
         }
 
+        //FunctionCache<decltype(&VideoContext::setBlendState)> setBlendStateCache;
         void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, uint32_t sampleMask)
         {
             videoContext->setBlendState(blendState, blendFactor, sampleMask);
+            //setBlendStateCache(videoContext, &VideoContext::setBlendState, blendState, blendFactor, sampleMask);
         }
 
+        FunctionCache<decltype(&VideoContext::setVertexBuffer)> setVertexBufferCache;
         void setVertexBuffer(uint32_t slot, VideoBuffer *vertexBuffer, uint32_t offset)
         {
-            videoContext->setVertexBuffer(slot, vertexBuffer, offset);
+            setVertexBufferCache(videoContext, &VideoContext::setVertexBuffer, slot, vertexBuffer, offset);
         }
 
+        FunctionCache<decltype(&VideoContext::setIndexBuffer)> setIndexBufferCache;
         void setIndexBuffer(VideoBuffer *indexBuffer, uint32_t offset)
         {
-            videoContext->setIndexBuffer(indexBuffer, offset);
+            setIndexBufferCache(videoContext, &VideoContext::setIndexBuffer, indexBuffer, offset);
         }
 
+        FunctionCache<decltype(&VideoContext::setPrimitiveType)> setPrimitiveTypeCache;
         void setPrimitiveType(Video::PrimitiveType type)
         {
-            videoContext->setPrimitiveType(type);
+            setPrimitiveTypeCache(videoContext, &VideoContext::setPrimitiveType, type);
         }
 
         void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)

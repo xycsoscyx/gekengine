@@ -219,17 +219,17 @@ namespace Gek
             enum
             {
                 Point = 0,
-                Spot = 1,
-                Directional = 2,
+                Directional = 1,
+                Spot = 2,
             };
         };
 
         struct LightData
         {
             uint32_t type;
+            Math::Float3 color;
             Math::Float3 position;
             Math::Float3 direction;
-            Math::Float3 color;
             float range;
             float radius;
             float innerAngle;
@@ -245,6 +245,13 @@ namespace Gek
             {
             }
 
+            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float3 &direction)
+                : type(LightType::Directional)
+                , direction(direction)
+                , color(color.value)
+            {
+            }
+
             LightData(const SpotLightComponent &light, const ColorComponent &color, const Math::Float3 &position, const Math::Float3 &direction)
                 : type(LightType::Spot)
                 , position(position)
@@ -254,13 +261,6 @@ namespace Gek
                 , innerAngle(light.innerAngle)
                 , outerAngle(light.outerAngle)
                 , falloff(light.falloff)
-                , color(color.value)
-            {
-            }
-
-            LightData(const DirectionalLightComponent &light, const ColorComponent &color, const Math::Float3 &direction)
-                : type(LightType::Directional)
-                , direction(direction)
                 , color(color.value)
             {
             }
@@ -647,30 +647,30 @@ namespace Gek
                     lightingData.format(
                         "namespace Lighting                                         \r\n" \
                         "{                                                          \r\n" \
+                        "    cbuffer Parameters : register(b3)                      \r\n" \
+                        "    {                                                      \r\n" \
+                        "        uint count;                                        \r\n" \
+                        "        uint padding[3];                                   \r\n" \
+                        "    };                                                     \r\n" \
+                        "                                                           \r\n" \
                         "    namespace Type                                         \r\n" \
                         "    {                                                      \r\n" \
                         "        static const uint Point = 0;                       \r\n" \
-                        "        static const uint Spot = 1;                        \r\n" \
-                        "        static const uint Directional = 2;                 \r\n" \
+                        "        static const uint Directional = 1;                 \r\n" \
+                        "        static const uint Spot = 2;                        \r\n" \
                         "    };                                                     \r\n" \
                         "                                                           \r\n" \
                         "    struct Data                                            \r\n" \
                         "    {                                                      \r\n" \
                         "        uint   type;                                       \r\n" \
+                        "        float3 color;                                      \r\n" \
                         "        float3 position;                                   \r\n" \
                         "        float3 direction;                                  \r\n" \
-                        "        float3 color;                                      \r\n" \
                         "        float  range;                                      \r\n" \
                         "        float  radius;                                     \r\n" \
                         "        float  innerAngle;                                 \r\n" \
                         "        float  outerAngle;                                 \r\n" \
                         "        float  falloff;                                    \r\n" \
-                        "    };                                                     \r\n" \
-                        "                                                           \r\n" \
-                        "    cbuffer Parameters : register(b3)                      \r\n" \
-                        "    {                                                      \r\n" \
-                        "        uint    count;                                     \r\n" \
-                        "        uint3   padding;                                   \r\n" \
                         "    };                                                     \r\n" \
                         "                                                           \r\n" \
                         "    StructuredBuffer<Data> list : register(t0);            \r\n" \
@@ -1460,6 +1460,14 @@ namespace Gek
                 }
             });
 
+            population->listEntities<TransformComponent, DirectionalLightComponent, ColorComponent>([&](Entity *entity) -> void
+            {
+                auto &transform = entity->getComponent<TransformComponent>();
+                auto &light = entity->getComponent<DirectionalLightComponent>();
+                auto &color = entity->getComponent<ColorComponent>();
+                lightData.push_back(LightData(light, color, (viewMatrix * transform.rotation.getMatrix().nz)));
+            });
+
             population->listEntities<TransformComponent, SpotLightComponent, ColorComponent>([&](Entity *entity) -> void
             {
                 auto &transform = entity->getComponent<TransformComponent>();
@@ -1469,14 +1477,6 @@ namespace Gek
                     auto &color = entity->getComponent<ColorComponent>();
                     lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz, (viewMatrix * transform.rotation.getMatrix().nz)));
                 }
-            });
-
-            population->listEntities<TransformComponent, DirectionalLightComponent, ColorComponent>([&](Entity *entity) -> void
-            {
-                auto &transform = entity->getComponent<TransformComponent>();
-                auto &light = entity->getComponent<DirectionalLightComponent>();
-                auto &color = entity->getComponent<ColorComponent>();
-                lightData.push_back(LightData(light, color, (viewMatrix * transform.rotation.getMatrix().nz)));
             });
 
             lightList.assign(lightData.begin(), lightData.end());

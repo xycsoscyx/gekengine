@@ -30,6 +30,16 @@ namespace Punctual
         return lightProperties;
     }
 
+    LightProperties getDirectionalLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    {
+        LightProperties lightProperties;
+
+        lightProperties.direction = light.direction;
+        lightProperties.falloff = 1.0;
+
+        return lightProperties;
+    }
+
     LightProperties getSpotLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
     {
         LightProperties lightProperties;
@@ -44,19 +54,18 @@ namespace Punctual
         lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
         lightProperties.falloff /= (sqr(lightDistance) + 1.0);
 
-        float rho = saturate(dot(light.direction, -lightProperties.direction));
+        float rho = dot(light.direction, -lightProperties.direction);
+        if (light.radius < 0.0)
+        {
+            rho = abs(rho);
+        }
+        else
+        {
+            rho = saturate(rho);
+        }
+
         float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
         lightProperties.falloff *= spotFactor;
-
-        return lightProperties;
-    }
-
-    LightProperties getDirectionalLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
-    {
-        LightProperties lightProperties;
-
-        lightProperties.direction = light.direction;
-        lightProperties.falloff = 1.0;
 
         return lightProperties;
     }
@@ -120,12 +129,12 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
             lightProperties = Area::getPointLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
             break;
 
-        case Lighting::Type::Spot:
-            lightProperties = Punctual::getSpotLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-            break;
-
         case Lighting::Type::Directional:
             lightProperties = Punctual::getDirectionalLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+            break;
+
+        case Lighting::Type::Spot:
+            lightProperties = Punctual::getSpotLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
             break;
         };
 
