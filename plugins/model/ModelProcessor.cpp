@@ -92,10 +92,12 @@ namespace Gek
         {
             Model &model;
             MaterialHandle skin;
+            ColorComponent *color;
 
-            EntityData(Model &model, MaterialHandle skin)
+            EntityData(Model &model, MaterialHandle skin, ColorComponent *color)
                 : model(model)
                 , skin(skin)
+                , color(color)
             {
             }
         };
@@ -307,7 +309,14 @@ namespace Gek
                     skinMaterial = resources->loadMaterial(modelComponent.skin);
                 }
 
-                entityDataList.insert(std::make_pair(entity, EntityData(pair.first->second, skinMaterial)));
+                ColorComponent *color = nullptr;
+                if (entity->hasComponent<ColorComponent>())
+                {
+                    color = &entity->getComponent<ColorComponent>();
+                }
+
+                EntityData entityData(pair.first->second, skinMaterial, color);
+                entityDataList.insert(std::make_pair(entity, entityData));
             }
         }
 
@@ -355,14 +364,9 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    Math::Color color(1.0f);
-                    if (entity->hasComponent<ColorComponent>())
-                    {
-                        color = entity->getComponent<ColorComponent>().value;
-                    }
-
                     auto &materialList = visibleList[&data];
                     auto &instanceList = materialList[dataEntity.second.skin];
+                    Math::Color color(dataEntity.second.color ? dataEntity.second.color->value : Math::Color::White);
                     instanceList.push_back(InstanceData((matrix * *viewMatrix), color, transformComponent.scale));
                 }
             });

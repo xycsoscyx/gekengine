@@ -1,7 +1,26 @@
 <?xml version="1.0"?>
 <world name="Demo">
-    <population>
+    <prefabs>
+        <basic_spot_light>
+            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
+            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
+            <color>(random(0,2), random(0,2), random(0,2))</color>
+            <spin />
+        </basic_spot_light>
 
+        <basic_point_light>
+            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
+            <color>(random(0,2), random(0,2), random(0,2))</color>
+        </basic_point_light>
+
+        <basic_particles>
+            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
+            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(250,500)">Flames</particles>
+        </basic_particles>
+    </prefabs>
+
+    <population>
         <entity>
             <transform position="(0, 0, 0)" rotation="(0, 0, 0)" />
             <model>sponza</model>
@@ -418,638 +437,307 @@
             <shape skin="debug//r9_m9" parameters="1">sphere</shape>
         </entity>
 
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-            <spin />
-        </entity>
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
+        <entity prefab="basic_spot_light" />
 
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)"/>
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(0,2), random(0,2), random(0,2))</color>
-        </entity>
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
+        <entity prefab="basic_point_light" />
 
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-        <entity>
-            <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" size="(0.25, 0.75)" density="random(100,300)">Flames</particles>
-        </entity>
-
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
+        <entity prefab="basic_particles" />
     </population>
 </world>

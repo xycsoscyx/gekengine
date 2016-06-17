@@ -54,7 +54,9 @@ namespace Gek
 
         void *getComponent(const std::type_index &type)
         {
-            return componentList[type].second;
+            auto component = componentList.find(type);
+            GEK_CHECK_CONDITION(component == componentList.end(), Exception, "Entity doesn't contain component %v", type.name());
+            return (*component).second.second;
         }
     };
 
@@ -205,18 +207,51 @@ namespace Gek
 
                     XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", fileName)));
                     XmlNodePtr worldNode = document->getRoot(L"world");
-                    XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
-                    XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
-                    while (entityNode->isValid())
+
+                    std::unordered_map<String, EntityDefinition> prefabList;
+                    XmlNodePtr prefabsNode = worldNode->firstChildElement(L"prefabs");
+                    XmlNodePtr prefabNode = prefabsNode->firstChildElement();
+                    while (prefabNode->isValid())
                     {
-                        EntityDefinition entityDefinition;
-                        XmlNodePtr componentNode = entityNode->firstChildElement();
+                        EntityDefinition &entityDefinition = prefabList[prefabNode->getType()];
+                        XmlNodePtr componentNode = prefabNode->firstChildElement();
                         while (componentNode->isValid())
                         {
                             auto &componentData = entityDefinition[componentNode->getType()];
                             componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
                             {
                                 componentData.unordered_map::insert(std::make_pair(name, value));
+                            });
+
+                            if (!componentNode->getText().empty())
+                            {
+                                componentData.value = componentNode->getText();
+                            }
+
+                            componentNode = componentNode->nextSiblingElement();
+                        };
+
+                        prefabNode = prefabNode->nextSiblingElement();
+                    };
+
+                    XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
+                    XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
+                    while (entityNode->isValid())
+                    {
+                        EntityDefinition entityDefinition;
+                        auto prefab = prefabList.find(entityNode->getAttribute(L"prefab"));
+                        if (prefab != prefabList.end())
+                        {
+                            entityDefinition = (*prefab).second;
+                        }
+
+                        XmlNodePtr componentNode = entityNode->firstChildElement();
+                        while (componentNode->isValid())
+                        {
+                            auto &componentData = entityDefinition[componentNode->getType()];
+                            componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                            {
+                                componentData[name] = value;
                             });
 
                             if (!componentNode->getText().empty())
