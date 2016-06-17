@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Engine\Population.h"
+#include "GEK\Shapes\Frustum.h"
 
 namespace Gek
 {

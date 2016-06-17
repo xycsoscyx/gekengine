@@ -17,6 +17,60 @@ namespace Shared
     groupshared float4  tileFrustum[6];
 };
 
+namespace Light
+{
+    bool isPointVisible(Lighting::Data light)
+    {
+        bool isLightVisible = true;
+
+        [loop]
+        for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
+        {
+            float lightDistance = dot(Shared::tileFrustum[planeIndex], float4(light.position, 1.0));
+            isLightVisible = (isLightVisible && (lightDistance >= -light.range));
+        }
+
+        return isLightVisible;
+    }
+
+    bool isDirectionalVisible(Lighting::Data light)
+    {
+        return true;
+    }
+
+    bool isSpotVisible(Lighting::Data light)
+    {
+        bool isLightVisible = true;
+
+        [loop]
+        for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
+        {
+            float lightDistance = dot(Shared::tileFrustum[planeIndex], float4(light.position, 1.0));
+            isLightVisible = (isLightVisible && (lightDistance >= -light.range));
+        }
+
+        return isLightVisible;
+    }
+
+    bool isVisible(Lighting::Data light)
+    {
+        [branch]
+        switch (light.type)
+        {
+        case Lighting::Type::Point:
+            return isPointVisible(light);
+
+        case Lighting::Type::Directional:
+            return isDirectionalVisible(light);
+
+        case Lighting::Type::Spot:
+            return isSpotVisible(light);
+        };
+
+        return false;
+    }
+};
+
 [numthreads(uint(Defines::tileSize), uint(Defines::tileSize), 1)]
 void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePosition : SV_GroupID, uint pixelIndex : SV_GroupIndex)
 {
@@ -63,26 +117,9 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
     for (uint lightIndex = pixelIndex; lightIndex < Lighting::count; lightIndex += Defines::tileVolume)
     {
         Lighting::Data light = Lighting::list[lightIndex];
-        bool isLightVisible = true;
-
-        switch (light.type)
-        {
-        case Lighting::Type::Point:
-        case Lighting::Type::Spot:
-            for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
-            {
-                float lightDistance = dot(Shared::tileFrustum[planeIndex], float4(light.position, 1.0));
-                isLightVisible = (isLightVisible && (lightDistance >= -light.range));
-            }
-
-            break;
-
-        case Lighting::Type::Directional:
-            break;
-        };
 
         [branch]
-        if (isLightVisible)
+        if (Light::isVisible(light))
         {
             uint tileIndex;
             InterlockedAdd(Shared::tileLightCount, 1, tileIndex);

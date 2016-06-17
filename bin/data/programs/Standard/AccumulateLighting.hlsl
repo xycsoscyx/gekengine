@@ -5,91 +5,112 @@
 
 #include "BRDF.Custom.h"
 
-struct LightProperties
+namespace Light
 {
-    float falloff;
-    float3 direction;
-};
-
-namespace Punctual
-{
-    LightProperties getPointLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    struct Properties
     {
-        LightProperties lightProperties;
+        float falloff;
+        float3 direction;
+    };
 
-        float3 lightRay = (light.position.xyz - surfacePosition);
-        float lightDistance = length(lightRay);
-        lightProperties.direction = (lightRay / lightDistance);
-
-        float distanceOverRange = (lightDistance / light.range);
-        float distanceOverRange2 = sqr(distanceOverRange);
-        float distanceOverRange4 = sqr(distanceOverRange2);
-        lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-        lightProperties.falloff /= (sqr(lightDistance) + 1.0);
-
-        return lightProperties;
-    }
-
-    LightProperties getDirectionalLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    namespace Punctual
     {
-        LightProperties lightProperties;
-
-        lightProperties.direction = light.direction;
-        lightProperties.falloff = 1.0;
-
-        return lightProperties;
-    }
-
-    LightProperties getSpotLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
-    {
-        LightProperties lightProperties;
-
-        float3 lightRay = (light.position.xyz - surfacePosition);
-        float lightDistance = length(lightRay);
-        lightProperties.direction = (lightRay / lightDistance);
-
-        float distanceOverRange = (lightDistance / light.range);
-        float distanceOverRange2 = sqr(distanceOverRange);
-        float distanceOverRange4 = sqr(distanceOverRange2);
-        lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-        lightProperties.falloff /= (sqr(lightDistance) + 1.0);
-
-        float rho = dot(light.direction, -lightProperties.direction);
-        if (light.radius < 0.0)
+        Properties getPointProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
         {
-            rho = abs(rho);
-        }
-        else
-        {
-            rho = saturate(rho);
+            Properties properties;
+
+            float3 lightRay = (light.position.xyz - surfacePosition);
+            float lightDistance = length(lightRay);
+            properties.direction = (lightRay / lightDistance);
+
+            float distanceOverRange = (lightDistance / light.range);
+            float distanceOverRange2 = sqr(distanceOverRange);
+            float distanceOverRange4 = sqr(distanceOverRange2);
+            properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
+            properties.falloff /= (sqr(lightDistance) + 1.0);
+
+            return properties;
         }
 
-        float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
-        lightProperties.falloff *= spotFactor;
+        Properties getDirectionalProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+        {
+            Properties properties;
 
-        return lightProperties;
-    }
-};
+            properties.direction = light.direction;
+            properties.falloff = 1.0;
 
-namespace Area
-{
-    LightProperties getPointLightProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+            return properties;
+        }
+
+        Properties getSpotProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+        {
+            Properties properties;
+
+            float3 lightRay = (light.position.xyz - surfacePosition);
+            float lightDistance = length(lightRay);
+            properties.direction = (lightRay / lightDistance);
+
+            float distanceOverRange = (lightDistance / light.range);
+            float distanceOverRange2 = sqr(distanceOverRange);
+            float distanceOverRange4 = sqr(distanceOverRange2);
+            properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
+            properties.falloff /= (sqr(lightDistance) + 1.0);
+
+            float rho = dot(light.direction, -properties.direction);
+            if (light.radius < 0.0)
+            {
+                rho = abs(rho);
+            }
+            else
+            {
+                rho = saturate(rho);
+            }
+
+            float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
+            properties.falloff *= spotFactor;
+
+            return properties;
+        }
+    };
+
+    namespace Area
     {
-        LightProperties lightProperties;
+        Properties getPointProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+        {
+            Properties properties;
 
-        float3 lightRay = (light.position.xyz - surfacePosition);
-        float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
-        float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
-        lightProperties.direction = normalize(closestPoint);
-        float lightDistance = length(closestPoint);
+            float3 lightRay = (light.position.xyz - surfacePosition);
+            float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
+            float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
+            properties.direction = normalize(closestPoint);
+            float lightDistance = length(closestPoint);
 
-        float distanceOverRange = (lightDistance / light.range);
-        float distanceOverRange2 = sqr(distanceOverRange);
-        float distanceOverRange4 = sqr(distanceOverRange2);
-        lightProperties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-        lightProperties.falloff /= (sqr(lightDistance) + 1.0);
+            float distanceOverRange = (lightDistance / light.range);
+            float distanceOverRange2 = sqr(distanceOverRange);
+            float distanceOverRange4 = sqr(distanceOverRange2);
+            properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
+            properties.falloff /= (sqr(lightDistance) + 1.0);
 
-        return lightProperties;
+            return properties;
+        }
+    };
+
+    Properties getProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+    {
+        [branch]
+        switch (light.type)
+        {
+        case Lighting::Type::Point:
+            return Area::getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+
+        case Lighting::Type::Directional:
+            return Punctual::getDirectionalProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+
+        case Lighting::Type::Spot:
+            return Punctual::getSpotProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+        };
+
+        return (Properties)0;
     }
 };
 
@@ -122,21 +143,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         uint lightIndex = Resources::tileIndexList[lightTileIndex];
         Lighting::Data light = Lighting::list[lightIndex];
 
-        LightProperties lightProperties;
-        switch (light.type)
-        {
-        case Lighting::Type::Point:
-            lightProperties = Area::getPointLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-            break;
-
-        case Lighting::Type::Directional:
-            lightProperties = Punctual::getDirectionalLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-            break;
-
-        case Lighting::Type::Spot:
-            lightProperties = Punctual::getSpotLightProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-            break;
-        };
+        Light::Properties lightProperties = Light::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
         float NdotL = dot(surfaceNormal, lightProperties.direction);
         float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);

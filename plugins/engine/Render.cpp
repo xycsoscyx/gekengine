@@ -23,17 +23,6 @@
 
 namespace Gek
 {
-    template <typename... ARGUMENTS, typename CLASS>
-    void checkCache(std::tuple<ARGUMENTS...> &cache, CLASS *classObject, void (CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
-    {
-        auto tuple = std::tie(arguments...);
-        if (tuple != cache)
-        {
-            cache = std::move(tuple);
-            (classObject->*function)(arguments...);
-        }
-    }
-
     template <typename CLASS>
     struct FunctionCache
     {
@@ -45,7 +34,7 @@ namespace Gek
     struct FunctionCache<RETURN(CLASS::*)(ARGUMENTS...)>
     {
         typedef RETURN ReturnType;
-        typedef std::tuple<ARGUMENTS...> ArgumentTypes;
+        typedef std::tuple<typename std::decay<ARGUMENTS>::type...> ArgumentTypes;
 
         ArgumentTypes cache;
         void operator()(CLASS *classObject, RETURN(CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
@@ -176,11 +165,10 @@ namespace Gek
             setDepthStateCache(videoContext, &VideoContext::setDepthState, depthState, stencilReference);
         }
 
-        //FunctionCache<decltype(&VideoContext::setBlendState)> setBlendStateCache;
+        FunctionCache<decltype(&VideoContext::setBlendState)> setBlendStateCache;
         void setBlendState(VideoObject *blendState, const Math::Color &blendFactor, uint32_t sampleMask)
         {
-            videoContext->setBlendState(blendState, blendFactor, sampleMask);
-            //setBlendStateCache(videoContext, &VideoContext::setBlendState, blendState, blendFactor, sampleMask);
+            setBlendStateCache(videoContext, &VideoContext::setBlendState, blendState, blendFactor, sampleMask);
         }
 
         FunctionCache<decltype(&VideoContext::setVertexBuffer)> setVertexBufferCache;
