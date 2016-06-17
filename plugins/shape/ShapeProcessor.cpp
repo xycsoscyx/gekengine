@@ -409,9 +409,9 @@ namespace Gek
         {
             Shape &shape;
             MaterialHandle skin;
-            ColorComponent *color;
+            const Math::Color &color;
 
-            EntityData(Shape &shape, MaterialHandle skin, ColorComponent *color)
+            EntityData(Shape &shape, MaterialHandle skin, const Math::Color &color)
                 : shape(shape)
                 , skin(skin)
                 , color(color)
@@ -573,10 +573,10 @@ namespace Gek
                     loadBoundingBox(pair.first->second, shapeComponent.value, shapeComponent.parameters);
                 }
 
-                ColorComponent *color = nullptr;
+                std::reference_wrapper<const Math::Color> color = Math::Color::White;
                 if (entity->hasComponent<ColorComponent>())
                 {
-                    color = &entity->getComponent<ColorComponent>();
+                    color = entity->getComponent<ColorComponent>().value;
                 }
 
                 EntityData entityData(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
@@ -630,8 +630,7 @@ namespace Gek
                 {
                     auto &materialList = visibleList[&shape];
                     auto &instanceList = materialList[dataEntity.second.skin];
-                    Math::Color color(dataEntity.second.color ? dataEntity.second.color->value : Math::Color::White);
-                    instanceList.push_back(InstanceData((matrix * *viewMatrix), color, transformComponent.scale));
+                    instanceList.push_back(InstanceData((matrix * *viewMatrix), dataEntity.second.color, transformComponent.scale));
                 }
             });
 

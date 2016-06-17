@@ -92,9 +92,9 @@ namespace Gek
         {
             Model &model;
             MaterialHandle skin;
-            ColorComponent *color;
+            const Math::Color &color;
 
-            EntityData(Model &model, MaterialHandle skin, ColorComponent *color)
+            EntityData(Model &model, MaterialHandle skin, const Math::Color &color)
                 : model(model)
                 , skin(skin)
                 , color(color)
@@ -309,10 +309,10 @@ namespace Gek
                     skinMaterial = resources->loadMaterial(modelComponent.skin);
                 }
 
-                ColorComponent *color = nullptr;
+                std::reference_wrapper<const Math::Color> color = Math::Color::White;
                 if (entity->hasComponent<ColorComponent>())
                 {
-                    color = &entity->getComponent<ColorComponent>();
+                    color = std::cref(entity->getComponent<ColorComponent>().value);
                 }
 
                 EntityData entityData(pair.first->second, skinMaterial, color);
@@ -366,8 +366,7 @@ namespace Gek
                 {
                     auto &materialList = visibleList[&data];
                     auto &instanceList = materialList[dataEntity.second.skin];
-                    Math::Color color(dataEntity.second.color ? dataEntity.second.color->value : Math::Color::White);
-                    instanceList.push_back(InstanceData((matrix * *viewMatrix), color, transformComponent.scale));
+                    instanceList.push_back(InstanceData((matrix * *viewMatrix), dataEntity.second.color, transformComponent.scale));
                 }
             });
 

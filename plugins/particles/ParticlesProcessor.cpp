@@ -64,11 +64,17 @@ namespace Gek
         struct EmitterData
             : public Shapes::AlignedBox
         {
+            const Math::Color &color;
             MaterialHandle material;
             ResourceHandle colorMap;
             std::uniform_real_distribution<float> lifeExpectancy;
             std::uniform_real_distribution<float> size;
             std::vector<ParticleData> particles;
+
+            EmitterData(const Math::Color &color)
+                : color(color)
+            {
+            }
         };
 
         struct Properties
@@ -196,7 +202,13 @@ namespace Gek
                 auto &particlesComponent = entity->getComponent<ParticlesComponent>();
                 auto &transformComponent = entity->getComponent<TransformComponent>();
 
-                auto &emitter = entityDataList[entity];
+                std::reference_wrapper<const Math::Color> color = Math::Color::White;
+                if (entity->hasComponent<ColorComponent>())
+                {
+                    color = entity->getComponent<ColorComponent>().value;
+                }
+
+                auto &emitter = entityDataList.insert(std::make_pair(entity, EmitterData(color))).first->second;
                 emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(String(L"Particles\\%v", particlesComponent.material));
                 emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), nullptr, 0);
