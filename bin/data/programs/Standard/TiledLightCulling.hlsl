@@ -21,12 +21,13 @@ namespace Light
 {
     bool isPointVisible(Lighting::Data light)
     {
+        float4 position = float4(light.position, 1.0);
         bool isLightVisible = true;
 
         [loop]
         for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
-            float lightDistance = dot(Shared::tileFrustum[planeIndex], float4(light.position, 1.0));
+            float lightDistance = dot(Shared::tileFrustum[planeIndex], position);
             isLightVisible = (isLightVisible && (lightDistance >= -light.range));
         }
 
@@ -40,13 +41,15 @@ namespace Light
 
     bool isSpotVisible(Lighting::Data light)
     {
+        float halfRange = (light.range * 0.5);
+        float4 center = float4(light.position + (light.direction * halfRange), 1.0);
         bool isLightVisible = true;
 
         [loop]
         for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
-            float lightDistance = dot(Shared::tileFrustum[planeIndex], float4(light.position, 1.0));
-            isLightVisible = (isLightVisible && (lightDistance >= -light.range));
+            float lightDistance = dot(Shared::tileFrustum[planeIndex], center);
+            isLightVisible = (isLightVisible && (lightDistance >= -halfRange));
         }
 
         return isLightVisible;

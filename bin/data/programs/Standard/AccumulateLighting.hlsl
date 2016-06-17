@@ -56,16 +56,7 @@ namespace Light
             properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
             properties.falloff /= (sqr(lightDistance) + 1.0);
 
-            float rho = dot(light.direction, -properties.direction);
-            if (light.radius < 0.0)
-            {
-                rho = abs(rho);
-            }
-            else
-            {
-                rho = saturate(rho);
-            }
-
+            float rho = saturate(dot(light.direction, -properties.direction));
             float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
             properties.falloff *= spotFactor;
 

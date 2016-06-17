@@ -1472,10 +1472,15 @@ namespace Gek
             {
                 auto &transform = entity->getComponent<TransformComponent>();
                 auto &light = entity->getComponent<SpotLightComponent>();
-                if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
+                
+                Math::Float3 direction = transform.rotation.getMatrix().nz;
+                float halfRange = (light.range * 0.5f);
+                Math::Float3 center = (transform.position + (direction * halfRange));
+
+                if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
                 {
                     auto &color = entity->getComponent<ColorComponent>();
-                    lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz, (viewMatrix * transform.rotation.getMatrix().nz)));
+                    lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz, (viewMatrix * direction)));
                 }
             });
 
