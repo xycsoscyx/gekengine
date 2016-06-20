@@ -149,6 +149,7 @@ namespace Gek
         virtual Shader * const getShader(ShaderHandle handle) const = 0;
         virtual Plugin * const getPlugin(PluginHandle handle) const = 0;
         virtual Material * const getMaterial(MaterialHandle handle) const = 0;
+        virtual VideoTexture * const getTexture(ResourceHandle handle) const = 0;
 
         virtual ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material) = 0;
         virtual std::list<ResourceHandle> getResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap) = 0;

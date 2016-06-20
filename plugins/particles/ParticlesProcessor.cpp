@@ -43,7 +43,7 @@ namespace Gek
         , public Processor
     {
     public:
-        struct ParticleData
+        struct Particle
         {
             Math::Float3 origin;
             Math::Float2 offset;
@@ -51,7 +51,7 @@ namespace Gek
             float angle, spin;
             float size;
 
-            ParticleData(void)
+            Particle(void)
                 : age(0.0f)
                 , death(0.0f)
                 , angle(0.0f)
@@ -61,7 +61,7 @@ namespace Gek
             }
         };
 
-        struct EmitterData
+        struct Emitter
             : public Shapes::AlignedBox
         {
             const Math::Color &color;
@@ -69,9 +69,9 @@ namespace Gek
             ResourceHandle colorMap;
             std::uniform_real_distribution<float> lifeExpectancy;
             std::uniform_real_distribution<float> size;
-            std::vector<ParticleData> particles;
+            std::vector<Particle> particles;
 
-            EmitterData(const Math::Color &color)
+            Emitter(const Math::Color &color)
                 : color(color)
             {
             }
@@ -123,10 +123,10 @@ namespace Gek
         ResourceHandle particleBuffer;
 
         ShuntingYard shuntingYard;
-        typedef std::unordered_map<Entity *, EmitterData> DataEntityMap;
-        DataEntityMap entityDataList;
+        typedef std::unordered_map<Entity *, Emitter> EntityEmitterMap;
+        EntityEmitterMap entityEmitterMap;
 
-        typedef concurrency::concurrent_unordered_multimap<Properties, const DataEntityMap::value_type *, Properties> VisibleList;
+        typedef concurrency::concurrent_unordered_multimap<Properties, const EntityEmitterMap::value_type *, Properties> VisibleList;
         VisibleList visibleList;
 
     public:
@@ -143,7 +143,7 @@ namespace Gek
 
             plugin = resources->loadPlugin(L"particles");
 
-            particleBuffer = resources->createBuffer(nullptr, sizeof(ParticleData), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+            particleBuffer = resources->createBuffer(nullptr, sizeof(Particle), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
         }
 
         ~ParticlesProcessorImplementation(void)
@@ -168,7 +168,7 @@ namespace Gek
 
         void onFree(void)
         {
-            entityDataList.clear();
+            entityEmitterMap.clear();
         }
 
         template <float const &(*OPERATION)(float const &, float const &)>
@@ -208,7 +208,7 @@ namespace Gek
                     color = entity->getComponent<ColorComponent>().value;
                 }
 
-                auto &emitter = entityDataList.insert(std::make_pair(entity, EmitterData(color))).first->second;
+                auto &emitter = entityEmitterMap.insert(std::make_pair(entity, Emitter(color))).first->second;
                 emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(String(L"Particles\\%v", particlesComponent.material));
                 emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), nullptr, 0);
@@ -232,10 +232,10 @@ namespace Gek
         {
             GEK_REQUIRE(entity);
 
-            auto dataEntityIterator = entityDataList.find(entity);
-            if (dataEntityIterator != entityDataList.end())
+            auto dataIterator = entityEmitterMap.find(entity);
+            if (dataIterator != entityEmitterMap.end())
             {
-                entityDataList.erase(dataEntityIterator);
+                entityEmitterMap.erase(dataIterator);
             }
         }
 
@@ -244,10 +244,10 @@ namespace Gek
             if (!isIdle)
             {
                 float frameTime = population->getFrameTime();
-                concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](DataEntityMap::value_type &dataEntity) -> void
+                concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](EntityEmitterMap::value_type &data) -> void
                 {
-                    Entity *entity = dataEntity.first;
-                    EmitterData &emitter = dataEntity.second;
+                    Entity *entity = data.first;
+                    Emitter &emitter = data.second;
                     auto &transformComponent = entity->getComponent<TransformComponent>();
 
                     combinable<std::min<float>> minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
@@ -287,7 +287,7 @@ namespace Gek
         }
 
         // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, ResourceHandle colorMap, VisibleList::iterator begin, VisibleList::iterator end, ResourceHandle particleBuffer)
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, ResourceHandle colorMap, VisibleList::iterator visibleBegin, VisibleList::iterator visibleEnd, ResourceHandle particleBuffer)
         {
             GEK_REQUIRE(renderContext);
             GEK_REQUIRE(resources);
@@ -296,21 +296,21 @@ namespace Gek
             resources->setResource(renderContext->vertexPipeline(), colorMap, 1);
 
             uint32_t bufferCopied = 0;
-            ParticleData *bufferData = nullptr;
+            Particle *bufferData = nullptr;
             resources->mapBuffer(particleBuffer, (void **)&bufferData);
-            for (auto emitterIterator = begin; emitterIterator != end; ++emitterIterator)
+            for (auto emitterIterator = visibleBegin; emitterIterator != visibleEnd; ++emitterIterator)
             {
                 const auto &emitter = emitterIterator->second->second;
 
                 uint32_t particlesCopied = 0;
                 uint32_t particlesCount = emitter.particles.size();
-                const ParticleData *particleData = emitter.particles.data();
+                const Particle *particleData = emitter.particles.data();
                 while (particlesCopied < particlesCount)
                 {
                     uint32_t bufferRemaining = (ParticleBufferCount - bufferCopied);
                     uint32_t particlesRemaining = (particlesCount - particlesCopied);
                     uint32_t copyCount = std::min(bufferRemaining, particlesRemaining);
-                    memcpy(&bufferData[bufferCopied], &particleData[particlesCopied], (sizeof(ParticleData) * copyCount));
+                    memcpy(&bufferData[bufferCopied], &particleData[particlesCopied], (sizeof(Particle) * copyCount));
 
                     bufferCopied += copyCount;
                     particlesCopied += copyCount;
@@ -337,13 +337,13 @@ namespace Gek
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
-            concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](auto &dataEntity) -> void
+            concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &data) -> void
             {
-                Entity *entity = dataEntity.first;
-                const EmitterData &emitter = dataEntity.second;
+                Entity *entity = data.first;
+                const Emitter &emitter = data.second;
                 if (viewFrustum->isVisible(emitter))
                 {
-                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &dataEntity));
+                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &data));
                     //render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
                 }
             });

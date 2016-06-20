@@ -418,7 +418,7 @@ namespace Gek
             }
         }
 
-        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance)
+        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance, ResourceHandle target)
         {
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(population);
@@ -506,7 +506,7 @@ namespace Gek
                 for (auto &drawCallSet : drawCallSetList)
                 {
                     auto &shader = drawCallSet.shader;
-                    for (auto block = shader->begin(renderContext.get(), cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
+                    for (auto block = shader->begin(renderContext.get(), cameraConstantData.viewMatrix, viewFrustum, target); block; block = block->next())
                     {
                         while (block->prepare())
                         {

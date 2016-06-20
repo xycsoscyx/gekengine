@@ -53,38 +53,73 @@ namespace Gek
         }
     };
 
+    class PlayerNewtonBody;
+
     GEK_INTERFACE(State)
     {
-        virtual void onEnter(StatePtr previousState) { };
-        virtual void onExit(StatePtr nextState) { };
+        virtual void onEnter(PlayerNewtonBody *player) { };
+        virtual void onExit(PlayerNewtonBody *player) { };
 
-        virtual StatePtr onUpdate(float frameTime) { return nullptr; };
-        virtual StatePtr onAction(const wchar_t *name, const ActionParam &param) { return nullptr; };
+        virtual StatePtr onUpdate(PlayerNewtonBody *player, float frameTime) { return nullptr; };
+        virtual StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param) { return nullptr; };
     };
 
-    class PlayerNewtonBody;
-    State *createIdleState(PlayerNewtonBody *playerBody);
-    State *createCrouchgingState(PlayerNewtonBody *playerBody);
-    State *createWalkingState(PlayerNewtonBody *playerBody, const wchar_t *trigger);
-    State *createJumpingState(PlayerNewtonBody *playerBody);
-    State *createFallingState(PlayerNewtonBody *playerBody);
+    class IdleState
+        : public State
+    {
+    public:
+        StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
+        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param);
+    };
+
+    class CrouchingState
+        : public State
+    {
+    public:
+        StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
+        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param);
+    };
+
+    class WalkingState
+        : public State
+    {
+    public:
+        StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
+        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param);
+    };
+
+    class JumpingState
+        : public State
+    {
+    public:
+        void onEnter(PlayerNewtonBody *player);
+        void onExit(PlayerNewtonBody *player);
+        StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
+    };
+
+    class FallingState
+        : public State
+    {
+    private:
+        float time;
+
+    public:
+        void onEnter(PlayerNewtonBody *player);
+        StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
+    };
+
+    class DroppingState
+        : public State
+    {
+    public:
+        StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
+    };
 
     class PlayerNewtonBody
         : public EngineObserver
         , public NewtonEntity
     {
     public:
-        LPVOID operator new(size_t size)
-        {
-            return _mm_malloc(size * sizeof(PlayerNewtonBody), 16);
-        }
-
-        void operator delete(LPVOID data)
-        {
-            _mm_free(data);
-        }
-
-    private:
         EngineContext *engine;
         NewtonProcessor *newtonProcessor;
         NewtonWorld *newtonWorld;
@@ -101,6 +136,10 @@ namespace Gek
         NewtonCollision *newtonUpperBodyShape;
 
         StatePtr currentState;
+        bool moveForward;
+        bool moveBackward;
+        bool strafeLeft;
+        bool strafeRight;
         float headingAngle;
         float forwardSpeed;
         float lateralSpeed;
@@ -109,10 +148,13 @@ namespace Gek
         Math::Float3 groundNormal;
         Math::Float3 groundVelocity;
 
-        bool isJumpingState;
+        bool jumping;
+        bool crouching;
+        bool touchingSurface;
+        bool falling;
 
     public:
-        PlayerNewtonBody(EngineContext *engine, 
+        PlayerNewtonBody(EngineContext *engine,
             NewtonWorld *newtonWorld,
             Entity *entity)
             : engine(engine)
@@ -120,15 +162,22 @@ namespace Gek
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
+            , currentState(std::make_shared<IdleState>())
             , halfHeight(0.0f)
-            , currentState(createIdleState(this))
+            , moveForward(false)
+            , moveBackward(false)
+            , strafeLeft(false)
+            , strafeRight(false)
             , headingAngle(0.0f)
             , forwardSpeed(0.0f)
             , lateralSpeed(0.0f)
             , verticalSpeed(0.0f)
             , groundNormal(0.0f)
             , groundVelocity(0.0f)
-            , isJumpingState(false)
+            , jumping(false)
+            , crouching(false)
+            , touchingSurface(false)
+            , falling(true)
         {
             auto &mass = entity->getComponent<MassComponent>();
             auto &transform = entity->getComponent<TransformComponent>();
@@ -216,30 +265,6 @@ namespace Gek
             engine->removeObserver((EngineObserver *)this);
         }
 
-        void addPlayerVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed)
-        {
-            this->forwardSpeed += forwardSpeed;
-            this->lateralSpeed += lateralSpeed;
-            this->verticalSpeed += verticalSpeed;
-        }
-
-        void setJumping(void)
-        {
-            isJumpingState = true;
-        }
-
-        bool isJumping(void)
-        {
-            return isJumpingState;
-        }
-
-        bool isFalling(void)
-        {
-            Math::Float3 velocity;
-            NewtonBodyGetVelocity(newtonBody, velocity.data);
-            return (velocity.y < 0.0f);
-        }
-
         // EngineObserver
         void onAction(const wchar_t *name, const ActionParam &param)
         {
@@ -247,12 +272,32 @@ namespace Gek
             {
                 headingAngle += (param.value * 0.01f);
             }
+            else if (_wcsicmp(name, L"move_forward") == 0)
+            {
+                moveForward = param.state;
+            }
+            else if (_wcsicmp(name, L"move_backward") == 0)
+            {
+                moveBackward = param.state;
+            }
+            else if (_wcsicmp(name, L"strafe_left") == 0)
+            {
+                strafeLeft = param.state;
+            }
+            else if (_wcsicmp(name, L"strafe_right") == 0)
+            {
+                strafeRight = param.state;
+            }
+            else if (_wcsicmp(name, L"crouch") == 0)
+            {
+                crouching = param.state;
+            }
 
-            StatePtr nextState(currentState ? currentState->onAction(name, param) : nullptr);
+            StatePtr nextState(currentState->onAction(this, name, param));
             if (nextState)
             {
-                currentState->onExit(nextState);
-                nextState->onEnter(currentState);
+                currentState->onExit(this);
+                nextState->onEnter(this);
                 currentState = nextState;
             }
         }
@@ -275,14 +320,11 @@ namespace Gek
 
         void onPreUpdate(float frameTime, int threadHandle)
         {
-            forwardSpeed = 0.0f;
-            lateralSpeed = 0.0f;
-            verticalSpeed = 0.0f;
-            StatePtr nextState(currentState ? currentState->onUpdate(frameTime) : nullptr);
+            StatePtr nextState(currentState->onUpdate(this, frameTime));
             if (nextState)
             {
-                currentState->onExit(nextState);
-                nextState->onEnter(currentState);
+                currentState->onExit(this);
+                nextState->onEnter(this);
                 currentState = nextState;
             }
 
@@ -323,7 +365,7 @@ namespace Gek
 
             Math::Float3 scale;
             NewtonCollisionGetScale(newtonUpperBodyShape, &scale.x, &scale.y, &scale.z);
-            
+
             //const float radius = (player.outerRadius * 4.0f);
             const float radius = ((player.outerRadius + restrainingDistance) * 4.0f);
             NewtonCollisionSetScale(newtonUpperBodyShape, (halfHeight - player.stairStep), radius, radius);
@@ -448,20 +490,25 @@ namespace Gek
 
             NewtonCollisionSetScale(newtonUpperBodyShape, scale.x, scale.y, scale.z);
 
-            // determine if player is standing on some plane
             Math::Float4x4 supportMatrix(matrix);
             supportMatrix.translation += (matrix.ny * sphereCastOrigin);
-            if (isJumping() || isFalling())
+            if (jumping || falling) // Allow jumping
             {
                 Math::Float3 destination(matrix.translation);
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
             }
-            else
+            else // Snap to ground plane
             {
                 velocityStep = std::abs(matrix.ny.dot(velocity * frameTime));
                 float castDist = ((groundNormal.getLengthSquared() > 0.0f) ? player.stairStep : velocityStep);
                 Math::Float3 destination(matrix.translation - (matrix.ny * (castDist * 2.0f)));
                 updateGroundPlane(matrix, supportMatrix, destination, threadHandle);
+            }
+
+            if (!touchingSurface)
+            {
+                Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
+                falling = (velocity.getNormal().dot(gravity.getNormal()) > 0.75f);
             }
 
             NewtonBodySetVelocity(newtonBody, velocity.data);
@@ -481,7 +528,7 @@ namespace Gek
             maximumSlope = std::cos(std::abs(slopeInRadians));
         }
 
-        Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3& omega, float frameTime) const
+        Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3 &omega, float frameTime) const
         {
             Math::Float3 theta(omega * frameTime * 0.5f);
             float thetaMagnitideSquared = theta.getLengthSquared();
@@ -528,7 +575,7 @@ namespace Gek
             }
         }
 
-        void setDesiredVelocity(const Math::Float4x4 &matrix, float frameTime) const
+        void setDesiredVelocity(const Math::Float4x4 &matrix, float frameTime)
         {
             Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
 
@@ -540,11 +587,14 @@ namespace Gek
                 if (groundNormal.dot(matrix.ny) >= maximumSlope)
                 {
                     // player is in a legal slope, he is in full control of his movement
-                    desiredVelocity = ((matrix.ny * desiredVelocity.dot(matrix.ny)) + (gravity * frameTime) + (matrix.nz * forwardSpeed) + (matrix.nx * lateralSpeed) + (matrix.ny * verticalSpeed));
+                    desiredVelocity = (gravity * frameTime);
+                    desiredVelocity += (matrix.nz * forwardSpeed);
+                    desiredVelocity += (matrix.nx * lateralSpeed);
                     desiredVelocity += (groundVelocity - (matrix.ny * matrix.ny.dot(groundVelocity)));
+                    desiredVelocity += (matrix.ny * desiredVelocity.dot(matrix.ny));
 
-                    float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.getLengthSquared() + 0.1f);
                     float speedMagnitudeSquared = desiredVelocity.getLengthSquared();
+                    float speedLimitMagnitudeSquared = ((forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + groundVelocity.getLengthSquared() + 0.1f);
                     if (speedMagnitudeSquared > speedLimitMagnitudeSquared)
                     {
                         desiredVelocity *= std::sqrt(speedLimitMagnitudeSquared / speedMagnitudeSquared);
@@ -559,7 +609,6 @@ namespace Gek
                 else
                 {
                     // player is in an illegal ramp, he slides down hill an loses control of his movement 
-                    desiredVelocity += (matrix.ny * verticalSpeed);
                     desiredVelocity += (gravity * frameTime);
                     float groundNormalVelocity = groundNormal.dot(desiredVelocity - groundVelocity);
                     if (groundNormalVelocity < 0.0f)
@@ -576,9 +625,12 @@ namespace Gek
             }
 
             NewtonBodySetVelocity(newtonBody, desiredVelocity.data);
+            forwardSpeed = 0.0f;
+            lateralSpeed = 0.0f;
+            verticalSpeed = 0.0f;
         }
 
-        float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
+        float calculateContactKinematics(const Math::Float3 &velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
         {
             Math::Float3 contactVelocity;
             if (contactInfo->m_hitBody)
@@ -596,7 +648,7 @@ namespace Gek
             return std::max(0.0f, reboundVelocityMagnitude);
         }
 
-        void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& destination, int threadHandle)
+        void updateGroundPlane(Math::Float4x4 &matrix, const Math::Float4x4 &castMatrix, const Math::Float3 &destination, int threadHandle)
         {
             groundNormal.set(0.0f, 0.0f, 0.0f);
             groundVelocity.set(0.0f, 0.0f, 0.0f);
@@ -606,257 +658,18 @@ namespace Gek
             ConvexCastPreFilter preFilterData(newtonBody);
             if (NewtonWorldConvexCast(newtonWorld, castMatrix.data, destination.data, newtonCastingShape, &parameter, &preFilterData, ConvexCastPreFilter::preFilter, &info, 1, threadHandle) > 0 && parameter <= 1.0f)
             {
-                isJumpingState = false;
+                touchingSurface = true;
                 groundNormal.set(info.m_normal[0], info.m_normal[1], info.m_normal[2]);
                 Math::Float3 supportPoint(castMatrix.translation + ((destination - castMatrix.translation) * parameter));
                 NewtonBodyGetPointVelocity(info.m_hitBody, supportPoint.data, groundVelocity.data);
                 matrix.translation = supportPoint;
             }
+            else
+            {
+                touchingSurface = false;
+            }
         }
     };
-
-    class PlayerStateMixin
-        : public State
-    {
-    protected:
-        PlayerNewtonBody *playerBody;
-
-    public:
-        PlayerStateMixin(PlayerNewtonBody *playerBody)
-            : playerBody(playerBody)
-        {
-        }
-    };
-
-    class IdleState
-        : public PlayerStateMixin
-    {
-    public:
-        IdleState(PlayerNewtonBody *playerBody)
-            : PlayerStateMixin(playerBody)
-        {
-        }
-
-        // State
-        StatePtr onUpdate(float frameTime)
-        {
-            playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
-            return nullptr;
-        }
-
-        StatePtr onAction(const wchar_t *name, const ActionParam &param)
-        {
-            if (_wcsicmp(name, L"crouch") == 0 && param.state)
-            {
-                return StatePtr(createCrouchgingState(playerBody));
-            }
-            else if (_wcsicmp(name, L"move_forward") == 0 && param.state)
-            {
-                return StatePtr(createWalkingState(playerBody, name));
-            }
-            else if (_wcsicmp(name, L"move_backward") == 0 && param.state)
-            {
-                return StatePtr(createWalkingState(playerBody, name));
-            }
-            else if (_wcsicmp(name, L"strafe_left") == 0 && param.state)
-            {
-                return StatePtr(createWalkingState(playerBody, name));
-            }
-            else if (_wcsicmp(name, L"strafe_right") == 0 && param.state)
-            {
-                return StatePtr(createWalkingState(playerBody, name));
-            }
-            else if (_wcsicmp(name, L"jump") == 0 && param.state)
-            {
-                return StatePtr(createJumpingState(playerBody));
-            }
-
-            return nullptr;
-        }
-    };
-
-    class CrouchingState
-        : public PlayerStateMixin
-    {
-    public:
-        CrouchingState(PlayerNewtonBody *playerBody)
-            : PlayerStateMixin(playerBody)
-        {
-        }
-
-        // State
-        StatePtr onUpdate(float frameTime)
-        {
-            playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
-            return nullptr;
-        }
-
-        StatePtr onAction(const wchar_t *name, const ActionParam &param)
-        {
-            if (_wcsicmp(name, L"crouch") == 0 && !param.state)
-            {
-                return StatePtr(createIdleState(playerBody));
-            }
-
-            return nullptr;
-        }
-    };
-
-    class WalkingState
-        : public PlayerStateMixin
-    {
-    private:
-        bool moveForward;
-        bool moveBackward;
-        bool strafeLeft;
-        bool strafeRight;
-
-    public:
-        WalkingState(PlayerNewtonBody *playerBody, const wchar_t *trigger)
-            : PlayerStateMixin(playerBody)
-            , moveForward(false)
-            , moveBackward(false)
-            , strafeLeft(false)
-            , strafeRight(false)
-        {
-            onAction(trigger, true);
-        }
-
-        // State
-        StatePtr onUpdate(float frameTime)
-        {
-            GEK_REQUIRE(playerBody);
-
-            float lateralSpeed = (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f);
-            float strafeSpeed = (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f);
-            playerBody->addPlayerVelocity(lateralSpeed, strafeSpeed, 0.0f);
-
-            return nullptr;
-        }
-
-        StatePtr onAction(const wchar_t *name, const ActionParam &param)
-        {
-            if (_wcsicmp(name, L"move_forward") == 0)
-            {
-                moveForward = param.state;
-            }
-            else if (_wcsicmp(name, L"move_backward") == 0)
-            {
-                moveBackward = param.state;
-            }
-            else if (_wcsicmp(name, L"strafe_left") == 0)
-            {
-                strafeLeft = param.state;
-            }
-            else if (_wcsicmp(name, L"strafe_right") == 0)
-            {
-                strafeRight = param.state;
-            }
-            else if (_wcsicmp(name, L"jump") == 0 && param.state)
-            {
-                return StatePtr(createJumpingState(playerBody));
-            }
-
-            if (!moveForward &&
-                !moveBackward &&
-                !strafeLeft &&
-                !strafeRight)
-            {
-                return StatePtr(createIdleState(playerBody));
-            }
-
-            return nullptr;
-        }
-    };
-
-    class JumpingState
-        : public PlayerStateMixin
-    {
-    private:
-        float jumpVelocity;
-
-    public:
-        JumpingState(PlayerNewtonBody *playerBody)
-            : PlayerStateMixin(playerBody)
-            , jumpVelocity(10.0f)
-        {
-            GEK_REQUIRE(playerBody);
-            playerBody->setJumping();
-        }
-
-        // State
-        StatePtr onUpdate(float frameTime)
-        {
-            GEK_REQUIRE(playerBody);
-
-            playerBody->addPlayerVelocity(0.0f, 0.0f, jumpVelocity);
-            jumpVelocity = 0.0f;
-
-            if (!playerBody->isJumping())
-            {
-                return StatePtr(createIdleState(playerBody));
-            }
-            else if (playerBody->isFalling())
-            {
-                return StatePtr(createFallingState(playerBody));
-            }
-
-            return nullptr;
-        }
-    };
-
-    class FallingState
-        : public PlayerStateMixin
-    {
-    private:
-
-    public:
-        FallingState(PlayerNewtonBody *playerBody)
-            : PlayerStateMixin(playerBody)
-        {
-            GEK_REQUIRE(playerBody);
-        }
-
-        // State
-        StatePtr onUpdate(float frameTime)
-        {
-            GEK_REQUIRE(playerBody);
-
-            playerBody->addPlayerVelocity(0.0f, 0.0f, 0.0f);
-
-            if (!playerBody->isFalling())
-            {
-                return StatePtr(createIdleState(playerBody));
-            }
-
-            return nullptr;
-        }
-    };
-
-    State *createIdleState(PlayerNewtonBody *playerBody)
-    {
-        return new IdleState(playerBody);
-    }
-
-    State *createCrouchgingState(PlayerNewtonBody *playerBody)
-    {
-        return new IdleState(playerBody);
-    }
-
-    State *createWalkingState(PlayerNewtonBody *playerBody, const wchar_t *trigger)
-    {
-        return new WalkingState(playerBody, trigger);
-    }
-
-    State *createJumpingState(PlayerNewtonBody *playerBody)
-    {
-        return new JumpingState(playerBody);
-    }
-
-    State *createFallingState(PlayerNewtonBody *playerBody)
-    {
-        return new FallingState(playerBody);
-    }
 
     NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity)
     {
@@ -872,6 +685,186 @@ namespace Gek
 
         engine->addObserver((EngineObserver *)player.get());
         return player;
+    }
+
+    /* Idle
+        If the ground drops out, the player starts to drop (uncontrolled)
+        Actions trigger action states (crouch, walk, jump)
+    */
+    StatePtr IdleState::onUpdate(PlayerNewtonBody *player, float frameTime)
+    {
+        if (player->falling)
+        {
+            return std::make_shared<DroppingState>();
+        }
+
+        return nullptr;
+    }
+
+    StatePtr IdleState::onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param)
+    {
+        if (_wcsicmp(name, L"crouch") == 0 && param.state)
+        {
+            return std::make_shared<CrouchingState>();
+        }
+        else if (_wcsicmp(name, L"move_forward") == 0 && param.state)
+        {
+            return std::make_shared<WalkingState>();
+        }
+        else if (_wcsicmp(name, L"move_backward") == 0 && param.state)
+        {
+            return std::make_shared<WalkingState>();
+        }
+        else if (_wcsicmp(name, L"strafe_left") == 0 && param.state)
+        {
+            return std::make_shared<WalkingState>();
+        }
+        else if (_wcsicmp(name, L"strafe_right") == 0 && param.state)
+        {
+            return std::make_shared<WalkingState>();
+        }
+        else if (_wcsicmp(name, L"jump") == 0 && param.state)
+        {
+            return std::make_shared<JumpingState>();
+        }
+
+        return nullptr;
+    }
+
+    /* Crouch
+        Triggered from idle or landing
+        If not crouching on update (after jumping or released key), then walks/stands idle
+    */
+    StatePtr CrouchingState::onUpdate(PlayerNewtonBody *player, float frameTime)
+    {
+        if (!player->crouching)
+        {
+            if (player->moveForward || player->moveBackward || player->strafeLeft || player->strafeRight)
+            {
+                return std::make_shared<WalkingState>();
+            }
+            else
+            {
+                return std::make_shared<IdleState>();
+            }
+        }
+
+        return nullptr;
+    }
+
+    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param)
+    {
+        return nullptr;
+    }
+
+    /* Walk
+        Move when keys pressed
+        Jump when jumping
+        Idle when no key pressed
+    */
+    StatePtr WalkingState::onUpdate(PlayerNewtonBody *player, float frameTime)
+    {
+        if (!player->moveForward && !player->moveBackward && !player->strafeLeft && !player->strafeRight)
+        {
+            return std::make_shared<IdleState>();
+        }
+
+        player->forwardSpeed += (((player->moveForward ? 1.0f : 0.0f) + (player->moveBackward ? -1.0f : 0.0f)) * 5.0f);
+        player->lateralSpeed += (((player->strafeLeft ? -1.0f : 0.0f) + (player->strafeRight ? 1.0f : 0.0f)) * 5.0f);
+        return nullptr;
+    }
+
+    StatePtr WalkingState::onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param)
+    {
+        if (_wcsicmp(name, L"jump") == 0 && param.state)
+        {
+            return std::make_shared<JumpingState>();
+        }
+
+        return nullptr;
+    }
+
+    /* Jump
+        Holds open jump state while active
+        Applies initial vertical velocity for starting push
+        If landing, land with a clean crouch (allows for walking from landing)
+        Once descent starts, transition to falling state
+    */
+    void JumpingState::onEnter(PlayerNewtonBody *player)
+    {
+        player->verticalSpeed += 10.0f;
+        player->jumping = true;
+
+        /*
+            Break the connection when first jumping:
+                touching == true
+                Action Update
+                    jumping = true
+                Physics Update
+                    if touching then crouch
+            Without breaking the initial connection, jumps will always instantly switch to crouch
+        */
+        player->touchingSurface = false;
+    }
+
+    void JumpingState::onExit(PlayerNewtonBody *player)
+    {
+        player->jumping = false;
+    }
+
+    StatePtr JumpingState::onUpdate(PlayerNewtonBody *player, float frameTime)
+    {
+        GEK_REQUIRE(player);
+
+        if (player->touchingSurface)
+        {
+            return std::make_shared<CrouchingState>();
+        }
+        else if (player->falling)
+        {
+            return std::make_shared<FallingState>();
+        }
+
+        return nullptr;
+    }
+
+    /* Fall
+        Controlled fall state, triggered from jump descent
+        If falling for too long, becomes uncontrolled fall
+        If landing, land with a clean crouch (allows for walking from landing)
+    */
+    void FallingState::onEnter(PlayerNewtonBody *player)
+    {
+        time = 0.0f;
+    }
+
+    StatePtr FallingState::onUpdate(PlayerNewtonBody *player, float frameTime)
+    {
+        time += frameTime;
+        if (time > 2.0f)
+        {
+            return std::make_shared<DroppingState>();
+        }
+        else if (player->touchingSurface)
+        {
+            return std::make_shared<CrouchingState>();
+        }
+
+        return nullptr;
+    }
+
+    /* Drop
+        Uncontrolled fall state, triggered from lack of ground or jumping too far
+        Lands in idle state (doesn't allow walking from fall)
+    */
+    StatePtr DroppingState::onUpdate(PlayerNewtonBody *player, float frameTime)
+    {
+        if (player->touchingSurface)
+        {
+            return std::make_shared<IdleState>();
+        }
+
+        return nullptr;
     }
 
     PlayerBodyComponent::PlayerBodyComponent(void)

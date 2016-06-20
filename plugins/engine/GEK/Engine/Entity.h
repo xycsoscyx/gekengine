@@ -7,6 +7,8 @@ namespace Gek
 {
     GEK_INTERFACE(Entity)
     {
+        virtual const wchar_t *getName(void) const = 0;
+
         virtual bool hasComponent(const std::type_index &type) = 0;
         virtual void *getComponent(const std::type_index &type) = 0;
 

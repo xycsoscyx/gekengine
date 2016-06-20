@@ -441,6 +441,11 @@ namespace Gek
             return materialManager.getResource(handle, false);
         }
 
+        VideoTexture * const getTexture(ResourceHandle handle) const
+        {
+            return dynamic_cast<VideoTexture *>(resourceManager.getResource(handle));
+        }
+
         PluginHandle loadPlugin(const wchar_t *fileName)
         {
             GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));

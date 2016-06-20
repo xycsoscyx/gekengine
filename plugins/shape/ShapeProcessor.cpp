@@ -405,13 +405,13 @@ namespace Gek
             }
         };
 
-        struct EntityData
+        struct Data
         {
             Shape &shape;
             MaterialHandle skin;
             const Math::Color &color;
 
-            EntityData(Shape &shape, MaterialHandle skin, const Math::Color &color)
+            Data(Shape &shape, MaterialHandle skin, const Math::Color &color)
                 : shape(shape)
                 , skin(skin)
                 , color(color)
@@ -420,14 +420,14 @@ namespace Gek
         };
 
         __declspec(align(16))
-        struct InstanceData
+        struct Instance
         {
             Math::Float4x4 matrix;
             Math::Color color;
             Math::Float3 scale;
             float buffer;
 
-            InstanceData(const Math::Float4x4 &matrix, const Math::Color &color, const Math::Float3 &scale)
+            Instance(const Math::Float4x4 &matrix, const Math::Color &color, const Math::Float3 &scale)
                 : matrix(matrix)
                 , color(color)
                 , scale(scale)
@@ -448,10 +448,10 @@ namespace Gek
         concurrency::concurrent_unordered_map<std::size_t, bool> loadShapeSet;
 
         std::unordered_map<std::size_t, Shape> shapeMap;
-        typedef std::unordered_map<Entity *, EntityData> EntityDataMap;
-        EntityDataMap entityDataList;
+        typedef std::unordered_map<Entity *, Data> EntityDataMap;
+        EntityDataMap entityDataMap;
 
-        typedef concurrency::concurrent_vector<InstanceData, AlignedAllocator<InstanceData, 16>> InstanceList;
+        typedef concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>> InstanceList;
         typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
         typedef concurrency::concurrent_unordered_map<Shape *, MaterialList> VisibleList;
         VisibleList visibleList;
@@ -468,7 +468,7 @@ namespace Gek
 
             plugin = resources->loadPlugin(L"model");
  
-            constantBuffer = resources->createBuffer(nullptr, sizeof(InstanceData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
         }
 
         ~ShapeProcessorImplementation(void)
@@ -555,7 +555,7 @@ namespace Gek
             }
 
             shapeMap.clear();
-            entityDataList.clear();
+            entityDataMap.clear();
         }
 
         void onEntityCreated(Entity *entity)
@@ -579,8 +579,8 @@ namespace Gek
                     color = entity->getComponent<ColorComponent>().value;
                 }
 
-                EntityData entityData(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
-                entityDataList.insert(std::make_pair(entity, entityData));
+                Data entityData(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
+                entityDataMap.insert(std::make_pair(entity, entityData));
             }
         }
 
@@ -588,19 +588,19 @@ namespace Gek
         {
             GEK_REQUIRE(entity);
 
-            auto dataEntityIterator = entityDataList.find(entity);
-            if (dataEntityIterator != entityDataList.end())
+            auto dataIterator = entityDataMap.find(entity);
+            if (dataIterator != entityDataMap.end())
             {
-                entityDataList.erase(dataEntityIterator);
+                entityDataMap.erase(dataIterator);
             }
         }
 
         // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, const Shape *shape, const InstanceData *instance, ResourceHandle constantBuffer)
+        static void drawCall(RenderContext *renderContext, PluginResources *resources, const Shape *shape, const Instance *instanceList, ResourceHandle constantBuffer)
         {
-            InstanceData *instanceData = nullptr;
+            Instance *instanceData = nullptr;
             resources->mapBuffer(constantBuffer, (void **)&instanceData);
-            memcpy(instanceData, instance, sizeof(InstanceData));
+            memcpy(instanceData, instanceList, sizeof(Instance));
             resources->unmapBuffer(constantBuffer);
 
             resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
@@ -615,10 +615,10 @@ namespace Gek
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
-            concurrency::parallel_for_each(entityDataList.begin(), entityDataList.end(), [&](EntityDataMap::value_type &dataEntity) -> void
+            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
             {
-                Entity *entity = dataEntity.first;
-                Shape &shape = dataEntity.second.shape;
+                Entity *entity = data.first;
+                Shape &shape = data.second.shape;
 
                 const auto &transformComponent = entity->getComponent<TransformComponent>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
@@ -629,25 +629,25 @@ namespace Gek
                 if (viewFrustum->isVisible(orientedBox))
                 {
                     auto &materialList = visibleList[&shape];
-                    auto &instanceList = materialList[dataEntity.second.skin];
-                    instanceList.push_back(InstanceData((matrix * *viewMatrix), dataEntity.second.color, transformComponent.scale));
+                    auto &instanceList = materialList[data.second.skin];
+                    instanceList.push_back(Instance((matrix * *viewMatrix), data.second.color, transformComponent.scale));
                 }
             });
 
-            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](VisibleList::value_type &visible) -> void
+            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](VisibleList::value_type &visibleList) -> void
             {
-                Shape *shape = visible.first;
+                Shape *shape = visibleList.first;
                 if (!shape->loaded)
                 {
                     loadShape(*shape);
                     return;
                 }
 
-                concurrency::parallel_for_each(visible.second.begin(), visible.second.end(), [&](MaterialList::value_type &material) -> void
+                concurrency::parallel_for_each(visibleList.second.begin(), visibleList.second.end(), [&](MaterialList::value_type &materialList) -> void
                 {
-                    concurrency::parallel_for_each(material.second.begin(), material.second.end(), [&](InstanceList::value_type &instance) -> void
+                    concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](InstanceList::value_type &instanceList) -> void
                     {
-                        render->queueDrawCall(plugin, material.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instance, constantBuffer));
+                        render->queueDrawCall(plugin, materialList.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
                     });
                 });
             });

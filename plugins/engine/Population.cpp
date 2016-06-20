@@ -16,10 +16,12 @@ namespace Gek
         : public Entity
     {
     private:
+        String name;
         std::unordered_map<std::type_index, std::pair<Component *, void *>> componentList;
 
     public:
-        EntityImplementation(void)
+        EntityImplementation(const wchar_t *name)
+            : name(name)
         {
         }
 
@@ -47,6 +49,11 @@ namespace Gek
         }
 
         // Entity
+        const wchar_t *getName(void) const
+        {
+            return name;
+        }
+
         bool hasComponent(const std::type_index &type)
         {
             return (componentList.count(type) > 0);
@@ -322,7 +329,7 @@ namespace Gek
 
         Entity * createEntity(const EntityDefinition &entityData, const wchar_t *name)
         {
-            std::shared_ptr<EntityImplementation> entity = std::make_shared<EntityImplementation>();
+            std::shared_ptr<EntityImplementation> entity = std::make_shared<EntityImplementation>(name);
             for (auto &componentDataPair : entityData)
             {
                 auto &componentName = componentDataPair.first;
