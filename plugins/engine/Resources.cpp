@@ -363,8 +363,10 @@ namespace Gek
             catch (const Exception &)
             {
             };
+        }
 
-            return;
+        void request2(std::function<void(void)> load)
+        {
             loadResourceQueue.push(load);
             if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
             {
@@ -460,13 +462,11 @@ namespace Gek
             GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
             auto load = [this, fileName = String(fileName)](MaterialHandle handle)->MaterialPtr
             {
-                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str());
+                return getContext()->createClass<Material>(L"MaterialSystem", (Resources *)this, fileName.c_str(), handle);
             };
 
             auto request = [this, load](MaterialHandle handle, std::function<void(MaterialPtr)> set) -> void
             {
-                MaterialPtr material = load(handle);
-                materialShaderMap[handle] = material->getShader();
                 set(load(handle));
             };
 
@@ -474,7 +474,7 @@ namespace Gek
             return materialManager.getHandle(hash, request);
         }
 
-        ShaderHandle loadShader(const wchar_t *fileName)
+        ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material)
         {
             GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
             auto load = [this, fileName = String(fileName)](ShaderHandle handle)->ShaderPtr
@@ -488,7 +488,9 @@ namespace Gek
             };
 
             std::size_t hash = reverseHash(fileName);
-            return shaderManager.getHandle(hash, request, false);
+            ShaderHandle shader = shaderManager.getHandle(hash, request, false);
+            materialShaderMap[material] = shader;
+            return shader;
         }
 
         std::list<ResourceHandle> getResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap)

@@ -11,7 +11,7 @@
 namespace Gek
 {
     class MaterialImplementation 
-        : public ContextRegistration<MaterialImplementation, Resources *, const wchar_t *>
+        : public ContextRegistration<MaterialImplementation, Resources *, const wchar_t *, MaterialHandle>
         , public Material
     {
     private:
@@ -20,7 +20,7 @@ namespace Gek
         ShaderHandle shader;
 
     public:
-        MaterialImplementation(Context *context, Resources *resources, const wchar_t *fileName)
+        MaterialImplementation(Context *context, Resources *resources, const wchar_t *fileName, MaterialHandle material)
             : ContextRegistration(context)
             , resources(resources)
         {
@@ -32,7 +32,7 @@ namespace Gek
 
             XmlNodePtr shaderNode = materialNode->firstChildElement(L"shader");
             String shaderFileName = shaderNode->getText();
-            shader = resources->loadShader(shaderFileName);
+            shader = resources->loadShader(shaderFileName, material);
 
             std::unordered_map<String, ResourcePtr> resourceMap;
             XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
@@ -60,11 +60,6 @@ namespace Gek
         }
 
         // Material
-        ShaderHandle getShader(void) const
-        {
-            return shader;
-        }
-
         const std::list<ResourceHandle> &getResourceList(void) const
         {
             return resourceList;

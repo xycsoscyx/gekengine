@@ -20,6 +20,7 @@ namespace Gek
         void reset(void);
         void update(void);
 
+        bool isPaused(void);
         void pause(bool state);
 
         double getUpdateTime(void) const;

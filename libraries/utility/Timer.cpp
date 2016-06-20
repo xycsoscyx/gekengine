@@ -19,6 +19,11 @@ namespace Gek
         currentTime = clock.now();
     }
 
+    bool Timer::isPaused(void)
+    {
+        return pausedState;
+    }
+
     void Timer::pause(bool state)
     {
         if (state && !pausedState)

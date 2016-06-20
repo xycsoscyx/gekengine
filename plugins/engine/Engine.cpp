@@ -67,6 +67,7 @@ namespace Gek
         uint32_t updateHandle;
         ActionQueue actionQueue;
 
+        bool consoleOpen;
         String currentCommand;
         std::list<String> commandLog;
         std::unordered_map<String, std::function<void(const std::vector<String> &, SCITER_VALUE &result)>> consoleCommands;
@@ -101,6 +102,7 @@ namespace Gek
             , windowActive(false)
             , engineRunning(true)
             , updateAccumulator(0.0)
+            , consoleOpen(false)
             , updateHandle(0)
             , mouseSensitivity(0.5f)
             , root(nullptr)
@@ -165,6 +167,17 @@ namespace Gek
                 if (parameters.size() == 1)
                 {
                     population->load(parameters[0]);
+                }
+
+                result = sciter::value(true);
+            };
+
+            consoleCommands[L"console"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+            {
+                if (parameters.size() == 1)
+                {
+                    consoleOpen = parameters[0];
+                    timer.pause(!windowActive || consoleOpen);
                 }
 
                 result = sciter::value(true);
@@ -351,7 +364,7 @@ namespace Gek
                     };
                 }
 
-                timer.pause(!windowActive);
+                timer.pause(!windowActive || consoleOpen);
                 return 1;
 
             case WM_KEYDOWN:
@@ -415,7 +428,7 @@ namespace Gek
                 uint32_t frameCount = 3;
                 while (updateAccumulator > (1.0 / 30.0))
                 {
-                    population->update(false, 1.0f / 30.0f);
+                    population->update(consoleOpen, 1.0f / 30.0f);
                     if (--frameCount == 0)
                     {
                         updateAccumulator = 0.0;
@@ -425,6 +438,12 @@ namespace Gek
                         updateAccumulator -= (1.0 / 30.0);
                     }
                 };
+            }
+            else
+            {
+                POINT currentCursorPosition;
+                GetCursorPos(&currentCursorPosition);
+                lastCursorPosition = currentCursorPosition;
             }
 
             return engineRunning;

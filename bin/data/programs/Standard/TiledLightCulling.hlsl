@@ -24,7 +24,7 @@ namespace Light
         float4 position = float4(light.position, 1.0);
         bool isLightVisible = true;
 
-        [loop]
+        [unroll]
         for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
             float lightDistance = dot(Shared::tileFrustum[planeIndex], position);
@@ -45,7 +45,7 @@ namespace Light
         float4 center = float4(light.position + (light.direction * halfRange), 1.0);
         bool isLightVisible = true;
 
-        [loop]
+        [unroll]
         for (uint planeIndex = 0; planeIndex < 6; ++planeIndex)
         {
             float lightDistance = dot(Shared::tileFrustum[planeIndex], center);

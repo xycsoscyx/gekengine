@@ -16,7 +16,7 @@
 
 namespace Defines
 {
-    static const int techniqueMode = TechniqueFilmicU2;
+    static const int techniqueMode = TechniqueFilmicALU;
     static const int autoExposureMode = 2;
 
     static const float luminanceSaturation = 1.0;
@@ -176,7 +176,10 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));
     float3 baseColor = Resources::lightAccumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-    float ambientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+
+    float ambientOcclusion = Resources::ambientOcclusionBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 4.0);
+    return ambientOcclusion;
+
     baseColor *= ambientOcclusion;
 
     float exposure = 0.0;

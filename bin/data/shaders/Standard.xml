@@ -18,7 +18,7 @@
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
         <shadowRadius>1.0</shadowRadius>
-        <shadowStrength>0.25</shadowStrength>
+        <shadowStrength>0.35</shadowStrength>
         <shadowTapCount integer="true">12</shadowTapCount>
         <shadowSpiralCount>13</shadowSpiralCount>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
@@ -36,7 +36,7 @@
         <lightAccumulationBuffer bind="float3" flags="target">float4</lightAccumulationBuffer>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
         <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminanceBuffer>
-        <ambientOcclusionBuffer bind="float" flags="target, readWrite">byte</ambientOcclusionBuffer>
+        <ambientOcclusionBuffer bind="float" flags="target" mipmaps="4">byte</ambientOcclusionBuffer>
     </textures>
 
     <buffers>
@@ -139,46 +139,6 @@
         </pass>
 
         <pass mode="deferred">
-            <defines>
-                <blurAxis>float2(1, 0)</blurAxis>
-            </defines>
-
-            <resources>
-                <ambientOcclusionBuffer actions="flip" />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <ambientOcclusionBuffer />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BilateralBlur</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <defines>
-                <blurAxis>float2(0, 1)</blurAxis>
-            </defines>
-
-            <resources>
-                <ambientOcclusionBuffer actions="flip" />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <ambientOcclusionBuffer />
-            </targets>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BilateralBlur</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
             <resources>
                 <luminanceBuffer actions="generateMipMaps" />
                 <averageLuminanceBuffer />
@@ -198,7 +158,7 @@
             <resources>
                 <lightAccumulationBuffer />
                 <averageLuminanceBuffer actions="flip" />
-                <ambientOcclusionBuffer actions="flip" />
+                <ambientOcclusionBuffer actions="generateMipMaps" />
                 <depthBuffer />
             </resources>
 

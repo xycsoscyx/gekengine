@@ -36,7 +36,7 @@
 
         #console_window {
             padding: 5px;
-            background: rgba(0, 0, 0, 0.75);
+            background: rgba(0, 0, 0, 0.9);
             z-index: 999;
         }
 
@@ -97,6 +97,7 @@
         if (event.keyCode == 0xC0)
         {
             $(div#console_window).attributes.toggleClass("console_hidden");
+            view.console(!$(div#console_window).attributes.hasClass("console_hidden"))
         }
         else if ($(div#console_window).attributes.hasClass("console_hidden"))
         {
@@ -131,7 +132,8 @@
     view.root.subscribe(function(event)
     {
         var character = String.fromCharCode(event.keyCode);
-        if (character && character.search("^[a-zA-Z0-9\"\ \_\.\,\(\)]$") >= 0)
+        if (character && character.search("^[a-zA-Z0-9\"\ \_\.\,\(\)]$") >= 0
+            && !$(div#console_window).attributes.hasClass("console_hidden"))
         {
             $(#console_command).text = $(#console_command).text.concat(character);
         }
