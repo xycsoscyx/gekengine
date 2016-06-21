@@ -187,7 +187,7 @@ float getAmbientOcclusion(InputPixel inputPixel)
         {
             float2 sampleTexCoord = (inputPixel.texCoord + (float2(offsetX, offsetY) * pixelSize));
             float sampleDepth = Resources::depthBuffer.Sample(Global::pointSampler, sampleTexCoord);
-            float sampleAmbientOcclusion = Resources::ambientOcclusionBuffer.SampleLevel(Global::linearClampSampler, sampleTexCoord, 3.0);
+            float sampleAmbientOcclusion = Resources::ambientOcclusionBuffer.SampleLevel(Global::linearClampSampler, sampleTexCoord, 4.0);
             float depthDelta = abs(surfaceDepth - sampleDepth);
 
             float sampleWeight = rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
