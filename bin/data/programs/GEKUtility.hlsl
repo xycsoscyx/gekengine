@@ -3,9 +3,9 @@ float sqr(float x)
     return x * x;
 }
 
-float rand(int2 position)
+float rand(int2 position, float time = 1.0)
 {
-    return (61.111231231 * 1.0 + (9.2735171213125 * position.x + -7.235171213125 * position.y + 1.53713171123412415411 * (position.x ^ position.y)));
+    return (61.111231231 * time + (9.2735171213125 * position.x + -7.235171213125 * position.y + 1.53713171123412415411 * (position.x ^ position.y)));
 }
 
 float getLuminance(float3 color)

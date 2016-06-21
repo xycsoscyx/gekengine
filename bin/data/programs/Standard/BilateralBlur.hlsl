@@ -15,7 +15,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float2 pixelSize = rcp(Shader::targetSize);
     float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
-    float finalAmbientOcclusion = 0.0;
+    float finalValue = 0.0;
     float totalWeight = 0.0;
 
     [unroll]
@@ -23,15 +23,14 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     {
         float2 sampleTexCoord = (inputPixel.texCoord + (offset * pixelSize * Defines::blurAxis));
         float sampleDepth = Resources::depthBuffer.Sample(Global::pointSampler, sampleTexCoord);
-        float sampleAmbientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, sampleTexCoord);
         float depthDelta = abs(surfaceDepth - sampleDepth);
 
-        float sampleWeight = calculateGaussianWeight(offset)
-            * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
+        float sampleWeight = calculateGaussianWeight(offset) * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
 
-        finalAmbientOcclusion += (sampleAmbientOcclusion * sampleWeight);
+        float sampleValue = Resources::sourceBuffer.Sample(Global::linearClampSampler, sampleTexCoord);
+        finalValue += (sampleValue * sampleWeight);
         totalWeight += sampleWeight;
     }
 
-    return (finalAmbientOcclusion * rcp(totalWeight + Math::Epsilon));
+    return (finalValue * rcp(totalWeight + Math::Epsilon));
 }

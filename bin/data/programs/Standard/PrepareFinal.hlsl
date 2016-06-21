@@ -23,7 +23,7 @@ float getShadowFactor(InputPixel inputPixel)
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
-    float randomAngle = rand(inputPixel.position.xy);
+    float randomAngle = rand(inputPixel.position.xy, Engine::worldTime);
     float sampleRadius = (Defines::shadowRadius / (2.0 * (surfaceDepth * Camera::maximumDistance) * Camera::fieldOfView.x));
 
     float totalOcclusion = 0.0;
@@ -47,12 +47,13 @@ float getShadowFactor(InputPixel inputPixel)
     return totalOcclusion;
 }
 
+
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float3 pixelColor = Resources::lightAccumulationBuffer.Sample(Global::linearClampSampler, inputPixel.texCoord);
 
     OutputPixel output;
-    output.ambientOcclusionBuffer = getShadowFactor(inputPixel);
     output.luminanceBuffer = log(getLuminance(pixelColor));
+    output.ambientOcclusionBuffer = getShadowFactor(inputPixel);
     return output;
 }
