@@ -99,33 +99,33 @@
             $(div#console_window).attributes.toggleClass("console_hidden");
             view.console(!$(div#console_window).attributes.hasClass("console_hidden"))
         }
-        else if ($(div#console_window).attributes.hasClass("console_hidden"))
+        else if (!$(div#console_window).attributes.hasClass("console_hidden"))
         {
-        }
-        else if (event.keyCode == Event.VK_RETURN || event.keyCode == Event.VK_ENTER)
-        {
-            var text = $(#console_command).text;
-            $(#console_command).text = "";
+            if (event.keyCode == Event.VK_RETURN || event.keyCode == Event.VK_ENTER)
+            {
+                var text = $(#console_command).text;
+                $(#console_command).text = "";
 
-            var parameters = text.split(" ");
-            var command = parameters.shift();
-            if(eval("view." + text))
-            {
-                addConsoleCommand(text);
+                var parameters = text.split(" ");
+                var command = parameters.shift();
+                if(eval("view." + text))
+                {
+                    addConsoleCommand(text);
+                }
+                else
+                {
+                    addConsoleCommand("unknown command: " + text);
+                }
             }
-            else
+            else if (event.keyCode == Event.VK_BACK)
             {
-                addConsoleCommand("unknown command: " + text);
+                var text = $(#console_command).text;
+                $(#console_command).text = text.substr(0, text.length ? text.length - 1 : 0);
             }
-        }
-        else if (event.keyCode == Event.VK_BACK)
-        {
-            var text = $(#console_command).text;
-            $(#console_command).text = text.substr(0, text.length ? text.length - 1 : 0);
-        }
-        else if (event.keyCode == Event.VK_ESCAPE)
-        {
-            $(#console_command).text = "";
+            else if (event.keyCode == Event.VK_ESCAPE)
+            {
+                $(#console_command).text = "";
+            }
         }
     }, Event.KEY, Event.KEY_DOWN);
 

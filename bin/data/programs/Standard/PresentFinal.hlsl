@@ -172,15 +172,41 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
     return color;
 }
 
+float getAmbientOcclusion(InputPixel inputPixel)
+{
+    float2 pixelSize = rcp(Shader::targetSize);
+    float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+
+    float finalAmbientOcclusion = 0.0;
+    float totalWeight = 0.0;
+
+    [unroll]
+    for (int offsetX = -Defines::bilateralRadius; offsetX <= Defines::bilateralRadius; offsetX++)
+    {
+        for (int offsetY = -Defines::bilateralRadius; offsetY <= Defines::bilateralRadius; offsetY++)
+        {
+            float2 sampleTexCoord = (inputPixel.texCoord + (float2(offsetX, offsetY) * pixelSize));
+            float sampleDepth = Resources::depthBuffer.Sample(Global::pointSampler, sampleTexCoord);
+            float sampleAmbientOcclusion = Resources::ambientOcclusionBuffer.SampleLevel(Global::linearClampSampler, sampleTexCoord, 3.0);
+            float depthDelta = abs(surfaceDepth - sampleDepth);
+
+            float sampleWeight = rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
+
+            finalAmbientOcclusion += (sampleAmbientOcclusion * sampleWeight);
+            totalWeight += sampleWeight;
+        }
+    }
+
+    return (finalAmbientOcclusion * rcp(totalWeight + Math::Epsilon));
+}
+
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
+    return getAmbientOcclusion(inputPixel);;
+
     float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));
     float3 baseColor = Resources::lightAccumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-
-    float ambientOcclusion = Resources::ambientOcclusionBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 4.0);
-    return ambientOcclusion;
-
-    baseColor *= ambientOcclusion;
+    baseColor *= getAmbientOcclusion(inputPixel);
 
     float exposure = 0.0;
     float3 tonedColor = getToneMappedColor(baseColor, averageLuminance, 0.0, exposure);

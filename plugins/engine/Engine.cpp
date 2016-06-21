@@ -44,6 +44,11 @@ namespace Gek
                 concurrency::critical_section::scoped_lock scope(lock);
                 return std::move(queue);
             }
+
+            void clear(void)
+            {
+                queue.clear();
+            }
         };
 
     private:
@@ -418,33 +423,23 @@ namespace Gek
 
         bool update(void)
         {
-            if (windowActive)
-            {
-                timer.update();
-                updateAccumulator += timer.getUpdateTime();
-                //population->update(false, float(updateAccumulator));
-                //return engineRunning;
+            timer.update();
 
-                uint32_t frameCount = 3;
-                while (updateAccumulator > (1.0 / 30.0))
-                {
-                    population->update(consoleOpen, 1.0f / 30.0f);
-                    if (--frameCount == 0)
-                    {
-                        updateAccumulator = 0.0;
-                    }
-                    else
-                    {
-                        updateAccumulator -= (1.0 / 30.0);
-                    }
-                };
-            }
-            else
+            updateAccumulator += timer.getUpdateTime();
+
+            uint32_t frameCount = 3;
+            while (updateAccumulator > (1.0 / 30.0))
             {
-                POINT currentCursorPosition;
-                GetCursorPos(&currentCursorPosition);
-                lastCursorPosition = currentCursorPosition;
-            }
+                population->update(!windowActive || consoleOpen, 1.0f / 30.0f);
+                if (--frameCount == 0)
+                {
+                    updateAccumulator = 0.0;
+                }
+                else
+                {
+                    updateAccumulator -= (1.0 / 30.0);
+                }
+            };
 
             return engineRunning;
         }
@@ -456,48 +451,54 @@ namespace Gek
             GetCursorPos(&currentCursorPosition);
             float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
             float cursorMovementY = (float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
-            if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
-            {
-                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", ActionParam(cursorMovementX))));
-                sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", ActionParam(cursorMovementY))));
-            }
-
             lastCursorPosition = currentCursorPosition;
-
-            std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
-            for (auto &action : actionCopy)
+            if (isIdle)
             {
-                ActionParam param(action.second);
-                switch (action.first)
+                actionQueue.clear();
+            }
+            else
+            {
+                if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
                 {
-                case 'W':
-                case VK_UP:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", param)));
-                    break;
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"turn", ActionParam(cursorMovementX))));
+                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"tilt", ActionParam(cursorMovementY))));
+                }
 
-                case 'S':
-                case VK_DOWN:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", param)));
-                    break;
+                std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
+                for (auto &action : actionCopy)
+                {
+                    ActionParam param(action.second);
+                    switch (action.first)
+                    {
+                    case 'W':
+                    case VK_UP:
+                        sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_forward", param)));
+                        break;
 
-                case 'A':
-                case VK_LEFT:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", param)));
-                    break;
+                    case 'S':
+                    case VK_DOWN:
+                        sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"move_backward", param)));
+                        break;
 
-                case 'D':
-                case VK_RIGHT:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", param)));
-                    break;
+                    case 'A':
+                    case VK_LEFT:
+                        sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_left", param)));
+                        break;
 
-                case VK_SPACE:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", param)));
-                    break;
+                    case 'D':
+                    case VK_RIGHT:
+                        sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"strafe_right", param)));
+                        break;
 
-                case VK_LCONTROL:
-                    sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", param)));
-                    break;
-                };
+                    case VK_SPACE:
+                        sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"jump", param)));
+                        break;
+
+                    case VK_LCONTROL:
+                        sendEvent(Event(std::bind(&EngineObserver::onAction, std::placeholders::_1, L"crouch", param)));
+                        break;
+                    };
+                }
             }
         }
 
