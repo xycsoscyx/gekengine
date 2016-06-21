@@ -8,7 +8,7 @@ namespace Gek
 {
     namespace Input
     {
-        GEK_BASE_EXCEPTION();
+        GEK_START_EXCEPTIONS();
 
         enum class Key
         {

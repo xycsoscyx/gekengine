@@ -19,13 +19,11 @@ namespace Gek
         uint32_t height;
         AspectRatio aspectRatio;
 
-        DisplayMode(uint32_t width, uint32_t height, AspectRatio aspectRatio)
-            : width(width)
-            , height(height)
-            , aspectRatio(aspectRatio)
-        {
-        }
+        DisplayMode(uint32_t width, uint32_t height);
+
+        bool operator == (const DisplayMode &displayMode) const;
     };
 
-    std::map<uint32_t, std::vector<DisplayMode>> getDisplayModes(void);
+    typedef std::multimap<uint32_t, DisplayMode> DisplayModeList;
+    DisplayModeList getDisplayModes(void);
 }; // namespace Gek

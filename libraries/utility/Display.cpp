@@ -29,25 +29,32 @@ namespace Gek
         }
     }
 
-    std::map<uint32_t, std::vector<DisplayMode>> getDisplayModes(void)
+    DisplayMode::DisplayMode(uint32_t width, uint32_t height)
+        : width(width)
+        , height(height)
+        , aspectRatio(getAspectRatio(width, height))
+    {
+    }
+
+    bool DisplayMode::operator == (const DisplayMode &displayMode) const
+    {
+        return (width == displayMode.width && height == displayMode.height);
+    }
+
+    std::multimap<uint32_t, DisplayMode> getDisplayModes(void)
     {
         uint32_t displayMode = 0;
         DEVMODE displayModeData = { 0 };
-        std::map<uint32_t, std::vector<DisplayMode>> availbleModeList;
+        std::multimap<uint32_t, DisplayMode> availbleModeList;
         while (EnumDisplaySettings(0, displayMode++, &displayModeData))
         {
-            std::vector<DisplayMode> &currentModeList = availbleModeList[displayModeData.dmBitsPerPel];
-            auto findIterator = std::find_if(currentModeList.begin(), currentModeList.end(), [&](const DisplayMode &mode) -> bool
+            DisplayMode displayMode(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight);
+            if (std::find_if(availbleModeList.begin(), availbleModeList.end(), [displayModeData, displayMode](const DisplayModeList::value_type &modePair) -> bool
             {
-                if (mode.width != displayModeData.dmPelsWidth) return false;
-                if (mode.height != displayModeData.dmPelsHeight) return false;
-                return true;
-            });
-
-            if (findIterator == currentModeList.end())
+                return (modePair.first == displayModeData.dmBitsPerPel && modePair.second == displayMode);
+            }) == availbleModeList.end())
             {
-                currentModeList.emplace_back(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight,
-                    getAspectRatio(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight));
+                availbleModeList.emplace(displayModeData.dmBitsPerPel, displayMode);
             }
         };
 

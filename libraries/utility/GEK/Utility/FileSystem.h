@@ -10,10 +10,10 @@ namespace Gek
 {
     namespace FileSystem
     {
-        GEK_BASE_EXCEPTION();
-        GEK_EXCEPTION(FileNotFound);
-        GEK_EXCEPTION(FileReadError);
-        GEK_EXCEPTION(FileWriteError);
+        GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(FileNotFound);
+        GEK_ADD_EXCEPTION(FileReadError);
+        GEK_ADD_EXCEPTION(FileWriteError);
 
         class Path : public std::experimental::filesystem::path
         {

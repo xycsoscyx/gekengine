@@ -128,15 +128,28 @@ namespace Gek
     }
 }; // namespace Gek
 
-#define GEK_BASE_EXCEPTION()                                    class Exception : public Gek::Trace::Exception { public: using Gek::Trace::Exception::Exception; };
-#define GEK_EXCEPTION(TYPE)                                     class TYPE : public Exception { public: using Exception::Exception; };
+#ifdef _ENABLE_TRACE_
+    #define GEK_START_EXCEPTIONS()                              class Exception : public Gek::Trace::Exception { public: using Gek::Trace::Exception::Exception; };
+#else
+    #define GEK_START_EXCEPTIONS()                              class Exception : public Gek::Exception { public: using Gek::Exception::Exception; };
+#endif
+
+#define GEK_ADD_EXCEPTION(TYPE)                                 class TYPE : public Exception { public: using Exception::Exception; };
+
 #define GEK_REQUIRE(CHECK)                                      do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
-
-#define GEK_PARAMETER(NAME)                                     Trace::Parameter<decltype(NAME)>(#NAME, NAME)
-#define GEK_TRACE_SCOPE(...)                                    Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
-#define GEK_TRACE_FUNCTION(...)                                 Trace::log("i", "Function", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, __VA_ARGS__)
-#define GEK_TRACE_EVENT(MESSAGE, ...)                           Trace::log("i", "Event", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-#define GEK_TRACE_ERROR(MESSAGE, ...)                           Trace::log("i", "Error", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-
 #define GEK_CHECK_CONDITION(CONDITION, EXCEPTION, MESSAGE, ...) if(CONDITION) throw EXCEPTION(__FUNCTION__, __LINE__, Gek::StringUTF8(MESSAGE, __VA_ARGS__));
 #define GEK_THROW_EXCEPTION(EXCEPTION, MESSAGE, ...)            throw EXCEPTION(__FUNCTION__, __LINE__, Gek::StringUTF8(MESSAGE, __VA_ARGS__));
+
+#ifdef _ENABLE_TRACE_
+    #define GEK_PARAMETER(NAME)                                 Trace::Parameter<decltype(NAME)>(#NAME, NAME)
+    #define GEK_TRACE_SCOPE(...)                                Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
+    #define GEK_TRACE_FUNCTION(...)                             Trace::log("i", "Function", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, __VA_ARGS__)
+    #define GEK_TRACE_EVENT(MESSAGE, ...)                       Trace::log("i", "Event", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+    #define GEK_TRACE_ERROR(MESSAGE, ...)                       Trace::log("i", "Error", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+#else
+    #define GEK_PARAMETER(NAME)
+    #define GEK_TRACE_SCOPE(...)
+    #define GEK_TRACE_FUNCTION(...)
+    #define GEK_TRACE_EVENT(MESSAGE, ...)
+    #define GEK_TRACE_ERROR(MESSAGE, ...)
+#endif

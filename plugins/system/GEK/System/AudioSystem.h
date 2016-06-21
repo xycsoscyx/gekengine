@@ -9,7 +9,7 @@ namespace Gek
 {
     namespace Audio
     {
-        GEK_BASE_EXCEPTION();
+        GEK_START_EXCEPTIONS();
     }; // namespace Audio
 
     GEK_INTERFACE(AudioSample)

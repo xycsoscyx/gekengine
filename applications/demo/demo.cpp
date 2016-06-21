@@ -12,6 +12,8 @@
 
 using namespace Gek;
 
+auto displayModes = getDisplayModes();
+
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch (message)
@@ -42,9 +44,12 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
         uint32_t selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
-        std::vector<DisplayMode> modeList = getDisplayModes()[32];
-        for (auto &mode : modeList)
+
+        auto modesRange = displayModes.equal_range(32);
+        for (auto &modeIterator = modesRange.first; modeIterator != modesRange.second; ++modeIterator)
         {
+            auto &mode = (*modeIterator).second;
+
             String aspectRatio(L"");
             switch (mode.aspectRatio)
             {
@@ -63,6 +68,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
             String modeString(String(L"%vx%v%v", mode.width, mode.height, aspectRatio));
             int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.c_str());
+            SendDlgItemMessage(dialog, IDC_MODES, CB_SETITEMDATA, modeIndex, (WPARAM)&mode);
             if (mode.width == width && mode.height == height)
             {
                 selectIndex = modeIndex;
@@ -82,9 +88,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         {
         case IDOK:
         {
-            std::vector<DisplayMode> modeList = getDisplayModes()[32];
             uint32_t selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
-            auto &mode = modeList[selectIndex];
+            auto &mode = *(DisplayMode *)SendDlgItemMessage(dialog, IDC_MODES, CB_GETITEMDATA, selectIndex, 0);
 
             XmlDocumentPtr document;
             XmlNodePtr configurationNode;

@@ -16,7 +16,7 @@ namespace Gek
 {
     namespace Video
     {
-        GEK_BASE_EXCEPTION();
+        GEK_START_EXCEPTIONS();
 
         enum class Format : uint8_t
         {

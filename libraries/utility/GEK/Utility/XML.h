@@ -8,7 +8,7 @@ namespace Gek
 {
     namespace Xml
     {
-        GEK_BASE_EXCEPTION();
+        GEK_START_EXCEPTIONS();
     }; // namespace Xml
 
     struct XmlNode;

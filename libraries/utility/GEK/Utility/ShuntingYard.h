@@ -12,20 +12,20 @@ namespace Gek
     class ShuntingYard
     {
     public:
-        GEK_BASE_EXCEPTION();
-        GEK_EXCEPTION(UnknownTokenType);
-        GEK_EXCEPTION(UnbalancedParenthesis);
-        GEK_EXCEPTION(InvalidReturnType);
-        GEK_EXCEPTION(InvalidVector);
-        GEK_EXCEPTION(InvalidEquation);
-        GEK_EXCEPTION(InvalidOperator);
-        GEK_EXCEPTION(InvalidOperand);
-        GEK_EXCEPTION(InvalidFunction);
-        GEK_EXCEPTION(InvalidFunctionParameters);
-        GEK_EXCEPTION(NotEnoughFunctionParameters);
-        GEK_EXCEPTION(MissingFunctionParenthesis);
-        GEK_EXCEPTION(MisplacedSeparator);
-        GEK_EXCEPTION(VectorUsedAsParameter);
+        GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(UnknownTokenType);
+        GEK_ADD_EXCEPTION(UnbalancedParenthesis);
+        GEK_ADD_EXCEPTION(InvalidReturnType);
+        GEK_ADD_EXCEPTION(InvalidVector);
+        GEK_ADD_EXCEPTION(InvalidEquation);
+        GEK_ADD_EXCEPTION(InvalidOperator);
+        GEK_ADD_EXCEPTION(InvalidOperand);
+        GEK_ADD_EXCEPTION(InvalidFunction);
+        GEK_ADD_EXCEPTION(InvalidFunctionParameters);
+        GEK_ADD_EXCEPTION(NotEnoughFunctionParameters);
+        GEK_ADD_EXCEPTION(MissingFunctionParenthesis);
+        GEK_ADD_EXCEPTION(MisplacedSeparator);
+        GEK_ADD_EXCEPTION(VectorUsedAsParameter);
 
     public:
         enum class Associations : uint8_t
