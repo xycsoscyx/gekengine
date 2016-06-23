@@ -608,16 +608,6 @@ namespace Gek
         {
             return c_str();
         }
-
-        operator std::basic_string<ELEMENT> & ()
-        {
-            return static_cast<basic_string &>(*this);
-        }
-
-        operator const std::basic_string<ELEMENT> & () const
-        {
-            return static_cast<const basic_string &>(*this);
-        }
     };
 
     typedef BaseString<char> StringUTF8;

@@ -2,6 +2,7 @@
 
 #include "GEK\Utility\String.h"
 #include <json.hpp>
+#include <unordered_map>
 #include <chrono>
 #include <atomic>
 
@@ -40,38 +41,40 @@ namespace Gek
             }
         };
 
-        void inline getParameters(nlohmann::json &jsonArguments)
+        typedef std::unordered_map<StringUTF8, StringUTF8> ParameterMap;
+
+        void inline getParameters(ParameterMap &parameters)
         {
         }
 
         template<typename VALUE, typename... ARGUMENTS>
-        void getParameters(nlohmann::json &jsonArguments, Parameter<VALUE> &pair, ARGUMENTS&... arguments)
+        void getParameters(ParameterMap &parameters, Parameter<VALUE> &pair, ARGUMENTS&... arguments)
         {
-            jsonArguments[pair.name] = StringUTF8("%v", pair.value).c_str();
-            getParameters(jsonArguments, arguments...);
+            parameters[pair.name] = pair.value;
+            getParameters(parameters, arguments...);
         }
 
-        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, nlohmann::json *jsonArguments = nullptr);
+        void logBase(const char *type, const char *category, uint64_t timeStamp, const char *function, const ParameterMap &parameters);
 
         template<typename... ARGUMENTS>
         void log(const char *type, const char *category, uint64_t timeStamp, const char *function, ARGUMENTS&... arguments)
         {
-            nlohmann::json jsonArguments;
-            getParameters(jsonArguments, arguments...);
-            log(type, category, timeStamp, function, &jsonArguments);
+            ParameterMap parameters;
+            getParameters(parameters, arguments...);
+            logBase(type, category, timeStamp, function, parameters);
         }
 
         template<typename... ARGUMENTS>
         void log(const char *type, const char *category, uint64_t timeStamp, const char *function, const char *message, ARGUMENTS&... arguments)
         {
-            nlohmann::json jsonArguments;
-            getParameters(jsonArguments, arguments...);
+            ParameterMap parameters;
+            getParameters(parameters, arguments...);
             if (message)
             {
-                jsonArguments["message"] = message;
+                parameters["msg"] = message;
             }
 
-            log(type, category, timeStamp, function, &jsonArguments);
+            logBase(type, category, timeStamp, function, parameters);
         }
 
         class Scope
@@ -79,31 +82,23 @@ namespace Gek
         private:
             const char *category;
             const char *function;
-
-            static std::atomic<uint32_t> uniqueId;
-            std::stringstream id;
+            std::chrono::time_point<std::chrono::system_clock> start;
+            ParameterMap parameters;
 
         public:
-            Scope(const char *category, const char *function)
-                : category(category)
-                , function(function)
-            {
-                id << function << "_" << uniqueId++;
-                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), id.str().c_str());
-            }
-
             template<typename... ARGUMENTS>
             Scope(const char *category, const char *function, ARGUMENTS &... arguments)
                 : category(category)
                 , function(function)
+                , start(std::chrono::system_clock::now())
             {
-                id << function << "_" << uniqueId++;
-                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), id.str().c_str(), arguments...);
+                getParameters(parameters, arguments...);
             }
 
             ~Scope(void)
             {
-                log("E", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), id.str().c_str());
+                auto duration(std::chrono::system_clock::now() - start);
+                logBase("X", category, std::chrono::duration_cast<std::chrono::milliseconds>(duration).count(), function, parameters);
             }
         };
 

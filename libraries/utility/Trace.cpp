@@ -27,8 +27,6 @@ namespace Gek
 
     namespace Trace
     {
-        std::atomic<uint32_t> Scope::uniqueId(0);
-
         Exception::Exception(const char *function, uint32_t line, const char *message)
             : Gek::Exception(function, line, message)
         {
@@ -102,7 +100,7 @@ namespace Gek
                 };
 
                 Logger file;
-                file.write("{\"traceEvents\":[" + startupData.dump(-1) + ",");
+                file.write("{\"displayTimeUnit\":\"ms\",\"traceEvents\":[" + startupData.dump(-1) + ",");
                 while (WaitForSingleObject(shutdownEvent, 0) != WAIT_OBJECT_0)
                 {
                     HANDLE pipe = CreateNamedPipe(
@@ -141,7 +139,7 @@ namespace Gek
 
                             if (!message.empty())
                             {
-                                OutputDebugStringA((message + "").c_str());
+                                OutputDebugStringA((message + "\r\n").c_str());
                                 file.write(message);
                             }
 
@@ -202,7 +200,7 @@ namespace Gek
             }
         }
 
-        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, nlohmann::json *jsonArguments)
+        void logBase(const char *type, const char *category, uint64_t timeStamp, const char *function, const ParameterMap &parameters)
         {
             nlohmann::json eventData =
             {
@@ -214,9 +212,14 @@ namespace Gek
                 { "ph", type },
             };
 
-            if (jsonArguments)
+            if (!parameters.empty())
             {
-                eventData["args"] = (*jsonArguments);
+                auto &args = eventData["args"];
+                //std::copy(parameters.begin(), parameters.end(), std::back_inserter(args));
+                for (const auto &parameter : parameters)
+                {
+                    args[parameter.first] = (std::string)parameter.second;
+                }
             }
 
             log(eventData.dump(-1) + ",");
