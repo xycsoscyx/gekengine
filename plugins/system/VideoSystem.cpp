@@ -21,7 +21,7 @@ namespace Gek
 {
     namespace DirectX
     {
-        // Both these lists must match, since the same GEK Format can be used for either textures or buffers
+        // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
         static const DXGI_FORMAT TextureFormatList[] =
         {
@@ -47,12 +47,74 @@ namespace Gek
             DXGI_FORMAT_R32G32_FLOAT,
             DXGI_FORMAT_R32G32B32_FLOAT,
             DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_R16_TYPELESS,
+            DXGI_FORMAT_R24G8_TYPELESS,
+            DXGI_FORMAT_R32_TYPELESS,
+        };
+
+        static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all TextureFormatList.");
+
+        static const DXGI_FORMAT DepthFormatList[] =
+        {
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_D16_UNORM,
             DXGI_FORMAT_D24_UNORM_S8_UINT,
             DXGI_FORMAT_D32_FLOAT,
         };
 
-        static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all TextureFormatList.");
+        static_assert(ARRAYSIZE(DepthFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all DepthFormatList.");
+
+        static const DXGI_FORMAT ViewFormatList[] =
+        {
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_R8_UNORM,
+            DXGI_FORMAT_R8G8_UNORM,
+            DXGI_FORMAT_R10G10B10A2_UNORM,
+            DXGI_FORMAT_R8G8B8A8_UNORM,
+            DXGI_FORMAT_B8G8R8A8_UNORM,
+            DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            DXGI_FORMAT_R16_UINT,
+            DXGI_FORMAT_R16G16_UINT,
+            DXGI_FORMAT_R16G16B16A16_UINT,
+            DXGI_FORMAT_R32_UINT,
+            DXGI_FORMAT_R32G32_UINT,
+            DXGI_FORMAT_R32G32B32_UINT,
+            DXGI_FORMAT_R32G32B32A32_UINT,
+            DXGI_FORMAT_R16_FLOAT,
+            DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R11G11B10_FLOAT,
+            DXGI_FORMAT_R16G16B16A16_FLOAT,
+            DXGI_FORMAT_R32_FLOAT,
+            DXGI_FORMAT_R32G32_FLOAT,
+            DXGI_FORMAT_R32G32B32_FLOAT,
+            DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_R16_UNORM,
+            DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+            DXGI_FORMAT_R32_FLOAT,
+        };
+
+        static_assert(ARRAYSIZE(ViewFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all ViewFormatList.");
 
         static const DXGI_FORMAT BufferFormatList[] =
         {
@@ -945,19 +1007,21 @@ namespace Gek
         void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            GEK_REQUIRE(viewPortList);
-            GEK_REQUIRE(viewPortCount > 0);
 
-            d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
+            if (viewPortCount)
+            {
+                d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
+            }
         }
 
         void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            GEK_REQUIRE(rectangleList);
-            GEK_REQUIRE(rectangleCount > 0);
 
-            d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
+            if (rectangleCount > 0)
+            {
+                d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
+            }
         }
 
         void clearRenderTarget(VideoTarget *renderTarget, const Math::Color &clearColor)
@@ -984,7 +1048,6 @@ namespace Gek
         void setRenderTargets(VideoTarget **renderTargetList, uint32_t renderTargetCount, VideoObject *depthBuffer)
         {
             GEK_REQUIRE(d3dDeviceContext);
-            GEK_REQUIRE(renderTargetList);
 
             for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
             {
@@ -1954,7 +2017,6 @@ namespace Gek
             resourceData.SysMemPitch = (DirectX::FormatStrideList[static_cast<uint8_t>(format)] * width);
             resourceData.SysMemSlicePitch = (depth == 1 ? 0 : (resourceData.SysMemPitch * height));
 
-            DXGI_FORMAT d3dFormat = DirectX::TextureFormatList[static_cast<uint8_t>(format)];;
             CComQIPtr<ID3D11Resource> d3dResource;
             if (depth == 1)
             {
@@ -1962,7 +2024,7 @@ namespace Gek
                 textureDescription.Width = width;
                 textureDescription.Height = height;
                 textureDescription.MipLevels = mipmaps;
-                textureDescription.Format = d3dFormat;
+                textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(format)];
                 textureDescription.ArraySize = 1;
                 textureDescription.SampleDesc.Count = 1;
                 textureDescription.SampleDesc.Quality = 0;
@@ -1990,7 +2052,7 @@ namespace Gek
                 textureDescription.Height = height;
                 textureDescription.Depth = depth;
                 textureDescription.MipLevels = mipmaps;
-                textureDescription.Format = d3dFormat;
+                textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(format)];
                 textureDescription.BindFlags = bindFlags;
                 textureDescription.CPUAccessFlags = 0;
                 textureDescription.MiscFlags = (mipmaps == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
@@ -2014,7 +2076,22 @@ namespace Gek
             CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
             if (flags & Video::TextureFlags::Resource)
             {
-                HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, nullptr, &d3dShaderResourceView);
+                D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
+                viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(format)];
+                if (depth == 1)
+                {
+                    viewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+                    viewDescription.Texture2D.MostDetailedMip = 0;
+                    viewDescription.Texture2D.MipLevels = -1;
+                }
+                else
+                {
+                    viewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+                    viewDescription.Texture3D.MostDetailedMip = 0;
+                    viewDescription.Texture3D.MipLevels = -1;
+                }
+
+                HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
                 GEK_CHECK_CONDITION(!d3dShaderResourceView, Video::Exception, "Unable to create resource view (error %v)", resultValue);
             }
 
@@ -2022,7 +2099,7 @@ namespace Gek
             if (flags & Video::TextureFlags::UnorderedAccess)
             {
                 D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                viewDescription.Format = d3dFormat;
+                viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(format)];
                 if (depth == 1)
                 {
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
@@ -2085,7 +2162,7 @@ namespace Gek
             if (flags & Video::TextureFlags::RenderTarget)
             {
                 D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
-                renderViewDescription.Format = d3dFormat;
+                renderViewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(format)];
                 if (depth == 1)
                 {
                     renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE2D;
@@ -2108,7 +2185,7 @@ namespace Gek
             else if (flags & Video::TextureFlags::DepthTarget)
             {
                 D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                depthStencilDescription.Format = d3dFormat;
+                depthStencilDescription.Format = DirectX::DepthFormatList[static_cast<uint8_t>(format)];
                 depthStencilDescription.ViewDimension = D3D11_DSV_DIMENSION_TEXTURE2D;
                 depthStencilDescription.Flags = 0;
                 depthStencilDescription.Texture2D.MipSlice = 0;

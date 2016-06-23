@@ -12,7 +12,7 @@
         <depthBuffer bind="float" source="standard" name="depthBuffer" />
     </textures>
     
-    <depth source="standard" name="depth" />
+    <depth source="standard" />
 
     <block>
         <clear>

@@ -697,15 +697,23 @@ namespace Gek
             XmlNodePtr depthNode = shaderNode->firstChildElement(L"depth");
             if (depthNode->isValid())
             {
-                if (depthNode->hasAttribute(L"source") && depthNode->hasAttribute(L"name"))
+                if (depthNode->hasAttribute(L"source"))
                 {
-                    depthBuffer = resources->getResourceHandle(String(L"%v:%v", depthNode->getAttribute(L"name"), depthNode->getAttribute(L"source")));
+                    depthBuffer = resources->getResourceHandle(String(L"%v:depth", depthNode->getAttribute(L"source")));
                 }
                 else
                 {
-                    Video::Format format = getFormat(depthNode->getText());
-                    depthBuffer = resources->createTexture(String(L"depth:%v", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget);
+                    String text(depthNode->getText());
+                    GEK_CHECK_CONDITION(text.empty(), Trace::Exception, "No format specified for depth buffer");
+
+                    Video::Format format = getFormat(text);
+                    GEK_CHECK_CONDITION(format == Video::Format::Unknown, Trace::Exception, "Invalid format specified for depth buffer");
+
+                    depthBuffer = resources->createTexture(String(L"%v:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource);
                 }
+
+                resourceList[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
+                resourceMap[L"depth"] = depthBuffer;
             }
 
             XmlNodePtr texturesNode = shaderNode->firstChildElement(L"textures");
@@ -716,7 +724,7 @@ namespace Gek
                 BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                 if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
                 {
-                    String identity(L"%v:%v", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
+                    String identity(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
                     if (!resourceMap.count(identity))
                     {
                         resourceMap[name] = resources->getResourceHandle(identity);
@@ -744,7 +752,7 @@ namespace Gek
 
                     Video::Format format = getFormat(textureNode->getText());
                     uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
-                    resourceMap[name] = resources->createTexture(String(L"%v:%v", name, fileName), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
+                    resourceMap[name] = resources->createTexture(String(L"%v:%v:resource", name, fileName), format, textureWidth, textureHeight, 1, flags, textureMipMaps);
                 }
 
                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
@@ -758,7 +766,7 @@ namespace Gek
                 String name(bufferNode->getType());
                 Video::Format format = getFormat(bufferNode->getText());
                 uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
-                resourceMap[name] = resources->createBuffer(String(L"%v:buffer:%v", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
+                resourceMap[name] = resources->createBuffer(String(L"%v:%v:buffer", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
                 switch (format)
                 {
                 case Video::Format::Byte:

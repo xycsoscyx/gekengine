@@ -238,7 +238,6 @@ namespace Gek
             float maximumDistance;
             Math::Float4x4 viewMatrix;
             Math::Float4x4 projectionMatrix;
-            Math::Float4x4 inverseProjectionMatrix;
         };
 
         struct DrawCallValue
@@ -427,6 +426,7 @@ namespace Gek
 
             auto &cameraTransform = cameraEntity->getComponent<TransformComponent>();
             Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
+            Math::Float4x4 viewMatrix(cameraMatrix.getInverse());
 
             EngineConstantData engineConstantData;
             engineConstantData.frameTime = population->getFrameTime();
@@ -437,11 +437,10 @@ namespace Gek
             cameraConstantData.fieldOfView.y = (1.0f / projectionMatrix._22);
             cameraConstantData.minimumDistance = minimumDistance;
             cameraConstantData.maximumDistance = maximumDistance;
-            cameraConstantData.viewMatrix = cameraMatrix.getInverse();
+            cameraConstantData.viewMatrix = viewMatrix;
             cameraConstantData.projectionMatrix = projectionMatrix;
-            cameraConstantData.inverseProjectionMatrix = projectionMatrix.getInverse();
 
-            const Shapes::Frustum viewFrustum(cameraConstantData.viewMatrix * cameraConstantData.projectionMatrix);
+            const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
 
             drawCallList.clear();
             sendEvent(Event(std::bind(&RenderObserver::onRenderScene, std::placeholders::_1, cameraEntity, &cameraConstantData.viewMatrix, &viewFrustum)));
