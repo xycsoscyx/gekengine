@@ -33,11 +33,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
         while (entityNode->isValid())
         {
-            Population::EntityDefinition entityData;
+            Population::EntityDefinition data;
             XmlNodePtr componentNode = entityNode->firstChildElement();
             while (componentNode->isValid())
             {
-                Population::ComponentDefinition &componentData = entityData[componentNode->getType()];
+                Population::ComponentDefinition &componentData = data[componentNode->getType()];
                 componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
                 {
                     componentData.insert(std::make_pair(name, value));

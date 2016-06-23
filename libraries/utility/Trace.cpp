@@ -27,10 +27,12 @@ namespace Gek
 
     namespace Trace
     {
+        std::atomic<uint32_t> Scope::uniqueId(0);
+
         Exception::Exception(const char *function, uint32_t line, const char *message)
             : Gek::Exception(function, line, message)
         {
-            log("i", "exception", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function, message);
+            log("I", "exception", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function, message);
         }
 
         class Logger
@@ -89,8 +91,18 @@ namespace Gek
             GEK_CHECK_CONDITION(shutdownEvent == nullptr, Gek::Exception, "Unable to create shutdown event: %v", GetLastError());
             server.reset(new std::thread([shutdownEvent](void) -> void
             {
+                nlohmann::json startupData =
+                {
+                    { "cat", "Trace" },
+                    { "name", "trace" },
+                    { "pid", GetCurrentProcessId() },
+                    { "tid", GetCurrentThreadId() },
+                    { "ts", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() },
+                    { "ph", "B" },
+                };
+
                 Logger file;
-                file.write("{\"traceEvents\":[\r\n");
+                file.write("{\"traceEvents\":[" + startupData.dump(-1) + ",");
                 while (WaitForSingleObject(shutdownEvent, 0) != WAIT_OBJECT_0)
                 {
                     HANDLE pipe = CreateNamedPipe(
@@ -129,7 +141,7 @@ namespace Gek
 
                             if (!message.empty())
                             {
-                                OutputDebugStringA((message + "\r\n").c_str());
+                                OutputDebugStringA((message + "").c_str());
                                 file.write(message);
                             }
 
@@ -142,21 +154,19 @@ namespace Gek
                         DWORD error = GetLastError();
                         OutputDebugStringW(String(L"Error creating named pipe: %v", error));
                     }
+                };
 
-                    nlohmann::json profileData =
-                    {
-                        { "name", "traceShutDown" },
-                        { "cat", "Trace" },
-                        { "ph", "i" },
-                        { "ts", GetTickCount64() },
-                        { "pid", GetCurrentProcessId() },
-                        { "tid", GetCurrentThreadId() },
-                    };
+                nlohmann::json shutdownData =
+                {
+                    { "cat", "Trace" },
+                    { "name", "trace" },
+                    { "pid", GetCurrentProcessId() },
+                    { "tid", GetCurrentThreadId() },
+                    { "ts", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() },
+                    { "ph", "E" },
+                };
 
-                    file.write(profileData.dump(4));
-                    file.write("] }\r\n");
-                }
-
+                file.write(shutdownData.dump(-1) + "]}");
                 CloseHandle(shutdownEvent);
             }));
         }
@@ -181,35 +191,35 @@ namespace Gek
             }
         }
 
-        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, nlohmann::json *jsonArguments)
-        {
-            nlohmann::json profileData =
-            {
-                { "name", function },
-                { "cat", category },
-                { "ph", type },
-                { "ts", timeStamp },
-                { "pid", GetCurrentProcessId() },
-                { "tid", GetCurrentThreadId() },
-            };
-
-            if (jsonArguments)
-            {
-                profileData["arguments"] = (*jsonArguments);
-            }
-
-            log((profileData.dump(4) + ",\r\n").c_str());
-        }
-
-        void log(const char *string)
+        void log(const std::string &string)
         {
             HANDLE pipe = CreateFile(L"\\\\.\\pipe\\GEK_Named_Pipe", GENERIC_WRITE, 0, nullptr, OPEN_EXISTING, 0, nullptr);
             if (pipe != INVALID_HANDLE_VALUE)
             {
                 DWORD bytesWritten = 0;
-                WriteFile(pipe, string, strlen(string), &bytesWritten, nullptr);
+                WriteFile(pipe, string.c_str(), string.length(), &bytesWritten, nullptr);
                 CloseHandle(pipe);
             }
+        }
+
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, nlohmann::json *jsonArguments)
+        {
+            nlohmann::json eventData =
+            {
+                { "cat", category },
+                { "name", function },
+                { "pid", GetCurrentProcessId() },
+                { "tid", GetCurrentThreadId() },
+                { "ts", timeStamp },
+                { "ph", type },
+            };
+
+            if (jsonArguments)
+            {
+                eventData["args"] = (*jsonArguments);
+            }
+
+            log(eventData.dump(-1) + ",");
         }
     }; // namespace Trace
 };

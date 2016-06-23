@@ -221,7 +221,10 @@ namespace Gek
             NewtonCompoundCollisionEndAddRemove(playerShape);
 
             // create the kinematic body
-            newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, Math::Float4x4::Identity.data);
+            Math::Float4x4 matrix(transform.getMatrix());
+            matrix.translation -= (matrix.ny * player.height);
+            newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, matrix.data);
+            NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
 
             // players must have weight, otherwise they are infinitely strong when they collide
             NewtonCollision* const bodyShape = NewtonBodyGetCollision(newtonBody);
@@ -238,7 +241,7 @@ namespace Gek
             for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
             {
                 Math::Float4x4 rotation;
-                rotation.setPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps);
+                rotation.setPitchRotation(currentPoint * 2.0f * Math::Pi / numberOfSteps);
                 convexPoints[0][currentPoint] = (rotation * point0);
                 convexPoints[1][currentPoint] = (rotation * point1);
             }
@@ -250,11 +253,6 @@ namespace Gek
             NewtonDestroyCollision(bodyCapsule);
             NewtonDestroyCollision(supportShape);
             NewtonDestroyCollision(playerShape);
-
-            Math::Float4x4 matrix(transform.getMatrix());
-            matrix.translation -= (matrix.ny * player.height);
-            NewtonBodySetMatrix(newtonBody, matrix.data);
-            NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
         }
 
         ~PlayerNewtonBody(void)
@@ -339,12 +337,13 @@ namespace Gek
 
         void onPostUpdate(float frameTime, int threadHandle)
         {
-            auto &transform = entity->getComponent<TransformComponent>();
             auto &player = entity->getComponent<PlayerBodyComponent>();
 
             // get the body motion state 
             Math::Float4x4 matrix;
             NewtonBodyGetMatrix(newtonBody, matrix.data);
+
+            Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
 
             Math::Float3 omega;
             NewtonBodyGetOmega(newtonBody, omega.data);
@@ -372,9 +371,9 @@ namespace Gek
 
             NewtonWorldConvexCastReturnInfo upConstraint;
             memset(&upConstraint, 0, sizeof(upConstraint));
-            upConstraint.m_normal[0] = 0.0f;
-            upConstraint.m_normal[1] = 1.0f;
-            upConstraint.m_normal[2] = 0.0f;
+            upConstraint.m_normal[0] = -gravity.x;
+            upConstraint.m_normal[1] = -gravity.y;
+            upConstraint.m_normal[2] = -gravity.z;
 
             for (int currentStep = 0; ((currentStep < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > PLAYER_EPSILON)); currentStep++)
             {
@@ -507,13 +506,14 @@ namespace Gek
 
             if (!touchingSurface)
             {
-                Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
                 falling = (velocity.getNormal().dot(gravity.getNormal()) > 0.75f);
             }
 
             NewtonBodySetVelocity(newtonBody, velocity.data);
             NewtonBodySetMatrix(newtonBody, matrix.data);
-            transform.position = matrix.translation + matrix.ny * player.height;
+
+            auto &transform = entity->getComponent<TransformComponent>();
+            transform.position = (matrix.translation + (matrix.ny * player.height));
             transform.rotation = matrix.getQuaternion();
         }
 

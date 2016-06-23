@@ -579,8 +579,8 @@ namespace Gek
                     color = entity->getComponent<ColorComponent>().value;
                 }
 
-                Data entityData(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
-                entityDataMap.insert(std::make_pair(entity, entityData));
+                Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
+                entityDataMap.insert(std::make_pair(entity, data));
             }
         }
 
@@ -588,10 +588,10 @@ namespace Gek
         {
             GEK_REQUIRE(entity);
 
-            auto dataIterator = entityDataMap.find(entity);
-            if (dataIterator != entityDataMap.end())
+            auto entityData = entityDataMap.find(entity);
+            if (entityData != entityDataMap.end())
             {
-                entityDataMap.erase(dataIterator);
+                entityDataMap.erase(entityData);
             }
         }
 
@@ -611,6 +611,8 @@ namespace Gek
 
         void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
+            GEK_TRACE_SCOPE();
+            GEK_REQUIRE(render);
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 

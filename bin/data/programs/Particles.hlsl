@@ -9,6 +9,7 @@ namespace Particles
         float age, death;
         float angle, spin;
         float size;
+        float buffer[2];
     };
 
     StructuredBuffer<Instance> list : register(t0);

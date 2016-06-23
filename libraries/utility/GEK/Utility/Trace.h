@@ -1,8 +1,9 @@
 #pragma once
 
 #include "GEK\Utility\String.h"
-#include <chrono>
 #include <json.hpp>
+#include <chrono>
+#include <atomic>
 
 namespace Gek
 {
@@ -25,7 +26,6 @@ namespace Gek
     {
         void initialize(void);
         void shutdown(void);
-        void log(const char *string);
 
         template <class TYPE>
         struct Parameter
@@ -80,12 +80,16 @@ namespace Gek
             const char *category;
             const char *function;
 
+            static std::atomic<uint32_t> uniqueId;
+            std::stringstream id;
+
         public:
             Scope(const char *category, const char *function)
                 : category(category)
                 , function(function)
             {
-                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function);
+                id << function << "_" << uniqueId++;
+                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), id.str().c_str());
             }
 
             template<typename... ARGUMENTS>
@@ -93,12 +97,13 @@ namespace Gek
                 : category(category)
                 , function(function)
             {
-                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function, arguments...);
+                id << function << "_" << uniqueId++;
+                log("B", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), id.str().c_str(), arguments...);
             }
 
             ~Scope(void)
             {
-                log("E", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), function);
+                log("E", category, std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), id.str().c_str());
             }
         };
 
@@ -128,12 +133,14 @@ namespace Gek
     }
 }; // namespace Gek
 
+#define _ENABLE_TRACE_
+
 #ifdef _ENABLE_TRACE_
     #define GEK_PARAMETER(NAME)                                 Trace::Parameter<decltype(NAME)>(#NAME, NAME)
     #define GEK_TRACE_SCOPE(...)                                Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
-    #define GEK_TRACE_FUNCTION(...)                             Trace::log("i", "Function", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, __VA_ARGS__)
-    #define GEK_TRACE_EVENT(MESSAGE, ...)                       Trace::log("i", "Event", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
-    #define GEK_TRACE_ERROR(MESSAGE, ...)                       Trace::log("i", "Error", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+    #define GEK_TRACE_FUNCTION(...)                             Trace::log("I", "Function", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, __VA_ARGS__)
+    #define GEK_TRACE_EVENT(MESSAGE, ...)                       Trace::log("I", "Event", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
+    #define GEK_TRACE_ERROR(MESSAGE, ...)                       Trace::log("I", "Error", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)
     #define GEK_START_EXCEPTIONS()                              class Exception : public Gek::Trace::Exception { public: using Gek::Trace::Exception::Exception; };
 #else
     #define GEK_PARAMETER(NAME)

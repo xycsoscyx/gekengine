@@ -625,7 +625,11 @@ namespace Gek
                 }
                 else if (mapNode->hasAttribute(L"pattern"))
                 {
-                    fallback = std::make_shared<DataResource>(mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"));
+                    fallback = std::make_shared<PatternResource>(mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"));
+                }
+                else if (mapNode->hasAttribute(L"name"))
+                {
+                    fallback = std::make_shared<NamedResource>(mapNode->getAttribute(L"name"));
                 }
 
                 mapList.push_back(Map(name, mapType, bindType, flags, fallback));
@@ -1160,11 +1164,20 @@ namespace Gek
 
                         break;
 
-                    case Resource::Type::Data:
+                    case Resource::Type::Pattern:
                         if (true)
                         {
-                            auto dataResource = std::dynamic_pointer_cast<DataResource>(baseResource);
-                            resource = resources->createTexture(dataResource->pattern, dataResource->parameters);
+                            auto patternResource = std::dynamic_pointer_cast<PatternResource>(baseResource);
+                            resource = resources->createTexture(patternResource->pattern, patternResource->parameters);
+                        }
+
+                        break;
+
+                    case Resource::Type::Named:
+                        if (true)
+                        {
+                            auto namedResource = std::dynamic_pointer_cast<NamedResource>(baseResource);
+                            resource = resources->getResourceHandle(namedResource->name);
                         }
 
                         break;

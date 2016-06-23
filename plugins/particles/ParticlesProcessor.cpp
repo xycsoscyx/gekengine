@@ -34,8 +34,6 @@ static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
 
 namespace Gek
 {
-    static const uint32_t ParticleBufferCount = 1000;
-
     class ParticlesProcessorImplementation
         : public ContextRegistration<ParticlesProcessorImplementation, EngineContext *>
         , public PopulationObserver
@@ -43,6 +41,7 @@ namespace Gek
         , public Processor
     {
     public:
+        __declspec(align(16))
         struct Particle
         {
             Math::Float3 origin;
@@ -60,6 +59,8 @@ namespace Gek
             {
             }
         };
+
+        static const uint32_t ParticleBufferCount = ((64 * 1024) / sizeof(Particle));
 
         struct Emitter
             : public Shapes::AlignedBox
@@ -218,6 +219,7 @@ namespace Gek
                 {
                     particle.age = emitter.lifeExpectancy(mersineTwister);
                     particle.death = emitter.lifeExpectancy(mersineTwister);
+                    particle.spin = (negativeOneToOne(mersineTwister) * Math::Pi);
                     particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2.0f);
                     particle.origin = transformComponent.position;
                     particle.offset.x = std::cos(particle.angle);
@@ -241,6 +243,7 @@ namespace Gek
 
         void onUpdate(uint32_t handle, bool isIdle)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
             if (!isIdle)
             {
                 float frameTime = population->getFrameTime();
@@ -333,6 +336,8 @@ namespace Gek
 
         void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
+            GEK_TRACE_SCOPE();
+            GEK_REQUIRE(render);
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
@@ -344,7 +349,6 @@ namespace Gek
                 if (viewFrustum->isVisible(emitter))
                 {
                     visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &data));
-                    //render->queueDrawCall(plugin, emitter.material, std::bind(drawCall, std::placeholders::_1, resources, entity, emitter, particleBuffer));
                 }
             });
 

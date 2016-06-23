@@ -76,7 +76,8 @@ namespace Gek
         {
             Unknown = 0,
             File = 1,
-            Data,
+            Pattern,
+            Named,
         };
 
         Type type;
@@ -103,15 +104,26 @@ namespace Gek
         }
     };
 
-    struct DataResource : public Resource
+    struct PatternResource : public Resource
     {
         String pattern;
         String parameters;
 
-        DataResource(const wchar_t *pattern, const wchar_t *parameters)
-            : Resource(Type::Data)
+        PatternResource(const wchar_t *pattern, const wchar_t *parameters)
+            : Resource(Type::Pattern)
             , pattern(pattern)
             , parameters(parameters)
+        {
+        }
+    };
+
+    struct NamedResource : public Resource
+    {
+        String name;
+
+        NamedResource(const wchar_t *name)
+            : Resource(Type::Named)
+            , name(name)
         {
         }
     };

@@ -315,8 +315,8 @@ namespace Gek
                     color = std::cref(entity->getComponent<ColorComponent>().value);
                 }
 
-                Data entityData(pair.first->second, skinMaterial, color);
-                entityDataMap.insert(std::make_pair(entity, entityData));
+                Data data(pair.first->second, skinMaterial, color);
+                entityDataMap.insert(std::make_pair(entity, data));
             }
         }
 
@@ -324,10 +324,10 @@ namespace Gek
         {
             GEK_REQUIRE(entity);
 
-            auto entityDataIterator = entityDataMap.find(entity);
-            if (entityDataIterator != entityDataMap.end())
+            auto entityData = entityDataMap.find(entity);
+            if (entityData != entityDataMap.end())
             {
-                entityDataMap.erase(entityDataIterator);
+                entityDataMap.erase(entityData);
             }
         }
 
@@ -347,35 +347,37 @@ namespace Gek
 
         void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
+            GEK_TRACE_SCOPE();
+            GEK_REQUIRE(render);
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
-            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &entityData) -> void
+            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
             {
-                Entity *entity = entityData.first;
-                Model &data = entityData.second.model;
+                Entity *entity = data.first;
+                Model &model = data.second.model;
 
                 const auto &transformComponent = entity->getComponent<TransformComponent>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
 
-                Shapes::OrientedBox orientedBox(data.alignedBox, matrix);
+                Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
                 orientedBox.halfsize *= transformComponent.scale;
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    auto &materialList = visibleList[&data];
-                    auto &instanceList = materialList[entityData.second.skin];
-                    instanceList.push_back(Instance((matrix * *viewMatrix), entityData.second.color, transformComponent.scale));
+                    auto &materialList = visibleList[&model];
+                    auto &instanceList = materialList[data.second.skin];
+                    instanceList.push_back(Instance((matrix * *viewMatrix), data.second.color, transformComponent.scale));
                 }
             });
 
             concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](auto &visibleList) -> void
             {
-                Model *data = visibleList.first;
-                if (!data->loaded)
+                Model *model = visibleList.first;
+                if (!model->loaded)
                 {
-                    loadModel(*data);
+                    loadModel(*model);
                     return;
                 }
 
@@ -383,7 +385,7 @@ namespace Gek
                 {
                     concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](auto &instanceList) -> void
                     {
-                        concurrency::parallel_for_each(data->materialList.begin(), data->materialList.end(), [&](const Material &material) -> void
+                        concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
                         {
                             render->queueDrawCall(plugin, (material.skin ? materialList.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer));
                         });

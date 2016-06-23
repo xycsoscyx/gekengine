@@ -421,6 +421,7 @@ namespace Gek
         void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance, ResourceHandle target)
         {
             GEK_TRACE_SCOPE();
+            GEK_REQUIRE(video);
             GEK_REQUIRE(population);
             GEK_REQUIRE(cameraEntity);
 
@@ -589,6 +590,7 @@ namespace Gek
 
         void onUpdate(uint32_t handle, bool isIdle)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
             if (handle == backgroundUpdateHandle)
             {
                 sendEvent(Event(std::bind(&RenderObserver::onRenderBackground, std::placeholders::_1)));

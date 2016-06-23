@@ -5,7 +5,6 @@
 #include "GEK\Math\Float4.h"
 #include "GEK\Math\Color.h"
 #include "GEK\Math\Quaternion.h"
-#include "GEK\Utility\Trace.h"
 #include <functional>
 #include <sstream>
 #include <codecvt>

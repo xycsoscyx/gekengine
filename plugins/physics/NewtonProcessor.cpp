@@ -390,6 +390,7 @@ namespace Gek
 
         void onUpdate(uint32_t handle, bool isIdle)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
             GEK_REQUIRE(population);
 
             if (!isIdle && newtonWorld)

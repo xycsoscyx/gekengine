@@ -19,9 +19,7 @@ namespace Gek
         float fieldOfView;
         float minimumDistance;
         float maximumDistance;
-        uint32_t width;
-        uint32_t height;
-        String format;
+        String name;
 
         FirstPersonCameraComponent(void)
         {
@@ -32,9 +30,7 @@ namespace Gek
             saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
             saveParameter(componentData, L"minimum_distance", minimumDistance);
             saveParameter(componentData, L"maximum_distance", maximumDistance);
-            saveParameter(componentData, L"width", width);
-            saveParameter(componentData, L"height", height);
-            saveParameter(componentData, L"format", format);
+            saveParameter(componentData, L"name", name);
         }
 
         void load(const Population::ComponentDefinition &componentData)
@@ -42,9 +38,7 @@ namespace Gek
             fieldOfView = Math::convertDegreesToRadians(loadParameter(componentData, L"field_of_view", 90.0f));
             minimumDistance = loadParameter(componentData, L"minimum_distance", 1.0f);
             maximumDistance = loadParameter(componentData, L"maximum_distance", 100.0f);
-            width = loadParameter(componentData, L"width", 0);
-            height = loadParameter(componentData, L"height", 0);
-            format = loadParameter(componentData, L"format", String());
+            name = loadParameter(componentData, L"name", String());
         }
     };
 
@@ -71,7 +65,7 @@ namespace Gek
         , public Processor
     {
     public:
-        struct Data
+        struct Camera
         {
             ResourceHandle target;
         };
@@ -82,7 +76,7 @@ namespace Gek
         Resources *resources;
         Render *render;
 
-        typedef std::unordered_map<Entity *, Data> EntityDataMap;
+        typedef std::unordered_map<Entity *, Camera> EntityDataMap;
         EntityDataMap entityDataMap;
 
     public:
@@ -133,25 +127,14 @@ namespace Gek
             {
                 auto &cameraComponent = entity->getComponent<FirstPersonCameraComponent>();
 
-                Data entityData;
-                if (!cameraComponent.format.empty() &&
-                    cameraComponent.width > 0 &&
-                    cameraComponent.height > 0)
+                Camera data;
+                if (!cameraComponent.name.empty())
                 {
-                    String name;
-                    if (entity->getName())
-                    {
-                        name.format(L"camera:%v", entity->getName());
-                    }
-                    else
-                    {
-                        name.format(L"camera:%v", entity);
-                    }
-
-                    entityData.target = resources->createTexture(name, Video::Format::sRGBA, cameraComponent.width, cameraComponent.height, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    String name(L"camera:%v", cameraComponent.name);
+                    data.target = resources->createTexture(name, Video::Format::sRGBA, render->getVideoSystem()->getBackBuffer()->getWidth(), render->getVideoSystem()->getBackBuffer()->getHeight(), 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
                 }
 
-                entityDataMap.insert(std::make_pair(entity, entityData));
+                entityDataMap.insert(std::make_pair(entity, data));
             }
         }
 
@@ -159,40 +142,32 @@ namespace Gek
         {
             GEK_REQUIRE(entity);
 
-            auto entityDataIterator = entityDataMap.find(entity);
-            if (entityDataIterator != entityDataMap.end())
+            auto data = entityDataMap.find(entity);
+            if (data != entityDataMap.end())
             {
-                entityDataMap.erase(entityDataIterator);
+                entityDataMap.erase(data);
             }
         }
 
         void onUpdate(uint32_t handle, bool isIdle)
         {
-            GEK_REQUIRE(population);
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
             GEK_REQUIRE(render);
 
-            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &entityData) -> void
+            std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
             {
-                Entity *entity = entityData.first;
-                auto &camera = entity->getComponent<FirstPersonCameraComponent>();
-                auto &data = entityData.second;
+                Entity *entity = data.first;
+                auto &cameraComponent = entity->getComponent<FirstPersonCameraComponent>();
+                auto &camera = data.second;
 
-                float displayAspectRatio;
-                if (data.target)
-                {
-                    displayAspectRatio = (float(camera.width) / float(camera.height));
-                }
-                else
-                {
-                    float width = float(render->getVideoSystem()->getBackBuffer()->getWidth());
-                    float height = float(render->getVideoSystem()->getBackBuffer()->getHeight());
-                    displayAspectRatio = (width / height);
-                }
+                float width = float(render->getVideoSystem()->getBackBuffer()->getWidth());
+                float height = float(render->getVideoSystem()->getBackBuffer()->getHeight());
+                float displayAspectRatio = (width / height);
 
                 Math::Float4x4 projectionMatrix;
-                projectionMatrix.setPerspective(camera.fieldOfView, displayAspectRatio, camera.minimumDistance, camera.maximumDistance);
+                projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
 
-                render->render(entity, projectionMatrix, camera.minimumDistance, camera.maximumDistance, data.target);
+                render->render(entity, projectionMatrix, cameraComponent.minimumDistance, cameraComponent.maximumDistance, camera.target);
             });
         }
     };

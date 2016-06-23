@@ -44,9 +44,13 @@ namespace Gek
                 {
                     resource = std::make_shared<FileResource>(mapNode->getAttribute(L"file"));
                 }
-                else if(mapNode->hasAttribute(L"pattern"))
+                else if (mapNode->hasAttribute(L"pattern"))
                 {
-                    resource = std::make_shared<DataResource>(mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"));
+                    resource = std::make_shared<PatternResource>(mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"));
+                }
+                else if (mapNode->hasAttribute(L"name"))
+                {
+                    resource = std::make_shared<NamedResource>(mapNode->getAttribute(L"name"));
                 }
 
                 mapNode = mapNode->nextSiblingElement();

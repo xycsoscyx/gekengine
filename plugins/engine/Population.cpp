@@ -27,9 +27,9 @@ namespace Gek
 
         ~EntityImplementation(void)
         {
-            for (auto &componentPair : componentList)
+            for (auto &componentInfo : componentList)
             {
-                componentPair.second.first->destroyData(componentPair.second.second);
+                componentInfo.second.first->destroyData(componentInfo.second.second);
             }
         }
 
@@ -40,11 +40,11 @@ namespace Gek
 
         void removeComponent(const std::type_index &type)
         {
-            auto componentPair = componentList.find(type);
-            if (componentPair != componentList.end())
+            auto componentInfo = componentList.find(type);
+            if (componentInfo != componentList.end())
             {
-                componentPair->second.first->destroyData(componentPair->second.second);
-                componentList.erase(componentPair);
+                componentInfo->second.first->destroyData(componentInfo->second.second);
+                componentList.erase(componentInfo);
             }
         }
 
@@ -148,7 +148,7 @@ namespace Gek
 
         void update(bool isIdle, float frameTime)
         {
-            GEK_TRACE_SCOPE();
+            GEK_TRACE_SCOPE(GEK_PARAMETER(isIdle), GEK_PARAMETER(frameTime));
             if (!isIdle)
             {
                 this->frameTime = frameTime;
@@ -327,21 +327,21 @@ namespace Gek
             return entity.get();
         }
 
-        Entity * createEntity(const EntityDefinition &entityData, const wchar_t *name)
+        Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *name)
         {
             std::shared_ptr<EntityImplementation> entity = std::make_shared<EntityImplementation>(name);
-            for (auto &componentDataPair : entityData)
+            for (auto &componentInfo : entityDefinition)
             {
-                auto &componentName = componentDataPair.first;
-                auto &componentData = componentDataPair.second;
+                auto &componentName = componentInfo.first;
+                auto &componentData = componentInfo.second;
                 auto componentIterator = componentNameList.find(componentName);
                 if (componentIterator != componentNameList.end())
                 {
                     std::type_index componentIdentifier = componentIterator->second;
-                    auto componentPair = componentList.find(componentIdentifier);
-                    if (componentPair != componentList.end())
+                    auto componentInfo = componentList.find(componentIdentifier);
+                    if (componentInfo != componentList.end())
                     {
-                        Component *componentManager = componentPair->second.get();
+                        Component *componentManager = componentInfo->second.get();
                         LPVOID component = componentManager->createData(componentData);
                         if (component)
                         {

@@ -889,11 +889,11 @@ namespace Gek
 
                                 break;
 
-                            case Resource::Type::Data:
+                            case Resource::Type::Pattern:
                                 if (true)
                                 {
-                                    auto dataResource = std::dynamic_pointer_cast<DataResource>(fallback);
-                                    texture = createTextureData(dataResource->pattern, dataResource->parameters);
+                                    auto patternResource = std::dynamic_pointer_cast<PatternResource>(fallback);
+                                    texture = createTextureData(patternResource->pattern, patternResource->parameters);
                                 }
 
                                 break;

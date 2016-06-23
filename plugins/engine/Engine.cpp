@@ -447,6 +447,8 @@ namespace Gek
         // PopulationObserver
         void onUpdate(uint32_t handle, bool isIdle)
         {
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
+
             POINT currentCursorPosition;
             GetCursorPos(&currentCursorPosition);
             float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
