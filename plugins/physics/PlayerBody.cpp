@@ -12,6 +12,7 @@
 #include "GEK\Newton\PlayerBody.h"
 #include "GEK\Newton\NewtonProcessor.h"
 #include <Newton.h>
+#include <algorithm>
 #include <memory>
 #include <stack>
 

@@ -1,10 +1,10 @@
 #pragma once
 
 #include "GEK\Utility\String.h"
-#include <json.hpp>
 #include <unordered_map>
 #include <chrono>
 #include <atomic>
+#include <memory>
 
 namespace Gek
 {

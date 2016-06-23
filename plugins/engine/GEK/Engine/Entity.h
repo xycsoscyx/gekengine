@@ -2,6 +2,7 @@
 
 #include "GEK\Context\Context.h"
 #include <typeindex>
+#include <algorithm>
 
 namespace Gek
 {

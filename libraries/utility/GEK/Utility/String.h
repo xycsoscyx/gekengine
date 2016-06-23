@@ -7,6 +7,7 @@
 #include "GEK\Math\Quaternion.h"
 #include <functional>
 #include <sstream>
+#include <iomanip>
 #include <codecvt>
 #include <vector>
 #include <cctype>
