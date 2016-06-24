@@ -59,10 +59,9 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
                     {
                         aiString sceneDiffuseMaterial;
                         sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                        StringUTF8 diffuseMaterial = sceneDiffuseMaterial.C_Str();
-                        if (!diffuseMaterial.empty())
+                        if (sceneDiffuseMaterial.length > 0)
                         {
-                            material = diffuseMaterial;
+                            material = sceneDiffuseMaterial.C_Str();;
                         }
                     }
                 }
@@ -268,7 +267,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         std::unordered_map<String, std::list<Model>> modelList;
         for (auto &material : modelListUTF8)
         {
-            String materialName = material.first;
+            String materialName(material.first);
             materialName.replace(L"/", L"\\");
             materialName = FileSystem::Path(materialName).replace_extension().generic_wstring();
 
@@ -338,7 +337,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             printf("> Num. Models: %d\r\n", modelCount);
             for (auto &model : sortedModelList)
             {
-                String materialName = model.first;
+                String materialName(model.first);
                 fwrite(materialName.c_str(), ((materialName.length() + 1) * sizeof(wchar_t)), 1, file);
 
                 uint32_t vertexCount = model.second.vertexList.size();

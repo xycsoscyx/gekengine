@@ -394,7 +394,7 @@ namespace Gek
             return (flags | Video::TextureFlags::Resource);
         }
 
-        void loadStencilState(Video::DepthState::StencilState &stencilState, XmlNodePtr stencilNode)
+        void loadStencilState(Video::DepthState::StencilState &stencilState, XmlNodePtr &stencilNode)
         {
             stencilState.passOperation = getStencilOperation(stencilNode->firstChildElement(L"pass")->getText());
             stencilState.failOperation = getStencilOperation(stencilNode->firstChildElement(L"fail")->getText());
@@ -402,7 +402,7 @@ namespace Gek
             stencilState.comparisonFunction = getComparisonFunction(stencilNode->firstChildElement(L"comparison")->getText());
         }
 
-        void loadDepthState(PassData &pass, XmlNodePtr depthNode)
+        void loadDepthState(PassData &pass, XmlNodePtr &depthNode)
         {
             Video::DepthState depthState;
             if (depthNode->isValid())
@@ -421,7 +421,7 @@ namespace Gek
 
                 if (depthNode->hasChildElement(L"stencil"))
                 {
-                    XmlNodePtr stencilNode = depthNode->firstChildElement(L"stencil");
+                    XmlNodePtr stencilNode(depthNode->firstChildElement(L"stencil"));
                     depthState.stencilEnable = true;
 
                     if (stencilNode->hasChildElement(L"clear"))
@@ -445,7 +445,7 @@ namespace Gek
             pass.depthState = resources->createDepthState(depthState);
         }
 
-        void loadRenderState(PassData &pass, XmlNodePtr renderNode)
+        void loadRenderState(PassData &pass, XmlNodePtr &renderNode)
         {
             Video::RenderState renderState;
             renderState.fillMode = getFillMode(renderNode->firstChildElement(L"fillmode")->getText());
@@ -463,7 +463,7 @@ namespace Gek
             pass.renderState = resources->createRenderState(renderState);
         }
 
-        void loadBlendTargetState(Video::TargetBlendState &blendState, XmlNodePtr blendNode)
+        void loadBlendTargetState(Video::TargetBlendState &blendState, XmlNodePtr &blendNode)
         {
             blendState.enable = blendNode->isValid();
             if (blendNode->hasChildElement(L"writemask"))
@@ -483,7 +483,7 @@ namespace Gek
 
             if (blendNode->hasChildElement(L"color"))
             {
-                XmlNodePtr colorNode = blendNode->firstChildElement(L"color");
+                XmlNodePtr colorNode(blendNode->firstChildElement(L"color"));
                 blendState.colorSource = getBlendSource(colorNode->getAttribute(L"source"));
                 blendState.colorDestination = getBlendSource(colorNode->getAttribute(L"destination"));
                 blendState.colorOperation = getBlendOperation(colorNode->getAttribute(L"operation"));
@@ -491,27 +491,25 @@ namespace Gek
 
             if (blendNode->hasChildElement(L"alpha"))
             {
-                XmlNodePtr alphaNode = blendNode->firstChildElement(L"alpha");
+                XmlNodePtr alphaNode(blendNode->firstChildElement(L"alpha"));
                 blendState.alphaSource = getBlendSource(alphaNode->getAttribute(L"source"));
                 blendState.alphaDestination = getBlendSource(alphaNode->getAttribute(L"destination"));
                 blendState.alphaOperation = getBlendOperation(alphaNode->getAttribute(L"operation"));
             }
         }
 
-        void loadBlendState(PassData &pass, XmlNodePtr blendNode)
+        void loadBlendState(PassData &pass, XmlNodePtr &blendNode)
         {
             bool alphaToCoverage =blendNode->firstChildElement(L"alphatocoverage")->getText();
             if (blendNode->hasChildElement(L"target"))
             {
                 Video::IndependentBlendState blendState;
                 Video::TargetBlendState *targetStatesList = blendState.targetStates;
-                XmlNodePtr targetNode = blendNode->firstChildElement(L"target");
-                while (targetNode->isValid())
+                for (XmlNodePtr targetNode(blendNode->firstChildElement(L"target")); targetNode->isValid(); targetNode = targetNode->nextSiblingElement(L"target"))
                 {
                     Video::TargetBlendState &targetStates = *targetStatesList++;
                     loadBlendTargetState(targetStates, targetNode);
-                    targetNode = targetNode->nextSiblingElement(L"target");
-                };
+                }
 
                 blendState.alphaToCoverage = alphaToCoverage;
                 pass.blendState = resources->createBlendState(blendState);
@@ -526,22 +524,20 @@ namespace Gek
             }
         }
 
-        std::unordered_map<String, String> loadChildMap(XmlNodePtr parentNode)
+        std::unordered_map<String, String> loadChildMap(XmlNodePtr &parentNode)
         {
             std::unordered_map<String, String> childMap;
-            XmlNodePtr childNode = parentNode->firstChildElement();
-            while (childNode->isValid())
+            for (XmlNodePtr childNode(parentNode->firstChildElement()); childNode->isValid(); childNode = childNode->nextSiblingElement())
             {
                 String type(childNode->getType());
                 String text(childNode->getText());
                 childMap.insert(std::make_pair(type, text.empty() ? type : text));
-                childNode = childNode->nextSiblingElement();
-            };
+            }
 
             return childMap;
         }
 
-        std::unordered_map<String, String> loadChildMap(XmlNodePtr rootNode, const wchar_t *name)
+        std::unordered_map<String, String> loadChildMap(XmlNodePtr &rootNode, const wchar_t *name)
         {
             return loadChildMap(rootNode->firstChildElement(name));
         }
@@ -604,14 +600,13 @@ namespace Gek
 
             XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\shaders\\%v.xml", fileName)));
 
-            XmlNodePtr shaderNode = document->getRoot(L"shader");
+            XmlNodePtr shaderNode(document->getRoot(L"shader"));
             priority = shaderNode->getAttribute(L"priority");
 
             std::unordered_map<String, std::pair<MapType, BindType>> resourceList;
-            XmlNodePtr materialNode = shaderNode->firstChildElement(L"material");
-            XmlNodePtr mapsNode = materialNode->firstChildElement(L"maps");
-            XmlNodePtr mapNode = mapsNode->firstChildElement();
-            while (mapNode->isValid())
+            XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
+            XmlNodePtr mapsNode(materialNode->firstChildElement(L"maps"));
+            for (XmlNodePtr mapNode(mapsNode->firstChildElement()); mapNode->isValid(); mapNode = mapNode->nextSiblingElement())
             {
                 String name(mapNode->getType());
                 MapType mapType = getMapType(mapNode->getText());
@@ -633,11 +628,10 @@ namespace Gek
                 }
 
                 mapList.push_back(Map(name, mapType, bindType, flags, fallback));
-                mapNode = mapNode->nextSiblingElement();
-            };
+            }
 
             StringUTF8 lightingData;
-            XmlNodePtr lightingNode = shaderNode->firstChildElement(L"lighting");
+            XmlNodePtr lightingNode(shaderNode->firstChildElement(L"lighting"));
             if (lightingNode->isValid())
             {
                 lightsPerPass = lightingNode->firstChildElement(L"lightsPerPass")->getText();
@@ -684,22 +678,20 @@ namespace Gek
                 }
             }
 
-            XmlNodePtr definesNode = shaderNode->firstChildElement(L"defines");
-            XmlNodePtr defineNode = definesNode->firstChildElement();
-            while (defineNode->isValid())
+            XmlNodePtr definesNode(shaderNode->firstChildElement(L"defines"));
+            for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
             {
                 String name(defineNode->getType());
                 String value(defineNode->getText());
                 globalDefinesList[name] = evaluate(value, defineNode->getAttribute(L"integer"));
-                defineNode = defineNode->nextSiblingElement();
-            };
+            }
 
-            XmlNodePtr depthNode = shaderNode->firstChildElement(L"depth");
+            XmlNodePtr depthNode(shaderNode->firstChildElement(L"depth"));
             if (depthNode->isValid())
             {
                 if (depthNode->hasAttribute(L"source"))
                 {
-                    depthBuffer = resources->getResourceHandle(String(L"%v:depth", depthNode->getAttribute(L"source")));
+                    depthBuffer = resources->getResourceHandle(String(L"depth:%v:resource", depthNode->getAttribute(L"source")));
                 }
                 else
                 {
@@ -709,26 +701,24 @@ namespace Gek
                     Video::Format format = getFormat(text);
                     GEK_CHECK_CONDITION(format == Video::Format::Unknown, Trace::Exception, "Invalid format specified for depth buffer");
 
-                    depthBuffer = resources->createTexture(String(L"%v:depth", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource);
+                    depthBuffer = resources->createTexture(String(L"depth:%v:resource", fileName), format, video->getBackBuffer()->getWidth(), video->getBackBuffer()->getHeight(), 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource);
                 }
 
                 resourceList[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
                 resourceMap[L"depth"] = depthBuffer;
             }
 
-            XmlNodePtr texturesNode = shaderNode->firstChildElement(L"textures");
-            XmlNodePtr textureNode = texturesNode->firstChildElement();
-            while (textureNode->isValid())
+            XmlNodePtr texturesNode(shaderNode->firstChildElement(L"textures"));
+            for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
             {
                 String name(textureNode->getType());
+                GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Trace::Exception, "Resource name already specified: %v", name);
+
                 BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                 if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
                 {
                     String identity(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
-                    if (!resourceMap.count(identity))
-                    {
-                        resourceMap[name] = resources->getResourceHandle(identity);
-                    }
+                    resourceMap[name] = resources->getResourceHandle(identity);
                 }
                 else
                 {
@@ -756,14 +746,14 @@ namespace Gek
                 }
 
                 resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
-                textureNode = textureNode->nextSiblingElement();
-            };
+            }
 
-            XmlNodePtr buffersNode = shaderNode->firstChildElement(L"buffers");
-            XmlNodePtr bufferNode = buffersNode->firstChildElement();
-            while (bufferNode->isValid())
+            XmlNodePtr buffersNode(shaderNode->firstChildElement(L"buffers"));
+            for (XmlNodePtr bufferNode(buffersNode->firstChildElement()); bufferNode->isValid(); bufferNode = bufferNode->nextSiblingElement())
             {
                 String name(bufferNode->getType());
+                GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Trace::Exception, "Resource name already specified: %v", name);
+
                 Video::Format format = getFormat(bufferNode->getText());
                 uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
                 resourceMap[name] = resources->createBuffer(String(L"%v:%v:buffer", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource);
@@ -811,35 +801,29 @@ namespace Gek
                     resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
                     break;
                 };
+            }
 
-                bufferNode = bufferNode->nextSiblingElement();
-            };
-
-            XmlNodePtr blockNode = shaderNode->firstChildElement(L"block");
-            while (blockNode->isValid())
+            for (XmlNodePtr blockNode(shaderNode->firstChildElement(L"block")); blockNode->isValid(); blockNode = blockNode->nextSiblingElement(L"block"))
             {
                 BlockData block;
                 block.lighting = blockNode->getAttribute(L"lighting");
                 GEK_CHECK_CONDITION(block.lighting && lightsPerPass <= 0, Trace::Exception, "Lighting enabled without any lights per pass");
 
-                XmlNodePtr clearNode = blockNode->firstChildElement(L"clear");
-                XmlNodePtr clearTargetNode = clearNode->firstChildElement();
-                while (clearTargetNode->isValid())
+                XmlNodePtr clearNode(blockNode->firstChildElement(L"clear"));
+                for (XmlNodePtr clearTargetNode(clearNode->firstChildElement()); clearTargetNode->isValid(); clearTargetNode = clearTargetNode->nextSiblingElement())
                 {
-                    Math::Color clearColor = clearTargetNode->getText();
+                    Math::Color clearColor(clearTargetNode->getText());
                     block.renderTargetsClearList[clearTargetNode->getType()] = clearColor;
-                    clearTargetNode = clearTargetNode->nextSiblingElement();
-                };
+                }
 
-                XmlNodePtr passNode = blockNode->firstChildElement(L"pass");
-                while (passNode->isValid())
+                for (XmlNodePtr passNode(blockNode->firstChildElement(L"pass")); passNode->isValid(); passNode = passNode->nextSiblingElement(L"pass"))
                 {
                     GEK_CHECK_CONDITION(!passNode->hasChildElement(L"program"), Trace::Exception, "Pass node requires program child node");
 
                     PassData pass;
                     if (passNode->hasAttribute(L"mode"))
                     {
-                        String modeString = passNode->getAttribute(L"mode");
+                        String modeString(passNode->getAttribute(L"mode"));
                         if (modeString.compareNoCase(L"forward") == 0)
                         {
                             pass.mode = Pass::Mode::Forward;
@@ -881,9 +865,8 @@ namespace Gek
 
                     if (passNode->hasChildElement(L"resources"))
                     {
-                        XmlNodePtr resourcesNode = passNode->firstChildElement(L"resources");
-                        XmlNodePtr resourceNode = resourcesNode->firstChildElement();
-                        while (resourceNode->isValid())
+                        XmlNodePtr resourcesNode(passNode->firstChildElement(L"resources"));
+                        for (XmlNodePtr resourceNode(resourcesNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                         {
                             String type(resourceNode->getType());
                             String text(resourceNode->getText());
@@ -898,9 +881,7 @@ namespace Gek
                             {
                                 pass.copyResourceMap[resourceNode->getType()] = resourceNode->getAttribute(L"copy");
                             }
-
-                            resourceNode = resourceNode->nextSiblingElement();
-                        };
+                        }
                     }
 
                     pass.unorderedAccessList = loadChildMap(passNode, L"unorderedaccess");
@@ -1040,21 +1021,18 @@ namespace Gek
                         }
                     };
 
-                    XmlNodePtr definesNode = passNode->firstChildElement(L"defines");
-                    XmlNodePtr defineNode = definesNode->firstChildElement();
-                    while (defineNode->isValid())
+                    XmlNodePtr definesNode(passNode->firstChildElement(L"defines"));
+                    for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
                     {
-                        String name = defineNode->getType();
-                        String value = evaluate(defineNode->getText());
+                        String name(defineNode->getType());
+                        String value(evaluate(defineNode->getText()));
                         addDefine(name, value);
-
-                        defineNode = defineNode->nextSiblingElement();
-                    };
+                    }
 
                     for (auto &globalDefine : globalDefinesList)
                     {
-                        String name = globalDefine.first;
-                        String value = globalDefine.second;
+                        String name(globalDefine.first);
+                        String value(globalDefine.second);
                         addDefine(name, value);
                     }
 
@@ -1068,8 +1046,8 @@ namespace Gek
                             "                                                          \r\n", defineData);
                     }
 
-                    XmlNodePtr programNode = passNode->firstChildElement(L"program");
-                    XmlNodePtr computeNode = programNode->firstChildElement(L"compute");
+                    XmlNodePtr programNode(passNode->firstChildElement(L"program"));
+                    XmlNodePtr computeNode(programNode->firstChildElement(L"compute"));
                     if (computeNode->isValid())
                     {
                         pass.dispatchWidth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
@@ -1077,7 +1055,7 @@ namespace Gek
                         pass.dispatchDepth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
                     }
 
-                    String programFileName = programNode->firstChildElement(L"source")->getText();
+                    String programFileName(programNode->firstChildElement(L"source")->getText());
                     String programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
                     StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
                     auto onInclude = [engineData, programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
@@ -1127,12 +1105,10 @@ namespace Gek
                     }
 
                     block.passList.push_back(pass);
-                    passNode = passNode->nextSiblingElement(L"pass");
-                };
+                }
 
                 blockList.push_back(block);
-                blockNode = blockNode->nextSiblingElement(L"block");
-            };
+            }
         }
 
         ~ShaderImplementation(void)
@@ -1163,7 +1139,7 @@ namespace Gek
                         if (true)
                         {
                             auto fileResource = std::dynamic_pointer_cast<FileResource>(baseResource);
-                            String dataName = fileResource->fileName.getLower();
+                            String dataName(fileResource->fileName.getLower());
                             dataName.replace(L"$directory", filePath);
                             dataName.replace(L"$filename", fileSpecifier);
                             dataName.replace(L"$material", materialName);
@@ -1511,10 +1487,9 @@ namespace Gek
                 auto &transform = entity->getComponent<TransformComponent>();
                 auto &light = entity->getComponent<SpotLightComponent>();
                 
-                Math::Float3 direction = transform.rotation.getMatrix().nz;
                 float halfRange = (light.range * 0.5f);
-                Math::Float3 center = (transform.position + (direction * halfRange));
-
+                Math::Float3 &direction = transform.rotation.getMatrix().nz;
+                Math::Float3 center(transform.position + (direction * halfRange));
                 if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
                 {
                     auto &color = entity->getComponent<ColorComponent>();

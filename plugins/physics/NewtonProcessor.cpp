@@ -124,8 +124,8 @@ namespace Gek
                 auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
 
                 XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", fileName)));
-                XmlNodePtr materialNode = document->getRoot(L"material");
-                XmlNodePtr surfaceNode = materialNode->firstChildElement(L"surface");
+                XmlNodePtr materialNode(document->getRoot(L"material"));
+                XmlNodePtr surfaceNode(materialNode->firstChildElement(L"surface"));
                 if (surfaceNode->isValid())
                 {
                     Surface surface;

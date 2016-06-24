@@ -29,8 +29,8 @@ namespace Camera
     cbuffer Constants : register(b1)
     {
         float2 fieldOfView;
-        float minimumDistance;
-        float maximumDistance;
+        float nearClip;
+        float farClip;
         float4x4 viewMatrix;
         float4x4 projectionMatrix;
     };

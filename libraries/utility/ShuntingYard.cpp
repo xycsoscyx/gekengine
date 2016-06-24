@@ -338,7 +338,7 @@ namespace Gek
             auto match = *current;
             if (match[1].matched) // variable
             {
-                String value = match.str(1);
+                String value(match.str(1));
                 auto variable = variableMap.find(value);
                 if (variable != variableMap.end())
                 {
@@ -357,7 +357,7 @@ namespace Gek
             }
             else if(match[2].matched) // number
             {
-                float value = String(match.str(2));
+                float value(String(match.str(2)));
                 insertToken(infixTokenList, Token(value));
             }
         }

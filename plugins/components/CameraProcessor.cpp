@@ -17,8 +17,8 @@ namespace Gek
     struct FirstPersonCameraComponent
     {
         float fieldOfView;
-        float minimumDistance;
-        float maximumDistance;
+        float nearClip;
+        float farClip;
         String name;
 
         FirstPersonCameraComponent(void)
@@ -28,16 +28,16 @@ namespace Gek
         void save(Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
-            saveParameter(componentData, L"minimum_distance", minimumDistance);
-            saveParameter(componentData, L"maximum_distance", maximumDistance);
+            saveParameter(componentData, L"near_clip", nearClip);
+            saveParameter(componentData, L"far_clip", farClip);
             saveParameter(componentData, L"name", name);
         }
 
         void load(const Population::ComponentDefinition &componentData)
         {
             fieldOfView = Math::convertDegreesToRadians(loadParameter(componentData, L"field_of_view", 90.0f));
-            minimumDistance = loadParameter(componentData, L"minimum_distance", 1.0f);
-            maximumDistance = loadParameter(componentData, L"maximum_distance", 100.0f);
+            nearClip = loadParameter(componentData, L"near_clip", 1.0f);
+            farClip = loadParameter(componentData, L"far_clip", 100.0f);
             name = loadParameter(componentData, L"name", String());
         }
     };
@@ -165,9 +165,9 @@ namespace Gek
                 float displayAspectRatio = (width / height);
 
                 Math::Float4x4 projectionMatrix;
-                projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.minimumDistance, cameraComponent.maximumDistance);
+                projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.nearClip, cameraComponent.farClip);
 
-                render->render(entity, projectionMatrix, cameraComponent.minimumDistance, cameraComponent.maximumDistance, camera.target);
+                render->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
             });
         }
     };

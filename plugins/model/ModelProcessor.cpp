@@ -214,7 +214,7 @@ namespace Gek
             model.materialList.resize(materialCount);
             for (uint32_t modelIndex = 0; modelIndex < materialCount; ++modelIndex)
             {
-                String materialName = (const wchar_t *)rawFileData;
+                String materialName((const wchar_t *)rawFileData);
                 rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
 
                 Material &material = model.materialList[modelIndex];

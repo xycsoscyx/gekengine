@@ -266,7 +266,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     return image;
 }
 
-SH9 ProjectOntoSH9(const Math::Float3& dir)
+SH9 ProjectOntoSH9(const Math::Float3& direction)
 {
     SH9 sh;
 
@@ -274,23 +274,23 @@ SH9 ProjectOntoSH9(const Math::Float3& dir)
     sh[0] = 0.282095f;
 
     // Band 1
-    sh[1] = 0.488603f * dir.y;
-    sh[2] = 0.488603f * dir.z;
-    sh[3] = 0.488603f * dir.x;
+    sh[1] = 0.488603f * direction.y;
+    sh[2] = 0.488603f * direction.z;
+    sh[3] = 0.488603f * direction.x;
 
     // Band 2
-    sh[4] = 1.092548f * dir.x * dir.y;
-    sh[5] = 1.092548f * dir.y * dir.z;
-    sh[6] = 0.315392f * (3.0f * dir.z * dir.z - 1.0f);
-    sh[7] = 1.092548f * dir.x * dir.z;
-    sh[8] = 0.546274f * (dir.x * dir.x - dir.y * dir.y);
+    sh[4] = 1.092548f * direction.x * direction.y;
+    sh[5] = 1.092548f * direction.y * direction.z;
+    sh[6] = 0.315392f * (3.0f * direction.z * direction.z - 1.0f);
+    sh[7] = 1.092548f * direction.x * direction.z;
+    sh[8] = 0.546274f * (direction.x * direction.x - direction.y * direction.y);
 
     return sh;
 }
 
-SH9Color ProjectOntoSH9Color(const Math::Float3& dir, const Math::Float4& color)
+SH9Color ProjectOntoSH9Color(const Math::Float3& direction, const Math::Float4& color)
 {
-    SH9 sh = ProjectOntoSH9(dir);
+    SH9 sh = ProjectOntoSH9(direction);
 
     SH9Color shColor;
     for (int i = 0; i < 9; ++i)
@@ -301,9 +301,9 @@ SH9Color ProjectOntoSH9Color(const Math::Float3& dir, const Math::Float4& color)
     return shColor;
 }
 
-Math::Float4 EvalSH9Cosine(const Math::Float3& dir, const SH9Color& sh)
+Math::Float4 EvalSH9Cosine(const Math::Float3& direction, const SH9Color& sh)
 {
-    SH9 dirSH = ProjectOntoSH9(dir);
+    SH9 dirSH = ProjectOntoSH9(direction);
     dirSH[0] *= CosineA0;
     dirSH[1] *= CosineA1;
     dirSH[2] *= CosineA1;
@@ -327,35 +327,35 @@ Math::Float4 EvalSH9Cosine(const Math::Float3& dir, const SH9Color& sh)
 Math::Float3 MapXYSToDirection(int face, float u, float v)
 {
     v *= -1.0f;
-    Math::Float3 dir;
+    Math::Float3 direction;
     switch (face)
     {
     case 0: // +x
-        dir.set(1.0f, v, -u);
+        direction.set(1.0f, v, -u);
         break;
 
     case 1: // -x
-        dir.set(-1.0f, v, u);
+        direction.set(-1.0f, v, u);
         break;
 
     case 2: // +y
-        dir.set(u, 1.0f, -v);
+        direction.set(u, 1.0f, -v);
         break;
 
     case 3: // -y
-        dir.set(u, -1.0f, v);
+        direction.set(u, -1.0f, v);
         break;
 
     case 4: // +z
-        dir.set(u, v, 1.0f);
+        direction.set(u, v, 1.0f);
         break;
 
     case 5: // -z
-        dir.set(-u, v, -1.0f);
+        direction.set(-u, v, -1.0f);
         break;
     };
 
-    return dir.getNormal();
+    return direction.getNormal();
 }
 
 SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
@@ -382,8 +382,8 @@ SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
                 const float temp = 1.0f + u * u + v * v;
                 const float weight = 4.0f / (std::sqrt(temp) * temp);
 
-                Math::Float3 dir = MapXYSToDirection(face, u, v);
-                result += ProjectOntoSH9Color(dir, sample) * weight;
+                Math::Float3 direction(MapXYSToDirection(face, u, v));
+                result += ProjectOntoSH9Color(direction, sample) * weight;
                 weightSum += weight;
             }
         }

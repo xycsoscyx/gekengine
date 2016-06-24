@@ -27,6 +27,5 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     outputPixel.normalBuffer = encodeNormal(normal);
-    outputPixel.depthBuffer = (inputPixel.viewPosition.z / Camera::maximumDistance);
     return outputPixel;
 }

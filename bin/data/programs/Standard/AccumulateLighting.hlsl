@@ -112,7 +112,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
     float materialMetalness = materialInfo.y;
 
-    float surfaceDepth = Resources::depthBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float surfaceDepth = Resources::depth.Sample(Global::pointSampler, inputPixel.texCoord);
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 

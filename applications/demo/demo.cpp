@@ -37,7 +37,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             configurationNode = document->getRoot(L"config");
         };
 
-        XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
+        XmlNodePtr displayNode(configurationNode->firstChildElement(L"display"));
         uint32_t width = displayNode->getAttribute(L"width", L"800");
         uint32_t height = displayNode->getAttribute(L"height", L"600");
         bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
@@ -104,7 +104,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 configurationNode = document->getRoot(L"config");
             };
 
-            XmlNodePtr displayNode = configurationNode->firstChildElement(L"display", true);
+            XmlNodePtr displayNode(configurationNode->firstChildElement(L"display", true));
             displayNode->setAttribute(L"width", String(L"%v", mode.width));
             displayNode->setAttribute(L"height", String(L"%v", mode.height));
             displayNode->setAttribute(L"fullscreen", SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
@@ -204,7 +204,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                 configurationNode = document->getRoot(L"config");
             };
 
-            XmlNodePtr displayNode = configurationNode->firstChildElement(L"display");
+            XmlNodePtr displayNode(configurationNode->firstChildElement(L"display"));
             uint32_t width = displayNode->getAttribute(L"width", L"800");
             uint32_t height = displayNode->getAttribute(L"height", L"600");
             bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");

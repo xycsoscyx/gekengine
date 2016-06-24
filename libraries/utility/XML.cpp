@@ -165,7 +165,7 @@ namespace Gek
         bool hasSiblingElement(const wchar_t *type) const
         {
             StringUTF8 typeUTF8(type);
-            for (xmlNode *checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
+            for (xmlNodePtr checkingNode = node->next; checkingNode; checkingNode = checkingNode->next)
             {
                 if (checkingNode->type == XML_ELEMENT_NODE && typeUTF8.compareNoCase(reinterpret_cast<const char *>(checkingNode->name)) == 0)
                 {
@@ -193,7 +193,7 @@ namespace Gek
         bool hasChildElement(const wchar_t *type) const
         {
             StringUTF8 typeUTF8(type);
-            for (xmlNode *checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
+            for (xmlNodePtr checkingNode = node->children; checkingNode; checkingNode = checkingNode->next)
             {
                 if (checkingNode->type == XML_ELEMENT_NODE && typeUTF8.compareNoCase(reinterpret_cast<const char *>(checkingNode->name)) == 0)
                 {

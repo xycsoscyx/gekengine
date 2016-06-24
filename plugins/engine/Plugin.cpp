@@ -103,15 +103,15 @@ namespace Gek
             GEK_REQUIRE(video);
 
             XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\plugins\\%v.xml", fileName)));
-            XmlNodePtr pluginNode = document->getRoot(L"plugin");
+            XmlNodePtr pluginNode(document->getRoot(L"plugin"));
 
-            XmlNodePtr geometryNode = pluginNode->firstChildElement(L"geometry");
+            XmlNodePtr geometryNode(pluginNode->firstChildElement(L"geometry"));
             if (geometryNode->isValid())
             {
                 try
                 {
-                    XmlNodePtr programNode = geometryNode->firstChildElement(L"program");
-                    String programFileName = programNode->getAttribute(L"source");
+                    XmlNodePtr programNode(geometryNode->firstChildElement(L"program"));
+                    String programFileName(programNode->getAttribute(L"source"));
                     StringUTF8 programEntryPoint(programNode->getAttribute(L"entry"));
                     geometryProgram = video->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
                 }
@@ -126,9 +126,8 @@ namespace Gek
 
             std::list<StringUTF8> elementNameList;
             std::vector<Video::InputElement> elementList;
-            XmlNodePtr layoutNode = pluginNode->firstChildElement(L"layout");
-            XmlNodePtr elementNode = layoutNode->firstChildElement();
-            while (elementNode->isValid())
+            XmlNodePtr layoutNode(pluginNode->firstChildElement(L"layout"));
+            for (XmlNodePtr elementNode(layoutNode->firstChildElement()); elementNode->isValid(); elementNode = elementNode->nextSiblingElement())
             {
                 String elementType(elementNode->getType());
                 if (elementType.compareNoCase(L"instanceIndex") == 0)
@@ -195,9 +194,7 @@ namespace Gek
                 {
                     GEK_THROW_EXCEPTION(Trace::Exception, "Invalid vertex layout element found");
                 }
-
-                elementNode = elementNode->nextSiblingElement();
-            };
+            }
 
             engineData +=
                 "};                                                                                                         \r\n" \
@@ -235,10 +232,9 @@ namespace Gek
                 "}                                                                                                          \r\n" \
                 "                                                                                                           \r\n";
 
-            XmlNodePtr vertexNode = pluginNode->firstChildElement(L"vertex");
-            XmlNodePtr programNode = vertexNode->firstChildElement(L"program");
+            XmlNodePtr vertexNode(pluginNode->firstChildElement(L"vertex"));
+            XmlNodePtr programNode(vertexNode->firstChildElement(L"program"));
             String programPath(String(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
-
             auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
             {
                 if (_stricmp(resourceName, "GEKPlugin") == 0)

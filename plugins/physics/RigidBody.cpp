@@ -33,7 +33,7 @@ namespace Gek
             auto &mass = entity->getComponent<MassComponent>();
             auto &transform = entity->getComponent<TransformComponent>();
 
-            Math::Float4x4 matrix = transform.getMatrix();
+            Math::Float4x4 matrix(transform.getMatrix());
             newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
             NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
             NewtonBodySetMassProperties(newtonBody, mass.value, newtonCollision);

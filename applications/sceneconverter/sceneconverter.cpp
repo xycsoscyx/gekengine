@@ -28,14 +28,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         XmlDocumentPtr document(XmlDocument::load(fileNameInput));
-        XmlNodePtr worldNode = document->getRoot(L"world");
-        XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
-        XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
-        while (entityNode->isValid())
+        XmlNodePtr worldNode(document->getRoot(L"world"));
+        XmlNodePtr populationNode(worldNode->firstChildElement(L"population"));
+        for (XmlNodePtr entityNode(populationNode->firstChildElement(L"entity")); entityNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
         {
             Population::EntityDefinition data;
-            XmlNodePtr componentNode = entityNode->firstChildElement();
-            while (componentNode->isValid())
+            for (XmlNodePtr componentNode(entityNode->firstChildElement()); componentNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
             {
                 Population::ComponentDefinition &componentData = data[componentNode->getType()];
                 componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
@@ -47,12 +45,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 {
                     componentData.value = componentNode->getText();
                 }
-
-                componentNode = componentNode->nextSiblingElement();
-            };
-
-            entityNode = entityNode->nextSiblingElement(L"entity");
-        };
+            }
+        }
     }
     catch (const Exception &exception)
     {

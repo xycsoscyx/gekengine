@@ -85,7 +85,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         Shared::tileMaximumDepth = 0;
     }
 
-    float viewDepth = Resources::depthBuffer[screenPosition.xy] * Camera::maximumDistance;
+    float viewDepth = getLinearDepth(Resources::depth[screenPosition.xy]);
     uint viewDepthInteger = asuint(viewDepth);
 
     GroupMemoryBarrierWithGroupSync();

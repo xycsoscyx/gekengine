@@ -32,7 +32,6 @@
         <albedoBuffer bind="float3" flags="target">byte4</albedoBuffer>
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
-        <depthBuffer bind="float" flags="target">float</depthBuffer>
         <lightAccumulationBuffer bind="float3" flags="target">float4</lightAccumulationBuffer>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
         <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminanceBuffer>
@@ -59,7 +58,6 @@
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />
-                <depthBuffer />
             </targets>
 
             <program>
@@ -76,7 +74,7 @@
 
         <pass mode="compute">
             <resources>
-                <depthBuffer />
+                <depth />
             </resources>
 
             <unorderedaccess>
@@ -105,7 +103,7 @@
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />
-                <depthBuffer />
+                <depth />
             </resources>
 
             <targets>
@@ -124,7 +122,7 @@
             <resources>
                 <lightAccumulationBuffer />
                 <normalBuffer />
-                <depthBuffer />
+                <depth />
             </resources>
 
             <targets>
@@ -145,7 +143,7 @@
 
             <resources>
                 <ambientOcclusionBuffer actions="flip">sourceBuffer</ambientOcclusionBuffer>
-                <depthBuffer />
+                <depth />
             </resources>
 
             <targets>
@@ -165,7 +163,7 @@
 
             <resources>
                 <ambientOcclusionBuffer actions="flip">sourceBuffer</ambientOcclusionBuffer>
-                <depthBuffer />
+                <depth />
             </resources>
 
             <targets>
@@ -199,7 +197,7 @@
                 <lightAccumulationBuffer />
                 <averageLuminanceBuffer actions="flip" />
                 <ambientOcclusionBuffer actions="flip" />
-                <depthBuffer />
+                <depth />
             </resources>
 
             <program>

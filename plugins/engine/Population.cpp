@@ -213,16 +213,14 @@ namespace Gek
                     sendEvent(Event(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
                     XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", fileName)));
-                    XmlNodePtr worldNode = document->getRoot(L"world");
+                    XmlNodePtr worldNode(document->getRoot(L"world"));
 
                     std::unordered_map<String, EntityDefinition> prefabList;
-                    XmlNodePtr prefabsNode = worldNode->firstChildElement(L"prefabs");
-                    XmlNodePtr prefabNode = prefabsNode->firstChildElement();
-                    while (prefabNode->isValid())
+                    XmlNodePtr prefabsNode(worldNode->firstChildElement(L"prefabs"));
+                    for (XmlNodePtr prefabNode(prefabsNode->firstChildElement()); prefabNode->isValid(); prefabNode = prefabNode->nextSiblingElement())
                     {
                         EntityDefinition &entityDefinition = prefabList[prefabNode->getType()];
-                        XmlNodePtr componentNode = prefabNode->firstChildElement();
-                        while (componentNode->isValid())
+                        for (XmlNodePtr componentNode(prefabNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
                         {
                             auto &componentData = entityDefinition[componentNode->getType()];
                             componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
@@ -234,16 +232,11 @@ namespace Gek
                             {
                                 componentData.value = componentNode->getText();
                             }
+                        }
+                    }
 
-                            componentNode = componentNode->nextSiblingElement();
-                        };
-
-                        prefabNode = prefabNode->nextSiblingElement();
-                    };
-
-                    XmlNodePtr populationNode = worldNode->firstChildElement(L"population");
-                    XmlNodePtr entityNode = populationNode->firstChildElement(L"entity");
-                    while (entityNode->isValid())
+                    XmlNodePtr populationNode(worldNode->firstChildElement(L"population"));
+                    for (XmlNodePtr entityNode(populationNode->firstChildElement(L"entity")); entityNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
                     {
                         EntityDefinition entityDefinition;
                         auto prefab = prefabList.find(entityNode->getAttribute(L"prefab"));
@@ -252,8 +245,7 @@ namespace Gek
                             entityDefinition = (*prefab).second;
                         }
 
-                        XmlNodePtr componentNode = entityNode->firstChildElement();
-                        while (componentNode->isValid())
+                        for (XmlNodePtr componentNode(entityNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
                         {
                             auto &componentData = entityDefinition[componentNode->getType()];
                             componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
@@ -265,9 +257,7 @@ namespace Gek
                             {
                                 componentData.value = componentNode->getText();
                             }
-
-                            componentNode = componentNode->nextSiblingElement();
-                        };
+                        }
 
                         if (entityNode->hasAttribute(L"name"))
                         {
@@ -277,9 +267,7 @@ namespace Gek
                         {
                             createEntity(entityDefinition, nullptr);
                         }
-
-                        entityNode = entityNode->nextSiblingElement(L"entity");
-                    };
+                    }
 
                     frameTime = 0.0f;
                     worldTime = 0.0f;
@@ -298,8 +286,8 @@ namespace Gek
             GEK_REQUIRE(fileName);
 
             XmlDocumentPtr document(XmlDocument::create(L"world"));
-            XmlNodePtr worldNode = document->getRoot(L"world");
-            XmlNodePtr populationNode = worldNode->createChildElement(L"population");
+            XmlNodePtr worldNode(document->getRoot(L"world"));
+            XmlNodePtr populationNode(worldNode->createChildElement(L"population"));
             for (auto &entity : entityList)
             {
             }
@@ -337,7 +325,7 @@ namespace Gek
                 auto componentIterator = componentNameList.find(componentName);
                 if (componentIterator != componentNameList.end())
                 {
-                    std::type_index componentIdentifier = componentIterator->second;
+                    std::type_index componentIdentifier(componentIterator->second);
                     auto componentInfo = componentList.find(componentIdentifier);
                     if (componentInfo != componentList.end())
                     {

@@ -234,8 +234,8 @@ namespace Gek
             struct CameraConstantData
         {
             Math::Float2 fieldOfView;
-            float minimumDistance;
-            float maximumDistance;
+            float nearClip;
+            float farClip;
             Math::Float4x4 viewMatrix;
             Math::Float4x4 projectionMatrix;
         };
@@ -417,7 +417,7 @@ namespace Gek
             }
         }
 
-        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance, ResourceHandle target)
+        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle target)
         {
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(video);
@@ -435,8 +435,8 @@ namespace Gek
             CameraConstantData cameraConstantData;
             cameraConstantData.fieldOfView.x = (1.0f / projectionMatrix._11);
             cameraConstantData.fieldOfView.y = (1.0f / projectionMatrix._22);
-            cameraConstantData.minimumDistance = minimumDistance;
-            cameraConstantData.maximumDistance = maximumDistance;
+            cameraConstantData.nearClip = nearClip;
+            cameraConstantData.farClip = farClip;
             cameraConstantData.viewMatrix = viewMatrix;
             cameraConstantData.projectionMatrix = projectionMatrix;
 

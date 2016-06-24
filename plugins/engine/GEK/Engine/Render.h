@@ -61,7 +61,7 @@ namespace Gek
     {
         virtual VideoSystem * getVideoSystem(void) const = 0;
 
-        virtual void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float minimumDistance, float maximumDistance, ResourceHandle target) = 0;
+        virtual void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle target) = 0;
         virtual void queueDrawCall(PluginHandle plugin, MaterialHandle material, std::function<void(RenderContext *renderContext)> draw) = 0;
     };
 

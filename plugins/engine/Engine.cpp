@@ -201,17 +201,14 @@ namespace Gek
                 configurationNode = document->getRoot(L"config");
             };
 
-            XmlNodePtr valueNode = configurationNode->firstChildElement();
-            while (valueNode->isValid())
+            for (XmlNodePtr valueNode(configurationNode->firstChildElement()); valueNode->isValid(); valueNode = valueNode->nextSiblingElement())
             {
                 auto &group = options[valueNode->getType()];
                 valueNode->listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
                 {
                     group[name] = value;
                 });
-
-                valueNode = valueNode->nextSiblingElement();
-            };
+            }
 
             HRESULT resultValue = CoInitialize(nullptr);
             GEK_CHECK_CONDITION(FAILED(resultValue), Trace::Exception, "Unable to initialize COM (error %v)", resultValue);
@@ -282,7 +279,7 @@ namespace Gek
             return render.get();
         }
 
-        const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = L"") const
+        const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = String()) const
         {
             auto &group = options.find(name);
             if (group != options.end())
