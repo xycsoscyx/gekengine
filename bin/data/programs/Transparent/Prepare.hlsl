@@ -5,7 +5,7 @@
 
 namespace Settings
 {
-    static const uint Equation = 9;
+    static const uint Equation = 10;
 };
 
 // Weight Based OIT
@@ -29,23 +29,27 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     switch (Settings::Equation)
     {
     case 7:
-        reveal = max(10e-2, min((3 * 10e3), (10.0 / (10e-5 + pow((viewDepth / 5.0), 2.0) + pow((viewDepth / 200.0), 6.0)))));
+        reveal = (10.0 / (10e-5 + pow((viewDepth / 5.0), 2.0) + pow((viewDepth / 200.0), 6.0)));
         break;
 
     case 8:
-        reveal = max(10e-2, min((3 * 10e3), (10.0 / (10e-5 + pow((viewDepth / 10.0), 3.0) + pow((viewDepth / 200.0), 6.0)))));
+        reveal = (10.0 / (10e-5 + pow((viewDepth / 10.0), 3.0) + pow((viewDepth / 200.0), 6.0)));
         break;
 
     case 9:
-        reveal = max(10e-2, min((3 * 10e3), (0.03 / 10e-5 + pow((viewDepth / 200.0), 4.0))));
+        reveal = (0.03 / (10e-5 + pow((viewDepth / 200.0), 4.0)));
         break;
 
     case 10:
-        reveal = max(10e-2, ((3 * 10e3) * pow((1.0 - clipDepth), 3.0)));
+        reveal = ((3 * 10e3) * pow((1.0 - clipDepth), 3.0));
+        break;
+
+    default:
+        reveal = 0.0;
         break;
     };
 
-    reveal = saturate(reveal);
+    reveal = clamp(reveal, Math::Epsilon, 3 * 10e3);
 
     OutputPixel outputPixel;
     outputPixel.accumulationBuffer = (float4((color.rgb * color.a), coverage) * reveal);
