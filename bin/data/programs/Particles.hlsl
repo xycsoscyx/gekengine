@@ -36,8 +36,9 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
                               0.0, 0.0, 1.0);
 
     float3 edge;
-    edge.x = ((cornerIndex % 2) ? 1.0 : -1.0);
-    edge.y = ((cornerIndex & 2) ? -1.0 : 1.0);
+    float2 normal;
+    normal.x = edge.x = ((cornerIndex % 2) ? 1.0 : -1.0);
+    normal.y = edge.y = ((cornerIndex & 2) ? -1.0 : 1.0);
     edge.z = 0.0f;
     edge = (mul(angle, edge) * instanceData.size);
 
@@ -52,7 +53,7 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
     ViewVertex viewVertex;
     viewVertex.position = (edge + mul(Camera::viewMatrix, float4(position, 1.0)).xyz);
 
-    viewVertex.normal = float3(0.0, 0.0, -1.0);
+    viewVertex.normal = normalize(float3(normal.xy, -1.0));
 
     viewVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     viewVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);

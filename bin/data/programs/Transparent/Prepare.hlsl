@@ -3,22 +3,52 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
+namespace Settings
+{
+    static const uint Equation = 9;
+};
+
 // Weight Based OIT
 // http://jcgt.org/published/0002/02/09/paper.pdf
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float sceneDepth = getLinearDepth(Resources::depth[inputPixel.position.xy]);
-    float pixelDepth = inputPixel.viewPosition.z;
-    float depthDelta = saturate(sceneDepth - pixelDepth);
+    const float clipDepth = inputPixel.position.z;
+    const float viewDepth = inputPixel.viewPosition.z;
+    const float4 color = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
+    float coverage = color.a;
 
-    float4 color = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
-    color.a *= depthDelta;
+    // Need to store transmission in a separate color?
+    coverage *= (1.0 - (color.r + color.g + color.b) * (1.0 / 3.0));
 
-    float reveal = max(min(1.0, max(max(color.r, color.g), color.b) * color.a), color.a)
-        * clamp(0.03 / (1e-5 + pow(pixelDepth / Camera::farClip, 3.0)), 1e-2, 3e3); // Eq 9
+    // Soften edges when transparent surfaces intersect solid surfaces
+    float sceneDepth = getLinearDepth(Resources::depthBuffer[inputPixel.position.xy]);
+    float depthDelta = saturate((sceneDepth - viewDepth) * 2.5);
+    coverage *= depthDelta;
+
+    float reveal;
+    switch (Settings::Equation)
+    {
+    case 7:
+        reveal = max(10e-2, min((3 * 10e3), (10.0 / (10e-5 + pow((viewDepth / 5.0), 2.0) + pow((viewDepth / 200.0), 6.0)))));
+        break;
+
+    case 8:
+        reveal = max(10e-2, min((3 * 10e3), (10.0 / (10e-5 + pow((viewDepth / 10.0), 3.0) + pow((viewDepth / 200.0), 6.0)))));
+        break;
+
+    case 9:
+        reveal = max(10e-2, min((3 * 10e3), (0.03 / 10e-5 + pow((viewDepth / 200.0), 4.0))));
+        break;
+
+    case 10:
+        reveal = max(10e-2, ((3 * 10e3) * pow((1.0 - clipDepth), 3.0)));
+        break;
+    };
+
+    reveal = saturate(reveal);
 
     OutputPixel outputPixel;
-    outputPixel.accumulationBuffer = (float4((color.rgb * color.a), color.a) * reveal);
-    outputPixel.revealBuffer = color.a;
+    outputPixel.accumulationBuffer = (float4((color.rgb * color.a), coverage) * reveal);
+    outputPixel.revealBuffer = (coverage * reveal);
     return outputPixel;
 }

@@ -9,8 +9,10 @@
     <textures>
         <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
         <revealBuffer bind="float" flags="target">byte</revealBuffer>
-        <depth bind="float" source="standard" name="depth" />
+        <depthBuffer bind="float">float</depthBuffer>
     </textures>
+
+    <depth source="standard" />
 
     <block>
         <clear>
@@ -34,13 +36,18 @@
                 <cullmode>back</cullmode>
             </renderstates>
 
+            <depthstates>
+                <comparison>less</comparison>
+                <writemask>zero</writemask>
+            </depthstates>
+
             <targets>
                 <accumulationBuffer />
                 <revealBuffer />
             </targets>
 
             <resources>
-                <depth />
+                <depthBuffer copy="depth" />
             </resources>
 
             <program>

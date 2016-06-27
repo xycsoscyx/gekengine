@@ -45,7 +45,7 @@
     <block>
         <pass mode="forward">
             <depthstates>
-                <comparison>lessequal</comparison>
+                <comparison>less_equal</comparison>
                 <writemask>all</writemask>
                 <clear>1</clear>
             </depthstates>
