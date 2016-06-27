@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<shader priority="10">
+<shader priority="2">
     <material>
         <maps>
             <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>
@@ -10,6 +10,7 @@
         <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
         <revealBuffer bind="float" flags="target">byte</revealBuffer>
         <depthBuffer bind="float">float</depthBuffer>
+        <finalBuffer bind="float" source="standard" name="finalBuffer">float</finalBuffer>
     </textures>
 
     <depth source="standard" />
@@ -52,7 +53,7 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Transparent\Prepare</source>
+                <source>Transparent\Calculate</source>
             </program>
         </pass>
 
@@ -67,9 +68,13 @@
                 <revealBuffer />
             </resources>
 
+            <targets>
+                <finalBuffer />
+            </targets>
+
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Transparent\Present</source>
+                <source>Transparent\Combinex</source>
             </program>
         </pass>
     </block>

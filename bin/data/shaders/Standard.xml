@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-<shader priority="0">
+<shader priority="1">
     <lighting>
         <lightsPerPass>255</lightsPerPass>
     </lighting>
@@ -33,9 +33,8 @@
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
         <lightAccumulationBuffer bind="float3" flags="target">float4</lightAccumulationBuffer>
-        <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
-        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminanceBuffer>
         <ambientOcclusionBuffer bind="float" flags="target, readWrite">byte</ambientOcclusionBuffer>
+        <finalBuffer bind="float3" flags="target">float4</finalBuffer>
     </textures>
 
     <buffers>
@@ -126,13 +125,12 @@
             </resources>
 
             <targets>
-                <luminanceBuffer />
                 <ambientOcclusionBuffer />
             </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\PrepareFinal</source>
+                <source>Standard\AmbientOcclusion</source>
             </program>
         </pass>
 
@@ -178,31 +176,17 @@
 
         <pass mode="deferred">
             <resources>
-                <luminanceBuffer actions="generateMipMaps" />
-                <averageLuminanceBuffer />
+                <lightAccumulationBuffer />
+                <ambientOcclusionBuffer actions="flip" />
             </resources>
 
             <targets>
-                <averageLuminanceBuffer />
+                <finalBuffer />
             </targets>
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Standard\AdaptiveLuminance</source>
-            </program>
-        </pass>
-
-        <pass mode="deferred">
-            <resources>
-                <lightAccumulationBuffer />
-                <averageLuminanceBuffer actions="flip" />
-                <ambientOcclusionBuffer actions="flip" />
-                <depth />
-            </resources>
-
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\PresentFinal</source>
+                <source>Standard\Combine</source>
             </program>
         </pass>
     </block>

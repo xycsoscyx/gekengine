@@ -4,7 +4,6 @@
 #include "GEKUtility.hlsl"
 
 // https://mynameismjp.wordpress.com/2010/04/30/a-closer-look-at-tone-mapping/
-
 #define TechniqueNone               0
 #define TechniqueLogarithmic        1
 #define TechniqueExponential        2
@@ -175,7 +174,7 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float ambientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
-    float3 baseColor = Resources::lightAccumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float3 baseColor = Resources::finalBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     float exposure = 0.0;
     float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));
