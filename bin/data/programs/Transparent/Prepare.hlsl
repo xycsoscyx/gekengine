@@ -15,10 +15,12 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     const float clipDepth = inputPixel.position.z;
     const float viewDepth = inputPixel.viewPosition.z;
     const float4 color = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
+    const float3 transmission = lerp(0.0, color.rgb, color.a);
     float coverage = color.a;
 
     // Need to store transmission in a separate color?
-    coverage *= (1.0 - (color.r + color.g + color.b) * (1.0 / 3.0));
+    // Hard to do with particle system since we'd need a secondary pixel color too
+    coverage *= (1.0 - (transmission.r + transmission.g + transmission.b) * (1.0 / 3.0));
 
     // Soften edges when transparent surfaces intersect solid surfaces
     float sceneDepth = getLinearDepth(Resources::depthBuffer[inputPixel.position.xy]);
