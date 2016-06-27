@@ -161,6 +161,7 @@
     <ClInclude Include="GEK\Engine\ComponentMixin.h" />
     <ClInclude Include="GEK\Engine\Engine.h" />
     <ClInclude Include="GEK\Engine\Entity.h" />
+    <ClInclude Include="GEK\Engine\Filter.h" />
     <ClInclude Include="GEK\Engine\Material.h" />
     <ClInclude Include="GEK\Engine\Plugin.h" />
     <ClInclude Include="GEK\Engine\Population.h" />
@@ -173,6 +174,7 @@
   <ItemGroup>
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="entrypoints.cpp" />
+    <ClCompile Include="Filter.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="Population.cpp" />

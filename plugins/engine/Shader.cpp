@@ -289,6 +289,8 @@ namespace Gek
 
         std::list<BlockData> blockList;
 
+        ResourceHandle cameraTarget;
+
     private:
         static MapType getMapType(const wchar_t *mapType)
         {
@@ -1174,7 +1176,6 @@ namespace Gek
             return resourceList;
         }
 
-        ResourceHandle target;
         ResourceHandle renderTargetList[8];
         Pass::Mode preparePass(RenderContext *renderContext, BlockData &block, PassData &pass)
         {
@@ -1272,12 +1273,12 @@ namespace Gek
 
                 if (pass.renderTargetList.empty())
                 {
-                    if (target)
+                    if (cameraTarget)
                     {
-                        renderTargetList[0] = target;
+                        renderTargetList[0] = cameraTarget;
                         resources->setRenderTargets(renderContext, renderTargetList, 1, (pass.enableDepth ? &depthBuffer : nullptr));
 
-                        VideoTexture *texture = resources->getTexture(target);
+                        VideoTexture *texture = resources->getTexture(cameraTarget);
                         shaderConstantData.targetSize.x = float(texture->getWidth());
                         shaderConstantData.targetSize.y = float(texture->getHeight());
                     }
@@ -1456,12 +1457,12 @@ namespace Gek
             }
         }
 
-        Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle target)
+        Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(renderContext);
 
-            this->target = target;
+            this->cameraTarget = cameraTarget;
             concurrency::concurrent_vector<LightData> lightData;
             population->listEntities<TransformComponent, PointLightComponent, ColorComponent>([&](Entity *entity) -> void
             {

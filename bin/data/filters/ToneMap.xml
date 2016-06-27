@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<filter>
+    <textures>
+        <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
+        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminanceBuffer>
+        <finalBuffer bind="float3" source="standard" name="finalBuffer">float</finalBuffer>
+    </textures>
+
+    <pass mode="deferred">
+        <resources>
+            <lightAccumulationBuffer />
+        </resources>
+
+        <targets>
+            <luminanceBuffer />
+        </targets>
+
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\CalculateLuminance</source>
+        </program>
+    </pass>
+
+    <pass mode="deferred">
+        <resources>
+            <luminanceBuffer actions="generateMipMaps" />
+            <averageLuminanceBuffer />
+        </resources>
+
+        <targets>
+            <averageLuminanceBuffer />
+        </targets>
+
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\AdaptLuminance</source>
+        </program>
+    </pass>
+
+    <pass mode="deferred">
+        <resources>
+            <finalBuffer />
+            <averageLuminanceBuffer actions="flip" />
+        </resources>
+
+        <program>
+            <entry>mainPixelProgram</entry>
+            <source>Standard\ToneMap</source>
+        </program>
+    </pass>
+</filter>

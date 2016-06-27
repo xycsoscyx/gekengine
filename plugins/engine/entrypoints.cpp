@@ -8,6 +8,7 @@ namespace Gek
     GEK_DECLARE_CONTEXT_USER(PluginImplementation);
     GEK_DECLARE_CONTEXT_USER(MaterialImplementation);
     GEK_DECLARE_CONTEXT_USER(ShaderImplementation);
+    GEK_DECLARE_CONTEXT_USER(FilterImplementation);
     GEK_DECLARE_CONTEXT_USER(EngineImplementation);
 
     GEK_CONTEXT_BEGIN(Engine);
@@ -17,6 +18,7 @@ namespace Gek
         GEK_CONTEXT_ADD_CLASS(PluginSystem, PluginImplementation);
         GEK_CONTEXT_ADD_CLASS(MaterialSystem, MaterialImplementation);
         GEK_CONTEXT_ADD_CLASS(ShaderSystem, ShaderImplementation);
+        GEK_CONTEXT_ADD_CLASS(FilterSystem, FilterImplementation);
         GEK_CONTEXT_ADD_CLASS(EngineSystem, EngineImplementation);
     GEK_CONTEXT_END()
 }; // namespace Gek

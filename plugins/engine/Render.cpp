@@ -8,11 +8,13 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Plugin.h"
 #include "GEK\Engine\Shader.h"
+#include "GEK\Engine\Filter.h"
 #include "GEK\Engine\Material.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
 #include "GEK\Components\Transform.h"
+#include "GEK\Components\Filter.h"
 #include "GEK\Shapes\Sphere.h"
 #include <set>
 #include <ppl.h>
@@ -417,7 +419,7 @@ namespace Gek
             }
         }
 
-        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle target)
+        void render(Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
         {
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(video);
@@ -506,7 +508,7 @@ namespace Gek
                 for (auto &drawCallSet : drawCallSetList)
                 {
                     auto &shader = drawCallSet.shader;
-                    for (auto block = shader->begin(renderContext.get(), cameraConstantData.viewMatrix, viewFrustum, target); block; block = block->next())
+                    for (auto block = shader->begin(renderContext.get(), cameraConstantData.viewMatrix, viewFrustum, cameraTarget); block; block = block->next())
                     {
                         while (block->prepare())
                         {
@@ -561,6 +563,28 @@ namespace Gek
                                 };
                             }
                         };
+                    }
+                }
+
+                if (cameraEntity->hasComponent<FilterComponent>())
+                {
+                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                    auto &filterList = cameraEntity->getComponent<FilterComponent>().list;
+                    for (auto &filterName : filterList)
+                    {
+                        FilterPtr filter(getContext()->createClass<Filter>(L"FilterSystem", video, (Resources *)this, filterName.c_str()));
+                        for (auto pass = filter->begin(renderContext.get(), cameraTarget); pass; pass = pass->next())
+                        {
+                            switch (pass->prepare())
+                            {
+                            case Filter::Pass::Mode::Deferred:
+                                videoContext->drawPrimitive(3, 0);
+                                break;
+
+                            case Filter::Pass::Mode::Compute:
+                                break;
+                            };
+                        }
                     }
                 }
             }

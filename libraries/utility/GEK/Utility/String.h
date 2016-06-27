@@ -6,8 +6,10 @@
 #include "GEK\Math\Color.h"
 #include "GEK\Math\Quaternion.h"
 #include <functional>
+#include <algorithm>
 #include <sstream>
 #include <iomanip>
+#include <numeric>
 #include <codecvt>
 #include <vector>
 #include <cctype>
@@ -46,7 +48,7 @@ namespace Gek
         {
             static void convert(std::basic_string<DESTINATION> &result, const SOURCE *string)
             {
-               traits<SOURCE>::convert(result, string);
+                traits<SOURCE>::convert(result, string);
             }
         };
 
@@ -97,6 +99,11 @@ namespace Gek
             {
                 assign(string);
             }
+        }
+
+        BaseString(std::vector<BaseString<ELEMENT>> list, ELEMENT delimiter, bool addSpaces = true)
+        {
+            join(list, delimiter, addSpaces);
         }
 
         template<typename TYPE, typename... ARGUMENTS>
@@ -210,6 +217,15 @@ namespace Gek
             };
 
             return tokens;
+        }
+
+        void join(std::vector<BaseString<ELEMENT>> list, ELEMENT delimiter, bool addSpaces = true)
+        {
+            std::accumulate(list.begin(), list.end(), *this, 
+                [delimiter](const BaseString<ELEMENT> &a, const BaseString<ELEMENT> &b) -> BaseString<ELEMENT>
+            {
+                return (a.empty() ? b : (a + delimiter + b));
+            });
         }
 
         int compareNoCase(const ELEMENT *string) const
