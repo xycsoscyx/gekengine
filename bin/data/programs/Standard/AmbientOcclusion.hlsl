@@ -53,7 +53,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float3 pixelColor = Resources::lightAccumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     OutputPixel output;
-    output.luminanceBuffer = log(getLuminance(pixelColor));
     output.ambientOcclusionBuffer = getShadowFactor(inputPixel);
     return output;
 }

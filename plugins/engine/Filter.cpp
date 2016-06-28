@@ -21,39 +21,6 @@ namespace Gek
 {
     extern Video::Format getFormat(const wchar_t *formatString);
 
-    static Video::DepthWrite getDepthWriteMask(const wchar_t *depthWrite)
-    {
-        if (_wcsicmp(depthWrite, L"zero") == 0) return Video::DepthWrite::Zero;
-        else if (_wcsicmp(depthWrite, L"all") == 0) return Video::DepthWrite::All;
-        else return Video::DepthWrite::Zero;
-    }
-
-    static Video::ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
-    {
-        if (_wcsicmp(comparisonFunction, L"always") == 0) return Video::ComparisonFunction::Always;
-        else if (_wcsicmp(comparisonFunction, L"never") == 0) return Video::ComparisonFunction::Never;
-        else if (_wcsicmp(comparisonFunction, L"equal") == 0) return Video::ComparisonFunction::Equal;
-        else if (_wcsicmp(comparisonFunction, L"not_equal") == 0) return Video::ComparisonFunction::NotEqual;
-        else if (_wcsicmp(comparisonFunction, L"less") == 0) return Video::ComparisonFunction::Less;
-        else if (_wcsicmp(comparisonFunction, L"less_equal") == 0) return Video::ComparisonFunction::LessEqual;
-        else if (_wcsicmp(comparisonFunction, L"greater") == 0) return Video::ComparisonFunction::Greater;
-        else if (_wcsicmp(comparisonFunction, L"greater_equal") == 0) return Video::ComparisonFunction::GreaterEqual;
-        else return Video::ComparisonFunction::Always;
-    }
-
-    static Video::StencilOperation getStencilOperation(const wchar_t *stencilOperation)
-    {
-        if (_wcsicmp(stencilOperation, L"zero") == 0) return Video::StencilOperation::Zero;
-        else if (_wcsicmp(stencilOperation, L"keep") == 0) return Video::StencilOperation::Keep;
-        else if (_wcsicmp(stencilOperation, L"replace") == 0) return Video::StencilOperation::Replace;
-        else if (_wcsicmp(stencilOperation, L"invert") == 0) return Video::StencilOperation::Invert;
-        else if (_wcsicmp(stencilOperation, L"increase") == 0) return Video::StencilOperation::Increase;
-        else if (_wcsicmp(stencilOperation, L"increase_saturated") == 0) return Video::StencilOperation::IncreaseSaturated;
-        else if (_wcsicmp(stencilOperation, L"decrease") == 0) return Video::StencilOperation::Decrease;
-        else if (_wcsicmp(stencilOperation, L"decrease_saturated") == 0) return Video::StencilOperation::DecreaseSaturated;
-        else return Video::StencilOperation::Zero;
-    }
-
     static Video::FillMode getFillMode(const wchar_t *fillMode)
     {
         if (_wcsicmp(fillMode, L"solid") == 0) return Video::FillMode::Solid;
@@ -135,11 +102,6 @@ namespace Gek
         struct PassData
         {
             Pass::Mode mode;
-            bool enableDepth;
-            uint32_t depthClearFlags;
-            float depthClearValue;
-            uint32_t stencilClearValue;
-            DepthStateHandle depthState;
             RenderStateHandle renderState;
             Math::Color blendFactor;
             BlendStateHandle blendState;
@@ -156,10 +118,6 @@ namespace Gek
 
             PassData(void)
                 : mode(Pass::Mode::Deferred)
-                , enableDepth(false)
-                , depthClearFlags(0)
-                , depthClearValue(1.0f)
-                , stencilClearValue(0)
                 , width(0)
                 , height(0)
                 , blendFactor(1.0f)
@@ -185,7 +143,7 @@ namespace Gek
 
         std::unordered_map<String, String> globalDefinesList;
 
-        ResourceHandle depthBuffer;
+        DepthStateHandle depthState;
         std::unordered_map<String, ResourceHandle> resourceMap;
 
         ResourceHandle cameraTarget;
@@ -447,6 +405,9 @@ namespace Gek
 
             shaderConstantBuffer = video->createBuffer(sizeof(FilterConstantData), 1, Video::BufferType::Constant, 0);
 
+            Video::DepthState depthInfo;
+            depthState = resources->createDepthState(depthInfo);
+
             XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\filters\\%v.xml", fileName)));
 
             XmlNodePtr filterNode(document->getRoot(L"filter"));
@@ -633,9 +594,9 @@ namespace Gek
                 {
                     engineData +=
                         "struct InputPixel                                          \r\n" \
-                        "{                                                          \r\n";
+                        "{                                                          \r\n" \
                         "    float4 position     : SV_POSITION;                     \r\n" \
-                        "    float2 texCoord     : TEXCOORD0;                       \r\n";
+                        "    float2 texCoord     : TEXCOORD0;                       \r\n" \
                         "};                                                         \r\n" \
                         "                                                           \r\n";
                 }
@@ -900,21 +861,16 @@ namespace Gek
                 break;
 
             default:
-                resources->setDepthState(renderContext, pass.depthState, 0x0);
+                resources->setDepthState(renderContext, depthState, 0x0);
                 resources->setRenderState(renderContext, pass.renderState);
                 resources->setBlendState(renderContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
-
-                if (pass.depthClearFlags > 0)
-                {
-                    resources->clearDepthStencilTarget(renderContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
-                }
 
                 if (pass.renderTargetList.empty())
                 {
                     if (cameraTarget)
                     {
                         renderTargetList[0] = cameraTarget;
-                        resources->setRenderTargets(renderContext, renderTargetList, 1, (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setRenderTargets(renderContext, renderTargetList, 1, nullptr);
 
                         VideoTexture *texture = resources->getTexture(cameraTarget);
                         shaderConstantData.targetSize.x = float(texture->getWidth());
@@ -922,7 +878,7 @@ namespace Gek
                     }
                     else
                     {
-                        resources->setBackBuffer(renderContext, (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setBackBuffer(renderContext, nullptr);
                         shaderConstantData.targetSize.x = float(video->getBackBuffer()->getWidth());
                         shaderConstantData.targetSize.y = float(video->getBackBuffer()->getHeight());
                     }
@@ -945,7 +901,7 @@ namespace Gek
                         renderTargetList[stage++] = renderTargetHandle;
                     }
 
-                    resources->setRenderTargets(renderContext, renderTargetList, stage, (pass.enableDepth ? &depthBuffer : nullptr));
+                    resources->setRenderTargets(renderContext, renderTargetList, stage, nullptr);
                 }
 
                 break;

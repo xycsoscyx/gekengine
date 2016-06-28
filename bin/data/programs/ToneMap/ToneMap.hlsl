@@ -173,11 +173,10 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float ambientOcclusion = Resources::ambientOcclusionBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float3 baseColor = Resources::finalBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     float exposure = 0.0;
     float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));
-    float3 tonedColor = getToneMappedColor((baseColor * ambientOcclusion), averageLuminance, 0.0, exposure);
+    float3 tonedColor = getToneMappedColor(baseColor, averageLuminance, 0.0, exposure);
     return tonedColor;
 }

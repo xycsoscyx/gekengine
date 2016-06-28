@@ -8,7 +8,7 @@
 
     <pass mode="deferred">
         <resources>
-            <lightAccumulationBuffer />
+            <finalBuffer />
         </resources>
 
         <targets>
@@ -17,7 +17,7 @@
 
         <program>
             <entry>mainPixelProgram</entry>
-            <source>Standard\CalculateLuminance</source>
+            <source>ToneMap\CalculateLuminance</source>
         </program>
     </pass>
 
@@ -33,7 +33,7 @@
 
         <program>
             <entry>mainPixelProgram</entry>
-            <source>Standard\AdaptLuminance</source>
+            <source>ToneMap\AdaptLuminance</source>
         </program>
     </pass>
 
@@ -45,7 +45,7 @@
 
         <program>
             <entry>mainPixelProgram</entry>
-            <source>Standard\ToneMap</source>
+            <source>ToneMap\ToneMap</source>
         </program>
     </pass>
 </filter>

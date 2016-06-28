@@ -74,7 +74,7 @@
 
             <program>
                 <entry>mainPixelProgram</entry>
-                <source>Transparent\Combinex</source>
+                <source>Transparent\Combine</source>
             </program>
         </pass>
     </block>

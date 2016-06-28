@@ -105,7 +105,7 @@ namespace Light
     }
 };
 
-float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float3 materialAlbedo = Resources::albedoBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float2 materialInfo = Resources::materialBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
@@ -126,7 +126,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     uint lightTileStart = (bufferOffset + 1);
     uint lightTileEnd = (lightTileStart + lightTileCount);
 
-    float3 surfaceColor = 0.0;
+    OutputPixel outputPixel;
+    outputPixel.lightAccumulationBuffer = 0.0;
 
     [loop]
     for (uint lightTileIndex = lightTileStart; lightTileIndex < lightTileEnd; ++lightTileIndex)
@@ -140,8 +141,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);
         float3 diffuseLighting = (diffuseAlbedo * Math::ReciprocalPi);
         float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightProperties.direction, viewDirection, NdotL);
-        surfaceColor += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightProperties.falloff * light.color);
+        outputPixel.lightAccumulationBuffer += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightProperties.falloff * light.color);
     }
 
-    return surfaceColor;
+    return outputPixel;
 }

@@ -12,5 +12,4 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     float3 average = (accumulation.rgb / max(accumulation.a, 1e-5));
     return float4((average * (1.0 - reveal)), reveal);
-
 }

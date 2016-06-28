@@ -572,7 +572,7 @@ namespace Gek
                     auto &filterList = cameraEntity->getComponent<FilterComponent>().list;
                     for (auto &filterName : filterList)
                     {
-                        FilterPtr filter(getContext()->createClass<Filter>(L"FilterSystem", video, (Resources *)this, filterName.c_str()));
+                        Filter * const filter = resources->loadFilter(filterName);
                         for (auto pass = filter->begin(renderContext.get(), cameraTarget); pass; pass = pass->next())
                         {
                             switch (pass->prepare())

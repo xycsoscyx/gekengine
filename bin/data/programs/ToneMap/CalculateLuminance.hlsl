@@ -5,7 +5,7 @@
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float3 pixelColor = Resources::lightAccumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    float3 pixelColor = Resources::finalBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
     OutputPixel output;
     output.luminanceBuffer = log(getLuminance(pixelColor));

@@ -9,6 +9,7 @@
 #include "GEK\Engine\Render.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Shader.h"
+#include "GEK\Engine\Filter.h"
 #include "GEK\Engine\Material.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
@@ -327,6 +328,7 @@ namespace Gek
         ResourceManager<PluginHandle, Plugin> pluginManager;
         ResourceManager<MaterialHandle, Material> materialManager;
         ResourceManager<ShaderHandle, Shader> shaderManager;
+        ResourceManager<ResourceHandle, Filter> filterManager;
         ResourceManager<ResourceHandle, VideoObject> resourceManager;
         ResourceManager<RenderStateHandle, VideoObject> renderStateManager;
         ResourceManager<DepthStateHandle, VideoObject> depthStateManager;
@@ -346,6 +348,7 @@ namespace Gek
             , pluginManager(this)
             , materialManager(this)
             , shaderManager(this)
+            , filterManager(this)
             , resourceManager(this)
             , renderStateManager(this)
             , depthStateManager(this)
@@ -477,6 +480,24 @@ namespace Gek
 
             std::size_t hash = reverseHash(fileName);
             return materialManager.getHandle(hash, request);
+        }
+
+        Filter * const loadFilter(const wchar_t *fileName)
+        {
+            GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
+            auto load = [this, fileName = String(fileName)](ResourceHandle handle)->FilterPtr
+            {
+                return getContext()->createClass<Filter>(L"FilterSystem", video, (Resources *)this, fileName.c_str());
+            };
+
+            auto request = [this, load](ResourceHandle handle, std::function<void(FilterPtr)> set) -> void
+            {
+                set(load(handle));
+            };
+
+            std::size_t hash = reverseHash(fileName);
+            ResourceHandle filter = filterManager.getHandle(hash, request, false);
+            return filterManager.getResource(filter);
         }
 
         ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material)
