@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <plugin>
-    <layout>
+    <layout colors="2">
         <vertexIndex />
     </layout>
     <vertex>

@@ -14,6 +14,7 @@ namespace Particles
 
     StructuredBuffer<Instance> list : register(t0);
     Texture2D<float4> colorMap : register(t1);
+    Texture2D<float4> transmissionMap : register(t2);
 };
 
 static const uint indexBuffer[6] = 
@@ -59,6 +60,7 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
     viewVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
 
     viewVertex.color = (instanceData.age > 0.0 ? Particles::colorMap.SampleLevel(Global::linearClampSampler, age, 0) : 0.0);
+    viewVertex.color1 = (instanceData.age > 0.0 ? Particles::transmissionMap.SampleLevel(Global::linearClampSampler, age, 0) : 0.0);
 
     return viewVertex;
 }

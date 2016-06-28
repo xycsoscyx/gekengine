@@ -10,6 +10,7 @@ namespace Gek
     {
         String material;
         String colorMap;
+        String transmissionMap;
         Math::Float2 lifeExpectancy;
         Math::Float2 size;
         uint32_t density;

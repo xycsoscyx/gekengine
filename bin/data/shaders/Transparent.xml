@@ -21,7 +21,7 @@
             <revealBuffer>1</revealBuffer>
         </clear>
 
-        <pass mode="forward">
+        <pass mode="forward" colors="2">
             <blendstates>
                 <target>
                     <color source="one" destination="one" operation="add" />
@@ -60,7 +60,7 @@
         <pass mode="deferred">
             <blendstates>
                 <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
-                <writemask>rgb</writemask>
+                <writemask>rgba</writemask>
             </blendstates>
 
             <resources>

@@ -68,6 +68,7 @@ namespace Gek
             const Math::Color &color;
             MaterialHandle material;
             ResourceHandle colorMap;
+            ResourceHandle transmissionMap;
             std::uniform_real_distribution<float> lifeExpectancy;
             std::uniform_real_distribution<float> size;
             std::vector<Particle> particles;
@@ -82,35 +83,41 @@ namespace Gek
         {
             union
             {
-                uint64_t value;
                 struct
                 {
-                    uint16_t buffer;
+                    uint64_t value[2];
+                };
+
+                struct
+                {
+                    uint16_t buffer[3];
                     ResourceHandle colorMap;
+                    ResourceHandle transmissionMap;
                     MaterialHandle material;
                 };
             };
 
             Properties(void)
-                : value(0)
+                : value{ 0, 0 }
             {
             }
 
-            Properties(MaterialHandle material, ResourceHandle colorMap)
+            Properties(MaterialHandle material, ResourceHandle colorMap, ResourceHandle transmissionMap)
                 : material(material)
                 , colorMap(colorMap)
-                , buffer(0)
+                , transmissionMap(transmissionMap)
+                , buffer{ 0, 0, 0 }
             {
             }
 
             std::size_t operator()(const Properties &properties) const
             {
-                return std::hash<uint64_t>()(properties.value);
+                return std::hash_combine(properties.value[0], properties.value[1]);
             }
 
             bool operator == (const Properties &properties) const
             {
-                return (value == properties.value);
+                return (value[0] == properties.value[0] && value[1] == properties.value[1]);
             }
         };
 
@@ -213,6 +220,7 @@ namespace Gek
                 emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(String(L"Particles\\%v", particlesComponent.material));
                 emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), nullptr, 0);
+                emitter.transmissionMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.transmissionMap), nullptr, 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
                 emitter.size = std::uniform_real_distribution<float>(particlesComponent.size.x, particlesComponent.size.y);
                 concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
@@ -348,7 +356,7 @@ namespace Gek
                 const Emitter &emitter = data.second;
                 if (viewFrustum->isVisible(emitter))
                 {
-                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &data));
+                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap, emitter.transmissionMap), &data));
                 }
             });
 

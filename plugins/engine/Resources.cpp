@@ -36,7 +36,7 @@ namespace Gek
 
     GEK_INTERFACE(RequestLoader)
     {
-        virtual void request(std::function<void(void)> load) = 0;
+        virtual void request(std::function<void(void)> load, bool threaded) = 0;
     };
 
     template <class HANDLE, typename TYPE>
@@ -144,7 +144,7 @@ namespace Gek
                     auto &resource = globalResourceMap[handle];
                     resource.set(data);
                 });
-            });
+            }, false);
 
             return handle;
         }
@@ -160,7 +160,7 @@ namespace Gek
                     auto &resource = localResourceMap[handle];
                     resource.set(data);
                 });
-            });
+            }, false);
 
             return handle;
         }
@@ -182,12 +182,12 @@ namespace Gek
                     auto &resource = readWriteResourceMap[handle];
                     resource.setWrite(data);
                 });
-            });
+            }, false);
 
             return handle;
         }
 
-        HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad, bool threaded = true)
+        HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad, bool threaded)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -203,31 +203,20 @@ namespace Gek
                 requestedLoadSet.insert(hash);
                 handle.assign(InterlockedIncrement(&nextIdentifier));
                 resourceHandleMap[hash] = handle;
-                if (threaded)
-                {
-                    loader->request([this, handle, requestLoad](void) -> void
-                    {
-                        requestLoad(handle, [this, handle](TypePtr data) -> void
-                        {
-                            auto &resource = localResourceMap[handle];
-                            resource.set(data);
-                        });
-                    });
-                }
-                else
+                loader->request([this, handle, requestLoad](void) -> void
                 {
                     requestLoad(handle, [this, handle](TypePtr data) -> void
                     {
                         auto &resource = localResourceMap[handle];
                         resource.set(data);
                     });
-                }
+                }, threaded);
             }
 
             return handle;
         }
 
-        HANDLE getReadWriteHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad)
+        HANDLE getReadWriteHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad, bool threaded)
         {
             HANDLE handle;
             if (requestedLoadSet.count(hash) > 0)
@@ -256,7 +245,7 @@ namespace Gek
                         auto &resource = readWriteResourceMap[handle];
                         resource.setWrite(data);
                     });
-                });
+                }, threaded);
             }
 
             return handle;
@@ -357,7 +346,7 @@ namespace Gek
         }
 
         // RequestLoader
-        void request(std::function<void(void)> load)
+        void tryLoadingRequest(std::function<void(void)> load)
         {
             try
             {
@@ -368,28 +357,30 @@ namespace Gek
             };
         }
 
-        void request2(std::function<void(void)> load)
+        void request(std::function<void(void)> load, bool threaded)
         {
-            loadResourceQueue.push(load);
-            if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
+            threaded = false;
+            if (threaded)
             {
-                loadResourceRunning = std::async(std::launch::async, [this](void) -> void
+                loadResourceQueue.push(load);
+                if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
                 {
-                    CoInitialize(nullptr);
-                    std::function<void(void)> function;
-                    while (loadResourceQueue.try_pop(function))
+                    loadResourceRunning = std::async(std::launch::async, [this](void) -> void
                     {
-                        try
+                        CoInitialize(nullptr);
+                        std::function<void(void)> load;
+                        while (loadResourceQueue.try_pop(load))
                         {
-                            function();
-                        }
-                        catch (const Exception &)
-                        {
+                            tryLoadingRequest(load);
                         };
-                    };
 
-                    CoUninitialize();
-                });
+                        CoUninitialize();
+                    });
+                }
+            }
+            else
+            {
+                tryLoadingRequest(load);
             }
         }
 
@@ -406,6 +397,7 @@ namespace Gek
             programManager.clear();
             materialManager.clear();
             shaderManager.clear();
+            filterManager.clear();
             resourceManager.clear();
             renderStateManager.clear();
             depthStateManager.clear();
@@ -479,7 +471,7 @@ namespace Gek
             };
 
             std::size_t hash = reverseHash(fileName);
-            return materialManager.getHandle(hash, request);
+            return materialManager.getHandle(hash, request, true);
         }
 
         Filter * const loadFilter(const wchar_t *fileName)
@@ -549,7 +541,7 @@ namespace Gek
                 renderState.scissorEnable,
                 renderState.multisampleEnable,
                 renderState.antialiasedLineEnable);
-            return renderStateManager.getHandle(hash, request);
+            return renderStateManager.getHandle(hash, request, true);
         }
 
         DepthStateHandle createDepthState(const Video::DepthState &depthState)
@@ -579,7 +571,7 @@ namespace Gek
                 static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation),
                 static_cast<uint8_t>(depthState.stencilBackState.passOperation),
                 static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction));
-            return depthStateManager.getHandle(hash, request);
+            return depthStateManager.getHandle(hash, request, true);
         }
 
         BlendStateHandle createBlendState(const Video::UnifiedBlendState &blendState)
@@ -603,7 +595,7 @@ namespace Gek
                 static_cast<uint8_t>(blendState.alphaDestination),
                 static_cast<uint8_t>(blendState.alphaOperation),
                 blendState.writeMask);
-            return blendStateManager.getHandle(hash, request);
+            return blendStateManager.getHandle(hash, request, true);
         }
 
         BlendStateHandle createBlendState(const Video::IndependentBlendState &blendState)
@@ -635,7 +627,7 @@ namespace Gek
                 }
             }
 
-            return blendStateManager.getHandle(hash, request);
+            return blendStateManager.getHandle(hash, request, true);
         }
 
         ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t flags, uint32_t mipmaps)
@@ -656,11 +648,11 @@ namespace Gek
                 std::size_t hash = std::hash<String>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, request);
+                    return resourceManager.getReadWriteHandle(hash, request, true);
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, request);
+                    return resourceManager.getHandle(hash, request, true);
                 }
             }
             else
@@ -687,11 +679,11 @@ namespace Gek
                 std::size_t hash = std::hash<String>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, request);
+                    return resourceManager.getReadWriteHandle(hash, request, true);
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, request);
+                    return resourceManager.getHandle(hash, request, true);
                 }
             }
             else
@@ -718,11 +710,11 @@ namespace Gek
                 std::size_t hash = std::hash<String>()(name);
                 if (flags & TextureFlags::ReadWrite ? true : false)
                 {
-                    return resourceManager.getReadWriteHandle(hash, request);
+                    return resourceManager.getReadWriteHandle(hash, request, true);
                 }
                 else
                 {
-                    return resourceManager.getHandle(hash, request);
+                    return resourceManager.getHandle(hash, request, true);
                 }
             }
             else
@@ -935,7 +927,7 @@ namespace Gek
             };
 
             std::size_t hash = reverseHash(fileName);
-            return resourceManager.getHandle(hash, request);
+            return resourceManager.getHandle(hash, request, true);
         }
 
         ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
@@ -953,7 +945,7 @@ namespace Gek
             };
 
             std::size_t hash = std::hash_combine<String, String>(pattern, parameters);
-            return resourceManager.getHandle(hash, request);
+            return resourceManager.getHandle(hash, request, true);
         }
 
         ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)

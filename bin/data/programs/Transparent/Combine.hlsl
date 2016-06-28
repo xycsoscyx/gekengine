@@ -10,6 +10,6 @@ float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float4 accumulation = Resources::accumulationBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
     float reveal = Resources::revealBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
 
-    float3 average = (accumulation.rgb / max(accumulation.a, 1e-5));
-    return float4((average * (1.0 - reveal)), reveal);
+    float3 average = (accumulation.rgb / max(accumulation.a, Math::Epsilon));
+    return float4(average, reveal);
 }

@@ -891,6 +891,9 @@ namespace Gek
                     StringUTF8 engineData;
                     if (pass.mode != Pass::Mode::Compute)
                     {
+                        uint32_t coordCount = passNode->getAttribute(L"coords", L"1");
+                        uint32_t colorCount = passNode->getAttribute(L"colors", L"1");
+
                         engineData +=
                             "struct InputPixel                                          \r\n" \
                             "{                                                          \r\n";
@@ -904,10 +907,34 @@ namespace Gek
                         {
                             engineData +=
                                 "    float4 position     : SV_POSITION;                 \r\n" \
-                                "    float2 texCoord     : TEXCOORD0;                   \r\n" \
-                                "    float3 viewPosition : TEXCOORD1;                   \r\n" \
-                                "    float3 viewNormal   : NORMAL0;                     \r\n" \
-                                "    float4 color        : COLOR0;                      \r\n" \
+                                "    float3 viewPosition : TEXCOORD0;                   \r\n" \
+                                "    float3 viewNormal   : NORMAL0;                     \r\n";
+                            
+                            for (uint32_t coord = 1; coord <= coordCount; coord++)
+                            {
+                                if (coord == 1)
+                                {
+                                    engineData.format("    float2 texCoord : TEXCOORD%v;\r\n", coord);
+                                }
+                                else
+                                {
+                                    engineData.format("    float2 texCoord%v : TEXCOORD%v;\r\n", coord, coord);
+                                }
+                            }
+
+                            for (uint32_t color = 0; color < colorCount; color++)
+                            {
+                                if (color == 0)
+                                {
+                                    engineData.format("    float4 color : COLOR%v;      \r\n", color);
+                                }
+                                else
+                                {
+                                    engineData.format("    float4 color%v : COLOR%v;    \r\n", color, color);
+                                }
+                            }
+
+                            engineData +=
                                 "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
                         }
 
