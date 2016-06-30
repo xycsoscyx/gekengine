@@ -276,7 +276,6 @@ namespace Gek
 
         void loadBlendTargetState(Video::TargetBlendState &blendState, XmlNodePtr &blendNode)
         {
-            blendState.enable = blendNode->isValid();
             if (blendNode->hasChildElement(L"writemask"))
             {
                 blendState.writeMask = 0;
@@ -294,6 +293,7 @@ namespace Gek
 
             if (blendNode->hasChildElement(L"color"))
             {
+                blendState.enable = true;
                 XmlNodePtr colorNode(blendNode->firstChildElement(L"color"));
                 blendState.colorSource = getBlendSource(colorNode->getAttribute(L"source"));
                 blendState.colorDestination = getBlendSource(colorNode->getAttribute(L"destination"));
@@ -302,6 +302,7 @@ namespace Gek
 
             if (blendNode->hasChildElement(L"alpha"))
             {
+                blendState.enable = true;
                 XmlNodePtr alphaNode(blendNode->firstChildElement(L"alpha"));
                 blendState.alphaSource = getBlendSource(alphaNode->getAttribute(L"source"));
                 blendState.alphaDestination = getBlendSource(alphaNode->getAttribute(L"destination"));

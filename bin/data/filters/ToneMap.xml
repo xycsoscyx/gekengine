@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <filter>
     <textures>
-        <luminanceBuffer bind="float" flags="target" mipmaps="0">float</luminanceBuffer>
-        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">float</averageLuminanceBuffer>
-        <finalBuffer bind="float3" source="standard" name="finalBuffer">float</finalBuffer>
+        <luminanceBuffer bind="float" flags="target" mipmaps="0">half</luminanceBuffer>
+        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">half</averageLuminanceBuffer>
+        <finalBuffer bind="float3" source="standard" name="finalBuffer" />
     </textures>
 
     <pass mode="deferred">

@@ -32,9 +32,9 @@
         <albedoBuffer bind="float3" flags="target">byte4</albedoBuffer>
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
-        <lightAccumulationBuffer bind="float3" flags="target">float4</lightAccumulationBuffer>
+        <lightAccumulationBuffer bind="float3" flags="target">half4</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target, readWrite">byte</ambientOcclusionBuffer>
-        <finalBuffer bind="float3" flags="target">float4</finalBuffer>
+        <finalBuffer bind="float3" flags="target">half4</finalBuffer>
     </textures>
 
     <buffers>
@@ -119,7 +119,6 @@
     <block>
         <pass mode="deferred">
             <resources>
-                <lightAccumulationBuffer />
                 <normalBuffer />
                 <depth />
             </resources>
