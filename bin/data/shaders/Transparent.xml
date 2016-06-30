@@ -25,6 +25,7 @@
             <blendstates>
                 <target>
                     <color source="one" destination="one" operation="add" />
+                    <alpha source="one" destination="one" operation="add" />
                     <writemask>rgba</writemask>
                 </target>
                 <target>
