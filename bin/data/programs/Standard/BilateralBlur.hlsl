@@ -22,12 +22,12 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     for (int offset = -Defines::guassianRadius; offset <= Defines::guassianRadius; offset++)
     {
         float2 sampleTexCoord = (inputPixel.texCoord + (offset * pixelSize * Defines::blurAxis));
-        float sampleDepth = Resources::depth.Sample(Global::pointSampler, sampleTexCoord);
+        float sampleDepth = Resources::depth.SampleLevel(Global::pointSampler, sampleTexCoord, 0);
         float depthDelta = abs(surfaceDepth - sampleDepth);
 
         float sampleWeight = calculateGaussianWeight(offset) * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
 
-        float sampleValue = Resources::sourceBuffer.Sample(Global::linearClampSampler, sampleTexCoord);
+        float sampleValue = Resources::sourceBuffer.SampleLevel(Global::linearClampSampler, sampleTexCoord, 0);
         finalValue += (sampleValue * sampleWeight);
         totalWeight += sampleWeight;
     }

@@ -470,12 +470,19 @@ namespace Gek
             blendState.enable = blendNode->isValid();
             if (blendNode->hasChildElement(L"writemask"))
             {
-                blendState.writeMask = 0;
                 String writeMask(blendNode->firstChildElement(L"writemask")->getText().getLower());
-                if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::ColorMask::R;
-                if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::ColorMask::G;
-                if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
-                if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
+                if (writeMask.compare(L"all") == 0)
+                {
+                    blendState.writeMask = Video::ColorMask::RGBA;
+                }
+                else
+                {
+                    blendState.writeMask = 0;
+                    if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::ColorMask::R;
+                    if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::ColorMask::G;
+                    if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
+                    if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
+                }
 
             }
             else

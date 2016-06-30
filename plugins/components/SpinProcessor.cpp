@@ -107,12 +107,15 @@ namespace Gek
             GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
             GEK_REQUIRE(population);
 
-            Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
-            population->listEntities<TransformComponent, SpinComponent>([&](Entity *entity) -> void
+            if (!isIdle)
             {
-                auto &transform = entity->getComponent<TransformComponent>();
-                transform.rotation *= rotation;
-            });
+                Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
+                population->listEntities<TransformComponent, SpinComponent>([&](Entity *entity) -> void
+                {
+                    auto &transform = entity->getComponent<TransformComponent>();
+                    transform.rotation *= rotation;
+                });
+            }
         }
     };
 

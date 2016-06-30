@@ -7,18 +7,19 @@
     </material>
 
     <textures>
-        <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
-        <revealBuffer bind="float" flags="target">byte</revealBuffer>
+        <alphaBuffer bind="float4" flags="target">half4</alphaBuffer>
+        <betaBuffer bind="float4" flags="target">half4</betaBuffer>
         <depthBuffer bind="float">float</depthBuffer>
         <finalBuffer bind="float" source="standard" name="finalBuffer" />
+        <backgroundBuffer bind="float3" flags="target">half4</backgroundBuffer>
     </textures>
 
     <depth source="standard" />
 
     <block>
         <clear>
-            <accumulationBuffer>(0,0,0,0)</accumulationBuffer>
-            <revealBuffer>1</revealBuffer>
+            <alphaBuffer>(0,0,0,0)</alphaBuffer>
+            <betaBuffer>(1,1,1,0)</betaBuffer>
         </clear>
 
         <pass mode="forward" colors="2">
@@ -26,11 +27,10 @@
                 <target>
                     <color source="one" destination="one" operation="add" />
                     <alpha source="one" destination="one" operation="add" />
-                    <writemask>rgba</writemask>
                 </target>
                 <target>
                     <color source="zero" destination="inverse_source_color" operation="add" />
-                    <writemask>r</writemask>
+                    <alpha source="one" destination="one" operation="add" />
                 </target>
             </blendstates>
 
@@ -44,8 +44,8 @@
             </depthstates>
 
             <targets>
-                <accumulationBuffer />
-                <revealBuffer />
+                <alphaBuffer />
+                <betaBuffer />
             </targets>
 
             <resources>
@@ -59,14 +59,10 @@
         </pass>
 
         <pass mode="deferred">
-            <blendstates>
-                <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
-                <writemask>rgba</writemask>
-            </blendstates>
-
             <resources>
-                <accumulationBuffer />
-                <revealBuffer />
+                <alphaBuffer />
+                <betaBuffer />
+                <backgroundBuffer copy="finalBuffer" />
             </resources>
 
             <targets>

@@ -94,7 +94,6 @@
         <pass mode="deferred">
             <blendstates>
                 <color source="one" destination="one" operation="add" />
-                <writemask>rgb</writemask>
             </blendstates>
 
             <resources>

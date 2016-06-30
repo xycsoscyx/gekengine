@@ -3,50 +3,32 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-namespace Settings
-{
-    static const uint Equation = 10;
-};
+static const float collimation = 1.0;
+static const float k_0 = 120.0 / 63.0;
+static const float k_1 = 0.05;
 
 // Weight Based OIT
 // http://jcgt.org/published/0002/02/09/paper.pdf
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
+    float3 transmission = inputPixel.color1.rgb;
     float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
-    float reveal = albedo.a;
-    float weight = albedo.a;
+    float3 premultipliedColor = (albedo.rgb * albedo.a);
+    float coverage = albedo.a;
+    float sceneDepth = getLinearDepth(Resources::depthBuffer[inputPixel.position.xy]);
 
-    const float3 transmission = inputPixel.color1.rgb;
-    //weight *= saturate(1.0 - dot(inputPixel.color1.rgb, (1.0 / 3.0)));
+    float netCoverage = coverage * (1.0 - dot(transmission, (1.0 / 3.0)));
+    float tmp = (1.0 - inputPixel.position.z * 0.99) * netCoverage * 10.0;
+    float w = clamp(tmp * tmp * tmp, 0.01, 30.0);
 
-    // Soften edges when transparent surfaces intersect solid surfaces
-    const float sceneDepth = getLinearDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    const float depthDelta = saturate((sceneDepth - inputPixel.viewPosition.z) * 2.5);
-    //weight *= depthDelta;
-
-    switch (Settings::Equation)
-    {
-    case 7: // View Depth
-        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 5.0), 2.0) + pow((inputPixel.viewPosition.z / 200.0), 6.0)));
-        break;
-
-    case 8: // View Depth
-        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 10.0), 3.0) + pow((inputPixel.viewPosition.z / 200.0), 6.0)));
-        break;
-
-    case 9: // View Depth
-        weight *= (0.03 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 200.0), 4.0)));
-        break;
-
-    case 10: // Clip Depth
-        weight *= dot(3e3, pow((1.0 - inputPixel.position.z), 3.0));
-        break;
-    };
-
-    weight = clamp(weight, 1e-2, 3e3);
+    float4 alpha = float4(premultipliedColor * coverage, netCoverage) * w;
+    float3 beta = coverage * (1.0 - transmission) * (1.0 / 3.0);
+    float diffusion = k_0 * netCoverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - sceneDepth)) / abs(inputPixel.viewPosition.z);
+    diffusion = max((diffusion * diffusion), 1.0 / 256.0);
 
     OutputPixel outputPixel;
-    outputPixel.accumulationBuffer = float4((albedo.rgb * weight), weight);
-    outputPixel.revealBuffer = reveal;
+    outputPixel.alphaBuffer = alpha;
+    outputPixel.betaBuffer.rgb = beta;
+    outputPixel.betaBuffer.a = diffusion;
     return outputPixel;
 }
