@@ -36,7 +36,7 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     float3 F0 = lerp(materialAlbedo, 1.0, (1.0 - materialMetalness));
     specularColor = lerp(F0, 1.0, fresnel);
 
-    float alpha = sqr(materialRoughness);
+    float alpha = square(materialRoughness);
 
     float NdotH = clamp(dot(surfaceNormal, halfAngle), 0.0001f, 1.0);
     float D = getGGX(alpha, NdotH);

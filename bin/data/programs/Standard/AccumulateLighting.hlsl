@@ -24,10 +24,10 @@ namespace Light
             properties.direction = (lightRay / lightDistance);
 
             float distanceOverRange = (lightDistance / light.range);
-            float distanceOverRange2 = sqr(distanceOverRange);
-            float distanceOverRange4 = sqr(distanceOverRange2);
-            properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-            properties.falloff /= (sqr(lightDistance) + 1.0);
+            float distanceOverRange2 = square(distanceOverRange);
+            float distanceOverRange4 = square(distanceOverRange2);
+            properties.falloff = square(saturate(1.0 - distanceOverRange4));
+            properties.falloff /= (square(lightDistance) + 1.0);
 
             return properties;
         }
@@ -51,10 +51,10 @@ namespace Light
             properties.direction = (lightRay / lightDistance);
 
             float distanceOverRange = (lightDistance / light.range);
-            float distanceOverRange2 = sqr(distanceOverRange);
-            float distanceOverRange4 = sqr(distanceOverRange2);
-            properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-            properties.falloff /= (sqr(lightDistance) + 1.0);
+            float distanceOverRange2 = square(distanceOverRange);
+            float distanceOverRange4 = square(distanceOverRange2);
+            properties.falloff = square(saturate(1.0 - distanceOverRange4));
+            properties.falloff /= (square(lightDistance) + 1.0);
 
             float rho = saturate(dot(light.direction, -properties.direction));
             float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
@@ -77,10 +77,10 @@ namespace Light
             float lightDistance = length(closestPoint);
 
             float distanceOverRange = (lightDistance / light.range);
-            float distanceOverRange2 = sqr(distanceOverRange);
-            float distanceOverRange4 = sqr(distanceOverRange2);
-            properties.falloff = sqr(saturate(1.0 - distanceOverRange4));
-            properties.falloff /= (sqr(lightDistance) + 1.0);
+            float distanceOverRange2 = square(distanceOverRange);
+            float distanceOverRange4 = square(distanceOverRange2);
+            properties.falloff = square(saturate(1.0 - distanceOverRange4));
+            properties.falloff /= (square(lightDistance) + 1.0);
 
             return properties;
         }

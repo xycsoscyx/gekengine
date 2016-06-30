@@ -43,4 +43,6 @@ namespace Shader
         float2 targetSize;
         float buffer[2];
     };
+
+    static const float2 pixelSize = (1.0 / targetSize);
 };

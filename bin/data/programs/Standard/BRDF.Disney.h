@@ -36,7 +36,7 @@ float GTR2(float NdotH, float alpha)
 
 float GTR2_aniso(float NdotH, float HdotX, float HdotY, float ax, float ay)
 {
-    return 1 / (Math::Pi * ax * ay * sqr(sqr(HdotX / ax) + sqr(HdotY / ay) + NdotH * NdotH));
+    return 1 / (Math::Pi * ax * ay * square(square(HdotX / ax) + square(HdotY / ay) + NdotH * NdotH));
 }
 
 float smithG_GGX(float angle, float alpha)
@@ -80,19 +80,19 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     // specular
 #if _ANISOTROPIC
     float aspect = sqrt(1 - anisotropic * .9);
-    float ax = max(.001, sqr(materialRoughness) / aspect);
-    float ay = max(.001, sqr(materialRoughness) * aspect);
+    float ax = max(.001, square(materialRoughness) / aspect);
+    float ay = max(.001, square(materialRoughness) * aspect);
     float Ds = GTR2_aniso(NdotH, dot(halfAngle, X), dot(halfAngle, Y), ax, ay);
 #elif _GTR2
-    float Ds = GTR2(NdotH, sqr(materialRoughness));
+    float Ds = GTR2(NdotH, square(materialRoughness));
 #else
-    float Ds = GTR1(NdotH, sqr(materialRoughness));
+    float Ds = GTR1(NdotH, square(materialRoughness));
 #endif
 
     float FH = SchlickFresnel(LdotH);
     float3 Fs = lerp(Cspec0, 1, FH);
 
-    float alpha = sqr(materialRoughness);
+    float alpha = square(materialRoughness);
     float Gs = smithG_GGX(NdotL, alpha) * smithG_GGX(NdotV, alpha);
 
     // sheen

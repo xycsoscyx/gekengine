@@ -16,8 +16,8 @@ float maxComponent(float3 value)
     return max(value.x, max(value.y, value.z));
 }
 
-// Weight Based OIT
-// http://jcgt.org/published/0002/02/09/paper.pdf
+// A Phenomenological Scattering Model for Order-Independent Transparency
+// http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float4 betaDiffusion = Resources::betaBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
@@ -39,16 +39,16 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         alpha = (isinf(alpha.a) ? 1.0 : alpha.a);
     }
 
-    alpha.rgb *= 0.5 + 0.5 * beta / max(0.01, maxComponent(beta));
+    alpha.rgb *= (0.5 + 0.5 * beta / max(0.01, maxComponent(beta)));
 
-    float diffusion = betaDiffusion.a * sqr(PPD);
+    float diffusion = betaDiffusion.a * square(PPD);
     if (diffusion > 0)
     {
         static const float stride = 2.0;
 
         float weightSum = 0.0;
         float3 background = 0.0;
-        float radius = floor(min(sqrt(diffusion), maxDiffusionPixels) / float(stride)) * stride;
+        float radius = (floor(min(sqrt(diffusion), maxDiffusionPixels) / float(stride)) * stride);
         for (float2 step = -radius; step.x <= radius; step.x += stride)
         {
             for (step.y = -radius; step.y <= radius; step.y += stride)
@@ -61,8 +61,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
                     float sampleRadius2 = sampleDiffusion * PPD*PPD;
                     if (radius2 <= sampleRadius2)
                     {
-                        float weight = 1.0 / sampleRadius2 + 1e-5;
-                        background += weight * Resources::backgroundBuffer.SampleLevel(Global::pointSampler, sampleCoord, 0);
+                        float weight = (1.0 / sampleRadius2 + 1e-5);
+                        background += (weight * Resources::backgroundBuffer.SampleLevel(Global::pointSampler, sampleCoord, 0));
                         weightSum += weight;
                     }
                 }
@@ -70,7 +70,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         }
 
         background /= weightSum;
-        return background * beta + (1.0 - beta) * alpha.rgb / max(alpha.a, 0.00001);    }
+        return (background * beta + (1.0 - beta) * alpha.rgb / max(alpha.a, 0.00001));    }
     else
     {
         return Resources::backgroundBuffer.Sample(Global::pointSampler, inputPixel.texCoord);

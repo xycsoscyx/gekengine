@@ -6,8 +6,8 @@
 float calculateGaussianWeight(float offset)
 {
     static const float g = (1.0f / (sqrt(Math::Tau) * Defines::gaussianSigma));
-    static const float d = rcp(2.0 * sqr(Defines::gaussianSigma));
-    return (g * exp(-sqr(offset) * d)) / 2;
+    static const float d = rcp(2.0 * square(Defines::gaussianSigma));
+    return (g * exp(-square(offset) * d)) / 2;
 }
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)

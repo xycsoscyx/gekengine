@@ -1,8 +1,8 @@
 float getTrowbridgeReitzGGX(float materialRoughness, float NdotH)
 {
-    float alpha = sqr(materialRoughness);
-    float alphaSquared = sqr(alpha);
-    return (alphaSquared * rcp(Math::Pi * sqr(sqr(NdotH) * (alphaSquared - 1.0) + 1.0)));
+    float alpha = square(materialRoughness);
+    float alphaSquared = square(alpha);
+    return (alphaSquared * rcp(Math::Pi * square(square(NdotH) * (alphaSquared - 1.0) + 1.0)));
 }
 
 float3 getSchlickFresnelApproximation(float3 materialAlbedo, float materialMetalness, float VdotH)
@@ -18,7 +18,7 @@ float getSchlickBeckmann(float k, float angle)
 
 float getSmithGGX(float materialRoughness, float NdotL, float NdotV)
 {
-    float k = (sqr(materialRoughness + 1.0) * 0.125);
+    float k = (square(materialRoughness + 1.0) * 0.125);
     return (getSchlickBeckmann(k, NdotL) * getSchlickBeckmann(k, NdotV));
 }
 

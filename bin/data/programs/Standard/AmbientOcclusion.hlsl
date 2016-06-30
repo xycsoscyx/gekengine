@@ -23,7 +23,7 @@ float getShadowFactor(InputPixel inputPixel)
     float3 surfacePosition = getViewPosition(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
-    float randomAngle = rand(inputPixel.position.xy, Engine::worldTime);
+    float randomAngle = random(inputPixel.position.xy, Engine::worldTime);
     float sampleRadius = (Defines::shadowRadius / (2.0 * surfacePosition.z * Camera::fieldOfView.x));
 
     float totalOcclusion = 0.0;
