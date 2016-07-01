@@ -438,6 +438,76 @@
             <shape skin="debug//r9_m9" parameters="1">sphere</shape>
         </entity>
 
+        <entity>
+            <transform position="(2.0,6.0,2.0)" />
+            <shape skin="debug//alpha_r" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(2.0,6.0,2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_g" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(2.0,6.0,-2.0)" />
+            <shape skin="debug//alpha_g" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(2.0,6.0,-2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_b" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,6.0,2.0)" />
+            <shape skin="debug//alpha_b" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,6.0,2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_w" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,6.0,-2.0)" />
+            <shape skin="debug//alpha_w" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,6.0,-2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_r" parameters="1">sphere</shape>
+        </entity>
+
+        <entity>
+            <transform position="(2.0,4.0,2.0)" />
+            <shape skin="debug//alpha_r" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(2.0,4.0,2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_g" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(2.0,4.0,-2.0)" />
+            <shape skin="debug//alpha_g" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(2.0,4.0,-2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_b" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,4.0,2.0)" />
+            <shape skin="debug//alpha_b" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,4.0,2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_w" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,4.0,-2.0)" />
+            <shape skin="debug//alpha_w" parameters="1">sphere</shape>
+        </entity>
+        <entity>
+            <transform position="(-2.0,4.0,-2.0)" scale="(0.5,0.5,0.5)" />
+            <shape skin="debug//alpha_r" parameters="1">sphere</shape>
+        </entity>
+
+        <entity prefab="basic_particles">
+            <transform position="(0,3,0)" />
+        </entity>
+
         <entity prefab="basic_spot_light" />
         <entity prefab="basic_spot_light" />
         <entity prefab="basic_spot_light" />
@@ -640,105 +710,5 @@
         <entity prefab="basic_point_light" />
         <entity prefab="basic_point_light" />
 
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
-        <entity prefab="basic_particles" />
     </population>
 </world>

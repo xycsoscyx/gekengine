@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<material>
+    <shader>standard</shader>
+    <maps>
+        <albedo name="camera:player" />
+        <normal file="debug_n" />
+        <roughness file="debug_r" />
+        <metalness file="debug_m" />
+    </maps>
+</material>

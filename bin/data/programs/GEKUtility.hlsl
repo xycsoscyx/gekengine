@@ -13,9 +13,26 @@ float random(int2 position, float time = 1.0)
     return (61.111231231 * time + (9.2735171213125 * position.x + -7.235171213125 * position.y + 1.53713171123412415411 * (position.x ^ position.y)));
 }
 
+float maxComponent(float3 value)
+{
+    return max(value.x, max(value.y, value.z));
+}
+
+float minComponent(float3 value)
+{
+    return min(value.x, min(value.y, value.z));
+}
+
 float getLuminance(float3 color)
 {
-    return max(dot(color, float3(0.299, 0.587, 0.114)), Math::Epsilon);
+    float luminance = max(dot(color, float3(0.299, 0.587, 0.114)), Math::Epsilon);
+    if (isinf(luminance))
+    {
+        // maximum float
+        luminance = asfloat(0x7F7FFFFF);
+    }
+    
+    return luminance;
 }
 
 // using stereograpgic projection
