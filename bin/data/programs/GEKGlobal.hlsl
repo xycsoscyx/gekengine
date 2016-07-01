@@ -45,4 +45,5 @@ namespace Shader
     };
 
     static const float2 pixelSize = (1.0 / targetSize);
+    static const float2 halfPixelSize = (0.5 / targetSize);
 };
