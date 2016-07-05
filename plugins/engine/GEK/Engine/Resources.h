@@ -129,6 +129,11 @@ namespace Gek
         }
     };
 
+    GEK_INTERFACE(ResourceList)
+    {
+        virtual ~ResourceList(void) = default;
+    };
+
     GEK_INTERFACE(PluginResources)
     {
         virtual PluginHandle loadPlugin(const wchar_t *fileName) = 0;
@@ -167,7 +172,7 @@ namespace Gek
         virtual Filter * const loadFilter(const wchar_t *fileName) = 0;
 
         virtual ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material) = 0;
-        virtual std::list<ResourceHandle> getResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap) = 0;
+        virtual ResourceListPtr loadResourceList(ShaderHandle shader, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap) = 0;
         virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
         virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

@@ -53,6 +53,13 @@
                 <cullmode>back</cullmode>
             </renderstates>
 
+            <resources>
+                <albedo />
+                <normal />
+                <roughness />
+                <metalness />
+            </resources>
+
             <targets>
                 <albedoBuffer />
                 <materialBuffer />

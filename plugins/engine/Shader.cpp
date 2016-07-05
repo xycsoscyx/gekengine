@@ -134,20 +134,30 @@ namespace Gek
 
         struct Map
         {
-            String name;
             MapType mapType;
             BindType bindType;
             uint32_t flags;
             ResourcePtr fallback;
 
-            Map(const wchar_t *name, MapType mapType, BindType bindType, uint32_t flags, const ResourcePtr &fallback)
-                : name(name)
-                , mapType(mapType)
+            Map(MapType mapType, BindType bindType, uint32_t flags, const ResourcePtr &fallback)
+                : mapType(mapType)
                 , bindType(bindType)
                 , flags(flags)
                 , fallback(fallback)
             {
             }
+        };
+
+        enum class ResourceSource : uint8_t
+        {
+            Material = 0,
+            Target,
+        };
+
+        struct ResourceData
+        {
+            String alias;
+            ResourceSource source;
         };
 
         struct PassData
@@ -163,7 +173,7 @@ namespace Gek
             BlendStateHandle blendState;
             uint32_t width, height;
             std::unordered_map<String, String> renderTargetList;
-            std::unordered_map<String, String> resourceList;
+            std::unordered_map<String, ResourceData> resourceList;
             std::unordered_map<String, std::set<String>> actionMap;
             std::unordered_map<String, String> copyResourceMap;
             std::unordered_map<String, String> unorderedAccessList;
@@ -282,7 +292,7 @@ namespace Gek
 
         std::unordered_map<String, String> globalDefinesList;
 
-        std::list<Map> mapList;
+        std::unordered_map<String, Map> mapList;
 
         ResourceHandle depthBuffer;
         std::unordered_map<String, ResourceHandle> resourceMap;
@@ -636,7 +646,7 @@ namespace Gek
                     fallback = std::make_shared<NamedResource>(mapNode->getAttribute(L"name"));
                 }
 
-                mapList.push_back(Map(name, mapType, bindType, flags, fallback));
+                mapList.insert(std::make_pair(name, Map(mapType, bindType, flags, fallback)));
             }
 
             StringUTF8 lightingData;
@@ -877,18 +887,39 @@ namespace Gek
                         XmlNodePtr resourcesNode(passNode->firstChildElement(L"resources"));
                         for (XmlNodePtr resourceNode(resourcesNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                         {
-                            String type(resourceNode->getType());
-                            String text(resourceNode->getText());
-                            pass.resourceList.insert(std::make_pair(type, text.empty() ? type : text));
+                            String name(resourceNode->getType());
+                            String alias(resourceNode->getText());
+
+                            ResourceData data;
+                            data.alias = (alias.empty() ? name : alias);
+                            auto resourceIterator = resourceList.find(name);
+                            if (resourceIterator != resourceList.end())
+                            {
+                                data.source = ResourceSource::Target;
+                            }
+                            else
+                            {
+                                auto mapIterator = mapList.find(name);
+                                if (mapIterator != mapList.end())
+                                {
+                                    data.source = ResourceSource::Material;
+                                }
+                                else
+                                {
+                                    GEK_THROW_EXCEPTION(Trace::Exception, "Invalid resource listed in pass: %v", name);
+                                }
+                            }
+
+                            pass.resourceList.insert(std::make_pair(name, data));
                             if (resourceNode->hasAttribute(L"actions"))
                             {
                                 std::vector<String> actionList(resourceNode->getAttribute(L"actions").split(L','));
-                                pass.actionMap[resourceNode->getType()].insert(actionList.begin(), actionList.end());
+                                pass.actionMap[name].insert(actionList.begin(), actionList.end());
                             }
 
                             if (resourceNode->hasAttribute(L"copy"))
                             {
-                                pass.copyResourceMap[resourceNode->getType()] = resourceNode->getAttribute(L"copy");
+                                pass.copyResourceMap[name] = resourceNode->getAttribute(L"copy");
                             }
                         }
                     }
@@ -978,22 +1009,25 @@ namespace Gek
 
                     StringUTF8 resourceData;
                     uint32_t resourceStage(block.lighting ? 1 : 0);
-                    if (pass.mode == Pass::Mode::Forward)
-                    {
-                        for (auto &mapNode : mapList)
-                        {
-                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(mapNode.mapType), getBindType(mapNode.bindType), mapNode.name, resourceStage++);
-                        }
-                    }
-
                     for (auto &resourcePair : pass.resourceList)
                     {
                         auto resourceIterator = resourceList.find(resourcePair.first);
                         if (resourceIterator != resourceList.end())
                         {
                             auto &resource = (*resourceIterator).second;
-                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, resourceStage++);
+                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second.alias, resourceStage++);
+                            continue;
                         }
+
+                        auto mapIterator = mapList.find(resourcePair.first);
+                        if (mapIterator != mapList.end())
+                        {
+                            auto &map = (*mapIterator).second;
+                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.mapType), getBindType(map.bindType), resourcePair.second.alias, resourceStage++);
+                            continue;
+                        }
+
+                        GEK_THROW_EXCEPTION(Trace::Exception, "Invalid resource listed in pass: %v", resourcePair.first);
                     }
 
                     if (!resourceData.empty())
@@ -1157,57 +1191,78 @@ namespace Gek
             return priority;
         }
 
-        std::list<ResourceHandle> getResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &materialDataMap)
+        class ResourceListImplementation
+            : public ResourceList
         {
-            std::list<ResourceHandle> resourceList;
+        public:
+            std::unordered_map<PassData *, std::unordered_map<uint32_t, ResourceHandle>> data;
+        };
+
+        ResourceListPtr loadResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &materialDataMap)
+        {
             FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
             String fileSpecifier(FileSystem::Path(materialName).getFileName());
-            for (auto &mapValue : mapList)
+            auto resourceList = std::make_shared<ResourceListImplementation>();
+            for (auto &block : blockList)
             {
-                ResourceHandle resource;
-                auto dataIterator = materialDataMap.find(mapValue.name);
-                if (dataIterator != materialDataMap.end())
+                for (auto &pass : block.passList)
                 {
-                    auto &baseResource = (*dataIterator).second;
-                    switch (baseResource->type)
+                    uint32_t nextStage = (block.lighting ? 1 : 0);
+                    for (auto &resource : pass.resourceList)
                     {
-                    case Resource::Type::File:
-                        if (true)
+                        uint32_t stage = nextStage++;
+                        if (resource.second.source != ResourceSource::Material)
                         {
-                            auto fileResource = std::dynamic_pointer_cast<FileResource>(baseResource);
-                            String dataName(fileResource->fileName.getLower());
-                            dataName.replace(L"$directory", filePath);
-                            dataName.replace(L"$filename", fileSpecifier);
-                            dataName.replace(L"$material", materialName);
-                            resource = resources->loadTexture(dataName, mapValue.fallback, mapValue.flags);
+                            continue;
                         }
 
-                        break;
-
-                    case Resource::Type::Pattern:
-                        if (true)
+                        auto &mapIterator = mapList.find(resource.first);
+                        if (mapIterator != mapList.end())
                         {
-                            auto patternResource = std::dynamic_pointer_cast<PatternResource>(baseResource);
-                            resource = resources->createTexture(patternResource->pattern, patternResource->parameters);
+                            auto &materialIterator = materialDataMap.find(resource.first);
+                            if (materialIterator != materialDataMap.end())
+                            {
+                                auto &baseResource = (*materialIterator).second;
+                                switch (baseResource->type)
+                                {
+                                case Resource::Type::File:
+                                    if (true)
+                                    {
+                                        auto fileResource = std::dynamic_pointer_cast<FileResource>(baseResource);
+                                        String dataName(fileResource->fileName.getLower());
+                                        dataName.replace(L"$directory", filePath);
+                                        dataName.replace(L"$filename", fileSpecifier);
+                                        dataName.replace(L"$material", materialName);
+                                        resourceList->data[&pass][stage] = resources->loadTexture(dataName, mapIterator->second.fallback, mapIterator->second.flags);
+                                    }
+
+                                    break;
+
+                                case Resource::Type::Pattern:
+                                    if (true)
+                                    {
+                                        auto patternResource = std::dynamic_pointer_cast<PatternResource>(baseResource);
+                                        resourceList->data[&pass][stage] = resources->createTexture(patternResource->pattern, patternResource->parameters);
+                                    }
+
+                                    break;
+
+                                case Resource::Type::Named:
+                                    if (true)
+                                    {
+                                        auto namedResource = std::dynamic_pointer_cast<NamedResource>(baseResource);
+                                        resourceList->data[&pass][stage] = resources->getResourceHandle(namedResource->name);
+                                    }
+
+                                    break;
+                                };
+                            }
                         }
-
-                        break;
-
-                    case Resource::Type::Named:
-                        if (true)
-                        {
-                            auto namedResource = std::dynamic_pointer_cast<NamedResource>(baseResource);
-                            resource = resources->getResourceHandle(namedResource->name);
-                        }
-
-                        break;
-                    };
+                    }
                 }
-
-                resourceList.push_back(resource);
             }
 
-            return resourceList;
+            return std::dynamic_pointer_cast<ResourceList>(resourceList);
         }
 
         ResourceHandle renderTargetList[8];
@@ -1472,23 +1527,28 @@ namespace Gek
             }
         };
 
-        void setResourceList(RenderContext *renderContext, Block *block, Pass *pass, const std::list<ResourceHandle> &resourceList)
+        bool setResourceList(RenderContext *renderContext, Block *block, Pass *pass, ResourceList * const resourceList)
         {
             GEK_REQUIRE(renderContext);
             GEK_REQUIRE(block);
             GEK_REQUIRE(pass);
+            GEK_REQUIRE(resourceList);
 
-            uint32_t firstStage = 0;
-            if (dynamic_cast<BlockImplementation *>(block)->current->lighting)
+            PassData &passData = *dynamic_cast<PassImplementation *>(pass)->current;
+            auto &resourceData = dynamic_cast<ResourceListImplementation *>(resourceList)->data;
+            auto passList = resourceData.find(&passData);
+            if (passList != resourceData.end())
             {
-                firstStage = 1;
+                RenderPipeline *renderPipeline = (passData.mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
+                for (auto &resource : passList->second)
+                {
+                    resources->setResource(renderPipeline, resource.second, resource.first);
+                }
+
+                return true;
             }
 
-            RenderPipeline *renderPipeline = (dynamic_cast<PassImplementation *>(pass)->current->mode == Pass::Mode::Compute ? renderContext->computePipeline() : renderContext->pixelPipeline());
-            for (auto &resource : resourceList)
-            {
-                resources->setResource(renderPipeline, resource, firstStage++);
-            }
+            return false;
         }
 
         Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget)

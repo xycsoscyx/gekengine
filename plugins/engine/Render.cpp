@@ -507,6 +507,7 @@ namespace Gek
 
                 for (auto &drawCallSet : drawCallSetList)
                 {
+                    bool materialEnabled = false;
                     auto &shader = drawCallSet.shader;
                     for (auto block = shader->begin(renderContext.get(), cameraConstantData.viewMatrix, viewFrustum, cameraTarget); block; block = block->next())
                     {
@@ -544,10 +545,13 @@ namespace Gek
                                                     continue;
                                                 }
 
-                                                shader->setResourceList(renderContext.get(), block.get(), pass.get(), material->getResourceList());
+                                                materialEnabled = shader->setResourceList(renderContext.get(), block.get(), pass.get(), material->getResourceList());
                                             }
 
-                                            (*shaderDrawCall).onDraw(renderContext.get());
+                                            if (materialEnabled)
+                                            {
+                                                (*shaderDrawCall).onDraw(renderContext.get());
+                                            }
                                         }
                                     }
 

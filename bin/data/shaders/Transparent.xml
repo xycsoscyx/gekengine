@@ -48,6 +48,7 @@
 
             <resources>
                 <depthBuffer copy="depth" />
+                <albedo />
             </resources>
 
             <program>

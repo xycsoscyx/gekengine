@@ -5,8 +5,10 @@
 
 namespace Gek
 {
+    GEK_PREDECLARE(ResourceList);
+
     GEK_INTERFACE(Material)
     {
-        virtual const std::list<ResourceHandle> &getResourceList(void) const = 0;
+        virtual ResourceList * const getResourceList(void) const = 0;
     };
 }; // namespace Gek

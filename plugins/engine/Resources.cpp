@@ -511,11 +511,11 @@ namespace Gek
             return shader;
         }
 
-        std::list<ResourceHandle> getResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap)
+        ResourceListPtr loadResourceList(ShaderHandle shaderHandle, const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap)
         {
             auto shader = shaderManager.getResource(shaderHandle);
             GEK_CHECK_CONDITION(shader == nullptr, Exception, "Unable to find shader for material: %v", materialName);
-            return shader->getResourceList(materialName, resourceMap);
+            return shader->loadResourceList(materialName, resourceMap);
         }
 
         RenderStateHandle createRenderState(const Video::RenderState &renderState)

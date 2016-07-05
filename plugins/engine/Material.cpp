@@ -16,7 +16,7 @@ namespace Gek
     {
     private:
         Resources *resources;
-        std::list<ResourceHandle> resourceList;
+        ResourceListPtr resourceList;
         ShaderHandle shader;
 
     public:
@@ -53,7 +53,7 @@ namespace Gek
                 }
             }
 
-            resourceList = resources->getResourceList(shader, fileName, resourceMap);
+            resourceList = resources->loadResourceList(shader, fileName, resourceMap);
         }
 
         ~MaterialImplementation(void)
@@ -61,9 +61,9 @@ namespace Gek
         }
 
         // Material
-        const std::list<ResourceHandle> &getResourceList(void) const
+        ResourceList * const getResourceList(void) const
         {
-            return resourceList;
+            return resourceList.get();
         }
     };
 
