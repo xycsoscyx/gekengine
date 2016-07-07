@@ -148,6 +148,12 @@ namespace Gek
             }
         };
 
+        enum class Actions : uint8_t
+        {
+            GenerateMipMaps = 0,
+            Flip,
+        };
+
         enum class ResourceSource : uint8_t
         {
             Material = 0,
@@ -174,7 +180,7 @@ namespace Gek
             uint32_t width, height;
             std::unordered_map<String, String> renderTargetList;
             std::unordered_map<String, ResourceData> resourceList;
-            std::unordered_map<String, std::set<String>> actionMap;
+            std::unordered_map<String, std::set<Actions>> actionMap;
             std::unordered_map<String, String> copyResourceMap;
             std::unordered_map<String, String> unorderedAccessList;
             ProgramHandle program;
@@ -290,8 +296,6 @@ namespace Gek
         VideoBufferPtr lightDataBuffer;
         std::vector<LightData> lightList;
 
-        std::unordered_map<String, String> globalDefinesList;
-
         std::unordered_map<String, Map> mapList;
 
         ResourceHandle depthBuffer;
@@ -300,306 +304,6 @@ namespace Gek
         std::list<BlockData> blockList;
 
         ResourceHandle cameraTarget;
-
-    private:
-        static MapType getMapType(const wchar_t *mapType)
-        {
-            if (_wcsicmp(mapType, L"Texture1D") == 0) return MapType::Texture1D;
-            else if (_wcsicmp(mapType, L"Texture2D") == 0) return MapType::Texture2D;
-            else if (_wcsicmp(mapType, L"Texture3D") == 0) return MapType::Texture3D;
-            else if (_wcsicmp(mapType, L"Buffer") == 0) return MapType::Buffer;
-            return MapType::Texture2D;
-        }
-
-        static const wchar_t *getMapType(MapType mapType)
-        {
-            switch (mapType)
-            {
-            case MapType::Texture1D:    return L"Texture1D";
-            case MapType::Texture2D:    return L"Texture2D";
-            case MapType::TextureCube:  return L"TextureCube";
-            case MapType::Texture3D:    return L"Texture3D";
-            case MapType::Buffer:       return L"Buffer";
-            };
-
-            return L"Texture2D";
-        }
-
-        static BindType getBindType(const wchar_t *bindType)
-        {
-            if (_wcsicmp(bindType, L"Float") == 0) return BindType::Float;
-            else if (_wcsicmp(bindType, L"Float2") == 0) return BindType::Float2;
-            else if (_wcsicmp(bindType, L"Float3") == 0) return BindType::Float3;
-            else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
-            else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
-            else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
-            else if (_wcsicmp(bindType, L"Half3") == 0) return BindType::Half3;
-            else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
-            else if (_wcsicmp(bindType, L"Int") == 0) return BindType::Int;
-            else if (_wcsicmp(bindType, L"Int2") == 0) return BindType::Int2;
-            else if (_wcsicmp(bindType, L"Int3") == 0) return BindType::Int3;
-            else if (_wcsicmp(bindType, L"Int4") == 0) return BindType::Int4;
-            else if (_wcsicmp(bindType, L"Boolean") == 0) return BindType::Boolean;
-            return BindType::Float4;
-        }
-
-        static const wchar_t *getBindType(BindType bindType)
-        {
-            switch (bindType)
-            {
-            case BindType::Float:       return L"float";
-            case BindType::Float2:      return L"float2";
-            case BindType::Float3:      return L"float3";
-            case BindType::Float4:      return L"float4";
-            case BindType::Half:        return L"half";
-            case BindType::Half2:       return L"half2";
-            case BindType::Half3:       return L"half3";
-            case BindType::Half4:       return L"half4";
-            case BindType::Int:        return L"uint";
-            case BindType::Int2:       return L"uint2";
-            case BindType::Int3:       return L"uint3";
-            case BindType::Int4:       return L"uint4";
-            case BindType::Boolean:     return L"boolean";
-            };
-
-            return L"float4";
-        }
-
-        static uint32_t getTextureLoadFlags(const String &loadFlags)
-        {
-            uint32_t flags = 0;
-            int position = 0;
-            std::vector<String> flagList(loadFlags.split(L','));
-            for (auto &flag : flagList)
-            {
-                if (flag.compareNoCase(L"sRGB") == 0)
-                {
-                    flags |= Video::TextureLoadFlags::sRGB;
-                }
-            }
-
-            return flags;
-        }
-
-        static uint32_t getTextureCreateFlags(const String &createFlags)
-        {
-            uint32_t flags = 0;
-            int position = 0;
-            std::vector<String> flagList(createFlags.split(L','));
-            for (auto &flag : flagList)
-            {
-                flag.trim();
-                if (flag.compareNoCase(L"target") == 0)
-                {
-                    flags |= Video::TextureFlags::RenderTarget;
-                }
-                else if (flag.compareNoCase(L"unorderedaccess") == 0)
-                {
-                    flags |= Video::TextureFlags::UnorderedAccess;
-                }
-                else if (flag.compareNoCase(L"readwrite") == 0)
-                {
-                    flags |= TextureFlags::ReadWrite;
-                }
-            }
-
-            return (flags | Video::TextureFlags::Resource);
-        }
-
-        void loadStencilState(Video::DepthState::StencilState &stencilState, XmlNodePtr &stencilNode)
-        {
-            stencilState.passOperation = getStencilOperation(stencilNode->firstChildElement(L"pass")->getText());
-            stencilState.failOperation = getStencilOperation(stencilNode->firstChildElement(L"fail")->getText());
-            stencilState.depthFailOperation = getStencilOperation(stencilNode->firstChildElement(L"depthfail")->getText());
-            stencilState.comparisonFunction = getComparisonFunction(stencilNode->firstChildElement(L"comparison")->getText());
-        }
-
-        void loadDepthState(PassData &pass, XmlNodePtr &depthNode)
-        {
-            Video::DepthState depthState;
-            if (depthNode->isValid())
-            {
-                pass.enableDepth = true;
-                if (depthNode->hasChildElement(L"clear"))
-                {
-                    pass.depthClearFlags |= Video::ClearMask::Depth;
-                    pass.depthClearValue = depthNode->firstChildElement(L"clear")->getText();
-                }
-
-                depthState.enable = true;
-
-                depthState.comparisonFunction = getComparisonFunction(depthNode->firstChildElement(L"comparison")->getText());
-                depthState.writeMask = getDepthWriteMask(depthNode->firstChildElement(L"writemask")->getText());
-
-                if (depthNode->hasChildElement(L"stencil"))
-                {
-                    XmlNodePtr stencilNode(depthNode->firstChildElement(L"stencil"));
-                    depthState.stencilEnable = true;
-
-                    if (stencilNode->hasChildElement(L"clear"))
-                    {
-                        pass.depthClearFlags |= Video::ClearMask::Stencil;
-                        pass.stencilClearValue = stencilNode->firstChildElement(L"clear")->getText();
-                    }
-
-                    if (stencilNode->hasChildElement(L"front"))
-                    {
-                        loadStencilState(depthState.stencilFrontState, stencilNode->firstChildElement(L"front"));
-                    }
-
-                    if (stencilNode->hasChildElement(L"back"))
-                    {
-                        loadStencilState(depthState.stencilBackState, stencilNode->firstChildElement(L"back"));
-                    }
-                }
-            }
-
-            pass.depthState = resources->createDepthState(depthState);
-        }
-
-        void loadRenderState(PassData &pass, XmlNodePtr &renderNode)
-        {
-            Video::RenderState renderState;
-            renderState.fillMode = getFillMode(renderNode->firstChildElement(L"fillmode")->getText());
-            renderState.cullMode = getCullMode(renderNode->firstChildElement(L"cullmode")->getText());
-            if (renderNode->hasChildElement(L"frontcounterclockwise"))
-            {
-                renderState.frontCounterClockwise = renderNode->firstChildElement(L"frontcounterclockwise")->getText();
-            }
-
-            renderState.depthBias = renderNode->firstChildElement(L"depthbias")->getText();
-            renderState.depthBiasClamp = renderNode->firstChildElement(L"depthbiasclamp")->getText();
-            renderState.slopeScaledDepthBias = renderNode->firstChildElement(L"slopescaleddepthbias")->getText();
-            renderState.depthClipEnable = renderNode->firstChildElement(L"depthclip")->getText();
-            renderState.multisampleEnable = renderNode->firstChildElement(L"multisample")->getText();
-            pass.renderState = resources->createRenderState(renderState);
-        }
-
-        void loadBlendTargetState(Video::TargetBlendState &blendState, XmlNodePtr &blendNode)
-        {
-            blendState.enable = blendNode->isValid();
-            if (blendNode->hasChildElement(L"writemask"))
-            {
-                String writeMask(blendNode->firstChildElement(L"writemask")->getText().getLower());
-                if (writeMask.compare(L"all") == 0)
-                {
-                    blendState.writeMask = Video::ColorMask::RGBA;
-                }
-                else
-                {
-                    blendState.writeMask = 0;
-                    if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::ColorMask::R;
-                    if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::ColorMask::G;
-                    if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
-                    if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
-                }
-
-            }
-            else
-            {
-                blendState.writeMask = Video::ColorMask::RGBA;
-            }
-
-            if (blendNode->hasChildElement(L"color"))
-            {
-                XmlNodePtr colorNode(blendNode->firstChildElement(L"color"));
-                blendState.colorSource = getBlendSource(colorNode->getAttribute(L"source"));
-                blendState.colorDestination = getBlendSource(colorNode->getAttribute(L"destination"));
-                blendState.colorOperation = getBlendOperation(colorNode->getAttribute(L"operation"));
-            }
-
-            if (blendNode->hasChildElement(L"alpha"))
-            {
-                XmlNodePtr alphaNode(blendNode->firstChildElement(L"alpha"));
-                blendState.alphaSource = getBlendSource(alphaNode->getAttribute(L"source"));
-                blendState.alphaDestination = getBlendSource(alphaNode->getAttribute(L"destination"));
-                blendState.alphaOperation = getBlendOperation(alphaNode->getAttribute(L"operation"));
-            }
-        }
-
-        void loadBlendState(PassData &pass, XmlNodePtr &blendNode)
-        {
-            bool alphaToCoverage =blendNode->firstChildElement(L"alphatocoverage")->getText();
-            if (blendNode->hasChildElement(L"target"))
-            {
-                Video::IndependentBlendState blendState;
-                Video::TargetBlendState *targetStatesList = blendState.targetStates;
-                for (XmlNodePtr targetNode(blendNode->firstChildElement(L"target")); targetNode->isValid(); targetNode = targetNode->nextSiblingElement(L"target"))
-                {
-                    Video::TargetBlendState &targetStates = *targetStatesList++;
-                    loadBlendTargetState(targetStates, targetNode);
-                }
-
-                blendState.alphaToCoverage = alphaToCoverage;
-                pass.blendState = resources->createBlendState(blendState);
-            }
-            else
-            {
-                Video::UnifiedBlendState blendState;
-                loadBlendTargetState(blendState, blendNode);
-
-                blendState.alphaToCoverage = alphaToCoverage;
-                pass.blendState = resources->createBlendState(blendState);
-            }
-        }
-
-        std::unordered_map<String, String> loadChildMap(XmlNodePtr &parentNode)
-        {
-            std::unordered_map<String, String> childMap;
-            for (XmlNodePtr childNode(parentNode->firstChildElement()); childNode->isValid(); childNode = childNode->nextSiblingElement())
-            {
-                String type(childNode->getType());
-                String text(childNode->getText());
-                childMap.insert(std::make_pair(type, text.empty() ? type : text));
-            }
-
-            return childMap;
-        }
-
-        std::unordered_map<String, String> loadChildMap(XmlNodePtr &rootNode, const wchar_t *name)
-        {
-            return loadChildMap(rootNode->firstChildElement(name));
-        }
-
-        bool replaceDefines(String &value)
-        {
-            bool foundDefine = false;
-            for (auto &define : globalDefinesList)
-            {
-                foundDefine = (foundDefine | value.replace(define.first, define.second));
-            }
-
-            return foundDefine;
-        }
-
-        String evaluate(const wchar_t *value, bool integer = false)
-        {
-            String finalValue(value);
-            finalValue.replace(L"displayWidth", String(L"%v", video->getBackBuffer()->getWidth()));
-            finalValue.replace(L"displayHeight", String(L"%v", video->getBackBuffer()->getHeight()));
-            while (replaceDefines(finalValue));
-
-            if (finalValue.find(L"float2") != std::string::npos)
-            {
-                return String(L"float2%v", Evaluator::get<Math::Float2>(finalValue.subString(6)));
-            }
-            else if (finalValue.find(L"float3") != std::string::npos)
-            {
-                return String(L"float3%v", Evaluator::get<Math::Float3>(finalValue.subString(6)));
-            }
-            else if (finalValue.find(L"float4") != std::string::npos)
-            {
-                return String(L"float4%v", Evaluator::get<Math::Float4>(finalValue.subString(6)));
-            }
-            else if (integer)
-            {
-                return String(L"%v", Evaluator::get<uint32_t>(finalValue));
-            }
-            else
-            {
-                return String(L"%v", Evaluator::get<float>(finalValue));
-            }
-        }
 
     public:
         ShaderImplementation(Context *context, VideoSystem *video, Resources *resources, Population *population, const wchar_t *fileName)
@@ -648,6 +352,47 @@ namespace Gek
 
                 mapList.insert(std::make_pair(name, Map(mapType, bindType, flags, fallback)));
             }
+
+            std::unordered_map<String, String> globalDefinesList;
+            auto replaceDefines = [&globalDefinesList](String &value) -> bool
+            {
+                bool foundDefine = false;
+                for (auto &define : globalDefinesList)
+                {
+                    foundDefine = (foundDefine | value.replace(define.first, define.second));
+                }
+
+                return foundDefine;
+            };
+
+            auto evaluate = [&](const wchar_t *value, bool integer = false) -> String
+            {
+                String finalValue(value);
+                finalValue.replace(L"displayWidth", String(L"%v", video->getBackBuffer()->getWidth()));
+                finalValue.replace(L"displayHeight", String(L"%v", video->getBackBuffer()->getHeight()));
+                while (replaceDefines(finalValue));
+
+                if (finalValue.find(L"float2") != std::string::npos)
+                {
+                    return String(L"float2%v", Evaluator::get<Math::Float2>(finalValue.subString(6)));
+                }
+                else if (finalValue.find(L"float3") != std::string::npos)
+                {
+                    return String(L"float3%v", Evaluator::get<Math::Float3>(finalValue.subString(6)));
+                }
+                else if (finalValue.find(L"float4") != std::string::npos)
+                {
+                    return String(L"float4%v", Evaluator::get<Math::Float4>(finalValue.subString(6)));
+                }
+                else if (integer)
+                {
+                    return String(L"%v", Evaluator::get<uint32_t>(finalValue));
+                }
+                else
+                {
+                    return String(L"%v", Evaluator::get<float>(finalValue));
+                }
+            };
 
             StringUTF8 lightingData;
             XmlNodePtr lightingNode(shaderNode->firstChildElement(L"lighting"));
@@ -914,7 +659,17 @@ namespace Gek
                             if (resourceNode->hasAttribute(L"actions"))
                             {
                                 std::vector<String> actionList(resourceNode->getAttribute(L"actions").split(L','));
-                                pass.actionMap[name].insert(actionList.begin(), actionList.end());
+                                for (auto &action : actionList)
+                                {
+                                    if (action.compareNoCase(L"generatemipmaps") == 0)
+                                    {
+                                        pass.actionMap[name].insert(Actions::GenerateMipMaps);
+                                    }
+                                    else if (action.compareNoCase(L"flip") == 0)
+                                    {
+                                        pass.actionMap[name].insert(Actions::Flip);
+                                    }
+                                }
                             }
 
                             if (resourceNode->hasAttribute(L"copy"))
@@ -1301,14 +1056,16 @@ namespace Gek
                         auto &actionMap = actionIterator->second;
                         for (auto &action : actionMap)
                         {
-                            if (action.compareNoCase(L"generatemipmaps") == 0)
+                            switch (action)
                             {
+                            case Actions::GenerateMipMaps:
                                 resources->generateMipMaps(renderContext, resource);
-                            }
-                            else if (action.compareNoCase(L"flip") == 0)
-                            {
+                                break;
+
+                            case Actions::Flip:
                                 resources->flip(resource);
-                            }
+                                break;
+                            };
                         }
                     }
 
@@ -1594,6 +1351,266 @@ namespace Gek
 
             lightList.assign(lightData.begin(), lightData.end());
             return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(renderContext, this, blockList.begin(), blockList.end()));
+        }
+
+    private:
+        static MapType getMapType(const wchar_t *mapType)
+        {
+            if (_wcsicmp(mapType, L"Texture1D") == 0) return MapType::Texture1D;
+            else if (_wcsicmp(mapType, L"Texture2D") == 0) return MapType::Texture2D;
+            else if (_wcsicmp(mapType, L"Texture3D") == 0) return MapType::Texture3D;
+            else if (_wcsicmp(mapType, L"Buffer") == 0) return MapType::Buffer;
+            return MapType::Texture2D;
+        }
+
+        static const wchar_t *getMapType(MapType mapType)
+        {
+            switch (mapType)
+            {
+            case MapType::Texture1D:    return L"Texture1D";
+            case MapType::Texture2D:    return L"Texture2D";
+            case MapType::TextureCube:  return L"TextureCube";
+            case MapType::Texture3D:    return L"Texture3D";
+            case MapType::Buffer:       return L"Buffer";
+            };
+
+            return L"Texture2D";
+        }
+
+        static BindType getBindType(const wchar_t *bindType)
+        {
+            if (_wcsicmp(bindType, L"Float") == 0) return BindType::Float;
+            else if (_wcsicmp(bindType, L"Float2") == 0) return BindType::Float2;
+            else if (_wcsicmp(bindType, L"Float3") == 0) return BindType::Float3;
+            else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
+            else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
+            else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
+            else if (_wcsicmp(bindType, L"Half3") == 0) return BindType::Half3;
+            else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
+            else if (_wcsicmp(bindType, L"Int") == 0) return BindType::Int;
+            else if (_wcsicmp(bindType, L"Int2") == 0) return BindType::Int2;
+            else if (_wcsicmp(bindType, L"Int3") == 0) return BindType::Int3;
+            else if (_wcsicmp(bindType, L"Int4") == 0) return BindType::Int4;
+            else if (_wcsicmp(bindType, L"Boolean") == 0) return BindType::Boolean;
+            return BindType::Float4;
+        }
+
+        static const wchar_t *getBindType(BindType bindType)
+        {
+            switch (bindType)
+            {
+            case BindType::Float:       return L"float";
+            case BindType::Float2:      return L"float2";
+            case BindType::Float3:      return L"float3";
+            case BindType::Float4:      return L"float4";
+            case BindType::Half:        return L"half";
+            case BindType::Half2:       return L"half2";
+            case BindType::Half3:       return L"half3";
+            case BindType::Half4:       return L"half4";
+            case BindType::Int:        return L"uint";
+            case BindType::Int2:       return L"uint2";
+            case BindType::Int3:       return L"uint3";
+            case BindType::Int4:       return L"uint4";
+            case BindType::Boolean:     return L"boolean";
+            };
+
+            return L"float4";
+        }
+
+        static uint32_t getTextureLoadFlags(const String &loadFlags)
+        {
+            uint32_t flags = 0;
+            int position = 0;
+            std::vector<String> flagList(loadFlags.split(L','));
+            for (auto &flag : flagList)
+            {
+                if (flag.compareNoCase(L"sRGB") == 0)
+                {
+                    flags |= Video::TextureLoadFlags::sRGB;
+                }
+            }
+
+            return flags;
+        }
+
+        static uint32_t getTextureCreateFlags(const String &createFlags)
+        {
+            uint32_t flags = 0;
+            int position = 0;
+            std::vector<String> flagList(createFlags.split(L','));
+            for (auto &flag : flagList)
+            {
+                flag.trim();
+                if (flag.compareNoCase(L"target") == 0)
+                {
+                    flags |= Video::TextureFlags::RenderTarget;
+                }
+                else if (flag.compareNoCase(L"unorderedaccess") == 0)
+                {
+                    flags |= Video::TextureFlags::UnorderedAccess;
+                }
+                else if (flag.compareNoCase(L"readwrite") == 0)
+                {
+                    flags |= TextureFlags::ReadWrite;
+                }
+            }
+
+            return (flags | Video::TextureFlags::Resource);
+        }
+
+        void loadStencilState(Video::DepthState::StencilState &stencilState, XmlNodePtr &stencilNode)
+        {
+            stencilState.passOperation = getStencilOperation(stencilNode->firstChildElement(L"pass")->getText());
+            stencilState.failOperation = getStencilOperation(stencilNode->firstChildElement(L"fail")->getText());
+            stencilState.depthFailOperation = getStencilOperation(stencilNode->firstChildElement(L"depthfail")->getText());
+            stencilState.comparisonFunction = getComparisonFunction(stencilNode->firstChildElement(L"comparison")->getText());
+        }
+
+        void loadDepthState(PassData &pass, XmlNodePtr &depthNode)
+        {
+            Video::DepthState depthState;
+            if (depthNode->isValid())
+            {
+                pass.enableDepth = true;
+                if (depthNode->hasChildElement(L"clear"))
+                {
+                    pass.depthClearFlags |= Video::ClearMask::Depth;
+                    pass.depthClearValue = depthNode->firstChildElement(L"clear")->getText();
+                }
+
+                depthState.enable = true;
+
+                depthState.comparisonFunction = getComparisonFunction(depthNode->firstChildElement(L"comparison")->getText());
+                depthState.writeMask = getDepthWriteMask(depthNode->firstChildElement(L"writemask")->getText());
+
+                if (depthNode->hasChildElement(L"stencil"))
+                {
+                    XmlNodePtr stencilNode(depthNode->firstChildElement(L"stencil"));
+                    depthState.stencilEnable = true;
+
+                    if (stencilNode->hasChildElement(L"clear"))
+                    {
+                        pass.depthClearFlags |= Video::ClearMask::Stencil;
+                        pass.stencilClearValue = stencilNode->firstChildElement(L"clear")->getText();
+                    }
+
+                    if (stencilNode->hasChildElement(L"front"))
+                    {
+                        loadStencilState(depthState.stencilFrontState, stencilNode->firstChildElement(L"front"));
+                    }
+
+                    if (stencilNode->hasChildElement(L"back"))
+                    {
+                        loadStencilState(depthState.stencilBackState, stencilNode->firstChildElement(L"back"));
+                    }
+                }
+            }
+
+            pass.depthState = resources->createDepthState(depthState);
+        }
+
+        void loadRenderState(PassData &pass, XmlNodePtr &renderNode)
+        {
+            Video::RenderState renderState;
+            renderState.fillMode = getFillMode(renderNode->firstChildElement(L"fillmode")->getText());
+            renderState.cullMode = getCullMode(renderNode->firstChildElement(L"cullmode")->getText());
+            if (renderNode->hasChildElement(L"frontcounterclockwise"))
+            {
+                renderState.frontCounterClockwise = renderNode->firstChildElement(L"frontcounterclockwise")->getText();
+            }
+
+            renderState.depthBias = renderNode->firstChildElement(L"depthbias")->getText();
+            renderState.depthBiasClamp = renderNode->firstChildElement(L"depthbiasclamp")->getText();
+            renderState.slopeScaledDepthBias = renderNode->firstChildElement(L"slopescaleddepthbias")->getText();
+            renderState.depthClipEnable = renderNode->firstChildElement(L"depthclip")->getText();
+            renderState.multisampleEnable = renderNode->firstChildElement(L"multisample")->getText();
+            pass.renderState = resources->createRenderState(renderState);
+        }
+
+        void loadBlendTargetState(Video::TargetBlendState &blendState, XmlNodePtr &blendNode)
+        {
+            blendState.enable = blendNode->isValid();
+            if (blendNode->hasChildElement(L"writemask"))
+            {
+                String writeMask(blendNode->firstChildElement(L"writemask")->getText().getLower());
+                if (writeMask.compare(L"all") == 0)
+                {
+                    blendState.writeMask = Video::ColorMask::RGBA;
+                }
+                else
+                {
+                    blendState.writeMask = 0;
+                    if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::ColorMask::R;
+                    if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::ColorMask::G;
+                    if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
+                    if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
+                }
+
+            }
+            else
+            {
+                blendState.writeMask = Video::ColorMask::RGBA;
+            }
+
+            if (blendNode->hasChildElement(L"color"))
+            {
+                XmlNodePtr colorNode(blendNode->firstChildElement(L"color"));
+                blendState.colorSource = getBlendSource(colorNode->getAttribute(L"source"));
+                blendState.colorDestination = getBlendSource(colorNode->getAttribute(L"destination"));
+                blendState.colorOperation = getBlendOperation(colorNode->getAttribute(L"operation"));
+            }
+
+            if (blendNode->hasChildElement(L"alpha"))
+            {
+                XmlNodePtr alphaNode(blendNode->firstChildElement(L"alpha"));
+                blendState.alphaSource = getBlendSource(alphaNode->getAttribute(L"source"));
+                blendState.alphaDestination = getBlendSource(alphaNode->getAttribute(L"destination"));
+                blendState.alphaOperation = getBlendOperation(alphaNode->getAttribute(L"operation"));
+            }
+        }
+
+        void loadBlendState(PassData &pass, XmlNodePtr &blendNode)
+        {
+            bool alphaToCoverage = blendNode->firstChildElement(L"alphatocoverage")->getText();
+            if (blendNode->hasChildElement(L"target"))
+            {
+                Video::IndependentBlendState blendState;
+                Video::TargetBlendState *targetStatesList = blendState.targetStates;
+                for (XmlNodePtr targetNode(blendNode->firstChildElement(L"target")); targetNode->isValid(); targetNode = targetNode->nextSiblingElement(L"target"))
+                {
+                    Video::TargetBlendState &targetStates = *targetStatesList++;
+                    loadBlendTargetState(targetStates, targetNode);
+                }
+
+                blendState.alphaToCoverage = alphaToCoverage;
+                pass.blendState = resources->createBlendState(blendState);
+            }
+            else
+            {
+                Video::UnifiedBlendState blendState;
+                loadBlendTargetState(blendState, blendNode);
+
+                blendState.alphaToCoverage = alphaToCoverage;
+                pass.blendState = resources->createBlendState(blendState);
+            }
+        }
+
+        std::unordered_map<String, String> loadChildMap(XmlNodePtr &parentNode)
+        {
+            std::unordered_map<String, String> childMap;
+            for (XmlNodePtr childNode(parentNode->firstChildElement()); childNode->isValid(); childNode = childNode->nextSiblingElement())
+            {
+                String type(childNode->getType());
+                String text(childNode->getText());
+                childMap.insert(std::make_pair(type, text.empty() ? type : text));
+            }
+
+            return childMap;
+        }
+
+        std::unordered_map<String, String> loadChildMap(XmlNodePtr &rootNode, const wchar_t *name)
+        {
+            return loadChildMap(rootNode->firstChildElement(name));
         }
     };
 
