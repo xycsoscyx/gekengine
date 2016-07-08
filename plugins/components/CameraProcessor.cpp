@@ -156,11 +156,11 @@ namespace Gek
             GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
             GEK_REQUIRE(renderer);
 
-            std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
+            std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
             {
-                Plugin::Entity *entity = data.first;
+                Plugin::Entity *entity = entityDataPair.first;
                 auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
-                auto &camera = data.second;
+                auto &camera = entityDataPair.second;
 
                 auto backBuffer = renderer->getDevice()->getBackBuffer();
                 float width = float(backBuffer->getWidth());

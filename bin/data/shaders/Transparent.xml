@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <shader priority="2">
     <material>
-        <maps pass="transparent">
+        <transparent>
             <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>
-        </maps>
+        </transparent>
     </material>
 
     <textures>

@@ -2,7 +2,7 @@
 <material>
     <shader>standard</shader>
     <maps pass="solid">
-        <albedo resource="camera:player" />
+        <albedo name="camera:player" />
         <normal file="debug_n" />
         <roughness file="debug_r" />
         <metalness file="debug_m" />

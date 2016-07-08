@@ -177,6 +177,7 @@ namespace Gek
                 BlendStateHandle blendState;
                 uint32_t width, height;
                 std::unordered_map<String, String> renderTargetList;
+                std::vector<String> materialList;
                 std::unordered_map<String, String> resourceList;
                 std::unordered_map<String, std::set<Actions>> actionMap;
                 std::unordered_map<String, String> copyResourceMap;
@@ -294,8 +295,6 @@ namespace Gek
             Video::BufferPtr lightDataBuffer;
             std::vector<LightData> lightList;
 
-            std::unordered_map<String, std::unordered_map<String, Map>> materialMapLists;
-
             ResourceHandle depthBuffer;
             std::unordered_map<String, ResourceHandle> resourceMap;
 
@@ -326,6 +325,7 @@ namespace Gek
                 priority = shaderNode->getAttribute(L"priority");
 
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
+                std::unordered_map<String, std::unordered_map<String, Map>> materialResourceLists;
 
                 std::unordered_map<String, String> globalDefinesList;
                 auto replaceDefines = [&globalDefinesList](String &value) -> bool
@@ -496,33 +496,32 @@ namespace Gek
                 }
 
                 XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
-                for (XmlNodePtr passesNode(materialNode->firstChildElement(L"passes")); passesNode->isValid(); passesNode->nextSiblingElement())
+                for (XmlNodePtr passNode(materialNode->firstChildElement()); passNode->isValid(); passNode->nextSiblingElement())
                 {
-                    XmlNodePtr mapsNode(passesNode->firstChildElement(L"maps"));
-                    auto &materialList = materialMapLists[mapsNode->getAttribute(L"pass")];
-                    for (XmlNodePtr mapNode(mapsNode->firstChildElement()); mapNode->isValid(); mapNode = mapNode->nextSiblingElement())
+                    auto &materialList = materialResourceLists[passNode->getType()];
+                    for (XmlNodePtr resourceNode(passNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                     {
-                        String name(mapNode->getType());
-                        if (mapNode->hasAttribute(L"resource"))
+                        String name(resourceNode->getType());
+                        if (resourceNode->hasAttribute(L"name"))
                         {
-                            materialList.insert(std::make_pair(name, Map(mapNode->getAttribute(L"resource"))));
+                            materialList.insert(std::make_pair(name, Map(resourceNode->getAttribute(L"name"))));
                         }
                         else
                         {
-                            MapType mapType = getMapType(mapNode->getText());
-                            BindType bindType = getBindType(mapNode->getAttribute(L"bind"));
-                            uint32_t flags = getTextureLoadFlags(mapNode->getAttribute(L"flags"));
-                            if (mapNode->hasAttribute(L"file"))
+                            MapType mapType = getMapType(resourceNode->getText());
+                            BindType bindType = getBindType(resourceNode->getAttribute(L"bind"));
+                            uint32_t flags = getTextureLoadFlags(resourceNode->getAttribute(L"flags"));
+                            if (resourceNode->hasAttribute(L"file"))
                             {
-                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, mapNode->getAttribute(L"file"))));
+                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, resourceNode->getAttribute(L"file"))));
                             }
-                            else if (mapNode->hasAttribute(L"pattern"))
+                            else if (resourceNode->hasAttribute(L"pattern"))
                             {
-                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"))));
+                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, resourceNode->getAttribute(L"pattern"), resourceNode->getAttribute(L"parameters"))));
                             }
                             else
                             {
-                                GEK_THROW_EXCEPTION(Exception, "Unknown map found in material map data: %v", name);
+                                GEK_THROW_EXCEPTION(Exception, "Unknown resource type found in material data: %v", name);
                             }
                         }
                     }
@@ -752,12 +751,14 @@ namespace Gek
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
                         if (passNode->hasAttribute(L"name"))
                         {
-                            auto mapSearch = materialMapLists.find(passNode->getAttribute(L"name"));
-                            if (mapSearch != materialMapLists.end())
+                            auto mapSearch = materialResourceLists.find(passNode->getAttribute(L"name"));
+                            if (mapSearch != materialResourceLists.end())
                             {
+                                pass.materialList.reserve(mapSearch->second.size());
                                 namedPassMap[passNode->getAttribute(L"name")] = &pass;
                                 for (auto &map : mapSearch->second)
                                 {
+                                    pass.materialList.push_back(map.first);
                                     uint32_t currentStage = nextResourceStage++;
                                     switch (map.second.source)
                                     {
@@ -951,84 +952,32 @@ namespace Gek
             {
                 return priority;
             }
-/*
-            class ResourceList
-                : public Engine::ResourceList
-            {
-            public:
-                std::unordered_map<PassData *, std::unordered_map<uint32_t, ResourceHandle>> data;
-            };
 
-            Engine::ResourceListPtr loadResourceList(const wchar_t *materialName, const ResourcePassMap &resourcePassMap)
+            void compileMaterialMaps(const wchar_t *materialName, const std::unordered_map<String, std::unordered_map<String, ResourceHandle>> &passResourceMaps)
             {
                 FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
                 String fileSpecifier(FileSystem::Path(materialName).getFileName());
-                auto resourceList(std::make_shared<ResourceListImplementation>());
-                std::for_each(resourcePassMap.begin(), resourcePassMap.end(), [&](const ResourcePassMap::value_type &resourcePair) -> void
+                std::for_each(passResourceMaps.begin(), passResourceMaps.end(), [&](auto &passResourcePair) -> void
                 {
-                    auto passSearch = namedPassMap.find(resourcePair.first);
+                    auto &passName = passResourcePair.first;
+                    auto passSearch = namedPassMap.find(passName);
                     if (passSearch != namedPassMap.end())
                     {
                         uint32_t nextStage = 0;
                         PassData &pass = *passSearch->second;
-                        auto &resourceMap = resourcePair.second;
-                        for (auto &resource : pass.resourceList)
+                        auto &passResourceMap = passResourcePair.second;
+                        for (auto &material : pass.materialList)
                         {
                             uint32_t stage = nextStage++;
-                            if (resource.second.source != ResourceData::Source::Material)
+                            auto &resourceSearch = passResourceMap.find(material);
+                            if (resourceSearch != passResourceMap.end())
                             {
-                                continue;
-                            }
-
-                            auto &mapSearch = mapList.find(resource.first);
-                            if (mapSearch != mapList.end())
-                            {
-                                auto &resourceSearch = resourceMap.find(resource.first);
-                                if (resourceSearch != resourceMap.end())
-                                {
-                                    auto &baseResource = (*resourceSearch).second;
-                                    switch (baseResource->type)
-                                    {
-                                    case Resource::Type::File:
-                                        if (true)
-                                        {
-                                            auto fileResource = std::dynamic_pointer_cast<FileResource>(baseResource);
-                                            String dataName(fileResource->fileName.getLower());
-                                            dataName.replace(L"$directory", filePath);
-                                            dataName.replace(L"$filename", fileSpecifier);
-                                            dataName.replace(L"$material", materialName);
-                                            resourceList->data[&pass][stage] = resources->loadTexture(dataName, mapSearch->second.fallback, mapSearch->second.flags);
-                                        }
-
-                                        break;
-
-                                    case Resource::Type::Pattern:
-                                        if (true)
-                                        {
-                                            auto patternResource = std::dynamic_pointer_cast<PatternResource>(baseResource);
-                                            resourceList->data[&pass][stage] = resources->createTexture(patternResource->pattern, patternResource->parameters);
-                                        }
-
-                                        break;
-
-                                    case Resource::Type::Named:
-                                        if (true)
-                                        {
-                                            auto namedResource = std::dynamic_pointer_cast<NamedResource>(baseResource);
-                                            resourceList->data[&pass][stage] = resources->getResourceHandle(namedResource->name);
-                                        }
-
-                                        break;
-                                    };
-                                }
+                                ResourceHandle resource = resourceSearch->second;
                             }
                         }
                     }
                 });
-
-                return std::dynamic_pointer_cast<ResourceList>(resourceList);
             }
-            */
 
             bool setMaterial(Video::Device::Context *deviceContext, BlockData &block, PassData &pass, Engine::Material *material)
             {

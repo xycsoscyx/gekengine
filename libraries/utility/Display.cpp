@@ -49,7 +49,7 @@ namespace Gek
         while (EnumDisplaySettings(0, displayMode++, &displayModeData))
         {
             DisplayMode displayMode(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight);
-            if (std::find_if(availbleModeList.begin(), availbleModeList.end(), [displayModeData, displayMode](const DisplayModeList::value_type &modePair) -> bool
+            if (std::find_if(availbleModeList.begin(), availbleModeList.end(), [displayModeData, displayMode](auto &modePair) -> bool
             {
                 return (modePair.first == displayModeData.dmBitsPerPel && modePair.second == displayMode);
             }) == availbleModeList.end())

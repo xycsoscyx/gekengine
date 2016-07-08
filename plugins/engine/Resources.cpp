@@ -31,11 +31,6 @@ namespace Gek
     {
         static ShuntingYard shuntingYard;
 
-        std::size_t reverseHash(const std::wstring &string)
-        {
-            return std::hash<std::wstring>()(std::wstring(string.rbegin(), string.rend()));
-        }
-
         GEK_INTERFACE(RequestLoader)
         {
             virtual void request(std::function<void(void)> load, bool threaded) = 0;
@@ -471,7 +466,7 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = reverseHash(fileName);
+                std::size_t hash = std::hash<String>()(fileName);
                 return materialManager.getHandle(hash, request, true);
             }
 
@@ -488,7 +483,7 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = reverseHash(fileName);
+                std::size_t hash = std::hash<String>()(fileName);
                 ResourceHandle filter = filterManager.getHandle(hash, request, false);
                 return filterManager.getResource(filter);
             }
@@ -508,7 +503,7 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = reverseHash(fileName);
+                std::size_t hash = std::hash<String>()(fileName);
                 ShaderHandle shader = shaderManager.getHandle(hash, request, true);
                 materialShaderMap[material] = shader;
                 return shader;
@@ -884,7 +879,7 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = reverseHash(fileName);
+                std::size_t hash = std::hash<String>()(fileName);
                 return resourceManager.getHandle(hash, request, true);
             }
 

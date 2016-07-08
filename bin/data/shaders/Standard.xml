@@ -5,18 +5,18 @@
     </lighting>
 
     <material>
-        <maps pass="solid">
+        <solid>
             <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
             <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
             <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
             <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
-        </maps>
-        <maps pass="transparent">
+        </solid>
+        <transparent>
             <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
             <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
             <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
             <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
-        </maps>
+        </transparent>
     </material>
 
     <defines>

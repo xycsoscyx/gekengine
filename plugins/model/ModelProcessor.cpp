@@ -393,10 +393,11 @@ namespace Gek
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
-            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
+            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
             {
-                Plugin::Entity *entity = data.first;
-                Model &model = data.second.model;
+                Plugin::Entity *entity = entityDataPair.first;
+                Data &data = entityDataPair.second;
+                Model &model = data.model;
 
                 const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
@@ -407,8 +408,8 @@ namespace Gek
                 if (viewFrustum->isVisible(orientedBox))
                 {
                     auto &materialList = visibleList[&model];
-                    auto &instanceList = materialList[data.second.skin];
-                    instanceList.push_back(Instance((matrix * *viewMatrix), data.second.color, transformComponent.scale));
+                    auto &instanceList = materialList[data.skin];
+                    instanceList.push_back(Instance((matrix * *viewMatrix), data.color, transformComponent.scale));
                 }
             });
 

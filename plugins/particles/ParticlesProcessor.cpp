@@ -307,10 +307,10 @@ namespace Gek
             if (!isIdle)
             {
                 float frameTime = population->getFrameTime();
-                concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](EntityEmitterMap::value_type &data) -> void
+                concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
                 {
-                    Plugin::Entity *entity = data.first;
-                    Emitter &emitter = data.second;
+                    Plugin::Entity *entity = entityEmitterPair.first;
+                    Emitter &emitter = entityEmitterPair.second;
                     auto &transformComponent = entity->getComponent<Components::Transform>();
 
                     combinable<std::min<float>> minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
@@ -402,13 +402,13 @@ namespace Gek
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
-            concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &data) -> void
+            concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
             {
-                Plugin::Entity *entity = data.first;
-                const Emitter &emitter = data.second;
+                Plugin::Entity *entity = entityEmitterPair.first;
+                const Emitter &emitter = entityEmitterPair.second;
                 if (viewFrustum->isVisible(emitter))
                 {
-                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap, emitter.transmissionMap), &data));
+                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap, emitter.transmissionMap), &entityEmitterPair));
                 }
             });
 

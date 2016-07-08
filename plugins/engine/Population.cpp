@@ -155,9 +155,9 @@ namespace Gek
 
                 for (auto const &killEntity : killEntityList)
                 {
-                    auto namedSearch = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const String, Plugin::Entity *> &namedEntity) -> bool
+                    auto namedSearch = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](auto &namedEntityPair) -> bool
                     {
-                        return (namedEntity.second == killEntity);
+                        return (namedEntityPair.second == killEntity);
                     });
 
                     if (namedSearch != namedEntityList.end())
@@ -167,7 +167,7 @@ namespace Gek
 
                     if (entityList.size() > 1)
                     {
-                        auto entitySearch = std::find_if(entityList.begin(), entityList.end(), [killEntity](const Plugin::EntityPtr &entity) -> bool
+                        auto entitySearch = std::find_if(entityList.begin(), entityList.end(), [killEntity](auto &entity) -> bool
                         {
                             return (entity.get() == killEntity);
                         });
@@ -351,7 +351,7 @@ namespace Gek
 
             void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
             {
-                concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const Plugin::EntityPtr &entity) -> void
+                concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](auto &entity) -> void
                 {
                     onEntity(entity.get());
                 });
@@ -359,7 +359,7 @@ namespace Gek
 
             void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) const
             {
-                concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](const Plugin::ProcessorPtr &processor) -> void
+                concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](auto &processor) -> void
                 {
                     onProcessor(processor.get());
                 });

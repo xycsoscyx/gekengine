@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <material>
-    <shader>transparent</shader>
-    <maps pass="transparent">
-        <albedo file="$material.Albedo" />
-    </maps>
+    <shader name="transparent">
+        <transparent>
+            <albedo file="$material.Albedo" />
+        </transparent>
+    </shader>
 </material>

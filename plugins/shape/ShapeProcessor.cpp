@@ -660,10 +660,11 @@ namespace Gek
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
-            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
+            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
             {
-                Plugin::Entity *entity = data.first;
-                Shape &shape = data.second.shape;
+                Plugin::Entity *entity = entityDataPair.first;
+                Data &data = entityDataPair.second;
+                Shape &shape = data.shape;
 
                 const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
@@ -674,12 +675,12 @@ namespace Gek
                 if (viewFrustum->isVisible(orientedBox))
                 {
                     auto &materialList = visibleList[&shape];
-                    auto &instanceList = materialList[data.second.skin];
-                    instanceList.push_back(Instance((matrix * *viewMatrix), data.second.color, transformComponent.scale));
+                    auto &instanceList = materialList[data.skin];
+                    instanceList.push_back(Instance((matrix * *viewMatrix), data.color, transformComponent.scale));
                 }
             });
 
-            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](VisibleList::value_type &visibleList) -> void
+            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](auto &visibleList) -> void
             {
                 Shape *shape = visibleList.first;
                 if (!shape->loaded)
@@ -688,9 +689,9 @@ namespace Gek
                     return;
                 }
 
-                concurrency::parallel_for_each(visibleList.second.begin(), visibleList.second.end(), [&](MaterialList::value_type &materialList) -> void
+                concurrency::parallel_for_each(visibleList.second.begin(), visibleList.second.end(), [&](auto &materialList) -> void
                 {
-                    concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](InstanceList::value_type &instanceList) -> void
+                    concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](auto &instanceList) -> void
                     {
                         renderer->queueDrawCall(visual, materialList.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
                     });
