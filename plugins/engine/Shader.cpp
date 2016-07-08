@@ -118,7 +118,7 @@ namespace Gek
             return L"float4";
         }
 
-        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Engine::Population *, const wchar_t *)
+        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, const wchar_t *)
             , public Engine::Shader
         {
         public:
@@ -284,7 +284,7 @@ namespace Gek
         private:
             Video::Device *device;
             Engine::Resources *resources;
-            Engine::Population *population;
+            Plugin::Population *population;
 
             uint32_t priority;
 
@@ -304,7 +304,7 @@ namespace Gek
             ResourceHandle cameraTarget;
 
         public:
-            Shader(Context *context, Video::Device *device, Engine::Resources *resources, Engine::Population *population, const wchar_t *fileName)
+            Shader(Context *context, Video::Device *device, Engine::Resources *resources, Plugin::Population *population, const wchar_t *fileName)
                 : ContextRegistration(context)
                 , device(device)
                 , resources(resources)
