@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <material>
     <shader>transparent</shader>
-    <maps>
+    <maps pass="solid">
         <albedo pattern="color" parameters="(1,1,1,0.5)" />
         <normal file="schulz/old_tiles/old_tiles_n" />
         <roughness pattern="color" parameters="0.000000" />

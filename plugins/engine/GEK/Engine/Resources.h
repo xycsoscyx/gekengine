@@ -61,10 +61,12 @@ namespace Gek
 
         GEK_INTERFACE(Resources)
         {
+            GEK_START_EXCEPTIONS();
+
             virtual VisualHandle loadPlugin(const wchar_t *fileName) = 0;
             virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
 
-            virtual ResourceHandle loadTexture(const wchar_t *fileName, uint32_t flags, const wchar_t *pattern = nullptr, const wchar_t *parameters = nullptr) = 0;
+            virtual ResourceHandle loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
             virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
 
             virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite) = 0;
@@ -103,7 +105,7 @@ namespace Gek
 
             virtual Filter * const loadFilter(const wchar_t *fileName) = 0;
 
-            virtual ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material) = 0;
+            virtual ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad = [](Engine::Shader *) {}) = 0;
             virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

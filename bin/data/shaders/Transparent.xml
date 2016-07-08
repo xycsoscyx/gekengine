@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <shader priority="2">
     <material>
-        <maps>
+        <maps pass="transparent">
             <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>
         </maps>
     </material>
@@ -21,7 +21,7 @@
             <revealBuffer>1</revealBuffer>
         </clear>
 
-        <pass mode="forward" colors="2">
+        <pass mode="forward" colors="2" name="transparent">
             <blendstates>
                 <target>
                     <color source="one" destination="one" operation="add" />

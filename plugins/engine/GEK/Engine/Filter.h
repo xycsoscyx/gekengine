@@ -15,6 +15,8 @@ namespace Gek
         {
             GEK_INTERFACE(Pass)
             {
+                GEK_START_EXCEPTIONS();
+
                 enum class Mode : uint8_t
                 {
                     Deferred = 0,

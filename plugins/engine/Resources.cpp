@@ -493,12 +493,14 @@ namespace Gek
                 return filterManager.getResource(filter);
             }
 
-            ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material)
+            ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName)](ShaderHandle handle)->Engine::ShaderPtr
+                auto load = [this, fileName = String(fileName), onLoad](ShaderHandle handle)->Engine::ShaderPtr
                 {
-                    return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), fileName.c_str());
+                    Engine::ShaderPtr shader(getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), fileName.c_str()));
+                    onLoad(shader.get());
+                    return shader;
                 };
 
                 auto request = [this, load](ShaderHandle handle, std::function<void(Engine::ShaderPtr)> set) -> void
@@ -507,7 +509,7 @@ namespace Gek
                 };
 
                 std::size_t hash = reverseHash(fileName);
-                ShaderHandle shader = shaderManager.getHandle(hash, request, false);
+                ShaderHandle shader = shaderManager.getHandle(hash, request, true);
                 materialShaderMap[material] = shader;
                 return shader;
             }
@@ -673,11 +675,11 @@ namespace Gek
                     std::size_t hash = std::hash<String>()(name);
                     if (readWrite)
                     {
-                        return resourceManager.getReadWriteHandle(hash, request, true);
+                        return resourceManager.getReadWriteHandle(hash, request, staticData ? false : true);
                     }
                     else
                     {
-                        return resourceManager.getHandle(hash, request, true);
+                        return resourceManager.getHandle(hash, request, staticData ? false : true);
                     }
                 }
                 else
@@ -704,11 +706,11 @@ namespace Gek
                     std::size_t hash = std::hash<String>()(name);
                     if (readWrite)
                     {
-                        return resourceManager.getReadWriteHandle(hash, request, true);
+                        return resourceManager.getReadWriteHandle(hash, request, staticData ? false : true);
                     }
                     else
                     {
-                        return resourceManager.getHandle(hash, request, true);
+                        return resourceManager.getHandle(hash, request, staticData ? false : true);
                     }
                 }
                 else
@@ -869,31 +871,12 @@ namespace Gek
                 return texture;
             }
 
-            ResourceHandle loadTexture(const wchar_t *fileName, uint32_t flags, const wchar_t *pattern, const wchar_t *parameters)
+            ResourceHandle loadTexture(const wchar_t *fileName, uint32_t flags)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName), flags, pattern = String(pattern), parameters = String(parameters)](ResourceHandle handle)->Video::TexturePtr
+                auto load = [this, fileName = String(fileName), flags](ResourceHandle handle)->Video::TexturePtr
                 {
-                    Video::TexturePtr texture;
-                    try
-                    {
-                        texture = loadTextureData(fileName, flags);
-                    }
-                    catch (const Exception &)
-                    {
-                        if (!pattern.empty())
-                        {
-                            try
-                            {
-                                texture = createTextureData(pattern, parameters);
-                            }
-                            catch (const Exception &)
-                            {
-                            };
-                        }
-                    };
-
-                    return texture;
+                    return loadTextureData(fileName, flags);
                 };
 
                 auto request = [this, load](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void

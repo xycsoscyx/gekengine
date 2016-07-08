@@ -8,6 +8,7 @@
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Renderer.h"
+#include "GEK\Engine\Material.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Components\Transform.h"
@@ -125,25 +126,25 @@ namespace Gek
             {
                 MapType type;
                 MapSource source;
-                BindType bindType;
+                BindType binding;
                 uint32_t flags;
                 String name;
                 String pattern;
                 String parameters;
 
-                Map(MapType type, BindType bindType, uint32_t flags, const wchar_t *name)
-                    : type(type)
-                    , source(MapSource::File)
-                    , bindType(bindType)
+                Map(MapType type, BindType binding, uint32_t flags, const wchar_t *name)
+                    : source(MapSource::File)
+                    , type(type)
+                    , binding(binding)
                     , flags(flags)
                     , name(name)
                 {
                 }
 
-                Map(MapType type, BindType bindType, uint32_t flags, const wchar_t *pattern, const wchar_t *parameters)
-                    : type(type)
-                    , source(MapSource::Pattern)
-                    , bindType(bindType)
+                Map(MapType type, BindType binding, uint32_t flags, const wchar_t *pattern, const wchar_t *parameters)
+                    : source(MapSource::Pattern)
+                    , type(type)
+                    , binding(binding)
                     , flags(flags)
                     , pattern(pattern)
                     , parameters(parameters)
@@ -163,18 +164,6 @@ namespace Gek
                 Flip,
             };
 
-            struct ResourceData
-            {
-                enum class Source : uint8_t
-                {
-                    Material = 0,
-                    Shader,
-                };
-
-                Source source;
-                String alias;
-            };
-
             struct PassData
             {
                 Pass::Mode mode;
@@ -188,7 +177,7 @@ namespace Gek
                 BlendStateHandle blendState;
                 uint32_t width, height;
                 std::unordered_map<String, String> renderTargetList;
-                std::unordered_map<String, ResourceData> resourceList;
+                std::unordered_map<String, String> resourceList;
                 std::unordered_map<String, std::set<Actions>> actionMap;
                 std::unordered_map<String, String> copyResourceMap;
                 std::unordered_map<String, String> unorderedAccessList;
@@ -305,7 +294,7 @@ namespace Gek
             Video::BufferPtr lightDataBuffer;
             std::vector<LightData> lightList;
 
-            std::unordered_map<String, std::unordered_map<String, Map>> mapLists;
+            std::unordered_map<String, std::unordered_map<String, Map>> materialMapLists;
 
             ResourceHandle depthBuffer;
             std::unordered_map<String, ResourceHandle> resourceMap;
@@ -335,6 +324,8 @@ namespace Gek
                 XmlNodePtr shaderNode(document->getRoot(L"shader"));
 
                 priority = shaderNode->getAttribute(L"priority");
+
+                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
 
                 std::unordered_map<String, String> globalDefinesList;
                 auto replaceDefines = [&globalDefinesList](String &value) -> bool
@@ -377,18 +368,144 @@ namespace Gek
                     }
                 };
 
-                std::unordered_map<String, std::pair<MapType, BindType>> resourceList;
+                XmlNodePtr definesNode(shaderNode->firstChildElement(L"defines"));
+                for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
+                {
+                    String name(defineNode->getType());
+                    String value(defineNode->getText());
+                    globalDefinesList[name] = evaluate(value, defineNode->getAttribute(L"integer"));
+                }
+
+                XmlNodePtr depthNode(shaderNode->firstChildElement(L"depth"));
+                if (depthNode->isValid())
+                {
+                    if (depthNode->hasAttribute(L"source"))
+                    {
+                        depthBuffer = resources->getResourceHandle(String(L"depth:%v:resource", depthNode->getAttribute(L"source")));
+                    }
+                    else
+                    {
+                        String text(depthNode->getText());
+                        GEK_CHECK_CONDITION(text.empty(), Exception, "No format specified for depth buffer");
+
+                        Video::Format format = Video::getFormat(text);
+                        GEK_CHECK_CONDITION(format == Video::Format::Unknown, Exception, "Invalid format specified for depth buffer: %v", text);
+
+                        depthBuffer = resources->createTexture(String(L"depth:%v:resource", fileName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource, false);
+                    }
+
+                    resourceMappingList[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
+                    resourceMap[L"depth"] = depthBuffer;
+                }
+
+                XmlNodePtr texturesNode(shaderNode->firstChildElement(L"targets"));
+                for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
+                {
+                    String name(textureNode->getType());
+                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Exception, "Resource name already specified: %v", name);
+
+                    BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
+                    if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
+                    {
+                        String identity(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
+                        resourceMap[name] = resources->getResourceHandle(identity);
+                    }
+                    else
+                    {
+                        int textureWidth = device->getBackBuffer()->getWidth();
+                        if (textureNode->hasAttribute(L"width"))
+                        {
+                            textureWidth = evaluate(textureNode->getAttribute(L"width"));
+                        }
+
+                        int textureHeight = device->getBackBuffer()->getHeight();
+                        if (textureNode->hasAttribute(L"height"))
+                        {
+                            textureHeight = evaluate(textureNode->getAttribute(L"height"));
+                        }
+
+                        int textureMipMaps = 1;
+                        if (textureNode->hasAttribute(L"mipmaps"))
+                        {
+                            textureMipMaps = evaluate(textureNode->getAttribute(L"mipmaps"));
+                        }
+
+                        Video::Format format = Video::getFormat(textureNode->getText());
+                        uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
+                        bool readWrite = textureNode->getAttribute(L"readWrite");
+                        resourceMap[name] = resources->createTexture(String(L"%v:%v:resource", name, fileName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
+                    }
+
+                    resourceMappingList[name] = std::make_pair(MapType::Texture2D, bindType);
+                }
+
+                XmlNodePtr buffersNode(shaderNode->firstChildElement(L"buffers"));
+                for (XmlNodePtr bufferNode(buffersNode->firstChildElement()); bufferNode->isValid(); bufferNode = bufferNode->nextSiblingElement())
+                {
+                    String name(bufferNode->getType());
+                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Exception, "Resource name already specified: %v", name);
+
+                    Video::Format format = Video::getFormat(bufferNode->getText());
+                    uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
+                    bool readWrite = bufferNode->getAttribute(L"readWrite");
+                    resourceMap[name] = resources->createBuffer(String(L"%v:%v:buffer", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource, readWrite);
+                    switch (format)
+                    {
+                    case Video::Format::Byte:
+                    case Video::Format::Short:
+                    case Video::Format::Int:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int);
+                        break;
+
+                    case Video::Format::Byte2:
+                    case Video::Format::Short2:
+                    case Video::Format::Int2:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
+                        break;
+
+                    case Video::Format::Int3:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
+                        break;
+
+                    case Video::Format::BGRA:
+                    case Video::Format::Byte4:
+                    case Video::Format::Short4:
+                    case Video::Format::Int4:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
+                        break;
+
+                    case Video::Format::Half:
+                    case Video::Format::Float:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float);
+                        break;
+
+                    case Video::Format::Half2:
+                    case Video::Format::Float2:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
+                        break;
+
+                    case Video::Format::Float3:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
+                        break;
+
+                    case Video::Format::Half4:
+                    case Video::Format::Float4:
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
+                        break;
+                    };
+                }
+
                 XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
                 for (XmlNodePtr passesNode(materialNode->firstChildElement(L"passes")); passesNode->isValid(); passesNode->nextSiblingElement())
                 {
                     XmlNodePtr mapsNode(passesNode->firstChildElement(L"maps"));
-                    auto &mapList = mapLists[mapsNode->getAttribute(L"pass")];
+                    auto &materialList = materialMapLists[mapsNode->getAttribute(L"pass")];
                     for (XmlNodePtr mapNode(mapsNode->firstChildElement()); mapNode->isValid(); mapNode = mapNode->nextSiblingElement())
                     {
                         String name(mapNode->getType());
-                        if (mapNode->hasAttribute(L"name"))
+                        if (mapNode->hasAttribute(L"resource"))
                         {
-                            mapList.insert(std::make_pair(name, Map(mapNode->getAttribute(L"name"))));
+                            materialList.insert(std::make_pair(name, Map(mapNode->getAttribute(L"resource"))));
                         }
                         else
                         {
@@ -397,15 +514,15 @@ namespace Gek
                             uint32_t flags = getTextureLoadFlags(mapNode->getAttribute(L"flags"));
                             if (mapNode->hasAttribute(L"file"))
                             {
-                                mapList.insert(std::make_pair(name, Map(mapType, bindType, flags, mapNode->getAttribute(L"file"))));
+                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, mapNode->getAttribute(L"file"))));
                             }
                             else if (mapNode->hasAttribute(L"pattern"))
                             {
-                                mapList.insert(std::make_pair(name, Map(mapType, bindType, flags, mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"))));
+                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, mapNode->getAttribute(L"pattern"), mapNode->getAttribute(L"parameters"))));
                             }
                             else
                             {
-                                GEK_THROW_EXCEPTION(Trace::Exception, "Unknown map found in material map data: %v", name);
+                                GEK_THROW_EXCEPTION(Exception, "Unknown map found in material map data: %v", name);
                             }
                         }
                     }
@@ -459,137 +576,13 @@ namespace Gek
                     }
                 }
 
-                XmlNodePtr definesNode(shaderNode->firstChildElement(L"defines"));
-                for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
-                {
-                    String name(defineNode->getType());
-                    String value(defineNode->getText());
-                    globalDefinesList[name] = evaluate(value, defineNode->getAttribute(L"integer"));
-                }
-
-                XmlNodePtr depthNode(shaderNode->firstChildElement(L"depth"));
-                if (depthNode->isValid())
-                {
-                    if (depthNode->hasAttribute(L"source"))
-                    {
-                        depthBuffer = resources->getResourceHandle(String(L"depth:%v:resource", depthNode->getAttribute(L"source")));
-                    }
-                    else
-                    {
-                        String text(depthNode->getText());
-                        GEK_CHECK_CONDITION(text.empty(), Trace::Exception, "No format specified for depth buffer");
-
-                        Video::Format format = Video::getFormat(text);
-                        GEK_CHECK_CONDITION(format == Video::Format::Unknown, Trace::Exception, "Invalid format specified for depth buffer");
-
-                        depthBuffer = resources->createTexture(String(L"depth:%v:resource", fileName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource, false);
-                    }
-
-                    resourceList[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
-                    resourceMap[L"depth"] = depthBuffer;
-                }
-
-                XmlNodePtr texturesNode(shaderNode->firstChildElement(L"textures"));
-                for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
-                {
-                    String name(textureNode->getType());
-                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Trace::Exception, "Resource name already specified: %v", name);
-
-                    BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
-                    if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
-                    {
-                        String identity(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
-                        resourceMap[name] = resources->getResourceHandle(identity);
-                    }
-                    else
-                    {
-                        int textureWidth = device->getBackBuffer()->getWidth();
-                        if (textureNode->hasAttribute(L"width"))
-                        {
-                            textureWidth = evaluate(textureNode->getAttribute(L"width"));
-                        }
-
-                        int textureHeight = device->getBackBuffer()->getHeight();
-                        if (textureNode->hasAttribute(L"height"))
-                        {
-                            textureHeight = evaluate(textureNode->getAttribute(L"height"));
-                        }
-
-                        int textureMipMaps = 1;
-                        if (textureNode->hasAttribute(L"mipmaps"))
-                        {
-                            textureMipMaps = evaluate(textureNode->getAttribute(L"mipmaps"));
-                        }
-
-                        Video::Format format = Video::getFormat(textureNode->getText());
-                        uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
-                        resourceMap[name] = resources->createTexture(String(L"%v:%v:resource", name, fileName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, false);
-                    }
-
-                    resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
-                }
-
-                XmlNodePtr buffersNode(shaderNode->firstChildElement(L"buffers"));
-                for (XmlNodePtr bufferNode(buffersNode->firstChildElement()); bufferNode->isValid(); bufferNode = bufferNode->nextSiblingElement())
-                {
-                    String name(bufferNode->getType());
-                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Trace::Exception, "Resource name already specified: %v", name);
-
-                    Video::Format format = Video::getFormat(bufferNode->getText());
-                    uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
-                    resourceMap[name] = resources->createBuffer(String(L"%v:%v:buffer", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource, false);
-                    switch (format)
-                    {
-                    case Video::Format::Byte:
-                    case Video::Format::Short:
-                    case Video::Format::Int:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int);
-                        break;
-
-                    case Video::Format::Byte2:
-                    case Video::Format::Short2:
-                    case Video::Format::Int2:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
-                        break;
-
-                    case Video::Format::Int3:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
-                        break;
-
-                    case Video::Format::BGRA:
-                    case Video::Format::Byte4:
-                    case Video::Format::Short4:
-                    case Video::Format::Int4:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
-                        break;
-
-                    case Video::Format::Half:
-                    case Video::Format::Float:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
-                        break;
-
-                    case Video::Format::Half2:
-                    case Video::Format::Float2:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
-                        break;
-
-                    case Video::Format::Float3:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
-                        break;
-
-                    case Video::Format::Half4:
-                    case Video::Format::Float4:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
-                        break;
-                    };
-                }
-
                 for (XmlNodePtr blockNode(shaderNode->firstChildElement(L"block")); blockNode->isValid(); blockNode = blockNode->nextSiblingElement(L"block"))
                 {
                     blockList.push_back(BlockData());
                     BlockData &block = blockList.back();
+
                     block.lighting = blockNode->getAttribute(L"lighting");
-                    GEK_CHECK_CONDITION(block.lighting && lightsPerPass <= 0, Trace::Exception, "Lighting enabled without any lights per pass");
+                    GEK_CHECK_CONDITION(block.lighting && lightsPerPass <= 0, Exception, "Lighting enabled without any lights per pass");
 
                     XmlNodePtr clearNode(blockNode->firstChildElement(L"clear"));
                     for (XmlNodePtr clearTargetNode(clearNode->firstChildElement()); clearTargetNode->isValid(); clearTargetNode = clearTargetNode->nextSiblingElement())
@@ -600,14 +593,10 @@ namespace Gek
 
                     for (XmlNodePtr passNode(blockNode->firstChildElement(L"pass")); passNode->isValid(); passNode = passNode->nextSiblingElement(L"pass"))
                     {
-                        GEK_CHECK_CONDITION(!passNode->hasChildElement(L"program"), Trace::Exception, "Pass node requires program child node");
+                        GEK_CHECK_CONDITION(!passNode->hasChildElement(L"program"), Exception, "Pass node requires program child node");
 
                         block.passList.push_back(PassData());
                         PassData &pass = block.passList.back();
-                        if (passNode->hasAttribute(L"name"))
-                        {
-                            namedPassMap[passNode->getAttribute(L"name")] = &pass;
-                        }
 
                         if (passNode->hasAttribute(L"mode"))
                         {
@@ -626,20 +615,13 @@ namespace Gek
                             }
                             else
                             {
-                                GEK_THROW_EXCEPTION(Trace::Exception, "Invalid pass mode specified: %v", modeString);
+                                GEK_THROW_EXCEPTION(Exception, "Invalid pass mode specified: %v", modeString);
                             }
                         }
 
                         if (passNode->hasChildElement(L"targets"))
                         {
                             pass.renderTargetList = loadChildMap(passNode, L"targets");
-                            for (auto &resourcePair : pass.renderTargetList)
-                            {
-                                auto resourceSearch = resourceMap.find(resourcePair.first);
-                                if (resourceSearch != resourceMap.end())
-                                {
-                                }
-                            }
                         }
                         else
                         {
@@ -658,20 +640,8 @@ namespace Gek
                             {
                                 String name(resourceNode->getType());
                                 String alias(resourceNode->getText());
+                                pass.resourceList.insert(std::make_pair(name, alias));
 
-                                ResourceData data;
-                                data.alias = (alias.empty() ? name : alias);
-                                auto resourceSearch = resourceList.find(name);
-                                if (resourceSearch != resourceList.end())
-                                {
-                                    data.source = ResourceData::Source::Shader;
-                                }
-                                else
-                                {
-                                    data.source = ResourceData::Source::Material;
-                                }
-
-                                pass.resourceList.insert(std::make_pair(name, data));
                                 if (resourceNode->hasAttribute(L"actions"))
                                 {
                                     std::vector<String> actionList(resourceNode->getAttribute(L"actions").split(L','));
@@ -761,8 +731,8 @@ namespace Gek
                         StringUTF8 outputData;
                         for (auto &resourcePair : pass.renderTargetList)
                         {
-                            auto resourceSearch = resourceList.find(resourcePair.first);
-                            if (resourceSearch != resourceList.end())
+                            auto resourceSearch = resourceMappingList.find(resourcePair.first);
+                            if (resourceSearch != resourceMappingList.end())
                             {
                                 outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, stage++);
                             }
@@ -780,26 +750,47 @@ namespace Gek
 
                         StringUTF8 resourceData;
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
-                        for (auto &resourcePair : pass.resourceList)
+                        if (passNode->hasAttribute(L"name"))
                         {
-                            uint32_t currentStage = nextResourceStage++;
-                            auto resourceSearch = resourceList.find(resourcePair.first);
-                            if (resourceSearch != resourceList.end())
+                            auto mapSearch = materialMapLists.find(passNode->getAttribute(L"name"));
+                            if (mapSearch != materialMapLists.end())
                             {
-                                auto &resource = (*resourceSearch).second;
-                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second.alias, currentStage++);
-                                continue;
+                                namedPassMap[passNode->getAttribute(L"name")] = &pass;
+                                for (auto &map : mapSearch->second)
+                                {
+                                    uint32_t currentStage = nextResourceStage++;
+                                    switch (map.second.source)
+                                    {
+                                    case MapSource::File:
+                                    case MapSource::Pattern:
+                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.second.type), getBindType(map.second.binding), map.first, currentStage++);
+                                        break;
+
+                                    case MapSource::Resource:
+                                        if (true)
+                                        {
+                                            auto resourceSearch = resourceMappingList.find(map.second.name);
+                                            if (resourceSearch != resourceMappingList.end())
+                                            {
+                                                auto &resource = (*resourceSearch).second;
+                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), map.first, currentStage++);
+                                            }
+                                        }
+
+                                        break;
+                                    };
+                                }
                             }
                         }
 
-                        if (passNode->hasAttribute(L"name"))
+                        for (auto &resourcePair : pass.resourceList)
                         {
-                            auto mapSearch = mapLists.find(passNode->getAttribute(L"name"));
-                            if (mapSearch != mapLists.end())
+                            uint32_t currentStage = nextResourceStage++;
+                            auto resourceSearch = resourceMappingList.find(resourcePair.first);
+                            if (resourceSearch != resourceMappingList.end())
                             {
-                                for (auto &map : mapSearch->second)
-                                {
-                                }
+                                auto &resource = (*resourceSearch).second;
+                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage++);
                             }
                         }
 
@@ -823,8 +814,8 @@ namespace Gek
                         for (auto &resourcePair : pass.unorderedAccessList)
                         {
                             uint32_t currentStage = nextUnorderedStage++;
-                            auto resourceSearch = resourceList.find(resourcePair.first);
-                            if (resourceSearch != resourceList.end())
+                            auto resourceSearch = resourceMappingList.find(resourcePair.first);
+                            if (resourceSearch != resourceMappingList.end())
                             {
                                 unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceSearch).second.first), getBindType((*resourceSearch).second.second), resourcePair.second, currentStage);
                             }
@@ -1038,6 +1029,12 @@ namespace Gek
                 return std::dynamic_pointer_cast<ResourceList>(resourceList);
             }
             */
+
+            bool setMaterial(Video::Device::Context *deviceContext, BlockData &block, PassData &pass, Engine::Material *material)
+            {
+                return false;
+            }
+
             ResourceHandle renderTargetList[8];
             Pass::Mode preparePass(Video::Device::Context *deviceContext, BlockData &block, PassData &pass)
             {
@@ -1263,6 +1260,11 @@ namespace Gek
                 Mode prepare(void)
                 {
                     return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                }
+
+                bool setMaterial(Engine::Material *material)
+                {
+                    return shaderNode->setMaterial(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current), material);
                 }
             };
 

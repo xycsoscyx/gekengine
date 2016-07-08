@@ -9,6 +9,8 @@ namespace Gek
     {
         GEK_INTERFACE(Visual)
         {
+            GEK_START_EXCEPTIONS();
+
             virtual void enable(Video::Device::Context *context) = 0;
         };
     }; // namespace Engine

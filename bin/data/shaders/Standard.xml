@@ -5,20 +5,18 @@
     </lighting>
 
     <material>
-        <passes>
-            <maps pass="solid">
-                <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
-                <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
-                <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
-                <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
-            </maps>
-            <maps pass="transparent">
-                <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
-                <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
-                <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
-                <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
-            </maps>
-        </passes>
+        <maps pass="solid">
+            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
+        </maps>
+        <maps pass="transparent">
+            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
+        </maps>
     </material>
 
     <defines>
@@ -41,7 +39,7 @@
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
         <lightAccumulationBuffer bind="float3" flags="target">half4</lightAccumulationBuffer>
-        <ambientOcclusionBuffer bind="float" flags="target, readWrite">byte</ambientOcclusionBuffer>
+        <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">byte</ambientOcclusionBuffer>
         <finalBuffer bind="float3" flags="target">half4</finalBuffer>
     </textures>
 

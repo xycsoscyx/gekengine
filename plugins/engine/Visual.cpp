@@ -160,7 +160,7 @@ namespace Gek
                     }
                     else
                     {
-                        GEK_THROW_EXCEPTION(Trace::Exception, "Invalid vertex layout element found");
+                        GEK_THROW_EXCEPTION(Exception, "Invalid vertex layout element found");
                     }
                 }
 

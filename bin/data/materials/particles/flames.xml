@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <material>
     <shader>transparent</shader>
-    <maps>
+    <maps pass="transparent">
         <albedo file="$material.Albedo" />
     </maps>
 </material>

@@ -219,7 +219,7 @@ namespace Gek
                     }
                 };
 
-                std::unordered_map<String, std::pair<MapType, BindType>> resourceList;
+                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
 
                 XmlNodePtr filterNode(document->getRoot(L"filter"));
                 XmlNodePtr definesNode(filterNode->firstChildElement(L"defines"));
@@ -234,7 +234,7 @@ namespace Gek
                 for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
                 {
                     String name(textureNode->getType());
-                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Trace::Exception, "Resource name already specified: %v", name);
+                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Exception, "Resource name already specified: %v", name);
 
                     BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                     if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
@@ -268,14 +268,14 @@ namespace Gek
                         resourceMap[name] = resources->createTexture(String(L"%v:%v:resource", name, fileName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
                     }
 
-                    resourceList[name] = std::make_pair(MapType::Texture2D, bindType);
+                    resourceMappingList[name] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
                 XmlNodePtr buffersNode(filterNode->firstChildElement(L"buffers"));
                 for (XmlNodePtr bufferNode(buffersNode->firstChildElement()); bufferNode->isValid(); bufferNode = bufferNode->nextSiblingElement())
                 {
                     String name(bufferNode->getType());
-                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Trace::Exception, "Resource name already specified: %v", name);
+                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Exception, "Resource name already specified: %v", name);
 
                     Video::Format format = Video::getFormat(bufferNode->getText());
                     uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
@@ -285,43 +285,43 @@ namespace Gek
                     case Video::Format::Byte:
                     case Video::Format::Short:
                     case Video::Format::Int:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int);
                         break;
 
                     case Video::Format::Byte2:
                     case Video::Format::Short2:
                     case Video::Format::Int2:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
                         break;
 
                     case Video::Format::Int3:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
                         break;
 
                     case Video::Format::BGRA:
                     case Video::Format::Byte4:
                     case Video::Format::Short4:
                     case Video::Format::Int4:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
                         break;
 
                     case Video::Format::Half:
                     case Video::Format::Float:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float);
                         break;
 
                     case Video::Format::Half2:
                     case Video::Format::Float2:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
                         break;
 
                     case Video::Format::Float3:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
                         break;
 
                     case Video::Format::Half4:
                     case Video::Format::Float4:
-                        resourceList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
+                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
                         break;
                     };
                 }
@@ -335,7 +335,7 @@ namespace Gek
 
                 for (XmlNodePtr passNode(filterNode->firstChildElement(L"pass")); passNode->isValid(); passNode = passNode->nextSiblingElement(L"pass"))
                 {
-                    GEK_CHECK_CONDITION(!passNode->hasChildElement(L"program"), Trace::Exception, "Pass node requires program child node");
+                    GEK_CHECK_CONDITION(!passNode->hasChildElement(L"program"), Exception, "Pass node requires program child node");
 
                     PassData pass;
                     if (passNode->hasAttribute(L"mode"))
@@ -351,7 +351,7 @@ namespace Gek
                         }
                         else
                         {
-                            GEK_THROW_EXCEPTION(Trace::Exception, "Invalid pass mode specified: %v", modeString);
+                            GEK_THROW_EXCEPTION(Exception, "Invalid pass mode specified: %v", modeString);
                         }
                     }
 
@@ -414,8 +414,8 @@ namespace Gek
                     StringUTF8 outputData;
                     for (auto &resourcePair : pass.renderTargetList)
                     {
-                        auto resourceSearch = resourceList.find(resourcePair.first);
-                        if (resourceSearch != resourceList.end())
+                        auto resourceSearch = resourceMappingList.find(resourcePair.first);
+                        if (resourceSearch != resourceMappingList.end())
                         {
                             outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, stage++);
                         }
@@ -435,8 +435,8 @@ namespace Gek
                     uint32_t resourceStage = 0;
                     for (auto &resourcePair : pass.resourceList)
                     {
-                        auto resourceSearch = resourceList.find(resourcePair.first);
-                        if (resourceSearch != resourceList.end())
+                        auto resourceSearch = resourceMappingList.find(resourcePair.first);
+                        if (resourceSearch != resourceMappingList.end())
                         {
                             auto &resource = (*resourceSearch).second;
                             resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, resourceStage++);
@@ -462,8 +462,8 @@ namespace Gek
 
                     for (auto &resourcePair : pass.unorderedAccessList)
                     {
-                        auto resourceSearch = resourceList.find(resourcePair.first);
-                        if (resourceSearch != resourceList.end())
+                        auto resourceSearch = resourceMappingList.find(resourcePair.first);
+                        if (resourceSearch != resourceMappingList.end())
                         {
                             unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceSearch).second.first), getBindType((*resourceSearch).second.second), resourcePair.second, unorderedStage++);
                         }

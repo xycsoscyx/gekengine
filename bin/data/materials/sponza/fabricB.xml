@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <material>
     <shader>standard</shader>
-    <maps>
+    <maps pass="solid">
         <albedo file="$material.Albedo" />
         <normal file="$directory\fabric.Normal" />
         <roughness file="$directory\fabric.Roughness" />

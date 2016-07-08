@@ -21,6 +21,8 @@ namespace Gek
         GEK_INTERFACE(Population)
             : virtual public Observable
         {
+            GEK_START_EXCEPTIONS();
+
             struct ComponentDefinition
                 : public std::unordered_map<String, String>
             {

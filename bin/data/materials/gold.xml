@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <material>
     <shader>standard</shader>
-    <maps>
+    <maps pass="solid">
         <albedo pattern="color" parameters="(1.000000, 0.766000, 0.336000)" />
         <normal file="gradient_n" />
         <roughness file="gradient_r" />

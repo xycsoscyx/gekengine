@@ -17,7 +17,6 @@ namespace Gek
         {
         private:
             Engine::Resources *resources;
-            Engine::ResourceListPtr resourceList;
             ShaderHandle shader;
 
         public:
@@ -30,39 +29,34 @@ namespace Gek
 
                 XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", fileName)));
                 XmlNodePtr materialNode(document->getRoot(L"material"));
-
                 XmlNodePtr shaderNode(materialNode->firstChildElement(L"shader"));
-                String shaderFileName(shaderNode->getText());
-                shader = resources->loadShader(shaderFileName, material);
-
-                XmlNodePtr passesNode(materialNode->firstChildElement(L"passes"));
-                for (XmlNodePtr mapsNode(passesNode->firstChildElement(L"maps")); mapsNode->isValid(); mapsNode = mapsNode->nextSiblingElement())
+                String shaderName(shaderNode->getText());
+                shader = resources->loadShader(shaderName, material, [materialNode](Engine::Shader *shader)->void
                 {
-                    mapsNode->getAttribute(L"pass");
-                    for (XmlNodePtr mapNode(mapsNode->firstChildElement()); mapNode->isValid(); mapNode = mapNode->nextSiblingElement())
+                    for (XmlNodePtr mapsNode(materialNode->firstChildElement(L"maps")); mapsNode->isValid(); mapsNode = mapsNode->nextSiblingElement())
                     {
-                        mapNode->getType();
-                        if (mapNode->hasAttribute(L"file"))
+                        GEK_CHECK_CONDITION(mapsNode->hasAttribute(L"pass"), Exception, "Material maps node missing pass attribute");
+
+                        String pass(mapsNode->getAttribute(L"pass"));
+                        for (XmlNodePtr mapNode(mapsNode->firstChildElement()); mapNode->isValid(); mapNode = mapNode->nextSiblingElement())
                         {
-                            mapNode->getAttribute(L"file");
-                        }
-                        else if (mapNode->hasAttribute(L"pattern"))
-                        {
-                            mapNode->getAttribute(L"pattern");
-                            mapNode->getAttribute(L"parameters");
-                        }
-                        else if (mapNode->hasAttribute(L"name"))
-                        {
-                            mapNode->getAttribute(L"name");
+                            String name(mapNode->getType());
+                            if (mapNode->hasAttribute(L"file"))
+                            {
+                                String file(mapNode->getAttribute(L"file"));
+                            }
+                            else if (mapNode->hasAttribute(L"pattern"))
+                            {
+                                String pattern(mapNode->getAttribute(L"pattern"));
+                                String parameters(mapNode->getAttribute(L"parameters"));
+                            }
+                            else if (mapNode->hasAttribute(L"resource"))
+                            {
+                                String resource(mapNode->getAttribute(L"resource"));
+                            }
                         }
                     }
-                }
-            }
-
-            // Engine::Material
-            Engine::ResourceList * const getResourceList(void) const
-            {
-                return resourceList.get();
+                });
             }
         };
 

@@ -7,14 +7,11 @@ namespace Gek
 {
     namespace Engine
     {
-        GEK_INTERFACE(ResourceList)
-        {
-            virtual ~ResourceList(void) = default;
-        };
-
         GEK_INTERFACE(Material)
         {
-            virtual ResourceList * const getResourceList(void) const = 0;
+            GEK_START_EXCEPTIONS();
+
+            virtual ~Material(void) = default;
         };
     }; // namespace Engine
 }; // namespace Gek

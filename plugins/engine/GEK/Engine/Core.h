@@ -14,6 +14,8 @@ namespace Gek
         GEK_INTERFACE(Core)
             : virtual public Observable
         {
+            GEK_START_EXCEPTIONS();
+
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;
             virtual Plugin::Renderer * getRenderer(void) const = 0;

@@ -28,6 +28,8 @@ namespace Gek
         GEK_INTERFACE(Renderer)
             : virtual public Observable
         {
+            GEK_START_EXCEPTIONS();
+
             virtual Video::Device * getDevice(void) const = 0;
 
             virtual void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;

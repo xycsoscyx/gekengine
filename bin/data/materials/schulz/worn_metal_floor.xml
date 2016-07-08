@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <material>
     <shader>standard</shader>
-    <maps>
+    <maps pass="solid">
         <albedo file="$directory\$filename\$filename_a" />
         <normal file="$directory\$filename\$filename_n" />
         <roughness file="$directory\$filename\$filename_r" />
