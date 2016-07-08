@@ -14,9 +14,9 @@ namespace Gek
         GEK_INTERFACE(Core)
             : virtual public Observable
         {
-            virtual Population * getPopulation(void) const = 0;
-            virtual Resources * getResources(void) const = 0;
-            virtual Renderer * getRenderer(void) const = 0;
+            virtual Plugin::Population * getPopulation(void) const = 0;
+            virtual Plugin::Resources * getResources(void) const = 0;
+            virtual Plugin::Renderer * getRenderer(void) const = 0;
 
             virtual const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = String()) const = 0;
 

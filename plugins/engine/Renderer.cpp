@@ -144,7 +144,7 @@ namespace Gek
 
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Renderer, Video::Device *, Engine::Population *, Engine::Resources *)
+        GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public ObservableMixin<Plugin::RendererObserver>
             , public Plugin::PopulationObserver
             , public Plugin::Renderer
@@ -242,7 +242,7 @@ namespace Gek
 
         private:
             Video::Device *device;
-            Engine::Population *population;
+            Plugin::Population *population;
             uint32_t backgroundUpdateHandle;
             uint32_t foregroundUpdateHandle;
             Engine::Resources *resources;
@@ -258,7 +258,7 @@ namespace Gek
             DrawCallList drawCallList;
 
         public:
-            Renderer(Context *context, Video::Device *device, Engine::Population *population, Engine::Resources *resources)
+            Renderer(Context *context, Video::Device *device, Plugin::Population *population, Engine::Resources *resources)
                 : ContextRegistration(context)
                 , device(device)
                 , population(population)

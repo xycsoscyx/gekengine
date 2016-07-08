@@ -86,6 +86,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
             {
+                OutputDebugString(L"");
             }
 
             // Engine::Population

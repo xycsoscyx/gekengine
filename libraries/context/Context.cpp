@@ -79,12 +79,12 @@ namespace Gek
         }
 
         // Context
-        ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const
+        ContextUserPtr createBaseClass(const wchar_t *name, void *arguments) const
         {
             auto classSearch = classMap.find(name);
             GEK_CHECK_CONDITION(classSearch == classMap.end(), Trace::Exception, "Unable to find requested class creator: %v", name);
 
-            return (*classSearch).second((Context *)this, parameters);
+            return (*classSearch).second((Context *)this, arguments);
         }
 
         void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const

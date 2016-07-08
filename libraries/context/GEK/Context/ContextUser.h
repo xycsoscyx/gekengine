@@ -70,20 +70,20 @@ namespace Gek
         }
 
         template<std::size_t... Size>
-        static ContextUserPtr createUnpack(Context *context, const std::tuple<ARGUMENTS...>& tuple, std::index_sequence<Size...>)
+        static ContextUserPtr createFromTupleArguments(Context *context, const std::tuple<ARGUMENTS...>& tuple, std::index_sequence<Size...>)
         {
             return createBase(context, std::get<Size>(tuple)...);
         }
 
-        static ContextUserPtr createPacked(Context *context, void *arguments)
+        static ContextUserPtr createFromPackedArguments(Context *context, void *arguments)
         {
             std::tuple<ARGUMENTS...> *tuple = (std::tuple<ARGUMENTS...> *)arguments;
-            return createUnpack(context, *tuple, std::index_sequence_for<ARGUMENTS...>());
+            return createFromTupleArguments(context, *tuple, std::index_sequence_for<ARGUMENTS...>());
         }
 
-        static ContextUserPtr createObject(Context *context, void *parameters)
+        static ContextUserPtr createObject(Context *context, void *arguments)
         {
-            return createPacked(context, parameters);
+            return createFromPackedArguments(context, arguments);
         }
     };
 }; // namespace Gek

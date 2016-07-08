@@ -22,8 +22,8 @@ namespace Gek
         template <typename TYPE, typename... ARGUMENTS>
         std::shared_ptr<TYPE> createClass(const wchar_t *name, ARGUMENTS... arguments) const
         {
-            std::tuple<ARGUMENTS...> tuple(arguments...);
-            ContextUserPtr baseClass = createBaseClass(name, static_cast<void *>(&tuple));
+            std::tuple<ARGUMENTS...> argumentsTuple(arguments...);
+            ContextUserPtr baseClass = createBaseClass(name, static_cast<void *>(&argumentsTuple));
 
             std::shared_ptr<TYPE> castClass;
             try

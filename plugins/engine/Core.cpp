@@ -65,8 +65,8 @@ namespace Gek
 
             Video::DevicePtr device;
             Engine::ResourcesPtr resources;
-            Plugin::RendererPtr renderer;
             Engine::PopulationPtr population;
+            Plugin::RendererPtr renderer;
 
             uint32_t updateHandle;
             ActionQueue actionQueue;
@@ -193,9 +193,9 @@ namespace Gek
                 GEK_CHECK_CONDITION(FAILED(resultValue), Trace::Exception, "Unable to initialize COM (error %v)", resultValue);
 
                 device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::sRGBA, nullptr);
-                resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Core *)this, device.get());
-                population = getContext()->createClass<Engine::Population>(L"Engine::Population", (Core *)this);
-                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), getResources());
+                population = getContext()->createClass<Engine::Population>(L"Engine::Population", (Plugin::Core *)this);
+                resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
+                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
                 population->loadPlugins();
 
                 updateHandle = population->setUpdatePriority(this, 0);
