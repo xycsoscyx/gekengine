@@ -30,11 +30,10 @@ namespace Gek
                     HMODULE module = LoadLibrary(fileName);
                     if (module)
                     {
-                        typedef void(*InitializePlugin)(std::function<void(const wchar_t *, std::function<ContextUserPtr(Context *, void *)>)> addClass, std::function<void(const wchar_t *, const wchar_t *)> addType);
                         InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
                         if (initializePlugin)
                         {
-                            GEK_TRACE_EVENT("Plugin found: %v", GEK_PARAMETER(fileName));
+                            GEK_TRACE_EVENT("Plugin found", GEK_PARAMETER(fileName));
 
                             initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *)> creator) -> void
                             {
@@ -82,10 +81,10 @@ namespace Gek
         // Context
         ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const
         {
-            auto classIterator = classMap.find(name);
-            GEK_CHECK_CONDITION(classIterator == classMap.end(), Trace::Exception, "Unable to find requested class creator: %v", name);
+            auto classSearch = classMap.find(name);
+            GEK_CHECK_CONDITION(classSearch == classMap.end(), Trace::Exception, "Unable to find requested class creator: %v", name);
 
-            return (*classIterator).second((Context *)this, parameters);
+            return (*classSearch).second((Context *)this, parameters);
         }
 
         void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const
@@ -93,10 +92,10 @@ namespace Gek
             GEK_REQUIRE(typeName);
             GEK_REQUIRE(onType);
 
-            auto typeIterator = typeMap.equal_range(typeName);
-            for (auto iterator = typeIterator.first; iterator != typeIterator.second; ++iterator)
+            auto typeRange = typeMap.equal_range(typeName);
+            for (auto typeSearch = typeRange.first; typeSearch != typeRange.second; ++typeSearch)
             {
-                onType((*iterator).second);
+                onType((*typeSearch).second);
             }
         }
     };

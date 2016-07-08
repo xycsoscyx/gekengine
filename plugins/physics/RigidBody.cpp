@@ -1,41 +1,41 @@
-#include "GEK\Newton\RigidBody.h"
-#include "GEK\Newton\NewtonEntity.h"
-#include "GEK\Newton\NewtonProcessor.h"
-#include "GEK\Newton\Mass.h"
+#include "GEK\Math\Common.h"
+#include "GEK\Math\Float4x4.h"
+#include "GEK\Utility\String.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
+#include "GEK\Newton\World.h"
+#include "GEK\Newton\Entity.h"
+#include "GEK\Newton\Mass.h"
+#include "GEK\Newton\RigidBody.h"
 #include <Newton.h>
 
 namespace Gek
 {
     class RigidNewtonBody
-        : public NewtonEntity
+        : public Newton::Entity
     {
     private:
-        NewtonProcessor *newtonProcessor;
+        Newton::World *world;
 
-        Entity *entity;
+        Plugin::Entity *entity;
         NewtonBody *newtonBody;
 
     public:
-        RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity)
-            : newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
+        RigidNewtonBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
+            : world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
             , entity(entity)
             , newtonBody(nullptr)
         {
-            GEK_REQUIRE(newtonProcessor);
+            GEK_REQUIRE(world);
             GEK_REQUIRE(entity);
 
-            auto &mass = entity->getComponent<MassComponent>();
-            auto &transform = entity->getComponent<TransformComponent>();
+            auto &mass = entity->getComponent<Components::Mass>();
+            auto &transform = entity->getComponent<Components::Transform>();
 
             Math::Float4x4 matrix(transform.getMatrix());
             newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
-            NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
+            NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
             NewtonBodySetMassProperties(newtonBody, mass.value, newtonCollision);
         }
 
@@ -44,8 +44,8 @@ namespace Gek
             NewtonDestroyBody(newtonBody);
         }
 
-        // NewtonEntity
-        Entity * const getEntity(void) const
+        // Newton::Entity
+        Plugin::Entity * const getEntity(void) const
         {
             return entity;
         }
@@ -62,18 +62,18 @@ namespace Gek
 
         void onPreUpdate(int threadHandle)
         {
-            auto &mass = entity->getComponent<MassComponent>();
-            auto &transform = entity->getComponent<TransformComponent>();
+            auto &mass = entity->getComponent<Components::Mass>();
+            auto &transform = entity->getComponent<Components::Transform>();
 
             NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transform.scale.x, transform.scale.y, transform.scale.z);
 
-            Math::Float3 gravity(newtonProcessor->getGravity(transform.position));
+            Math::Float3 gravity(world->getGravity(transform.position));
             NewtonBodyAddForce(newtonBody, (gravity * mass.value).data);
         }
 
         void onSetTransform(const float* const matrixData, int threadHandle)
         {
-            auto &transform = entity->getComponent<TransformComponent>();
+            auto &transform = entity->getComponent<Components::Transform>();
 
             Math::Float4x4 matrix(matrixData);
             transform.position = matrix.translation;
@@ -81,43 +81,45 @@ namespace Gek
         }
     };
 
-    NewtonEntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Entity *entity)
+    Newton::EntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
     {
-        return makeShared<NewtonEntity, RigidNewtonBody>(newtonWorld, newtonCollision, entity);
+        return makeShared<Newton::Entity, RigidNewtonBody>(newtonWorld, newtonCollision, entity);
     }
 
-    RigidBodyComponent::RigidBodyComponent(void)
+    namespace Components
     {
-    }
+        RigidBody::RigidBody(void)
+        {
+        }
 
-    void RigidBodyComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, nullptr, shape);
-        saveParameter(componentData, L"surface", surface);
-    }
+        void RigidBody::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, shape);
+            saveParameter(componentData, L"surface", surface);
+        }
 
-    void RigidBodyComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        shape = loadParameter<String>(componentData, nullptr);
-        surface = loadParameter<String>(componentData, L"surface");
-    }
+        void RigidBody::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            shape = loadParameter(componentData, nullptr, String());
+            surface = loadParameter(componentData, L"surface", String());
+        }
+    }; // namespace Components
 
-    class RigidBodyImplementation
-        : public ContextRegistration<RigidBodyImplementation>
-        , public ComponentMixin<RigidBodyComponent>
+    GEK_CONTEXT_USER(RigidBody)
+        , public Plugin::ComponentMixin<Components::RigidBody>
     {
     public:
-        RigidBodyImplementation(Context *context)
+        RigidBody(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"rigid_body";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(RigidBodyImplementation)
+    GEK_REGISTER_CONTEXT_USER(RigidBody)
 }; // namespace Gek

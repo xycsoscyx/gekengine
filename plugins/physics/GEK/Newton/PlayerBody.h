@@ -5,15 +5,18 @@
 
 namespace Gek
 {
-    struct PlayerBodyComponent
+    namespace Components
     {
-        float height;
-        float outerRadius;
-        float innerRadius;
-        float stairStep;
+        struct PlayerBody
+        {
+            float height;
+            float outerRadius;
+            float innerRadius;
+            float stairStep;
 
-        PlayerBodyComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            PlayerBody(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
+    }; // namespace Components
 }; // namespace Gek

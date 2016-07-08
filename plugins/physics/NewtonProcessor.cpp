@@ -4,7 +4,7 @@
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
@@ -13,8 +13,8 @@
 #include "GEK\Newton\RigidBody.h"
 #include "GEK\Newton\StaticBody.h"
 #include "GEK\Newton\PlayerBody.h"
-#include "GEK\Newton\NewtonEntity.h"
-#include "GEK\Newton\NewtonProcessor.h"
+#include "GEK\Newton\Entity.h"
+#include "GEK\Newton\World.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
@@ -33,15 +33,14 @@ static void deSerializeCollision(void* const serializeHandle, void* const buffer
 
 namespace Gek
 {
-    extern NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity);
-    extern NewtonEntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Entity *entity);
+    extern Newton::EntityPtr createPlayerBody(Plugin::Core *core, NewtonWorld *newtonWorld, Plugin::Entity *entity);
+    extern Newton::EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
 
-    class NewtonProcessorImplementation
-        : public ContextRegistration<NewtonProcessorImplementation, EngineContext *>
-        , public ObservableMixin<NewtonObserver>
-        , public PopulationObserver
-        , public Processor
-        , public NewtonProcessor
+    GEK_CONTEXT_USER(NewtonProcessor, Plugin::Core *)
+        , public ObservableMixin<Newton::WorldObserver>
+        , public Plugin::PopulationObserver
+        , public Plugin::Processor
+        , public Newton::World
     {
     public:
         struct Vertex
@@ -59,8 +58,8 @@ namespace Gek
         };
 
     private:
-        EngineContext *engine;
-        Population *population;
+        Plugin::Core *core;
+        Plugin::Population *population;
         uint32_t updateHandle;
 
         NewtonWorld *newtonWorld;
@@ -71,14 +70,14 @@ namespace Gek
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
         std::unordered_map<std::size_t, uint32_t> surfaceIndexList;
-        std::unordered_map<Entity *, NewtonEntityPtr> entityMap;
+        std::unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
         std::unordered_map<std::size_t, NewtonCollision *> collisionList;
 
     public:
-        NewtonProcessorImplementation(Context *context, EngineContext *engine)
+        NewtonProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-            , engine(engine)
-            , population(engine->getPopulation())
+            , core(core)
+            , population(core->getPopulation())
             , updateHandle(0)
             , newtonWorld(nullptr)
             , newtonStaticScene(nullptr)
@@ -86,20 +85,20 @@ namespace Gek
             , gravity(0.0f, -32.174f, 0.0f)
         {
             updateHandle = population->setUpdatePriority(this, 50);
-            population->addObserver((PopulationObserver *)this);
+            population->addObserver((Plugin::PopulationObserver *)this);
         }
 
-        ~NewtonProcessorImplementation(void)
+        ~NewtonProcessor(void)
         {
             onFree();
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((PopulationObserver *)this);
+                population->removeObserver((Plugin::PopulationObserver *)this);
             }
         }
 
-        // NewtonProcessor
+        // Newton::World
         Math::Float3 getGravity(const Math::Float3 &position)
         {
             const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
@@ -112,10 +111,10 @@ namespace Gek
 
             uint32_t surfaceIndex = 0;
             std::size_t fileNameHash = std::hash<String>()(fileName);
-            auto surfaceIterator = surfaceIndexList.find(fileNameHash);
-            if (surfaceIterator != surfaceIndexList.end())
+            auto surfaceSearch = surfaceIndexList.find(fileNameHash);
+            if (surfaceSearch != surfaceIndexList.end())
             {
-                surfaceIndex = (*surfaceIterator).second;
+                surfaceIndex = (*surfaceSearch).second;
             }
             else
             {
@@ -166,14 +165,14 @@ namespace Gek
         // Processor
         static void newtonWorldPreUpdate(const NewtonWorld* const world, void* const userData, float frameTime)
         {
-            std::map<NewtonEntity *, float> updateMap;
-            NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(userData);
+            std::map<Newton::Entity *, float> updateMap;
+            NewtonProcessor *processor = static_cast<NewtonProcessor *>(userData);
             for (auto &entityPair : processor->entityMap)
             {
                 auto updatePair = (*updateMap.insert(std::make_pair(entityPair.second.get(), frameTime)).first);
                 NewtonDispachThreadJob(processor->newtonWorld, [](NewtonWorld* const world, void* const userData, int threadIndex) -> void
                 {
-                    auto updatePair = static_cast<std::pair<NewtonEntity *, float> *>(userData);
+                    auto updatePair = static_cast<std::pair<Newton::Entity *, float> *>(userData);
                     updatePair->first->onPreUpdate(updatePair->second, threadIndex);
                 }, &updatePair);
             }
@@ -183,14 +182,14 @@ namespace Gek
 
         static void newtonWorldPostUpdate(const NewtonWorld* const world, void* const userData, float frameTime)
         {
-            std::map<NewtonEntity *, float> updateMap;
-            NewtonProcessorImplementation *processor = static_cast<NewtonProcessorImplementation *>(userData);
+            std::map<Newton::Entity *, float> updateMap;
+            NewtonProcessor *processor = static_cast<NewtonProcessor *>(userData);
             for (auto &entityPair : processor->entityMap)
             {
                 auto updatePair = (*updateMap.insert(std::make_pair(entityPair.second.get(), frameTime)).first);
                 NewtonDispachThreadJob(processor->newtonWorld, [](NewtonWorld* const world, void* const userData, int threadIndex) -> void
                 {
-                    auto updatePair = static_cast<std::pair<NewtonEntity *, float> *>(userData);
+                    auto updatePair = static_cast<std::pair<Newton::Entity *, float> *>(userData);
                     updatePair->first->onPostUpdate(updatePair->second, threadIndex);
                 }, &updatePair);
             }
@@ -200,7 +199,7 @@ namespace Gek
 
         static void newtonSetTransform(const NewtonBody* const body, const float* const matrixData, int threadHandle)
         {
-            NewtonEntity *newtonEntity = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body));
+            Newton::Entity *newtonEntity = static_cast<Newton::Entity *>(NewtonBodyGetUserData(body));
             newtonEntity->onSetTransform(matrixData, threadHandle);
         }
 
@@ -215,13 +214,13 @@ namespace Gek
             const NewtonBody* const body1 = NewtonJointGetBody1(contactJoint);
 
             NewtonWorld *newtonWorld = NewtonBodyGetWorld(body0);
-            NewtonProcessor *processorBase = static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld));
-            NewtonProcessorImplementation *processor = dynamic_cast<NewtonProcessorImplementation *>(processorBase);
+            Newton::World *processorBase = static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld));
+            NewtonProcessor *processor = dynamic_cast<NewtonProcessor *>(processorBase);
 
-            NewtonEntity *newtonEntity0 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body0));
-            NewtonEntity *newtonEntity1 = static_cast<NewtonEntity *>(NewtonBodyGetUserData(body1));
-            Entity *entity0 = (newtonEntity0 ? newtonEntity0->getEntity() : nullptr);
-            Entity *entity1 = (newtonEntity1 ? newtonEntity1->getEntity() : nullptr);
+            Newton::Entity *newtonEntity0 = static_cast<Newton::Entity *>(NewtonBodyGetUserData(body0));
+            Newton::Entity *newtonEntity1 = static_cast<Newton::Entity *>(NewtonBodyGetUserData(body1));
+            Plugin::Entity *entity0 = (newtonEntity0 ? newtonEntity0->getEntity() : nullptr);
+            Plugin::Entity *entity1 = (newtonEntity1 ? newtonEntity1->getEntity() : nullptr);
 
             NewtonWorldCriticalSectionLock(newtonWorld, threadHandle);
             for (void* newtonContact = NewtonContactJointGetFirstContact(contactJoint); newtonContact; newtonContact = NewtonContactJointGetNextContact(contactJoint, newtonContact))
@@ -235,7 +234,7 @@ namespace Gek
                 const Surface &surface0 = processor->getSurface(surfaceIndex0);
                 const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                processor->ObservableMixin::sendEvent(Event(std::bind(&NewtonObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
+                processor->ObservableMixin::sendEvent(Event(std::bind(&Newton::WorldObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
                 if (surface0.ghost || surface1.ghost)
                 {
                     NewtonContactJointRemoveContact(contactJoint, newtonContact);
@@ -252,13 +251,13 @@ namespace Gek
             NewtonWorldCriticalSectionUnlock(newtonWorld);
         }
 
-        // PopulationObserver
+        // Plugin::PopulationObserver
         void onLoadBegin(void)
         {
             surfaceList.push_back(Surface());
 
             newtonWorld = NewtonCreate();
-            NewtonWorldSetUserData(newtonWorld, static_cast<NewtonProcessor *>(this));
+            NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
             NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);
             NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
@@ -329,16 +328,16 @@ namespace Gek
             GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
         }
 
-        void onEntityCreated(Entity *entity)
+        void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(entity);
 
-            if (entity->hasComponents<TransformComponent>())
+            if (entity->hasComponents<Components::Transform>())
             {
-                auto &transformComponent = entity->getComponent<TransformComponent>();
-                if (entity->hasComponent<StaticBodyComponent>())
+                auto &transformComponent = entity->getComponent<Components::Transform>();
+                if (entity->hasComponent<Components::StaticBody>())
                 {
-                    auto &staticBodyComponent = entity->getComponent<StaticBodyComponent>();
+                    auto &staticBodyComponent = entity->getComponent<Components::StaticBody>();
                     NewtonCollision *newtonCollision = loadCollision(entity, staticBodyComponent.shape);
                     if (newtonCollision != nullptr)
                     {
@@ -348,16 +347,16 @@ namespace Gek
                         NewtonDestroyCollision(clonedCollision);
                     }
                 }
-                else if (entity->hasComponents<MassComponent>())
+                else if (entity->hasComponents<Components::Mass>())
                 {
-                    auto &massComponent = entity->getComponent<MassComponent>();
-                    if (entity->hasComponent<RigidBodyComponent>())
+                    auto &massComponent = entity->getComponent<Components::Mass>();
+                    if (entity->hasComponent<Components::RigidBody>())
                     {
-                        auto &rigidBodyComponent = entity->getComponent<RigidBodyComponent>();
+                        auto &rigidBodyComponent = entity->getComponent<Components::RigidBody>();
                         NewtonCollision *newtonCollision = loadCollision(entity, rigidBodyComponent.shape);
                         if (newtonCollision != nullptr)
                         {
-                            NewtonEntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
+                            Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
                             if (rigidBody)
                             {
                                 entityMap[entity] = rigidBody;
@@ -365,10 +364,10 @@ namespace Gek
                             }
                         }
                     }
-                    else if (entity->hasComponent<PlayerBodyComponent>())
+                    else if (entity->hasComponent<Components::PlayerBody>())
                     {
-                        auto &playerBodyComponent = entity->getComponent<PlayerBodyComponent>();
-                        NewtonEntityPtr playerBody(createPlayerBody(engine, newtonWorld, entity));
+                        auto &playerBodyComponent = entity->getComponent<Components::PlayerBody>();
+                        Newton::EntityPtr playerBody(createPlayerBody(core, newtonWorld, entity));
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
@@ -379,12 +378,14 @@ namespace Gek
             }
         }
 
-        void onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Plugin::Entity *entity)
         {
-            auto entityIterator = entityMap.find(entity);
-            if (entityIterator != entityMap.end())
+            GEK_REQUIRE(entity);
+
+            auto entitySearch = entityMap.find(entity);
+            if (entitySearch != entityMap.end())
             {
-                entityMap.erase(entityIterator);
+                entityMap.erase(entitySearch);
             }
         }
 
@@ -413,18 +414,18 @@ namespace Gek
             return 0;
         }
 
-        NewtonCollision *createCollision(Entity *entity, const String &shape)
+        NewtonCollision *createCollision(Plugin::Entity *entity, const String &shape)
         {
             GEK_REQUIRE(population);
 
             NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<String>()(shape);
-            auto collisionIterator = collisionList.find(collisionHash);
-            if (collisionIterator != collisionList.end())
+            auto collisionSearch = collisionList.find(collisionHash);
+            if (collisionSearch != collisionList.end())
             {
-                if ((*collisionIterator).second)
+                if ((*collisionSearch).second)
                 {
-                    newtonCollision = (*collisionIterator).second;
+                    newtonCollision = (*collisionSearch).second;
                 }
             }
             else
@@ -482,7 +483,7 @@ namespace Gek
             return newtonCollision;
         }
 
-        NewtonCollision *loadCollision(Entity *entity, const String &shape)
+        NewtonCollision *loadCollision(Plugin::Entity *entity, const String &shape)
         {
             NewtonCollision *newtonCollision = nullptr;
             if (shape.at(0) == L'*')
@@ -492,12 +493,12 @@ namespace Gek
             else
             {
                 std::size_t shapeHash = std::hash<String>()(shape);
-                auto collisionIterator = collisionList.find(shapeHash);
-                if (collisionIterator != collisionList.end())
+                auto collisionSearch = collisionList.find(shapeHash);
+                if (collisionSearch != collisionList.end())
                 {
-                    if ((*collisionIterator).second)
+                    if ((*collisionSearch).second)
                     {
-                        newtonCollision = (*collisionIterator).second;
+                        newtonCollision = (*collisionSearch).second;
                     }
                 }
                 else
@@ -558,5 +559,5 @@ namespace Gek
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(NewtonProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(NewtonProcessor)
 }; // namespace Gek

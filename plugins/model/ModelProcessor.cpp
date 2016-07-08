@@ -7,16 +7,16 @@
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\System\VideoSystem.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\System\VideoDevice.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\Processor.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
-#include "GEK\Engine\Model.h"
 #include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
@@ -29,11 +29,51 @@
 
 namespace Gek
 {
-    class ModelProcessorImplementation
-        : public ContextRegistration<ModelProcessorImplementation, EngineContext *>
-        , public PopulationObserver
-        , public RenderObserver
-        , public Processor
+    namespace Components
+    {
+        struct Model
+        {
+            String value;
+            String skin;
+
+            Model(void)
+            {
+            }
+
+            void save(Plugin::Population::ComponentDefinition &componentData) const
+            {
+                saveParameter(componentData, nullptr, value);
+                saveParameter(componentData, L"skin", skin);
+            }
+
+            void load(const Plugin::Population::ComponentDefinition &componentData)
+            {
+                value = loadParameter(componentData, nullptr, String());
+                skin = loadParameter(componentData, L"skin", String());
+            }
+        };
+    }; // namespace Components
+
+    GEK_CONTEXT_USER(Model)
+        , public Plugin::ComponentMixin<Components::Model>
+    {
+    public:
+        Model(Context *context)
+            : ContextRegistration(context)
+        {
+        }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"model";
+        }
+    };
+
+    GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
+        , public Plugin::PopulationObserver
+        , public Plugin::RendererObserver
+        , public Plugin::Processor
     {
     public:
         struct Vertex
@@ -103,7 +143,7 @@ namespace Gek
         };
 
         __declspec(align(16))
-        struct Instance
+            struct Instance
         {
             Math::Float4x4 matrix;
             Math::Color color;
@@ -119,11 +159,11 @@ namespace Gek
         };
 
     private:
-        Population *population;
-        PluginResources *resources;
-        Render *render;
+        Plugin::Population *population;
+        Plugin::Resources *resources;
+        Plugin::Renderer *renderer;
 
-        PluginHandle plugin;
+        VisualHandle visual;
         ResourceHandle constantBuffer;
 
         std::future<void> loadModelRunning;
@@ -131,33 +171,33 @@ namespace Gek
         concurrency::concurrent_unordered_map<std::size_t, bool> loadModelSet;
 
         std::unordered_map<std::size_t, Model> modelMap;
-        typedef std::unordered_map<Entity *, Data> EntityDataMap;
+        using EntityDataMap = std::unordered_map<Plugin::Entity *, Data>;
         EntityDataMap entityDataMap;
 
-        typedef concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>> InstanceList;
-        typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
-        typedef concurrency::concurrent_unordered_map<Model *, MaterialList> VisibleList;
+        using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
+        using MaterialList = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
+        using VisibleList = concurrency::concurrent_unordered_map<Model *, MaterialList>;
         VisibleList visibleList;
 
     public:
-        ModelProcessorImplementation(Context *context, EngineContext *engine)
+        ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-            , population(engine->getPopulation())
-            , resources(engine->getResources())
-            , render(engine->getRender())
+            , population(core->getPopulation())
+            , resources(core->getResources())
+            , renderer(core->getRenderer())
         {
-            population->addObserver((PopulationObserver *)this);
-            render->addObserver((RenderObserver *)this);
+            population->addObserver((Plugin::PopulationObserver *)this);
+            renderer->addObserver((Plugin::RendererObserver *)this);
 
-            plugin = resources->loadPlugin(L"model");
+            visual = resources->loadPlugin(L"model");
 
-            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
         }
 
-        ~ModelProcessorImplementation(void)
+        ~ModelProcessor(void)
         {
-            render->removeObserver((RenderObserver *)this);
-            population->removeObserver((PopulationObserver *)this);
+            renderer->removeObserver((Plugin::RendererObserver *)this);
+            population->removeObserver((Plugin::PopulationObserver *)this);
         }
 
         void loadBoundingBox(Model &model, const String &name)
@@ -230,14 +270,14 @@ namespace Gek
                 uint32_t vertexCount = *((uint32_t *)rawFileData);
                 rawFileData += sizeof(uint32_t);
 
-                material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, rawFileData);
+                material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, false, rawFileData);
                 rawFileData += (sizeof(Vertex) * vertexCount);
 
                 uint32_t indexCount = *((uint32_t *)rawFileData);
                 rawFileData += sizeof(uint32_t);
 
                 material.indexCount = indexCount;
-                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, rawFileData);
+                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, false, rawFileData);
                 rawFileData += (sizeof(uint16_t) * indexCount);
             }
 
@@ -250,7 +290,7 @@ namespace Gek
             if (loadModelSet.count(hash) == 0)
             {
                 loadModelSet.insert(std::make_pair(hash, true));
-                loadModelQueue.push(std::bind(&ModelProcessorImplementation::loadModelWorker, this, std::ref(model)));
+                loadModelQueue.push(std::bind(&ModelProcessor::loadModelWorker, this, std::ref(model)));
                 if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
                 {
                     loadModelRunning = std::async(std::launch::async, [&](void) -> void
@@ -265,7 +305,7 @@ namespace Gek
             }
         }
 
-        // PopulationObserver
+        // Plugin::PopulationObserver
         void onLoadSucceeded(void)
         {
         }
@@ -288,14 +328,14 @@ namespace Gek
             entityDataMap.clear();
         }
 
-        void onEntityCreated(Entity *entity)
+        void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(resources);
             GEK_REQUIRE(entity);
 
-            if (entity->hasComponents<ModelComponent, TransformComponent>())
+            if (entity->hasComponents<Components::Model, Components::Transform>())
             {
-                auto &modelComponent = entity->getComponent<ModelComponent>();
+                auto &modelComponent = entity->getComponent<Components::Model>();
                 std::size_t hash = std::hash<String>()(modelComponent.value);
                 auto pair = modelMap.insert(std::make_pair(hash, Model()));
                 if (pair.second)
@@ -310,9 +350,9 @@ namespace Gek
                 }
 
                 std::reference_wrapper<const Math::Color> color = Math::Color::White;
-                if (entity->hasComponent<ColorComponent>())
+                if (entity->hasComponent<Components::Color>())
                 {
-                    color = std::cref(entity->getComponent<ColorComponent>().value);
+                    color = std::cref(entity->getComponent<Components::Color>().value);
                 }
 
                 Data data(pair.first->second, skinMaterial, color);
@@ -320,45 +360,45 @@ namespace Gek
             }
         }
 
-        void onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Plugin::Entity *entity)
         {
             GEK_REQUIRE(entity);
 
-            auto entityData = entityDataMap.find(entity);
-            if (entityData != entityDataMap.end())
+            auto entitySearch = entityDataMap.find(entity);
+            if (entitySearch != entityDataMap.end())
             {
-                entityDataMap.erase(entityData);
+                entityDataMap.erase(entitySearch);
             }
         }
 
-        // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, const Material &material, const Instance *instanceList, ResourceHandle constantBuffer)
+        // Plugin::RendererObserver
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, ResourceHandle constantBuffer)
         {
             Instance *instanceData = nullptr;
             resources->mapBuffer(constantBuffer, (void **)&instanceData);
             memcpy(instanceData, instanceList, sizeof(Instance));
             resources->unmapBuffer(constantBuffer);
 
-            resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-            resources->setVertexBuffer(renderContext, 0, material.vertexBuffer, 0);
-            resources->setIndexBuffer(renderContext, material.indexBuffer, 0);
-            renderContext->drawIndexedPrimitive(material.indexCount, 0, 0);
+            resources->setConstantBuffer(deviceContext->vertexPipeline(), constantBuffer, 4);
+            resources->setVertexBuffer(deviceContext, 0, material.vertexBuffer, 0);
+            resources->setIndexBuffer(deviceContext, material.indexBuffer, 0);
+            deviceContext->drawIndexedPrimitive(material.indexCount, 0, 0);
         }
 
-        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_TRACE_SCOPE();
-            GEK_REQUIRE(render);
+            GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
             concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
             {
-                Entity *entity = data.first;
+                Plugin::Entity *entity = data.first;
                 Model &model = data.second.model;
 
-                const auto &transformComponent = entity->getComponent<TransformComponent>();
+                const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
 
                 Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
@@ -387,7 +427,7 @@ namespace Gek
                     {
                         concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
                         {
-                            render->queueDrawCall(plugin, (material.skin ? materialList.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer));
+                            renderer->queueDrawCall(visual, (material.skin ? materialList.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer));
                         });
                     });
                 });
@@ -395,5 +435,6 @@ namespace Gek
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(ModelProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(Model)
+    GEK_REGISTER_CONTEXT_USER(ModelProcessor)
 }; // namespace Gek

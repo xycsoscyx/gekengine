@@ -36,13 +36,13 @@
     <ClInclude Include="GEK\Newton\PlayerBody.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Newton\NewtonEntity.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Newton\NewtonProcessor.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Newton\RigidBody.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Newton\World.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Newton\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

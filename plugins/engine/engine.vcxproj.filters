@@ -5,19 +5,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Render.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Shader.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Plugin.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Resources.cpp">
@@ -26,13 +17,19 @@
     <ClCompile Include="Filter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Renderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Core.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Visual.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
     <ClInclude Include="GEK\Engine\ComponentMixin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Engine\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Engine\Entity.h">
@@ -41,22 +38,13 @@
     <ClInclude Include="GEK\Engine\Material.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Plugin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Engine\Population.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Engine\Processor.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Render.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Engine\Shader.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Engine\Action.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Engine\Component.h">
@@ -66,6 +54,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Engine\Filter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Application.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Visual.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Core.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Engine\Renderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

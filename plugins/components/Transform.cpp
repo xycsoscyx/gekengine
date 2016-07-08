@@ -5,40 +5,42 @@
 
 namespace Gek
 {
-    TransformComponent::TransformComponent(void)
+    namespace Components
     {
-    }
+        Transform::Transform(void)
+        {
+        }
 
-    void TransformComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, L"position", position);
-        saveParameter(componentData, L"rotation", rotation);
-        saveParameter(componentData, L"scale", scale);
-    }
+        void Transform::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, L"position", position);
+            saveParameter(componentData, L"rotation", rotation);
+            saveParameter(componentData, L"scale", scale);
+        }
 
-    void TransformComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        position = loadParameter(componentData, L"position", Math::Float3::Zero);
-        rotation = loadParameter(componentData, L"rotation", Math::Quaternion::Identity);
-        scale = loadParameter(componentData, L"scale", Math::Float3::One);
-    }
+        void Transform::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            position = loadParameter(componentData, L"position", Math::Float3::Zero);
+            rotation = loadParameter(componentData, L"rotation", Math::Quaternion::Identity);
+            scale = loadParameter(componentData, L"scale", Math::Float3::One);
+        }
+    }; // namespace Components
 
-    class TransformImplementation
-        : public ContextRegistration<TransformImplementation>
-        , public ComponentMixin<TransformComponent>
+    GEK_CONTEXT_USER(Transform)
+        , public Plugin::ComponentMixin<Components::Transform>
     {
     public:
-        TransformImplementation(Context *context)
+        Transform(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"transform";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(TransformImplementation);
+    GEK_REGISTER_CONTEXT_USER(Transform);
 }; // namespace Gek

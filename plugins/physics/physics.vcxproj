@@ -172,12 +172,12 @@
     <ClCompile Include="StaticBody.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="GEK\Newton\Entity.h" />
     <ClInclude Include="GEK\Newton\Mass.h" />
-    <ClInclude Include="GEK\Newton\NewtonEntity.h" />
-    <ClInclude Include="GEK\Newton\NewtonProcessor.h" />
     <ClInclude Include="GEK\Newton\PlayerBody.h" />
     <ClInclude Include="GEK\Newton\RigidBody.h" />
     <ClInclude Include="GEK\Newton\StaticBody.h" />
+    <ClInclude Include="GEK\Newton\World.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

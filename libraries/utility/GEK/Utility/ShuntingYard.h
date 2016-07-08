@@ -59,7 +59,7 @@ namespace Gek
             Token(float value);
         };
 
-        typedef std::vector<Token> TokenList;
+        using TokenList = std::vector<Token>;
 
     private:
         template <typename DATA>

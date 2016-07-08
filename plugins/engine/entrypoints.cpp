@@ -2,23 +2,26 @@
 
 namespace Gek
 {
-    GEK_DECLARE_CONTEXT_USER(PopulationImplementation);
-    GEK_DECLARE_CONTEXT_USER(RenderImplementation);
-    GEK_DECLARE_CONTEXT_USER(ResourcesImplementation);
-    GEK_DECLARE_CONTEXT_USER(PluginImplementation);
-    GEK_DECLARE_CONTEXT_USER(MaterialImplementation);
-    GEK_DECLARE_CONTEXT_USER(ShaderImplementation);
-    GEK_DECLARE_CONTEXT_USER(FilterImplementation);
-    GEK_DECLARE_CONTEXT_USER(EngineImplementation);
+    namespace Implementation
+    {
+        GEK_DECLARE_CONTEXT_USER(Population);
+        GEK_DECLARE_CONTEXT_USER(Renderer);
+        GEK_DECLARE_CONTEXT_USER(Resources);
+        GEK_DECLARE_CONTEXT_USER(Visual);
+        GEK_DECLARE_CONTEXT_USER(Material);
+        GEK_DECLARE_CONTEXT_USER(Shader);
+        GEK_DECLARE_CONTEXT_USER(Filter);
+        GEK_DECLARE_CONTEXT_USER(Core);
+    };
 
     GEK_CONTEXT_BEGIN(Engine);
-        GEK_CONTEXT_ADD_CLASS(PopulationSystem, PopulationImplementation);
-        GEK_CONTEXT_ADD_CLASS(RenderSystem, RenderImplementation);
-        GEK_CONTEXT_ADD_CLASS(ResourcesSystem, ResourcesImplementation);
-        GEK_CONTEXT_ADD_CLASS(PluginSystem, PluginImplementation);
-        GEK_CONTEXT_ADD_CLASS(MaterialSystem, MaterialImplementation);
-        GEK_CONTEXT_ADD_CLASS(ShaderSystem, ShaderImplementation);
-        GEK_CONTEXT_ADD_CLASS(FilterSystem, FilterImplementation);
-        GEK_CONTEXT_ADD_CLASS(EngineSystem, EngineImplementation);
+        GEK_CONTEXT_ADD_CLASS(Engine::Population, Implementation::Population);
+        GEK_CONTEXT_ADD_CLASS(Engine::Renderer, Implementation::Renderer);
+        GEK_CONTEXT_ADD_CLASS(Engine::Resources, Implementation::Resources);
+        GEK_CONTEXT_ADD_CLASS(Engine::Visual, Implementation::Visual);
+        GEK_CONTEXT_ADD_CLASS(Engine::Material, Implementation::Material);
+        GEK_CONTEXT_ADD_CLASS(Engine::Shader, Implementation::Shader);
+        GEK_CONTEXT_ADD_CLASS(Engine::Filter, Implementation::Filter);
+        GEK_CONTEXT_ADD_CLASS(Engine::Core, Implementation::Core);
     GEK_CONTEXT_END()
 }; // namespace Gek

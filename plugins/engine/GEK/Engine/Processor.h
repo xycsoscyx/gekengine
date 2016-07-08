@@ -4,8 +4,11 @@
 
 namespace Gek
 {
-    GEK_INTERFACE(Processor)
+    namespace Plugin
     {
-        virtual ~Processor(void) = default;
-    };
+        GEK_INTERFACE(Processor)
+        {
+            virtual ~Processor(void) = default;
+        };
+    }; // namespace Plugin
 }; // namespace Gek

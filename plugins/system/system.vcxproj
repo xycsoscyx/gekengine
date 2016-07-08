@@ -150,10 +150,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AudioSystem.cpp" />
+    <ClCompile Include="AudioDevice.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="InputSystem.cpp" />
-    <ClCompile Include="VideoSystem.cpp" />
+    <ClCompile Include="VideoDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj">
@@ -173,9 +173,9 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\System\AudioSystem.h" />
+    <ClInclude Include="GEK\System\AudioDevice.h" />
     <ClInclude Include="GEK\System\InputSystem.h" />
-    <ClInclude Include="GEK\System\VideoSystem.h" />
+    <ClInclude Include="GEK\System\VideoDevice.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

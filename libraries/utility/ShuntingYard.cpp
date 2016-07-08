@@ -333,23 +333,23 @@ namespace Gek
 
     void ShuntingYard::parseSubTokens(TokenList &infixTokenList, const String &token)
     {
-        for (std::wsregex_iterator current(token.begin(), token.end(), SearchWord), end; current != end; ++current)
+        for (std::wsregex_iterator tokenSearch(token.begin(), token.end(), SearchWord), end; tokenSearch != end; ++tokenSearch)
         {
-            auto match = *current;
+            auto match = *tokenSearch;
             if (match[1].matched) // variable
             {
                 String value(match.str(1));
-                auto variable = variableMap.find(value);
-                if (variable != variableMap.end())
+                auto variableSearch = variableMap.find(value);
+                if (variableSearch != variableMap.end())
                 {
-                    insertToken(infixTokenList, Token((*variable).second));
+                    insertToken(infixTokenList, Token((*variableSearch).second));
                     continue;
                 }
 
-                auto function = functionsMap.find(value);
-                if (function != functionsMap.end())
+                auto functionSearch = functionsMap.find(value);
+                if (functionSearch != functionsMap.end())
                 {
-                    insertToken(infixTokenList, Token(TokenType::Function, (*function).first));
+                    insertToken(infixTokenList, Token(TokenType::Function, (*functionSearch).first));
                     continue;
                 }
 
@@ -555,10 +555,10 @@ namespace Gek
             case TokenType::UnaryOperation:
                 if (true)
                 {
-                    auto &operationIterater = operationsMap.find(token.string);
-                    GEK_CHECK_CONDITION(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
+                    auto &operationSearch = operationsMap.find(token.string);
+                    GEK_CHECK_CONDITION(operationSearch == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
 
-                    auto &operation = (*operationIterater).second;
+                    auto &operation = (*operationSearch).second;
                     GEK_CHECK_CONDITION(!operation.unaryFunction, InvalidOperator, "No unary function found for operation: %v", token.string);
 
                     GEK_CHECK_CONDITION(stack.empty(), InvalidOperand, "No values found for unary operator: %v", token.string);
@@ -572,10 +572,10 @@ namespace Gek
             case TokenType::BinaryOperation:
                 if (true)
                 {
-                    auto &operationIterater = operationsMap.find(token.string);
-                    GEK_CHECK_CONDITION(operationIterater == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
+                    auto &operationSearch = operationsMap.find(token.string);
+                    GEK_CHECK_CONDITION(operationSearch == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
 
-                    auto &operation = (*operationIterater).second;
+                    auto &operation = (*operationSearch).second;
                     GEK_CHECK_CONDITION(!operation.binaryFunction, InvalidOperator, "No binary function found for operation: %v", token.string);
 
 
@@ -594,10 +594,10 @@ namespace Gek
             case TokenType::Function:
                 if (true)
                 {
-                    auto &functionIterator = functionsMap.find(token.string);
-                    GEK_CHECK_CONDITION(functionIterator == functionsMap.end(), InvalidFunction, "Unable to find operation: %v", token.string);
+                    auto &functionSearch = functionsMap.find(token.string);
+                    GEK_CHECK_CONDITION(functionSearch == functionsMap.end(), InvalidFunction, "Unable to find operation: %v", token.string);
 
-                    auto &function = (*functionIterator).second;
+                    auto &function = (*functionSearch).second;
                     GEK_CHECK_CONDITION(function.parameterCount != token.parameterCount, InvalidFunctionParameters, "Mismatched function parameters found");
                     GEK_CHECK_CONDITION(stack.size() < function.parameterCount, NotEnoughFunctionParameters, "Not enough function parameters found");
 

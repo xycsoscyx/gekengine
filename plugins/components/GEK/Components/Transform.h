@@ -7,29 +7,32 @@
 
 namespace Gek
 {
-    struct TransformComponent
+    namespace Components
     {
-        LPVOID operator new(size_t size)
+        struct Transform
         {
-            return _mm_malloc(size * sizeof(TransformComponent), 16);
-        }
+            LPVOID operator new(size_t size)
+            {
+                return _mm_malloc(size * sizeof(Transform), 16);
+            }
 
-        void operator delete(LPVOID data)
-        {
-            _mm_free(data);
-        }
+            void operator delete(LPVOID data)
+            {
+                _mm_free(data);
+            }
 
-        Math::Float3 position;
-        Math::Quaternion rotation;
-        Math::Float3 scale;
+            Math::Float3 position;
+            Math::Quaternion rotation;
+            Math::Float3 scale;
 
-        TransformComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
+            Transform(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
 
-        inline Math::Float4x4 getMatrix(void) const
-        {
-            return rotation.getMatrix(position);
-        }
-    };
+            inline Math::Float4x4 getMatrix(void) const
+            {
+                return rotation.getMatrix(position);
+            }
+        };
+    }; // namespace Components
 }; // namespace Gek

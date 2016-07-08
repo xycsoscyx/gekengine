@@ -3,14 +3,13 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
-#include "GEK\Newton\NewtonEntity.h"
-#include "GEK\Newton\PlayerBody.h"
+#include "GEK\Newton\World.h"
+#include "GEK\Newton\Entity.h"
 #include "GEK\Newton\Mass.h"
 #include "GEK\Newton\PlayerBody.h"
-#include "GEK\Newton\NewtonProcessor.h"
 #include <Newton.h>
 #include <algorithm>
 #include <memory>
@@ -62,7 +61,7 @@ namespace Gek
         virtual void onExit(PlayerNewtonBody *player) { };
 
         virtual StatePtr onUpdate(PlayerNewtonBody *player, float frameTime) { return nullptr; };
-        virtual StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param) { return nullptr; };
+        virtual StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state) { return nullptr; };
     };
 
     class IdleState
@@ -70,7 +69,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param);
+        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state);
     };
 
     class CrouchingState
@@ -78,7 +77,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param);
+        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state);
     };
 
     class WalkingState
@@ -86,7 +85,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param);
+        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state);
     };
 
     class JumpingState
@@ -117,15 +116,15 @@ namespace Gek
     };
 
     class PlayerNewtonBody
-        : public EngineObserver
-        , public NewtonEntity
+        : public Plugin::CoreObserver
+        , public Newton::Entity
     {
     public:
-        EngineContext *engine;
-        NewtonProcessor *newtonProcessor;
+        Plugin::Core *core;
+        Newton::World *world;
         NewtonWorld *newtonWorld;
 
-        Entity *entity;
+        Plugin::Entity *entity;
         float halfHeight;
         float maximumSlope;
         float restrainingDistance;
@@ -155,11 +154,11 @@ namespace Gek
         bool falling;
 
     public:
-        PlayerNewtonBody(EngineContext *engine,
+        PlayerNewtonBody(Plugin::Core *core,
             NewtonWorld *newtonWorld,
-            Entity *entity)
-            : engine(engine)
-            , newtonProcessor(static_cast<NewtonProcessor *>(NewtonWorldGetUserData(newtonWorld)))
+            Plugin::Entity *entity)
+            : core(core)
+            , world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
@@ -180,9 +179,9 @@ namespace Gek
             , touchingSurface(false)
             , falling(true)
         {
-            auto &mass = entity->getComponent<MassComponent>();
-            auto &transform = entity->getComponent<TransformComponent>();
-            auto &player = entity->getComponent<PlayerBodyComponent>();
+            auto &mass = entity->getComponent<Components::Mass>();
+            auto &transform = entity->getComponent<Components::Transform>();
+            auto &player = entity->getComponent<Components::PlayerBody>();
 
             halfHeight = player.height * 0.5f;
 
@@ -225,7 +224,7 @@ namespace Gek
             Math::Float4x4 matrix(transform.getMatrix());
             matrix.translation -= (matrix.ny * player.height);
             newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, matrix.data);
-            NewtonBodySetUserData(newtonBody, dynamic_cast<NewtonEntity *>(this));
+            NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
 
             // players must have weight, otherwise they are infinitely strong when they collide
             NewtonCollision* const bodyShape = NewtonBodyGetCollision(newtonBody);
@@ -261,38 +260,38 @@ namespace Gek
             NewtonDestroyCollision(newtonCastingShape);
             NewtonDestroyCollision(newtonSupportShape);
             NewtonDestroyCollision(newtonUpperBodyShape);
-            engine->removeObserver((EngineObserver *)this);
+            core->removeObserver((Plugin::CoreObserver *)this);
         }
 
-        // EngineObserver
-        void onAction(const wchar_t *name, const ActionParam &param)
+        // Plugin::CoreObserver
+        void onAction(const wchar_t *name, const Plugin::ActionState &state)
         {
             if (_wcsicmp(name, L"turn") == 0)
             {
-                headingAngle += (param.value * 0.01f);
+                headingAngle += (state.value * 0.01f);
             }
             else if (_wcsicmp(name, L"move_forward") == 0)
             {
-                moveForward = param.state;
+                moveForward = state.state;
             }
             else if (_wcsicmp(name, L"move_backward") == 0)
             {
-                moveBackward = param.state;
+                moveBackward = state.state;
             }
             else if (_wcsicmp(name, L"strafe_left") == 0)
             {
-                strafeLeft = param.state;
+                strafeLeft = state.state;
             }
             else if (_wcsicmp(name, L"strafe_right") == 0)
             {
-                strafeRight = param.state;
+                strafeRight = state.state;
             }
             else if (_wcsicmp(name, L"crouch") == 0)
             {
-                crouching = param.state;
+                crouching = state.state;
             }
 
-            StatePtr nextState(currentState->onAction(this, name, param));
+            StatePtr nextState(currentState->onAction(this, name, state));
             if (nextState)
             {
                 currentState->onExit(this);
@@ -301,8 +300,8 @@ namespace Gek
             }
         }
 
-        // NewtonEntity
-        Entity * const getEntity(void) const
+        // Newton::Entity
+        Plugin::Entity * const getEntity(void) const
         {
             return entity;
         }
@@ -338,13 +337,13 @@ namespace Gek
 
         void onPostUpdate(float frameTime, int threadHandle)
         {
-            auto &player = entity->getComponent<PlayerBodyComponent>();
+            auto &player = entity->getComponent<Components::PlayerBody>();
 
             // get the body motion state 
             Math::Float4x4 matrix;
             NewtonBodyGetMatrix(newtonBody, matrix.data);
 
-            Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
+            Math::Float3 gravity(world->getGravity(matrix.translation));
 
             Math::Float3 omega;
             NewtonBodyGetOmega(newtonBody, omega.data);
@@ -513,7 +512,7 @@ namespace Gek
             NewtonBodySetVelocity(newtonBody, velocity.data);
             NewtonBodySetMatrix(newtonBody, matrix.data);
 
-            auto &transform = entity->getComponent<TransformComponent>();
+            auto &transform = entity->getComponent<Components::Transform>();
             transform.position = (matrix.translation + (matrix.ny * player.height));
             transform.rotation = matrix.getQuaternion();
         }
@@ -578,7 +577,7 @@ namespace Gek
 
         void setDesiredVelocity(const Math::Float4x4 &matrix, float frameTime)
         {
-            Math::Float3 gravity(newtonProcessor->getGravity(matrix.translation));
+            Math::Float3 gravity(world->getGravity(matrix.translation));
 
             Math::Float3 desiredVelocity;
             NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
@@ -672,19 +671,19 @@ namespace Gek
         }
     };
 
-    NewtonEntityPtr createPlayerBody(EngineContext *engine, NewtonWorld *newtonWorld, Entity *entity)
+    Newton::EntityPtr createPlayerBody(Plugin::Core *core, NewtonWorld *newtonWorld, Plugin::Entity *entity)
     {
         std::shared_ptr<PlayerNewtonBody> player;
         try
         {
-            player = std::make_shared<PlayerNewtonBody>(engine, newtonWorld, entity);
+            player = std::make_shared<PlayerNewtonBody>(core, newtonWorld, entity);
         }
         catch (const std::bad_alloc &badAllocation)
         {
             GEK_THROW_EXCEPTION(Trace::Exception, "Unable to allocate new player object: %v", badAllocation.what());
         };
 
-        engine->addObserver((EngineObserver *)player.get());
+        core->addObserver((Plugin::CoreObserver *)player.get());
         return player;
     }
 
@@ -702,29 +701,29 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr IdleState::onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param)
+    StatePtr IdleState::onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state)
     {
-        if (_wcsicmp(name, L"crouch") == 0 && param.state)
+        if (_wcsicmp(name, L"crouch") == 0 && state.state)
         {
             return std::make_shared<CrouchingState>();
         }
-        else if (_wcsicmp(name, L"move_forward") == 0 && param.state)
+        else if (_wcsicmp(name, L"move_forward") == 0 && state.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(name, L"move_backward") == 0 && param.state)
+        else if (_wcsicmp(name, L"move_backward") == 0 && state.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(name, L"strafe_left") == 0 && param.state)
+        else if (_wcsicmp(name, L"strafe_left") == 0 && state.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(name, L"strafe_right") == 0 && param.state)
+        else if (_wcsicmp(name, L"strafe_right") == 0 && state.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(name, L"jump") == 0 && param.state)
+        else if (_wcsicmp(name, L"jump") == 0 && state.state)
         {
             return std::make_shared<JumpingState>();
         }
@@ -753,7 +752,7 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param)
+    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state)
     {
         return nullptr;
     }
@@ -775,9 +774,9 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr WalkingState::onAction(PlayerNewtonBody *player, const wchar_t *name, const ActionParam &param)
+    StatePtr WalkingState::onAction(PlayerNewtonBody *player, const wchar_t *name, const Plugin::ActionState &state)
     {
-        if (_wcsicmp(name, L"jump") == 0 && param.state)
+        if (_wcsicmp(name, L"jump") == 0 && state.state)
         {
             return std::make_shared<JumpingState>();
         }
@@ -868,42 +867,44 @@ namespace Gek
         return nullptr;
     }
 
-    PlayerBodyComponent::PlayerBodyComponent(void)
+    namespace Components
     {
-    }
+        PlayerBody::PlayerBody(void)
+        {
+        }
 
-    void PlayerBodyComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, L"height", height);
-        saveParameter(componentData, L"outer_radius", outerRadius);
-        saveParameter(componentData, L"inner_radius", innerRadius);
-        saveParameter(componentData, L"stair_step", stairStep);
-    }
+        void PlayerBody::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, L"height", height);
+            saveParameter(componentData, L"outer_radius", outerRadius);
+            saveParameter(componentData, L"inner_radius", innerRadius);
+            saveParameter(componentData, L"stair_step", stairStep);
+        }
 
-    void PlayerBodyComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        height = loadParameter(componentData, L"height", 6.0f);
-        outerRadius = loadParameter(componentData, L"outer_radius", 1.5f);
-        innerRadius = loadParameter(componentData, L"inner_radius", 0.5f);
-        stairStep = loadParameter(componentData, L"stair_step", 1.5f);
-    }
+        void PlayerBody::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            height = loadParameter(componentData, L"height", 6.0f);
+            outerRadius = loadParameter(componentData, L"outer_radius", 1.5f);
+            innerRadius = loadParameter(componentData, L"inner_radius", 0.5f);
+            stairStep = loadParameter(componentData, L"stair_step", 1.5f);
+        }
+    }; // namespace Components
 
-    class PlayerBodyImplementation
-        : public ContextRegistration<PlayerBodyImplementation>
-        , public ComponentMixin<PlayerBodyComponent>
+    GEK_CONTEXT_USER(PlayerBody)
+        , public Plugin::ComponentMixin<Components::PlayerBody>
     {
     public:
-        PlayerBodyImplementation(Context *context)
+        PlayerBody(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"player_body";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(PlayerBodyImplementation)
+    GEK_REGISTER_CONTEXT_USER(PlayerBody)
 }; // namespace Gek

@@ -8,12 +8,15 @@
 
 namespace Gek
 {
-    GEK_INTERFACE(Component)
+    namespace Plugin
     {
-        virtual const wchar_t * const getName(void) const = 0;
-        virtual std::type_index getIdentifier(void) const = 0;
+        GEK_INTERFACE(Component)
+        {
+            virtual const wchar_t * const getName(void) const = 0;
+            virtual std::type_index getIdentifier(void) const = 0;
 
-        virtual void *createData(const Population::ComponentDefinition &componentData) = 0;
-        virtual void destroyData(void *data) = 0;
-    };
+            virtual void *create(const Plugin::Population::ComponentDefinition &componentData) = 0;
+            virtual void destroy(void *data) = 0;
+        };
+    }; // namespace Plugin
 }; // namespace Gek

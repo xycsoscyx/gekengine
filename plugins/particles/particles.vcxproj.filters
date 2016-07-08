@@ -2,9 +2,6 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Particles.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ParticlesProcessor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -19,10 +16,5 @@
     <Filter Include="Header Files">
       <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="GEK\Engine\Particles.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

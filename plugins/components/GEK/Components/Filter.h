@@ -4,12 +4,15 @@
 
 namespace Gek
 {
-    struct FilterComponent
+    namespace Components
     {
-        std::vector<String> list;
+        struct Filter
+        {
+            std::vector<String> list;
 
-        FilterComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            Filter(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
+    }; // namespace Components
 }; // namespace Gek

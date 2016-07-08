@@ -2,13 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="AudioSystem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="InputSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VideoSystem.cpp">
+    <ClCompile Include="AudioDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VideoDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -27,10 +27,10 @@
     <ClInclude Include="GEK\System\InputSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\VideoSystem.h">
+    <ClInclude Include="GEK\System\AudioDevice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\AudioSystem.h">
+    <ClInclude Include="GEK\System\VideoDevice.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -627,8 +627,8 @@ namespace Gek
         }
     };
 
-    typedef BaseString<char> StringUTF8;
-    typedef BaseString<wchar_t> String;
+    using StringUTF8 = BaseString<char>;
+    using String = BaseString<wchar_t>;
 }; // namespace Gek
 
 namespace std

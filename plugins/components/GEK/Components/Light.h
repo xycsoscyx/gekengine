@@ -5,33 +5,36 @@
 
 namespace Gek
 {
-    struct PointLightComponent
+    namespace Components
     {
-        float range;
-        float radius;
+        struct PointLight
+        {
+            float range;
+            float radius;
 
-        PointLightComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            PointLight(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
 
-    struct SpotLightComponent
-    {
-        float range;
-        float radius;
-        float innerAngle;
-        float outerAngle;
-        float falloff;
+        struct SpotLight
+        {
+            float range;
+            float radius;
+            float innerAngle;
+            float outerAngle;
+            float falloff;
 
-        SpotLightComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            SpotLight(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
 
-    struct DirectionalLightComponent
-    {
-        DirectionalLightComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+        struct DirectionalLight
+        {
+            DirectionalLight(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
+    }; // namespace Components
 }; // namespace Gek

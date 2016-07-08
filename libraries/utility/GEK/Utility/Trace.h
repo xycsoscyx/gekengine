@@ -41,7 +41,7 @@ namespace Gek
             }
         };
 
-        typedef std::unordered_map<StringUTF8, StringUTF8> ParameterMap;
+        using ParameterMap = std::unordered_map<StringUTF8, StringUTF8>;
 
         void inline getParameters(ParameterMap &parameters)
         {

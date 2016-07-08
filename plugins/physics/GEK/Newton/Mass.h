@@ -5,12 +5,15 @@
 
 namespace Gek
 {
-    struct MassComponent
+    namespace Components
     {
-        float value;
+        struct Mass
+        {
+            float value;
 
-        MassComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            Mass(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
+    }; // namespace Components
 }; // namespace Gek

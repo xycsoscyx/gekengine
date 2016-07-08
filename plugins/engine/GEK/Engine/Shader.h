@@ -8,42 +8,42 @@
 
 namespace Gek
 {
-    GEK_PREDECLARE(RenderPipeline);
-    GEK_PREDECLARE(RenderContext);
-
-    GEK_INTERFACE(Shader)
+    namespace Engine
     {
-        GEK_PREDECLARE(Block);
-
-        GEK_INTERFACE(Pass)
+        GEK_INTERFACE(Shader)
         {
-            enum class Mode : uint8_t
+            GEK_PREDECLARE(Block);
+
+            GEK_INTERFACE(Pass)
             {
-                Forward = 0,
-                Deferred,
-                Compute,
+                enum class Mode : uint8_t
+                {
+                    Forward = 0,
+                    Deferred,
+                    Compute,
+                };
+
+                using Iterator = std::unique_ptr<Pass>;
+
+                virtual Iterator next(void) = 0;
+                virtual Mode prepare(void) = 0;
             };
 
-            typedef std::unique_ptr<Pass> Iterator;
+            GEK_INTERFACE(Block)
+            {
+                using Iterator = std::unique_ptr<Block>;
 
-            virtual Iterator next(void) = 0;
-            virtual Mode prepare(void) = 0;
+                virtual Iterator next(void) = 0;
+                virtual Pass::Iterator begin(void) = 0;
+                virtual bool prepare(void) = 0;
+            };
+
+            virtual uint32_t getPriority(void) = 0;
+
+            //virtual ResourceListPtr loadResourceList(const wchar_t *materialName, const ResourcePassMap &resourcePassMap) = 0;
+            //virtual bool setResourceList(Video::Device::Context *deviceContext, Block *block, Pass *pass, ResourceList * const resourceList) = 0;
+
+            virtual Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget) = 0;
         };
-
-        GEK_INTERFACE(Block)
-        {
-            typedef std::unique_ptr<Block> Iterator;
-
-            virtual Iterator next(void) = 0;
-            virtual Pass::Iterator begin(void) = 0;
-            virtual bool prepare(void) = 0;
-        };
-
-        virtual uint32_t getPriority(void) = 0;
-
-        virtual ResourceListPtr loadResourceList(const wchar_t *materialName, std::unordered_map<String, ResourcePtr> &resourceMap) = 0;
-        virtual bool setResourceList(RenderContext *renderContext, Block *block, Pass *pass, ResourceList * const resourceList) = 0;
-
-        virtual Block::Iterator begin(RenderContext *renderContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget) = 0;
-    };
+    }; // namespace Engine
 }; // namespace Gek

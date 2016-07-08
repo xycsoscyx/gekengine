@@ -5,12 +5,15 @@
 
 namespace Gek
 {
-    struct ColorComponent
+    namespace Components
     {
-        Math::Color value;
+        struct Color
+        {
+            Math::Color value;
 
-        ColorComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            Color(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
+    }; // namespace Components
 }; // namespace Gek

@@ -5,13 +5,16 @@
 
 namespace Gek
 {
-    struct RigidBodyComponent
+    namespace Components
     {
-        String shape;
-        String surface;
+        struct RigidBody
+        {
+            String shape;
+            String surface;
 
-        RigidBodyComponent(void);
-        void save(Population::ComponentDefinition &componentData) const;
-        void load(const Population::ComponentDefinition &componentData);
-    };
+            RigidBody(void);
+            void save(Plugin::Population::ComponentDefinition &componentData) const;
+            void load(const Plugin::Population::ComponentDefinition &componentData);
+        };
+    }; // namespace Components
 }; // namespace Gek

@@ -12,7 +12,7 @@ namespace Gek
     }; // namespace Xml
 
     struct XmlNode;
-    typedef std::shared_ptr<XmlNode> XmlNodePtr;
+    using XmlNodePtr = std::shared_ptr<XmlNode>;
     struct XmlNode
     {
         virtual ~XmlNode(void) = default;
@@ -40,7 +40,7 @@ namespace Gek
     };
 
     struct XmlDocument;
-    typedef std::shared_ptr<XmlDocument> XmlDocumentPtr;
+    using XmlDocumentPtr = std::shared_ptr<XmlDocument>;
     struct XmlDocument
     {
         XmlNode & operator = (const XmlNode &) = delete;

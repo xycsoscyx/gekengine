@@ -6,36 +6,38 @@
 
 namespace Gek
 {
-    StaticBodyComponent::StaticBodyComponent(void)
+    namespace Components
     {
-    }
+        StaticBody::StaticBody(void)
+        {
+        }
 
-    void StaticBodyComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, nullptr, shape);
-    }
+        void StaticBody::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, shape);
+        }
 
-    void StaticBodyComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        shape = loadParameter<String>(componentData, nullptr);
-    }
+        void StaticBody::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            shape = loadParameter(componentData, nullptr, String());
+        }
+    }; // namespace Components
 
-    class StaticBodyImplementation
-        : public ContextRegistration<StaticBodyImplementation>
-        , public ComponentMixin<StaticBodyComponent>
+    GEK_CONTEXT_USER(StaticBody)
+        , public Plugin::ComponentMixin<Components::StaticBody>
     {
     public:
-        StaticBodyImplementation(Context *context)
+        StaticBody(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"static_body";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(StaticBodyImplementation)
+    GEK_REGISTER_CONTEXT_USER(StaticBody)
 }; // namespace Gek

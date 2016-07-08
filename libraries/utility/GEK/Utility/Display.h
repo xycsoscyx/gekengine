@@ -24,6 +24,6 @@ namespace Gek
         bool operator == (const DisplayMode &displayMode) const;
     };
 
-    typedef std::multimap<uint32_t, DisplayMode> DisplayModeList;
+    using DisplayModeList = std::multimap<uint32_t, DisplayMode>;
     DisplayModeList getDisplayModes(void);
 }; // namespace Gek

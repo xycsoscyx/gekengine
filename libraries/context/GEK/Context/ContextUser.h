@@ -4,6 +4,8 @@
 #include "GEK\Context\Context.h"
 #include <unordered_map>
 
+#define GEK_CONTEXT_USER(CLASS, ...) struct CLASS : public ContextRegistration<CLASS, __VA_ARGS__>
+
 #define GEK_REGISTER_CONTEXT_USER(CLASS)                                                                                \
 ContextUserPtr CLASS##CreateInstance(Context *context, void *parameters)                                                \
 {                                                                                                                       \
@@ -32,6 +34,8 @@ extern "C" __declspec(dllexport) void initializePlugin(                         
 
 namespace Gek
 {
+    using InitializePlugin = void(*)(std::function<void(const wchar_t *, std::function<ContextUserPtr(Context *, void *)>)> addClass, std::function<void(const wchar_t *, const wchar_t *)> addType);
+
     GEK_PREDECLARE(Context);
 
     GEK_INTERFACE(ContextUser)

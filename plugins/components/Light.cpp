@@ -6,108 +6,108 @@
 
 namespace Gek
 {
-    PointLightComponent::PointLightComponent(void)
+    namespace Components
     {
-    }
+        PointLight::PointLight(void)
+        {
+        }
 
-    void PointLightComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, L"range", range);
-        saveParameter(componentData, L"radius", radius);
-    }
+        void PointLight::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, L"range", range);
+            saveParameter(componentData, L"radius", radius);
+        }
 
-    void PointLightComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        range = loadParameter(componentData, L"range", 10.0f);
-        radius = loadParameter(componentData, L"radius", 0.1f);
-    }
+        void PointLight::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            range = loadParameter(componentData, L"range", 10.0f);
+            radius = loadParameter(componentData, L"radius", 0.1f);
+        }
 
-    SpotLightComponent::SpotLightComponent(void)
-    {
-    }
+        SpotLight::SpotLight(void)
+        {
+        }
 
-    void SpotLightComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, L"range", range);
-        saveParameter(componentData, L"radius", radius);
-        saveParameter(componentData, L"inner_angle", Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
-        saveParameter(componentData, L"outer_angle", Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
-        saveParameter(componentData, L"falloff", falloff);
-    }
+        void SpotLight::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, L"range", range);
+            saveParameter(componentData, L"radius", radius);
+            saveParameter(componentData, L"inner_angle", Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
+            saveParameter(componentData, L"outer_angle", Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
+            saveParameter(componentData, L"falloff", falloff);
+        }
 
-    void SpotLightComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        range = loadParameter(componentData, L"range", 10.0f);
-        radius = loadParameter(componentData, L"radius", 0.1f);
-        innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 45.0f) * 0.5f));
-        outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 90.0f) * 0.5f));
-        falloff = loadParameter(componentData, L"falloff", 2.0f);
-    }
+        void SpotLight::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            range = loadParameter(componentData, L"range", 10.0f);
+            radius = loadParameter(componentData, L"radius", 0.1f);
+            innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 45.0f) * 0.5f));
+            outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 90.0f) * 0.5f));
+            falloff = loadParameter(componentData, L"falloff", 2.0f);
+        }
 
-    DirectionalLightComponent::DirectionalLightComponent(void)
-    {
-    }
+        DirectionalLight::DirectionalLight(void)
+        {
+        }
 
-    void DirectionalLightComponent::save(Population::ComponentDefinition &componentData) const
-    {
-    }
+        void DirectionalLight::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+        }
 
-    void DirectionalLightComponent::load(const Population::ComponentDefinition &componentData)
-    {
-    }
+        void DirectionalLight::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+        }
+    }; // namespace Components
 
-    class PointLightImplementation
-        : public ContextRegistration<PointLightImplementation>
-        , public ComponentMixin<PointLightComponent>
+    GEK_CONTEXT_USER(PointLight)
+        , public Plugin::ComponentMixin<Components::PointLight>
     {
     public:
-        PointLightImplementation(Context *context)
+        PointLight(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"point_light";
         }
     };
 
-    class SpotLightImplementation
-        : public ContextRegistration<SpotLightImplementation>
-        , public ComponentMixin<SpotLightComponent>
+    GEK_CONTEXT_USER(SpotLight)
+        , public Plugin::ComponentMixin<Components::SpotLight>
     {
     public:
-        SpotLightImplementation(Context *context)
+        SpotLight(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"spot_light";
         }
     };
 
-    class DirectionalLightImplementation
-        : public ContextRegistration<DirectionalLightImplementation>
-        , public ComponentMixin<DirectionalLightComponent>
+    GEK_CONTEXT_USER(DirectionalLight)
+        , public Plugin::ComponentMixin<Components::DirectionalLight>
     {
     public:
-        DirectionalLightImplementation(Context *context)
+        DirectionalLight(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"directional_light";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(PointLightImplementation);
-    GEK_REGISTER_CONTEXT_USER(SpotLightImplementation);
-    GEK_REGISTER_CONTEXT_USER(DirectionalLightImplementation);
+    GEK_REGISTER_CONTEXT_USER(PointLight);
+    GEK_REGISTER_CONTEXT_USER(SpotLight);
+    GEK_REGISTER_CONTEXT_USER(DirectionalLight);
 }; // namespace Gek

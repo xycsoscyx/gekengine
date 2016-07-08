@@ -49,8 +49,8 @@ namespace Gek
         // Observable
         void addObserver(Observer *observer)
         {
-            auto observerIterator = observerList.find(dynamic_cast<OBSERVER *>(observer));
-            if (observerIterator == observerList.end())
+            auto observerSearch = observerList.find(dynamic_cast<OBSERVER *>(observer));
+            if (observerSearch == observerList.end())
             {
                 observerList.insert(dynamic_cast<OBSERVER *>(observer));
             }
@@ -58,10 +58,10 @@ namespace Gek
 
         void removeObserver(Observer *observer)
         {
-            auto observerIterator = observerList.find(dynamic_cast<OBSERVER *>(observer));
-            if (observerIterator != observerList.end())
+            auto observerSearch = observerList.find(dynamic_cast<OBSERVER *>(observer));
+            if (observerSearch != observerList.end())
             {
-                observerList.erase(observerIterator);
+                observerList.erase(observerSearch);
             }
         }
     };

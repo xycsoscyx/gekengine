@@ -5,36 +5,38 @@
 
 namespace Gek
 {
-    ColorComponent::ColorComponent(void)
+    namespace Components
     {
-    }
+        Color::Color(void)
+        {
+        }
 
-    void ColorComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, nullptr, value);
-    }
+        void Color::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, value);
+        }
 
-    void ColorComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        value = loadParameter(componentData, nullptr, Math::Color::White);
-    }
+        void Color::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            value = loadParameter(componentData, nullptr, Math::Color::White);
+        }
+    }; // namespace Components
 
-    class ColorImplementation
-        : public ContextRegistration<ColorImplementation>
-        , public ComponentMixin<ColorComponent>
+    GEK_CONTEXT_USER(Color)
+        , public Plugin::ComponentMixin<Components::Color>
     {
     public:
-        ColorImplementation(Context *context)
+        Color(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"color";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(ColorImplementation);
+    GEK_REGISTER_CONTEXT_USER(Color);
 }; // namespace Gek

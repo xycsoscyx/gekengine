@@ -1,8 +1,8 @@
 ﻿#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
@@ -13,69 +13,70 @@
 
 namespace Gek
 {
-    struct SpinComponent
+    namespace Components
     {
-        SpinComponent(void)
+        struct Spin
         {
-        }
+            Spin(void)
+            {
+            }
 
-        void save(Population::ComponentDefinition &componentData) const
-        {
-        }
+            void save(Plugin::Population::ComponentDefinition &componentData) const
+            {
+            }
 
-        void load(const Population::ComponentDefinition &componentData)
-        {
-        }
-    };
+            void load(const Plugin::Population::ComponentDefinition &componentData)
+            {
+            }
+        };
+    }; // namespace Components
 
-    class SpinImplementation
-        : public ContextRegistration<SpinImplementation>
-        , public ComponentMixin<SpinComponent>
+    GEK_CONTEXT_USER(Spin)
+        , public Plugin::ComponentMixin<Components::Spin>
     {
     public:
-        SpinImplementation(Context *context)
+        Spin(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"spin";
         }
     };
 
-    class SpinProcessorImplementation
-        : public ContextRegistration<SpinProcessorImplementation, EngineContext *>
-        , public PopulationObserver
-        , public Processor
+    GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
+        , public Plugin::PopulationObserver
+        , public Plugin::Processor
     {
     public:
 
     private:
-        Population *population;
+        Plugin::Population *population;
         uint32_t updateHandle;
 
     public:
-        SpinProcessorImplementation(Context *context, EngineContext *engine)
+        SpinProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-            , population(engine->getPopulation())
+            , population(core->getPopulation())
             , updateHandle(0)
         {
-            population->addObserver((PopulationObserver *)this);
+            population->addObserver((Plugin::PopulationObserver *)this);
             updateHandle = population->setUpdatePriority(this, 0);
         }
 
-        ~SpinProcessorImplementation(void)
+        ~SpinProcessor(void)
         {
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((PopulationObserver *)this);
+                population->removeObserver((Plugin::PopulationObserver *)this);
             }
         }
 
-        // PopulationObserver
+        // Plugin::PopulationObserver
         void onLoadBegin(void)
         {
         }
@@ -93,12 +94,12 @@ namespace Gek
         {
         }
 
-        void onEntityCreated(Entity *head)
+        void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(population);
         }
 
-        void onEntityDestroyed(Entity *head)
+        void onEntityDestroyed(Plugin::Entity *entity)
         {
         }
 
@@ -110,15 +111,15 @@ namespace Gek
             if (!isIdle)
             {
                 Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
-                population->listEntities<TransformComponent, SpinComponent>([&](Entity *entity) -> void
+                population->listEntities<Components::Transform, Spin>([&](Plugin::Entity *entity) -> void
                 {
-                    auto &transform = entity->getComponent<TransformComponent>();
+                    auto &transform = entity->getComponent<Components::Transform>();
                     transform.rotation *= rotation;
                 });
             }
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(SpinImplementation);
-    GEK_REGISTER_CONTEXT_USER(SpinProcessorImplementation);
+    GEK_REGISTER_CONTEXT_USER(Spin);
+    GEK_REGISTER_CONTEXT_USER(SpinProcessor);
 }; // namespace Gek

@@ -5,12 +5,20 @@
     </lighting>
 
     <material>
-        <maps>
-            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
-            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
-            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
-            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
-        </maps>
+        <passes>
+            <maps pass="solid">
+                <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+                <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+                <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+                <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
+            </maps>
+            <maps pass="transparent">
+                <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+                <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+                <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+                <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
+            </maps>
+        </passes>
     </material>
 
     <defines>
@@ -23,7 +31,7 @@
         <shadowSpiralCount>13</shadowSpiralCount>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
         <gaussianSigma>2</gaussianSigma>
-        <guassianRadius integer="true">floor(displayWidth / 100)</guassianRadius>
+        <guassianRadius integer="true">floor(displayHeight / 100)</guassianRadius>
     </defines>
 
     <depth>D32</depth>
@@ -42,7 +50,7 @@
     </buffers>
 
     <block>
-        <pass mode="forward">
+        <pass mode="forward" name="solid">
             <depthstates>
                 <comparison>less_equal</comparison>
                 <writemask>all</writemask>
@@ -52,13 +60,6 @@
             <renderstates>
                 <cullmode>back</cullmode>
             </renderstates>
-
-            <resources>
-                <albedo />
-                <normal />
-                <roughness />
-                <metalness />
-            </resources>
 
             <targets>
                 <albedoBuffer />

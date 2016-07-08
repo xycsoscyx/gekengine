@@ -8,16 +8,16 @@
 #include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\System\VideoSystem.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\System\VideoDevice.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\Processor.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
-#include "GEK\Engine\Particles.h"
 #include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
@@ -34,11 +34,63 @@ static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
 
 namespace Gek
 {
-    class ParticlesProcessorImplementation
-        : public ContextRegistration<ParticlesProcessorImplementation, EngineContext *>
-        , public PopulationObserver
-        , public RenderObserver
-        , public Processor
+    namespace Components
+    {
+        struct Particles
+        {
+            String material;
+            String colorMap;
+            String transmissionMap;
+            Math::Float2 lifeExpectancy;
+            Math::Float2 size;
+            uint32_t density;
+
+            Particles(void)
+            {
+            }
+
+            void save(Plugin::Population::ComponentDefinition &componentData) const
+            {
+                saveParameter(componentData, nullptr, material);
+                saveParameter(componentData, L"density", density);
+                saveParameter(componentData, L"color_map", colorMap);
+                saveParameter(componentData, L"transmission_map", transmissionMap);
+                saveParameter(componentData, L"life_expectancy", lifeExpectancy);
+                saveParameter(componentData, L"size", size);
+            }
+
+            void load(const Plugin::Population::ComponentDefinition &componentData)
+            {
+                material = loadParameter(componentData, nullptr, String());
+                density = loadParameter(componentData, L"density", 100);
+                colorMap = loadParameter(componentData, L"color_map", String());
+                transmissionMap = loadParameter(componentData, L"transmission_map", String());
+                lifeExpectancy = loadParameter(componentData, L"life_expectancy", Math::Float2(1.0f, 1.0f));
+                size = loadParameter(componentData, L"size", Math::Float2(1.0f, 1.0f));
+            }
+        };
+    }; // namespace Components
+
+    GEK_CONTEXT_USER(Particles)
+        , public Plugin::ComponentMixin<Components::Particles>
+    {
+    public:
+        Particles(Context *context)
+            : ContextRegistration(context)
+        {
+        }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"particles";
+        }
+    };
+
+    GEK_CONTEXT_USER(ParticlesProcessor, Plugin::Core *)
+        , public Plugin::PopulationObserver
+        , public Plugin::RendererObserver
+        , public Plugin::Processor
     {
     public:
         __declspec(align(16))
@@ -122,49 +174,49 @@ namespace Gek
         };
 
     private:
-        Population *population;
+        Plugin::Population *population;
         uint32_t updateHandle;
-        PluginResources *resources;
-        Render *render;
+        Plugin::Resources *resources;
+        Plugin::Renderer *renderer;
 
-        PluginHandle plugin;
+        VisualHandle visual;
         ResourceHandle particleBuffer;
 
         ShuntingYard shuntingYard;
-        typedef std::unordered_map<Entity *, Emitter> EntityEmitterMap;
+        using EntityEmitterMap = std::unordered_map<Plugin::Entity *, Emitter>;
         EntityEmitterMap entityEmitterMap;
 
-        typedef concurrency::concurrent_unordered_multimap<Properties, const EntityEmitterMap::value_type *, Properties> VisibleList;
+        using VisibleList = concurrency::concurrent_unordered_multimap<Properties, const EntityEmitterMap::value_type *, Properties>;
         VisibleList visibleList;
 
     public:
-        ParticlesProcessorImplementation(Context *context, EngineContext *engine)
+        ParticlesProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-            , population(engine->getPopulation())
+            , population(core->getPopulation())
             , updateHandle(0)
-            , resources(engine->getResources())
-            , render(engine->getRender())
+            , resources(core->getResources())
+            , renderer(core->getRenderer())
         {
-            population->addObserver((PopulationObserver *)this);
+            population->addObserver((Plugin::PopulationObserver *)this);
             updateHandle = population->setUpdatePriority(this, 60);
-            render->addObserver((RenderObserver *)this);
+            renderer->addObserver((Plugin::RendererObserver *)this);
 
-            plugin = resources->loadPlugin(L"particles");
+            visual = resources->loadPlugin(L"particles");
 
-            particleBuffer = resources->createBuffer(nullptr, sizeof(Particle), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+            particleBuffer = resources->createBuffer(nullptr, sizeof(Particle), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
         }
 
-        ~ParticlesProcessorImplementation(void)
+        ~ParticlesProcessor(void)
         {
-            render->removeObserver((RenderObserver *)this);
+            renderer->removeObserver((Plugin::RendererObserver *)this);
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((PopulationObserver *)this);
+                population->removeObserver((Plugin::PopulationObserver *)this);
             }
         }
 
-        // PopulationObserver
+        // Plugin::PopulationObserver
         void onLoadSucceeded(void)
         {
         }
@@ -200,27 +252,27 @@ namespace Gek
             }
         };
 
-        void onEntityCreated(Entity *entity)
+        void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(resources);
             GEK_REQUIRE(entity);
 
-            if (entity->hasComponents<ParticlesComponent, TransformComponent>())
+            if (entity->hasComponents<Components::Particles, Components::Transform>())
             {
-                auto &particlesComponent = entity->getComponent<ParticlesComponent>();
-                auto &transformComponent = entity->getComponent<TransformComponent>();
+                auto &particlesComponent = entity->getComponent<Components::Particles>();
+                auto &transformComponent = entity->getComponent<Components::Transform>();
 
                 std::reference_wrapper<const Math::Color> color = Math::Color::White;
-                if (entity->hasComponent<ColorComponent>())
+                if (entity->hasComponent<Components::Color>())
                 {
-                    color = entity->getComponent<ColorComponent>().value;
+                    color = entity->getComponent<Components::Color>().value;
                 }
 
                 auto &emitter = entityEmitterMap.insert(std::make_pair(entity, Emitter(color))).first->second;
                 emitter.particles.resize(particlesComponent.density);
                 emitter.material = resources->loadMaterial(String(L"Particles\\%v", particlesComponent.material));
-                emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), nullptr, 0);
-                emitter.transmissionMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.transmissionMap), nullptr, 0);
+                emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), 0);
+                emitter.transmissionMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.transmissionMap), 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
                 emitter.size = std::uniform_real_distribution<float>(particlesComponent.size.x, particlesComponent.size.y);
                 concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
@@ -238,14 +290,14 @@ namespace Gek
             }
         }
 
-        void onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Plugin::Entity *entity)
         {
             GEK_REQUIRE(entity);
 
-            auto dataIterator = entityEmitterMap.find(entity);
-            if (dataIterator != entityEmitterMap.end())
+            auto entitySearch = entityEmitterMap.find(entity);
+            if (entitySearch != entityEmitterMap.end())
             {
-                entityEmitterMap.erase(dataIterator);
+                entityEmitterMap.erase(entitySearch);
             }
         }
 
@@ -257,9 +309,9 @@ namespace Gek
                 float frameTime = population->getFrameTime();
                 concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](EntityEmitterMap::value_type &data) -> void
                 {
-                    Entity *entity = data.first;
+                    Plugin::Entity *entity = data.first;
                     Emitter &emitter = data.second;
-                    auto &transformComponent = entity->getComponent<TransformComponent>();
+                    auto &transformComponent = entity->getComponent<Components::Transform>();
 
                     combinable<std::min<float>> minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
                     combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
@@ -297,21 +349,21 @@ namespace Gek
             }
         }
 
-        // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, ResourceHandle colorMap, VisibleList::iterator visibleBegin, VisibleList::iterator visibleEnd, ResourceHandle particleBuffer)
+        // Plugin::RendererObserver
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleList::iterator visibleBegin, VisibleList::iterator visibleEnd, ResourceHandle particleBuffer)
         {
-            GEK_REQUIRE(renderContext);
+            GEK_REQUIRE(deviceContext);
             GEK_REQUIRE(resources);
 
-            resources->setResource(renderContext->vertexPipeline(), particleBuffer, 0);
-            resources->setResource(renderContext->vertexPipeline(), colorMap, 1);
+            resources->setResource(deviceContext->vertexPipeline(), particleBuffer, 0);
+            resources->setResource(deviceContext->vertexPipeline(), colorMap, 1);
 
             uint32_t bufferCopied = 0;
             Particle *bufferData = nullptr;
             resources->mapBuffer(particleBuffer, (void **)&bufferData);
-            for (auto emitterIterator = visibleBegin; emitterIterator != visibleEnd; ++emitterIterator)
+            for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
             {
-                const auto &emitter = emitterIterator->second->second;
+                const auto &emitter = emitterSearch->second->second;
 
                 uint32_t particlesCopied = 0;
                 uint32_t particlesCount = emitter.particles.size();
@@ -328,7 +380,7 @@ namespace Gek
                     if (bufferCopied >= ParticleBufferCount)
                     {
                         resources->unmapBuffer(particleBuffer);
-                        renderContext->drawPrimitive((ParticleBufferCount * 6), 0);
+                        deviceContext->drawPrimitive((ParticleBufferCount * 6), 0);
                         resources->mapBuffer(particleBuffer, (void **)&bufferData);
                         bufferCopied = 0;
                     }
@@ -338,21 +390,21 @@ namespace Gek
             resources->unmapBuffer(particleBuffer);
             if (bufferCopied > 0)
             {
-                renderContext->drawPrimitive((bufferCopied * 6), 0);
+                deviceContext->drawPrimitive((bufferCopied * 6), 0);
             }
         }
 
-        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_TRACE_SCOPE();
-            GEK_REQUIRE(render);
+            GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
             concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &data) -> void
             {
-                Entity *entity = data.first;
+                Plugin::Entity *entity = data.first;
                 const Emitter &emitter = data.second;
                 if (viewFrustum->isVisible(emitter))
                 {
@@ -360,15 +412,15 @@ namespace Gek
                 }
             });
 
-            for (auto propertiesIterator = visibleList.begin(); propertiesIterator != visibleList.end(); )
+            for (auto propertiesSearch = visibleList.begin(); propertiesSearch != visibleList.end(); )
             {
-                auto emittersIterator = visibleList.equal_range(propertiesIterator->first);
-                render->queueDrawCall(plugin, propertiesIterator->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesIterator->first.colorMap, emittersIterator.first, emittersIterator.second, particleBuffer));
-                propertiesIterator = emittersIterator.second;
+                auto emittersRange = visibleList.equal_range(propertiesSearch->first);
+                renderer->queueDrawCall(visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesSearch->first.colorMap, emittersRange.first, emittersRange.second, particleBuffer));
+                propertiesSearch = emittersRange.second;
             }
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(ParticlesProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(Particles)
+    GEK_REGISTER_CONTEXT_USER(ParticlesProcessor)
 }; // namespace Gek
-

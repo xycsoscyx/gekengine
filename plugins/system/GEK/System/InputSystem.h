@@ -10,7 +10,7 @@ namespace Gek
     {
         GEK_START_EXCEPTIONS();
 
-        enum class Key
+        enum class Key : uint8_t
         {
             Escape              = 0x01,
             Number1             = 0x02,
@@ -168,28 +168,28 @@ namespace Gek
                 Pressed         = 1 << 3,
             };
         }; // namespace State
+
+        GEK_INTERFACE(Device)
+        {
+            virtual void poll(void) = 0;
+
+            virtual uint32_t getButtonCount(void) const = 0;
+            virtual uint8_t getButtonState(uint32_t buttonIndex) const = 0;
+
+            virtual Math::Float3 getAxis(void) const = 0;
+            virtual Math::Float3 getRotation(void) const = 0;
+            virtual float getPointOfView(void) const = 0;
+        };
+
+        GEK_INTERFACE(System)
+        {
+            virtual Device * const getKeyboard(void) = 0;
+            virtual Device * const getMouse(void) = 0;
+
+            virtual uint32_t getJoystickCount(void) = 0;
+            virtual Device * const getJoystick(uint32_t deviceIndex) = 0;
+
+            virtual void pollAllDevices(void) = 0;
+        };
     }; // namespace Input
-
-    GEK_INTERFACE(InputDevice)
-    {
-        virtual void update(void) = 0;
-
-        virtual uint32_t getButtonCount(void) const = 0;
-        virtual uint8_t getButtonState(uint32_t buttonIndex) const = 0;
-
-        virtual Math::Float3 getAxis(void) const = 0;
-        virtual Math::Float3 getRotation(void) const = 0;
-        virtual float getPointOfView(void) const = 0;
-    };
-
-    GEK_INTERFACE(InputSystem)
-    {
-        virtual InputDevice * const getKeyboard(void) = 0;
-        virtual InputDevice * const getMouse(void) = 0;
-
-        virtual uint32_t getJoystickCount(void) = 0;
-        virtual InputDevice * const getJoystick(uint32_t deviceIndex) = 0;
-
-        virtual void update(void) = 0;
-    };
 }; // namespace Gek

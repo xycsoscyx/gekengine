@@ -2,7 +2,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Entity.h"
@@ -12,403 +12,390 @@
 
 namespace Gek
 {
-    class EntityImplementation
-        : public Entity
+    namespace Implementation
     {
-    private:
-        String name;
-        std::unordered_map<std::type_index, std::pair<Component *, void *>> componentList;
-
-    public:
-        EntityImplementation(const wchar_t *name)
-            : name(name)
+        class Entity
+            : public Plugin::Entity
         {
-        }
+        private:
+            std::unordered_map<std::type_index, std::pair<Plugin::Component *, void *>> componentList;
 
-        ~EntityImplementation(void)
-        {
-            for (auto &componentInfo : componentList)
+        public:
+            ~Entity(void)
             {
-                componentInfo.second.first->destroyData(componentInfo.second.second);
-            }
-        }
-
-        void addComponent(Component *component, void *data)
-        {
-            componentList[component->getIdentifier()] = std::make_pair(component, data);
-        }
-
-        void removeComponent(const std::type_index &type)
-        {
-            auto componentInfo = componentList.find(type);
-            if (componentInfo != componentList.end())
-            {
-                componentInfo->second.first->destroyData(componentInfo->second.second);
-                componentList.erase(componentInfo);
-            }
-        }
-
-        // Entity
-        const wchar_t *getName(void) const
-        {
-            return name;
-        }
-
-        bool hasComponent(const std::type_index &type)
-        {
-            return (componentList.count(type) > 0);
-        }
-
-        void *getComponent(const std::type_index &type)
-        {
-            auto component = componentList.find(type);
-            GEK_CHECK_CONDITION(component == componentList.end(), Exception, "Entity doesn't contain component %v", type.name());
-            return (*component).second.second;
-        }
-    };
-
-    class PopulationImplementation
-        : public ContextRegistration<PopulationImplementation, EngineContext *>
-        , public ObservableMixin<PopulationObserver>
-        , public PopulationSystem
-    {
-    private:
-        EngineContext *engine;
-
-        float worldTime;
-        float frameTime;
-
-        std::unordered_map<String, std::type_index> componentNameList;
-        std::unordered_map<std::type_index, ComponentPtr> componentList;
-        std::list<ProcessorPtr> processorList;
-
-        std::vector<EntityPtr> entityList;
-        std::unordered_map<String, Entity *> namedEntityList;
-        std::vector<Entity *> killEntityList;
-
-        typedef std::multimap<uint32_t, std::pair<uint32_t, PopulationObserver *>> UpdatePriorityMap;
-        UpdatePriorityMap updatePriorityMap;
-
-        std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
-
-    public:
-        PopulationImplementation(Context *context, EngineContext *engine)
-            : ContextRegistration(context)
-            , engine(engine)
-        {
-        }
-
-        ~PopulationImplementation(void)
-        {
-        }
-
-        // PopulationSystem
-        void loadPlugins(void)
-        {
-            GEK_TRACE_SCOPE();
-            getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
-            {
-                ComponentPtr component(getContext()->createClass<Component>(className));
-                auto identifierIterator = componentList.insert(std::make_pair(component->getIdentifier(), component));
-                if (identifierIterator.second)
+                for (auto &componentInfo : componentList)
                 {
-                    if (!componentNameList.insert(std::make_pair(component->getName(), component->getIdentifier())).second)
+                    componentInfo.second.first->destroy(componentInfo.second.second);
+                }
+            }
+
+            void addComponent(Plugin::Component *component, void *data)
+            {
+                componentList[component->getIdentifier()] = std::make_pair(component, data);
+            }
+
+            void removeComponent(const std::type_index &type)
+            {
+                auto componentSearch = componentList.find(type);
+                if (componentSearch != componentList.end())
+                {
+                    componentSearch->second.first->destroy(componentSearch->second.second);
+                    componentList.erase(componentSearch);
+                }
+            }
+
+            // Plugin::Entity
+            bool hasComponent(const std::type_index &type)
+            {
+                return (componentList.count(type) > 0);
+            }
+
+            void *getComponent(const std::type_index &type)
+            {
+                auto componentSearch = componentList.find(type);
+                GEK_CHECK_CONDITION(componentSearch == componentList.end(), Exception, "Plugin::Entity doesn't contain component %v", type.name());
+                return (*componentSearch).second.second;
+            }
+        };
+
+        GEK_CONTEXT_USER(Population, Plugin::Core *)
+            , public ObservableMixin<Plugin::PopulationObserver>
+            , public Engine::Population
+        {
+        private:
+            Plugin::Core *core;
+
+            float worldTime;
+            float frameTime;
+
+            std::unordered_map<String, std::type_index> componentNameList;
+            std::unordered_map<std::type_index, Plugin::ComponentPtr> componentList;
+            std::list<Plugin::ProcessorPtr> processorList;
+
+            std::vector<Plugin::EntityPtr> entityList;
+            std::unordered_map<String, Plugin::Entity *> namedEntityList;
+            std::vector<Plugin::Entity *> killEntityList;
+
+            using UpdatePriorityMap = std::multimap<uint32_t, std::pair<uint32_t, Plugin::PopulationObserver *>>;
+            UpdatePriorityMap updatePriorityMap;
+
+            std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
+
+        public:
+            Population(Context *context, Plugin::Core *core)
+                : ContextRegistration(context)
+                , core(core)
+            {
+            }
+
+            // Engine::Population
+            void loadPlugins(void)
+            {
+                GEK_TRACE_SCOPE();
+                getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
+                {
+                    Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className));
+                    auto componentSearch = componentList.insert(std::make_pair(component->getIdentifier(), component));
+                    if (componentSearch.second)
                     {
-                        componentList.erase(identifierIterator.first);
+                        if (!componentNameList.insert(std::make_pair(component->getName(), component->getIdentifier())).second)
+                        {
+                            componentList.erase(componentSearch.first);
+                        }
                     }
-                }
-                else
-                {
-                }
-            });
-
-            getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
-            {
-                processorList.push_back(getContext()->createClass<Processor>(className, engine));
-            });
-        }
-
-        void freePlugins(void)
-        {
-            processorList.clear();
-            componentNameList.clear();
-            componentList.clear();
-        }
-
-        // Population
-        float getFrameTime(void) const
-        {
-            return frameTime;
-        }
-
-        float getWorldTime(void) const
-        {
-            return worldTime;
-        }
-
-        void update(bool isIdle, float frameTime)
-        {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(isIdle), GEK_PARAMETER(frameTime));
-            if (!isIdle)
-            {
-                this->frameTime = frameTime;
-                this->worldTime += frameTime;
-            }
-
-            if (loadScene)
-            {
-                loadScene();
-                loadScene = nullptr;
-            }
-
-            for (auto &priorityPair : updatePriorityMap)
-            {
-                priorityPair.second.second->onUpdate(priorityPair.second.first, isIdle);
-            }
-
-            for (auto const &killEntity : killEntityList)
-            {
-                auto namedEntityIterator = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const String, Entity *> &namedEntity) -> bool
-                {
-                    return (namedEntity.second == killEntity);
+                    else
+                    {
+                    }
                 });
 
-                if (namedEntityIterator != namedEntityList.end())
+                getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
-                    namedEntityList.erase(namedEntityIterator);
+                    processorList.push_back(getContext()->createClass<Plugin::Processor>(className, core));
+                });
+            }
+
+            void freePlugins(void)
+            {
+                processorList.clear();
+                componentNameList.clear();
+                componentList.clear();
+            }
+
+            // Plugin::Population
+            float getFrameTime(void) const
+            {
+                return frameTime;
+            }
+
+            float getWorldTime(void) const
+            {
+                return worldTime;
+            }
+
+            void update(bool isIdle, float frameTime)
+            {
+                GEK_TRACE_SCOPE(GEK_PARAMETER(isIdle), GEK_PARAMETER(frameTime));
+                if (!isIdle)
+                {
+                    this->frameTime = frameTime;
+                    this->worldTime += frameTime;
                 }
 
-                if (entityList.size() > 1)
+                if (loadScene)
                 {
-                    auto entityIterator = std::find_if(entityList.begin(), entityList.end(), [killEntity](const EntityPtr &entity) -> bool
+                    loadScene();
+                    loadScene = nullptr;
+                }
+
+                for (auto &priorityPair : updatePriorityMap)
+                {
+                    priorityPair.second.second->onUpdate(priorityPair.second.first, isIdle);
+                }
+
+                for (auto const &killEntity : killEntityList)
+                {
+                    auto namedSearch = std::find_if(namedEntityList.begin(), namedEntityList.end(), [&](std::pair<const String, Plugin::Entity *> &namedEntity) -> bool
                     {
-                        return (entity.get() == killEntity);
+                        return (namedEntity.second == killEntity);
                     });
 
-                    if (entityIterator != entityList.end())
+                    if (namedSearch != namedEntityList.end())
                     {
-                        (*entityIterator) = entityList.back();
+                        namedEntityList.erase(namedSearch);
                     }
 
-                    entityList.resize(entityList.size() - 1);
+                    if (entityList.size() > 1)
+                    {
+                        auto entitySearch = std::find_if(entityList.begin(), entityList.end(), [killEntity](const Plugin::EntityPtr &entity) -> bool
+                        {
+                            return (entity.get() == killEntity);
+                        });
+
+                        if (entitySearch != entityList.end())
+                        {
+                            (*entitySearch) = entityList.back();
+                        }
+
+                        entityList.resize(entityList.size() - 1);
+                    }
+                    else
+                    {
+                        entityList.clear();
+                    }
                 }
-                else
-                {
-                    entityList.clear();
-                }
+
+                killEntityList.clear();
             }
 
-            killEntityList.clear();
-        }
+            std::function<void(void)> loadScene;
+            void load(const wchar_t *fileName)
+            {
+                loadScene = [this, fileName = String(fileName)](void) -> void
+                {
+                    GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
+                    try
+                    {
+                        free();
+                        sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-        std::function<void(void)> loadScene;
-        void load(const wchar_t *fileName)
-        {
-            loadScene = [this, fileName = String(fileName)](void) -> void
+                        XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", fileName)));
+                        XmlNodePtr worldNode(document->getRoot(L"world"));
+
+                        std::unordered_map<String, EntityDefinition> prefabList;
+                        XmlNodePtr prefabsNode(worldNode->firstChildElement(L"prefabs"));
+                        for (XmlNodePtr prefabNode(prefabsNode->firstChildElement()); prefabNode->isValid(); prefabNode = prefabNode->nextSiblingElement())
+                        {
+                            EntityDefinition &entityDefinition = prefabList[prefabNode->getType()];
+                            for (XmlNodePtr componentNode(prefabNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
+                            {
+                                auto &componentData = entityDefinition[componentNode->getType()];
+                                componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                                {
+                                    componentData.unordered_map::insert(std::make_pair(name, value));
+                                });
+
+                                if (!componentNode->getText().empty())
+                                {
+                                    componentData.value = componentNode->getText();
+                                }
+                            }
+                        }
+
+                        XmlNodePtr populationNode(worldNode->firstChildElement(L"population"));
+                        for (XmlNodePtr entityNode(populationNode->firstChildElement(L"entity")); entityNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
+                        {
+                            EntityDefinition entityDefinition;
+                            auto prefabSearch = prefabList.find(entityNode->getAttribute(L"prefab"));
+                            if (prefabSearch != prefabList.end())
+                            {
+                                entityDefinition = (*prefabSearch).second;
+                            }
+
+                            for (XmlNodePtr componentNode(entityNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
+                            {
+                                auto &componentData = entityDefinition[componentNode->getType()];
+                                componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                                {
+                                    componentData[name] = value;
+                                });
+
+                                if (!componentNode->getText().empty())
+                                {
+                                    componentData.value = componentNode->getText();
+                                }
+                            }
+
+                            if (entityNode->hasAttribute(L"name"))
+                            {
+                                createEntity(entityDefinition, entityNode->getAttribute(L"name"));
+                            }
+                            else
+                            {
+                                createEntity(entityDefinition, nullptr);
+                            }
+                        }
+
+                        frameTime = 0.0f;
+                        worldTime = 0.0f;
+                        sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
+                    }
+                    catch (const Exception &)
+                    {
+                        sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadFailed, std::placeholders::_1)));
+                    };
+                };
+            }
+
+            void save(const wchar_t *fileName)
             {
                 GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
-                try
+                GEK_REQUIRE(fileName);
+
+                XmlDocumentPtr document(XmlDocument::create(L"world"));
+                XmlNodePtr worldNode(document->getRoot(L"world"));
+                XmlNodePtr populationNode(worldNode->createChildElement(L"population"));
+                for (auto &entity : entityList)
                 {
-                    free();
-                    sendEvent(Event(std::bind(&PopulationObserver::onLoadBegin, std::placeholders::_1)));
+                }
 
-                    XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", fileName)));
-                    XmlNodePtr worldNode(document->getRoot(L"world"));
+                document->save(String(L"$root\\data\\saves\\%v.xml", fileName));
+            }
 
-                    std::unordered_map<String, EntityDefinition> prefabList;
-                    XmlNodePtr prefabsNode(worldNode->firstChildElement(L"prefabs"));
-                    for (XmlNodePtr prefabNode(prefabsNode->firstChildElement()); prefabNode->isValid(); prefabNode = prefabNode->nextSiblingElement())
+            void free(void)
+            {
+                sendEvent(Event(std::bind(&Plugin::PopulationObserver::onFree, std::placeholders::_1)));
+                namedEntityList.clear();
+                killEntityList.clear();
+                entityList.clear();
+            }
+
+            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *name)
+            {
+                entityList.push_back(entity);
+                sendEvent(Event(std::bind(&Plugin::PopulationObserver::onEntityCreated, std::placeholders::_1, entity.get())));
+                if (name)
+                {
+                    namedEntityList[name] = entity.get();
+                }
+
+                return entity.get();
+            }
+
+            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *name)
+            {
+                std::shared_ptr<Entity> entity(std::make_shared<Entity>());
+                for (auto &componentInfo : entityDefinition)
+                {
+                    auto &componentName = componentInfo.first;
+                    auto &componentData = componentInfo.second;
+                    auto componentNameSearch = componentNameList.find(componentName);
+                    if (componentNameSearch != componentNameList.end())
                     {
-                        EntityDefinition &entityDefinition = prefabList[prefabNode->getType()];
-                        for (XmlNodePtr componentNode(prefabNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
+                        std::type_index componentIdentifier(componentNameSearch->second);
+                        auto componentSearch = componentList.find(componentIdentifier);
+                        if (componentSearch != componentList.end())
                         {
-                            auto &componentData = entityDefinition[componentNode->getType()];
-                            componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                            Plugin::Component *componentManager = componentSearch->second.get();
+                            LPVOID component = componentManager->create(componentData);
+                            if (component)
                             {
-                                componentData.unordered_map::insert(std::make_pair(name, value));
-                            });
-
-                            if (!componentNode->getText().empty())
-                            {
-                                componentData.value = componentNode->getText();
+                                entity->addComponent(componentManager, component);
                             }
                         }
                     }
-
-                    XmlNodePtr populationNode(worldNode->firstChildElement(L"population"));
-                    for (XmlNodePtr entityNode(populationNode->firstChildElement(L"entity")); entityNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
-                    {
-                        EntityDefinition entityDefinition;
-                        auto prefab = prefabList.find(entityNode->getAttribute(L"prefab"));
-                        if (prefab != prefabList.end())
-                        {
-                            entityDefinition = (*prefab).second;
-                        }
-
-                        for (XmlNodePtr componentNode(entityNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
-                        {
-                            auto &componentData = entityDefinition[componentNode->getType()];
-                            componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
-                            {
-                                componentData[name] = value;
-                            });
-
-                            if (!componentNode->getText().empty())
-                            {
-                                componentData.value = componentNode->getText();
-                            }
-                        }
-
-                        if (entityNode->hasAttribute(L"name"))
-                        {
-                            createEntity(entityDefinition, entityNode->getAttribute(L"name"));
-                        }
-                        else
-                        {
-                            createEntity(entityDefinition, nullptr);
-                        }
-                    }
-
-                    frameTime = 0.0f;
-                    worldTime = 0.0f;
-                    sendEvent(Event(std::bind(&PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
                 }
-                catch (const Exception &)
-                {
-                    sendEvent(Event(std::bind(&PopulationObserver::onLoadFailed, std::placeholders::_1)));
-                };
-            };
-        }
 
-        void save(const wchar_t *fileName)
-        {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
-            GEK_REQUIRE(fileName);
-
-            XmlDocumentPtr document(XmlDocument::create(L"world"));
-            XmlNodePtr worldNode(document->getRoot(L"world"));
-            XmlNodePtr populationNode(worldNode->createChildElement(L"population"));
-            for (auto &entity : entityList)
-            {
+                return addEntity(entity, name);
             }
 
-            document->save(String(L"$root\\data\\saves\\%v.xml", fileName));
-        }
-
-        void free(void)
-        {
-            sendEvent(Event(std::bind(&PopulationObserver::onFree, std::placeholders::_1)));
-            namedEntityList.clear();
-            killEntityList.clear();
-            entityList.clear();
-        }
-
-        Entity * addEntity(EntityPtr entity, const wchar_t *name)
-        {
-            entityList.push_back(entity);
-            sendEvent(Event(std::bind(&PopulationObserver::onEntityCreated, std::placeholders::_1, entity.get())));
-            if (name)
+            void killEntity(Plugin::Entity *entity)
             {
-                namedEntityList[name] = entity.get();
+                sendEvent(Event(std::bind(&Plugin::PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
+                killEntityList.push_back(entity);
             }
 
-            return entity.get();
-        }
-
-        Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *name)
-        {
-            std::shared_ptr<EntityImplementation> entity = std::make_shared<EntityImplementation>(name);
-            for (auto &componentInfo : entityDefinition)
+            Plugin::Entity * getNamedEntity(const wchar_t *name) const
             {
-                auto &componentName = componentInfo.first;
-                auto &componentData = componentInfo.second;
-                auto componentIterator = componentNameList.find(componentName);
-                if (componentIterator != componentNameList.end())
+                GEK_REQUIRE(name);
+
+                Plugin::Entity* entity = nullptr;
+                auto namedSearch = namedEntityList.find(name);
+                if (namedSearch != namedEntityList.end())
                 {
-                    std::type_index componentIdentifier(componentIterator->second);
-                    auto componentInfo = componentList.find(componentIdentifier);
-                    if (componentInfo != componentList.end())
-                    {
-                        Component *componentManager = componentInfo->second.get();
-                        LPVOID component = componentManager->createData(componentData);
-                        if (component)
-                        {
-                            entity->addComponent(componentManager, component);
-                        }
-                    }
+                    return (*namedSearch).second;
                 }
+
+                return nullptr;
             }
 
-            return addEntity(entity, name);
-        }
-
-        void killEntity(Entity *entity)
-        {
-            sendEvent(Event(std::bind(&PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
-            killEntityList.push_back(entity);
-        }
-
-        Entity * getNamedEntity(const wchar_t *name) const
-        {
-            GEK_REQUIRE(name);
-
-            Entity* entity = nullptr;
-            auto namedEntity = namedEntityList.find(name);
-            if (namedEntity != namedEntityList.end())
+            void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
             {
-                return (*namedEntity).second;
-            }
-
-            return nullptr;
-        }
-
-        void listEntities(std::function<void(Entity *)> onEntity) const
-        {
-            concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const EntityPtr &entity) -> void
-            {
-                onEntity(entity.get());
-            });
-        }
-
-        void listProcessors(std::function<void(Processor *)> onProcessor) const
-        {
-            concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](const ProcessorPtr &processor) -> void
-            {
-                onProcessor(processor.get());
-            });
-        }
-
-        uint32_t setUpdatePriority(PopulationObserver *observer, uint32_t priority)
-        {
-            static uint32_t nextHandle = 0;
-            uint32_t updateHandle = InterlockedIncrement(&nextHandle);
-            auto pair = std::make_pair(priority, std::make_pair(updateHandle, observer));
-            auto updateIterator = updatePriorityMap.insert(pair);
-            updateHandleMap[updateHandle] = &(*updateIterator);
-            return updateHandle;
-        }
-
-        void removeUpdatePriority(uint32_t updateHandle)
-        {
-            auto handleIterator = updateHandleMap.find(updateHandle);
-            if (handleIterator != updateHandleMap.end())
-            {
-                uint32_t priority = handleIterator->second->first;
-                auto priorityRange = updatePriorityMap.equal_range(priority);
-                auto priorityIterator = std::find_if(priorityRange.first, priorityRange.second, [&](auto &priorityPair) -> bool
+                concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](const Plugin::EntityPtr &entity) -> void
                 {
-                    return (handleIterator->second == &priorityPair);
+                    onEntity(entity.get());
                 });
-
-                if (priorityIterator != updatePriorityMap.end())
-                {
-                    updatePriorityMap.erase(priorityIterator);
-                }
-
-                updateHandleMap.erase(handleIterator);
             }
-        }
-    };
 
-    GEK_REGISTER_CONTEXT_USER(PopulationImplementation);
+            void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) const
+            {
+                concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](const Plugin::ProcessorPtr &processor) -> void
+                {
+                    onProcessor(processor.get());
+                });
+            }
+
+            uint32_t setUpdatePriority(Plugin::PopulationObserver *observer, uint32_t priority)
+            {
+                static uint32_t nextHandle = 0;
+                uint32_t updateHandle = InterlockedIncrement(&nextHandle);
+                auto pair = std::make_pair(priority, std::make_pair(updateHandle, observer));
+                auto updateSearch = updatePriorityMap.insert(pair);
+                updateHandleMap[updateHandle] = &(*updateSearch);
+                return updateHandle;
+            }
+
+            void removeUpdatePriority(uint32_t updateHandle)
+            {
+                auto updateSearch = updateHandleMap.find(updateHandle);
+                if (updateSearch != updateHandleMap.end())
+                {
+                    uint32_t priority = updateSearch->second->first;
+                    auto priorityRange = updatePriorityMap.equal_range(priority);
+                    auto prioritySearch = std::find_if(priorityRange.first, priorityRange.second, [&](auto &priorityPair) -> bool
+                    {
+                        return (updateSearch->second == &priorityPair);
+                    });
+
+                    if (prioritySearch != updatePriorityMap.end())
+                    {
+                        updatePriorityMap.erase(prioritySearch);
+                    }
+
+                    updateHandleMap.erase(updateSearch);
+                }
+            }
+        };
+
+        GEK_REGISTER_CONTEXT_USER(Population);
+    }; // namespace Implementation
 }; // namespace Gek

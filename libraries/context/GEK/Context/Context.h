@@ -6,8 +6,8 @@
 #include <memory>
 #include <vector>
 
-#define GEK_PREDECLARE(TYPE) struct TYPE; typedef std::shared_ptr<TYPE> TYPE##Ptr;
-#define GEK_INTERFACE(TYPE) struct TYPE; typedef std::shared_ptr<TYPE> TYPE##Ptr; struct TYPE
+#define GEK_PREDECLARE(TYPE) struct TYPE; using TYPE##Ptr = std::shared_ptr<TYPE>;
+#define GEK_INTERFACE(TYPE) struct TYPE; using TYPE##Ptr = std::shared_ptr<TYPE>; struct TYPE
 
 namespace Gek
 {

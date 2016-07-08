@@ -7,16 +7,16 @@
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Context\ObservableMixin.h"
-#include "GEK\System\VideoSystem.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\System\VideoDevice.h"
+#include "GEK\Engine\Core.h"
+#include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Entity.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
-#include "GEK\Engine\Shape.h"
 #include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
@@ -363,11 +363,54 @@ namespace Gek
         }
     };
 
-    class ShapeProcessorImplementation
-        : public ContextRegistration<ShapeProcessorImplementation, EngineContext *>
-        , public PopulationObserver
-        , public RenderObserver
-        , public Processor
+    namespace Components
+    {
+        struct Shape
+        {
+            String value;
+            String parameters;
+            String skin;
+
+            Shape(void)
+            {
+            }
+
+            void save(Plugin::Population::ComponentDefinition &componentData) const
+            {
+                saveParameter(componentData, nullptr, value);
+                saveParameter(componentData, L"parameters", parameters);
+                saveParameter(componentData, L"skin", skin);
+            }
+
+            void load(const Plugin::Population::ComponentDefinition &componentData)
+            {
+                value = loadParameter(componentData, nullptr, String());
+                parameters = loadParameter(componentData, L"parameters", String());
+                skin = loadParameter(componentData, L"skin", String());
+            }
+        };
+    }; // namespace Components
+
+    GEK_CONTEXT_USER(Shape)
+        , public Plugin::ComponentMixin<Components::Shape>
+    {
+    public:
+        Shape(Context *context)
+            : ContextRegistration(context)
+        {
+        }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"shape";
+        }
+    };
+
+    GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)
+        , public Plugin::PopulationObserver
+        , public Plugin::RendererObserver
+        , public Plugin::Processor
     {
     public:
         enum class ShapeType : uint8_t
@@ -420,7 +463,7 @@ namespace Gek
         };
 
         __declspec(align(16))
-        struct Instance
+            struct Instance
         {
             Math::Float4x4 matrix;
             Math::Color color;
@@ -436,11 +479,11 @@ namespace Gek
         };
 
     private:
-        Population *population;
-        PluginResources *resources;
-        Render *render;
+        Plugin::Population *population;
+        Plugin::Resources *resources;
+        Plugin::Renderer *renderer;
 
-        PluginHandle plugin;
+        VisualHandle visual;
         ResourceHandle constantBuffer;
 
         std::future<void> loadShapeRunning;
@@ -448,33 +491,33 @@ namespace Gek
         concurrency::concurrent_unordered_map<std::size_t, bool> loadShapeSet;
 
         std::unordered_map<std::size_t, Shape> shapeMap;
-        typedef std::unordered_map<Entity *, Data> EntityDataMap;
+        using EntityDataMap = std::unordered_map<Plugin::Entity *, Data>;
         EntityDataMap entityDataMap;
 
-        typedef concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>> InstanceList;
-        typedef concurrency::concurrent_unordered_map<MaterialHandle, InstanceList> MaterialList;
-        typedef concurrency::concurrent_unordered_map<Shape *, MaterialList> VisibleList;
+        using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
+        using MaterialList = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
+        using VisibleList = concurrency::concurrent_unordered_map<Shape *, MaterialList>;
         VisibleList visibleList;
 
     public:
-        ShapeProcessorImplementation(Context *context, EngineContext *engine)
+        ShapeProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-            , population(engine->getPopulation())
-            , resources(engine->getResources())
-            , render(engine->getRender())
+            , population(core->getPopulation())
+            , resources(core->getResources())
+            , renderer(core->getRenderer())
         {
-            population->addObserver((PopulationObserver *)this);
-            render->addObserver((RenderObserver *)this);
+            population->addObserver((Plugin::PopulationObserver *)this);
+            renderer->addObserver((Plugin::RendererObserver *)this);
 
-            plugin = resources->loadPlugin(L"model");
- 
-            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+            visual = resources->loadPlugin(L"model");
+
+            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
         }
 
-        ~ShapeProcessorImplementation(void)
+        ~ShapeProcessor(void)
         {
-            render->removeObserver((RenderObserver *)this);
-            population->removeObserver((PopulationObserver *)this);
+            renderer->removeObserver((Plugin::RendererObserver *)this);
+            population->removeObserver((Plugin::PopulationObserver *)this);
         }
 
         void loadBoundingBox(Shape &shape, const String &name, const String &parameters)
@@ -502,8 +545,8 @@ namespace Gek
                     geoSphere.generate(divisionCount);
 
                     shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, geoSphere.getIndices().data());
+                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, false, geoSphere.getVertices().data());
+                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, false, geoSphere.getIndices().data());
                     break;
                 }
             };
@@ -517,7 +560,7 @@ namespace Gek
             if (loadShapeSet.count(hash) == 0)
             {
                 loadShapeSet.insert(std::make_pair(hash, true));
-                loadShapeQueue.push(std::bind(&ShapeProcessorImplementation::loadShapeWorker, this, std::ref(shape)));
+                loadShapeQueue.push(std::bind(&ShapeProcessor::loadShapeWorker, this, std::ref(shape)));
                 if (!loadShapeRunning.valid() || (loadShapeRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
                 {
                     loadShapeRunning = std::async(std::launch::async, [&](void) -> void
@@ -535,7 +578,7 @@ namespace Gek
             }
         }
 
-        // PopulationObserver
+        // Plugin::PopulationObserver
         void onLoadSucceeded(void)
         {
         }
@@ -558,14 +601,14 @@ namespace Gek
             entityDataMap.clear();
         }
 
-        void onEntityCreated(Entity *entity)
+        void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(resources);
             GEK_REQUIRE(entity);
 
-            if (entity->hasComponents<ShapeComponent, TransformComponent>())
+            if (entity->hasComponents<Components::Shape, Components::Transform>())
             {
-                auto &shapeComponent = entity->getComponent<ShapeComponent>();
+                auto &shapeComponent = entity->getComponent<Components::Shape>();
                 std::size_t hash = std::hash_combine(shapeComponent.parameters, shapeComponent.value);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
@@ -574,9 +617,9 @@ namespace Gek
                 }
 
                 std::reference_wrapper<const Math::Color> color = Math::Color::White;
-                if (entity->hasComponent<ColorComponent>())
+                if (entity->hasComponent<Components::Color>())
                 {
-                    color = entity->getComponent<ColorComponent>().value;
+                    color = entity->getComponent<Components::Color>().value;
                 }
 
                 Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
@@ -584,45 +627,45 @@ namespace Gek
             }
         }
 
-        void onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Plugin::Entity *entity)
         {
             GEK_REQUIRE(entity);
 
-            auto entityData = entityDataMap.find(entity);
-            if (entityData != entityDataMap.end())
+            auto entitySearch = entityDataMap.find(entity);
+            if (entitySearch != entityDataMap.end())
             {
-                entityDataMap.erase(entityData);
+                entityDataMap.erase(entitySearch);
             }
         }
 
-        // RenderObserver
-        static void drawCall(RenderContext *renderContext, PluginResources *resources, const Shape *shape, const Instance *instanceList, ResourceHandle constantBuffer)
+        // Plugin::RendererObserver
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Shape *shape, const Instance *instanceList, ResourceHandle constantBuffer)
         {
             Instance *instanceData = nullptr;
             resources->mapBuffer(constantBuffer, (void **)&instanceData);
             memcpy(instanceData, instanceList, sizeof(Instance));
             resources->unmapBuffer(constantBuffer);
 
-            resources->setConstantBuffer(renderContext->vertexPipeline(), constantBuffer, 4);
-            resources->setVertexBuffer(renderContext, 0, shape->vertexBuffer, 0);
-            resources->setIndexBuffer(renderContext, shape->indexBuffer, 0);
-            renderContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
+            resources->setConstantBuffer(deviceContext->vertexPipeline(), constantBuffer, 4);
+            resources->setVertexBuffer(deviceContext, 0, shape->vertexBuffer, 0);
+            resources->setIndexBuffer(deviceContext, shape->indexBuffer, 0);
+            deviceContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
         }
 
-        void onRenderScene(Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
         {
             GEK_TRACE_SCOPE();
-            GEK_REQUIRE(render);
+            GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
             visibleList.clear();
             concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
             {
-                Entity *entity = data.first;
+                Plugin::Entity *entity = data.first;
                 Shape &shape = data.second.shape;
 
-                const auto &transformComponent = entity->getComponent<TransformComponent>();
+                const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
 
                 Shapes::OrientedBox orientedBox(shape.alignedBox, matrix);
@@ -649,12 +692,13 @@ namespace Gek
                 {
                     concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](InstanceList::value_type &instanceList) -> void
                     {
-                        render->queueDrawCall(plugin, materialList.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
+                        renderer->queueDrawCall(visual, materialList.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
                     });
                 });
             });
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(ShapeProcessorImplementation)
+    GEK_REGISTER_CONTEXT_USER(Shape)
+    GEK_REGISTER_CONTEXT_USER(ShapeProcessor)
 }; // namespace Gek

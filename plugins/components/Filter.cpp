@@ -5,36 +5,38 @@
 
 namespace Gek
 {
-    FilterComponent::FilterComponent(void)
+    namespace Components
     {
-    }
+        Filter::Filter(void)
+        {
+        }
 
-    void FilterComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, nullptr, String(list, L','));
-    }
+        void Filter::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, String(list, L','));
+        }
 
-    void FilterComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        list = loadParameter(componentData, nullptr, String()).split(L',');
-    }
+        void Filter::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            list = loadParameter(componentData, nullptr, String()).split(L',');
+        }
+    }; // namespace Components
 
-    class FilterImplementation
-        : public ContextRegistration<FilterImplementation>
-        , public ComponentMixin<FilterComponent>
+    GEK_CONTEXT_USER(Filter)
+        , public Plugin::ComponentMixin<Components::Filter>
     {
     public:
-        FilterImplementation(Context *context)
+        Filter(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"filter";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(FilterImplementation);
+    GEK_REGISTER_CONTEXT_USER(Filter);
 }; // namespace Gek

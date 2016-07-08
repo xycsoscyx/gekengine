@@ -6,13 +6,13 @@ namespace Gek
     class AlignedAllocator
     {
     public:
-        typedef TYPE *pointer;
-        typedef const TYPE *const_pointer;
-        typedef TYPE &reference;
-        typedef const TYPE &const_reference;
-        typedef TYPE value_type;
-        typedef std::size_t size_type;
-        typedef ptrdiff_t difference_type;
+        using pointer = TYPE *;
+        using const_pointer = const TYPE *;
+        using reference = TYPE &;
+        using const_reference = const TYPE;
+        using value_type = TYPE;
+        using size_type = std::size_t;
+        using difference_type = ptrdiff_t;
 
         AlignedAllocator()
         {
@@ -48,7 +48,7 @@ namespace Gek
         template <typename NEWTYPE>
         struct rebind
         {
-            typedef AlignedAllocator<NEWTYPE, ALIGNMENT> other;
+            using other = AlignedAllocator<NEWTYPE, ALIGNMENT>;
         };
 
         bool operator != (const AlignedAllocator &other) const

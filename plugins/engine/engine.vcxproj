@@ -156,31 +156,31 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Engine\Action.h" />
+    <ClInclude Include="GEK\Engine\Application.h" />
     <ClInclude Include="GEK\Engine\Component.h" />
     <ClInclude Include="GEK\Engine\ComponentMixin.h" />
-    <ClInclude Include="GEK\Engine\Engine.h" />
+    <ClInclude Include="GEK\Engine\Core.h" />
     <ClInclude Include="GEK\Engine\Entity.h" />
     <ClInclude Include="GEK\Engine\Filter.h" />
     <ClInclude Include="GEK\Engine\Material.h" />
-    <ClInclude Include="GEK\Engine\Plugin.h" />
     <ClInclude Include="GEK\Engine\Population.h" />
     <ClInclude Include="GEK\Engine\Processor.h" />
-    <ClInclude Include="GEK\Engine\Render.h" />
+    <ClInclude Include="GEK\Engine\Renderer.h" />
     <ClInclude Include="GEK\Engine\Resources.h" />
     <ClInclude Include="GEK\Engine\Shader.h" />
+    <ClInclude Include="GEK\Engine\Visual.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="Core.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Filter.cpp" />
     <ClCompile Include="Material.cpp" />
-    <ClCompile Include="Plugin.cpp" />
     <ClCompile Include="Population.cpp" />
-    <ClCompile Include="Render.cpp" />
+    <ClCompile Include="Renderer.cpp" />
     <ClCompile Include="Resources.cpp" />
     <ClCompile Include="Shader.cpp" />
+    <ClCompile Include="Visual.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

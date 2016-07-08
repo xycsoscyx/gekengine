@@ -5,7 +5,8 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Application.h"
+#include "GEK\Engine\Core.h"
 #include <Windows.h>
 #include <CommCtrl.h>
 #include "resource.h"
@@ -46,9 +47,9 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
 
         auto modesRange = displayModes.equal_range(32);
-        for (auto &modeIterator = modesRange.first; modeIterator != modesRange.second; ++modeIterator)
+        for (auto &modeSearch = modesRange.first; modeSearch != modesRange.second; ++modeSearch)
         {
-            auto &mode = (*modeIterator).second;
+            auto &mode = (*modeSearch).second;
 
             String aspectRatio(L"");
             switch (mode.aspectRatio)
@@ -128,23 +129,23 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM lParam)
 {
     LRESULT resultValue = 0;
-    Engine *engineCore = reinterpret_cast<Engine *>(GetWindowLongPtr(window, GWLP_USERDATA));
+    Application *application = reinterpret_cast<Application *>(GetWindowLongPtr(window, GWLP_USERDATA));
     switch (message)
     {
     case WM_CLOSE:
     case WM_DESTROY:
-        if (engineCore)
+        if (application)
         {
-            engineCore->windowEvent(message, wParam, lParam);
+            application->windowEvent(message, wParam, lParam);
         }
 
         PostQuitMessage(0);
         break;
 
     default:
-        if (engineCore)
+        if (application)
         {
-            resultValue = engineCore->windowEvent(message, wParam, lParam);
+            resultValue = application->windowEvent(message, wParam, lParam);
         }
 
         break;
@@ -219,12 +220,12 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             int windowHeight = (clientRect.bottom - clientRect.top);
             int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
             int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
-            HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Engine - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
+            HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Application - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
             GEK_CHECK_CONDITION(window == nullptr, Trace::Exception, "Unable to create window: %v", GetLastError());
 
-            EnginePtr engineCore(context->createClass<Engine>(L"EngineSystem", window));
+            ApplicationPtr application(context->createClass<Application>(L"Engine::Core", window));
 
-            SetWindowLongPtr(window, GWLP_USERDATA, LONG(engineCore.get()));
+            SetWindowLongPtr(window, GWLP_USERDATA, LONG(application.get()));
             ShowWindow(window, SW_SHOW);
             UpdateWindow(window);
 
@@ -237,7 +238,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
                     DispatchMessage(&message);
                 };
 
-                if (!engineCore->update())
+                if (!application->update())
                 {
                     break;
                 }

@@ -1,8 +1,8 @@
 ﻿#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\Engine.h"
+#include "GEK\Engine\Core.h"
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Population.h"
-#include "GEK\Engine\Render.h"
+#include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
@@ -14,55 +14,56 @@
 
 namespace Gek
 {
-    struct FirstPersonCameraComponent
+    namespace Components
     {
-        float fieldOfView;
-        float nearClip;
-        float farClip;
-        String name;
-
-        FirstPersonCameraComponent(void)
+        struct FirstPersonCamera
         {
-        }
+            float fieldOfView;
+            float nearClip;
+            float farClip;
+            String name;
 
-        void save(Population::ComponentDefinition &componentData) const
-        {
-            saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
-            saveParameter(componentData, L"near_clip", nearClip);
-            saveParameter(componentData, L"far_clip", farClip);
-            saveParameter(componentData, L"name", name);
-        }
+            FirstPersonCamera(void)
+            {
+            }
 
-        void load(const Population::ComponentDefinition &componentData)
-        {
-            fieldOfView = Math::convertDegreesToRadians(loadParameter(componentData, L"field_of_view", 90.0f));
-            nearClip = loadParameter(componentData, L"near_clip", 1.0f);
-            farClip = loadParameter(componentData, L"far_clip", 100.0f);
-            name = loadParameter(componentData, L"name", String());
-        }
+            void save(Plugin::Population::ComponentDefinition &componentData) const
+            {
+                saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
+                saveParameter(componentData, L"near_clip", nearClip);
+                saveParameter(componentData, L"far_clip", farClip);
+                saveParameter(componentData, L"name", name);
+            }
+
+            void load(const Plugin::Population::ComponentDefinition &componentData)
+            {
+                fieldOfView = Math::convertDegreesToRadians(loadParameter(componentData, L"field_of_view", 90.0f));
+                nearClip = loadParameter(componentData, L"near_clip", 1.0f);
+                farClip = loadParameter(componentData, L"far_clip", 100.0f);
+                name = loadParameter(componentData, L"name", String());
+            }
+        };
     };
 
-    class FirstPersonCameraImplementation
-        : public ContextRegistration<FirstPersonCameraImplementation>
-        , public ComponentMixin<FirstPersonCameraComponent>
+    GEK_CONTEXT_USER(FirstPersonCamera)
+        , public Plugin::ComponentMixin<Components::FirstPersonCamera>
     {
     public:
-        FirstPersonCameraImplementation(Context *context)
+        FirstPersonCamera(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"first_person_camera";
         }
     };
 
-    class CameraProcessorImplementation
-        : public ContextRegistration<CameraProcessorImplementation, EngineContext *>
-        , public PopulationObserver
-        , public Processor
+    GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
+        , public Plugin::PopulationObserver
+        , public Plugin::Processor
     {
     public:
         struct Camera
@@ -71,36 +72,36 @@ namespace Gek
         };
 
     private:
-        Population *population;
+        Plugin::Population *population;
         uint32_t updateHandle;
-        Resources *resources;
-        Render *render;
+        Plugin::Resources *resources;
+        Plugin::Renderer *renderer;
 
-        typedef std::unordered_map<Entity *, Camera> EntityDataMap;
+        using EntityDataMap = std::unordered_map<Plugin::Entity *, Camera>;
         EntityDataMap entityDataMap;
 
     public:
-        CameraProcessorImplementation(Context *context, EngineContext *engine)
+        CameraProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
-            , population(engine->getPopulation())
+            , population(core->getPopulation())
             , updateHandle(0)
-            , resources(engine->getResources())
-            , render(engine->getRender())
+            , resources(core->getResources())
+            , renderer(core->getRenderer())
         {
-            population->addObserver((PopulationObserver *)this);
+            population->addObserver((Plugin::PopulationObserver *)this);
             updateHandle = population->setUpdatePriority(this, 90);
         }
 
-        ~CameraProcessorImplementation(void)
+        ~CameraProcessor(void)
         {
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((PopulationObserver *)this);
+                population->removeObserver((Plugin::PopulationObserver *)this);
             }
         }
 
-        // PopulationObserver
+        // Plugin::PopulationObserver
         void onLoadBegin(void)
         {
         }
@@ -119,59 +120,61 @@ namespace Gek
             entityDataMap.clear();
         }
 
-        void onEntityCreated(Entity *entity)
+        void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(entity);
 
-            if (entity->hasComponents<FirstPersonCameraComponent, TransformComponent>())
+            if (entity->hasComponents<Components::FirstPersonCamera, Components::Transform>())
             {
-                auto &cameraComponent = entity->getComponent<FirstPersonCameraComponent>();
+                auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
 
                 Camera data;
                 if (!cameraComponent.name.empty())
                 {
                     String name(L"camera:%v", cameraComponent.name);
-                    data.target = resources->createTexture(name, Video::Format::sRGBA, render->getVideoSystem()->getBackBuffer()->getWidth(), render->getVideoSystem()->getBackBuffer()->getHeight(), 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    auto backBuffer = renderer->getDevice()->getBackBuffer();
+                    data.target = resources->createTexture(name, Video::Format::sRGBA, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource, false);
                 }
 
                 entityDataMap.insert(std::make_pair(entity, data));
             }
         }
 
-        void onEntityDestroyed(Entity *entity)
+        void onEntityDestroyed(Plugin::Entity *entity)
         {
             GEK_REQUIRE(entity);
 
-            auto data = entityDataMap.find(entity);
-            if (data != entityDataMap.end())
+            auto entitySearch = entityDataMap.find(entity);
+            if (entitySearch != entityDataMap.end())
             {
-                entityDataMap.erase(data);
+                entityDataMap.erase(entitySearch);
             }
         }
 
         void onUpdate(uint32_t handle, bool isIdle)
         {
             GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
-            GEK_REQUIRE(render);
+            GEK_REQUIRE(renderer);
 
             std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](EntityDataMap::value_type &data) -> void
             {
-                Entity *entity = data.first;
-                auto &cameraComponent = entity->getComponent<FirstPersonCameraComponent>();
+                Plugin::Entity *entity = data.first;
+                auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
                 auto &camera = data.second;
 
-                float width = float(render->getVideoSystem()->getBackBuffer()->getWidth());
-                float height = float(render->getVideoSystem()->getBackBuffer()->getHeight());
+                auto backBuffer = renderer->getDevice()->getBackBuffer();
+                float width = float(backBuffer->getWidth());
+                float height = float(backBuffer->getHeight());
                 float displayAspectRatio = (width / height);
 
                 Math::Float4x4 projectionMatrix;
                 projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.nearClip, cameraComponent.farClip);
 
-                render->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
+                renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
             });
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(FirstPersonCameraImplementation);
-    GEK_REGISTER_CONTEXT_USER(CameraProcessorImplementation);
+    GEK_REGISTER_CONTEXT_USER(FirstPersonCamera);
+    GEK_REGISTER_CONTEXT_USER(CameraProcessor);
 }; // namespace Gek

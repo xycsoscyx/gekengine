@@ -4,29 +4,30 @@
 #include "GEK\Shapes\Frustum.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Resources.h"
+#include "GEK\Engine\Renderer.h"
 #include <memory>
 
 namespace Gek
 {
-    GEK_PREDECLARE(RenderPipeline);
-    GEK_PREDECLARE(RenderContext);
-
-    GEK_INTERFACE(Filter)
+    namespace Engine
     {
-        GEK_INTERFACE(Pass)
+        GEK_INTERFACE(Filter)
         {
-            enum class Mode : uint8_t
+            GEK_INTERFACE(Pass)
             {
-                Deferred = 0,
-                Compute,
+                enum class Mode : uint8_t
+                {
+                    Deferred = 0,
+                    Compute,
+                };
+
+                using Iterator = std::unique_ptr<Pass>;
+
+                virtual Iterator next(void) = 0;
+                virtual Mode prepare(void) = 0;
             };
 
-            typedef std::unique_ptr<Pass> Iterator;
-
-            virtual Iterator next(void) = 0;
-            virtual Mode prepare(void) = 0;
+            virtual Pass::Iterator begin(Video::Device::Context *deviceContext, ResourceHandle cameraTarget) = 0;
         };
-
-        virtual Pass::Iterator begin(RenderContext *renderContext, ResourceHandle cameraTarget) = 0;
-    };
+    }; // namespace Engine
 }; // namespace Gek

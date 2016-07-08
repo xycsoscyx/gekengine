@@ -13,74 +13,80 @@
 
 namespace Gek
 {
-    GEK_PREDECLARE(Entity);
-    GEK_PREDECLARE(PopulationObserver);
-
-    GEK_INTERFACE(Population)
-        : virtual public Observable
+    namespace Plugin
     {
-        struct ComponentDefinition
-            : public std::unordered_map<String, String>
+        GEK_PREDECLARE(Entity);
+        GEK_PREDECLARE(PopulationObserver);
+
+        GEK_INTERFACE(Population)
+            : virtual public Observable
         {
-            String value;
-        };
-
-        struct EntityDefinition
-            : public std::unordered_map<String, ComponentDefinition>
-        {
-        };
-
-        virtual float getWorldTime(void) const = 0;
-        virtual float getFrameTime(void) const = 0;
-
-        virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
-
-        virtual void load(const wchar_t *fileName) = 0;
-        virtual void save(const wchar_t *fileName) = 0;
-        virtual void free(void) = 0;
-
-        virtual Entity *createEntity(const EntityDefinition &entityParameterList, const wchar_t *name = nullptr) = 0;
-        virtual void killEntity(Entity *entity) = 0;
-        virtual Entity *getNamedEntity(const wchar_t *name) const = 0;
-
-        virtual void listEntities(std::function<void(Entity *)> onEntity) const = 0;
-
-        template<typename... ARGUMENTS>
-        void listEntities(std::function<void(Entity *)> onEntity) const
-        {
-            listEntities([onEntity](Entity *entity) -> void
+            struct ComponentDefinition
+                : public std::unordered_map<String, String>
             {
-                if (entity->hasComponents<ARGUMENTS...>())
+                String value;
+            };
+
+            struct EntityDefinition
+                : public std::unordered_map<String, ComponentDefinition>
+            {
+            };
+
+            virtual float getWorldTime(void) const = 0;
+            virtual float getFrameTime(void) const = 0;
+
+            virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
+
+            virtual void load(const wchar_t *fileName) = 0;
+            virtual void save(const wchar_t *fileName) = 0;
+            virtual void free(void) = 0;
+
+            virtual Plugin::Entity *createEntity(const EntityDefinition &entityParameterList, const wchar_t *name = nullptr) = 0;
+            virtual void killEntity(Plugin::Entity *entity) = 0;
+            virtual Plugin::Entity *getNamedEntity(const wchar_t *name) const = 0;
+
+            virtual void listEntities(std::function<void(Plugin::Entity *)> onEntity) const = 0;
+
+            template<typename... ARGUMENTS>
+            void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
+            {
+                listEntities([onEntity](Plugin::Entity *entity) -> void
                 {
-                    onEntity(entity);
-                }
-            });
-        }
+                    if (entity->hasComponents<ARGUMENTS...>())
+                    {
+                        onEntity(entity);
+                    }
+                });
+            }
 
-        virtual void listProcessors(std::function<void(Processor *)> onProcessor) const = 0;
+            virtual void listProcessors(std::function<void(Processor *)> onProcessor) const = 0;
 
-        virtual uint32_t setUpdatePriority(PopulationObserver *observer, uint32_t priority) = 0;
-        virtual void removeUpdatePriority(uint32_t updateHandle) = 0;
-    };
+            virtual uint32_t setUpdatePriority(PopulationObserver *observer, uint32_t priority) = 0;
+            virtual void removeUpdatePriority(uint32_t updateHandle) = 0;
+        };
 
-    GEK_INTERFACE(PopulationSystem)
-        : public Population
+        GEK_INTERFACE(PopulationObserver)
+            : public Observer
+        {
+            virtual void onLoadBegin(void) { };
+            virtual void onLoadSucceeded(void) { };
+            virtual void onLoadFailed(void) { };
+            virtual void onFree(void) { };
+
+            virtual void onEntityCreated(Plugin::Entity *entity) { };
+            virtual void onEntityDestroyed(Plugin::Entity *entity) { };
+
+            virtual void onUpdate(uint32_t handle, bool isIdle) { };
+        };
+    }; // namespace Plugin
+
+    namespace Engine
     {
-        virtual void loadPlugins(void) = 0;
-        virtual void freePlugins(void) = 0;
-    };
-
-    GEK_INTERFACE(PopulationObserver)
-        :  public Observer
-    {
-        virtual void onLoadBegin(void) { };
-        virtual void onLoadSucceeded(void) { };
-        virtual void onLoadFailed(void) { };
-        virtual void onFree(void) { };
-
-        virtual void onEntityCreated(Entity *entity) { };
-        virtual void onEntityDestroyed(Entity *entity) { };
-
-        virtual void onUpdate(uint32_t handle, bool isIdle) { };
-    };
+        GEK_INTERFACE(Population)
+            : virtual public Gek::Plugin::Population
+        {
+            virtual void loadPlugins(void) = 0;
+            virtual void freePlugins(void) = 0;
+        };
+    }; // namespace Engine
 }; // namespace Gek

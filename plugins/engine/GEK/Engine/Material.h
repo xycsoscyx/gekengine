@@ -5,10 +5,16 @@
 
 namespace Gek
 {
-    GEK_PREDECLARE(ResourceList);
-
-    GEK_INTERFACE(Material)
+    namespace Engine
     {
-        virtual ResourceList * const getResourceList(void) const = 0;
-    };
+        GEK_INTERFACE(ResourceList)
+        {
+            virtual ~ResourceList(void) = default;
+        };
+
+        GEK_INTERFACE(Material)
+        {
+            virtual ResourceList * const getResourceList(void) const = 0;
+        };
+    }; // namespace Engine
 }; // namespace Gek

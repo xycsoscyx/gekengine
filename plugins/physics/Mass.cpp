@@ -6,36 +6,38 @@
 
 namespace Gek
 {
-    MassComponent::MassComponent(void)
+    namespace Components
     {
-    }
+        Mass::Mass(void)
+        {
+        }
 
-    void MassComponent::save(Population::ComponentDefinition &componentData) const
-    {
-        saveParameter(componentData, nullptr, value);
-    }
+        void Mass::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, value);
+        }
 
-    void MassComponent::load(const Population::ComponentDefinition &componentData)
-    {
-        value = loadParameter(componentData, nullptr, 0.0f);
-    }
+        void Mass::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            value = loadParameter(componentData, nullptr, 0.0f);
+        }
+    }; // namespace Components
 
-    class MassImplementation
-        : public ContextRegistration<MassImplementation>
-        , public ComponentMixin<MassComponent>
+    GEK_CONTEXT_USER(Mass)
+        , public Plugin::ComponentMixin<Components::Mass>
     {
     public:
-        MassImplementation(Context *context)
+        Mass(Context *context)
             : ContextRegistration(context)
         {
         }
 
-        // Component
+        // Plugin::Component
         const wchar_t * const getName(void) const
         {
             return L"mass";
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(MassImplementation)
+    GEK_REGISTER_CONTEXT_USER(Mass)
 }; // namespace Gek
