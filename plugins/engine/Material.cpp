@@ -36,13 +36,13 @@ namespace Gek
 
                 shader = resources->loadShader(shaderNode->getAttribute(L"name"), material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
                 {
-                    std::unordered_map<String, std::unordered_map<String, ResourceHandle>> passResourceMaps;
+                    std::unordered_map<String, std::unordered_map<String, ResourceHandle>> passResourceMap;
                     for (XmlNodePtr passNode(shaderNode->firstChildElement()); passNode->isValid(); passNode = passNode->nextSiblingElement())
                     {
-                        auto &passResourceMap = passResourceMaps[passNode->getType()];
+                        auto &resourceMap = passResourceMap[passNode->getType()];
                         for (XmlNodePtr resourceNode(passNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                         {
-                            ResourceHandle &resource = passResourceMap[resourceNode->getType()];
+                            ResourceHandle &resource = resourceMap[resourceNode->getType()];
                             if (resourceNode->hasAttribute(L"file"))
                             {
                                 resource = this->resources->loadTexture(resourceNode->getAttribute(L"file"), 0);

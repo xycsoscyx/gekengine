@@ -176,12 +176,12 @@ namespace Gek
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
                 uint32_t width, height;
-                std::unordered_map<String, String> renderTargetList;
                 std::vector<String> materialList;
                 std::unordered_map<String, String> resourceList;
+                std::unordered_map<String, String> unorderedAccessList;
+                std::unordered_map<String, String> renderTargetList;
                 std::unordered_map<String, std::set<Actions>> actionMap;
                 std::unordered_map<String, String> copyResourceMap;
-                std::unordered_map<String, String> unorderedAccessList;
                 ProgramHandle program;
                 uint32_t dispatchWidth;
                 uint32_t dispatchHeight;
@@ -325,7 +325,6 @@ namespace Gek
                 priority = shaderNode->getAttribute(L"priority");
 
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
-                std::unordered_map<String, std::unordered_map<String, Map>> materialResourceLists;
 
                 std::unordered_map<String, String> globalDefinesList;
                 auto replaceDefines = [&globalDefinesList](String &value) -> bool
@@ -495,38 +494,6 @@ namespace Gek
                     };
                 }
 
-                XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
-                for (XmlNodePtr passNode(materialNode->firstChildElement()); passNode->isValid(); passNode->nextSiblingElement())
-                {
-                    auto &materialList = materialResourceLists[passNode->getType()];
-                    for (XmlNodePtr resourceNode(passNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
-                    {
-                        String name(resourceNode->getType());
-                        if (resourceNode->hasAttribute(L"name"))
-                        {
-                            materialList.insert(std::make_pair(name, Map(resourceNode->getAttribute(L"name"))));
-                        }
-                        else
-                        {
-                            MapType mapType = getMapType(resourceNode->getText());
-                            BindType bindType = getBindType(resourceNode->getAttribute(L"bind"));
-                            uint32_t flags = getTextureLoadFlags(resourceNode->getAttribute(L"flags"));
-                            if (resourceNode->hasAttribute(L"file"))
-                            {
-                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, resourceNode->getAttribute(L"file"))));
-                            }
-                            else if (resourceNode->hasAttribute(L"pattern"))
-                            {
-                                materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, resourceNode->getAttribute(L"pattern"), resourceNode->getAttribute(L"parameters"))));
-                            }
-                            else
-                            {
-                                GEK_THROW_EXCEPTION(Exception, "Unknown resource type found in material data: %v", name);
-                            }
-                        }
-                    }
-                }
-
                 StringUTF8 lightingData;
                 XmlNodePtr lightingNode(shaderNode->firstChildElement(L"lighting"));
                 if (lightingNode->isValid())
@@ -575,6 +542,7 @@ namespace Gek
                     }
                 }
 
+                XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
                 for (XmlNodePtr blockNode(shaderNode->firstChildElement(L"block")); blockNode->isValid(); blockNode = blockNode->nextSiblingElement(L"block"))
                 {
                     blockList.push_back(BlockData());
@@ -751,30 +719,60 @@ namespace Gek
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
                         if (passNode->hasAttribute(L"name"))
                         {
-                            auto mapSearch = materialResourceLists.find(passNode->getAttribute(L"name"));
-                            if (mapSearch != materialResourceLists.end())
+                            String passName(passNode->getAttribute(L"name"));
+                            if (materialNode->hasChildElement(passName))
                             {
-                                pass.materialList.reserve(mapSearch->second.size());
-                                namedPassMap[passNode->getAttribute(L"name")] = &pass;
-                                for (auto &map : mapSearch->second)
+                                namedPassMap[passName] = &pass;
+                                std::unordered_map<String, Map> materialList;
+                                for (XmlNodePtr resourceNode(materialNode->firstChildElement(passName)->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                                 {
-                                    pass.materialList.push_back(map.first);
+                                    String name(resourceNode->getType());
+                                    if (resourceNode->hasAttribute(L"name"))
+                                    {
+                                        materialList.insert(std::make_pair(name, Map(resourceNode->getAttribute(L"name"))));
+                                    }
+                                    else
+                                    {
+                                        MapType mapType = getMapType(resourceNode->getText());
+                                        BindType bindType = getBindType(resourceNode->getAttribute(L"bind"));
+                                        uint32_t flags = getTextureLoadFlags(resourceNode->getAttribute(L"flags"));
+                                        if (resourceNode->hasAttribute(L"file"))
+                                        {
+                                            materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, resourceNode->getAttribute(L"file"))));
+                                        }
+                                        else if (resourceNode->hasAttribute(L"pattern"))
+                                        {
+                                            materialList.insert(std::make_pair(name, Map(mapType, bindType, flags, resourceNode->getAttribute(L"pattern"), resourceNode->getAttribute(L"parameters"))));
+                                        }
+                                        else
+                                        {
+                                            GEK_THROW_EXCEPTION(Exception, "Unknown resource type found in material data: %v", name);
+                                        }
+                                    }
+                                }
+
+                                pass.materialList.reserve(materialList.size());
+                                for (auto &resourcePair : materialList)
+                                {
+                                    auto &name = resourcePair.first;
+                                    auto &map = resourcePair.second;
+                                    pass.materialList.push_back(name);
                                     uint32_t currentStage = nextResourceStage++;
-                                    switch (map.second.source)
+                                    switch (map.source)
                                     {
                                     case MapSource::File:
                                     case MapSource::Pattern:
-                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.second.type), getBindType(map.second.binding), map.first, currentStage++);
+                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), name, currentStage++);
                                         break;
 
                                     case MapSource::Resource:
                                         if (true)
                                         {
-                                            auto resourceSearch = resourceMappingList.find(map.second.name);
+                                            auto resourceSearch = resourceMappingList.find(name);
                                             if (resourceSearch != resourceMappingList.end())
                                             {
                                                 auto &resource = (*resourceSearch).second;
-                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), map.first, currentStage++);
+                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), name, currentStage++);
                                             }
                                         }
 
@@ -953,24 +951,24 @@ namespace Gek
                 return priority;
             }
 
-            void compileMaterialMaps(const wchar_t *materialName, const std::unordered_map<String, std::unordered_map<String, ResourceHandle>> &passResourceMaps)
+            void compileMaterialMaps(const wchar_t *materialName, const std::unordered_map<String, std::unordered_map<String, ResourceHandle>> &passResourceMap)
             {
                 FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
                 String fileSpecifier(FileSystem::Path(materialName).getFileName());
-                std::for_each(passResourceMaps.begin(), passResourceMaps.end(), [&](auto &passResourcePair) -> void
+                std::for_each(passResourceMap.begin(), passResourceMap.end(), [&](auto &passResourcePair) -> void
                 {
                     auto &passName = passResourcePair.first;
                     auto passSearch = namedPassMap.find(passName);
                     if (passSearch != namedPassMap.end())
                     {
                         uint32_t nextStage = 0;
-                        PassData &pass = *passSearch->second;
-                        auto &passResourceMap = passResourcePair.second;
-                        for (auto &material : pass.materialList)
+                        PassData *pass = passSearch->second;
+                        auto &resourceMap = passResourcePair.second;
+                        for (auto &material : pass->materialList)
                         {
                             uint32_t stage = nextStage++;
-                            auto &resourceSearch = passResourceMap.find(material);
-                            if (resourceSearch != passResourceMap.end())
+                            auto &resourceSearch = resourceMap.find(material);
+                            if (resourceSearch != resourceMap.end())
                             {
                                 ResourceHandle resource = resourceSearch->second;
                             }
@@ -981,6 +979,8 @@ namespace Gek
 
             bool setMaterial(Video::Device::Context *deviceContext, BlockData &block, PassData &pass, Engine::Material *material)
             {
+                uint32_t nextStage = (block.lighting ? 1 : 0);
+
                 return false;
             }
 
@@ -1322,7 +1322,7 @@ namespace Gek
             }
 
         private:
-            static uint32_t getTextureLoadFlags(const String &loadFlags)
+            uint32_t getTextureLoadFlags(const String &loadFlags)
             {
                 uint32_t flags = 0;
                 int position = 0;
@@ -1338,7 +1338,7 @@ namespace Gek
                 return flags;
             }
 
-            static uint32_t getTextureCreateFlags(const String &createFlags)
+            uint32_t getTextureCreateFlags(const String &createFlags)
             {
                 uint32_t flags = 0;
                 int position = 0;
