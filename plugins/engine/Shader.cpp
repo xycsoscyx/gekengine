@@ -951,35 +951,48 @@ namespace Gek
                 return priority;
             }
 
-            void compileMaterialMaps(const wchar_t *materialName, const std::unordered_map<String, std::unordered_map<String, ResourceHandle>> &passResourceMap)
+            std::unordered_map<Engine::Material *, std::unordered_map<PassData *, std::unordered_map<uint32_t, ResourceHandle>>> materialMap;
+            void loadMaterial(Engine::Material *material, const Engine::Material::PassMap &passMap)
             {
-                FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
-                String fileSpecifier(FileSystem::Path(materialName).getFileName());
-                std::for_each(passResourceMap.begin(), passResourceMap.end(), [&](auto &passResourcePair) -> void
+                std::for_each(passMap.begin(), passMap.end(), [&](auto &passPair) -> void
                 {
-                    auto &passName = passResourcePair.first;
+                    auto &passName = passPair.first;
                     auto passSearch = namedPassMap.find(passName);
                     if (passSearch != namedPassMap.end())
                     {
                         uint32_t nextStage = 0;
                         PassData *pass = passSearch->second;
-                        auto &resourceMap = passResourcePair.second;
-                        for (auto &material : pass->materialList)
+                        auto &resourceMap = passPair.second;
+                        for (auto &resource : pass->materialList)
                         {
                             uint32_t stage = nextStage++;
-                            auto &resourceSearch = resourceMap.find(material);
+                            auto &resourceSearch = resourceMap.find(resource);
                             if (resourceSearch != resourceMap.end())
                             {
-                                ResourceHandle resource = resourceSearch->second;
+                                materialMap[material][pass][stage] = resourceSearch->second;
                             }
                         }
                     }
                 });
             }
 
-            bool setMaterial(Video::Device::Context *deviceContext, BlockData &block, PassData &pass, Engine::Material *material)
+            bool enableMaterial(Video::Device::Context *deviceContext, BlockData &block, PassData &pass, Engine::Material *material)
             {
-                uint32_t nextStage = (block.lighting ? 1 : 0);
+                uint32_t firstStage = (block.lighting ? 1 : 0);
+                auto &materialSearch = materialMap.find(material);
+                if (materialSearch != materialMap.end())
+                {
+                    auto &passSearch = materialSearch->second.find(&pass);
+                    if (passSearch != materialSearch->second.end())
+                    {
+                        for (auto &resource : passSearch->second)
+                        {
+                            resources->setResource(deviceContext->pixelPipeline(), resource.second, (resource.first + firstStage));
+                        }
+
+                        return true;
+                    }
+                }
 
                 return false;
             }
@@ -1211,9 +1224,9 @@ namespace Gek
                     return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                 }
 
-                bool setMaterial(Engine::Material *material)
+                bool enableMaterial(Engine::Material *material)
                 {
-                    return shaderNode->setMaterial(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current), material);
+                    return shaderNode->enableMaterial(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current), material);
                 }
             };
 

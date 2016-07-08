@@ -17,7 +17,6 @@ namespace Gek
         {
         private:
             Engine::Resources *resources;
-            ShaderHandle shader;
 
         public:
             Material(Context *context, Engine::Resources *resources, const wchar_t *materialName, MaterialHandle material)
@@ -34,12 +33,12 @@ namespace Gek
                 XmlNodePtr shaderNode(materialNode->firstChildElement(L"shader"));
                 GEK_CHECK_CONDITION(shaderNode->hasAttribute(L"name"), Exception, "Material shader node missing name attribute");
 
-                shader = resources->loadShader(shaderNode->getAttribute(L"name"), material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
+                resources->loadShader(shaderNode->getAttribute(L"name"), material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
                 {
-                    std::unordered_map<String, std::unordered_map<String, ResourceHandle>> passResourceMap;
+                    PassMap passMap;
                     for (XmlNodePtr passNode(shaderNode->firstChildElement()); passNode->isValid(); passNode = passNode->nextSiblingElement())
                     {
-                        auto &resourceMap = passResourceMap[passNode->getType()];
+                        auto &resourceMap = passMap[passNode->getType()];
                         for (XmlNodePtr resourceNode(passNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                         {
                             ResourceHandle &resource = resourceMap[resourceNode->getType()];
@@ -57,6 +56,8 @@ namespace Gek
                             }
                         }
                     }
+
+                    shader->loadMaterial((Engine::Material *)this, passMap);
                 });
             }
         };

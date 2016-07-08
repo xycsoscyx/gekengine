@@ -432,7 +432,7 @@ namespace Gek
 
                     for (auto &drawCallSet : drawCallSetList)
                     {
-                        bool materialSet = false;
+                        bool materialEnabled = false;
                         auto &shader = drawCallSet.shader;
                         for (auto block = shader->begin(deviceContext, cameraConstantData.viewMatrix, viewFrustum, cameraTarget); block; block = block->next())
                         {
@@ -470,10 +470,10 @@ namespace Gek
                                                         continue;
                                                     }
 
-                                                    materialSet = pass->setMaterial(material);
+                                                    materialEnabled = pass->enableMaterial(material);
                                                 }
 
-                                                if (materialSet)
+                                                if (materialEnabled)
                                                 {
                                                     (*shaderDrawCall).onDraw(deviceContext);
                                                 }

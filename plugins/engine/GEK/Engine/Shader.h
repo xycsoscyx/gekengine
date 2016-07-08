@@ -4,14 +4,13 @@
 #include "GEK\Shapes\Frustum.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Resources.h"
+#include "GEK\Engine\Material.h"
 #include <memory>
 
 namespace Gek
 {
     namespace Engine
     {
-        GEK_PREDECLARE(Material);
-
         GEK_INTERFACE(Shader)
         {
             GEK_START_EXCEPTIONS();
@@ -33,7 +32,7 @@ namespace Gek
 
                 virtual Mode prepare(void) = 0;
 
-                virtual bool setMaterial(Material *material) = 0;
+                virtual bool enableMaterial(Material *material) = 0;
             };
 
             GEK_INTERFACE(Block)
@@ -48,6 +47,8 @@ namespace Gek
             };
 
             virtual uint32_t getPriority(void) = 0;
+
+            virtual void loadMaterial(Material *material, const Material::PassMap &passMap) = 0;
 
             virtual Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget) = 0;
         };

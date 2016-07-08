@@ -2,6 +2,7 @@
 
 #include "GEK\Context\Context.h"
 #include "GEK\Engine\Resources.h"
+#include <unordered_map>
 
 namespace Gek
 {
@@ -11,7 +12,8 @@ namespace Gek
         {
             GEK_START_EXCEPTIONS();
 
-            virtual ~Material(void) = default;
+            using ResourceMap = std::unordered_map<String, ResourceHandle>;
+            using PassMap = std::unordered_map<String, ResourceMap>;
         };
     }; // namespace Engine
 }; // namespace Gek
