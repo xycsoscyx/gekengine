@@ -458,7 +458,7 @@ namespace Gek
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
                 auto load = [this, fileName = String(fileName)](MaterialHandle handle)->Engine::MaterialPtr
                 {
-                    return getContext()->createClass<Engine::Material>(L"Engine::Material", (Resources *)this, fileName.c_str(), handle);
+                    return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, fileName.c_str(), handle);
                 };
 
                 auto request = [this, load](MaterialHandle handle, std::function<void(Engine::MaterialPtr)> set) -> void
@@ -475,7 +475,7 @@ namespace Gek
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
                 auto load = [this, fileName = String(fileName)](ResourceHandle handle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Resources *)this, fileName.c_str());
+                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, fileName.c_str());
                 };
 
                 auto request = [this, load](ResourceHandle handle, std::function<void(Engine::FilterPtr)> set) -> void
