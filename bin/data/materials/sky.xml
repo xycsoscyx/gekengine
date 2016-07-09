@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <material>
-    <shader>standard</shader>
-    <maps pass="solid">
-        <albedo pattern="color" parameters="(7.0196, 8.90196, 8.43137)" />
-        <normal pattern="system" parameters="flat" />
-        <roughness pattern="color" parameters="1" />
-        <metalness pattern="color" parameters="0" />
-    </maps>
+    <shader name="standard">
+        <solid>
+            <albedo pattern="color" parameters="(7.0196, 8.90196, 8.43137)" />
+            <normal pattern="system" parameters="flat" />
+            <roughness pattern="color" parameters="1" />
+            <metalness pattern="color" parameters="0" />
+        </solid>
+    </shader>
 </material>

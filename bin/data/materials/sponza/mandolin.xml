@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <material>
-    <shader>standard</shader>
-    <maps pass="solid">
+    <shader name="standard">
+    <solid>
         <albedo file="$material.Albedo" />
         <normal pattern="system" parameters="flat" />
         <roughness file="$material.Roughness" />
         <metalness pattern="color" parameters="0" />
-    </maps>
+    </solid></shader>
 </material>

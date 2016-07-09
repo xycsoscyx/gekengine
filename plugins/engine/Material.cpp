@@ -31,7 +31,7 @@ namespace Gek
                 XmlNodePtr materialNode(document->getRoot(L"material"));
 
                 XmlNodePtr shaderNode(materialNode->firstChildElement(L"shader"));
-                GEK_CHECK_CONDITION(shaderNode->hasAttribute(L"name"), Exception, "Material shader node missing name attribute");
+                GEK_CHECK_CONDITION(!shaderNode->hasAttribute(L"name"), Exception, "Material shader node missing name attribute");
 
                 resources->loadShader(shaderNode->getAttribute(L"name"), material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
                 {

@@ -367,6 +367,54 @@ namespace Gek
                     }
                 };
 
+                StringUTF8 lightingData;
+                XmlNodePtr lightingNode(shaderNode->firstChildElement(L"lighting"));
+                if (lightingNode->isValid())
+                {
+                    lightsPerPass = lightingNode->firstChildElement(L"lightsPerPass")->getText();
+                    if (lightsPerPass > 0)
+                    {
+                        lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                        lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+
+                        globalDefinesList[L"lightsPerPass"] = lightsPerPass;
+
+                        lightingData.format(
+                            "namespace Lighting                                         \r\n" \
+                            "{                                                          \r\n" \
+                            "    cbuffer Parameters : register(b3)                      \r\n" \
+                            "    {                                                      \r\n" \
+                            "        uint count;                                        \r\n" \
+                            "        uint padding[3];                                   \r\n" \
+                            "    };                                                     \r\n" \
+                            "                                                           \r\n" \
+                            "    namespace Type                                         \r\n" \
+                            "    {                                                      \r\n" \
+                            "        static const uint Point = 0;                       \r\n" \
+                            "        static const uint Directional = 1;                 \r\n" \
+                            "        static const uint Spot = 2;                        \r\n" \
+                            "    };                                                     \r\n" \
+                            "                                                           \r\n" \
+                            "    struct Data                                            \r\n" \
+                            "    {                                                      \r\n" \
+                            "        uint   type;                                       \r\n" \
+                            "        float3 color;                                      \r\n" \
+                            "        float3 position;                                   \r\n" \
+                            "        float3 direction;                                  \r\n" \
+                            "        float  range;                                      \r\n" \
+                            "        float  radius;                                     \r\n" \
+                            "        float  innerAngle;                                 \r\n" \
+                            "        float  outerAngle;                                 \r\n" \
+                            "        float  falloff;                                    \r\n" \
+                            "    };                                                     \r\n" \
+                            "                                                           \r\n" \
+                            "    StructuredBuffer<Data> list : register(t0);            \r\n" \
+                            "    static const uint lightsPerPass = %v;                  \r\n" \
+                            "};                                                         \r\n" \
+                            "                                                           \r\n", lightsPerPass);
+                    }
+                }
+
                 XmlNodePtr definesNode(shaderNode->firstChildElement(L"defines"));
                 for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
                 {
@@ -397,7 +445,7 @@ namespace Gek
                     resourceMap[L"depth"] = depthBuffer;
                 }
 
-                XmlNodePtr texturesNode(shaderNode->firstChildElement(L"targets"));
+                XmlNodePtr texturesNode(shaderNode->firstChildElement(L"textures"));
                 for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
                 {
                     String name(textureNode->getType());
@@ -494,54 +542,6 @@ namespace Gek
                     };
                 }
 
-                StringUTF8 lightingData;
-                XmlNodePtr lightingNode(shaderNode->firstChildElement(L"lighting"));
-                if (lightingNode->isValid())
-                {
-                    lightsPerPass = lightingNode->firstChildElement(L"lightsPerPass")->getText();
-                    if (lightsPerPass > 0)
-                    {
-                        lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                        lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-
-                        globalDefinesList[L"lightsPerPass"] = lightsPerPass;
-
-                        lightingData.format(
-                            "namespace Lighting                                         \r\n" \
-                            "{                                                          \r\n" \
-                            "    cbuffer Parameters : register(b3)                      \r\n" \
-                            "    {                                                      \r\n" \
-                            "        uint count;                                        \r\n" \
-                            "        uint padding[3];                                   \r\n" \
-                            "    };                                                     \r\n" \
-                            "                                                           \r\n" \
-                            "    namespace Type                                         \r\n" \
-                            "    {                                                      \r\n" \
-                            "        static const uint Point = 0;                       \r\n" \
-                            "        static const uint Directional = 1;                 \r\n" \
-                            "        static const uint Spot = 2;                        \r\n" \
-                            "    };                                                     \r\n" \
-                            "                                                           \r\n" \
-                            "    struct Data                                            \r\n" \
-                            "    {                                                      \r\n" \
-                            "        uint   type;                                       \r\n" \
-                            "        float3 color;                                      \r\n" \
-                            "        float3 position;                                   \r\n" \
-                            "        float3 direction;                                  \r\n" \
-                            "        float  range;                                      \r\n" \
-                            "        float  radius;                                     \r\n" \
-                            "        float  innerAngle;                                 \r\n" \
-                            "        float  outerAngle;                                 \r\n" \
-                            "        float  falloff;                                    \r\n" \
-                            "    };                                                     \r\n" \
-                            "                                                           \r\n" \
-                            "    StructuredBuffer<Data> list : register(t0);            \r\n" \
-                            "    static const uint lightsPerPass = %v;                  \r\n" \
-                            "};                                                         \r\n" \
-                            "                                                           \r\n", lightsPerPass);
-                    }
-                }
-
                 XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
                 for (XmlNodePtr blockNode(shaderNode->firstChildElement(L"block")); blockNode->isValid(); blockNode = blockNode->nextSiblingElement(L"block"))
                 {
@@ -607,7 +607,7 @@ namespace Gek
                             {
                                 String name(resourceNode->getType());
                                 String alias(resourceNode->getText());
-                                pass.resourceList.insert(std::make_pair(name, alias));
+                                pass.resourceList.insert(std::make_pair(name, alias.empty() ? name : alias));
 
                                 if (resourceNode->hasAttribute(L"actions"))
                                 {
@@ -699,10 +699,9 @@ namespace Gek
                         for (auto &resourcePair : pass.renderTargetList)
                         {
                             auto resourceSearch = resourceMappingList.find(resourcePair.first);
-                            if (resourceSearch != resourceMappingList.end())
-                            {
-                                outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, stage++);
-                            }
+                            GEK_CHECK_CONDITION(resourceSearch == resourceMappingList.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
+
+                            outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, stage++);
                         }
 
                         if (!outputData.empty())
@@ -835,23 +834,23 @@ namespace Gek
                         {
                             if (value.find(L"float2") != std::string::npos)
                             {
-                                defineData.format("static const float2 %v = %v;\r\n", name, value);
+                                defineData.format("    static const float2 %v = %v;\r\n", name, value);
                             }
                             else if (value.find(L"float3") != std::string::npos)
                             {
-                                defineData.format("static const float3 %v = %v;\r\n", name, value);
+                                defineData.format("    static const float3 %v = %v;\r\n", name, value);
                             }
                             else if (value.find(L"float4") != std::string::npos)
                             {
-                                defineData.format("static const float4 %v = %v;\r\n", name, value);
+                                defineData.format("    static const float4 %v = %v;\r\n", name, value);
                             }
                             else if (value.find(L".") == std::string::npos)
                             {
-                                defineData.format("static const int %v = %v;\r\n", name, value);
+                                defineData.format("    static const int %v = %v;\r\n", name, value);
                             }
                             else
                             {
-                                defineData.format("static const float %v = %v;\r\n", name, value);
+                                defineData.format("    static const float %v = %v;\r\n", name, value);
                             }
                         };
 
@@ -1265,32 +1264,7 @@ namespace Gek
                     return shaderNode->prepareBlock(base, deviceContext, (*current));
                 }
             };
-/*
-            bool setResourceList(Video::Device::Context *deviceContext, Block *block, Pass *pass, Engine::ResourceList * const resourceList)
-            {
-                GEK_REQUIRE(deviceContext);
-                GEK_REQUIRE(block);
-                GEK_REQUIRE(pass);
-                GEK_REQUIRE(resourceList);
 
-                PassData &passData = *dynamic_cast<PassImplementation *>(pass)->current;
-                auto &resourceData = dynamic_cast<ResourceList *>(resourceList)->data;
-                auto resourceSearch = resourceData.find(&passData);
-                if (resourceSearch != resourceData.end())
-                {
-                    uint32_t firstStage = (dynamic_cast<BlockImplementation *>(block)->current->lighting ? 1 : 0);
-                    Video::Device::Context::Pipeline *deviceContextPipeline = (passData.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
-                    for (auto &resource : resourceSearch->second)
-                    {
-                        resources->setResource(deviceContextPipeline, resource.second, (firstStage + resource.first));
-                    }
-
-                    return true;
-                }
-
-                return false;
-            }
-            */
             Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget)
             {
                 GEK_REQUIRE(population);

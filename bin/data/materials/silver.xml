@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <material>
-    <shader>standard</shader>
-    <maps pass="solid">
-        <albedo pattern="color" parameters="(0.972000, 0.960000, 0.915000)" />
-        <normal file="gradient_n" />
-        <roughness file="gradient_r" />
-        <metalness file="gradient_m" />
-    </maps>
+    <shader name="standard">
+        <solid>
+            <albedo pattern="color" parameters="(0.972000, 0.960000, 0.915000)" />
+            <normal file="gradient_n" />
+            <roughness file="gradient_r" />
+            <metalness file="gradient_m" />
+        </solid>
+    </shader>
 </material>
