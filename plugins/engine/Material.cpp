@@ -1,5 +1,6 @@
 ﻿#include "GEK\Engine\Material.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Shader.h"
 #include "GEK\Engine\Resources.h"
@@ -35,6 +36,9 @@ namespace Gek
 
                 resources->loadShader(shaderNode->getAttribute(L"name"), material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
                 {
+                    FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
+                    String fileSpecifier(FileSystem::Path(materialName).getFileName());
+
                     PassMap passMap;
                     for (XmlNodePtr passNode(shaderNode->firstChildElement()); passNode->isValid(); passNode = passNode->nextSiblingElement())
                     {
@@ -44,7 +48,11 @@ namespace Gek
                             ResourceHandle &resource = resourceMap[resourceNode->getType()];
                             if (resourceNode->hasAttribute(L"file"))
                             {
-                                resource = this->resources->loadTexture(resourceNode->getAttribute(L"file"), 0);
+                                String file(resourceNode->getAttribute(L"file"));
+                                file.replace(L"$directory", filePath);
+                                file.replace(L"$filename", fileSpecifier);
+                                file.replace(L"$material", materialName);
+                                resource = this->resources->loadTexture(file, 0);
                             }
                             else if (resourceNode->hasAttribute(L"pattern"))
                             {

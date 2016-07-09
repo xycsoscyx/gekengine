@@ -1,10 +1,11 @@
 <?xml version="1.0"?>
 <material>
     <shader name="standard">
-    <solid>
-        <albedo file="$material.Albedo" />
-        <normal file="$directory\fabric.Normal" />
-        <roughness file="$directory\fabric.Roughness" />
-        <metalness file="$directory\fabric.Metalness" />
-    </solid></shader>
+        <solid>
+            <albedo file="$material.Albedo" />
+            <normal file="$directory\fabric.Normal" />
+            <roughness file="$directory\fabric.Roughness" />
+            <metalness file="$directory\fabric.Metalness" />
+        </solid>
+    </shader>
 </material>

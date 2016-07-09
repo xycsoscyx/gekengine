@@ -2,7 +2,7 @@
 <filter>
     <textures>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">half</luminanceBuffer>
-        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess, readWrite" width="1" height="1">half</averageLuminanceBuffer>
+        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess" readwrite="true" width="1" height="1">half</averageLuminanceBuffer>
         <finalBuffer bind="float3" source="standard" name="finalBuffer" />
     </textures>
 

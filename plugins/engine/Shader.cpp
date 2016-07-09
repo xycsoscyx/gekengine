@@ -479,7 +479,7 @@ namespace Gek
 
                         Video::Format format = Video::getFormat(textureNode->getText());
                         uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
-                        bool readWrite = textureNode->getAttribute(L"readWrite");
+                        bool readWrite = textureNode->getAttribute(L"readwrite");
                         resourceMap[name] = resources->createTexture(String(L"%v:%v:resource", name, fileName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
                     }
 
@@ -494,7 +494,7 @@ namespace Gek
 
                     Video::Format format = Video::getFormat(bufferNode->getText());
                     uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
-                    bool readWrite = bufferNode->getAttribute(L"readWrite");
+                    bool readWrite = bufferNode->getAttribute(L"readwrite");
                     resourceMap[name] = resources->createBuffer(String(L"%v:%v:buffer", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource, readWrite);
                     switch (format)
                     {
@@ -694,14 +694,14 @@ namespace Gek
                             engineData += lightingData;
                         }
 
-                        uint32_t stage = 0;
+                        uint32_t currentStage = 0;
                         StringUTF8 outputData;
                         for (auto &resourcePair : pass.renderTargetList)
                         {
                             auto resourceSearch = resourceMappingList.find(resourcePair.first);
                             GEK_CHECK_CONDITION(resourceSearch == resourceMappingList.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
 
-                            outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, stage++);
+                            outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
                         }
 
                         if (!outputData.empty())
@@ -964,11 +964,11 @@ namespace Gek
                         auto &resourceMap = passPair.second;
                         for (auto &resource : pass->materialList)
                         {
-                            uint32_t stage = nextStage++;
+                            uint32_t currentStage = nextStage++;
                             auto &resourceSearch = resourceMap.find(resource);
                             if (resourceSearch != resourceMap.end())
                             {
-                                materialMap[material][pass][stage] = resourceSearch->second;
+                                materialMap[material][pass][currentStage] = resourceSearch->second;
                             }
                         }
                     }
@@ -1001,18 +1001,18 @@ namespace Gek
             {
                 deviceContext->clearResources();
 
-                uint32_t stage = 0;
+                uint32_t currentResourceStage = 0;
                 Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
                 if (block.lighting)
                 {
                     deviceContextPipeline->setResource(lightDataBuffer.get(), 0);
                     deviceContextPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
-                    stage = 1;
+                    currentResourceStage = 1;
                 }
 
                 if (pass.mode == Pass::Mode::Forward)
                 {
-                    //stage += mapList.size();
+                    currentResourceStage += pass.materialList.size();
                 }
 
                 for (auto &resourcePair : pass.resourceList)
@@ -1057,10 +1057,15 @@ namespace Gek
                         }
                     }
 
-                    resources->setResource(deviceContextPipeline, resource, stage++);
+                    resources->setResource(deviceContextPipeline, resource, currentResourceStage++);
                 }
 
-                stage = (pass.renderTargetList.empty() ? 0 : pass.renderTargetList.size());
+                uint32_t currentUnorderedStage = 0;
+                if (pass.mode != Pass::Mode::Compute)
+                {
+                    currentUnorderedStage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                }
+
                 for (auto &resourcePair : pass.unorderedAccessList)
                 {
                     ResourceHandle resource;
@@ -1070,7 +1075,7 @@ namespace Gek
                         resource = resourceSearch->second;
                     }
 
-                    resources->setUnorderedAccess(deviceContextPipeline, resource, stage++);
+                    resources->setUnorderedAccess(deviceContextPipeline, resource, currentUnorderedStage++);
                 }
 
                 resources->setProgram(deviceContextPipeline, pass.program);
@@ -1113,7 +1118,7 @@ namespace Gek
                     }
                     else
                     {
-                        uint32_t stage = 0;
+                        uint32_t currentStage = 0;
                         for (auto &resourcePair : pass.renderTargetList)
                         {
                             ResourceHandle renderTargetHandle;
@@ -1126,10 +1131,10 @@ namespace Gek
                                 shaderConstantData.targetSize.y = float(texture->getHeight());
                             }
 
-                            renderTargetList[stage++] = renderTargetHandle;
+                            renderTargetList[currentStage++] = renderTargetHandle;
                         }
 
-                        resources->setRenderTargets(deviceContext, renderTargetList, stage, (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setRenderTargets(deviceContext, renderTargetList, currentStage, (pass.enableDepth ? &depthBuffer : nullptr));
                     }
 
                     break;
