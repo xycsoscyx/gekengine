@@ -184,7 +184,7 @@ namespace Gek
                 return handle;
             }
 
-            HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad, bool threaded)
+            HANDLE getHandle(std::size_t hash, std::function<void(HANDLE, std::function<void(TypePtr)>)> requestLoad, std::function<void(TYPE *)> onLoaded, bool threaded)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -193,6 +193,10 @@ namespace Gek
                     if (resourceSearch != resourceHandleMap.end())
                     {
                         handle = resourceSearch->second;
+                        if (onLoaded)
+                        {
+                            onLoaded(getResource(handle, false));
+                        }
                     }
                 }
                 else
@@ -467,7 +471,7 @@ namespace Gek
                 };
 
                 std::size_t hash = std::hash<String>()(fileName);
-                return materialManager.getHandle(hash, request, true);
+                return materialManager.getHandle(hash, request, nullptr, true);
             }
 
             Engine::Filter * const loadFilter(const wchar_t *fileName)
@@ -484,7 +488,7 @@ namespace Gek
                 };
 
                 std::size_t hash = std::hash<String>()(fileName);
-                ResourceHandle filter = filterManager.getHandle(hash, request, false);
+                ResourceHandle filter = filterManager.getHandle(hash, request, nullptr, false);
                 return filterManager.getResource(filter);
             }
 
@@ -504,7 +508,7 @@ namespace Gek
                 };
 
                 std::size_t hash = std::hash<String>()(fileName);
-                ShaderHandle shader = shaderManager.getHandle(hash, request, true);
+                ShaderHandle shader = shaderManager.getHandle(hash, request, onLoad, true);
                 materialShaderMap[material] = shader;
                 return shader;
             }
@@ -532,7 +536,7 @@ namespace Gek
                     renderState.scissorEnable,
                     renderState.multisampleEnable,
                     renderState.antialiasedLineEnable);
-                return renderStateManager.getHandle(hash, request, true);
+                return renderStateManager.getHandle(hash, request, nullptr, true);
             }
 
             DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
@@ -562,7 +566,7 @@ namespace Gek
                     static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation),
                     static_cast<uint8_t>(depthState.stencilBackState.passOperation),
                     static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction));
-                return depthStateManager.getHandle(hash, request, true);
+                return depthStateManager.getHandle(hash, request, nullptr, true);
             }
 
             BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
@@ -586,7 +590,7 @@ namespace Gek
                     static_cast<uint8_t>(blendState.alphaDestination),
                     static_cast<uint8_t>(blendState.alphaOperation),
                     blendState.writeMask);
-                return blendStateManager.getHandle(hash, request, true);
+                return blendStateManager.getHandle(hash, request, nullptr, true);
             }
 
             BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
@@ -618,7 +622,7 @@ namespace Gek
                     }
                 }
 
-                return blendStateManager.getHandle(hash, request, true);
+                return blendStateManager.getHandle(hash, request, nullptr, true);
             }
 
             ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite)
@@ -643,7 +647,7 @@ namespace Gek
                     }
                     else
                     {
-                        return resourceManager.getHandle(hash, request, true);
+                        return resourceManager.getHandle(hash, request, nullptr, true);
                     }
                 }
                 else
@@ -674,7 +678,7 @@ namespace Gek
                     }
                     else
                     {
-                        return resourceManager.getHandle(hash, request, staticData ? false : true);
+                        return resourceManager.getHandle(hash, request, nullptr, staticData ? false : true);
                     }
                 }
                 else
@@ -705,7 +709,7 @@ namespace Gek
                     }
                     else
                     {
-                        return resourceManager.getHandle(hash, request, staticData ? false : true);
+                        return resourceManager.getHandle(hash, request, nullptr, staticData ? false : true);
                     }
                 }
                 else
@@ -880,7 +884,7 @@ namespace Gek
                 };
 
                 std::size_t hash = std::hash<String>()(fileName);
-                return resourceManager.getHandle(hash, request, true);
+                return resourceManager.getHandle(hash, request, nullptr, true);
             }
 
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
@@ -898,7 +902,7 @@ namespace Gek
                 };
 
                 std::size_t hash = std::hash_combine<String, String>(pattern, parameters);
-                return resourceManager.getHandle(hash, request, true);
+                return resourceManager.getHandle(hash, request, nullptr, true);
             }
 
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
