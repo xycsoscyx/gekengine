@@ -10,14 +10,14 @@ namespace Gek
 {
     Exception::Exception(const char *function, uint32_t line, const char *message)
         : std::exception(message)
-        , function(function)
         , line(line)
     {
+        std::copy_n(function, strlen(function), this->function.data());
     }
 
     const char *Exception::in(void) const
     {
-        return function;
+        return function.data();
     }
 
     uint32_t Exception::at(void) const

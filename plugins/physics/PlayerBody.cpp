@@ -210,7 +210,7 @@ namespace Gek
             float capsuleHeight = (halfHeight - player.stairStep);
             sphereCastOrigin = ((capsuleHeight * 0.5f) + player.stairStep);
             outerShapeMatrix.translation = (outerShapeMatrix.ny * sphereCastOrigin);
-            NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.5f, 0, outerShapeMatrix.data);
+            NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.25f, 0.5f, 0, outerShapeMatrix.data);
             NewtonCollisionSetScale(bodyCapsule, capsuleHeight, (player.outerRadius * 4.0f), (player.outerRadius * 4.0f));
 
             // compound collision player controller

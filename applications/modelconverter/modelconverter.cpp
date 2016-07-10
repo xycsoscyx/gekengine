@@ -11,7 +11,6 @@
 #include <map>
 
 #include <Newton.h>
-#pragma comment(lib, "newton.lib")
 
 #include <assimp/config.h>
 #include <assimp/cimport.h>
@@ -267,9 +266,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         std::unordered_map<String, std::list<Model>> modelList;
         for (auto &material : modelListUTF8)
         {
-            String materialName(material.first);
+            String materialName(material.first.getLower());
             materialName.replace(L"/", L"\\");
-            materialName = FileSystem::Path(materialName).replace_extension().generic_wstring();
+            materialName = FileSystem::Path(materialName).replace_extension();
 
             int texturesPathIndex = materialName.find(L"\\textures\\");
             if (texturesPathIndex != std::string::npos)
@@ -279,20 +278,19 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             if (materialName.subString(materialName.length() - 9).compareNoCase(L".colormap") == 0)
             {
-                materialName = materialName.subString(materialName.length() - 9);
+                materialName = materialName.subString(0, materialName.length() - 9);
             }
             else if (materialName.subString(materialName.length() - 7).compareNoCase(L".albedo") == 0)
             {
-                materialName = materialName.subString(materialName.length() - 7);
+                materialName = materialName.subString(0, materialName.length() - 7);
             }
             else if (materialName.subString(materialName.length() - 2).compareNoCase(L"_a") == 0)
             {
-                materialName = materialName.subString(materialName.length() - 2);
+                materialName = materialName.subString(0, materialName.length() - 2);
             }
 
             auto fileSpecifier = FileSystem::Path(materialName).filename();
             auto folderName = FileSystem::Path(materialName).remove_filename().filename();
-
             if (fileSpecifier == folderName)
             {
                 materialName = FileSystem::Path(materialName).remove_filename().generic_wstring();

@@ -7,6 +7,7 @@
 #include "GEK\Math\Quaternion.h"
 #include <functional>
 #include <algorithm>
+#include <iterator>
 #include <sstream>
 #include <iomanip>
 #include <numeric>
@@ -144,7 +145,23 @@ namespace Gek
 
         BaseString subString(size_t position = 0, size_t length = std::string::npos) const
         {
-            return BaseString(substr(position, length));
+            if (position < 0)
+            {
+                throw Exception(__FUNCTION__, __LINE__, "Negative string position encountered");
+            }
+            else if (position >= size())
+            {
+                return BaseString();
+            }
+
+            try
+            {
+                return BaseString(substr(position, length));
+            }
+            catch (const std::out_of_range &)
+            {
+                throw Exception(__FUNCTION__, __LINE__, "Out of range exception encountered");
+            }
         }
 
         bool replace(const BaseString &from, const BaseString &to)

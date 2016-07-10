@@ -5,6 +5,7 @@
 #include <chrono>
 #include <atomic>
 #include <memory>
+#include <array>
 
 namespace Gek
 {
@@ -12,7 +13,7 @@ namespace Gek
         : public std::exception
     {
     private:
-        const char *function;
+        std::array<char, 256> function;
         uint32_t line;
 
     public:
@@ -119,9 +120,9 @@ namespace Gek
         {
             object = std::make_shared<CREATE>(arguments...);
         }
-        catch (const std::bad_alloc &badAllocation)
+        catch (const std::bad_alloc &exception)
         {
-            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), badAllocation.what()));
+            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), exception.what()));
         };
 
         return object;

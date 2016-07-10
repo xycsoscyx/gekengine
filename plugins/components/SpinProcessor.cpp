@@ -96,7 +96,6 @@ namespace Gek
 
         void onEntityCreated(Plugin::Entity *entity)
         {
-            GEK_REQUIRE(population);
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)
@@ -111,7 +110,7 @@ namespace Gek
             if (!isIdle)
             {
                 Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
-                population->listEntities<Components::Transform, Spin>([&](Plugin::Entity *entity) -> void
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity) -> void
                 {
                     auto &transform = entity->getComponent<Components::Transform>();
                     transform.rotation *= rotation;

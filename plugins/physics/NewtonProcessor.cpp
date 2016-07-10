@@ -23,8 +23,6 @@
 #include <map>
 #include <set>
 
-#pragma comment(lib, "newton.lib")
-
 static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
 {
     FILE *file = (FILE *)serializeHandle;
@@ -263,7 +261,7 @@ namespace Gek
             NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
+            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
 
             newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
             if (newtonStaticScene)
@@ -453,13 +451,14 @@ namespace Gek
                 else if (parameters[0].compareNoCase(L"*capsule") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
-                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
                 else if (parameters[0].compareNoCase(L"*cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
-                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
+/*
                 else if (parameters[0].compareNoCase(L"*tapered_capsule") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
@@ -470,6 +469,7 @@ namespace Gek
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
                     newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
                 }
+*/
                 else if (parameters[0].compareNoCase(L"*chamfer_cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
