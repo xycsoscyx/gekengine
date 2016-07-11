@@ -410,38 +410,38 @@ namespace Gek
                         globalDefinesList[L"lightsPerPass"] = lightsPerPass;
 
                         lightingData.format(
-                            "namespace Lighting                                         \r\n" \
-                            "{                                                          \r\n" \
-                            "    cbuffer Parameters : register(b3)                      \r\n" \
-                            "    {                                                      \r\n" \
-                            "        uint count;                                        \r\n" \
-                            "        uint padding[3];                                   \r\n" \
-                            "    };                                                     \r\n" \
-                            "                                                           \r\n" \
-                            "    namespace Type                                         \r\n" \
-                            "    {                                                      \r\n" \
-                            "        static const uint Point = 0;                       \r\n" \
-                            "        static const uint Directional = 1;                 \r\n" \
-                            "        static const uint Spot = 2;                        \r\n" \
-                            "    };                                                     \r\n" \
-                            "                                                           \r\n" \
-                            "    struct Data                                            \r\n" \
-                            "    {                                                      \r\n" \
-                            "        uint   type;                                       \r\n" \
-                            "        float3 color;                                      \r\n" \
-                            "        float3 position;                                   \r\n" \
-                            "        float3 direction;                                  \r\n" \
-                            "        float  range;                                      \r\n" \
-                            "        float  radius;                                     \r\n" \
-                            "        float  innerAngle;                                 \r\n" \
-                            "        float  outerAngle;                                 \r\n" \
-                            "        float  falloff;                                    \r\n" \
-                            "    };                                                     \r\n" \
-                            "                                                           \r\n" \
-                            "    StructuredBuffer<Data> list : register(t0);            \r\n" \
-                            "    static const uint lightsPerPass = %v;                  \r\n" \
-                            "};                                                         \r\n" \
-                            "                                                           \r\n", lightsPerPass);
+                            "namespace Lighting\r\n" \
+                            "{\r\n" \
+                            "    cbuffer Parameters : register(b3)\r\n" \
+                            "    {\r\n" \
+                            "        uint count;\r\n" \
+                            "        uint padding[3];\r\n" \
+                            "    };\r\n" \
+                            "\r\n" \
+                            "    namespace Type\r\n" \
+                            "    {\r\n" \
+                            "        static const uint Point = 0;\r\n" \
+                            "        static const uint Directional = 1;\r\n" \
+                            "        static const uint Spot = 2;\r\n" \
+                            "    };\r\n" \
+                            "\r\n" \
+                            "    struct Data\r\n" \
+                            "    {\r\n" \
+                            "        uint   type;\r\n" \
+                            "        float3 color;\r\n" \
+                            "        float3 position;\r\n" \
+                            "        float3 direction;\r\n" \
+                            "        float  range;\r\n" \
+                            "        float  radius;\r\n" \
+                            "        float  innerAngle;\r\n" \
+                            "        float  outerAngle;\r\n" \
+                            "        float  falloff;\r\n" \
+                            "    };\r\n" \
+                            "\r\n" \
+                            "    StructuredBuffer<Data> list : register(t0);\r\n" \
+                            "    static const uint lightsPerPass = %v;\r\n" \
+                            "};\r\n" \
+                            "\r\n", lightsPerPass);
                     }
                 }
 
@@ -669,52 +669,28 @@ namespace Gek
                             uint32_t colorCount = passNode->getAttribute(L"colors", L"1");
 
                             engineData +=
-                                "struct InputPixel                                          \r\n" \
-                                "{                                                          \r\n";
+                                "struct InputPixel\r\n" \
+                                "{\r\n";
                             if (pass.mode == Pass::Mode::Deferred)
                             {
                                 engineData +=
-                                    "    float4 position     : SV_POSITION;                 \r\n" \
-                                    "    float2 texCoord     : TEXCOORD0;                   \r\n";
+                                    "    float4 position : SV_POSITION;\r\n" \
+                                    "    float2 texCoord : TEXCOORD0;\r\n";
                             }
                             else
                             {
                                 engineData +=
-                                    "    float4 position     : SV_POSITION;                 \r\n" \
-                                    "    float3 viewPosition : TEXCOORD0;                   \r\n" \
-                                    "    float3 viewNormal   : NORMAL0;                     \r\n";
-
-                                for (uint32_t coord = 1; coord <= coordCount; coord++)
-                                {
-                                    if (coord == 1)
-                                    {
-                                        engineData.format("    float2 texCoord : TEXCOORD%v;\r\n", coord);
-                                    }
-                                    else
-                                    {
-                                        engineData.format("    float2 texCoord%v : TEXCOORD%v;\r\n", coord, coord);
-                                    }
-                                }
-
-                                for (uint32_t color = 0; color < colorCount; color++)
-                                {
-                                    if (color == 0)
-                                    {
-                                        engineData.format("    float4 color : COLOR%v;      \r\n", color);
-                                    }
-                                    else
-                                    {
-                                        engineData.format("    float4 color%v : COLOR%v;    \r\n", color, color);
-                                    }
-                                }
-
-                                engineData +=
-                                    "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
+                                    "    float4 position : SV_POSITION;\r\n" \
+                                    "    float2 texCoord : TEXCOORD0;\r\n" \
+                                    "    float3 viewPosition : TEXCOORD1;\r\n" \
+                                    "    float3 viewNormal : NORMAL0;\r\n" \
+                                    "    float4 color : COLOR0;\r\n" \
+                                    "    bool   frontFacing : SV_ISFRONTFACE;\r\n";
                             }
 
                             engineData +=
-                                "};                                                         \r\n" \
-                                "                                                           \r\n";
+                                "};\r\n" \
+                                "\r\n";
                         }
 
                         if (block.lighting)
@@ -735,11 +711,11 @@ namespace Gek
                         if (!outputData.empty())
                         {
                             engineData.format(
-                                "struct OutputPixel                                         \r\n" \
-                                "{                                                          \r\n" \
+                                "struct OutputPixel\r\n" \
+                                "{\r\n" \
                                 "%v" \
-                                "};                                                         \r\n" \
-                                "                                                           \r\n", outputData);
+                                "};\r\n" \
+                                "\r\n", outputData);
                         }
 
                         StringUTF8 resourceData;
@@ -823,11 +799,11 @@ namespace Gek
                         if (!resourceData.empty())
                         {
                             engineData.format(
-                                "namespace Resources                                        \r\n" \
-                                "{                                                          \r\n" \
+                                "namespace Resources\r\n" \
+                                "{\r\n" \
                                 "%v" \
-                                "};                                                         \r\n" \
-                                "                                                           \r\n", resourceData);
+                                "};\r\n" \
+                                "\r\n", resourceData);
                         }
 
                         StringUTF8 unorderedAccessData;
@@ -850,11 +826,11 @@ namespace Gek
                         if (!unorderedAccessData.empty())
                         {
                             engineData.format(
-                                "namespace UnorderedAccess                              \r\n" \
-                                "{                                                      \r\n" \
+                                "namespace UnorderedAccess\r\n" \
+                                "{\r\n" \
                                 "%v" \
-                                "};                                                     \r\n" \
-                                "                                                       \r\n", unorderedAccessData);
+                                "};\r\n" \
+                                "\r\n", unorderedAccessData);
                         }
 
                         StringUTF8 defineData;
@@ -896,11 +872,11 @@ namespace Gek
                         if (!defineData.empty())
                         {
                             engineData.format(
-                                "namespace Defines                                         \r\n" \
-                                "{                                                         \r\n" \
+                                "namespace Defines\r\n" \
+                                "{\r\n" \
                                 "%v" \
-                                "};                                                        \r\n" \
-                                "                                                          \r\n", defineData);
+                                "};\r\n" \
+                                "\r\n", defineData);
                         }
 
                         XmlNodePtr programNode(passNode->firstChildElement(L"program"));
@@ -1494,23 +1470,25 @@ namespace Gek
             void loadBlendState(PassData &pass, XmlNodePtr &blendNode)
             {
                 bool alphaToCoverage = blendNode->firstChildElement(L"alphatocoverage")->getText();
-                if (blendNode->hasChildElement(L"target"))
+                bool unifiedStates = blendNode->getAttribute(L"unified", L"true");
+                if (unifiedStates)
                 {
-                    Video::IndependentBlendStateInformation blendState;
-                    Video::BlendStateInformation *targetStatesList = blendState.targetStates;
-                    for (XmlNodePtr targetNode(blendNode->firstChildElement(L"target")); targetNode->isValid(); targetNode = targetNode->nextSiblingElement(L"target"))
-                    {
-                        Video::BlendStateInformation &targetStates = *targetStatesList++;
-                        loadBlendTargetState(targetStates, targetNode);
-                    }
+                    Video::UnifiedBlendStateInformation blendState;
+                    loadBlendTargetState(blendState, blendNode);
 
                     blendState.alphaToCoverage = alphaToCoverage;
                     pass.blendState = resources->createBlendState(blendState);
                 }
                 else
                 {
-                    Video::UnifiedBlendStateInformation blendState;
-                    loadBlendTargetState(blendState, blendNode);
+                    Video::IndependentBlendStateInformation blendState;
+                    Video::BlendStateInformation *targetStatesList = blendState.targetStates;
+                    for (auto &target : pass.renderTargetList)
+                    {
+                        XmlNodePtr targetNode(blendNode->firstChildElement(target.first));
+                        GEK_CHECK_CONDITION(!targetNode->isValid(), Exception, "Shader missing blend target parameters: %v", target.first);
+                        loadBlendTargetState(*targetStatesList++, targetNode);
+                    }
 
                     blendState.alphaToCoverage = alphaToCoverage;
                     pass.blendState = resources->createBlendState(blendState);

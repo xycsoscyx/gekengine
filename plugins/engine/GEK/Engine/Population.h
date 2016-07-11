@@ -87,8 +87,8 @@ namespace Gek
         GEK_INTERFACE(Population)
             : virtual public Gek::Plugin::Population
         {
-            virtual void loadPlugins(void) = 0;
-            virtual void freePlugins(void) = 0;
+            virtual void loadComponents(void) = 0;
+            virtual void freeComponents(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

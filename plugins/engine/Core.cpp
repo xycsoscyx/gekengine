@@ -196,7 +196,7 @@ namespace Gek
                 population = getContext()->createClass<Engine::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
-                population->loadPlugins();
+                population->loadComponents();
 
                 updateHandle = population->setUpdatePriority(this, 0);
                 renderer->addObserver((Plugin::RendererObserver *)this);
@@ -226,7 +226,7 @@ namespace Gek
                 if (population)
                 {
                     population->free();
-                    population->freePlugins();
+                    population->freeComponents();
                     population->removeUpdatePriority(updateHandle);
                 }
 

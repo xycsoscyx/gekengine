@@ -8,28 +8,36 @@
 
     <textures>
         <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
-        <revealBuffer bind="float" flags="target">byte</revealBuffer>
+        <modulationDiffusionBuffer bind="float4" flags="target">byte4</modulationDiffusionBuffer>
+        <refractionBuffer bind="float2" flags="target">half2</refractionBuffer>
         <depthBuffer bind="float">float</depthBuffer>
         <finalBuffer bind="float" source="standard" name="finalBuffer" />
+        <sourceBuffer bind="float3">half4</sourceBuffer>
     </textures>
 
     <depth source="standard" />
 
     <block>
         <clear>
-            <accumulationBuffer>(0,0,0,0)</accumulationBuffer>
-            <revealBuffer>1</revealBuffer>
+            <accumulationBuffer>0</accumulationBuffer>
+            <modulationDiffusionBuffer>(1,1,1,0)</modulationDiffusionBuffer>
+            <refractionBuffer>0</refractionBuffer>
         </clear>
 
-        <pass mode="forward" colors="2" name="transparent">
-            <blendstates>
-                <target>
+        <pass mode="forward" name="transparent">
+            <blendstates unified="false">
+                <accumulationBuffer>
                     <color source="one" destination="one" operation="add" />
                     <alpha source="one" destination="one" operation="add" />
-                </target>
-                <target>
+                </accumulationBuffer>
+                <modulationDiffusionBuffer>
                     <color source="zero" destination="inverse_source_color" operation="add" />
-                </target>
+                    <alpha source="one" destination="one" operation="add" />
+                </modulationDiffusionBuffer>
+                <refractionBuffer>
+                    <color source="one" destination="one" operation="add" />
+                    <alpha source="one" destination="one" operation="add" />
+                </refractionBuffer>
             </blendstates>
 
             <renderstates>
@@ -43,7 +51,8 @@
 
             <targets>
                 <accumulationBuffer />
-                <revealBuffer />
+                <modulationDiffusionBuffer />
+                <refractionBuffer />
             </targets>
 
             <resources>
@@ -57,13 +66,11 @@
         </pass>
 
         <pass mode="deferred">
-            <blendstates>
-                <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
-            </blendstates>
-
             <resources>
                 <accumulationBuffer />
-                <revealBuffer />
+                <modulationDiffusionBuffer />
+                <refractionBuffer />
+                <sourceBuffer copy="finalBuffer" />
             </resources>
 
             <targets>

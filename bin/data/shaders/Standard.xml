@@ -98,7 +98,7 @@
         </pass>
 
         <pass mode="deferred">
-            <blendstates>
+            <blendstates unified="true">
                 <color source="one" destination="one" operation="add" />
             </blendstates>
 

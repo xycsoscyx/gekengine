@@ -78,17 +78,17 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
 }
 
-float getLinearDepth(float depth)
+float getSceneDepth(float projectedDepth)
 {
-    depth = 2.0 * depth - 1.0;
-    depth = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - depth * (Camera::farClip - Camera::nearClip));
-    return depth;
+    projectedDepth = 2.0 * projectedDepth - 1.0;
+    projectedDepth = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - projectedDepth * (Camera::farClip - Camera::nearClip));
+    return projectedDepth;
 }
 
-float3 getViewPosition(float2 texCoord, float depth)
+float3 getViewPosition(float2 texCoord, float projectedDepth)
 {
     float2 adjustedCoord = texCoord;
     adjustedCoord.y = (1.0 - adjustedCoord.y);
     adjustedCoord.xy = (adjustedCoord.xy * 2.0 - 1.0);
-    return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * getLinearDepth(depth));
+    return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * getSceneDepth(projectedDepth));
 }

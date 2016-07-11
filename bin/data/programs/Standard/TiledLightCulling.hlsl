@@ -85,13 +85,13 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         Shared::tileMaximumDepth = 0;
     }
 
-    float viewDepth = getLinearDepth(Resources::depth[screenPosition.xy]);
-    uint viewDepthInteger = asuint(viewDepth);
+    float sceneDepth = getSceneDepth(Resources::depth[screenPosition.xy]);
+    uint sceneDepthInteger = asuint(sceneDepth);
 
     GroupMemoryBarrierWithGroupSync();
 
-    InterlockedMin(Shared::tileMinimumDepth, viewDepthInteger);
-    InterlockedMax(Shared::tileMaximumDepth, viewDepthInteger);
+    InterlockedMin(Shared::tileMinimumDepth, sceneDepthInteger);
+    InterlockedMax(Shared::tileMaximumDepth, sceneDepthInteger);
 
     GroupMemoryBarrierWithGroupSync();
 

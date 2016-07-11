@@ -70,7 +70,7 @@ namespace Gek
                 GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
                 GEK_REQUIRE(device);
 
-                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\plugins\\%v.xml", fileName)));
+                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\visuals\\%v.xml", fileName)));
                 XmlNodePtr pluginNode(document->getRoot(L"plugin"));
 
                 XmlNodePtr geometryNode(pluginNode->firstChildElement(L"geometry"));
@@ -89,8 +89,8 @@ namespace Gek
                 }
 
                 StringUTF8 engineData =
-                    "struct PluginVertex                                    \r\n" \
-                    "{                                                      \r\n";
+                    "struct PluginVertex\r\n" \
+                    "{\r\n";
 
                 std::list<StringUTF8> elementNameList;
                 std::vector<Video::InputElementInformation> elementList;
@@ -164,92 +164,41 @@ namespace Gek
                     }
                 }
 
-                uint32_t coordCount = layoutNode->getAttribute(L"coords", L"1");
-                uint32_t colorCount = layoutNode->getAttribute(L"colors", L"1");
-
-                StringUTF8 coordColorData;
-                for (uint32_t coord = 1; coord <= coordCount; coord++)
-                {
-                    if (coord == 1)
-                    {
-                        coordColorData.format("    float2 texCoord : TEXCOORD%v;  \r\n", coord);
-                    }
-                    else
-                    {
-                        coordColorData.format("    float2 texCoord%v : TEXCOORD%v;  \r\n", coord, coord);
-                    }
-                }
-
-                for (uint32_t color = 0; color < colorCount; color++)
-                {
-                    if (color == 0)
-                    {
-                        coordColorData.format("    float4 color : COLOR%v;        \r\n", color);
-                    }
-                    else
-                    {
-                        coordColorData.format("    float4 color%v : COLOR%v;        \r\n", color, color);
-                    }
-                }
-
                 engineData +=
-                    "};                                                                                                         \r\n" \
-                    "                                                                                                           \r\n" \
-                    "struct ViewVertex                                                                                          \r\n" \
-                    "{                                                                                                          \r\n" \
-                    "    float3 position;                                                                                       \r\n" \
-                    "    float3 normal;                                                                                         \r\n";
-                engineData += coordColorData;
-                engineData +=
-                    "};                                                                                                         \r\n" \
-                    "                                                                                                           \r\n" \
-                    "struct ProjectedVertex                                                                                     \r\n" \
-                    "{                                                                                                          \r\n" \
-                    "    float4 position : SV_POSITION;                                                                         \r\n" \
-                    "    float3 viewPosition : TEXCOORD0;                                                                       \r\n" \
-                    "    float3 viewNormal : NORMAL0;                                                                           \r\n";
-                engineData += coordColorData;
-                engineData +=
-                    "};                                                                                                         \r\n" \
-                    "                                                                                                           \r\n" \
-                    "#include \"GEKPlugin\"                                                                                     \r\n" \
-                    "                                                                                                           \r\n" \
-                    "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)                                            \r\n" \
-                    "{                                                                                                          \r\n" \
-                    "    ViewVertex viewVertex = getViewVertex(pluginVertex);                                                   \r\n" \
-                    "                                                                                                           \r\n" \
-                    "    ProjectedVertex projectedVertex;                                                                       \r\n" \
-                    "    projectedVertex.viewPosition = viewVertex.position;                                                    \r\n" \
-                    "    projectedVertex.position = mul(Camera::projectionMatrix, float4(projectedVertex.viewPosition, 1.0));   \r\n" \
-                    "    projectedVertex.viewNormal = viewVertex.normal;                                                        \r\n";
-                for (uint32_t coord = 1; coord <= coordCount; coord++)
-                {
-                    if (coord == 1)
-                    {
-                        engineData.format("    projectedVertex.texCoord = viewVertex.texCoord;                                  \r\n");
-                    }
-                    else
-                    {
-                        engineData.format("    projectedVertex.texCoord%v = viewVertex.texCoord%v;                              \r\n", coord, coord);
-                    }
-                }
-
-                for (uint32_t color = 0; color < colorCount; color++)
-                {
-                    if (color == 0)
-                    {
-                        engineData.format("    projectedVertex.color = viewVertex.color;                                        \r\n");
-                    }
-                    else
-                    {
-                        engineData.format("    projectedVertex.color%v = viewVertex.color%v;                                    \r\n", color, color);
-                    }
-                }
-
-                engineData +=
-                    "    return projectedVertex;                                                                                \r\n" \
-                    "}                                                                                                          \r\n" \
-                    "                                                                                                           \r\n";
+                    "};\r\n" \
+                    "\r\n" \
+                    "struct ViewVertex\r\n" \
+                    "{\r\n" \
+                    "    float3 position;\r\n" \
+                    "    float2 texCoord;\r\n" \
+                    "    float3 normal;\r\n" \
+                    "    float4 color;\r\n" \
+                    "};\r\n" \
+                    "\r\n" \
+                    "struct ProjectedVertex\r\n" \
+                    "{\r\n" \
+                    "    float4 position : SV_POSITION;\r\n" \
+                    "    float2 texCoord : TEXCOORD0;\r\n" \
+                    "    float3 viewPosition : TEXCOORD1;\r\n" \
+                    "    float3 viewNormal : NORMAL0;\r\n" \
+                    "    float4 color : COLOR0;\r\n" \
+                    "};\r\n" \
+                    "\r\n" \
+                    "#include \"GEKPlugin\"\r\n" \
+                    "\r\n" \
+                    "ProjectedVertex mainVertexProgram(in PluginVertex pluginVertex)\r\n" \
+                    "{\r\n" \
+                    "    ViewVertex viewVertex = getViewVertex(pluginVertex);\r\n" \
+                    "\r\n" \
+                    "    ProjectedVertex projectedVertex;\r\n" \
+                    "    projectedVertex.viewPosition = viewVertex.position;\r\n" \
+                    "    projectedVertex.viewNormal = viewVertex.normal;\r\n" \
+                    "    projectedVertex.position = mul(Camera::projectionMatrix, float4(projectedVertex.viewPosition, 1.0));\r\n" \
+                    "    projectedVertex.texCoord = viewVertex.texCoord;\r\n" \
+                    "    projectedVertex.color = viewVertex.color;\r\n" \
+                    "    return projectedVertex;\r\n" \
+                    "}\r\n" \
+                    "\r\n";
 
                 XmlNodePtr vertexNode(pluginNode->firstChildElement(L"vertex"));
                 XmlNodePtr programNode(vertexNode->firstChildElement(L"program"));

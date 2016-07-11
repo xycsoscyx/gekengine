@@ -90,7 +90,7 @@ namespace Gek
             }
 
             // Engine::Population
-            void loadPlugins(void)
+            void loadComponents(void)
             {
                 GEK_TRACE_SCOPE();
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
@@ -115,7 +115,7 @@ namespace Gek
                 });
             }
 
-            void freePlugins(void)
+            void freeComponents(void)
             {
                 processorList.clear();
                 componentNameList.clear();

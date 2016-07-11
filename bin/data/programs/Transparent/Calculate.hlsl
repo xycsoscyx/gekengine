@@ -3,50 +3,47 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-namespace Settings
+float2 getRefractOffset(float sceneDepth, float3 normal, float3 position, float eta)
 {
-    static const uint Equation = 10;
-};
+    return 0.0;
+}
 
-// Weight Based OIT
-// http://jcgt.org/published/0002/02/09/paper.pdf
+/* Diffusion scaling constant. Adjust based on the precision of the diffusion texture channel. */
+static const float k_0 = 8.0;
+
+/** Focus rate. Increase to make objects come into focus behind a frosted glass surface more quickly, decrease to defocus them quickly. */
+static const float k_1 = 0.1;
+
+// http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
-    float reveal = albedo.a;
-    float weight = albedo.a;
 
-    const float3 transmission = inputPixel.color1.rgb;
-    //weight *= saturate(1.0 - dot(inputPixel.color1.rgb, (1.0 / 3.0)));
-
-    // Soften edges when transparent surfaces intersect solid surfaces
-    const float sceneDepth = getLinearDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    const float depthDelta = saturate((sceneDepth - inputPixel.viewPosition.z) * 2.5);
-    //weight *= depthDelta;
-
-    switch (Settings::Equation)
-    {
-    case 7: // View Depth
-        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 5.0), 2.0) + pow((inputPixel.viewPosition.z / 200.0), 6.0)));
-        break;
-
-    case 8: // View Depth
-        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 10.0), 3.0) + pow((inputPixel.viewPosition.z / 200.0), 6.0)));
-        break;
-
-    case 9: // View Depth
-        weight *= (0.03 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 200.0), 4.0)));
-        break;
-
-    case 10: // Clip Depth
-        weight *= dot(3e3, pow((1.0 - inputPixel.position.z), 3.0));
-        break;
-    };
-
-    weight = clamp(weight, 1e-2, 3e3);
+    float3 premultipliedReflectionAndEmission = 0.0;
+    float3 transmissionCoefficient = albedo.rgb;
+    float coverage = albedo.a;
+    float collimation = albedo.a;
+    float etaRatio = 0.0;
 
     OutputPixel outputPixel;
-    outputPixel.accumulationBuffer = float4((albedo.rgb * weight), weight);
-    outputPixel.revealBuffer = reveal;
+
+    outputPixel.modulationDiffusionBuffer.rgb = coverage * (1.0 - transmissionCoefficient);
+
+    coverage *= 1.0 - (transmissionCoefficient.r + transmissionCoefficient.g + transmissionCoefficient.b) * (1.0 / 3.0);
+    float adjustedDepth = 1.0 - inputPixel.position.z * 0.99;
+    float weight = clamp(coverage * cube(adjustedDepth) * 1e3, 1e-2, 3e2 * 0.1);
+    outputPixel.accumulationBuffer = float4(premultipliedReflectionAndEmission, coverage) * weight;
+
+    float backgroundDepth = inputPixel.position.z - 4.0;
+    float sceneDepth = getSceneDepth(Resources::depthBuffer[inputPixel.position.xy * Shader::pixelSize]);
+    outputPixel.modulationDiffusionBuffer.a = square(k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - sceneDepth)) / abs(inputPixel.viewPosition.z));
+    if (outputPixel.modulationDiffusionBuffer.a > 0.0)
+    {
+        outputPixel.modulationDiffusionBuffer.a = max(outputPixel.modulationDiffusionBuffer.a, 1.0 / 256.0);
+    }
+
+    float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : getRefractOffset(backgroundDepth, inputPixel.viewNormal, inputPixel.viewPosition, etaRatio);
+    outputPixel.refractionBuffer = refractionOffset * coverage * 8.0;
+
     return outputPixel;
 }

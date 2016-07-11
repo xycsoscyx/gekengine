@@ -484,28 +484,28 @@ namespace Gek
                         uint32_t colorCount = passNode->getAttribute(L"colors", L"1");
 
                         engineData +=
-                            "struct InputPixel                                          \r\n" \
-                            "{                                                          \r\n";
+                            "struct InputPixel\r\n" \
+                            "{\r\n";
                         if (pass.mode == Pass::Mode::Deferred)
                         {
                             engineData +=
-                                "    float4 position     : SV_POSITION;                 \r\n" \
-                                "    float2 texCoord     : TEXCOORD0;                   \r\n";
+                                "    float4 position : SV_POSITION;\r\n" \
+                                "    float2 texCoord : TEXCOORD0;\r\n";
                         }
                         else
                         {
                             engineData +=
-                                "    float4 position     : SV_POSITION;                 \r\n" \
-                                "    float3 viewPosition : TEXCOORD0;                   \r\n" \
-                                "    float3 viewNormal   : NORMAL0;                     \r\n" \
-                                "    float2 texCoord     : TEXCOORD0;                   \r\n" \
-                                "    float4 color        : COLOR0;                      \r\n" \
-                                "    bool   frontFacing  : SV_ISFRONTFACE;              \r\n";
+                                "    float4 position : SV_POSITION;\r\n" \
+                                "    float2 texCoord : TEXCOORD0;\r\n" \
+                                "    float3 viewPosition : TEXCOORD1;\r\n" \
+                                "    float3 viewNormal : NORMAL0;\r\n" \
+                                "    float4 color : COLOR0;\r\n" \
+                                "    bool frontFacing : SV_ISFRONTFACE;\r\n";
                         }
 
                         engineData +=
-                            "};                                                         \r\n" \
-                            "                                                           \r\n";
+                            "};\r\n" \
+                            "\r\n";
                     }
 
                     uint32_t currentStage = 0;
@@ -521,11 +521,11 @@ namespace Gek
                     if (!outputData.empty())
                     {
                         engineData.format(
-                            "struct OutputPixel                                         \r\n" \
-                            "{                                                          \r\n" \
+                            "struct OutputPixel\r\n" \
+                            "{\r\n" \
                             "%v" \
-                            "};                                                         \r\n" \
-                            "                                                           \r\n", outputData);
+                            "};\r\n" \
+                            "\r\n", outputData);
                     }
 
                     StringUTF8 resourceData;
@@ -544,11 +544,11 @@ namespace Gek
                     if (!resourceData.empty())
                     {
                         engineData.format(
-                            "namespace Resources                                        \r\n" \
-                            "{                                                          \r\n" \
+                            "namespace Resources\r\n" \
+                            "{\r\n" \
                             "%v" \
-                            "};                                                         \r\n" \
-                            "                                                           \r\n", resourceData);
+                            "};\r\n" \
+                            "\r\n", resourceData);
                     }
 
                     StringUTF8 unorderedAccessData;
@@ -571,11 +571,11 @@ namespace Gek
                     if (!unorderedAccessData.empty())
                     {
                         engineData.format(
-                            "namespace UnorderedAccess                              \r\n" \
-                            "{                                                      \r\n" \
+                            "namespace UnorderedAccess\r\n" \
+                            "{\r\n" \
                             "%v" \
-                            "};                                                     \r\n" \
-                            "                                                       \r\n", unorderedAccessData);
+                            "};\r\n" \
+                            "\r\n", unorderedAccessData);
                     }
 
                     StringUTF8 defineData;
@@ -617,11 +617,11 @@ namespace Gek
                     if (!defineData.empty())
                     {
                         engineData.format(
-                            "namespace Defines                                         \r\n" \
-                            "{                                                         \r\n" \
+                            "namespace Defines\r\n" \
+                            "{\r\n" \
                             "%v" \
-                            "};                                                        \r\n" \
-                            "                                                          \r\n", defineData);
+                            "};\r\n" \
+                            "\r\n", defineData);
                     }
 
                     XmlNodePtr programNode(passNode->firstChildElement(L"program"));
@@ -950,23 +950,25 @@ namespace Gek
             void loadBlendState(PassData &pass, XmlNodePtr &blendNode)
             {
                 bool alphaToCoverage = blendNode->firstChildElement(L"alphatocoverage")->getText();
-                if (blendNode->hasChildElement(L"target"))
+                bool unifiedStates = blendNode->getAttribute(L"unified", L"true");
+                if (unifiedStates)
                 {
-                    Video::IndependentBlendStateInformation blendState;
-                    Video::BlendStateInformation *targetStatesList = blendState.targetStates;
-                    for (XmlNodePtr targetNode(blendNode->firstChildElement(L"target")); targetNode->isValid(); targetNode = targetNode->nextSiblingElement(L"target"))
-                    {
-                        Video::BlendStateInformation &targetStates = *targetStatesList++;
-                        loadBlendTargetState(targetStates, targetNode);
-                    }
+                    Video::UnifiedBlendStateInformation blendState;
+                    loadBlendTargetState(blendState, blendNode);
 
                     blendState.alphaToCoverage = alphaToCoverage;
                     pass.blendState = resources->createBlendState(blendState);
                 }
                 else
                 {
-                    Video::UnifiedBlendStateInformation blendState;
-                    loadBlendTargetState(blendState, blendNode);
+                    Video::IndependentBlendStateInformation blendState;
+                    Video::BlendStateInformation *targetStatesList = blendState.targetStates;
+                    for (auto &target : pass.renderTargetList)
+                    {
+                        XmlNodePtr targetNode(blendNode->firstChildElement(target.first));
+                        GEK_CHECK_CONDITION(!targetNode->isValid(), Exception, "Shader missing blend target parameters: %v", target.first);
+                        loadBlendTargetState(*targetStatesList++, targetNode);
+                    }
 
                     blendState.alphaToCoverage = alphaToCoverage;
                     pass.blendState = resources->createBlendState(blendState);

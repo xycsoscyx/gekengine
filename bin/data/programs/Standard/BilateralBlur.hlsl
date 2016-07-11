@@ -13,7 +13,7 @@ float calculateGaussianWeight(float offset)
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float2 pixelSize = rcp(Shader::targetSize);
-    float surfaceDepth = Resources::depth.Sample(Global::pointSampler, inputPixel.texCoord);
+    float surfaceDepth = Resources::depth.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
 
     float finalValue = 0.0;
     float totalWeight = 0.0;
