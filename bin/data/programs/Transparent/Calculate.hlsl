@@ -19,8 +19,8 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
 
-    float3 premultipliedReflectionAndEmission = 0.0;
-    float3 transmissionCoefficient = albedo.rgb;
+    float3 premultipliedReflectionAndEmission = albedo.rgb;
+    float3 transmissionCoefficient = 0.0;
     float coverage = albedo.a;
     float collimation = albedo.a;
     float etaRatio = 0.0;

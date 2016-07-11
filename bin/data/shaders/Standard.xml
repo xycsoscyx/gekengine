@@ -11,12 +11,6 @@
             <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
             <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
         </solid>
-        <transparent>
-            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
-            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
-            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
-            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
-        </transparent>
     </material>
 
     <defines>
@@ -48,6 +42,10 @@
     </buffers>
 
     <block>
+        <clear>
+            <startOffsetBuffer>-1</startOffsetBuffer>
+        </clear>
+
         <pass mode="forward" name="solid">
             <depthstates>
                 <comparison>less_equal</comparison>

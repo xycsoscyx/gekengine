@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<shader priority="2">
+    <material>
+        <transparent>
+            <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>
+        </transparent>
+    </material>
+
+    <textures>
+        <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
+        <revealBuffer bind="float" flags="target">byte</revealBuffer>
+        <depthBuffer bind="float">float</depthBuffer>
+        <finalBuffer bind="float" source="standard" name="finalBuffer" />
+    </textures>
+
+    <depth source="standard" />
+
+    <block>
+        <clear>
+            <accumulationBuffer>(0,0,0,0)</accumulationBuffer>
+            <revealBuffer>1</revealBuffer>
+        </clear>
+
+        <pass mode="forward" colors="2" name="transparent">
+            <blendstates>
+                <target>
+                    <color source="one" destination="one" operation="add" />
+                    <alpha source="one" destination="one" operation="add" />
+                </target>
+                <target>
+                    <color source="zero" destination="inverse_source_color" operation="add" />
+                </target>
+            </blendstates>
+
+            <renderstates>
+                <cullmode>back</cullmode>
+            </renderstates>
+
+            <depthstates>
+                <comparison>less</comparison>
+                <writemask>zero</writemask>
+            </depthstates>
+
+            <targets>
+                <accumulationBuffer />
+                <revealBuffer />
+            </targets>
+
+            <resources>
+                <depthBuffer copy="depth" />
+            </resources>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Transparent\Calculate</source>
+            </program>
+        </pass>
+
+        <pass mode="deferred">
+            <blendstates>
+                <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
+            </blendstates>
+
+            <resources>
+                <accumulationBuffer />
+                <revealBuffer />
+            </resources>
+
+            <targets>
+                <finalBuffer />
+            </targets>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Transparent\Combine</source>
+            </program>
+        </pass>
+    </block>
+</shader>
