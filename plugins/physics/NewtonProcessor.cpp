@@ -103,24 +103,22 @@ namespace Gek
             return Gravity;
         }
 
-        uint32_t loadSurface(const wchar_t *fileName)
+        uint32_t loadSurface(const wchar_t *surfaceName)
         {
-            GEK_REQUIRE(fileName);
+            GEK_REQUIRE(surfaceName);
 
             uint32_t surfaceIndex = 0;
-            std::size_t fileNameHash = std::hash<String>()(fileName);
-            auto surfaceSearch = surfaceIndexList.find(fileNameHash);
+            std::size_t hash = std::hash<String>()(surfaceName);
+            auto surfaceSearch = surfaceIndexList.find(hash);
             if (surfaceSearch != surfaceIndexList.end())
             {
                 surfaceIndex = (*surfaceSearch).second;
             }
             else
             {
-                HRESULT resultValue = E_FAIL;
+                auto &surfaceIndex = surfaceIndexList[hash] = 0;
 
-                auto &surfaceIndex = surfaceIndexList[fileNameHash] = 0;
-
-                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", fileName)));
+                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", surfaceName)));
                 XmlNodePtr materialNode(document->getRoot(L"material"));
                 XmlNodePtr surfaceNode(materialNode->firstChildElement(L"surface"));
                 if (surfaceNode->isValid())

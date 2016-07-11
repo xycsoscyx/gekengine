@@ -189,17 +189,17 @@ namespace Gek
             }
 
             std::function<void(void)> loadScene;
-            void load(const wchar_t *fileName)
+            void load(const wchar_t *populationName)
             {
-                loadScene = [this, fileName = String(fileName)](void) -> void
+                loadScene = [this, populationName = String(populationName)](void) -> void
                 {
-                    GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
+                    GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
                     try
                     {
                         free();
                         sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadBegin, std::placeholders::_1)));
 
-                        XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", fileName)));
+                        XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", populationName)));
                         XmlNodePtr worldNode(document->getRoot(L"world"));
 
                         std::unordered_map<String, EntityDefinition> prefabList;
@@ -267,10 +267,10 @@ namespace Gek
                 };
             }
 
-            void save(const wchar_t *fileName)
+            void save(const wchar_t *populationName)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
-                GEK_REQUIRE(fileName);
+                GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
+                GEK_REQUIRE(populationName);
 
                 XmlDocumentPtr document(XmlDocument::create(L"world"));
                 XmlNodePtr worldNode(document->getRoot(L"world"));
@@ -279,7 +279,7 @@ namespace Gek
                 {
                 }
 
-                document->save(String(L"$root\\data\\saves\\%v.xml", fileName));
+                document->save(String(L"$root\\data\\saves\\%v.xml", populationName));
             }
 
             void free(void)
@@ -290,19 +290,19 @@ namespace Gek
                 entityList.clear();
             }
 
-            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *name)
+            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
             {
                 entityList.push_back(entity);
                 sendEvent(Event(std::bind(&Plugin::PopulationObserver::onEntityCreated, std::placeholders::_1, entity.get())));
-                if (name)
+                if (entityName)
                 {
-                    namedEntityList[name] = entity.get();
+                    namedEntityList[entityName] = entity.get();
                 }
 
                 return entity.get();
             }
 
-            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *name)
+            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentInfo : entityDefinition)
@@ -326,7 +326,7 @@ namespace Gek
                     }
                 }
 
-                return addEntity(entity, name);
+                return addEntity(entity, entityName);
             }
 
             void killEntity(Plugin::Entity *entity)
@@ -335,12 +335,12 @@ namespace Gek
                 killEntityList.push_back(entity);
             }
 
-            Plugin::Entity * getNamedEntity(const wchar_t *name) const
+            Plugin::Entity * getNamedEntity(const wchar_t *entityName) const
             {
-                GEK_REQUIRE(name);
+                GEK_REQUIRE(entityName);
 
                 Plugin::Entity* entity = nullptr;
-                auto namedSearch = namedEntityList.find(name);
+                auto namedSearch = namedEntityList.find(entityName);
                 if (namedSearch != namedEntityList.end())
                 {
                     return (*namedSearch).second;

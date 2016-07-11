@@ -63,15 +63,15 @@ namespace Gek
         {
             GEK_START_EXCEPTIONS();
 
-            virtual VisualHandle loadPlugin(const wchar_t *fileName) = 0;
-            virtual MaterialHandle loadMaterial(const wchar_t *fileName) = 0;
+            virtual VisualHandle loadPlugin(const wchar_t *pluginName) = 0;
+            virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
 
-            virtual ResourceHandle loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
+            virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
             virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
 
-            virtual ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData = nullptr) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *name, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData = nullptr) = 0;
+            virtual ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData = nullptr) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData = nullptr) = 0;
 
             virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
             virtual void unmapBuffer(ResourceHandle buffer) = 0;
@@ -96,16 +96,16 @@ namespace Gek
             virtual void clearLocal(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
-            virtual ResourceHandle getResourceHandle(const wchar_t *name) const = 0;
+            virtual ResourceHandle getResourceHandle(const wchar_t *reosurceNme) const = 0;
 
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Plugin::Visual * const getVisual(VisualHandle handle) const = 0;
             virtual Material * const getMaterial(MaterialHandle handle) const = 0;
             virtual Video::Texture * const getTexture(ResourceHandle handle) const = 0;
 
-            virtual Filter * const loadFilter(const wchar_t *fileName) = 0;
+            virtual Filter * const loadFilter(const wchar_t *filterName) = 0;
 
-            virtual ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad = [](Engine::Shader *) {}) = 0;
+            virtual ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad = [](Engine::Shader *) {}) = 0;
             virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

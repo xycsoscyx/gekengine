@@ -520,9 +520,9 @@ namespace Gek
             population->removeObserver((Plugin::PopulationObserver *)this);
         }
 
-        void loadBoundingBox(Shape &shape, const String &name, const String &parameters)
+        void loadBoundingBox(Shape &shape, const String &shapeName, const String &parameters)
         {
-            if (name.compareNoCase(L"sphere") == 0)
+            if (shapeName.compareNoCase(L"sphere") == 0)
             {
                 shape.type = ShapeType::Sphere;
                 shape.parameters = parameters;

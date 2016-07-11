@@ -128,16 +128,21 @@ namespace Gek
                 MapSource source;
                 BindType binding;
                 uint32_t flags;
-                String name;
-                String pattern;
+                union
+                {
+                    String fileName;
+                    String resourceName;
+                    String pattern;
+                };
+
                 String parameters;
 
-                Map(MapType type, BindType binding, uint32_t flags, const wchar_t *name)
+                Map(MapType type, BindType binding, uint32_t flags, const wchar_t *fileName)
                     : source(MapSource::File)
                     , type(type)
                     , binding(binding)
                     , flags(flags)
-                    , name(name)
+                    , fileName(fileName)
                 {
                 }
 
@@ -151,10 +156,35 @@ namespace Gek
                 {
                 }
 
-                Map(const wchar_t *name)
+                Map(const wchar_t *resourceName)
                     : source(MapSource::Resource)
-                    , name(name)
+                    , resourceName(resourceName)
                 {
+                }
+
+                Map(const Map &map)
+                    : type(map.type)
+                    , source(map.source)
+                    , binding(map.binding)
+                    , flags(map.flags)
+                    , fileName(map.fileName)
+                    , parameters(map.parameters)
+                {
+                }
+
+                ~Map(void)
+                {
+                }
+
+                Map & operator = (const Map &map)
+                {
+                    type = map.type;
+                    source = map.source;
+                    binding = map.binding;
+                    flags = map.flags;
+                    fileName = map.fileName;
+                    parameters = map.parameters;
+                    return *this;
                 }
             };
 
@@ -215,12 +245,12 @@ namespace Gek
             ResourceHandle cameraTarget;
 
         public:
-            Filter(Context *context, Video::Device *device, Engine::Resources *resources, const wchar_t *fileName)
+            Filter(Context *context, Video::Device *device, Engine::Resources *resources, const wchar_t *filterName)
                 : ContextRegistration(context)
                 , device(device)
                 , resources(resources)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
+                GEK_TRACE_SCOPE(GEK_PARAMETER(filterName));
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
 
@@ -228,7 +258,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\filters\\%v.xml", fileName)));
+                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\filters\\%v.xml", filterName)));
                 XmlNodePtr filterNode(document->getRoot(L"filter"));
 
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
@@ -277,22 +307,20 @@ namespace Gek
                 XmlNodePtr definesNode(filterNode->firstChildElement(L"defines"));
                 for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
                 {
-                    String name(defineNode->getType());
-                    String value(defineNode->getText());
-                    globalDefinesList[name] = evaluate(value, defineNode->getAttribute(L"integer"));
+                    globalDefinesList[defineNode->getType()] = evaluate(defineNode->getText(), defineNode->getAttribute(L"integer"));
                 }
 
                 XmlNodePtr texturesNode(filterNode->firstChildElement(L"textures"));
                 for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
                 {
-                    String name(textureNode->getType());
-                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Exception, "Resource name already specified: %v", name);
+                    String textureName(textureNode->getType());
+                    GEK_CHECK_CONDITION(resourceMap.count(textureName) > 0, Exception, "Resource name already specified: %v", textureName);
 
                     BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                     if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
                     {
-                        String identity(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
-                        resourceMap[name] = resources->getResourceHandle(identity);
+                        String resourceName(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
+                        resourceMap[textureName] = resources->getResourceHandle(resourceName);
                     }
                     else
                     {
@@ -317,64 +345,64 @@ namespace Gek
                         Video::Format format = Video::getFormat(textureNode->getText());
                         uint32_t flags = getTextureCreateFlags(textureNode->getAttribute(L"flags"));
                         bool readWrite = textureNode->getAttribute(L"readwrite");
-                        resourceMap[name] = resources->createTexture(String(L"%v:%v:resource", name, fileName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
+                        resourceMap[textureName] = resources->createTexture(String(L"%v:%v:resource", textureName, filterName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
                     }
 
-                    resourceMappingList[name] = std::make_pair(MapType::Texture2D, bindType);
+                    resourceMappingList[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
                 XmlNodePtr buffersNode(filterNode->firstChildElement(L"buffers"));
                 for (XmlNodePtr bufferNode(buffersNode->firstChildElement()); bufferNode->isValid(); bufferNode = bufferNode->nextSiblingElement())
                 {
-                    String name(bufferNode->getType());
-                    GEK_CHECK_CONDITION(resourceMap.count(name) > 0, Exception, "Resource name already specified: %v", name);
+                    String bufferName(bufferNode->getType());
+                    GEK_CHECK_CONDITION(resourceMap.count(bufferName) > 0, Exception, "Resource name already specified: %v", bufferName);
 
                     Video::Format format = Video::getFormat(bufferNode->getText());
                     uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
                     bool readWrite = bufferNode->getAttribute(L"readwrite");
-                    resourceMap[name] = resources->createBuffer(String(L"%v:%v:buffer", name, fileName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource, readWrite);
+                    resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource, readWrite);
                     switch (format)
                     {
                     case Video::Format::Byte:
                     case Video::Format::Short:
                     case Video::Format::Int:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int);
                         break;
 
                     case Video::Format::Byte2:
                     case Video::Format::Short2:
                     case Video::Format::Int2:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int2);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int2);
                         break;
 
                     case Video::Format::Int3:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int3);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int3);
                         break;
 
                     case Video::Format::BGRA:
                     case Video::Format::Byte4:
                     case Video::Format::Short4:
                     case Video::Format::Int4:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Int4);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int4);
                         break;
 
                     case Video::Format::Half:
                     case Video::Format::Float:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float);
                         break;
 
                     case Video::Format::Half2:
                     case Video::Format::Float2:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float2);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float2);
                         break;
 
                     case Video::Format::Float3:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float3);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float3);
                         break;
 
                     case Video::Format::Half4:
                     case Video::Format::Float4:
-                        resourceMappingList[name] = std::make_pair(MapType::Buffer, BindType::Float4);
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float4);
                         break;
                     };
                 }
@@ -420,9 +448,9 @@ namespace Gek
                         XmlNodePtr resourcesNode(passNode->firstChildElement(L"resources"));
                         for (XmlNodePtr resourceNode(resourcesNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                         {
-                            String name(resourceNode->getType());
+                            String resourceName(resourceNode->getType());
                             String alias(resourceNode->getText());
-                            pass.resourceList.insert(std::make_pair(name, alias.empty() ? name : alias));
+                            pass.resourceList.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
 
                             if (resourceNode->hasAttribute(L"actions"))
                             {
@@ -431,18 +459,18 @@ namespace Gek
                                 {
                                     if (action.compareNoCase(L"generatemipmaps") == 0)
                                     {
-                                        pass.actionMap[name].insert(Actions::GenerateMipMaps);
+                                        pass.actionMap[resourceName].insert(Actions::GenerateMipMaps);
                                     }
                                     else if (action.compareNoCase(L"flip") == 0)
                                     {
-                                        pass.actionMap[name].insert(Actions::Flip);
+                                        pass.actionMap[resourceName].insert(Actions::Flip);
                                     }
                                 }
                             }
 
                             if (resourceNode->hasAttribute(L"copy"))
                             {
-                                pass.copyResourceMap[name] = resourceNode->getAttribute(L"copy");
+                                pass.copyResourceMap[resourceName] = resourceNode->getAttribute(L"copy");
                             }
                         }
                     }
@@ -578,16 +606,12 @@ namespace Gek
                     XmlNodePtr definesNode(passNode->firstChildElement(L"defines"));
                     for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
                     {
-                        String name(defineNode->getType());
-                        String value(evaluate(defineNode->getText()));
-                        addDefine(name, value);
+                        addDefine(defineNode->getType(), evaluate(defineNode->getText()));
                     }
 
                     for (auto &globalDefine : globalDefinesList)
                     {
-                        String name(globalDefine.first);
-                        String value(globalDefine.second);
-                        addDefine(name, value);
+                        addDefine(globalDefine.first, globalDefine.second);
                     }
 
                     if (!defineData.empty())
@@ -609,27 +633,27 @@ namespace Gek
                         pass.dispatchDepth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
                     }
 
-                    String programFileName(programNode->firstChildElement(L"source")->getText());
-                    String programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
+                    String programName(programNode->firstChildElement(L"source")->getText());
+                    String programFileName(L"$root\\data\\programs\\%v.hlsl", programName);
                     StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
-                    auto onInclude = [engineData, programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
+                    auto onInclude = [engineData, programFileName](const char *includeName, std::vector<uint8_t> &data) -> void
                     {
-                        if (_stricmp(resourceName, "GEKEngine") == 0)
+                        if (_stricmp(includeName, "GEKEngine") == 0)
                         {
                             data.resize(engineData.size());
                             memcpy(data.data(), engineData, data.size());
                         }
                         else
                         {
-                            if (std::experimental::filesystem::is_regular_file(resourceName))
+                            if (std::experimental::filesystem::is_regular_file(includeName))
                             {
-                                FileSystem::load(String(resourceName), data);
+                                FileSystem::load(String(includeName), data);
                             }
                             else
                             {
-                                FileSystem::Path filePath(programFilePath);
+                                FileSystem::Path filePath(programFileName);
                                 filePath.remove_filename();
-                                filePath.append(resourceName);
+                                filePath.append(includeName);
                                 filePath = FileSystem::expandPath(filePath);
                                 if (std::experimental::filesystem::is_regular_file(filePath))
                                 {
@@ -638,7 +662,7 @@ namespace Gek
                                 else
                                 {
                                     FileSystem::Path rootPath(L"$root\\data\\programs");
-                                    rootPath.append(resourceName);
+                                    rootPath.append(includeName);
                                     rootPath = FileSystem::expandPath(rootPath);
                                     if (std::experimental::filesystem::is_regular_file(rootPath))
                                     {
@@ -651,11 +675,11 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, onInclude);
+                        pass.program = resources->loadComputeProgram(programFileName, programEntryPoint, onInclude);
                     }
                     else
                     {
-                        pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, onInclude);
+                        pass.program = resources->loadPixelProgram(programFileName, programEntryPoint, onInclude);
                     }
                 }
             }
@@ -962,9 +986,9 @@ namespace Gek
                 return childMap;
             }
 
-            std::unordered_map<String, String> loadChildMap(XmlNodePtr &rootNode, const wchar_t *name)
+            std::unordered_map<String, String> loadChildMap(XmlNodePtr &rootNode, const wchar_t *childName)
             {
-                return loadChildMap(rootNode->firstChildElement(name));
+                return loadChildMap(rootNode->firstChildElement(childName));
             }
         };
 

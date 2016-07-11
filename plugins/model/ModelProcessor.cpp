@@ -200,13 +200,11 @@ namespace Gek
             population->removeObserver((Plugin::PopulationObserver *)this);
         }
 
-        void loadBoundingBox(Model &model, const String &name)
+        void loadBoundingBox(Model &model, const String &modelName)
         {
             static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
 
-            HRESULT resultValue = E_FAIL;
-
-            model.fileName = String(L"$root\\data\\models\\%v.gek", name);
+            model.fileName = String(L"$root\\data\\models\\%v.gek", modelName);
 
             std::vector<uint8_t> fileData;
             FileSystem::load(model.fileName, fileData, PreReadSize);

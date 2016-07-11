@@ -8,4 +8,5 @@
             <metalness file="$directory\curtain.Metalness" />
         </solid>
     </shader>
+    <surface ghost="true" />
 </material>

@@ -14,6 +14,13 @@ namespace Gek
 
             using ResourceMap = std::unordered_map<String, ResourceHandle>;
             using PassMap = std::unordered_map<String, ResourceMap>;
+
+            GEK_INTERFACE(Data)
+            {
+                virtual ~Data(void) = default;
+            };
+
+            virtual Data * const getData(void) const = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

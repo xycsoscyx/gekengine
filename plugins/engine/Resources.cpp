@@ -415,9 +415,9 @@ namespace Gek
                 return ShaderHandle();
             }
 
-            ResourceHandle getResourceHandle(const wchar_t *name) const
+            ResourceHandle getResourceHandle(const wchar_t *resourceName) const
             {
-                std::size_t hash = std::hash<String>()(name);
+                std::size_t hash = std::hash<String>()(resourceName);
                 return resourceManager.getHandle(hash);
             }
 
@@ -441,12 +441,12 @@ namespace Gek
                 return dynamic_cast<Video::Texture *>(resourceManager.getResource(handle));
             }
 
-            VisualHandle loadPlugin(const wchar_t *fileName)
+            VisualHandle loadPlugin(const wchar_t *pluginName)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName)](VisualHandle handle)->Plugin::VisualPtr
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(pluginName));
+                auto load = [this, pluginName = String(pluginName)](VisualHandle handle)->Plugin::VisualPtr
                 {
-                    return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, fileName.c_str());
+                    return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, pluginName.c_str());
                 };
 
                 auto request = [this, load](VisualHandle handle, std::function<void(Plugin::VisualPtr)> set) -> void
@@ -457,12 +457,12 @@ namespace Gek
                 return visualManager.getGlobalHandle(request);
             }
 
-            MaterialHandle loadMaterial(const wchar_t *fileName)
+            MaterialHandle loadMaterial(const wchar_t *materialName)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName)](MaterialHandle handle)->Engine::MaterialPtr
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(materialName));
+                auto load = [this, materialName = String(materialName)](MaterialHandle handle)->Engine::MaterialPtr
                 {
-                    return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, fileName.c_str(), handle);
+                    return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName.c_str(), handle);
                 };
 
                 auto request = [this, load](MaterialHandle handle, std::function<void(Engine::MaterialPtr)> set) -> void
@@ -470,16 +470,16 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = std::hash<String>()(fileName);
+                std::size_t hash = std::hash<String>()(materialName);
                 return materialManager.getHandle(hash, request, nullptr, true);
             }
 
-            Engine::Filter * const loadFilter(const wchar_t *fileName)
+            Engine::Filter * const loadFilter(const wchar_t *filterName)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName)](ResourceHandle handle)->Engine::FilterPtr
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(filterName));
+                auto load = [this, filterName = String(filterName)](ResourceHandle handle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, fileName.c_str());
+                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName.c_str());
                 };
 
                 auto request = [this, load](ResourceHandle handle, std::function<void(Engine::FilterPtr)> set) -> void
@@ -487,17 +487,17 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = std::hash<String>()(fileName);
+                std::size_t hash = std::hash<String>()(filterName);
                 ResourceHandle filter = filterManager.getHandle(hash, request, nullptr, false);
                 return filterManager.getResource(filter);
             }
 
-            ShaderHandle loadShader(const wchar_t *fileName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad)
+            ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName), onLoad](ShaderHandle handle)->Engine::ShaderPtr
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
+                auto load = [this, shaderName = String(shaderName), onLoad](ShaderHandle handle)->Engine::ShaderPtr
                 {
-                    Engine::ShaderPtr shader(getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), fileName.c_str()));
+                    Engine::ShaderPtr shader(getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName.c_str()));
                     onLoad(shader.get());
                     return shader;
                 };
@@ -507,7 +507,7 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = std::hash<String>()(fileName);
+                std::size_t hash = std::hash<String>()(shaderName);
                 ShaderHandle shader = shaderManager.getHandle(hash, request, onLoad, true);
                 materialShaderMap[material] = shader;
                 return shader;
@@ -625,9 +625,9 @@ namespace Gek
                 return blendStateManager.getHandle(hash, request, nullptr, true);
             }
 
-            ResourceHandle createTexture(const wchar_t *name, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite)
+            ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(name));
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName));
                 auto load = [this, format, width, height, depth, mipmaps, flags](ResourceHandle handle) -> Video::TexturePtr
                 {
                     return device->createTexture(format, width, height, depth, mipmaps, flags);
@@ -638,9 +638,9 @@ namespace Gek
                     set(load(handle));
                 };
 
-                if (name)
+                if (textureName)
                 {
-                    std::size_t hash = std::hash<String>()(name);
+                    std::size_t hash = std::hash<String>()(textureName);
                     if (readWrite)
                     {
                         return resourceManager.getReadWriteHandle(hash, request, true);
@@ -656,9 +656,9 @@ namespace Gek
                 }
             }
 
-            ResourceHandle createBuffer(const wchar_t *name, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(name));
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
                 auto load = [this, stride, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
                 {
                     return device->createBuffer(stride, count, type, flags, staticData);
@@ -669,9 +669,9 @@ namespace Gek
                     set(load(handle));
                 };
 
-                if (name)
+                if (bufferName)
                 {
-                    std::size_t hash = std::hash<String>()(name);
+                    std::size_t hash = std::hash<String>()(bufferName);
                     if (readWrite)
                     {
                         return resourceManager.getReadWriteHandle(hash, request, staticData ? false : true);
@@ -687,9 +687,9 @@ namespace Gek
                 }
             }
 
-            ResourceHandle createBuffer(const wchar_t *name, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(name));
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
                 auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
                 {
                     return device->createBuffer(format, count, type, flags, staticData);
@@ -700,9 +700,9 @@ namespace Gek
                     set(load(handle));
                 };
 
-                if (name)
+                if (bufferName)
                 {
-                    std::size_t hash = std::hash<String>()(name);
+                    std::size_t hash = std::hash<String>()(bufferName);
                     if (readWrite)
                     {
                         return resourceManager.getReadWriteHandle(hash, request, staticData ? false : true);
@@ -718,7 +718,7 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTextureData(const String &fileName, uint32_t flags)
+            Video::TexturePtr loadTextureData(const String &textureName, uint32_t flags)
             {
                 // iterate over formats in case the texture name has no extension
                 static const wchar_t *formatList[] =
@@ -733,7 +733,7 @@ namespace Gek
 
                 for (auto &format : formatList)
                 {
-                    FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", fileName, format)));
+                    FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", textureName, format)));
                     if (filePath.isFile())
                     {
                         return device->loadTexture(filePath, flags);
@@ -870,12 +870,12 @@ namespace Gek
                 return texture;
             }
 
-            ResourceHandle loadTexture(const wchar_t *fileName, uint32_t flags)
+            ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName));
-                auto load = [this, fileName = String(fileName), flags](ResourceHandle handle)->Video::TexturePtr
+                GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName));
+                auto load = [this, textureName = String(textureName), flags](ResourceHandle handle)->Video::TexturePtr
                 {
-                    return loadTextureData(fileName, flags);
+                    return loadTextureData(textureName, flags);
                 };
 
                 auto request = [this, load](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
@@ -883,7 +883,7 @@ namespace Gek
                     set(load(handle));
                 };
 
-                std::size_t hash = std::hash<String>()(fileName);
+                std::size_t hash = std::hash<String>()(textureName);
                 return resourceManager.getHandle(hash, request, nullptr, true);
             }
 

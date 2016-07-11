@@ -17,13 +17,13 @@ namespace Gek
     {
         static ContextPtr create(const std::vector<String> &searchPathList);
 
-        virtual ContextUserPtr createBaseClass(const wchar_t *name, void *parameters) const = 0;
+        virtual ContextUserPtr createBaseClass(const wchar_t *className, void *parameters) const = 0;
 
         template <typename TYPE, typename... ARGUMENTS>
-        std::shared_ptr<TYPE> createClass(const wchar_t *name, ARGUMENTS... arguments) const
+        std::shared_ptr<TYPE> createClass(const wchar_t *className, ARGUMENTS... arguments) const
         {
             std::tuple<ARGUMENTS...> argumentsTuple(arguments...);
-            ContextUserPtr baseClass = createBaseClass(name, static_cast<void *>(&argumentsTuple));
+            ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&argumentsTuple));
 
             std::shared_ptr<TYPE> castClass;
             try

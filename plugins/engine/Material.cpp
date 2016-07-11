@@ -18,6 +18,7 @@ namespace Gek
         {
         private:
             Engine::Resources *resources;
+            DataPtr data;
 
         public:
             Material(Context *context, Engine::Resources *resources, const wchar_t *materialName, MaterialHandle material)
@@ -32,9 +33,10 @@ namespace Gek
                 XmlNodePtr materialNode(document->getRoot(L"material"));
 
                 XmlNodePtr shaderNode(materialNode->firstChildElement(L"shader"));
-                GEK_CHECK_CONDITION(!shaderNode->hasAttribute(L"name"), Exception, "Material shader node missing name attribute");
+                GEK_CHECK_CONDITION(!shaderNode->hasAttribute(L"name"), Exception, "Materials shader node missing name attribute");
 
-                resources->loadShader(shaderNode->getAttribute(L"name"), material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
+                String shaderName(shaderNode->getAttribute(L"name"));
+                resources->loadShader(shaderName, material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
                 {
                     FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
                     String fileSpecifier(FileSystem::Path(materialName).getFileName());
@@ -65,8 +67,13 @@ namespace Gek
                         }
                     }
 
-                    shader->loadMaterial((Engine::Material *)this, passMap);
+                    this->data = shader->loadMaterialData(passMap);
                 });
+            }
+
+            Data * const getData(void) const
+            {
+                return data.get();
             }
         };
 

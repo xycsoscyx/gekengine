@@ -51,7 +51,7 @@ namespace Gek
         {
             virtual void onChanged(void) { };
 
-            virtual void onAction(const wchar_t *name, const ActionState &state) { };
+            virtual void onAction(const wchar_t *actionName, const ActionState &state) { };
         };
     }; // namespace Engine
 }; // namespace Gek
