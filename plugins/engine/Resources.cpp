@@ -695,6 +695,7 @@ namespace Gek
                     Video::BufferPtr buffer(device->createBuffer(format, count, type, flags, staticData));
                     if (flags & Video::BufferFlags::UnorderedAccess)
                     {
+                        static const uint32_t zero[4] = { 0, 0, 0, 0 };
                         switch (format)
                         {
                         case Video::Format::Byte:
@@ -708,7 +709,7 @@ namespace Gek
                         case Video::Format::Byte4:
                         case Video::Format::Short4:
                         case Video::Format::Int4:
-                            device->getDefaultContext()->clearUnorderedAccess(buffer.get(), { 0, 0, 0, 0 });
+                            device->getDefaultContext()->clearUnorderedAccess(buffer.get(), zero);
                             break;
 
                         case Video::Format::Half:
