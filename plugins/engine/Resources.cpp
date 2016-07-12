@@ -692,7 +692,38 @@ namespace Gek
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
                 auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
                 {
-                    return device->createBuffer(format, count, type, flags, staticData);
+                    Video::BufferPtr buffer(device->createBuffer(format, count, type, flags, staticData));
+                    if (flags & Video::BufferFlags::UnorderedAccess)
+                    {
+                        switch (format)
+                        {
+                        case Video::Format::Byte:
+                        case Video::Format::Short:
+                        case Video::Format::Int:
+                        case Video::Format::Byte2:
+                        case Video::Format::Short2:
+                        case Video::Format::Int2:
+                        case Video::Format::Int3:
+                        case Video::Format::BGRA:
+                        case Video::Format::Byte4:
+                        case Video::Format::Short4:
+                        case Video::Format::Int4:
+                            device->getDefaultContext()->clearUnorderedAccess(buffer.get(), { 0, 0, 0, 0 });
+                            break;
+
+                        case Video::Format::Half:
+                        case Video::Format::Float:
+                        case Video::Format::Half2:
+                        case Video::Format::Float2:
+                        case Video::Format::Float3:
+                        case Video::Format::Half4:
+                        case Video::Format::Float4:
+                            device->getDefaultContext()->clearUnorderedAccess(buffer.get(), Math::Float4::Zero);
+                            break;
+                        };
+                    }
+
+                    return buffer;
                 };
 
                 auto request = [this, load](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void

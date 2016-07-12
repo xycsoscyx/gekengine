@@ -11,6 +11,12 @@
             <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
             <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
         </solid>
+        <transparent>
+            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
+        </transparent>
     </material>
 
     <defines>
@@ -35,10 +41,14 @@
         <lightAccumulationBuffer bind="float3" flags="target">half4</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">byte</ambientOcclusionBuffer>
         <finalBuffer bind="float3" flags="target">half4</finalBuffer>
+
+        <startIndexBuffer bind="int" flags="unorderedAccess">int</startIndexBuffer>
     </textures>
 
     <buffers>
         <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">byte</tileIndexList>
+
+        <pixelListBuffer stride="16" size="displayWidth * displayHeight * 5" flags="unorderedAccess, counter">PixelInfo</pixelListBuffer>
     </buffers>
 
     <block>
@@ -66,6 +76,30 @@
             <program>
                 <entry>mainPixelProgram</entry>
                 <source>Standard\StoreDeferred</source>
+            </program>
+        </pass>
+
+        <pass mode="forward" name="transparent">
+            <depthstates>
+                <comparison>less</comparison>
+                <writemask>all</writemask>
+            </depthstates>
+
+            <renderstates>
+                <cullmode>back</cullmode>
+            </renderstates>
+
+            <unorderedaccess>
+                <startIndexBuffer />
+                <pixelListBuffer />
+            </unorderedaccess>
+
+            <targets>
+            </targets>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\StoreLinkedLists</source>
             </program>
         </pass>
     </block>

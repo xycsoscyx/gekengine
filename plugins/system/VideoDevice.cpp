@@ -797,12 +797,12 @@ namespace Gek
                         d3dDeviceContext->CSSetShaderResources(stage, 1, list);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
                         ID3D11UnorderedAccessView *list[1] = { unorderedAccess ? dynamic_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView.p : nullptr };
-                        d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, list, nullptr);
+                        d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, list, &count);
                     }
                 };
 
@@ -851,7 +851,7 @@ namespace Gek
                         d3dDeviceContext->VSSetShaderResources(stage, 1, list);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
                     {
                         GEK_THROW_EXCEPTION(Video::Exception, "Unable to set vertex shader unordered access")
                     }
@@ -901,7 +901,7 @@ namespace Gek
                         d3dDeviceContext->GSSetShaderResources(stage, 1, list);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
                     {
                         GEK_THROW_EXCEPTION(Video::Exception, "Unable to set geometry shader unordered access")
                     }
@@ -951,9 +951,12 @@ namespace Gek
                         d3dDeviceContext->PSSetShaderResources(stage, 1, list);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
                     {
-                        GEK_THROW_EXCEPTION(Video::Exception, "Unable to set pixel shader unordered access")
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        ID3D11UnorderedAccessView *list[1] = { unorderedAccess ? dynamic_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView.p : nullptr };
+                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, stage, 1, list, &count);
                     }
                 };
 
@@ -1048,6 +1051,22 @@ namespace Gek
                     {
                         d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
                     }
+                }
+
+                void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(object);
+
+                    d3dDeviceContext->ClearUnorderedAccessViewFloat(dynamic_cast<UnorderedAccessView *>(object)->d3dUnorderedAccessView.p, value.data);
+                }
+
+                void clearUnorderedAccess(Video::Object *object, const uint32_t value[4])
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(object);
+
+                    d3dDeviceContext->ClearUnorderedAccessViewUint(dynamic_cast<UnorderedAccessView *>(object)->d3dUnorderedAccessView.p, value);
                 }
 
                 void clearRenderTarget(Video::Target *renderTarget, const Math::Color &clearColor)
@@ -1661,52 +1680,10 @@ namespace Gek
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = count;
-                    viewDescription.Buffer.Flags = 0;
+                    viewDescription.Buffer.Flags = (flags & Video::BufferFlags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
 
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create buffer unordered access view (error %v)", resultValue);
-                    if (data == nullptr)
-                    {
-                        switch (format)
-                        {
-                        case Video::Format::Byte:
-                        case Video::Format::Byte2:
-                        case Video::Format::Byte3:
-                        case Video::Format::Byte4:
-                        case Video::Format::BGRA:
-                        case Video::Format::sRGBA:
-                        case Video::Format::Short:
-                        case Video::Format::Short2:
-                        case Video::Format::Short4:
-                        case Video::Format::Int:
-                        case Video::Format::Int2:
-                        case Video::Format::Int3:
-                        case Video::Format::Int4:
-                        case Video::Format::Half:
-                        case Video::Format::Half2:
-                        case Video::Format::Half3:
-                        case Video::Format::Half4:
-                            if (true)
-                            {
-                                static const uint32_t zero[4] = { 0, 0, 0, 0 };
-                                d3dDeviceContext->ClearUnorderedAccessViewUint(d3dUnorderedAccessView.p, zero);
-                            }
-
-                            break;
-
-                        case Video::Format::Float:
-                        case Video::Format::Float2:
-                        case Video::Format::Float3:
-                        case Video::Format::Float4:
-                            if (true)
-                            {
-                                static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-                                d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
-                            }
-
-                            break;
-                        };
-                    }
                 }
 
                 return makeShared<Video::Buffer, Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);

@@ -197,6 +197,7 @@ namespace Gek
                 Mappable = 1 << 1,
                 Resource = 1 << 2,
                 UnorderedAccess = 1 << 3,
+                Counter = 1 << 4,
             };
         }; // BufferFlags
 
@@ -457,7 +458,7 @@ namespace Gek
                     virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
                     virtual void setSamplerState(Object *samplerState, uint32_t stage) = 0;
                     virtual void setResource(Object *resource, uint32_t stage) = 0;
-                    virtual void setUnorderedAccess(Object *unorderedAccess, uint32_t stage) = 0;
+                    virtual void setUnorderedAccess(Object *unorderedAccess, uint32_t stage, uint32_t count = 0) = 0;
                 };
 
                 virtual Pipeline * const computePipeline(void) = 0;
@@ -472,8 +473,12 @@ namespace Gek
                 virtual void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
                 virtual void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
 
+                virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;
+                virtual void clearUnorderedAccess(Object *object, const uint32_t value[4]) = 0;
+
                 virtual void clearRenderTarget(Target *renderTarget, const Math::Color &clearColor) = 0;
                 virtual void clearDepthStencilTarget(Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
+
                 virtual void setRenderTargets(Target **renderTargetList, uint32_t renderTargetCount, Object *depthBuffer) = 0;
 
                 virtual void setRenderState(Object *renderState) = 0;

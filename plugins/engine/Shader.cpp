@@ -40,7 +40,8 @@ namespace Gek
 
         enum class BindType : uint8_t
         {
-            Float = 0,
+            Structure = 0,
+            Float,
             Float2,
             Float3,
             Float4,
@@ -198,6 +199,7 @@ namespace Gek
             {
                 Pass::Mode mode;
                 bool enableDepth;
+                bool renderToScreen;
                 uint32_t depthClearFlags;
                 float depthClearValue;
                 uint32_t stencilClearValue;
@@ -220,6 +222,7 @@ namespace Gek
                 PassData(void)
                     : mode(Pass::Mode::Forward)
                     , enableDepth(false)
+                    , renderToScreen(true)
                     , depthClearFlags(0)
                     , depthClearValue(1.0f)
                     , stencilClearValue(0)
@@ -355,6 +358,7 @@ namespace Gek
                 priority = shaderNode->getAttribute(L"priority");
 
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
+                std::unordered_map<String, String> resourceStructureList;
 
                 std::unordered_map<String, String> globalDefinesList;
                 auto replaceDefines = [&globalDefinesList](String &value) -> bool
@@ -520,54 +524,64 @@ namespace Gek
                     String bufferName(bufferNode->getType());
                     GEK_CHECK_CONDITION(resourceMap.count(bufferName) > 0, Exception, "Resource name already specified: %v", bufferName);
 
-                    Video::Format format = Video::getFormat(bufferNode->getText());
                     uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
+                    uint32_t flags = getBufferCreateFlags(bufferNode->getAttribute(L"flags"));
                     bool readWrite = bufferNode->getAttribute(L"readwrite");
-                    resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, Video::BufferFlags::UnorderedAccess | Video::BufferFlags::Resource, readWrite);
-                    switch (format)
+                    if (bufferNode->hasAttribute(L"stride"))
                     {
-                    case Video::Format::Byte:
-                    case Video::Format::Short:
-                    case Video::Format::Int:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int);
-                        break;
+                        uint32_t stride = evaluate(bufferNode->getAttribute(L"stride"), true);
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags, readWrite);
+                        resourceStructureList[bufferName] = bufferNode->getText();
+                    }
+                    else
+                    {
+                        Video::Format format = Video::getFormat(bufferNode->getText());
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags, readWrite);
+                        switch (format)
+                        {
+                        case Video::Format::Byte:
+                        case Video::Format::Short:
+                        case Video::Format::Int:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int);
+                            break;
 
-                    case Video::Format::Byte2:
-                    case Video::Format::Short2:
-                    case Video::Format::Int2:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int2);
-                        break;
+                        case Video::Format::Byte2:
+                        case Video::Format::Short2:
+                        case Video::Format::Int2:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int2);
+                            break;
 
-                    case Video::Format::Int3:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int3);
-                        break;
+                        case Video::Format::Int3:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int3);
+                            break;
 
-                    case Video::Format::BGRA:
-                    case Video::Format::Byte4:
-                    case Video::Format::Short4:
-                    case Video::Format::Int4:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int4);
-                        break;
+                        case Video::Format::BGRA:
+                        case Video::Format::Byte4:
+                        case Video::Format::Short4:
+                        case Video::Format::Int4:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int4);
+                            break;
 
-                    case Video::Format::Half:
-                    case Video::Format::Float:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float);
-                        break;
+                        case Video::Format::Half:
+                        case Video::Format::Float:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float);
+                            break;
 
-                    case Video::Format::Half2:
-                    case Video::Format::Float2:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float2);
-                        break;
+                        case Video::Format::Half2:
+                        case Video::Format::Float2:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float2);
+                            break;
 
-                    case Video::Format::Float3:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float3);
-                        break;
+                        case Video::Format::Float3:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float3);
+                            break;
 
-                    case Video::Format::Half4:
-                    case Video::Format::Float4:
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float4);
-                        break;
-                    };
+                        case Video::Format::Half4:
+                        case Video::Format::Float4:
+                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float4);
+                            break;
+                        };
+                    }
                 }
 
                 XmlNodePtr materialNode(shaderNode->firstChildElement(L"material"));
@@ -616,10 +630,12 @@ namespace Gek
 
                         if (passNode->hasChildElement(L"targets"))
                         {
+                            pass.renderToScreen = false;
                             pass.renderTargetList = loadChildMap(passNode, L"targets");
                         }
                         else
                         {
+                            pass.renderToScreen = true;
                             pass.width = device->getBackBuffer()->getWidth();
                             pass.height = device->getBackBuffer()->getHeight();
                         }
@@ -765,7 +781,7 @@ namespace Gek
                                     {
                                     case MapSource::File:
                                     case MapSource::Pattern:
-                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage++);
+                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
                                         break;
 
                                     case MapSource::Resource:
@@ -775,7 +791,7 @@ namespace Gek
                                             if (resourceSearch != resourceMappingList.end())
                                             {
                                                 auto &resource = (*resourceSearch).second;
-                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage++);
+                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
                                             }
                                         }
 
@@ -792,7 +808,16 @@ namespace Gek
                             if (resourceSearch != resourceMappingList.end())
                             {
                                 auto &resource = (*resourceSearch).second;
-                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage++);
+                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                continue;
+                            }
+                            
+                            auto structureSearch = resourceStructureList.find(resourcePair.first);
+                            if (structureSearch != resourceStructureList.end())
+                            {
+                                auto &structure = (*structureSearch).second;
+                                resourceData.format("    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
+                                continue;
                             }
                         }
 
@@ -810,7 +835,7 @@ namespace Gek
                         uint32_t nextUnorderedStage = 0;
                         if (pass.mode != Pass::Mode::Compute)
                         {
-                            nextUnorderedStage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                            nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                         }
 
                         for (auto &resourcePair : pass.unorderedAccessList)
@@ -820,6 +845,15 @@ namespace Gek
                             if (resourceSearch != resourceMappingList.end())
                             {
                                 unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceSearch).second.first), getBindType((*resourceSearch).second.second), resourcePair.second, currentStage);
+                                continue;
+                            }
+
+                            auto structureSearch = resourceStructureList.find(resourcePair.first);
+                            if (structureSearch != resourceStructureList.end())
+                            {
+                                auto &structure = (*structureSearch).second;
+                                unorderedAccessData.format("    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                                continue;
                             }
                         }
 
@@ -1068,7 +1102,7 @@ namespace Gek
                 uint32_t currentUnorderedStage = 0;
                 if (pass.mode != Pass::Mode::Compute)
                 {
-                    currentUnorderedStage = (pass.renderTargetList.empty() ? 1 : pass.renderTargetList.size());
+                    currentUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                 }
 
                 for (auto &resourcePair : pass.unorderedAccessList)
@@ -1103,7 +1137,7 @@ namespace Gek
                         resources->clearDepthStencilTarget(deviceContext, depthBuffer, pass.depthClearFlags, pass.depthClearValue, pass.stencilClearValue);
                     }
 
-                    if (pass.renderTargetList.empty())
+                    if (pass.renderToScreen)
                     {
                         if (cameraTarget)
                         {
@@ -1121,7 +1155,7 @@ namespace Gek
                             shaderConstantData.targetSize.y = float(device->getBackBuffer()->getHeight());
                         }
                     }
-                    else
+                    else if (!pass.renderTargetList.empty())
                     {
                         uint32_t currentStage = 0;
                         for (auto &resourcePair : pass.renderTargetList)
@@ -1354,6 +1388,27 @@ namespace Gek
                 }
 
                 return (flags | Video::TextureFlags::Resource);
+            }
+
+            uint32_t getBufferCreateFlags(const String &createFlags)
+            {
+                uint32_t flags = 0;
+                int position = 0;
+                std::vector<String> flagList(createFlags.split(L','));
+                for (auto &flag : flagList)
+                {
+                    flag.trim();
+                    if (flag.compareNoCase(L"unorderedaccess") == 0)
+                    {
+                        flags |= Video::BufferFlags::UnorderedAccess;
+                    }
+                    else if (flag.compareNoCase(L"counter") == 0)
+                    {
+                        flags |= Video::BufferFlags::Counter;
+                    }
+                }
+
+                return (flags | Video::BufferFlags::Resource);
             }
 
             void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, XmlNodePtr &stencilNode)
