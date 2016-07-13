@@ -66,7 +66,7 @@ void mainPixelProgram(InputPixel inputPixel)
 
     uint oldPixelCount;
     uint pixelCount = UnorderedAccess::pixelListBuffer.IncrementCounter();
-    InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.xy], pixelCount, oldPixelCount);
+    InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.y * Shader::targetSize.x + inputPixel.position.x], pixelCount, oldPixelCount);
 
     PixelInfo pixelInfo;
     pixelInfo.albedoBuffer = encodeAlbedo(albedo);

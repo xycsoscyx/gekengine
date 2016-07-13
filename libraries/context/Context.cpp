@@ -103,6 +103,6 @@ namespace Gek
     ContextPtr Context::create(const std::vector<String> &searchPathList)
     {
         GEK_TRACE_FUNCTION();
-        return makeShared<Context, ContextImplementation>(searchPathList);
+        return makeShared<ContextImplementation>(searchPathList);
     }
 };

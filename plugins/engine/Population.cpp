@@ -304,7 +304,7 @@ namespace Gek
 
             Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName)
             {
-                std::shared_ptr<Entity> entity(std::make_shared<Entity>());
+                std::shared_ptr<Entity> entity(makeShared<Entity>());
                 for (auto &componentInfo : entityDefinition)
                 {
                     auto &componentName = componentInfo.first;

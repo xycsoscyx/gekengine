@@ -50,6 +50,7 @@ namespace Gek
             else if (_wcsicmp(formatString, L"INT4") == 0) return Format::Int4;
             else if (_wcsicmp(formatString, L"HALF") == 0) return Format::Half;
             else if (_wcsicmp(formatString, L"HALF2") == 0) return Format::Half2;
+            else if (_wcsicmp(formatString, L"HALF3") == 0) return Format::Half3;
             else if (_wcsicmp(formatString, L"HALF4") == 0) return Format::Half4;
             else if (_wcsicmp(formatString, L"FLOAT") == 0) return Format::Float;
             else if (_wcsicmp(formatString, L"FLOAT2") == 0) return Format::Float2;

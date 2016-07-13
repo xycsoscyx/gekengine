@@ -35,19 +35,18 @@
     <depth>D32</depth>
 
     <textures>
-        <albedoBuffer bind="float3" flags="target">byte4</albedoBuffer>
+        <albedoBuffer bind="float3" flags="target">half3</albedoBuffer>
         <materialBuffer bind="float2" flags="target">byte2</materialBuffer>
         <normalBuffer bind="half2" flags="target">half2</normalBuffer>
-        <lightAccumulationBuffer bind="float3" flags="target">half4</lightAccumulationBuffer>
+        <lightAccumulationBuffer bind="float3" flags="target">half3</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">byte</ambientOcclusionBuffer>
-        <finalBuffer bind="float3" flags="target">half4</finalBuffer>
-
-        <startIndexBuffer bind="int" flags="unorderedAccess">int</startIndexBuffer>
+        <finalBuffer bind="float3" flags="target">half3</finalBuffer>
     </textures>
 
     <buffers>
         <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">byte</tileIndexList>
 
+        <startIndexBuffer size="displayWidth * displayHeight" flags="unorderedAccess">int</startIndexBuffer>
         <pixelListBuffer stride="16" size="displayWidth * displayHeight * 5" flags="unorderedAccess, counter">PixelInfo</pixelListBuffer>
     </buffers>
 
@@ -82,7 +81,7 @@
         <pass mode="forward" name="transparent">
             <depthstates>
                 <comparison>less</comparison>
-                <writemask>all</writemask>
+                <writemask>zero</writemask>
             </depthstates>
 
             <renderstates>

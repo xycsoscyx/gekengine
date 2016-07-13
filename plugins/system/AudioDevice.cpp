@@ -310,7 +310,7 @@ namespace Gek
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
                 GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
 
-                return makeShared<Audio::Effect, Effect>(directSound8Buffer.p);
+                return makeShared<Effect>(directSound8Buffer.p);
             }
 
             Audio::SoundPtr loadSound(const wchar_t *fileName)
@@ -326,7 +326,7 @@ namespace Gek
                 CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
                 GEK_CHECK_CONDITION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
 
-                return makeShared<Audio::Sound, Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
+                return makeShared<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
             }
 
             Audio::EffectPtr copyEffect(Audio::Effect *source)
@@ -341,7 +341,7 @@ namespace Gek
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
                 GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
 
-                return makeShared<Audio::Effect, Effect>(directSound8Buffer.p);
+                return makeShared<Effect>(directSound8Buffer.p);
             }
 
             Audio::SoundPtr copySound(Audio::Sound *source)
@@ -359,7 +359,7 @@ namespace Gek
                 CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
                 GEK_CHECK_CONDITION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
 
-                return makeShared<Audio::Sound, Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
+                return makeShared<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
             }
         };
 

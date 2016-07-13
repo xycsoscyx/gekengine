@@ -112,17 +112,17 @@ namespace Gek
         };
     }; // namespace Trace
 
-    template <typename RETURN, typename CREATE, typename... ARGUMENTS>
-    std::shared_ptr<RETURN> makeShared(ARGUMENTS... arguments)
+    template <typename TYPE, typename... ARGUMENTS>
+    std::shared_ptr<TYPE> makeShared(ARGUMENTS... arguments)
     {
-        std::shared_ptr<CREATE> object;
+        std::shared_ptr<TYPE> object;
         try
         {
-            object = std::make_shared<CREATE>(arguments...);
+            object = std::make_shared<TYPE>(arguments...);
         }
         catch (const std::bad_alloc &exception)
         {
-            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to allocate new object: %v (%v)", typeid(CREATE).name(), exception.what()));
+            throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to allocate new object: %v (%v)", typeid(TYPE).name(), exception.what()));
         };
 
         return object;

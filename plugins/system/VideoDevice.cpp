@@ -1194,7 +1194,7 @@ namespace Gek
                     HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
                     GEK_CHECK_CONDITION(!d3dCommandList, Video::Exception, "Unable to finish command list (error %v)", resultValue);
 
-                    return makeShared<Video::Object, CommandList>(d3dCommandList.p);
+                    return makeShared<CommandList>(d3dCommandList.p);
                 }
             };
 
@@ -1265,7 +1265,7 @@ namespace Gek
                     GEK_CHECK_CONDITION(FAILED(resultValue), Video::Exception, "Unable to set fullscreen state (error %v)", resultValue);
                 }
 
-                defaultContext = makeShared<Video::Device::Context, Context>(d3dDeviceContext);
+                defaultContext = makeShared<Context>(d3dDeviceContext);
             }
 
             ~Device(void)
@@ -1345,7 +1345,7 @@ namespace Gek
 
                     D3D11_TEXTURE2D_DESC description;
                     d3dRenderTarget->GetDesc(&description);
-                    backBuffer = makeShared<Video::Target, TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1);
+                    backBuffer = makeShared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1);
                 }
 
                 return backBuffer.get();
@@ -1371,7 +1371,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
                 GEK_CHECK_CONDITION(!d3dDeferredDeviceContext, Video::Exception, "Unable to create deferred context (error %v)", resultValue);
 
-                return makeShared<Video::Device::Context, Context>(d3dDeferredDeviceContext.p);
+                return makeShared<Context>(d3dDeferredDeviceContext.p);
             }
 
             Video::ObjectPtr createEvent(void)
@@ -1386,7 +1386,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateQuery(&description, &d3dQuery);
                 GEK_CHECK_CONDITION(!d3dQuery, Video::Exception, "Unable to create event object (error %v)", resultValue);
 
-                return makeShared<Video::Object, Event>(d3dQuery);
+                return makeShared<Event>(d3dQuery);
             }
 
             void setEvent(Video::Object *event)
@@ -1431,7 +1431,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
                 GEK_CHECK_CONDITION(!d3dStates, Video::Exception, "Unable to create render state (error %v)", resultValue);
 
-                return makeShared<Video::Object, RenderState>(d3dStates);
+                return makeShared<RenderState>(d3dStates);
             }
 
             Video::ObjectPtr createDepthState(const Video::DepthStateInformation &depthState)
@@ -1458,7 +1458,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
                 GEK_CHECK_CONDITION(!d3dStates, Video::Exception, "Unable to create depth state (error %v)", resultValue);
 
-                return makeShared<Video::Object, DepthState>(d3dStates);
+                return makeShared<DepthState>(d3dStates);
             }
 
             Video::ObjectPtr createBlendState(const Video::UnifiedBlendStateInformation &blendState)
@@ -1500,7 +1500,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
                 GEK_CHECK_CONDITION(!d3dStates, Video::Exception, "Unable to create unified blend state (error %v)", resultValue);
 
-                return makeShared<Video::Object, BlendState>(d3dStates);
+                return makeShared<BlendState>(d3dStates);
             }
 
             Video::ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState)
@@ -1545,7 +1545,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
                 GEK_CHECK_CONDITION(!d3dStates, Video::Exception, "Unable to create independent blend state (error %v)", resultValue);
 
-                return makeShared<Video::Object, BlendState>(d3dStates);
+                return makeShared<BlendState>(d3dStates);
             }
 
             Video::ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState)
@@ -1571,7 +1571,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
                 GEK_CHECK_CONDITION(!d3dStates, Video::Exception, "Unable to create sampler state (error %v)", resultValue);
 
-                return makeShared<Video::Object, SamplerState>(d3dStates);
+                return makeShared<SamplerState>(d3dStates);
             }
 
             Video::BufferPtr createBuffer(Video::Format format, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
@@ -1686,7 +1686,7 @@ namespace Gek
                     GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create buffer unordered access view (error %v)", resultValue);
                 }
 
-                return makeShared<Video::Buffer, Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);
+                return makeShared<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);
             }
 
             Video::BufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
@@ -1774,7 +1774,7 @@ namespace Gek
                 resultValue = d3dDevice->CreateComputeShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
                 GEK_CHECK_CONDITION(!d3dShader, Video::Exception, "Unable to create shader (error %v)", resultValue);
 
-                return makeShared<Video::Object, ComputeProgram>(d3dShader);
+                return makeShared<ComputeProgram>(d3dShader);
             }
 
             Video::ObjectPtr compileVertexProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
@@ -1850,7 +1850,7 @@ namespace Gek
                     GEK_CHECK_CONDITION(!d3dInputLayout, Video::Exception, "Unable to create vertex input layout (error %v)", resultValue);
                 }
 
-                return makeShared<Video::Object, VertexProgram>(d3dShader, d3dInputLayout);
+                return makeShared<VertexProgram>(d3dShader, d3dInputLayout);
             }
 
             Video::ObjectPtr compileGeometryProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
@@ -1883,7 +1883,7 @@ namespace Gek
                 resultValue = d3dDevice->CreateGeometryShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
                 GEK_CHECK_CONDITION(!d3dShader, Video::Exception, "Unable to create shader (error %v)", resultValue);
 
-                return makeShared<Video::Object, GeometryProgram>(d3dShader);
+                return makeShared<GeometryProgram>(d3dShader);
             }
 
             Video::ObjectPtr compilePixelProgram(const wchar_t *fileName, const char *programScript, const char *entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &defineList, ID3DInclude *includes)
@@ -1916,7 +1916,7 @@ namespace Gek
                 resultValue = d3dDevice->CreatePixelShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
                 GEK_CHECK_CONDITION(!d3dShader, Video::Exception, "Unable to create shader (error %v)", resultValue);
 
-                return makeShared<Video::Object, PixelProgram>(d3dShader);
+                return makeShared<PixelProgram>(d3dShader);
             }
 
             Video::ObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
@@ -2183,7 +2183,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
                     GEK_CHECK_CONDITION(!d3dRenderTargetView, Video::Exception, "Unable to create render target view (error %v)", resultValue);
 
-                    return makeShared<Video::Texture, TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
+                    return makeShared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
                 }
                 else if (flags & Video::TextureFlags::DepthTarget)
                 {
@@ -2197,11 +2197,11 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
                     GEK_CHECK_CONDITION(!d3dDepthStencilView, Video::Exception, "Unable to create depth stencil view (error %v)", resultValue);
 
-                    return makeShared<Video::Texture, DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
+                    return makeShared<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
                 }
                 else
                 {
-                    return makeShared<Video::Texture, ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
+                    return makeShared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
                 }
             }
 
@@ -2278,7 +2278,7 @@ namespace Gek
                 d3dShaderResourceView->GetResource(&d3dResource);
                 GEK_CHECK_CONDITION(!d3dResource, Video::Exception, "Unable to get resource object");
 
-                return makeShared<Video::Texture, ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth);
+                return makeShared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth);
             }
 
             Video::TexturePtr loadCubeMap(const wchar_t *fileNameList[6], uint32_t flags)
@@ -2369,7 +2369,7 @@ namespace Gek
                 d3dShaderResourceView->GetResource(&d3dResource);
                 GEK_CHECK_CONDITION(!d3dResource, Video::Exception, "Unable to get resource object");
 
-                return makeShared<Video::Texture, ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1);
+                return makeShared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, cubeMapMetaData.width, cubeMapMetaData.height, 1);
             }
 
             void executeCommandList(Video::Object *commandList)

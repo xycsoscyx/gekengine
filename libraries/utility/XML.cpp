@@ -55,7 +55,7 @@ namespace Gek
 
         XmlNodePtr nextSiblingElement(const wchar_t *type) const
         {
-            return makeShared<XmlNode, XmlDummyNode>();
+            return makeShared<XmlDummyNode>();
         }
 
         bool hasChildElement(const wchar_t *type) const
@@ -65,12 +65,12 @@ namespace Gek
 
         XmlNodePtr firstChildElement(const wchar_t *type, bool create)
         {
-            return makeShared<XmlNode, XmlDummyNode>();
+            return makeShared<XmlDummyNode>();
         }
 
         XmlNodePtr createChildElement(const wchar_t *type, const wchar_t *content)
         {
-            return makeShared<XmlNode, XmlDummyNode>();
+            return makeShared<XmlDummyNode>();
         }
     };
 
@@ -183,11 +183,11 @@ namespace Gek
             {
                 if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8 == reinterpret_cast<const char *>(checkingNode->name)))
                 {
-                    return makeShared<XmlNode, XmlNodeImplementation>(checkingNode);
+                    return makeShared<XmlNodeImplementation>(checkingNode);
                 }
             }
 
-            return makeShared<XmlNode, XmlDummyNode>();
+            return makeShared<XmlDummyNode>();
         }
 
         bool hasChildElement(const wchar_t *type) const
@@ -211,7 +211,7 @@ namespace Gek
             {
                 if (checkingNode->type == XML_ELEMENT_NODE && (type == nullptr || typeUTF8 == reinterpret_cast<const char *>(checkingNode->name)))
                 {
-                    return makeShared<XmlNode, XmlNodeImplementation>(checkingNode);
+                    return makeShared<XmlNodeImplementation>(checkingNode);
                 }
             }
 
@@ -221,7 +221,7 @@ namespace Gek
             }
             else
             {
-                return makeShared<XmlNode, XmlDummyNode>();
+                return makeShared<XmlDummyNode>();
             }
         }
 
@@ -230,7 +230,7 @@ namespace Gek
             xmlNodePtr childNode = xmlNewChild(node, nullptr, BAD_CAST StringUTF8(type).c_str(), BAD_CAST StringUTF8(content).c_str());
             GEK_CHECK_CONDITION(childNode == nullptr, Xml::Exception, "Unable to create new child node: %v (%v)", type, content);
 
-            return makeShared<XmlNode, XmlNodeImplementation>(childNode);
+            return makeShared<XmlNodeImplementation>(childNode);
         }
     };
 
@@ -239,7 +239,7 @@ namespace Gek
         xmlNodePtr node = xmlNewNode(nullptr, BAD_CAST StringUTF8(type).c_str());
         GEK_CHECK_CONDITION(node == nullptr, Xml::Exception, "Unable to create node: %v", type);
 
-        return makeShared<XmlNode, XmlNodeImplementation>(node);
+        return makeShared<XmlNodeImplementation>(node);
     }
 
     class XmlDocumentImplementation
@@ -274,7 +274,7 @@ namespace Gek
             String rootType(reinterpret_cast<const char *>(root->name));
             GEK_CHECK_CONDITION(rootType != type, Xml::Exception, "Document root node type doesn't match: (%v vs %v)", type, rootType);
 
-            return makeShared<XmlNode, XmlNodeImplementation>(root);
+            return makeShared<XmlNodeImplementation>(root);
         }
     };
 
@@ -288,7 +288,7 @@ namespace Gek
 
         xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
 
-        return makeShared<XmlDocument, XmlDocumentImplementation>(document);
+        return makeShared<XmlDocumentImplementation>(document);
     }
 
     XmlDocumentPtr XmlDocument::load(const wchar_t *fileName, bool validateDTD)
@@ -297,6 +297,6 @@ namespace Gek
         xmlDocPtr document = xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT);
         GEK_CHECK_CONDITION(document == nullptr, Xml::Exception, "Unable to load document: %v", fileName);
 
-        return makeShared<XmlDocument, XmlDocumentImplementation>(document);
+        return makeShared<XmlDocumentImplementation>(document);
     }
 }; // namespace Gek

@@ -669,7 +669,7 @@ namespace Gek
                     String programName(programNode->firstChildElement(L"source")->getText());
                     String programFileName(L"$root\\data\\programs\\%v.hlsl", programName);
                     StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
-                    auto onInclude = [engineData, programFileName](const char *includeName, std::vector<uint8_t> &data) -> void
+                    auto onInclude = [engineData = move(engineData), programFileName](const char *includeName, std::vector<uint8_t> &data) -> void
                     {
                         if (_stricmp(includeName, "GEKEngine") == 0)
                         {
@@ -708,11 +708,11 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        pass.program = resources->loadComputeProgram(programFileName, programEntryPoint, onInclude);
+                        pass.program = resources->loadComputeProgram(programFileName, programEntryPoint, std::move(onInclude));
                     }
                     else
                     {
-                        pass.program = resources->loadPixelProgram(programFileName, programEntryPoint, onInclude);
+                        pass.program = resources->loadPixelProgram(programFileName, programEntryPoint, std::move(onInclude));
                     }
                 }
             }

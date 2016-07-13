@@ -83,7 +83,7 @@ namespace Gek
 
     Newton::EntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
     {
-        return makeShared<Newton::Entity, RigidNewtonBody>(newtonWorld, newtonCollision, entity);
+        return makeShared<RigidNewtonBody>(newtonWorld, newtonCollision, entity);
     }
 
     namespace Components

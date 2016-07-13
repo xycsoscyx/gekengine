@@ -52,7 +52,7 @@ namespace Gek
             template<typename... ARGUMENTS>
             void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
             {
-                listEntities([onEntity](Plugin::Entity *entity) -> void
+                listEntities([onEntity = move(onEntity)](Plugin::Entity *entity) -> void
                 {
                     if (entity->hasComponents<ARGUMENTS...>())
                     {

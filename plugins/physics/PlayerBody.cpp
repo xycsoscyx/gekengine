@@ -162,7 +162,7 @@ namespace Gek
             , newtonWorld(newtonWorld)
             , newtonBody(nullptr)
             , entity(entity)
-            , currentState(std::make_shared<IdleState>())
+            , currentState(makeShared<IdleState>())
             , halfHeight(0.0f)
             , moveForward(false)
             , moveBackward(false)
@@ -676,7 +676,7 @@ namespace Gek
         std::shared_ptr<PlayerNewtonBody> player;
         try
         {
-            player = std::make_shared<PlayerNewtonBody>(core, newtonWorld, entity);
+            player = makeShared<PlayerNewtonBody>(core, newtonWorld, entity);
         }
         catch (const std::bad_alloc &badAllocation)
         {
@@ -695,7 +695,7 @@ namespace Gek
     {
         if (player->falling)
         {
-            return std::make_shared<DroppingState>();
+            return makeShared<DroppingState>();
         }
 
         return nullptr;
@@ -705,27 +705,27 @@ namespace Gek
     {
         if (_wcsicmp(actionName, L"crouch") == 0 && state.state)
         {
-            return std::make_shared<CrouchingState>();
+            return makeShared<CrouchingState>();
         }
         else if (_wcsicmp(actionName, L"move_forward") == 0 && state.state)
         {
-            return std::make_shared<WalkingState>();
+            return makeShared<WalkingState>();
         }
         else if (_wcsicmp(actionName, L"move_backward") == 0 && state.state)
         {
-            return std::make_shared<WalkingState>();
+            return makeShared<WalkingState>();
         }
         else if (_wcsicmp(actionName, L"strafe_left") == 0 && state.state)
         {
-            return std::make_shared<WalkingState>();
+            return makeShared<WalkingState>();
         }
         else if (_wcsicmp(actionName, L"strafe_right") == 0 && state.state)
         {
-            return std::make_shared<WalkingState>();
+            return makeShared<WalkingState>();
         }
         else if (_wcsicmp(actionName, L"jump") == 0 && state.state)
         {
-            return std::make_shared<JumpingState>();
+            return makeShared<JumpingState>();
         }
 
         return nullptr;
@@ -741,11 +741,11 @@ namespace Gek
         {
             if (player->moveForward || player->moveBackward || player->strafeLeft || player->strafeRight)
             {
-                return std::make_shared<WalkingState>();
+                return makeShared<WalkingState>();
             }
             else
             {
-                return std::make_shared<IdleState>();
+                return makeShared<IdleState>();
             }
         }
 
@@ -766,7 +766,7 @@ namespace Gek
     {
         if (!player->moveForward && !player->moveBackward && !player->strafeLeft && !player->strafeRight)
         {
-            return std::make_shared<IdleState>();
+            return makeShared<IdleState>();
         }
 
         player->forwardSpeed += (((player->moveForward ? 1.0f : 0.0f) + (player->moveBackward ? -1.0f : 0.0f)) * 5.0f);
@@ -778,7 +778,7 @@ namespace Gek
     {
         if (_wcsicmp(actionName, L"jump") == 0 && state.state)
         {
-            return std::make_shared<JumpingState>();
+            return makeShared<JumpingState>();
         }
 
         return nullptr;
@@ -818,11 +818,11 @@ namespace Gek
 
         if (player->touchingSurface)
         {
-            return std::make_shared<CrouchingState>();
+            return makeShared<CrouchingState>();
         }
         else if (player->falling)
         {
-            return std::make_shared<FallingState>();
+            return makeShared<FallingState>();
         }
 
         return nullptr;
@@ -843,11 +843,11 @@ namespace Gek
         time += frameTime;
         if (time > 2.0f)
         {
-            return std::make_shared<DroppingState>();
+            return makeShared<DroppingState>();
         }
         else if (player->touchingSurface)
         {
-            return std::make_shared<CrouchingState>();
+            return makeShared<CrouchingState>();
         }
 
         return nullptr;
@@ -861,7 +861,7 @@ namespace Gek
     {
         if (player->touchingSurface)
         {
-            return std::make_shared<IdleState>();
+            return makeShared<IdleState>();
         }
 
         return nullptr;

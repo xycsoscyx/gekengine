@@ -134,7 +134,7 @@ namespace Gek
             {
                 HANDLE handle;
                 handle.assign(InterlockedIncrement(&nextIdentifier));
-                loader->request([this, handle, requestLoad](void) -> void
+                loader->request([this, handle, requestLoad = move(requestLoad)](void) -> void
                 {
                     requestLoad(handle, [this, handle](TypePtr data) -> void
                     {
@@ -150,7 +150,7 @@ namespace Gek
             {
                 HANDLE handle;
                 handle.assign(InterlockedIncrement(&nextIdentifier));
-                loader->request([this, handle, requestLoad](void) -> void
+                loader->request([this, handle, requestLoad = move(requestLoad)](void) -> void
                 {
                     requestLoad(handle, [this, handle](TypePtr data) -> void
                     {
@@ -166,7 +166,7 @@ namespace Gek
             {
                 HANDLE handle;
                 handle.assign(InterlockedIncrement(&nextIdentifier));
-                loader->request([this, handle, requestLoad](void) -> void
+                loader->request([this, handle, requestLoad = move(requestLoad)](void) -> void
                 {
                     requestLoad(handle, [this, handle](TypePtr data) -> void
                     {
@@ -204,7 +204,7 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
-                    loader->request([this, handle, requestLoad](void) -> void
+                    loader->request([this, handle, requestLoad = move(requestLoad)](void) -> void
                     {
                         requestLoad(handle, [this, handle](TypePtr data) -> void
                         {
@@ -233,7 +233,7 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
-                    loader->request([this, handle, requestLoad](void) -> void
+                    loader->request([this, handle, requestLoad = move(requestLoad)](void) -> void
                     {
                         requestLoad(handle, [this, handle](TypePtr data) -> void
                         {
@@ -449,7 +449,7 @@ namespace Gek
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, pluginName.c_str());
                 };
 
-                auto request = [this, load](VisualHandle handle, std::function<void(Plugin::VisualPtr)> set) -> void
+                auto request = [this, load = std::move(load)](VisualHandle handle, std::function<void(Plugin::VisualPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -465,7 +465,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName.c_str(), handle);
                 };
 
-                auto request = [this, load](MaterialHandle handle, std::function<void(Engine::MaterialPtr)> set) -> void
+                auto request = [this, load = std::move(load)](MaterialHandle handle, std::function<void(Engine::MaterialPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -482,7 +482,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName.c_str());
                 };
 
-                auto request = [this, load](ResourceHandle handle, std::function<void(Engine::FilterPtr)> set) -> void
+                auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Engine::FilterPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -502,7 +502,7 @@ namespace Gek
                     return shader;
                 };
 
-                auto request = [this, load](ShaderHandle handle, std::function<void(Engine::ShaderPtr)> set) -> void
+                auto request = [this, load = std::move(load)](ShaderHandle handle, std::function<void(Engine::ShaderPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -521,7 +521,7 @@ namespace Gek
                     return device->createRenderState(renderState);
                 };
 
-                auto request = [this, load](RenderStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
+                auto request = [this, load = std::move(load)](RenderStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -547,7 +547,7 @@ namespace Gek
                     return device->createDepthState(depthState);
                 };
 
-                auto request = [this, load](DepthStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
+                auto request = [this, load = std::move(load)](DepthStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -577,7 +577,7 @@ namespace Gek
                     return device->createBlendState(blendState);
                 };
 
-                auto request = [this, load](BlendStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
+                auto request = [this, load = std::move(load)](BlendStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -601,7 +601,7 @@ namespace Gek
                     return device->createBlendState(blendState);
                 };
 
-                auto request = [this, load](BlendStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
+                auto request = [this, load = std::move(load)](BlendStateHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -633,7 +633,7 @@ namespace Gek
                     return device->createTexture(format, width, height, depth, mipmaps, flags);
                 };
 
-                auto request = [this, load](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
+                auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -664,7 +664,7 @@ namespace Gek
                     return device->createBuffer(stride, count, type, flags, staticData);
                 };
 
-                auto request = [this, load](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
+                auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -727,7 +727,7 @@ namespace Gek
                     return buffer;
                 };
 
-                auto request = [this, load](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
+                auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -910,7 +910,7 @@ namespace Gek
                     return loadTextureData(textureName, flags);
                 };
 
-                auto request = [this, load](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
+                auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -928,7 +928,7 @@ namespace Gek
                     return createTextureData(pattern, parameters);
                 };
 
-                auto request = [this, load](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
+                auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -940,12 +940,12 @@ namespace Gek
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
-                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle)->Video::ObjectPtr
+                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), defineList](ProgramHandle handle)->Video::ObjectPtr
                 {
                     return device->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
                 };
 
-                auto request = [this, load](ProgramHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
+                auto request = [this, load = std::move(load)](ProgramHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
                 {
                     set(load(handle));
                 };
@@ -956,12 +956,12 @@ namespace Gek
             ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
-                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude, defineList](ProgramHandle handle)->Video::ObjectPtr
+                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), defineList](ProgramHandle handle)->Video::ObjectPtr
                 {
                     return device->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
                 };
 
-                auto request = [this, load](ProgramHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
+                auto request = [this, load = std::move(load)](ProgramHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
                 {
                     set(load(handle));
                 };

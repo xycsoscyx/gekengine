@@ -18,33 +18,65 @@ namespace Gek
     {
         GEK_START_EXCEPTIONS();
 
+        namespace FormatFlags
+        {
+            enum
+            {
+                INT8 = 1 << 0,
+                INT16 = 1 << 1,
+                INT32 = 1 << 2,
+                Float = 1 << 3,
+                Unsigned = 1 << 4,
+                Normalized = 1 << 5,
+            };
+        }; // namespace FormatFlags
+
         enum class Format : uint8_t
         {
             Unknown = 0,
-            Byte,
-            Byte2,
-            Byte3,
-            Byte4,
-            BGRA,
+
+
+            INT8_X,
+            INT8_XY,
+            INT8_XYB,
+            INT8_XYBA,
+            INT16_X,
+            INT16_XY,
+            INT16_XYB,
+            INT16_XYBA,
+            INT32_X,
+            INT32_XY,
+            INT32_XYB,
+            INT32_XYBA,
+
+            UINT8_X,
+            UINT8_XY,
+            UINT8_XYB,
+            UINT8_XYBA,
+            UINT16_X,
+            UINT16_XY,
+            UINT16_XYB,
+            UINT16_XYBA,
+            UINT32_X,
+            UINT32_XY,
+            UINT32_XYB,
+            UINT32_XYBA,
+
+            Float_X,
+            Float_XY,
+            Float_XYB,
+            Float_XYBA,
+
+            R,
+            RG,
+            RGBA,
             sRGBA,
-            Short,
-            Short2,
-            Short4,
-            Int,
-            Int2,
-            Int3,
-            Int4,
-            Half,
-            Half2,
-            Half3,
-            Half4,
-            Float,
-            Float2,
-            Float3,
-            Float4,
+            BGRA,
+
             Depth16,
             Depth24Stencil8,
             Depth32,
+
             NumFormats
         };
 

@@ -535,52 +535,62 @@ namespace Gek
                     }
                     else
                     {
+                        BindType bindType;
                         Video::Format format = Video::getFormat(bufferNode->getText());
-                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags, readWrite);
-                        switch (format)
+                        if (bufferNode->hasAttribute(L"bind"))
                         {
-                        case Video::Format::Byte:
-                        case Video::Format::Short:
-                        case Video::Format::Int:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int);
-                            break;
+                            bindType = getBindType(bufferNode->getAttribute(L"bind"));
+                        }
+                        else
+                        {
+                            switch (format)
+                            {
+                            case Video::Format::Byte:
+                            case Video::Format::Short:
+                            case Video::Format::Int:
+                                bindType = BindType::Int;
+                                break;
 
-                        case Video::Format::Byte2:
-                        case Video::Format::Short2:
-                        case Video::Format::Int2:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int2);
-                            break;
+                            case Video::Format::Byte2:
+                            case Video::Format::Short2:
+                            case Video::Format::Int2:
+                                bindType = BindType::Int2;
+                                break;
 
-                        case Video::Format::Int3:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int3);
-                            break;
+                            case Video::Format::Int3:
+                                bindType = BindType::Int3;
+                                break;
 
-                        case Video::Format::BGRA:
-                        case Video::Format::Byte4:
-                        case Video::Format::Short4:
-                        case Video::Format::Int4:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Int4);
-                            break;
+                            case Video::Format::BGRA:
+                            case Video::Format::Byte4:
+                            case Video::Format::Short4:
+                            case Video::Format::Int4:
+                                bindType = BindType::Int4;
+                                break;
 
-                        case Video::Format::Half:
-                        case Video::Format::Float:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float);
-                            break;
+                            case Video::Format::Half:
+                            case Video::Format::Float:
+                                bindType = BindType::Float;
+                                break;
 
-                        case Video::Format::Half2:
-                        case Video::Format::Float2:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float2);
-                            break;
+                            case Video::Format::Half2:
+                            case Video::Format::Float2:
+                                bindType = BindType::Float2;
+                                break;
 
-                        case Video::Format::Float3:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float3);
-                            break;
+                            case Video::Format::Float3:
+                                bindType = BindType::Float3;
+                                break;
 
-                        case Video::Format::Half4:
-                        case Video::Format::Float4:
-                            resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, BindType::Float4);
-                            break;
-                        };
+                            case Video::Format::Half4:
+                            case Video::Format::Float4:
+                                bindType = BindType::Float4;
+                                break;
+                            };
+                        }
+
+                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, bindType);
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags, readWrite);
                     }
                 }
 
@@ -925,7 +935,7 @@ namespace Gek
                         String programFileName(programNode->firstChildElement(L"source")->getText());
                         String programFilePath(L"$root\\data\\programs\\%v.hlsl", programFileName);
                         StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
-                        auto onInclude = [engineData, programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
+                        auto onInclude = [engineData = move(engineData), programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
                         {
                             if (_stricmp(resourceName, "GEKEngine") == 0)
                             {
@@ -964,11 +974,11 @@ namespace Gek
 
                         if (pass.mode == Pass::Mode::Compute)
                         {
-                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, onInclude);
+                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
                         }
                         else
                         {
-                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, onInclude);
+                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
                         }
                     }
                 }
@@ -992,7 +1002,7 @@ namespace Gek
 
             Engine::Material::DataPtr loadMaterialData(const Engine::Material::PassMap &passMap)
             {
-                DataPtr data(std::make_shared<Data>());
+                DataPtr data(makeShared<Data>());
                 std::for_each(passMap.begin(), passMap.end(), [&](auto &passPair) -> void
                 {
                     auto &passName = passPair.first;

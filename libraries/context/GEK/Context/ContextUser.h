@@ -66,7 +66,7 @@ namespace Gek
     public:
         static ContextUserPtr createBase(Context *context, ARGUMENTS... arguments)
         {
-            return makeShared<ContextUser, TYPE>(context, arguments...);
+            return makeShared<TYPE>(context, arguments...);
         }
 
         template<std::size_t... Size>

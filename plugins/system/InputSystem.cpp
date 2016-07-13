@@ -362,7 +362,7 @@ namespace Gek
             {
                 try
                 {
-                    Input::DevicePtr joystick(makeShared<Input::Device, Joystick>(directInput, window, deviceObjectInstance->guidInstance));
+                    Input::DevicePtr joystick(makeShared<Joystick>(directInput, window, deviceObjectInstance->guidInstance));
                     joystickDeviceList.push_back(joystick);
                 }
                 catch (...)
@@ -382,8 +382,8 @@ namespace Gek
                 HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
                 GEK_CHECK_CONDITION(FAILED(resultValue), Input::Exception, "Unable to create DirectInput device (error %v)", resultValue);
 
-                keyboardDevice = makeShared<Input::Device, Keyboard>(directInput, window);
-                mouseDevice = makeShared<Input::Device, Mouse>(directInput, window);
+                keyboardDevice = makeShared<Keyboard>(directInput, window);
+                mouseDevice = makeShared<Mouse>(directInput, window);
                 directInput->EnumDevices(DI8DEVCLASS_GAMECTRL, joystickEnumeration, LPVOID(this), DIEDFL_ATTACHEDONLY);
             }
 
