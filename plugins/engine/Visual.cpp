@@ -281,6 +281,8 @@ namespace Gek
             // Plugin
             void enable(Video::Device::Context *deviceContext)
             {
+                GEK_TRACE_SCOPE();
+
                 deviceContext->geometryPipeline()->setProgram(geometryProgram.get());
                 deviceContext->vertexPipeline()->setProgram(vertexProgram.get());
             }

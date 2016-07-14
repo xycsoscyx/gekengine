@@ -170,6 +170,7 @@
     <ClInclude Include="GEK\Engine\Shader.h" />
     <ClInclude Include="GEK\Engine\Visual.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="ShaderFilter.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core.cpp" />

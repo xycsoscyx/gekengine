@@ -1203,6 +1203,12 @@ namespace Gek
                     }
                 }
 
+                void clearResource(Video::Object *object, const Math::Float4 &value)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(object);
+                }
+
                 void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);

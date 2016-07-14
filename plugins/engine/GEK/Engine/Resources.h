@@ -123,7 +123,9 @@ namespace Gek
             virtual void setBlendState(Video::Device::Context *deviceContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
             virtual void setProgram(Video::Device::Context::Pipeline *deviceContextPipeline, ProgramHandle programHandle) = 0;
             virtual void setRenderTargets(Video::Device::Context *deviceContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer) = 0;
-            virtual void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle  , const Math::Color &color) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Float4 &value) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const uint32_t value[4]) = 0;
+            virtual void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *deviceContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
             virtual void setBackBuffer(Video::Device::Context *deviceContext, ResourceHandle *depthBuffer) = 0;
         };

@@ -692,67 +692,7 @@ namespace Gek
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
                 auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
                 {
-                    Video::BufferPtr buffer(device->createBuffer(format, count, type, flags, staticData));
-                    if (flags & Video::BufferFlags::UnorderedAccess)
-                    {
-                        static const uint32_t zero[4] = { 0, 0, 0, 0 };
-                        switch (format)
-                        {
-                        case Video::Format::R32G32B32A32_UINT:
-                        case Video::Format::R16G16B16A16_UINT:
-                        case Video::Format::R10G10B10A2_UINT:
-                        case Video::Format::R8G8B8A8_UINT:
-                        case Video::Format::R32G32B32_UINT:
-                        case Video::Format::R32G32_UINT:
-                        case Video::Format::R16G16_UINT:
-                        case Video::Format::R8G8_UINT:
-                        case Video::Format::R32_UINT:
-                        case Video::Format::R16_UINT:
-                        case Video::Format::R8_UINT:
-
-                        case Video::Format::R32G32B32A32_INT:
-                        case Video::Format::R16G16B16A16_INT:
-                        case Video::Format::R8G8B8A8_INT:
-                        case Video::Format::R32G32B32_INT:
-                        case Video::Format::R32G32_INT:
-                        case Video::Format::R16G16_INT:
-                        case Video::Format::R8G8_INT:
-                        case Video::Format::R32_INT:
-                        case Video::Format::R16_INT:
-                        case Video::Format::R8_INT:
-                            device->getDefaultContext()->clearUnorderedAccess(buffer.get(), zero);
-                            break;
-
-                        case Video::Format::R32G32B32A32_FLOAT:
-                        case Video::Format::R16G16B16A16_FLOAT:
-                        case Video::Format::R32G32B32_FLOAT:
-                        case Video::Format::R11G11B10_FLOAT:
-                        case Video::Format::R32G32_FLOAT:
-                        case Video::Format::R16G16_FLOAT:
-                        case Video::Format::R32_FLOAT:
-                        case Video::Format::R16_FLOAT:
-
-                        case Video::Format::R16G16B16A16_UNORM:
-                        case Video::Format::R10G10B10A2_UNORM:
-                        case Video::Format::R8G8B8A8_UNORM:
-                        case Video::Format::R8G8B8A8_UNORM_SRGB:
-                        case Video::Format::R16G16_UNORM:
-                        case Video::Format::R8G8_UNORM:
-                        case Video::Format::R16_UNORM:
-                        case Video::Format::R8_UNORM:
-
-                        case Video::Format::R16G16B16A16_NORM:
-                        case Video::Format::R8G8B8A8_NORM:
-                        case Video::Format::R16G16_NORM:
-                        case Video::Format::R8G8_NORM:
-                        case Video::Format::R16_NORM:
-                        case Video::Format::R8_NORM:
-                            device->getDefaultContext()->clearUnorderedAccess(buffer.get(), Math::Float4::Zero);
-                            break;
-                        };
-                    }
-
-                    return buffer;
+                    return device->createBuffer(format, count, type, flags, staticData);
                 };
 
                 auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
@@ -821,7 +761,7 @@ namespace Gek
                                 uint8_t(color * 255.0f),
                             };
 
-                            texture = device->createTexture(Video::Format::R8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else if (colorSize == 2)
                         {
@@ -833,7 +773,7 @@ namespace Gek
                                 uint8_t(color.y * 255.0f),
                             };
 
-                            texture = device->createTexture(Video::Format::R8G8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8G8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else if (colorSize == 3)
                         {
@@ -847,7 +787,7 @@ namespace Gek
                                 255,
                             };
 
-                            texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else if (colorSize == 4)
                         {
@@ -861,7 +801,7 @@ namespace Gek
                                 uint8_t(color.w * 255.0f),
                             };
 
-                            texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else
                         {
@@ -886,13 +826,13 @@ namespace Gek
 
                     uint8_t normalData[4] =
                     {
-                        uint8_t(normal.x * 255.0f),
-                        uint8_t(normal.y * 255.0f),
-                        uint8_t(normal.z * 255.0f),
+                        uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
+                        uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
+                        uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
                         255,
                     };
 
-                    texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
+                    texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
                 }
                 else if (pattern.compareNoCase(L"system") == 0)
                 {
@@ -903,19 +843,20 @@ namespace Gek
                             255, 0, 255, 255,
                         };
 
-                        texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, data);
+                        texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, data);
                     }
                     else if (parameters.compareNoCase(L"flat") == 0)
                     {
+                        Math::Float3 normal(0.0f, 0.0f, 1.0f);
                         uint8_t normalData[4] =
                         {
-                            127,
-                            127,
-                            255,
+                            uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
+                            uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
+                            uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
                             255,
                         };
 
-                        texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
+                        texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
                     }
                     else
                     {
@@ -1065,6 +1006,16 @@ namespace Gek
             void setIndexBuffer(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, uint32_t offset)
             {
                 deviceContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)), offset);
+            }
+
+            void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Float4 &value)
+            {
+                deviceContext->clearUnorderedAccess(dynamic_cast<Video::Object *>(resourceManager.getResource(resourceHandle, true)), value);
+            }
+
+            void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const uint32_t value[4])
+            {
+                deviceContext->clearUnorderedAccess(dynamic_cast<Video::Object *>(resourceManager.getResource(resourceHandle, true)), value);
             }
 
             void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Color &color)
