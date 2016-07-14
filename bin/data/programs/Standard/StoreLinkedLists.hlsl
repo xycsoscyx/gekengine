@@ -12,8 +12,8 @@ struct PixelInfo
 
 uint packFloat4(float4 value)
 {
-    value = min(max(value, 0.0f), 1.0f);
-    value = value * 255 + 0.5f;
+    value = min(max(value, 0.0), 1.0);
+    value = value * 255.0 + 0.5;
     value = floor(value);
     return (((uint)value.x) |
            (((uint)value.y) << 8) |
@@ -23,32 +23,31 @@ uint packFloat4(float4 value)
 
 float4 unpackFloat4(uint value)
 {
-    return float4((float)(value & 0x000000ff) / 255,
-                  (float)((value >> 8) & 0x000000ff) / 255,
-                  (float)((value >> 16) & 0x000000ff) / 255,
-                  (float)((value >> 24) & 0x000000ff) / 255);
+    return float4((float)(value & 0x000000ff) / 255.0,
+                  (float)((value >> 8) & 0x000000ff) / 255.0,
+                  (float)((value >> 16) & 0x000000ff) / 255.0,
+                  (float)((value >> 24) & 0x000000ff) / 255.0);
 }
 
 uint packMaterialNormal(float roughness, float metalness, float3 normal)
 {
-    half2 encodedNormal = encodeNormal(normal);
-    return packFloat4(float4(roughness, metalness, encodedNormal.x, encodedNormal.y));
+    return packFloat4(float4(roughness, metalness, encodeNormal(normal)));
 }
 
 float unpackRoughness(uint value)
 {
-    return (float)(value & 0x000000ff) / 255;
+    return (float)(value & 0x000000ff) / 255.0;
 }
 
 float unpackMetalness(uint value)
 {
-    return (float)((value >> 8) & 0x000000ff) / 255;
+    return (float)((value >> 8) & 0x000000ff) / 255.0;
 }
 
 float3 unpackNormal(uint value)
 {
-    return decodeNormal(half2((float)((value >> 16) & 0x000000ff) / 255,
-                              (float)((value >> 24) & 0x000000ff) / 255));
+    return decodeNormal(half2((float)((value >> 16) & 0x000000ff) / 255.0,
+                              (float)((value >> 24) & 0x000000ff) / 255.0));
 }
 
 void mainPixelProgram(InputPixel inputPixel)
