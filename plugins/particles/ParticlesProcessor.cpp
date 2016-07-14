@@ -154,7 +154,7 @@ namespace Gek
 
             std::size_t operator()(const Properties &properties) const
             {
-                return properties.value;
+                return std::hash<uint64_t>()(properties.value);
             }
 
             bool operator == (const Properties &properties) const

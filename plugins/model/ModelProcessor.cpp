@@ -275,7 +275,7 @@ namespace Gek
                 rawFileData += sizeof(uint32_t);
 
                 material.indexCount = indexCount;
-                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::Short, indexCount, Video::BufferType::Index, 0, false, rawFileData);
+                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::R16_UINT, indexCount, Video::BufferType::Index, 0, false, rawFileData);
                 rawFileData += (sizeof(uint16_t) * indexCount);
             }
 

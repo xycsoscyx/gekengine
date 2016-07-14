@@ -51,30 +51,60 @@ namespace Gek
         static const DXGI_FORMAT TextureFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_R8_UNORM,
-            DXGI_FORMAT_R8G8_UNORM,
+
+            DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_R16G16B16A16_FLOAT,
+            DXGI_FORMAT_R32G32B32_FLOAT,
+            DXGI_FORMAT_R11G11B10_FLOAT,
+            DXGI_FORMAT_R32G32_FLOAT,
+            DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R32_FLOAT,
+            DXGI_FORMAT_R16_FLOAT,
+
+            DXGI_FORMAT_R32G32B32A32_UINT,
+            DXGI_FORMAT_R16G16B16A16_UINT,
+            DXGI_FORMAT_R10G10B10A2_UINT,
+            DXGI_FORMAT_R8G8B8A8_UINT,
+            DXGI_FORMAT_R32G32B32_UINT,
+            DXGI_FORMAT_R32G32_UINT,
+            DXGI_FORMAT_R16G16_UINT,
+            DXGI_FORMAT_R8G8_UINT,
+            DXGI_FORMAT_R32_UINT,
+            DXGI_FORMAT_R16_UINT,
+            DXGI_FORMAT_R8_UINT,
+
+            DXGI_FORMAT_R32G32B32A32_SINT,
+            DXGI_FORMAT_R16G16B16A16_SINT,
+            DXGI_FORMAT_R8G8B8A8_SINT,
+            DXGI_FORMAT_R32G32B32_SINT,
+            DXGI_FORMAT_R32G32_SINT,
+            DXGI_FORMAT_R16G16_SINT,
+            DXGI_FORMAT_R8G8_SINT,
+            DXGI_FORMAT_R32_SINT,
+            DXGI_FORMAT_R16_SINT,
+            DXGI_FORMAT_R8_SINT,
+
+            DXGI_FORMAT_R16G16B16A16_UNORM,
             DXGI_FORMAT_R10G10B10A2_UNORM,
             DXGI_FORMAT_R8G8B8A8_UNORM,
-            DXGI_FORMAT_B8G8R8A8_UNORM,
             DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-            DXGI_FORMAT_R16_UINT,
-            DXGI_FORMAT_R16G16_UINT,
-            DXGI_FORMAT_R16G16B16A16_UINT,
-            DXGI_FORMAT_R32_UINT,
-            DXGI_FORMAT_R32G32_UINT,
-            DXGI_FORMAT_R32G32B32_UINT,
-            DXGI_FORMAT_R32G32B32A32_UINT,
-            DXGI_FORMAT_R16_FLOAT,
-            DXGI_FORMAT_R16G16_FLOAT,
-            DXGI_FORMAT_R11G11B10_FLOAT,
-            DXGI_FORMAT_R16G16B16A16_FLOAT,
-            DXGI_FORMAT_R32_FLOAT,
-            DXGI_FORMAT_R32G32_FLOAT,
-            DXGI_FORMAT_R32G32B32_FLOAT,
-            DXGI_FORMAT_R32G32B32A32_FLOAT,
-            DXGI_FORMAT_R16_TYPELESS,
+            DXGI_FORMAT_R16G16_UNORM,
+            DXGI_FORMAT_R8G8_UNORM,
+            DXGI_FORMAT_R16_UNORM,
+            DXGI_FORMAT_R8_UNORM,
+
+            DXGI_FORMAT_R16G16B16A16_SNORM,
+            DXGI_FORMAT_R8G8B8A8_SNORM,
+            DXGI_FORMAT_R16G16_SNORM,
+            DXGI_FORMAT_R8G8_SNORM,
+            DXGI_FORMAT_R16_SNORM,
+            DXGI_FORMAT_R8_SNORM,
+
+            DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,
             DXGI_FORMAT_R24G8_TYPELESS,
+
             DXGI_FORMAT_R32_TYPELESS,
+            DXGI_FORMAT_R16_TYPELESS,
         };
 
         static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all TextureFormatList.");
@@ -82,6 +112,16 @@ namespace Gek
         static const DXGI_FORMAT DepthFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
+
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
@@ -93,6 +133,7 @@ namespace Gek
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
+
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
@@ -103,9 +144,28 @@ namespace Gek
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_D16_UNORM,
+
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+
+            DXGI_FORMAT_D32_FLOAT_S8X24_UINT,
             DXGI_FORMAT_D24_UNORM_S8_UINT,
+
             DXGI_FORMAT_D32_FLOAT,
+            DXGI_FORMAT_D16_UNORM,
         };
 
         static_assert(ARRAYSIZE(DepthFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all DepthFormatList.");
@@ -113,30 +173,60 @@ namespace Gek
         static const DXGI_FORMAT ViewFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_R8_UNORM,
-            DXGI_FORMAT_R8G8_UNORM,
+
+            DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_R16G16B16A16_FLOAT,
+            DXGI_FORMAT_R32G32B32_FLOAT,
+            DXGI_FORMAT_R11G11B10_FLOAT,
+            DXGI_FORMAT_R32G32_FLOAT,
+            DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R32_FLOAT,
+            DXGI_FORMAT_R16_FLOAT,
+
+            DXGI_FORMAT_R32G32B32A32_UINT,
+            DXGI_FORMAT_R16G16B16A16_UINT,
+            DXGI_FORMAT_R10G10B10A2_UINT,
+            DXGI_FORMAT_R8G8B8A8_UINT,
+            DXGI_FORMAT_R32G32B32_UINT,
+            DXGI_FORMAT_R32G32_UINT,
+            DXGI_FORMAT_R16G16_UINT,
+            DXGI_FORMAT_R8G8_UINT,
+            DXGI_FORMAT_R32_UINT,
+            DXGI_FORMAT_R16_UINT,
+            DXGI_FORMAT_R8_UINT,
+
+            DXGI_FORMAT_R32G32B32A32_SINT,
+            DXGI_FORMAT_R16G16B16A16_SINT,
+            DXGI_FORMAT_R8G8B8A8_SINT,
+            DXGI_FORMAT_R32G32B32_SINT,
+            DXGI_FORMAT_R32G32_SINT,
+            DXGI_FORMAT_R16G16_SINT,
+            DXGI_FORMAT_R8G8_SINT,
+            DXGI_FORMAT_R32_SINT,
+            DXGI_FORMAT_R16_SINT,
+            DXGI_FORMAT_R8_SINT,
+
+            DXGI_FORMAT_R16G16B16A16_UNORM,
             DXGI_FORMAT_R10G10B10A2_UNORM,
             DXGI_FORMAT_R8G8B8A8_UNORM,
-            DXGI_FORMAT_B8G8R8A8_UNORM,
             DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
-            DXGI_FORMAT_R16_UINT,
-            DXGI_FORMAT_R16G16_UINT,
-            DXGI_FORMAT_R16G16B16A16_UINT,
-            DXGI_FORMAT_R32_UINT,
-            DXGI_FORMAT_R32G32_UINT,
-            DXGI_FORMAT_R32G32B32_UINT,
-            DXGI_FORMAT_R32G32B32A32_UINT,
-            DXGI_FORMAT_R16_FLOAT,
-            DXGI_FORMAT_R16G16_FLOAT,
-            DXGI_FORMAT_R11G11B10_FLOAT,
-            DXGI_FORMAT_R16G16B16A16_FLOAT,
-            DXGI_FORMAT_R32_FLOAT,
-            DXGI_FORMAT_R32G32_FLOAT,
-            DXGI_FORMAT_R32G32B32_FLOAT,
-            DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_R16G16_UNORM,
+            DXGI_FORMAT_R8G8_UNORM,
             DXGI_FORMAT_R16_UNORM,
+            DXGI_FORMAT_R8_UNORM,
+
+            DXGI_FORMAT_R16G16B16A16_SNORM,
+            DXGI_FORMAT_R8G8B8A8_SNORM,
+            DXGI_FORMAT_R16G16_SNORM,
+            DXGI_FORMAT_R8G8_SNORM,
+            DXGI_FORMAT_R16_SNORM,
+            DXGI_FORMAT_R8_SNORM,
+
+            DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,
             DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+
             DXGI_FORMAT_R32_FLOAT,
+            DXGI_FORMAT_R16_UNORM,
         };
 
         static_assert(ARRAYSIZE(ViewFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all ViewFormatList.");
@@ -144,28 +234,58 @@ namespace Gek
         static const DXGI_FORMAT BufferFormatList[] =
         {
             DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_R8_UINT,
-            DXGI_FORMAT_R8G8_UINT,
-            DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_R8G8B8A8_UINT,
-            DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_UNKNOWN,
-            DXGI_FORMAT_R16_UINT,
-            DXGI_FORMAT_R16G16_UINT,
-            DXGI_FORMAT_R16G16B16A16_UINT,
-            DXGI_FORMAT_R32_UINT,
-            DXGI_FORMAT_R32G32_UINT,
-            DXGI_FORMAT_R32G32B32_UINT,
-            DXGI_FORMAT_R32G32B32A32_UINT,
-            DXGI_FORMAT_R16_FLOAT,
-            DXGI_FORMAT_R16G16_FLOAT,
-            DXGI_FORMAT_R11G11B10_FLOAT,
-            DXGI_FORMAT_R16G16B16A16_FLOAT,
-            DXGI_FORMAT_R32_FLOAT,
-            DXGI_FORMAT_R32G32_FLOAT,
-            DXGI_FORMAT_R32G32B32_FLOAT,
+
             DXGI_FORMAT_R32G32B32A32_FLOAT,
+            DXGI_FORMAT_R16G16B16A16_FLOAT,
+            DXGI_FORMAT_R32G32B32_FLOAT,
+            DXGI_FORMAT_R11G11B10_FLOAT,
+            DXGI_FORMAT_R32G32_FLOAT,
+            DXGI_FORMAT_R16G16_FLOAT,
+            DXGI_FORMAT_R32_FLOAT,
+            DXGI_FORMAT_R16_FLOAT,
+
+            DXGI_FORMAT_R32G32B32A32_UINT,
+            DXGI_FORMAT_R16G16B16A16_UINT,
+            DXGI_FORMAT_R10G10B10A2_UINT,
+            DXGI_FORMAT_R8G8B8A8_UINT,
+            DXGI_FORMAT_R32G32B32_UINT,
+            DXGI_FORMAT_R32G32_UINT,
+            DXGI_FORMAT_R16G16_UINT,
+            DXGI_FORMAT_R8G8_UINT,
+            DXGI_FORMAT_R32_UINT,
+            DXGI_FORMAT_R16_UINT,
+            DXGI_FORMAT_R8_UINT,
+
+            DXGI_FORMAT_R32G32B32A32_SINT,
+            DXGI_FORMAT_R16G16B16A16_SINT,
+            DXGI_FORMAT_R8G8B8A8_SINT,
+            DXGI_FORMAT_R32G32B32_SINT,
+            DXGI_FORMAT_R32G32_SINT,
+            DXGI_FORMAT_R16G16_SINT,
+            DXGI_FORMAT_R8G8_SINT,
+            DXGI_FORMAT_R32_SINT,
+            DXGI_FORMAT_R16_SINT,
+            DXGI_FORMAT_R8_SINT,
+
+            DXGI_FORMAT_R16G16B16A16_UNORM,
+            DXGI_FORMAT_R10G10B10A2_UNORM,
+            DXGI_FORMAT_R8G8B8A8_UNORM,
+            DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            DXGI_FORMAT_R16G16_UNORM,
+            DXGI_FORMAT_R8G8_UNORM,
+            DXGI_FORMAT_R16_UNORM,
+            DXGI_FORMAT_R8_UNORM,
+
+            DXGI_FORMAT_R16G16B16A16_SNORM,
+            DXGI_FORMAT_R8G8B8A8_SNORM,
+            DXGI_FORMAT_R16G16_SNORM,
+            DXGI_FORMAT_R8G8_SNORM,
+            DXGI_FORMAT_R16_SNORM,
+            DXGI_FORMAT_R8_SNORM,
+
             DXGI_FORMAT_UNKNOWN,
+            DXGI_FORMAT_UNKNOWN,
+
             DXGI_FORMAT_UNKNOWN,
             DXGI_FORMAT_UNKNOWN,
         };
@@ -174,31 +294,61 @@ namespace Gek
 
         static const uint32_t FormatStrideList[] =
         {
-            0,
-            sizeof(uint8_t),
-            (sizeof(uint8_t) * 2),
-            (sizeof(uint8_t) * 4),
-            (sizeof(uint8_t) * 4),
-            (sizeof(uint8_t) * 4),
-            (sizeof(uint8_t) * 4),
-            sizeof(uint16_t),
-            (sizeof(uint16_t) * 2),
-            (sizeof(uint16_t) * 4),
-            sizeof(uint32_t),
-            (sizeof(uint32_t) * 2),
-            (sizeof(uint32_t) * 3),
-            (sizeof(uint32_t) * 4),
-            (sizeof(float) / 2),
-            ((sizeof(float) / 2) * 3),
-            ((sizeof(float) / 2) * 2),
-            ((sizeof(float) / 2) * 4),
-            sizeof(float),
-            (sizeof(float) * 2),
-            (sizeof(float) * 3),
-            (sizeof(float) * 4),
-            sizeof(uint16_t),
-            sizeof(uint32_t),
-            sizeof(uint32_t),
+            0, // DXGI_FORMAT_UNKNOWN,
+
+            (sizeof(uint32_t) * 4), // DXGI_FORMAT_R32G32B32A32_FLOAT,
+            (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_FLOAT,
+            (sizeof(uint32_t) * 3), // DXGI_FORMAT_R32G32B32_FLOAT,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R11G11B10_FLOAT,
+            (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32G32_FLOAT,
+            (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_FLOAT,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R32_FLOAT,
+            (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_FLOAT,
+
+            (sizeof(uint32_t) * 4), // DXGI_FORMAT_R32G32B32A32_UINT,
+            (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_UINT,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R10G10B10A2_UINT,
+            (sizeof(uint8_t)  * 4), // DXGI_FORMAT_R8G8B8A8_UINT,
+            (sizeof(uint32_t) * 3), // DXGI_FORMAT_R32G32B32_UINT,
+            (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32G32_UINT,
+            (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_UINT,
+            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_UINT,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R32_UINT,
+            (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_UINT,
+            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_UINT,
+
+            (sizeof(uint32_t) * 4), // DXGI_FORMAT_R32G32B32A32_SINT,
+            (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_SINT,
+            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_SINT,
+            (sizeof(uint32_t) * 3), // DXGI_FORMAT_R32G32B32_SINT,
+            (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32G32_SINT,
+            (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_SINT,
+            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_SINT,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R32_SINT,
+            (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_SINT,
+            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_SINT,
+
+            (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_UNORM,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R10G10B10A2_UNORM,
+            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_UNORM,
+            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_UNORM_SRGB,
+            (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_UNORM,
+            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_UNORM,
+            (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_UNORM,
+            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_UNORM,
+
+            (sizeof(uint16_t) * 4), // DXGI_FORMAT_R16G16B16A16_SNORM,
+            (sizeof(uint8_t) * 4), // DXGI_FORMAT_R8G8B8A8_SNORM,
+            (sizeof(uint16_t) * 2), // DXGI_FORMAT_R16G16_SNORM,
+            (sizeof(uint8_t) * 2), // DXGI_FORMAT_R8G8_SNORM,
+            (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_SNORM,
+            (sizeof(uint8_t) * 1), // DXGI_FORMAT_R8_SNORM,
+
+            (sizeof(uint32_t) * 2), // DXGI_FORMAT_R32_FLOAT_X8X24_TYPELESS,
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R24_UNORM_X8_TYPELESS,
+
+            (sizeof(uint32_t) * 1), // DXGI_FORMAT_R32_FLOAT,
+            (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_UNORM,
         };
 
         static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all FormatStrideList.");
@@ -1140,7 +1290,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(indexBuffer);
 
-                    DXGI_FORMAT format = (indexBuffer->getFormat() == Video::Format::Short ? DXGI_FORMAT_R16_UINT : DXGI_FORMAT_R32_UINT);
+                    DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getFormat())];
                     d3dDeviceContext->IASetIndexBuffer(dynamic_cast<Buffer *>(indexBuffer)->d3dBuffer, format, offset);
                 }
 
@@ -2118,48 +2268,6 @@ namespace Gek
 
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                     GEK_CHECK_CONDITION(!d3dUnorderedAccessView, Video::Exception, "Unable to create unordered access view (error %v)", resultValue);
-                    if (data == nullptr)
-                    {
-                        switch (format)
-                        {
-                        case Video::Format::Byte:
-                        case Video::Format::Byte2:
-                        case Video::Format::Byte3:
-                        case Video::Format::Byte4:
-                        case Video::Format::BGRA:
-                        case Video::Format::sRGBA:
-                        case Video::Format::Short:
-                        case Video::Format::Short2:
-                        case Video::Format::Short4:
-                        case Video::Format::Int:
-                        case Video::Format::Int2:
-                        case Video::Format::Int3:
-                        case Video::Format::Int4:
-                        case Video::Format::Half:
-                        case Video::Format::Half2:
-                        case Video::Format::Half3:
-                        case Video::Format::Half4:
-                            if (true)
-                            {
-                                static const uint32_t zero[4] = { 0, 0, 0, 0 };
-                                d3dDeviceContext->ClearUnorderedAccessViewUint(d3dUnorderedAccessView.p, zero);
-                            }
-
-                            break;
-
-                        case Video::Format::Float:
-                        case Video::Format::Float2:
-                        case Video::Format::Float3:
-                        case Video::Format::Float4:
-                            if (true)
-                            {
-                                static const float zero[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
-                                d3dDeviceContext->ClearUnorderedAccessViewFloat(d3dUnorderedAccessView.p, zero);
-                            }
-
-                            break;
-                        };
-                    }
                 }
 
                 if (flags & Video::TextureFlags::RenderTarget)

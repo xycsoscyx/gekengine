@@ -546,7 +546,7 @@ namespace Gek
 
                     shape.indexCount = geoSphere.getIndices().size();
                     shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, false, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::Short, geoSphere.getIndices().size(), Video::BufferType::Index, 0, false, geoSphere.getIndices().data());
+                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::R16_UINT, geoSphere.getIndices().size(), Video::BufferType::Index, 0, false, geoSphere.getIndices().data());
                     break;
                 }
             };

@@ -35,30 +35,61 @@ namespace Gek
 
         Format getFormat(const wchar_t *formatString)
         {
-            if (_wcsicmp(formatString, L"BYTE") == 0) return Format::Byte;
-            else if (_wcsicmp(formatString, L"BYTE2") == 0) return Format::Byte2;
-            else if (_wcsicmp(formatString, L"BYTE3") == 0) return Format::Byte3;
-            else if (_wcsicmp(formatString, L"BYTE4") == 0) return Format::Byte4;
-            else if (_wcsicmp(formatString, L"BGRA") == 0) return Format::BGRA;
-            else if (_wcsicmp(formatString, L"sRGBA") == 0) return Format::sRGBA;
-            else if (_wcsicmp(formatString, L"SHORT") == 0) return Format::Short;
-            else if (_wcsicmp(formatString, L"SHORT2") == 0) return Format::Short2;
-            else if (_wcsicmp(formatString, L"SHORT4") == 0) return Format::Short4;
-            else if (_wcsicmp(formatString, L"INT") == 0) return Format::Int;
-            else if (_wcsicmp(formatString, L"INT2") == 0) return Format::Int2;
-            else if (_wcsicmp(formatString, L"INT3") == 0) return Format::Int3;
-            else if (_wcsicmp(formatString, L"INT4") == 0) return Format::Int4;
-            else if (_wcsicmp(formatString, L"HALF") == 0) return Format::Half;
-            else if (_wcsicmp(formatString, L"HALF2") == 0) return Format::Half2;
-            else if (_wcsicmp(formatString, L"HALF3") == 0) return Format::Half3;
-            else if (_wcsicmp(formatString, L"HALF4") == 0) return Format::Half4;
-            else if (_wcsicmp(formatString, L"FLOAT") == 0) return Format::Float;
-            else if (_wcsicmp(formatString, L"FLOAT2") == 0) return Format::Float2;
-            else if (_wcsicmp(formatString, L"FLOAT3") == 0) return Format::Float3;
-            else if (_wcsicmp(formatString, L"FLOAT4") == 0) return Format::Float4;
-            else if (_wcsicmp(formatString, L"D16") == 0) return Format::Depth16;
-            else if (_wcsicmp(formatString, L"D24S8") == 0) return Format::Depth24Stencil8;
-            else if (_wcsicmp(formatString, L"D32") == 0) return Format::Depth32;
+            if (_wcsicmp(formatString, L"Unknown") == 0) return Format::Unknown;
+            else if (_wcsicmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
+            else if (_wcsicmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
+            else if (_wcsicmp(formatString, L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
+            else if (_wcsicmp(formatString, L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
+            else if (_wcsicmp(formatString, L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
+            else if (_wcsicmp(formatString, L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
+            else if (_wcsicmp(formatString, L"R32_FLOAT") == 0) return Format::R32_FLOAT;
+            else if (_wcsicmp(formatString, L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+
+            else if (_wcsicmp(formatString, L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
+            else if (_wcsicmp(formatString, L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
+            else if (_wcsicmp(formatString, L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
+            else if (_wcsicmp(formatString, L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
+            else if (_wcsicmp(formatString, L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
+            else if (_wcsicmp(formatString, L"R32G32_UINT") == 0) return Format::R32G32_UINT;
+            else if (_wcsicmp(formatString, L"R16G16_UINT") == 0) return Format::R16G16_UINT;
+            else if (_wcsicmp(formatString, L"R8G8_UINT") == 0) return Format::R8G8_UINT;
+            else if (_wcsicmp(formatString, L"R32_UINT") == 0) return Format::R32_UINT;
+            else if (_wcsicmp(formatString, L"R16_UINT") == 0) return Format::R16_UINT;
+            else if (_wcsicmp(formatString, L"R8_UINT") == 0) return Format::R8_UINT;
+
+            else if (_wcsicmp(formatString, L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
+            else if (_wcsicmp(formatString, L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
+            else if (_wcsicmp(formatString, L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
+            else if (_wcsicmp(formatString, L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
+            else if (_wcsicmp(formatString, L"R32G32_INT") == 0) return Format::R32G32_INT;
+            else if (_wcsicmp(formatString, L"R16G16_INT") == 0) return Format::R16G16_INT;
+            else if (_wcsicmp(formatString, L"R8G8_INT") == 0) return Format::R8G8_INT;
+            else if (_wcsicmp(formatString, L"R32_INT") == 0) return Format::R32_INT;
+            else if (_wcsicmp(formatString, L"R16_INT") == 0) return Format::R16_INT;
+            else if (_wcsicmp(formatString, L"R8_INT") == 0) return Format::R8_INT;
+
+            else if (_wcsicmp(formatString, L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
+            else if (_wcsicmp(formatString, L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
+            else if (_wcsicmp(formatString, L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
+            else if (_wcsicmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
+            else if (_wcsicmp(formatString, L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
+            else if (_wcsicmp(formatString, L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
+            else if (_wcsicmp(formatString, L"R16_UNORM") == 0) return Format::R16_UNORM;
+            else if (_wcsicmp(formatString, L"R8_UNORM") == 0) return Format::R8_UNORM;
+
+            else if (_wcsicmp(formatString, L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
+            else if (_wcsicmp(formatString, L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
+            else if (_wcsicmp(formatString, L"R16G16_NORM") == 0) return Format::R16G16_NORM;
+            else if (_wcsicmp(formatString, L"R8G8_NORM") == 0) return Format::R8G8_NORM;
+            else if (_wcsicmp(formatString, L"R16_NORM") == 0) return Format::R16_NORM;
+            else if (_wcsicmp(formatString, L"R8_NORM") == 0) return Format::R8_NORM;
+
+            else if (_wcsicmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
+            else if (_wcsicmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+
+            else if (_wcsicmp(formatString, L"D32_FLOAT") == 0) return Format::D32_FLOAT;
+            else if (_wcsicmp(formatString, L"D16_UNORM") == 0) return Format::D16_UNORM;
+
             return Format::Unknown;
         }
 

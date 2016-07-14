@@ -53,6 +53,10 @@ namespace Gek
             Int2,
             Int3,
             Int4,
+            UInt,
+            UInt2,
+            UInt3,
+            UInt4,
             Boolean,
         };
 
@@ -109,14 +113,91 @@ namespace Gek
             case BindType::Half2:       return L"half2";
             case BindType::Half3:       return L"half3";
             case BindType::Half4:       return L"half4";
-            case BindType::Int:        return L"uint";
-            case BindType::Int2:       return L"uint2";
-            case BindType::Int3:       return L"uint3";
-            case BindType::Int4:       return L"uint4";
+            case BindType::Int:        return L"int";
+            case BindType::Int2:       return L"int2";
+            case BindType::Int3:       return L"int3";
+            case BindType::Int4:       return L"int4";
+            case BindType::UInt:        return L"uint";
+            case BindType::UInt2:       return L"uint2";
+            case BindType::UInt3:       return L"uint3";
+            case BindType::UInt4:       return L"uint4";
             case BindType::Boolean:     return L"boolean";
             };
 
             return L"float4";
+        }
+
+        static const BindType getBindType(Video::Format format)
+        {
+            switch (format)
+            {
+            case Video::Format::R32G32B32A32_FLOAT:
+            case Video::Format::R16G16B16A16_FLOAT:
+            case Video::Format::R16G16B16A16_UNORM:
+            case Video::Format::R10G10B10A2_UNORM:
+            case Video::Format::R8G8B8A8_UNORM:
+            case Video::Format::R8G8B8A8_UNORM_SRGB:
+            case Video::Format::R16G16B16A16_NORM:
+            case Video::Format::R8G8B8A8_NORM:
+                return BindType::Float4;
+
+            case Video::Format::R32G32B32_FLOAT:
+            case Video::Format::R11G11B10_FLOAT:
+                return BindType::Float3;
+
+            case Video::Format::R32G32_FLOAT:
+            case Video::Format::R16G16_FLOAT:
+            case Video::Format::R16G16_UNORM:
+            case Video::Format::R8G8_UNORM:
+            case Video::Format::R16G16_NORM:
+            case Video::Format::R8G8_NORM:
+                return BindType::Float2;
+
+            case Video::Format::R32_FLOAT:
+            case Video::Format::R16_FLOAT:
+            case Video::Format::R16_UNORM:
+            case Video::Format::R8_UNORM:
+            case Video::Format::R16_NORM:
+            case Video::Format::R8_NORM:
+                return BindType::Float;
+
+            case Video::Format::R32G32B32A32_UINT:
+            case Video::Format::R16G16B16A16_UINT:
+            case Video::Format::R10G10B10A2_UINT:
+            case Video::Format::R8G8B8A8_UINT:
+                return BindType::UInt4;
+
+            case Video::Format::R32G32B32_UINT:
+            case Video::Format::R32G32B32_INT:
+                return BindType::UInt3;
+
+            case Video::Format::R32G32_UINT:
+            case Video::Format::R16G16_UINT:
+            case Video::Format::R8G8_UINT:
+                return BindType::UInt2;
+
+            case Video::Format::R32_UINT:
+            case Video::Format::R16_UINT:
+            case Video::Format::R8_UINT:
+                return BindType::UInt;
+
+            case Video::Format::R32G32B32A32_INT:
+            case Video::Format::R16G16B16A16_INT:
+            case Video::Format::R8G8B8A8_INT:
+                return BindType::Int4;
+
+            case Video::Format::R32G32_INT:
+            case Video::Format::R16G16_INT:
+            case Video::Format::R8G8_INT:
+                return BindType::Int2;
+
+            case Video::Format::R32_INT:
+            case Video::Format::R16_INT:
+            case Video::Format::R8_INT:
+                return BindType::Int;
+            };
+
+            return BindType::Float4;
         }
 
         GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, const wchar_t *)
@@ -543,50 +624,7 @@ namespace Gek
                         }
                         else
                         {
-                            switch (format)
-                            {
-                            case Video::Format::Byte:
-                            case Video::Format::Short:
-                            case Video::Format::Int:
-                                bindType = BindType::Int;
-                                break;
-
-                            case Video::Format::Byte2:
-                            case Video::Format::Short2:
-                            case Video::Format::Int2:
-                                bindType = BindType::Int2;
-                                break;
-
-                            case Video::Format::Int3:
-                                bindType = BindType::Int3;
-                                break;
-
-                            case Video::Format::BGRA:
-                            case Video::Format::Byte4:
-                            case Video::Format::Short4:
-                            case Video::Format::Int4:
-                                bindType = BindType::Int4;
-                                break;
-
-                            case Video::Format::Half:
-                            case Video::Format::Float:
-                                bindType = BindType::Float;
-                                break;
-
-                            case Video::Format::Half2:
-                            case Video::Format::Float2:
-                                bindType = BindType::Float2;
-                                break;
-
-                            case Video::Format::Float3:
-                                bindType = BindType::Float3;
-                                break;
-
-                            case Video::Format::Half4:
-                            case Video::Format::Float4:
-                                bindType = BindType::Float4;
-                                break;
-                            };
+                            bindType = getBindType(format);
                         }
 
                         resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, bindType);

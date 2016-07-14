@@ -698,27 +698,55 @@ namespace Gek
                         static const uint32_t zero[4] = { 0, 0, 0, 0 };
                         switch (format)
                         {
-                        case Video::Format::Byte:
-                        case Video::Format::Short:
-                        case Video::Format::Int:
-                        case Video::Format::Byte2:
-                        case Video::Format::Short2:
-                        case Video::Format::Int2:
-                        case Video::Format::Int3:
-                        case Video::Format::BGRA:
-                        case Video::Format::Byte4:
-                        case Video::Format::Short4:
-                        case Video::Format::Int4:
+                        case Video::Format::R32G32B32A32_UINT:
+                        case Video::Format::R16G16B16A16_UINT:
+                        case Video::Format::R10G10B10A2_UINT:
+                        case Video::Format::R8G8B8A8_UINT:
+                        case Video::Format::R32G32B32_UINT:
+                        case Video::Format::R32G32_UINT:
+                        case Video::Format::R16G16_UINT:
+                        case Video::Format::R8G8_UINT:
+                        case Video::Format::R32_UINT:
+                        case Video::Format::R16_UINT:
+                        case Video::Format::R8_UINT:
+
+                        case Video::Format::R32G32B32A32_INT:
+                        case Video::Format::R16G16B16A16_INT:
+                        case Video::Format::R8G8B8A8_INT:
+                        case Video::Format::R32G32B32_INT:
+                        case Video::Format::R32G32_INT:
+                        case Video::Format::R16G16_INT:
+                        case Video::Format::R8G8_INT:
+                        case Video::Format::R32_INT:
+                        case Video::Format::R16_INT:
+                        case Video::Format::R8_INT:
                             device->getDefaultContext()->clearUnorderedAccess(buffer.get(), zero);
                             break;
 
-                        case Video::Format::Half:
-                        case Video::Format::Float:
-                        case Video::Format::Half2:
-                        case Video::Format::Float2:
-                        case Video::Format::Float3:
-                        case Video::Format::Half4:
-                        case Video::Format::Float4:
+                        case Video::Format::R32G32B32A32_FLOAT:
+                        case Video::Format::R16G16B16A16_FLOAT:
+                        case Video::Format::R32G32B32_FLOAT:
+                        case Video::Format::R11G11B10_FLOAT:
+                        case Video::Format::R32G32_FLOAT:
+                        case Video::Format::R16G16_FLOAT:
+                        case Video::Format::R32_FLOAT:
+                        case Video::Format::R16_FLOAT:
+
+                        case Video::Format::R16G16B16A16_UNORM:
+                        case Video::Format::R10G10B10A2_UNORM:
+                        case Video::Format::R8G8B8A8_UNORM:
+                        case Video::Format::R8G8B8A8_UNORM_SRGB:
+                        case Video::Format::R16G16_UNORM:
+                        case Video::Format::R8G8_UNORM:
+                        case Video::Format::R16_UNORM:
+                        case Video::Format::R8_UNORM:
+
+                        case Video::Format::R16G16B16A16_NORM:
+                        case Video::Format::R8G8B8A8_NORM:
+                        case Video::Format::R16G16_NORM:
+                        case Video::Format::R8G8_NORM:
+                        case Video::Format::R16_NORM:
+                        case Video::Format::R8_NORM:
                             device->getDefaultContext()->clearUnorderedAccess(buffer.get(), Math::Float4::Zero);
                             break;
                         };
@@ -793,7 +821,7 @@ namespace Gek
                                 uint8_t(color * 255.0f),
                             };
 
-                            texture = device->createTexture(Video::Format::Byte, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else if (colorSize == 2)
                         {
@@ -805,7 +833,7 @@ namespace Gek
                                 uint8_t(color.y * 255.0f),
                             };
 
-                            texture = device->createTexture(Video::Format::Byte2, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8G8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else if (colorSize == 3)
                         {
@@ -819,7 +847,7 @@ namespace Gek
                                 255,
                             };
 
-                            texture = device->createTexture(Video::Format::Byte4, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else if (colorSize == 4)
                         {
@@ -833,7 +861,7 @@ namespace Gek
                                 uint8_t(color.w * 255.0f),
                             };
 
-                            texture = device->createTexture(Video::Format::Byte4, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                         }
                         else
                         {
@@ -864,7 +892,7 @@ namespace Gek
                         255,
                     };
 
-                    texture = device->createTexture(Video::Format::Byte4, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
+                    texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
                 }
                 else if (pattern.compareNoCase(L"system") == 0)
                 {
@@ -875,7 +903,7 @@ namespace Gek
                             255, 0, 255, 255,
                         };
 
-                        texture = device->createTexture(Video::Format::Byte4, 1, 1, 1, 1, Video::TextureFlags::Resource, data);
+                        texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, data);
                     }
                     else if (parameters.compareNoCase(L"flat") == 0)
                     {
@@ -887,7 +915,7 @@ namespace Gek
                             255,
                         };
 
-                        texture = device->createTexture(Video::Format::Byte4, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
+                        texture = device->createTexture(Video::Format::R8G8B8A8_UINT, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
                     }
                     else
                     {

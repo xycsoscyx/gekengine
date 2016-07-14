@@ -18,66 +18,65 @@ namespace Gek
     {
         GEK_START_EXCEPTIONS();
 
-        namespace FormatFlags
-        {
-            enum
-            {
-                INT8 = 1 << 0,
-                INT16 = 1 << 1,
-                INT32 = 1 << 2,
-                Float = 1 << 3,
-                Unsigned = 1 << 4,
-                Normalized = 1 << 5,
-            };
-        }; // namespace FormatFlags
-
         enum class Format : uint8_t
         {
             Unknown = 0,
 
+            R32G32B32A32_FLOAT,
+            R16G16B16A16_FLOAT,
+            R32G32B32_FLOAT,
+            R11G11B10_FLOAT,
+            R32G32_FLOAT,
+            R16G16_FLOAT,
+            R32_FLOAT,
+            R16_FLOAT,
 
-            INT8_X,
-            INT8_XY,
-            INT8_XYB,
-            INT8_XYBA,
-            INT16_X,
-            INT16_XY,
-            INT16_XYB,
-            INT16_XYBA,
-            INT32_X,
-            INT32_XY,
-            INT32_XYB,
-            INT32_XYBA,
+            R32G32B32A32_UINT,
+            R16G16B16A16_UINT,
+            R10G10B10A2_UINT,
+            R8G8B8A8_UINT,
+            R32G32B32_UINT,
+            R32G32_UINT,
+            R16G16_UINT,
+            R8G8_UINT,
+            R32_UINT,
+            R16_UINT,
+            R8_UINT,
 
-            UINT8_X,
-            UINT8_XY,
-            UINT8_XYB,
-            UINT8_XYBA,
-            UINT16_X,
-            UINT16_XY,
-            UINT16_XYB,
-            UINT16_XYBA,
-            UINT32_X,
-            UINT32_XY,
-            UINT32_XYB,
-            UINT32_XYBA,
+            R32G32B32A32_INT,
+            R16G16B16A16_INT,
+            R8G8B8A8_INT,
+            R32G32B32_INT,
+            R32G32_INT,
+            R16G16_INT,
+            R8G8_INT,
+            R32_INT,
+            R16_INT,
+            R8_INT,
 
-            Float_X,
-            Float_XY,
-            Float_XYB,
-            Float_XYBA,
+            R16G16B16A16_UNORM,
+            R10G10B10A2_UNORM,
+            R8G8B8A8_UNORM,
+            R8G8B8A8_UNORM_SRGB,
+            R16G16_UNORM,
+            R8G8_UNORM,
+            R16_UNORM,
+            R8_UNORM,
 
-            R,
-            RG,
-            RGBA,
-            sRGBA,
-            BGRA,
+            R16G16B16A16_NORM,
+            R8G8B8A8_NORM,
+            R16G16_NORM,
+            R8G8_NORM,
+            R16_NORM,
+            R8_NORM,
 
-            Depth16,
-            Depth24Stencil8,
-            Depth32,
+            D32_FLOAT_S8X24_UINT,
+            D24_UNORM_S8_UINT,
 
-            NumFormats
+            D32_FLOAT,
+            D16_UNORM,
+
+            NumFormats,
         };
 
         enum class ElementType : uint8_t
@@ -427,7 +426,7 @@ namespace Gek
 
         struct InputElementInformation
         {
-            Format format;
+            Video::Format format;
             const char *semanticName;
             uint32_t semanticIndex;
             ElementType slotClass;
@@ -442,7 +441,7 @@ namespace Gek
             {
             }
 
-            InputElementInformation(Format format, const char *semanticName, uint32_t semanticIndex, ElementType slotClass = ElementType::Vertex, uint32_t slotIndex = 0)
+            InputElementInformation(Video::Format format, const char *semanticName, uint32_t semanticIndex, ElementType slotClass = ElementType::Vertex, uint32_t slotIndex = 0)
                 : format(format)
                 , semanticName(semanticName)
                 , semanticIndex(semanticIndex)

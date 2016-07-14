@@ -12,43 +12,74 @@ namespace Gek
 {
     namespace Implementation
     {
-        static const char *getFormatType(Video::Format formatType)
+        static const char *getFormatType(Video::Format format)
         {
-            switch (formatType)
+            switch (format)
             {
-            case Video::Format::Byte:
-            case Video::Format::Short:
-            case Video::Format::Int:
-                return "int";
+            case Video::Format::R32G32B32A32_FLOAT:
+            case Video::Format::R16G16B16A16_FLOAT:
+            case Video::Format::R16G16B16A16_UNORM:
+            case Video::Format::R10G10B10A2_UNORM:
+            case Video::Format::R8G8B8A8_UNORM:
+            case Video::Format::R8G8B8A8_UNORM_SRGB:
+            case Video::Format::R16G16B16A16_NORM:
+            case Video::Format::R8G8B8A8_NORM:
+                return "float4";
 
-            case Video::Format::Byte2:
-            case Video::Format::Short2:
-            case Video::Format::Int2:
-                return "int2";
-
-            case Video::Format::Int3:
-                return "int3";
-
-            case Video::Format::BGRA:
-            case Video::Format::Byte4:
-            case Video::Format::Short4:
-            case Video::Format::Int4:
-                return "int4";
-
-            case Video::Format::Half:
-            case Video::Format::Float:
-                return "float";
-
-            case Video::Format::Half2:
-            case Video::Format::Float2:
-                return "float2";
-
-            case Video::Format::Float3:
+            case Video::Format::R32G32B32_FLOAT:
+            case Video::Format::R11G11B10_FLOAT:
                 return "float3";
 
-            case Video::Format::Half4:
-            case Video::Format::Float4:
-                return "float4";
+            case Video::Format::R32G32_FLOAT:
+            case Video::Format::R16G16_FLOAT:
+            case Video::Format::R16G16_UNORM:
+            case Video::Format::R8G8_UNORM:
+            case Video::Format::R16G16_NORM:
+            case Video::Format::R8G8_NORM:
+                return "float2";
+
+            case Video::Format::R32_FLOAT:
+            case Video::Format::R16_FLOAT:
+            case Video::Format::R16_UNORM:
+            case Video::Format::R8_UNORM:
+            case Video::Format::R16_NORM:
+            case Video::Format::R8_NORM:
+                return "float";
+
+            case Video::Format::R32G32B32A32_UINT:
+            case Video::Format::R16G16B16A16_UINT:
+            case Video::Format::R10G10B10A2_UINT:
+            case Video::Format::R8G8B8A8_UINT:
+                return "uint4";
+
+            case Video::Format::R32G32B32_UINT:
+            case Video::Format::R32G32B32_INT:
+                return "uint3";
+
+            case Video::Format::R32G32_UINT:
+            case Video::Format::R16G16_UINT:
+            case Video::Format::R8G8_UINT:
+                return "uint2";
+
+            case Video::Format::R32_UINT:
+            case Video::Format::R16_UINT:
+            case Video::Format::R8_UINT:
+                return "uint";
+
+            case Video::Format::R32G32B32A32_INT:
+            case Video::Format::R16G16B16A16_INT:
+            case Video::Format::R8G8B8A8_INT:
+                return "int4";
+
+            case Video::Format::R32G32_INT:
+            case Video::Format::R16G16_INT:
+            case Video::Format::R8G8_INT:
+                return "int2";
+
+            case Video::Format::R32_INT:
+            case Video::Format::R16_INT:
+            case Video::Format::R8_INT:
+                return "int";
             };
 
             return "void";
@@ -132,7 +163,7 @@ namespace Gek
                         if (format.compareNoCase(L"float4x4") == 0)
                         {
                             engineData.format("    float4x4 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
-                            element.format = Video::Format::Float4;
+                            element.format = Video::Format::R32G32B32A32_FLOAT;
                             elementList.push_back(element);
                             element.semanticIndex++;
                             elementList.push_back(element);
@@ -144,7 +175,7 @@ namespace Gek
                         else if (format.compareNoCase(L"float4x3") == 0)
                         {
                             engineData.format("    float4x3 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
-                            element.format = Video::Format::Float4;
+                            element.format = Video::Format::R32G32B32A32_FLOAT;
                             elementList.push_back(element);
                             element.semanticIndex++;
                             elementList.push_back(element);

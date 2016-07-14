@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <filter>
     <textures>
-        <luminanceBuffer bind="float" flags="target" mipmaps="0">half</luminanceBuffer>
-        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess" readwrite="true" width="1" height="1">half</averageLuminanceBuffer>
+        <luminanceBuffer bind="float" flags="target" mipmaps="0">R16_FLOAT</luminanceBuffer>
+        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess" readwrite="true" width="1" height="1">R16_FLOAT</averageLuminanceBuffer>
         <finalBuffer bind="float3" source="standard" name="finalBuffer" />
     </textures>
 

@@ -7,12 +7,12 @@
     </material>
 
     <textures>
-        <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
-        <modulationDiffusionBuffer bind="float4" flags="target">byte4</modulationDiffusionBuffer>
-        <refractionBuffer bind="float2" flags="target">half2</refractionBuffer>
-        <depthBuffer bind="float">float</depthBuffer>
+        <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
+        <modulationDiffusionBuffer bind="float4" flags="target">R8G8B8A8_UNORM</modulationDiffusionBuffer>
+        <refractionBuffer bind="float2" flags="target">R16G16_FLOAT</refractionBuffer>
+        <depthBuffer bind="float">R32_FLOAT</depthBuffer>
         <finalBuffer bind="float" source="standard" name="finalBuffer" />
-        <sourceBuffer bind="float3">half4</sourceBuffer>
+        <sourceBuffer bind="float3">R11G11B10_FLOAT</sourceBuffer>
     </textures>
 
     <depth source="standard" />

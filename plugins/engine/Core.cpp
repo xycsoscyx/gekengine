@@ -192,7 +192,7 @@ namespace Gek
                 HRESULT resultValue = CoInitialize(nullptr);
                 GEK_CHECK_CONDITION(FAILED(resultValue), Exception, "Unable to initialize COM (error %v)", resultValue);
 
-                device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::sRGBA, nullptr);
+                device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, nullptr);
                 population = getContext()->createClass<Engine::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
@@ -298,7 +298,7 @@ namespace Gek
                         auto &heightSearch = (*displaySearch).second.find(L"height");
                         if (widthSearch != (*displaySearch).second.end() && heightSearch != (*displaySearch).second.end())
                         {
-                            device->setSize((*widthSearch).second, (*heightSearch).second, Video::Format::sRGBA);
+                            device->setSize((*widthSearch).second, (*heightSearch).second, Video::Format::R8G8B8A8_UNORM_SRGB);
                         }
 
                         auto &fullscreenSearch = (*displaySearch).second.find(L"fullscreen");

@@ -133,7 +133,7 @@ namespace Gek
                 {
                     String name(L"camera:%v", cameraComponent.name);
                     auto backBuffer = renderer->getDevice()->getBackBuffer();
-                    data.target = resources->createTexture(name, Video::Format::sRGBA, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource, false);
+                    data.target = resources->createTexture(name, Video::Format::R8G8B8A8_UNORM_SRGB, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource, false);
                 }
 
                 entityDataMap.insert(std::make_pair(entity, data));
