@@ -951,8 +951,9 @@ namespace Gek
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
+                        uint32_t countList[1] = { count };
                         ID3D11UnorderedAccessView *list[1] = { unorderedAccess ? dynamic_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView.p : nullptr };
-                        d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, list, &count);
+                        d3dDeviceContext->CSSetUnorderedAccessViews(stage, 1, list, countList);
                     }
                 };
 
@@ -1105,8 +1106,9 @@ namespace Gek
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
+                        uint32_t countList[1] = { count };
                         ID3D11UnorderedAccessView *list[1] = { unorderedAccess ? dynamic_cast<UnorderedAccessView *>(unorderedAccess)->d3dUnorderedAccessView.p : nullptr };
-                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, stage, 1, list, &count);
+                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, stage, 1, list, countList);
                     }
                 };
 

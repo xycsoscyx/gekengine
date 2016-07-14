@@ -2,9 +2,12 @@
 <filter>
     <textures>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">R16_FLOAT</luminanceBuffer>
-        <averageLuminanceBuffer bind="float" flags="target, unorderedAccess" readwrite="true" width="1" height="1">R16_FLOAT</averageLuminanceBuffer>
         <finalBuffer bind="float3" source="standard" name="finalBuffer" />
     </textures>
+
+    <buffers>
+        <averageLuminanceBuffer size="1" flags="unorderedAccess">R32_FLOAT</averageLuminanceBuffer>
+    </buffers>
 
     <pass mode="deferred">
         <resources>
@@ -21,17 +24,21 @@
         </program>
     </pass>
 
-    <pass mode="deferred">
+    <pass mode="compute">
         <resources>
             <luminanceBuffer actions="generateMipMaps" />
-            <averageLuminanceBuffer />
         </resources>
 
-        <targets>
+        <unorderedaccess>
             <averageLuminanceBuffer />
-        </targets>
+        </unorderedaccess>
 
         <program>
+            <compute>
+                <width>1</width>
+                <height>1</height>
+                <depth>1</depth>
+            </compute>
             <entry>mainPixelProgram</entry>
             <source>ToneMap\AdaptLuminance</source>
         </program>
@@ -40,7 +47,7 @@
     <pass mode="deferred">
         <resources>
             <finalBuffer />
-            <averageLuminanceBuffer actions="flip" />
+            <averageLuminanceBuffer />
         </resources>
 
         <program>

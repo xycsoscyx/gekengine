@@ -378,7 +378,13 @@ namespace Gek
                             bindType = getBindType(format);
                         }
 
-                        resourceMappingList[bufferName] = std::make_pair(MapType::Buffer, bindType);
+                        MapType mapType = MapType::Buffer;
+                        if ((bool)bufferNode->getAttribute(L"byteaddress", L"false"))
+                        {
+                            mapType = MapType::ByteAddressBuffer;
+                        }
+
+                        resourceMappingList[bufferName] = std::make_pair(mapType, bindType);
                         resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags, readWrite);
                     }
                 }
@@ -650,7 +656,15 @@ namespace Gek
                             if (resourceSearch != resourceMappingList.end())
                             {
                                 auto &resource = (*resourceSearch).second;
-                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                if (resource.first == MapType::ByteAddressBuffer)
+                                {
+                                    resourceData.format("    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                }
+                                else
+                                {
+                                    resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                }
+
                                 continue;
                             }
                             
@@ -686,7 +700,16 @@ namespace Gek
                             auto resourceSearch = resourceMappingList.find(resourcePair.first);
                             if (resourceSearch != resourceMappingList.end())
                             {
-                                unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType((*resourceSearch).second.first), getBindType((*resourceSearch).second.second), resourcePair.second, currentStage);
+                                auto &resource = (*resourceSearch).second;
+                                if (resource.first == MapType::ByteAddressBuffer)
+                                {
+                                    unorderedAccessData.format("    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                }
+                                else
+                                {
+                                    unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                }
+
                                 continue;
                             }
 

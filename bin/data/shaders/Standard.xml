@@ -41,20 +41,17 @@
         <lightAccumulationBuffer bind="float3" flags="target">R11G11B10_FLOAT</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">R8_UNORM</ambientOcclusionBuffer>
         <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
+
+        <startIndexBuffer bind="int" flags="unorderedAccess">R32_INT</startIndexBuffer>
     </textures>
 
     <buffers>
         <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">R8_UINT</tileIndexList>
 
-        <startIndexBuffer size="displayWidth * displayHeight" flags="unorderedAccess">R32_INT</startIndexBuffer>
         <pixelListBuffer stride="16" size="displayWidth * displayHeight * 5" flags="unorderedAccess, counter">PixelInfo</pixelListBuffer>
     </buffers>
 
     <block>
-        <clear>
-            <startOffsetBuffer>-1</startOffsetBuffer>
-        </clear>
-
         <pass mode="forward" name="solid">
             <depthstates>
                 <comparison>less_equal</comparison>

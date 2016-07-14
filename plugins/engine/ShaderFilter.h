@@ -10,6 +10,7 @@ namespace Gek
             TextureCube,
             Texture3D,
             Buffer,
+            ByteAddressBuffer,
         };
 
         enum class MapSource : uint8_t
@@ -196,6 +197,7 @@ namespace Gek
             else if (_wcsicmp(mapType, L"Texture2D") == 0) return MapType::Texture2D;
             else if (_wcsicmp(mapType, L"Texture3D") == 0) return MapType::Texture3D;
             else if (_wcsicmp(mapType, L"Buffer") == 0) return MapType::Buffer;
+            else if (_wcsicmp(mapType, L"ByteAddressBuffer") == 0) return MapType::ByteAddressBuffer;
             return MapType::Unknown;
         }
 
@@ -203,11 +205,12 @@ namespace Gek
         {
             switch (mapType)
             {
-            case MapType::Texture1D:    return L"Texture1D";
-            case MapType::Texture2D:    return L"Texture2D";
-            case MapType::TextureCube:  return L"TextureCube";
-            case MapType::Texture3D:    return L"Texture3D";
-            case MapType::Buffer:       return L"Buffer";
+            case MapType::Texture1D:            return L"Texture1D";
+            case MapType::Texture2D:            return L"Texture2D";
+            case MapType::TextureCube:          return L"TextureCube";
+            case MapType::Texture3D:            return L"Texture3D";
+            case MapType::Buffer:               return L"Buffer";
+            case MapType::ByteAddressBuffer:    return L"ByteAddressBuffer";
             };
 
             return L"void";

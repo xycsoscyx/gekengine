@@ -1,11 +1,8 @@
 struct PixelInfo
 {
-    uint albedoBuffer;
-    half materialBuffer;
-    half2 normalBuffer;
+    uint albedo;
+    uint materialNormal;
     uint next;
-
-    half buffer;
 };
 
 #include "GEKEngine"
@@ -13,7 +10,7 @@ struct PixelInfo
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-uint encodeAlbedo(float4 value)
+uint packFloat4(float4 value)
 {
     value = min(max(value, 0.0f), 1.0f);
     value = value * 255 + 0.5f;
@@ -24,7 +21,7 @@ uint encodeAlbedo(float4 value)
            (((uint)value.w) << 24));
 }
 
-float4 decodeAlbedo(uint value)
+float4 unpackFloat4(uint value)
 {
     return float4((float)(value & 0x000000ff) / 255,
                   (float)((value >> 8) & 0x000000ff) / 255,
@@ -32,17 +29,26 @@ float4 decodeAlbedo(uint value)
                   (float)((value >> 24) & 0x000000ff) / 255);
 }
 
-half encodeHalf(float A/*one bit*/, float B/*5 bits*/, float C/*10 bits*/)//all inputs in 0-1 range
+uint packMaterialNormal(float roughness, float metalness, float3 normal)
 {
-    float s = A * 2 - 1;// -1/+1
-    float e = lerp(-13, 14, B);
-    float f = lerp(1024, 2047, C);
-    return s*f*pow(2, e);
+    half2 encodedNormal = encodeNormal(normal);
+    return packFloat4(float4(roughness, metalness, encodedNormal.x, encodedNormal.y));
 }
 
-half encodeMaterial(float roughness, float metalness)
+float unpackRoughness(uint value)
 {
-    return encodeHalf(0.0, metalness, roughness);
+    return (float)(value & 0x000000ff) / 255;
+}
+
+float unpackMetalness(uint value)
+{
+    return (float)((value >> 8) & 0x000000ff) / 255;
+}
+
+float3 unpackNormal(uint value)
+{
+    return decodeNormal(half2((float)((value >> 16) & 0x000000ff) / 255,
+                              (float)((value >> 24) & 0x000000ff) / 255));
 }
 
 void mainPixelProgram(InputPixel inputPixel)
@@ -64,17 +70,16 @@ void mainPixelProgram(InputPixel inputPixel)
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1.0 : -1.0);
 
-    uint oldPixelCount;
-    uint pixelCount = UnorderedAccess::pixelListBuffer.IncrementCounter();
-    InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.y * Shader::targetSize.x + inputPixel.position.x], pixelCount, oldPixelCount);
+    uint nextPixelIndex;
+    uint pixelIndex = UnorderedAccess::pixelListBuffer.IncrementCounter();
+    InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.xy * Shader::pixelSize], pixelIndex, nextPixelIndex);
 
     PixelInfo pixelInfo;
-    pixelInfo.albedoBuffer = encodeAlbedo(albedo);
-    pixelInfo.materialBuffer = encodeMaterial(Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
-        Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord));
-    pixelInfo.normalBuffer = encodeNormal(normal);
-    pixelInfo.next = oldPixelCount;
-    pixelInfo.buffer = 0;
+    pixelInfo.albedo = packFloat4(albedo);
+    pixelInfo.materialNormal = packMaterialNormal(Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
+                                                  Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
+                                                  normal);
+    pixelInfo.next = nextPixelIndex;
 
-    UnorderedAccess::pixelListBuffer[pixelCount] = pixelInfo;
+    UnorderedAccess::pixelListBuffer[pixelIndex] = pixelInfo;
 }
