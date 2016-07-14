@@ -29,6 +29,8 @@ namespace Gek
         public:
             struct PassData
             {
+                std::unordered_map<String, ClearData> clearList;
+
                 Pass::Mode mode;
                 bool renderToScreen;
                 Math::Color blendFactor;
@@ -241,6 +243,56 @@ namespace Gek
                         else
                         {
                             GEK_THROW_EXCEPTION(Exception, "Invalid pass mode specified: %v", modeString);
+                        }
+                    }
+
+                    XmlNodePtr clearNode(passNode->firstChildElement(L"clear"));
+                    for (XmlNodePtr clearTargetNode(clearNode->firstChildElement()); clearTargetNode->isValid(); clearTargetNode = clearTargetNode->nextSiblingElement())
+                    {
+                        String clearName(clearTargetNode->getType());
+                        Math::Color clearColor(clearTargetNode->getText());
+                        auto resourceSearch = resourceMappingList.find(clearName);
+                        if (resourceSearch != resourceMappingList.end())
+                        {
+                            switch (resourceSearch->second.first)
+                            {
+                            case MapType::Texture2D:
+                                pass.clearList.insert(std::make_pair(clearName, ClearData(clearColor)));
+                                break;
+
+                            case MapType::Buffer:
+                                switch (resourceSearch->second.second)
+                                {
+                                case BindType::Float:
+                                case BindType::Float2:
+                                case BindType::Float3:
+                                case BindType::Float4:
+                                case BindType::Half:
+                                case BindType::Half2:
+                                case BindType::Half3:
+                                case BindType::Half4:
+                                    pass.clearList.insert(std::make_pair(clearName, ClearData(clearColor.getXYZW())));
+                                    break;
+
+                                case BindType::Int:
+                                case BindType::Int2:
+                                case BindType::Int3:
+                                case BindType::Int4:
+                                case BindType::UInt:
+                                case BindType::UInt2:
+                                case BindType::UInt3:
+                                case BindType::UInt4:
+                                    if (true)
+                                    {
+                                        uint32_t uint4[4] = { uint32_t(clearColor.r), uint32_t(clearColor.g), uint32_t(clearColor.b), uint32_t(clearColor.a) };
+                                        pass.clearList.insert(std::make_pair(clearName, ClearData(uint4)));
+                                    }
+
+                                    break;
+                                };
+
+                                break;
+                            }
                         }
                     }
 
@@ -525,6 +577,28 @@ namespace Gek
             ResourceHandle renderTargetList[8];
             Pass::Mode preparePass(Video::Device::Context *deviceContext, PassData &pass)
             {
+                for (auto &clearTarget : pass.clearList)
+                {
+                    auto resourceSearch = resourceMap.find(clearTarget.first);
+                    if (resourceSearch != resourceMap.end())
+                    {
+                        switch (clearTarget.second.type)
+                        {
+                        case ClearType::Target:
+                            resources->clearRenderTarget(deviceContext, resourceSearch->second, clearTarget.second.color);
+                            break;
+
+                        case ClearType::Float4:
+                            resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.float4);
+                            break;
+
+                        case ClearType::UInt4:
+                            resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.uint4);
+                            break;
+                        };
+                    }
+                }
+
                 deviceContext->clearResources();
 
                 uint32_t currentResourceStage = 0;

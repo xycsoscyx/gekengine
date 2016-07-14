@@ -103,6 +103,93 @@ namespace Gek
             }
         };
 
+        enum class ClearType : uint8_t
+        {
+            Unknown = 0,
+            Target,
+            Float4,
+            UInt4,
+        };
+
+        struct ClearData
+        {
+            ClearType type;
+            union
+            {
+                Math::Color color;
+                Math::Float4 float4;
+                uint32_t uint4[4];
+            };
+
+            ClearData(const Math::Color &color)
+                : type(ClearType::Target)
+                , color(color)
+            {
+            }
+
+            ClearData(const Math::Float4 &float4)
+                : type(ClearType::Float4)
+                , float4(float4)
+            {
+            }
+
+            ClearData(const uint32_t *uint4)
+                : type(ClearType::UInt4)
+                , uint4{ uint4[0], uint4[1], uint4[2], uint4[3] }
+            {
+            }
+
+            ClearData(const ClearData &clearData)
+                : type(clearData.type)
+            {
+                switch (type)
+                {
+                case ClearType::Target:
+                    color = clearData.color;
+                    break;
+
+                case ClearType::Float4:
+                    float4 = clearData.float4;
+                    break;
+
+                case ClearType::UInt4:
+                    uint4[0] = clearData.uint4[0];
+                    uint4[1] = clearData.uint4[1];
+                    uint4[2] = clearData.uint4[2];
+                    uint4[3] = clearData.uint4[3];
+                    break;
+                };
+            }
+
+            ~ClearData(void)
+            {
+            }
+
+            ClearData & operator = (const ClearData &clearData)
+            {
+                type = clearData.type;
+                switch (type)
+                {
+                case ClearType::Target:
+                    color = clearData.color;
+                    break;
+
+                case ClearType::Float4:
+                    float4 = clearData.float4;
+                    break;
+
+                case ClearType::UInt4:
+                    uint4[0] = clearData.uint4[0];
+                    uint4[1] = clearData.uint4[1];
+                    uint4[2] = clearData.uint4[2];
+                    uint4[3] = clearData.uint4[3];
+                    break;
+                };
+
+                return *this;
+            }
+        };
+
         __forceinline MapType getMapType(const wchar_t *mapType)
         {
             if (_wcsicmp(mapType, L"Texture1D") == 0) return MapType::Texture1D;
