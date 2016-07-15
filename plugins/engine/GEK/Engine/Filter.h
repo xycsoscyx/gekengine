@@ -26,7 +26,9 @@ namespace Gek
                 using Iterator = std::unique_ptr<Pass>;
 
                 virtual Iterator next(void) = 0;
+
                 virtual Mode prepare(void) = 0;
+                virtual void clear(void) = 0;
             };
 
             virtual Pass::Iterator begin(Video::Device::Context *deviceContext, ResourceHandle cameraTarget) = 0;

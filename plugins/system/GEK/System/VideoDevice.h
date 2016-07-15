@@ -251,14 +251,14 @@ namespace Gek
             };
         }; // TextureLoadFlags
 
-        namespace ClearMask
+        namespace ClearFlags
         {
             enum
             {
                 Depth = 1 << 0,
                 Stencil = 1 << 1,
             };
-        }; // ClearMask
+        }; // ClearFlags
 
         struct ViewPort
         {
@@ -453,7 +453,7 @@ namespace Gek
 
         GEK_INTERFACE(Object)
         {
-            virtual ~Object(void) = default;
+            virtual void setName(const wchar_t *name) = 0;
         };
 
         GEK_INTERFACE(Buffer)
@@ -486,10 +486,14 @@ namespace Gek
                 GEK_INTERFACE(Pipeline)
                 {
                     virtual void setProgram(Object *program) = 0;
-                    virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
                     virtual void setSamplerState(Object *samplerState, uint32_t stage) = 0;
+                    virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
+
                     virtual void setResource(Object *resource, uint32_t stage) = 0;
                     virtual void setUnorderedAccess(Object *unorderedAccess, uint32_t stage, uint32_t count = 0) = 0;
+
+                    virtual void setResourceList(Object **resourceList, uint32_t resourceCount, uint32_t firstStage) = 0;
+                    virtual void setUnorderedAccessList(Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList = 0) = 0;
                 };
 
                 virtual Pipeline * const computePipeline(void) = 0;
@@ -499,7 +503,7 @@ namespace Gek
 
                 virtual void generateMipMaps(Texture *texture) = 0;
 
-                virtual void clearResources(void) = 0;
+                virtual void clearState(void) = 0;
 
                 virtual void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
                 virtual void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
@@ -563,7 +567,7 @@ namespace Gek
             virtual void unmapBuffer(Buffer *buffer) = 0;
 
             virtual void updateResource(Object *buffer, const void *data) = 0;
-            virtual void copyResource(Object *destination, Object *source) = 0;
+            virtual void copyResource(Object *source, Object *destination) = 0;
 
             virtual ObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout = std::vector<Video::InputElementInformation>(), std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &defineList = std::unordered_map<StringUTF8, StringUTF8>()) = 0;

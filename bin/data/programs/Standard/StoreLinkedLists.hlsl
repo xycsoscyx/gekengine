@@ -1,7 +1,8 @@
 struct PixelInfo
 {
     uint albedo;
-    uint materialNormal;
+    uint material;
+    uint normal;
     uint next;
 };
 
@@ -21,6 +22,15 @@ uint packFloat4(float4 value)
            (((uint)value.w) << 24));
 }
 
+uint packFloat2(float2 value)
+{
+    value = min(max(value, 0.0), 1.0);
+    value = value * 255.0 + 0.5;
+    value = floor(value);
+    return (((uint)value.x) |
+           (((uint)value.y) << 16));
+}
+
 float4 unpackFloat4(uint value)
 {
     return float4((float)(value & 0x000000ff) / 255.0,
@@ -29,37 +39,16 @@ float4 unpackFloat4(uint value)
                   (float)((value >> 24) & 0x000000ff) / 255.0);
 }
 
-uint packMaterialNormal(float roughness, float metalness, float3 normal)
+float2 unpackFloat2(uint value)
 {
-    return packFloat4(float4(roughness, metalness, encodeNormal(normal)));
-}
-
-float unpackRoughness(uint value)
-{
-    return (float)(value & 0x000000ff) / 255.0;
-}
-
-float unpackMetalness(uint value)
-{
-    return (float)((value >> 8) & 0x000000ff) / 255.0;
-}
-
-float3 unpackNormal(uint value)
-{
-    return decodeNormal(half2((float)((value >> 16) & 0x000000ff) / 255.0,
-                              (float)((value >> 24) & 0x000000ff) / 255.0));
+    return float2((float)(value & 0x0000ffff) / 65535.0,
+                  (float)((value >> 16) & 0x0000ffff) / 65535.0);
 }
 
 void mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be in sRGB format and converted to linear automatically
     float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
-    
-    [branch]
-    if(albedo.a < 0.5)
-    {
-        discard;
-    }
 
     float3x3 viewBasis = getCoTangentFrame(inputPixel.viewPosition, inputPixel.viewNormal, inputPixel.texCoord);
 
@@ -71,13 +60,13 @@ void mainPixelProgram(InputPixel inputPixel)
 
     uint nextPixelIndex;
     uint pixelIndex = UnorderedAccess::pixelListBuffer.IncrementCounter();
-    InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.xy * Shader::pixelSize], pixelIndex, nextPixelIndex);
+    InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.xy], pixelIndex, nextPixelIndex);
 
     PixelInfo pixelInfo;
     pixelInfo.albedo = packFloat4(albedo);
-    pixelInfo.materialNormal = packMaterialNormal(Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
-                                                  Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
-                                                  normal);
+    pixelInfo.material = packFloat2(float2(Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
+                                           Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord)));
+    pixelInfo.normal = packFloat2(encodeNormal(normal));
     pixelInfo.next = nextPixelIndex;
 
     UnorderedAccess::pixelListBuffer[pixelIndex] = pixelInfo;

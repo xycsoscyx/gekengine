@@ -412,7 +412,7 @@ namespace Gek
                 depthState.enable = true;
                 if (depthNode->hasChildElement(L"clear"))
                 {
-                    clearFlags |= Video::ClearMask::Depth;
+                    clearFlags |= Video::ClearFlags::Depth;
                     clearDepthValue = depthNode->firstChildElement(L"clear")->getText();
                 }
 
@@ -426,7 +426,7 @@ namespace Gek
 
                     if (stencilNode->hasChildElement(L"clear"))
                     {
-                        clearFlags |= Video::ClearMask::Stencil;
+                        clearFlags |= Video::ClearFlags::Stencil;
                         clearStencilValue = stencilNode->firstChildElement(L"clear")->getText();
                     }
 

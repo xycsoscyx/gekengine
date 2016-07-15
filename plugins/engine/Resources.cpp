@@ -628,9 +628,11 @@ namespace Gek
             ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName));
-                auto load = [this, format, width, height, depth, mipmaps, flags](ResourceHandle handle) -> Video::TexturePtr
+                auto load = [this, textureName = String(textureName), format, width, height, depth, mipmaps, flags](ResourceHandle handle) -> Video::TexturePtr
                 {
-                    return device->createTexture(format, width, height, depth, mipmaps, flags);
+                    auto texture = device->createTexture(format, width, height, depth, mipmaps, flags);
+                    texture->setName(textureName);
+                    return texture;
                 };
 
                 auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::TexturePtr)> set) -> void
@@ -659,9 +661,11 @@ namespace Gek
             ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
-                auto load = [this, stride, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
+                auto load = [this, bufferName = String(bufferName), stride, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
                 {
-                    return device->createBuffer(stride, count, type, flags, staticData);
+                    auto buffer = device->createBuffer(stride, count, type, flags, staticData);
+                    buffer->setName(bufferName);
+                    return buffer;
                 };
 
                 auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
@@ -690,9 +694,11 @@ namespace Gek
             ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
-                auto load = [this, format, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
+                auto load = [this, bufferName = String(bufferName), format, count, type, flags, staticData](ResourceHandle handle) -> Video::BufferPtr
                 {
-                    return device->createBuffer(format, count, type, flags, staticData);
+                    auto buffer = device->createBuffer(format, count, type, flags, staticData);
+                    buffer->setName(bufferName);
+                    return buffer;
                 };
 
                 auto request = [this, load = std::move(load)](ResourceHandle handle, std::function<void(Video::BufferPtr)> set) -> void
@@ -736,7 +742,9 @@ namespace Gek
                     FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", textureName, format)));
                     if (filePath.isFile())
                     {
-                        return device->loadTexture(filePath, flags);
+                        auto texture = device->loadTexture(filePath, flags);
+                        texture->setName(filePath);
+                        return texture;
                     }
                 }
 
@@ -868,6 +876,7 @@ namespace Gek
                     GEK_THROW_EXCEPTION(Exception, "Invalid dynamic pattern specified: %v", pattern);
                 }
 
+                texture->setName(String(L"%v:%v", pattern, parameters));
                 return texture;
             }
 
@@ -911,7 +920,9 @@ namespace Gek
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), defineList](ProgramHandle handle)->Video::ObjectPtr
                 {
-                    return device->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
+                    auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
+                    program->setName(String(L"%v:%v", fileName, entryFunction));
+                    return program;
                 };
 
                 auto request = [this, load = std::move(load)](ProgramHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
@@ -927,7 +938,9 @@ namespace Gek
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), defineList](ProgramHandle handle)->Video::ObjectPtr
                 {
-                    return device->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
+                    auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
+                    program->setName(String(L"%v:%v", fileName, entryFunction));
+                    return program;
                 };
 
                 auto request = [this, load = std::move(load)](ProgramHandle handle, std::function<void(Video::ObjectPtr)> set) -> void
@@ -958,9 +971,9 @@ namespace Gek
                 deviceContext->generateMipMaps(dynamic_cast<Video::Texture *>(resourceManager.getResource(resourceHandle)));
             }
 
-            void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+            void copyResource(ResourceHandle sourceHandle, ResourceHandle destinationHandle)
             {
-                device->copyResource(resourceManager.getResource(destinationHandle), resourceManager.getResource(sourceHandle));
+                device->copyResource(resourceManager.getResource(sourceHandle), resourceManager.getResource(destinationHandle));
             }
 
             void setRenderState(Video::Device::Context *deviceContext, RenderStateHandle renderStateHandle)
@@ -980,17 +993,41 @@ namespace Gek
 
             void setResource(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)
             {
-                deviceContextPipeline->setResource(resourceManager.getResource(resourceHandle), stage);
+                setResourceList(deviceContextPipeline, &resourceHandle, 1, stage);
             }
 
             void setUnorderedAccess(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)
             {
-                deviceContextPipeline->setUnorderedAccess(resourceManager.getResource(resourceHandle, true), stage);
+                setUnorderedAccessList(deviceContextPipeline, &resourceHandle, 1, stage);
+            }
+
+            std::vector<Video::Object *> resourceCache;
+            void setResourceList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
+            {
+                resourceCache.resize(std::max(resourceCount, resourceCache.size()));
+                for (uint32_t resource = 0; resource < resourceCount; resource++)
+                {
+                    resourceCache[resource] = (resourceHandleList ? resourceManager.getResource(resourceHandleList[resource]) : nullptr);
+                }
+
+                deviceContextPipeline->setResourceList(resourceCache.data(), resourceCache.size(), firstStage);
+            }
+
+            std::vector<Video::Object *> unorderedAccessCache;
+            void setUnorderedAccessList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
+            {
+                unorderedAccessCache.resize(std::max(resourceCount, unorderedAccessCache.size()));
+                for (uint32_t resource = 0; resource < resourceCount; resource++)
+                {
+                    unorderedAccessCache[resource] = (resourceHandleList ? resourceManager.getResource(resourceHandleList[resource]) : nullptr);
+                }
+
+                deviceContextPipeline->setUnorderedAccessList(unorderedAccessCache.data(), unorderedAccessCache.size(), firstStage);
             }
 
             void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)
             {
-                deviceContextPipeline->setConstantBuffer(dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)), stage);
+                deviceContextPipeline->setConstantBuffer((resourceHandle ? dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)) : nullptr), stage);
             }
 
             void setProgram(Video::Device::Context::Pipeline *deviceContextPipeline, ProgramHandle programHandle)
@@ -1028,29 +1065,40 @@ namespace Gek
                 deviceContext->clearDepthStencilTarget(resourceManager.getResource(depthBuffer), flags, clearDepth, clearStencil);
             }
 
-            Video::ViewPort viewPortList[8];
-            Video::Target *renderTargetList[8];
+            std::vector<Video::ViewPort> viewPortCache;
+            std::vector<Video::Target *> renderTargetCache;
             void setRenderTargets(Video::Device::Context *deviceContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer)
             {
+                viewPortCache.resize(std::max(renderTargetHandleCount, viewPortCache.size()));
+                renderTargetCache.resize(std::max(renderTargetHandleCount, renderTargetCache.size()));
                 for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
                 {
-                    renderTargetList[renderTarget] = dynamic_cast<Video::Target *>(resourceManager.getResource(renderTargetHandleList[renderTarget], true));
-                    viewPortList[renderTarget] = renderTargetList[renderTarget]->getViewPort();
+                    renderTargetCache[renderTarget] = (renderTargetHandleList ? dynamic_cast<Video::Target *>(resourceManager.getResource(renderTargetHandleList[renderTarget], true)) : nullptr);
+                    if (renderTargetCache[renderTarget])
+                    {
+                        viewPortCache[renderTarget] = renderTargetCache[renderTarget]->getViewPort();
+                    }
                 }
 
-                deviceContext->setRenderTargets(renderTargetList, renderTargetHandleCount, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
-                deviceContext->setViewports(viewPortList, renderTargetHandleCount);
+                deviceContext->setRenderTargets(renderTargetCache.data(), renderTargetHandleCount, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
+                if (renderTargetHandleList)
+                {
+                    deviceContext->setViewports(viewPortCache.data(), renderTargetHandleCount);
+                }
             }
 
             void setBackBuffer(Video::Device::Context *deviceContext, ResourceHandle *depthBuffer)
             {
+                viewPortCache.resize(std::max(1U, viewPortCache.size()));
+                renderTargetCache.resize(std::max(1U, renderTargetCache.size()));
+
                 auto backBuffer = device->getBackBuffer();
 
-                renderTargetList[0] = backBuffer;
-                deviceContext->setRenderTargets(renderTargetList, 1, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
+                renderTargetCache[0] = backBuffer;
+                deviceContext->setRenderTargets(renderTargetCache.data(), 1, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
 
-                viewPortList[0] = renderTargetList[0]->getViewPort();
-                deviceContext->setViewports(viewPortList, 1);
+                viewPortCache[0] = renderTargetCache[0]->getViewPort();
+                deviceContext->setViewports(viewPortCache.data(), 1);
             }
         };
 

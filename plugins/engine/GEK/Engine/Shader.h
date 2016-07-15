@@ -31,6 +31,7 @@ namespace Gek
                 virtual Iterator next(void) = 0;
 
                 virtual Mode prepare(void) = 0;
+                virtual void clear(void) = 0;
 
                 virtual bool enableMaterial(Material *material) = 0;
             };

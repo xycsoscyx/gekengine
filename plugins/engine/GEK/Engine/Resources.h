@@ -76,11 +76,16 @@ namespace Gek
             virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
             virtual void unmapBuffer(ResourceHandle buffer) = 0;
 
-            virtual void setResource(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
-            virtual void setUnorderedAccess(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
-            virtual void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
             virtual void setVertexBuffer(Video::Device::Context *deviceContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset) = 0;
             virtual void setIndexBuffer(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
+
+            virtual void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+
+            virtual void setResource(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+            virtual void setUnorderedAccess(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+
+            virtual void setResourceList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage) = 0;
+            virtual void setUnorderedAccessList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage) = 0;
         };
     }; // namespace Plugin
 
@@ -116,7 +121,7 @@ namespace Gek
 
             virtual void flip(ResourceHandle resourceHandle) = 0;
             virtual void generateMipMaps(Video::Device::Context *deviceContext, ResourceHandle resourceHandle) = 0;
-            virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
+            virtual void copyResource(ResourceHandle sourceHandle, ResourceHandle destinationHandle) = 0;
 
             virtual void setRenderState(Video::Device::Context *deviceContext, RenderStateHandle renderStateHandle) = 0;
             virtual void setDepthState(Video::Device::Context *deviceContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;

@@ -41,8 +41,8 @@ namespace Gek
                 BlendStateHandle blendState;
                 uint32_t width, height;
                 std::vector<String> materialList;
-                std::unordered_map<String, String> resourceList;
-                std::unordered_map<String, String> unorderedAccessList;
+                std::vector<ResourceHandle> resourceList;
+                std::vector<ResourceHandle> unorderedAccessList;
                 std::unordered_map<String, String> renderTargetList;
                 std::unordered_map<String, std::set<Actions>> actionMap;
                 std::unordered_map<String, String> copyResourceMap;
@@ -183,6 +183,7 @@ namespace Gek
                 GEK_REQUIRE(population);
 
                 shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+                shaderConstantBuffer->setName(String(L"%v:shaderConstantBuffer", shaderName));
 
                 XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\shaders\\%v.xml", shaderName)));
                 XmlNodePtr shaderNode(document->getRoot(L"shader"));
@@ -241,7 +242,10 @@ namespace Gek
                     if (lightsPerPass > 0)
                     {
                         lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                        lightConstantBuffer->setName(String(L"%v:lightConstantBuffer", shaderName));
+
                         lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                        lightDataBuffer->setName(String(L"%v:lightDataBuffer", shaderName));
 
                         globalDefinesList[L"lightsPerPass"] = lightsPerPass;
 
@@ -492,6 +496,8 @@ namespace Gek
                         pass.renderState = loadRenderState(resources, passNode->firstChildElement(L"renderstates"));
                         pass.blendState = loadBlendState(resources, passNode->firstChildElement(L"blendstates"), pass.renderTargetList);
 
+                        std::unordered_map<String, String> resourceList;
+                        std::unordered_map<String, String> unorderedAccessList = loadChildMap(passNode, L"unorderedaccess");
                         if (passNode->hasChildElement(L"resources"))
                         {
                             XmlNodePtr resourcesNode(passNode->firstChildElement(L"resources"));
@@ -499,7 +505,7 @@ namespace Gek
                             {
                                 String resourceName(resourceNode->getType());
                                 String alias(resourceNode->getText());
-                                pass.resourceList.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
+                                resourceList.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
 
                                 if (resourceNode->hasAttribute(L"actions"))
                                 {
@@ -523,8 +529,6 @@ namespace Gek
                                 }
                             }
                         }
-
-                        pass.unorderedAccessList = loadChildMap(passNode, L"unorderedaccess");
 
                         StringUTF8 engineData;
                         if (pass.mode != Pass::Mode::Compute)
@@ -649,13 +653,19 @@ namespace Gek
                             }
                         }
 
-                        for (auto &resourcePair : pass.resourceList)
+                        for (auto &resourcePair : resourceList)
                         {
-                            uint32_t currentStage = nextResourceStage++;
-                            auto resourceSearch = resourceMappingList.find(resourcePair.first);
-                            if (resourceSearch != resourceMappingList.end())
+                            auto resourceSearch = resourceMap.find(resourcePair.first);
+                            if (resourceSearch != resourceMap.end())
                             {
-                                auto &resource = (*resourceSearch).second;
+                                pass.resourceList.push_back(resourceSearch->second);
+                            }
+
+                            uint32_t currentStage = nextResourceStage++;
+                            auto resourceMapSearch = resourceMappingList.find(resourcePair.first);
+                            if (resourceMapSearch != resourceMappingList.end())
+                            {
+                                auto &resource = (*resourceMapSearch).second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
                                     resourceData.format("    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
@@ -694,13 +704,19 @@ namespace Gek
                             nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                         }
 
-                        for (auto &resourcePair : pass.unorderedAccessList)
+                        for (auto &resourcePair : unorderedAccessList)
                         {
-                            uint32_t currentStage = nextUnorderedStage++;
-                            auto resourceSearch = resourceMappingList.find(resourcePair.first);
-                            if (resourceSearch != resourceMappingList.end())
+                            auto resourceSearch = resourceMap.find(resourcePair.first);
+                            if (resourceSearch != resourceMap.end())
                             {
-                                auto &resource = (*resourceSearch).second;
+                                pass.unorderedAccessList.push_back(resourceSearch->second);
+                            }
+
+                            uint32_t currentStage = nextUnorderedStage++;
+                            auto resourceMapSearch = resourceMappingList.find(resourcePair.first);
+                            if (resourceMapSearch != resourceMappingList.end())
+                            {
+                                auto &resource = (*resourceMapSearch).second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
                                     unorderedAccessData.format("    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
@@ -852,7 +868,7 @@ namespace Gek
             GEK_INTERFACE(Data)
                 : public Engine::Material::Data
             {
-                std::unordered_map<PassData *, std::unordered_map<uint32_t, ResourceHandle>> passMap;
+                std::unordered_map<PassData *, std::vector<ResourceHandle>> passMap;
             };
 
             Engine::Material::DataPtr loadMaterialData(const Engine::Material::PassMap &passMap)
@@ -864,16 +880,14 @@ namespace Gek
                     auto passSearch = namedPassMap.find(passName);
                     if (passSearch != namedPassMap.end())
                     {
-                        uint32_t nextStage = 0;
                         PassData *pass = passSearch->second;
                         auto &resourceMap = passPair.second;
                         for (auto &resource : pass->materialList)
                         {
-                            uint32_t currentStage = nextStage++;
                             auto &resourceSearch = resourceMap.find(resource);
                             if (resourceSearch != resourceMap.end())
                             {
-                                data->passMap[pass][currentStage] = resourceSearch->second;
+                                data->passMap[pass].push_back(resourceSearch->second);
                             }
                         }
                     }
@@ -889,97 +903,76 @@ namespace Gek
                 auto &passSearch = data->passMap.find(&pass);
                 if (passSearch != data->passMap.end())
                 {
-                    for (auto &resource : passSearch->second)
-                    {
-                        resources->setResource(deviceContext->pixelPipeline(), resource.second, (resource.first + firstStage));
-                    }
-
+                    resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
                     return true;
                 }
 
                 return false;
             }
 
-            ResourceHandle renderTargetList[8];
+            std::vector<ResourceHandle> renderTargetCache;
             Pass::Mode preparePass(Video::Device::Context *deviceContext, BlockData &block, PassData &pass)
             {
-                deviceContext->clearResources();
+                for (auto &actionSearch : pass.actionMap)
+                {
+                    auto resourceSearch = resourceMap.find(actionSearch.first);
+                    if (resourceSearch != resourceMap.end())
+                    {
+                        for (auto &action : actionSearch.second)
+                        {
+                            switch (action)
+                            {
+                            case Actions::GenerateMipMaps:
+                                resources->generateMipMaps(deviceContext, resourceSearch->second);
+                                break;
 
-                uint32_t currentResourceStage = 0;
+                            case Actions::Flip:
+                                resources->flip(resourceSearch->second);
+                                break;
+                            };
+                        }
+                    }
+                }
+
+                for (auto &copySearch : pass.copyResourceMap)
+                {
+                    auto sourceSearch = resourceMap.find(copySearch.first);
+                    auto destinationSearch = resourceMap.find(copySearch.second);
+                    if (sourceSearch != resourceMap.end() && destinationSearch != resourceMap.end())
+                    {
+                        resources->copyResource(sourceSearch->second, destinationSearch->second);
+                    }
+                }
+
                 Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
-                if (block.lighting)
-                {
-                    deviceContextPipeline->setResource(lightDataBuffer.get(), 0);
-                    deviceContextPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
-                    currentResourceStage = 1;
-                }
 
-                if (pass.mode == Pass::Mode::Forward)
+                if (!pass.resourceList.empty())
                 {
-                    currentResourceStage += pass.materialList.size();
-                }
-
-                for (auto &resourcePair : pass.resourceList)
-                {
-                    ResourceHandle resource;
-                    auto resourceSearch = resourceMap.find(resourcePair.first);
-                    if (resourceSearch != resourceMap.end())
+                    uint32_t firstResourceStage = 0;
+                    if (block.lighting)
                     {
-                        resource = resourceSearch->second;
+                        deviceContextPipeline->setResource(lightDataBuffer.get(), 0);
+                        deviceContextPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
+                        firstResourceStage = 1;
                     }
 
-                    if (resource)
+                    if (pass.mode == Pass::Mode::Forward)
                     {
-                        auto actionSearch = pass.actionMap.find(resourcePair.first);
-                        if (actionSearch != pass.actionMap.end())
-                        {
-                            auto &actionMap = actionSearch->second;
-                            for (auto &action : actionMap)
-                            {
-                                switch (action)
-                                {
-                                case Actions::GenerateMipMaps:
-                                    resources->generateMipMaps(deviceContext, resource);
-                                    break;
-
-                                case Actions::Flip:
-                                    resources->flip(resource);
-                                    break;
-                                };
-                            }
-                        }
-
-                        auto copySearch = pass.copyResourceMap.find(resourcePair.first);
-                        if (copySearch != pass.copyResourceMap.end())
-                        {
-                            String &copyFrom = copySearch->second;
-                            auto copyResourceSearch = resourceMap.find(copyFrom);
-                            if (copyResourceSearch != resourceMap.end())
-                            {
-                                resources->copyResource(resource, copyResourceSearch->second);
-                            }
-                        }
+                        firstResourceStage += pass.materialList.size();
                     }
 
-                    resources->setResource(deviceContextPipeline, resource, currentResourceStage++);
+                    resources->setResourceList(deviceContextPipeline, pass.resourceList.data(), pass.resourceList.size(), firstResourceStage);
                 }
 
-                uint32_t currentUnorderedStage = 0;
-                if (pass.mode != Pass::Mode::Compute)
+                if (!pass.unorderedAccessList.empty())
                 {
-                    currentUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
-                }
-
-                for (auto &resourcePair : pass.unorderedAccessList)
-                {
-                    ResourceHandle resource;
-                    auto resourceSearch = resourceMap.find(resourcePair.first);
-                    if (resourceSearch != resourceMap.end())
+                    uint32_t firstUnorderedAccessStage = 0;
+                    if (pass.mode != Pass::Mode::Compute)
                     {
-                        resource = resourceSearch->second;
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                     }
 
-                    resources->setUnorderedAccess(deviceContextPipeline, resource, currentUnorderedStage++);
+                    resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
                 resources->setProgram(deviceContextPipeline, pass.program);
@@ -1006,8 +999,11 @@ namespace Gek
                     {
                         if (cameraTarget)
                         {
-                            renderTargetList[0] = cameraTarget;
-                            resources->setRenderTargets(deviceContext, renderTargetList, 1, (pass.enableDepth ? &depthBuffer : nullptr));
+                            renderTargetCache.resize(std::max(1U, renderTargetCache.size()));
+
+                            renderTargetCache[0] = cameraTarget;
+
+                            resources->setRenderTargets(deviceContext, renderTargetCache.data(), 1, (pass.enableDepth ? &depthBuffer : nullptr));
 
                             Video::Texture *texture = resources->getTexture(cameraTarget);
                             shaderConstantData.targetSize.x = float(texture->getWidth());
@@ -1022,6 +1018,8 @@ namespace Gek
                     }
                     else if (!pass.renderTargetList.empty())
                     {
+                        renderTargetCache.resize(std::max(pass.renderTargetList.size(), renderTargetCache.size()));
+
                         uint32_t currentStage = 0;
                         for (auto &resourcePair : pass.renderTargetList)
                         {
@@ -1035,10 +1033,10 @@ namespace Gek
                                 shaderConstantData.targetSize.y = float(texture->getHeight());
                             }
 
-                            renderTargetList[currentStage++] = renderTargetHandle;
+                            renderTargetCache[currentStage++] = renderTargetHandle;
                         }
 
-                        resources->setRenderTargets(deviceContext, renderTargetList, currentStage, (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setRenderTargets(deviceContext, renderTargetCache.data(), pass.renderTargetList.size(), (pass.enableDepth ? &depthBuffer : nullptr));
                     }
 
                     break;
@@ -1055,6 +1053,60 @@ namespace Gek
                 }
 
                 return pass.mode;
+            }
+
+            void clearPass(Video::Device::Context *deviceContext, BlockData &block, PassData &pass)
+            {
+                Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
+
+                if (!pass.resourceList.empty())
+                {
+                    uint32_t firstResourceStage = 0;
+                    if (block.lighting)
+                    {
+                        deviceContextPipeline->setResource(lightDataBuffer.get(), 0);
+                        deviceContextPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
+                        firstResourceStage = 1;
+                    }
+
+                    if (pass.mode == Pass::Mode::Forward)
+                    {
+                        firstResourceStage += pass.materialList.size();
+                    }
+
+                    resources->setResourceList(deviceContextPipeline, nullptr, pass.resourceList.size(), firstResourceStage);
+                }
+
+                if (!pass.unorderedAccessList.empty())
+                {
+                    uint32_t firstUnorderedAccessStage = 0;
+                    if (pass.mode != Pass::Mode::Compute)
+                    {
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                    }
+
+                    resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                }
+
+                if (pass.mode != Pass::Mode::Compute)
+                {
+                    if (pass.renderToScreen)
+                    {
+                        if (cameraTarget)
+                        {
+                            resources->setRenderTargets(deviceContext, nullptr, 1, nullptr);
+                        }
+                    }
+                    else if (!pass.renderTargetList.empty())
+                    {
+                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
+                    }
+                }
+
+                deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
+                deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
+                deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
+                deviceContext->computePipeline()->setConstantBuffer(nullptr, 2);
             }
 
             bool prepareBlock(uint32_t &base, Video::Device::Context *deviceContext, BlockData &block)
@@ -1143,6 +1195,11 @@ namespace Gek
                 Mode prepare(void)
                 {
                     return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                }
+
+                void clear(void)
+                {
+                    shaderNode->clearPass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                 }
 
                 bool enableMaterial(Engine::Material *material)

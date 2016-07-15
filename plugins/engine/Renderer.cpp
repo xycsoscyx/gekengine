@@ -325,8 +325,10 @@ namespace Gek
                 linearWrapSamplerState = device->createSamplerState(linearWrapSamplerStateData);
 
                 engineConstantBuffer = device->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
+                engineConstantBuffer->setName(L"engineConstantBuffer");
 
                 cameraConstantBuffer = device->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
+                cameraConstantBuffer->setName(L"cameraConstantBuffer");
 
                 static const char program[] =
                     "struct Pixel                                                                       \r\n" \
@@ -346,6 +348,7 @@ namespace Gek
                     "                                                                                   \r\n";
 
                 deferredVertexProgram = device->compileVertexProgram(program, "mainVertexProgram");
+                deferredVertexProgram->setName(L"deferredVertexProgram");
             }
 
             ~Renderer(void)
@@ -407,6 +410,7 @@ namespace Gek
                 if (!drawCallList.empty())
                 {
                     Video::Device::Context *deviceContext = device->getDefaultContext();
+                    deviceContext->clearState();
 
                     device->updateResource(engineConstantBuffer.get(), &engineConstantData);
                     deviceContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
@@ -479,7 +483,7 @@ namespace Gek
                                         {
                                             VisualHandle currentVisual;
                                             MaterialHandle currentMaterial;
-                                            for (auto &shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
+                                            for (auto shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
                                             {
                                                 if (currentVisual != (*shaderDrawCall).plugin)
                                                 {
@@ -522,6 +526,8 @@ namespace Gek
                                     case Engine::Shader::Pass::Mode::Compute:
                                         break;
                                     };
+
+                                    pass->clear();
                                 }
                             };
                         }
@@ -545,9 +551,21 @@ namespace Gek
                                 case Engine::Filter::Pass::Mode::Compute:
                                     break;
                                 };
+
+                                pass->clear();
                             }
                         }
                     }
+
+                    deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 0);
+                    deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 0);
+                    deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 0);
+                    deviceContext->computePipeline()->setConstantBuffer(nullptr, 0);
+
+                    deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 1);
+                    deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 1);
+                    deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 1);
+                    deviceContext->computePipeline()->setConstantBuffer(nullptr, 1);
                 }
             }
 
