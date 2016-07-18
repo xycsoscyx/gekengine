@@ -354,6 +354,10 @@ namespace Gek
                 }
                 catch (const Exception &)
                 {
+                }
+                catch (...)
+                {
+                    GEK_TRACE_EVENT("General exception occurred when loading resource");
                 };
             }
 

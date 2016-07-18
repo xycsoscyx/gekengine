@@ -150,13 +150,13 @@ namespace Gek
                     globalDefinesList[defineNode->getType()] = evaluate(defineNode->getText(), defineNode->getAttribute(L"integer"));
                 }
 
+                std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 XmlNodePtr texturesNode(filterNode->firstChildElement(L"textures"));
                 for (XmlNodePtr textureNode(texturesNode->firstChildElement()); textureNode->isValid(); textureNode = textureNode->nextSiblingElement())
                 {
                     String textureName(textureNode->getType());
                     GEK_CHECK_CONDITION(resourceMap.count(textureName) > 0, Exception, "Resource name already specified: %v", textureName);
 
-                    BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                     if (textureNode->hasAttribute(L"source") && textureNode->hasAttribute(L"name"))
                     {
                         String resourceName(L"%v:%v:resource", textureNode->getAttribute(L"name"), textureNode->getAttribute(L"source"));
@@ -186,8 +186,10 @@ namespace Gek
                         uint32_t flags = getTextureFlags(textureNode->getAttribute(L"flags"));
                         bool readWrite = textureNode->getAttribute(L"readwrite");
                         resourceMap[textureName] = resources->createTexture(String(L"%v:%v:resource", textureName, filterName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
+                        resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
 
+                    BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
                     resourceMappingList[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
@@ -258,56 +260,40 @@ namespace Gek
                     for (XmlNodePtr clearTargetNode(clearNode->firstChildElement()); clearTargetNode->isValid(); clearTargetNode = clearTargetNode->nextSiblingElement())
                     {
                         String clearName(clearTargetNode->getType());
-                        Math::Color clearColor(clearTargetNode->getText());
-                        auto resourceSearch = resourceMappingList.find(clearName);
-                        if (resourceSearch != resourceMappingList.end())
+                        switch (getClearType(clearTargetNode->getAttribute(L"type")))
                         {
-                            switch (resourceSearch->second.first)
-                            {
-                            case MapType::Texture2D:
-                                pass.clearList.insert(std::make_pair(clearName, ClearData(clearColor)));
-                                break;
+                        case ClearType::Target:
+                            pass.clearList.insert(std::make_pair(clearName, ClearData((Math::Color)clearTargetNode->getText())));
+                            break;
 
-                            case MapType::Buffer:
-                                switch (resourceSearch->second.second)
-                                {
-                                case BindType::Float:
-                                case BindType::Float2:
-                                case BindType::Float3:
-                                case BindType::Float4:
-                                case BindType::Half:
-                                case BindType::Half2:
-                                case BindType::Half3:
-                                case BindType::Half4:
-                                    pass.clearList.insert(std::make_pair(clearName, ClearData(clearColor.getXYZW())));
-                                    break;
+                        case ClearType::Float:
+                            pass.clearList.insert(std::make_pair(clearName, ClearData((Math::Float4)clearTargetNode->getText())));
+                            break;
 
-                                case BindType::Int:
-                                case BindType::Int2:
-                                case BindType::Int3:
-                                case BindType::Int4:
-                                case BindType::UInt:
-                                case BindType::UInt2:
-                                case BindType::UInt3:
-                                case BindType::UInt4:
-                                    if (true)
-                                    {
-                                        uint32_t uint4[4] = { uint32_t(clearColor.r), uint32_t(clearColor.g), uint32_t(clearColor.b), uint32_t(clearColor.a) };
-                                        pass.clearList.insert(std::make_pair(clearName, ClearData(uint4)));
-                                    }
-
-                                    break;
-                                };
-
-                                break;
-                            }
-                        }
+                        case ClearType::UInt:
+                            pass.clearList.insert(std::make_pair(clearName, ClearData((uint32_t)clearTargetNode->getText())));
+                            break;
+                        };
                     }
 
                     if (passNode->hasChildElement(L"targets"))
                     {
                         pass.renderToScreen = false;
                         pass.renderTargetList = loadChildMap(passNode, L"targets");
+                        if (!pass.renderTargetList.empty())
+                        {
+                            auto resourceSearch = resourceSizeMap.find(pass.renderTargetList.begin()->first);
+                            if (resourceSearch != resourceSizeMap.end())
+                            {
+                                pass.width = resourceSearch->second.first;
+                                pass.height = resourceSearch->second.second;
+                            }
+                        }
+                        else
+                        {
+                            pass.width = 0;
+                            pass.height = 0;
+                        }
                     }
                     else
                     {
@@ -625,12 +611,12 @@ namespace Gek
                             resources->clearRenderTarget(deviceContext, resourceSearch->second, clearTarget.second.color);
                             break;
 
-                        case ClearType::Float4:
-                            resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.float4);
+                        case ClearType::Float:
+                            resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.value);
                             break;
 
-                        case ClearType::UInt4:
-                            resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.uint4);
+                        case ClearType::UInt:
+                            resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.uint);
                             break;
                         };
                     }
@@ -659,8 +645,8 @@ namespace Gek
 
                 for (auto &copySearch : pass.copyResourceMap)
                 {
-                    auto sourceSearch = resourceMap.find(copySearch.first);
-                    auto destinationSearch = resourceMap.find(copySearch.second);
+                    auto sourceSearch = resourceMap.find(copySearch.second);
+                    auto destinationSearch = resourceMap.find(copySearch.first);
                     if (sourceSearch != resourceMap.end() && destinationSearch != resourceMap.end())
                     {
                         resources->copyResource(sourceSearch->second, destinationSearch->second);
@@ -687,12 +673,12 @@ namespace Gek
 
                 resources->setProgram(deviceContextPipeline, pass.program);
 
-                FilterConstantData FilterConstantData;
+                FilterConstantData filterConstantData;
+                filterConstantData.targetSize.x = float(pass.width);
+                filterConstantData.targetSize.y = float(pass.height);
                 switch (pass.mode)
                 {
                 case Pass::Mode::Compute:
-                    FilterConstantData.targetSize.x = float(device->getBackBuffer()->getWidth());
-                    FilterConstantData.targetSize.y = float(device->getBackBuffer()->getHeight());
                     break;
 
                 default:
@@ -705,20 +691,12 @@ namespace Gek
                         if (cameraTarget)
                         {
                             renderTargetCache.resize(std::max(1U, renderTargetCache.size()));
-
                             renderTargetCache[0] = cameraTarget;
-
                             resources->setRenderTargets(deviceContext, renderTargetCache.data(), 1, nullptr);
-
-                            Video::Texture *texture = resources->getTexture(cameraTarget);
-                            FilterConstantData.targetSize.x = float(texture->getWidth());
-                            FilterConstantData.targetSize.y = float(texture->getHeight());
                         }
                         else
                         {
                             resources->setBackBuffer(deviceContext, nullptr);
-                            FilterConstantData.targetSize.x = float(device->getBackBuffer()->getWidth());
-                            FilterConstantData.targetSize.y = float(device->getBackBuffer()->getHeight());
                         }
                     }
                     else if (!pass.renderTargetList.empty())
@@ -733,9 +711,6 @@ namespace Gek
                             if (resourceSearch != resourceMap.end())
                             {
                                 renderTargetHandle = (*resourceSearch).second;
-                                Video::Texture *texture = resources->getTexture(renderTargetHandle);
-                                FilterConstantData.targetSize.x = float(texture->getWidth());
-                                FilterConstantData.targetSize.y = float(texture->getHeight());
                             }
 
                             renderTargetCache[currentStage++] = renderTargetHandle;
@@ -747,7 +722,7 @@ namespace Gek
                     break;
                 };
 
-                device->updateResource(filterConstantBuffer.get(), &FilterConstantData);
+                device->updateResource(filterConstantBuffer.get(), &filterConstantData);
                 deviceContext->geometryPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
                 deviceContext->vertexPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
                 deviceContext->pixelPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);

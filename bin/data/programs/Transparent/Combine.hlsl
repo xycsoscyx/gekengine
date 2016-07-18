@@ -5,7 +5,9 @@
 
 static const float PixelsPerDiffusion = 200.0;
 static const float PixelsPerDiffusionSquared = square(PixelsPerDiffusion);
-static const int MaximumDiffusionPixels = 16;static const int DiffusionStridePixels = 2;
+static const int MaximumDiffusionPixels = 16;
+static const int DiffusionStridePixels = 2;
+
 // http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
@@ -49,7 +51,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
                     float backgroundBlurRadiusSquared = Resources::modulationDiffusionBuffer.SampleLevel(Global::pointSampler, sampleCoord, 0).a * PixelsPerDiffusionSquared;
                     if (sampleRadius <= backgroundBlurRadiusSquared)
                     {
-                        // Disk weight
+                        // Disc weight
                         float weight = 1.0 / backgroundBlurRadiusSquared + Math::Epsilon;
 
                         // Gaussian weight (slightly higher quality but much slower

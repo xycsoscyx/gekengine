@@ -11,7 +11,7 @@
         <modulationDiffusionBuffer bind="float4" flags="target">R8G8B8A8_UNORM</modulationDiffusionBuffer>
         <refractionBuffer bind="float2" flags="target">R16G16_FLOAT</refractionBuffer>
         <depthBuffer bind="float">R32_FLOAT</depthBuffer>
-        <finalBuffer bind="float" source="standard" name="finalBuffer" />
+        <finalBuffer bind="float3" source="standard" name="finalBuffer" />
         <sourceBuffer bind="float3">R11G11B10_FLOAT</sourceBuffer>
     </textures>
 
@@ -19,9 +19,9 @@
 
     <block>
         <clear>
-            <accumulationBuffer>0</accumulationBuffer>
-            <modulationDiffusionBuffer>(1,1,1,0)</modulationDiffusionBuffer>
-            <refractionBuffer>0</refractionBuffer>
+            <accumulationBuffer type="target">0</accumulationBuffer>
+            <modulationDiffusionBuffer type="target">(1,1,1,0)</modulationDiffusionBuffer>
+            <refractionBuffer type="target">0</refractionBuffer>
         </clear>
 
         <pass mode="forward" name="transparent">

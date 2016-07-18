@@ -108,8 +108,8 @@ namespace Gek
         {
             Unknown = 0,
             Target,
-            Float4,
-            UInt4,
+            Float,
+            UInt,
         };
 
         struct ClearData
@@ -118,8 +118,8 @@ namespace Gek
             union
             {
                 Math::Color color;
-                Math::Float4 float4;
-                uint32_t uint4[4];
+                Math::Float4 value;
+                uint32_t uint[4];
             };
 
             ClearData(const Math::Color &color)
@@ -128,15 +128,15 @@ namespace Gek
             {
             }
 
-            ClearData(const Math::Float4 &float4)
-                : type(ClearType::Float4)
-                , float4(float4)
+            ClearData(const Math::Float4 &value)
+                : type(ClearType::Float)
+                , value(value)
             {
             }
 
-            ClearData(const uint32_t *uint4)
-                : type(ClearType::UInt4)
-                , uint4{ uint4[0], uint4[1], uint4[2], uint4[3] }
+            ClearData(uint32_t uint)
+                : type(ClearType::UInt)
+                , uint{ uint, uint , uint , uint }
             {
             }
 
@@ -149,15 +149,15 @@ namespace Gek
                     color = clearData.color;
                     break;
 
-                case ClearType::Float4:
-                    float4 = clearData.float4;
+                case ClearType::Float:
+                    value = clearData.value;
                     break;
 
-                case ClearType::UInt4:
-                    uint4[0] = clearData.uint4[0];
-                    uint4[1] = clearData.uint4[1];
-                    uint4[2] = clearData.uint4[2];
-                    uint4[3] = clearData.uint4[3];
+                case ClearType::UInt:
+                    uint[0] = clearData.uint[0];
+                    uint[1] = clearData.uint[1];
+                    uint[2] = clearData.uint[2];
+                    uint[3] = clearData.uint[3];
                     break;
                 };
             }
@@ -175,21 +175,29 @@ namespace Gek
                     color = clearData.color;
                     break;
 
-                case ClearType::Float4:
-                    float4 = clearData.float4;
+                case ClearType::Float:
+                    value = clearData.value;
                     break;
 
-                case ClearType::UInt4:
-                    uint4[0] = clearData.uint4[0];
-                    uint4[1] = clearData.uint4[1];
-                    uint4[2] = clearData.uint4[2];
-                    uint4[3] = clearData.uint4[3];
+                case ClearType::UInt:
+                    uint[0] = clearData.uint[0];
+                    uint[1] = clearData.uint[1];
+                    uint[2] = clearData.uint[2];
+                    uint[3] = clearData.uint[3];
                     break;
                 };
 
                 return *this;
             }
         };
+
+        __forceinline ClearType getClearType(const wchar_t *clearType)
+        {
+            if (_wcsicmp(clearType, L"Target") == 0) return ClearType::Target;
+            else if (_wcsicmp(clearType, L"Float") == 0) return ClearType::Float;
+            else if (_wcsicmp(clearType, L"UInt") == 0) return ClearType::UInt;
+            return ClearType::Unknown;
+        }
 
         __forceinline MapType getMapType(const wchar_t *mapType)
         {

@@ -38,11 +38,13 @@
         <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
+
         <lightAccumulationBuffer bind="float3" flags="target">R11G11B10_FLOAT</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">R8_UNORM</ambientOcclusionBuffer>
+
         <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
 
-        <startIndexBuffer bind="int" flags="unorderedAccess">R32_INT</startIndexBuffer>
+        <startIndexBuffer bind="int" flags="unorderedAccess, target">R32_INT</startIndexBuffer>
     </textures>
 
     <buffers>
@@ -75,6 +77,17 @@
             </program>
         </pass>
 
+        <pass mode="deferred">
+            <targets>
+                <startIndexBuffer />
+            </targets>
+
+            <program>
+                <entry>mainPixelProgram</entry>
+                <source>Standard\ClearLinkedLists</source>
+            </program>
+        </pass>
+
         <pass mode="forward" name="transparent">
             <depthstates>
                 <comparison>less</comparison>
@@ -102,7 +115,7 @@
 
     <block lighting="true">
         <clear>
-            <lightAccumulationBuffer>(0,0,0,0)</lightAccumulationBuffer>
+            <lightAccumulationBuffer type="target">(0,0,0,0)</lightAccumulationBuffer>
         </clear>
 
         <pass mode="compute">

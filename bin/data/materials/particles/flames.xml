@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <material>
-    <shader name="standard">
+    <shader name="transparent">
         <transparent>
             <albedo file="$material.Albedo" />
         </transparent>
