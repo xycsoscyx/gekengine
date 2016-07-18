@@ -5,8 +5,8 @@
 
 static const float PixelsPerDiffusion = 200.0;
 static const float PixelsPerDiffusionSquared = square(PixelsPerDiffusion);
-static const int MaximumDiffusionPixels = 16;
-static const int DiffusionStridePixels = 2;
+static const int MaximumDiffusionPixels = 8;
+static const int DiffusionStridePixels = 1;
 
 // http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0

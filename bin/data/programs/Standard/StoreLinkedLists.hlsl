@@ -11,40 +11,6 @@ struct PixelInfo
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-uint packFloat4(float4 value)
-{
-    value = min(max(value, 0.0), 1.0);
-    value = value * 255.0 + 0.5;
-    value = floor(value);
-    return (((uint)value.x) |
-           (((uint)value.y) << 8) |
-           (((uint)value.z) << 16) |
-           (((uint)value.w) << 24));
-}
-
-uint packFloat2(float2 value)
-{
-    value = min(max(value, 0.0), 1.0);
-    value = value * 255.0 + 0.5;
-    value = floor(value);
-    return (((uint)value.x) |
-           (((uint)value.y) << 16));
-}
-
-float4 unpackFloat4(uint value)
-{
-    return float4((float)(value & 0x000000ff) / 255.0,
-                  (float)((value >> 8) & 0x000000ff) / 255.0,
-                  (float)((value >> 16) & 0x000000ff) / 255.0,
-                  (float)((value >> 24) & 0x000000ff) / 255.0);
-}
-
-float2 unpackFloat2(uint value)
-{
-    return float2((float)(value & 0x0000ffff) / 65535.0,
-                  (float)((value >> 16) & 0x0000ffff) / 65535.0);
-}
-
 void mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be in sRGB format and converted to linear automatically

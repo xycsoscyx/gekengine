@@ -113,7 +113,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float materialMetalness = materialInfo.y;
 
     float sceneDepth = Resources::depth.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
-    float3 surfacePosition = getViewPosition(inputPixel.texCoord, sceneDepth);
+    float3 surfacePosition = getPositionFromProjectedDepth(inputPixel.texCoord, sceneDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0));
 
     float3 viewDirection = -normalize(surfacePosition);

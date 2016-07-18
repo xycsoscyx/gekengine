@@ -3,7 +3,7 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-float2 getRefractOffset(float sceneDepth, float3 normal, float3 position, float eta)
+float2 getRefractOffset(float viewDepth, float3 normal, float3 position, float eta)
 {
     return 0.0;
 }
@@ -35,8 +35,8 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     outputPixel.accumulationBuffer = float4(premultipliedReflectionAndEmission, coverage) * weight;
 
     float backgroundDepth = inputPixel.position.z - 4.0;
-    float sceneDepth = getSceneDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    outputPixel.modulationDiffusionBuffer.a = square(k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - sceneDepth)) / abs(inputPixel.viewPosition.z));
+    float viewDepth = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
+    outputPixel.modulationDiffusionBuffer.a = square(k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - viewDepth)) / abs(inputPixel.viewPosition.z));
     if (outputPixel.modulationDiffusionBuffer.a > 0.0)
     {
         outputPixel.modulationDiffusionBuffer.a = max(outputPixel.modulationDiffusionBuffer.a, 1.0 / 256.0);

@@ -20,8 +20,8 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     //weight *= saturate(1.0 - dot(inputPixel.color1.rgb, (1.0 / 3.0)));
 
     // Soften edges when transparent surfaces intersect solid surfaces
-    const float sceneDepth = getSceneDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    const float depthDelta = saturate((sceneDepth - inputPixel.viewPosition.z) * 2.5);
+    const float viewDepth = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
+    const float depthDelta = saturate((viewDepth - inputPixel.viewPosition.z) * 2.5);
     //weight *= depthDelta;
 
     switch (Settings::Equation)

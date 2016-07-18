@@ -35,6 +35,47 @@ float getLuminance(float3 color)
     return luminance;
 }
 
+float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
+{
+    normal = normalize(normal);
+
+    // get edge vectors of the pixel triangle
+    float3 positionDDX = ddx(position);
+    float3 positionDDY = ddy(position);
+    float2 texCoordDDX = ddx(texCoord);
+    float2 texCoordDDY = ddy(texCoord);
+
+    // solve the linear system
+    float3 perpendicularDX = cross(normal, positionDDX);
+    float3 perpendicularDY = cross(positionDDY, normal);
+    float3 tangent =   perpendicularDY * texCoordDDX.x + perpendicularDX * texCoordDDY.x;
+    float3 biTangent = perpendicularDY * texCoordDDX.y + perpendicularDX * texCoordDDY.y;
+
+    // construct a scale-invariant frame 
+    float reciprocal = rsqrt(max(dot(tangent, tangent), dot(biTangent, biTangent)));
+    return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
+}
+
+float getViewDepthFromProjectedDepth(float projectedDepth)
+{
+    projectedDepth = 2.0 * projectedDepth - 1.0;
+    projectedDepth = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - projectedDepth * (Camera::farClip - Camera::nearClip));
+    return projectedDepth;
+}
+
+float3 getPositionFromViewDepth(float2 texCoord, float viewDepth)
+{
+    float2 adjustedCoord = texCoord;
+    adjustedCoord.y = (1.0 - adjustedCoord.y);
+    adjustedCoord.xy = (adjustedCoord.xy * 2.0 - 1.0);
+    return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * viewDepth);
+}
+
+float3 getPositionFromProjectedDepth(float2 texCoord, float projectedDepth)
+{
+    return getPositionFromViewDepth(texCoord, getViewDepthFromProjectedDepth(projectedDepth));
+}
+
 // using stereograpgic projection
 // http://aras-p.info/texts/CompactNormalStorage.html
 half2 encodeNormal(float3 n)
@@ -57,38 +98,21 @@ float3 decodeNormal(half2 enc)
     return n;
 }
 
-float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
+uint packFloat4(float4 value)
 {
-    normal = normalize(normal);
-
-    // get edge vectors of the pixel triangle
-    float3 positionDDX = ddx(position);
-    float3 positionDDY = ddy(position);
-    float2 texCoordDDX = ddx(texCoord);
-    float2 texCoordDDY = ddy(texCoord);
-
-    // solve the linear system
-    float3 perpendicularDX = cross(normal, positionDDX);
-    float3 perpendicularDY = cross(positionDDY, normal);
-    float3 tangent =   perpendicularDY * texCoordDDX.x + perpendicularDX * texCoordDDY.x;
-    float3 biTangent = perpendicularDY * texCoordDDX.y + perpendicularDX * texCoordDDY.y;
-
-    // construct a scale-invariant frame 
-    float reciprocal = rsqrt(max(dot(tangent, tangent), dot(biTangent, biTangent)));
-    return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
+    value = min(max(value, 0.0), 1.0);
+    value = value * 255.0 + 0.5;
+    value = floor(value);
+    return (((uint)value.x) |
+           (((uint)value.y) << 8) |
+           (((uint)value.z) << 16) |
+           (((uint)value.w) << 24));
 }
 
-float getSceneDepth(float projectedDepth)
+float4 unpackFloat4(uint value)
 {
-    projectedDepth = 2.0 * projectedDepth - 1.0;
-    projectedDepth = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - projectedDepth * (Camera::farClip - Camera::nearClip));
-    return projectedDepth;
-}
-
-float3 getViewPosition(float2 texCoord, float projectedDepth)
-{
-    float2 adjustedCoord = texCoord;
-    adjustedCoord.y = (1.0 - adjustedCoord.y);
-    adjustedCoord.xy = (adjustedCoord.xy * 2.0 - 1.0);
-    return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * getSceneDepth(projectedDepth));
+    return float4((float)(value & 0x000000ff) / 255.0,
+                  (float)((value >> 8) & 0x000000ff) / 255.0,
+                  (float)((value >> 16) & 0x000000ff) / 255.0,
+                  (float)((value >> 24) & 0x000000ff) / 255.0);
 }
