@@ -8,7 +8,7 @@ namespace Defines
 };
 
 [numthreads(uint(1), uint(1), 1)]
-void mainPixelProgram(void)
+void mainComputeProgram(void)
 {
     float averageLuminance = UnorderedAccess::averageLuminanceBuffer[0];
     float currentLuminance = Resources::luminanceBuffer.Load(uint3(0, 0, 9));

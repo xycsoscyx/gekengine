@@ -50,10 +50,7 @@
                 <depthBuffer copy="depth" />
             </resources>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Transparent\Calculate</source>
-            </program>
+            <program entry="mainPixelProgram">Transparent\Calculate</program>
         </pass>
 
         <pass mode="deferred">
@@ -70,10 +67,7 @@
                 <finalBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Transparent\Combine</source>
-            </program>
+            <program entry="mainPixelProgram">Transparent\Combine</program>
         </pass>
     </block>
 </shader>

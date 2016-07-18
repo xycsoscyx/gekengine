@@ -20,7 +20,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
 
     float3 premultipliedReflectionAndEmission = albedo.rgb;
-    float3 transmissionCoefficient = 0.0;
+    float3 transmissionCoefficient = albedo.rgb;
     float coverage = albedo.a;
     float collimation = albedo.a;
     float etaRatio = 0.0;
@@ -35,7 +35,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     outputPixel.accumulationBuffer = float4(premultipliedReflectionAndEmission, coverage) * weight;
 
     float backgroundDepth = inputPixel.position.z - 4.0;
-    float sceneDepth = getSceneDepth(Resources::depthBuffer[inputPixel.position.xy * Shader::pixelSize]);
+    float sceneDepth = getSceneDepth(Resources::depthBuffer[inputPixel.position.xy]);
     outputPixel.modulationDiffusionBuffer.a = square(k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - sceneDepth)) / abs(inputPixel.viewPosition.z));
     if (outputPixel.modulationDiffusionBuffer.a > 0.0)
     {

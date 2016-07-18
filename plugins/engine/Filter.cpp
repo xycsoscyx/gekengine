@@ -533,17 +533,16 @@ namespace Gek
                     }
 
                     XmlNodePtr programNode(passNode->firstChildElement(L"program"));
-                    XmlNodePtr computeNode(programNode->firstChildElement(L"compute"));
-                    if (computeNode->isValid())
+                    if (pass.mode == Pass::Mode::Compute)
                     {
-                        pass.dispatchWidth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"width")->getText()), 1U);
-                        pass.dispatchHeight = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"height")->getText()), 1U);
-                        pass.dispatchDepth = std::max((uint32_t)evaluate(computeNode->firstChildElement(L"depth")->getText()), 1U);
+                        pass.dispatchWidth = std::max((uint32_t)evaluate(passNode->getAttribute(L"width")), 1U);
+                        pass.dispatchHeight = std::max((uint32_t)evaluate(passNode->getAttribute(L"height")), 1U);
+                        pass.dispatchDepth = std::max((uint32_t)evaluate(passNode->getAttribute(L"depth")), 1U);
                     }
 
-                    String programName(programNode->firstChildElement(L"source")->getText());
+                    String programName(programNode->getText());
+                    StringUTF8 programEntryPoint(programNode->getAttribute(L"entry"));
                     String programFileName(L"$root\\data\\programs\\%v.hlsl", programName);
-                    StringUTF8 programEntryPoint(programNode->firstChildElement(L"entry")->getText());
                     auto onInclude = [engineData = move(engineData), programFileName](const char *includeName, std::vector<uint8_t> &data) -> void
                     {
                         if (_stricmp(includeName, "GEKEngine") == 0)

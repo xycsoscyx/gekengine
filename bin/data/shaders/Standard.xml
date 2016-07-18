@@ -71,10 +71,7 @@
                 <normalBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\StoreDeferred</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\StoreDeferred</program>
         </pass>
 
         <pass mode="deferred">
@@ -82,10 +79,7 @@
                 <startIndexBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\ClearLinkedLists</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\ClearLinkedLists</program>
         </pass>
 
         <pass mode="forward" name="transparent">
@@ -106,10 +100,7 @@
             <targets>
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\StoreLinkedLists</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\StoreLinkedLists</program>
         </pass>
     </block>
 
@@ -118,7 +109,7 @@
             <lightAccumulationBuffer type="target">(0,0,0,0)</lightAccumulationBuffer>
         </clear>
 
-        <pass mode="compute">
+        <pass mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1">
             <resources>
                 <depth />
             </resources>
@@ -127,15 +118,7 @@
                 <tileIndexList />
             </unorderedaccess>
 
-            <program>
-                <compute>
-                    <width>dispatchWidth</width>
-                    <height>dispatchHeight</height>
-                    <depth>1</depth>
-                </compute>
-                <entry>mainComputeProgram</entry>
-                <source>Standard\TiledLightCulling</source>
-            </program>
+            <program entry="mainComputeProgram">Standard\TiledLightCulling</program>
         </pass>
 
         <pass mode="deferred">
@@ -155,10 +138,7 @@
                 <lightAccumulationBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\AccumulateLighting</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\AccumulateLighting</program>
         </pass>
     </block>
 
@@ -173,10 +153,7 @@
                 <ambientOcclusionBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\AmbientOcclusion</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\AmbientOcclusion</program>
         </pass>
 
         <pass mode="deferred">
@@ -193,10 +170,7 @@
                 <ambientOcclusionBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BilateralBlur</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\BilateralBlur</program>
         </pass>
 
         <pass mode="deferred">
@@ -213,10 +187,7 @@
                 <ambientOcclusionBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\BilateralBlur</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\BilateralBlur</program>
         </pass>
 
         <pass mode="deferred">
@@ -229,10 +200,7 @@
                 <finalBuffer />
             </targets>
 
-            <program>
-                <entry>mainPixelProgram</entry>
-                <source>Standard\Combine</source>
-            </program>
+            <program entry="mainPixelProgram">Standard\Combine</program>
         </pass>
     </block>
 </shader>
