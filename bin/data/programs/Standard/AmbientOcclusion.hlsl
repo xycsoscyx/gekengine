@@ -31,11 +31,11 @@ float getShadowFactor(InputPixel inputPixel)
     [unroll]
     for (int tap = 0; tap < Defines::shadowTapCount; tap++)
     {
-        float2 tapOffset = getTapLocation(tap, randomAngle);
-        tapOffset *= sampleRadius;
-        int2 tapCoord = tapOffset * Shader::targetSize;
-        float tapDepth = Resources::depth[inputPixel.position.xy + tapCoord];
-        float3 tapPosition = getPositionFromProjectedDepth(inputPixel.texCoord + tapOffset, tapDepth);
+        float2 tapLocation = (getTapLocation(tap, randomAngle) * sampleRadius);
+        float2 tapCoord = (inputPixel.texCoord + tapLocation);
+
+        float tapDepth = Resources::depth.SampleLevel(Global::pointSampler, tapCoord, 0);
+        float3 tapPosition = getPositionFromProjectedDepth(tapCoord, tapDepth);
 
         float3 tapDelta = (tapPosition - surfacePosition);
         float deltaMagnitude = dot(tapDelta, tapDelta);

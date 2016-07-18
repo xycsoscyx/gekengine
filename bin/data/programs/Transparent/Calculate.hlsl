@@ -18,28 +18,25 @@ static const float k_1 = 0.1;
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
-
     float3 premultipliedReflectionAndEmission = albedo.rgb;
     float coverage = albedo.a;
     float3 transmissionCoefficient = 1.0 - albedo.a;
-    float collimation = albedo.a * 0.25 + 0.75;
+    float collimation = saturate(albedo.a * 0.25 + 0.8);
     float etaRatio = 0.0;
-    float3 csPosition = inputPixel.viewPosition;
-    float3 csNormal = inputPixel.viewNormal;
 
     OutputPixel outputPixel;
 
     outputPixel.modulationDiffusionBuffer.rgb = coverage * (1.0 - transmissionCoefficient);
 
     coverage *= 1.0 - (transmissionCoefficient.r + transmissionCoefficient.g + transmissionCoefficient.b) * (1.0 / 3.0);
-    float tmp = 1.0 - inputPixel.position.z * 0.99;
-    float w = clamp(coverage * tmp * tmp * tmp * 1e3, 1e-2, 3e2 * 0.1);
-    outputPixel.accumulationBuffer = float4(premultipliedReflectionAndEmission, coverage) * w;
+    float adjustedDepth = 1.0 - inputPixel.position.z * 0.99;
+    float weight = clamp(coverage * adjustedDepth * adjustedDepth * adjustedDepth * 1e3, 1e-2, 3e2 * 0.1);
+    outputPixel.accumulationBuffer = float4(premultipliedReflectionAndEmission, coverage) * weight;
 
-    float backgroundZ = csPosition.z - 4.0;
-    float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : computeRefractionOffset(backgroundZ, csNormal, csPosition, etaRatio);
-    float trueBackgroundCSZ = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + csPosition.z - trueBackgroundCSZ)) / abs(csPosition.z);
+    float transparentDepth = inputPixel.viewPosition.z - 4.0;
+    float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : computeRefractionOffset(transparentDepth, inputPixel.viewNormal, inputPixel.viewPosition, etaRatio);
+    float viewDepth = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
+    outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - viewDepth)) / abs(inputPixel.viewPosition.z);
     outputPixel.modulationDiffusionBuffer.a *= outputPixel.modulationDiffusionBuffer.a;
 
     [branch]
