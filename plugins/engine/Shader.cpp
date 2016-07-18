@@ -462,7 +462,12 @@ namespace Gek
                         {
                             pass.renderToScreen = false;
                             pass.renderTargetList = loadChildMap(passNode, L"targets");
-                            if (!pass.renderTargetList.empty())
+                            if (pass.renderTargetList.empty())
+                            {
+                                pass.width = 0;
+                                pass.height = 0;
+                            }
+                            else
                             {
                                 auto resourceSearch = resourceSizeMap.find(pass.renderTargetList.begin()->first);
                                 if (resourceSearch != resourceSizeMap.end())
@@ -470,11 +475,6 @@ namespace Gek
                                     pass.width = resourceSearch->second.first;
                                     pass.height = resourceSearch->second.second;
                                 }
-                            }
-                            else
-                            {
-                                pass.width = 0;
-                                pass.height = 0;
                             }
                         }
                         else

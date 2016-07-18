@@ -1,9 +1,9 @@
 struct PixelInfo
 {
     uint albedo;
-    uint material;
-    uint normal;
-    uint next;
+    uint materialNormal;
+    float depth;
+    int next;
 };
 
 #include "GEKEngine"
@@ -24,15 +24,16 @@ void mainPixelProgram(InputPixel inputPixel)
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1.0 : -1.0);
 
-    uint nextPixelIndex;
-    uint pixelIndex = UnorderedAccess::pixelListBuffer.IncrementCounter();
+    int nextPixelIndex;
+    int pixelIndex = UnorderedAccess::pixelListBuffer.IncrementCounter();
     InterlockedExchange(UnorderedAccess::startIndexBuffer[inputPixel.position.xy], pixelIndex, nextPixelIndex);
 
     PixelInfo pixelInfo;
     pixelInfo.albedo = packFloat4(albedo);
-    pixelInfo.material = packFloat2(float2(Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
-                                           Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord)));
-    pixelInfo.normal = packFloat2(encodeNormal(normal));
+    pixelInfo.materialNormal = packFloat4(float4(Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
+                                                 Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord),
+                                                 encodeNormal(normal)));
+    pixelInfo.depth = inputPixel.viewPosition.z;
     pixelInfo.next = nextPixelIndex;
 
     UnorderedAccess::pixelListBuffer[pixelIndex] = pixelInfo;

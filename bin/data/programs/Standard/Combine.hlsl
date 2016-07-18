@@ -5,7 +5,7 @@
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float ambientOcclusion = Resources::ambientOcclusionBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
-    float3 baseColor = Resources::lightAccumulationBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
+    float ambientOcclusion = Resources::ambientOcclusionBuffer[inputPixel.position.xy];
+    float3 baseColor = Resources::lightAccumulationBuffer[inputPixel.position.xy];
     return (baseColor * ambientOcclusion);
 }

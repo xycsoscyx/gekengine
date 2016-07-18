@@ -3,61 +3,74 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-static const float PixelsPerDiffusion = 200.0;
-static const float PixelsPerDiffusionSquared = square(PixelsPerDiffusion);
-static const int MaximumDiffusionPixels = 8;
-static const int DiffusionStridePixels = 1;
+static const int maxDiffusionPixels = 16;
+static const int diffusionStridePixels = 2;
+static const float pixelsPerDiffusion2 = square(200.0);
+static const int stride = diffusionStridePixels;
 
 // http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float4 backgroundModulationAndDiffusion = Resources::modulationDiffusionBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
+    float4 backgroundModulationAndDiffusion = Resources::modulationDiffusionBuffer[inputPixel.position.xy];
     float3 backgroundModulation = backgroundModulationAndDiffusion.rgb;
+
+    [branch]
     if (minComponent(backgroundModulation) == 1.0)
     {
-        return Resources::sourceBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
+        return Resources::sourceBuffer[inputPixel.position.xy];
     }
 
-    float diffusionSquared = backgroundModulationAndDiffusion.a * PixelsPerDiffusionSquared;
-    float2 refraction = 3.0 * Resources::refractionBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0) * (1.0 / 8.0);
-    float4 accumulation = Resources::accumulationBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
-    if (isinf(accumulation.a))
+    float diffusion2 = backgroundModulationAndDiffusion.a * pixelsPerDiffusion2;
+    float2 delta = 3.0 * Resources::refractionBuffer[inputPixel.position.xy] * (1.0 / 8.0);
+    float4 accum = Resources::accumulationBuffer[inputPixel.position.xy];
+
+    [branch]
+    if (isinf(accum.a))
     {
-        accumulation.a = maxComponent(accumulation.rgb);
+        accum.a = maxComponent(accum.rgb);
     }
 
-    if (isinf(maxComponent(accumulation.rgb)))
+    [branch]
+    if (isinf(maxComponent(accum.rgb)))
     {
-        accumulation = (isinf(accumulation.a) ? 1.0 : accumulation.a);
+        accum = (isinf(accum.a) ? 1.0 : accum.a);
     }
 
-    accumulation.rgb *= 0.5 + backgroundModulation / max(0.01, 2.0 * maxComponent(backgroundModulation));
+    accum.rgb *= 0.5 + backgroundModulation / max(0.01, 2.0 * maxComponent(backgroundModulation));
 
     float3 background = 0.0;
-    if (diffusionSquared > 0.0)
-    {
-        static const int stride = DiffusionStridePixels;
-        int radius = int(min(sqrt(diffusionSquared), MaximumDiffusionPixels) / float(stride)) * stride;
 
-        float weightSum = 0.0;
-        for (float2 sampleOffset = -radius; sampleOffset.x <= radius; sampleOffset.x += stride)
+    [branch]
+    if (diffusion2 > 0)
+    {
+        int R = int(min(sqrt(diffusion2), maxDiffusionPixels) / float(stride)) * stride;
+
+        float weightSum = 0;
+
+        [loop]
+        for (int2 q = -R; q.x <= R; q.x += stride)
         {
-            for (sampleOffset.y = -radius; sampleOffset.y <= radius; sampleOffset.y += stride)
+            [loop]
+            for (q.y = -R; q.y <= R; q.y += stride)
             {
-                float sampleRadius = dot(sampleOffset, sampleOffset);
-                if (sampleRadius <= diffusionSquared)
+                float radius2 = dot(q, q);
+
+                [branch]
+                if (radius2 <= diffusion2)
                 {
-                    float2 sampleCoord = inputPixel.texCoord + refraction + sampleOffset * Shader::pixelSize;
-                    float backgroundBlurRadiusSquared = Resources::modulationDiffusionBuffer.SampleLevel(Global::pointSampler, sampleCoord, 0).a * PixelsPerDiffusionSquared;
-                    if (sampleRadius <= backgroundBlurRadiusSquared)
+                    int2 tap = inputPixel.position.xy + q;
+                    float backgroundBlurRadius2 = Resources::modulationDiffusionBuffer[tap].a * pixelsPerDiffusion2;
+
+                    [branch]
+                    if (radius2 <= backgroundBlurRadius2)
                     {
-                        // Disc weight
-                        float weight = 1.0 / backgroundBlurRadiusSquared + Math::Epsilon;
+                        // Disk weight
+                        float weight = 1.0 / backgroundBlurRadius2 + 1e-5;
 
                         // Gaussian weight (slightly higher quality but much slower
-                        // float weight = exp(-sampleRadius / (8 * backgroundBlurRadiusSquared)) / sqrt(4 * Math::Pi * backgroundBlurRadiusSquared);
+                        // float weight = exp(-radius2 / (8 * backgroundBlurRadius2)) / sqrt(4 * pi * backgroundBlurRadius2);
 
-                        background += weight * Resources::sourceBuffer.SampleLevel(Global::pointSampler, sampleCoord, 0);
+                        background += weight * Resources::sourceBuffer[tap];
                         weightSum += weight;
                     }
                 }
@@ -68,8 +81,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     }
     else
     {
-        background = Resources::sourceBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord + refraction, 0);
+        background = Resources::sourceBuffer[inputPixel.position.xy];
     }
 
-    return background * backgroundModulation + (1.0 - backgroundModulation) * accumulation.rgb / max(accumulation.a, Math::Epsilon);
+    return background * backgroundModulation + (1.0 - backgroundModulation) * accum.rgb / max(accum.a, 0.00001);
 }

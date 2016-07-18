@@ -107,14 +107,14 @@ namespace Light
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float3 materialAlbedo = Resources::albedoBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
-    float2 materialInfo = Resources::materialBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
+    float3 materialAlbedo = Resources::albedoBuffer[inputPixel.position.xy];
+    float2 materialInfo = Resources::materialBuffer[inputPixel.position.xy];
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
     float materialMetalness = materialInfo.y;
 
-    float sceneDepth = Resources::depth.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
+    float sceneDepth = Resources::depth[inputPixel.position.xy];
     float3 surfacePosition = getPositionFromProjectedDepth(inputPixel.texCoord, sceneDepth);
-    float3 surfaceNormal = decodeNormal(Resources::normalBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0));
+    float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.position.xy]);
 
     float3 viewDirection = -normalize(surfacePosition);
     float3 reflectNormal = reflect(-viewDirection, surfaceNormal);
