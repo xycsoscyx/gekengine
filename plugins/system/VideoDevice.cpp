@@ -2521,34 +2521,8 @@ namespace Gek
                 HRESULT resultValue = load(fileData.data(), fileData.size(), &textureMetaData, scratchImage);
                 GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load image, %v (error %v)", fileName, resultValue);
 
-                if (flags && Video::TextureLoadFlags::sRGB)
-                {
-                    switch (scratchImage.GetMetadata().format)
-                    {
-                    case DXGI_FORMAT_R8G8B8A8_UNORM:
-                        scratchImage.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC1_UNORM:
-                        scratchImage.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC2_UNORM:
-                        scratchImage.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC3_UNORM:
-                        scratchImage.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC7_UNORM:
-                        scratchImage.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
-                        break;
-                    };
-                }
-
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags && Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                 GEK_CHECK_CONDITION(!d3dShaderResourceView, Video::Exception, "Unable to create resource view (error %v)", resultValue);
 
                 CComPtr<ID3D11Resource> d3dResource;
@@ -2612,34 +2586,8 @@ namespace Gek
                 HRESULT resultValue = cubeMap.InitializeCubeFromImages(imageList, 6, 0);
                 GEK_CHECK_CONDITION(FAILED(resultValue), Video::Exception, "Unable to create cubemap from images (error %v)", resultValue);
 
-                if (flags && Video::TextureLoadFlags::sRGB)
-                {
-                    switch (cubeMap.GetMetadata().format)
-                    {
-                    case DXGI_FORMAT_R8G8B8A8_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_R8G8B8A8_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC1_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC1_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC2_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC2_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC3_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC3_UNORM_SRGB);
-                        break;
-
-                    case DXGI_FORMAT_BC7_UNORM:
-                        cubeMap.OverrideFormat(DXGI_FORMAT_BC7_UNORM_SRGB);
-                        break;
-                    };
-                }
-
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceView(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags && Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                 GEK_CHECK_CONDITION(!d3dShaderResourceView, Video::Exception, "Unable to create resource view (error %v)", resultValue);
 
                 CComPtr<ID3D11Resource> d3dResource;
