@@ -2,7 +2,7 @@
 <material>
     <shader name="standard">
         <solid>
-            <albedo file="$material.Albedo" />
+            <albedo flags="sRGB" file="$material.Albedo" />
             <normal file="$directory\curtain.Normal" />
             <roughness file="$directory\curtain.Roughness" />
             <metalness file="$directory\curtain.Metalness" />

@@ -2,7 +2,7 @@
 <material>
     <shader name="standard">
         <solid>
-            <albedo file="$material.Albedo" />
+            <albedo flags="sRGB" file="$material.Albedo" />
             <normal pattern="system" parameters="flat" />
             <roughness file="$material.Roughness" />
             <metalness pattern="color" parameters="0" />

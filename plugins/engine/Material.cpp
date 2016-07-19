@@ -1,11 +1,13 @@
-﻿#include "GEK\Engine\Material.h"
-#include "GEK\Utility\String.h"
+﻿#include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
-#include "GEK\Engine\Shader.h"
-#include "GEK\Engine\Resources.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoDevice.h"
+#include "GEK\Engine\Shader.h"
+#include "GEK\Engine\Resources.h"
+#include "GEK\Engine\Renderer.h"
+#include "GEK\Engine\Material.h"
+#include "ShaderFilter.h"
 #include <set>
 #include <ppl.h>
 
@@ -54,7 +56,8 @@ namespace Gek
                                 file.replace(L"$directory", filePath);
                                 file.replace(L"$filename", fileSpecifier);
                                 file.replace(L"$material", materialName);
-                                resource = this->resources->loadTexture(file, 0);
+                                uint32_t flags = getTextureLoadFlags(resourceNode->getAttribute(L"flags"));
+                                resource = this->resources->loadTexture(file, flags);
                             }
                             else if (resourceNode->hasAttribute(L"pattern"))
                             {

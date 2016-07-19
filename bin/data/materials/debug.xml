@@ -2,7 +2,7 @@
 <material>
     <shader name="standard">
         <solid>
-            <albedo file="debug_a" />
+            <albedo flags="sRGB" file="debug_a" />
             <normal file="debug_n" />
             <roughness file="debug_r" />
             <metalness file="debug_m" />

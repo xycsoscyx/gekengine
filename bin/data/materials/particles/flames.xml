@@ -2,7 +2,7 @@
 <material>
     <shader name="transparent">
         <transparent>
-            <albedo file="$material.Albedo" />
+            <albedo flags="sRGB" file="$material.Albedo" />
         </transparent>
     </shader>
 </material>
