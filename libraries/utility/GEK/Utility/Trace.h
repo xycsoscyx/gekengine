@@ -29,6 +29,9 @@ namespace Gek
         void initialize(void);
         void shutdown(void);
 
+        uint32_t addObserver(std::function<void(const char *, const char *, uint64_t, const char *)> onTrace);
+        void removeObserver(uint32_t handle);
+
         template <class TYPE>
         struct Parameter
         {

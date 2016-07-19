@@ -29,7 +29,7 @@ namespace Gek
         public:
             struct PassData
             {
-                std::unordered_map<String, ClearData> clearList;
+                std::unordered_map<String, ClearData> clearResourceMap;
 
                 Pass::Mode mode;
                 bool renderToScreen;
@@ -39,7 +39,7 @@ namespace Gek
                 std::vector<String> materialList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
-                std::unordered_map<String, String> renderTargetList;
+                std::unordered_map<String, String> renderTargetsMap;
                 std::unordered_map<String, std::set<Actions>> actionMap;
                 std::unordered_map<String, String> copyResourceMap;
                 ProgramHandle program;
@@ -100,14 +100,14 @@ namespace Gek
                 XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\filters\\%v.xml", filterName)));
                 XmlNodePtr filterNode(document->getRoot(L"filter"));
 
-                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
-                std::unordered_map<String, String> resourceStructureList;
+                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingMap;
+                std::unordered_map<String, String> resourceStructuresMap;
 
-                std::unordered_map<String, String> globalDefinesList;
-                auto replaceDefines = [&globalDefinesList](String &value) -> bool
+                std::unordered_map<String, String> globalDefinesMap;
+                auto replaceDefines = [&globalDefinesMap](String &value) -> bool
                 {
                     bool foundDefine = false;
-                    for (auto &define : globalDefinesList)
+                    for (auto &define : globalDefinesMap)
                     {
                         foundDefine = (foundDefine | value.replace(define.first, define.second));
                     }
@@ -147,7 +147,7 @@ namespace Gek
                 XmlNodePtr definesNode(filterNode->firstChildElement(L"defines"));
                 for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
                 {
-                    globalDefinesList[defineNode->getType()] = evaluate(defineNode->getText(), defineNode->getAttribute(L"integer"));
+                    globalDefinesMap[defineNode->getType()] = evaluate(defineNode->getText(), defineNode->getAttribute(L"integer"));
                 }
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
@@ -190,7 +190,7 @@ namespace Gek
                     }
 
                     BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
-                    resourceMappingList[textureName] = std::make_pair(MapType::Texture2D, bindType);
+                    resourceMappingMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
                 XmlNodePtr buffersNode(filterNode->firstChildElement(L"buffers"));
@@ -206,7 +206,7 @@ namespace Gek
                     {
                         uint32_t stride = evaluate(bufferNode->getAttribute(L"stride"), true);
                         resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), stride, size, Video::BufferType::Structured, flags, readWrite);
-                        resourceStructureList[bufferName] = bufferNode->getText();
+                        resourceStructuresMap[bufferName] = bufferNode->getText();
                     }
                     else
                     {
@@ -227,7 +227,7 @@ namespace Gek
                             mapType = MapType::ByteAddressBuffer;
                         }
 
-                        resourceMappingList[bufferName] = std::make_pair(mapType, bindType);
+                        resourceMappingMap[bufferName] = std::make_pair(mapType, bindType);
                         resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), format, size, Video::BufferType::Raw, flags, readWrite);
                     }
                 }
@@ -263,15 +263,15 @@ namespace Gek
                         switch (getClearType(clearTargetNode->getAttribute(L"type")))
                         {
                         case ClearType::Target:
-                            pass.clearList.insert(std::make_pair(clearName, ClearData((Math::Color)clearTargetNode->getText())));
+                            pass.clearResourceMap.insert(std::make_pair(clearName, ClearData((Math::Color)clearTargetNode->getText())));
                             break;
 
                         case ClearType::Float:
-                            pass.clearList.insert(std::make_pair(clearName, ClearData((Math::Float4)clearTargetNode->getText())));
+                            pass.clearResourceMap.insert(std::make_pair(clearName, ClearData((Math::Float4)clearTargetNode->getText())));
                             break;
 
                         case ClearType::UInt:
-                            pass.clearList.insert(std::make_pair(clearName, ClearData((uint32_t)clearTargetNode->getText())));
+                            pass.clearResourceMap.insert(std::make_pair(clearName, ClearData((uint32_t)clearTargetNode->getText())));
                             break;
                         };
                     }
@@ -279,15 +279,15 @@ namespace Gek
                     if (passNode->hasChildElement(L"targets"))
                     {
                         pass.renderToScreen = false;
-                        pass.renderTargetList = loadChildMap(passNode, L"targets");
-                        if (pass.renderTargetList.empty())
+                        pass.renderTargetsMap = loadChildMap(passNode, L"targets");
+                        if (pass.renderTargetsMap.empty())
                         {
                             pass.width = 0;
                             pass.height = 0;
                         }
                         else
                         {
-                            auto resourceSearch = resourceSizeMap.find(pass.renderTargetList.begin()->first);
+                            auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
                             if (resourceSearch != resourceSizeMap.end())
                             {
                                 pass.width = resourceSearch->second.first;
@@ -302,10 +302,10 @@ namespace Gek
                         pass.height = device->getBackBuffer()->getHeight();
                     }
 
-                    pass.blendState = loadBlendState(resources, passNode->firstChildElement(L"blendstates"), pass.renderTargetList);
+                    pass.blendState = loadBlendState(resources, passNode->firstChildElement(L"blendstates"), pass.renderTargetsMap);
 
-                    std::unordered_map<String, String> resourceList;
-                    std::unordered_map<String, String> unorderedAccessList = loadChildMap(passNode, L"unorderedaccess");
+                    std::unordered_map<String, String> resourceAliasMap;
+                    std::unordered_map<String, String> unorderedAccessAliasMap = loadChildMap(passNode, L"unorderedaccess");
                     if (passNode->hasChildElement(L"resources"))
                     {
                         XmlNodePtr resourcesNode(passNode->firstChildElement(L"resources"));
@@ -313,7 +313,7 @@ namespace Gek
                         {
                             String resourceName(resourceNode->getType());
                             String alias(resourceNode->getText());
-                            resourceList.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
+                            resourceAliasMap.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
 
                             if (resourceNode->hasAttribute(L"actions"))
                             {
@@ -371,10 +371,10 @@ namespace Gek
 
                     uint32_t currentStage = 0;
                     StringUTF8 outputData;
-                    for (auto &resourcePair : pass.renderTargetList)
+                    for (auto &resourcePair : pass.renderTargetsMap)
                     {
-                        auto resourceSearch = resourceMappingList.find(resourcePair.first);
-                        GEK_CHECK_CONDITION(resourceSearch == resourceMappingList.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
+                        auto resourceSearch = resourceMappingMap.find(resourcePair.first);
+                        GEK_CHECK_CONDITION(resourceSearch == resourceMappingMap.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
 
                         outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
                     }
@@ -391,7 +391,7 @@ namespace Gek
 
                     StringUTF8 resourceData;
                     uint32_t nextResourceStage = 0;
-                    for (auto &resourcePair : resourceList)
+                    for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
                         if (resourceSearch != resourceMap.end())
@@ -400,8 +400,8 @@ namespace Gek
                         }
 
                         uint32_t currentStage = nextResourceStage++;
-                        auto resourceMapSearch = resourceMappingList.find(resourcePair.first);
-                        if (resourceMapSearch != resourceMappingList.end())
+                        auto resourceMapSearch = resourceMappingMap.find(resourcePair.first);
+                        if (resourceMapSearch != resourceMappingMap.end())
                         {
                             auto &resource = (*resourceMapSearch).second;
                             if (resource.first == MapType::ByteAddressBuffer)
@@ -416,8 +416,8 @@ namespace Gek
                             continue;
                         }
 
-                        auto structureSearch = resourceStructureList.find(resourcePair.first);
-                        if (structureSearch != resourceStructureList.end())
+                        auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                        if (structureSearch != resourceStructuresMap.end())
                         {
                             auto &structure = (*structureSearch).second;
                             resourceData.format("    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
@@ -439,10 +439,10 @@ namespace Gek
                     uint32_t nextUnorderedStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
                     }
 
-                    for (auto &resourcePair : unorderedAccessList)
+                    for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
                         if (resourceSearch != resourceMap.end())
@@ -451,8 +451,8 @@ namespace Gek
                         }
 
                         uint32_t currentStage = nextUnorderedStage++;
-                        auto resourceMapSearch = resourceMappingList.find(resourcePair.first);
-                        if (resourceMapSearch != resourceMappingList.end())
+                        auto resourceMapSearch = resourceMappingMap.find(resourcePair.first);
+                        if (resourceMapSearch != resourceMappingMap.end())
                         {
                             auto &resource = (*resourceMapSearch).second;
                             if (resource.first == MapType::ByteAddressBuffer)
@@ -467,8 +467,8 @@ namespace Gek
                             continue;
                         }
 
-                        auto structureSearch = resourceStructureList.find(resourcePair.first);
-                        if (structureSearch != resourceStructureList.end())
+                        auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                        if (structureSearch != resourceStructuresMap.end())
                         {
                             auto &structure = (*structureSearch).second;
                             unorderedAccessData.format("    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
@@ -517,7 +517,7 @@ namespace Gek
                         addDefine(defineNode->getType(), evaluate(defineNode->getText()));
                     }
 
-                    for (auto &globalDefine : globalDefinesList)
+                    for (auto &globalDefine : globalDefinesMap)
                     {
                         addDefine(globalDefine.first, globalDefine.second);
                     }
@@ -599,7 +599,7 @@ namespace Gek
             std::vector<ResourceHandle> renderTargetCache;
             Pass::Mode preparePass(Video::Device::Context *deviceContext, PassData &pass)
             {
-                for (auto &clearTarget : pass.clearList)
+                for (auto &clearTarget : pass.clearResourceMap)
                 {
                     auto resourceSearch = resourceMap.find(clearTarget.first);
                     if (resourceSearch != resourceMap.end())
@@ -664,7 +664,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -698,12 +698,12 @@ namespace Gek
                             resources->setBackBuffer(deviceContext, nullptr);
                         }
                     }
-                    else if (!pass.renderTargetList.empty())
+                    else if (!pass.renderTargetsMap.empty())
                     {
-                        renderTargetCache.resize(std::max(pass.renderTargetList.size(), renderTargetCache.size()));
+                        renderTargetCache.resize(std::max(pass.renderTargetsMap.size(), renderTargetCache.size()));
 
                         uint32_t currentStage = 0;
-                        for (auto &resourcePair : pass.renderTargetList)
+                        for (auto &resourcePair : pass.renderTargetsMap)
                         {
                             ResourceHandle renderTargetHandle;
                             auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -715,7 +715,7 @@ namespace Gek
                             renderTargetCache[currentStage++] = renderTargetHandle;
                         }
 
-                        resources->setRenderTargets(deviceContext, renderTargetCache.data(), pass.renderTargetList.size(), nullptr);
+                        resources->setRenderTargets(deviceContext, renderTargetCache.data(), pass.renderTargetsMap.size(), nullptr);
                     }
 
                     break;
@@ -748,7 +748,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -763,9 +763,9 @@ namespace Gek
                             resources->setRenderTargets(deviceContext, nullptr, 1, nullptr);
                         }
                     }
-                    else if (!pass.renderTargetList.empty())
+                    else if (!pass.renderTargetsMap.empty())
                     {
-                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
+                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetsMap.size(), nullptr);
                     }
                 }
 

@@ -513,7 +513,7 @@ namespace Gek
             }
         }
 
-        __forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, XmlNodePtr &blendNode, std::unordered_map<String, String> &renderTargetList)
+        __forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, XmlNodePtr &blendNode, std::unordered_map<String, String> &renderTargetsMap)
         {
             bool alphaToCoverage = blendNode->firstChildElement(L"alphatocoverage")->getText();
             bool unifiedStates = blendNode->getAttribute(L"unified", L"true");
@@ -529,7 +529,7 @@ namespace Gek
             {
                 Video::IndependentBlendStateInformation blendState;
                 Video::BlendStateInformation *targetStatesList = blendState.targetStates;
-                for (auto &target : renderTargetList)
+                for (auto &target : renderTargetsMap)
                 {
                     XmlNodePtr targetNode(blendNode->firstChildElement(target.first));
                     GEK_CHECK_CONDITION(!targetNode->isValid(), Exception, "Shader missing blend target parameters: %v", target.first);

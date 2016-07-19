@@ -43,7 +43,7 @@ namespace Gek
                 std::vector<String> materialList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
-                std::unordered_map<String, String> renderTargetList;
+                std::unordered_map<String, String> renderTargetsMap;
                 std::unordered_map<String, std::set<Actions>> actionMap;
                 std::unordered_map<String, String> copyResourceMap;
                 ProgramHandle program;
@@ -71,7 +71,7 @@ namespace Gek
             struct BlockData
             {
                 bool lighting;
-                std::unordered_map<String, ClearData> clearList;
+                std::unordered_map<String, ClearData> clearResourceMap;
                 std::list<PassData> passList;
 
                 BlockData(void)
@@ -190,14 +190,14 @@ namespace Gek
 
                 priority = shaderNode->getAttribute(L"priority");
 
-                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingList;
-                std::unordered_map<String, String> resourceStructureList;
+                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
+                std::unordered_map<String, String> resourceStructuresMap;
 
-                std::unordered_map<String, String> globalDefinesList;
-                auto replaceDefines = [&globalDefinesList](String &value) -> bool
+                std::unordered_map<String, String> globalDefinesMap;
+                auto replaceDefines = [&globalDefinesMap](String &value) -> bool
                 {
                     bool foundDefine = false;
-                    for (auto &define : globalDefinesList)
+                    for (auto &define : globalDefinesMap)
                     {
                         foundDefine = (foundDefine | value.replace(define.first, define.second));
                     }
@@ -247,7 +247,7 @@ namespace Gek
                         lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
                         lightDataBuffer->setName(String(L"%v:lightDataBuffer", shaderName));
 
-                        globalDefinesList[L"lightsPerPass"] = lightsPerPass;
+                        globalDefinesMap[L"lightsPerPass"] = lightsPerPass;
 
                         lightingData.format(
                             "namespace Lighting\r\n" \
@@ -288,7 +288,7 @@ namespace Gek
                 XmlNodePtr definesNode(shaderNode->firstChildElement(L"defines"));
                 for (XmlNodePtr defineNode(definesNode->firstChildElement()); defineNode->isValid(); defineNode = defineNode->nextSiblingElement())
                 {
-                    globalDefinesList[defineNode->getType()] = evaluate(defineNode->getText(), defineNode->getAttribute(L"integer"));
+                    globalDefinesMap[defineNode->getType()] = evaluate(defineNode->getText(), defineNode->getAttribute(L"integer"));
                 }
 
                 XmlNodePtr depthNode(shaderNode->firstChildElement(L"depth"));
@@ -309,7 +309,7 @@ namespace Gek
                         depthBuffer = resources->createTexture(String(L"depth:%v:resource", shaderName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource, false);
                     }
 
-                    resourceMappingList[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
+                    resourceMappingsMap[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
                     resourceMap[L"depth"] = depthBuffer;
                 }
 
@@ -353,7 +353,7 @@ namespace Gek
                     }
 
                     BindType bindType = getBindType(textureNode->getAttribute(L"bind"));
-                    resourceMappingList[textureName] = std::make_pair(MapType::Texture2D, bindType);
+                    resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
                 XmlNodePtr buffersNode(shaderNode->firstChildElement(L"buffers"));
@@ -369,7 +369,7 @@ namespace Gek
                     {
                         uint32_t stride = evaluate(bufferNode->getAttribute(L"stride"), true);
                         resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags, readWrite);
-                        resourceStructureList[bufferName] = bufferNode->getText();
+                        resourceStructuresMap[bufferName] = bufferNode->getText();
                     }
                     else
                     {
@@ -390,7 +390,7 @@ namespace Gek
                             mapType = MapType::ByteAddressBuffer;
                         }
 
-                        resourceMappingList[bufferName] = std::make_pair(mapType, bindType);
+                        resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
                         resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags, readWrite);
                     }
                 }
@@ -411,15 +411,15 @@ namespace Gek
                         switch (getClearType(clearTargetNode->getAttribute(L"type")))
                         {
                         case ClearType::Target:
-                            block.clearList.insert(std::make_pair(clearName, ClearData((Math::Color)clearTargetNode->getText())));
+                            block.clearResourceMap.insert(std::make_pair(clearName, ClearData((Math::Color)clearTargetNode->getText())));
                             break;
 
                         case ClearType::Float:
-                            block.clearList.insert(std::make_pair(clearName, ClearData((Math::Float4)clearTargetNode->getText())));
+                            block.clearResourceMap.insert(std::make_pair(clearName, ClearData((Math::Float4)clearTargetNode->getText())));
                             break;
 
                         case ClearType::UInt:
-                            block.clearList.insert(std::make_pair(clearName, ClearData((uint32_t)clearTargetNode->getText())));
+                            block.clearResourceMap.insert(std::make_pair(clearName, ClearData((uint32_t)clearTargetNode->getText())));
                             break;
                         };
                     }
@@ -461,15 +461,15 @@ namespace Gek
                         else if (passNode->hasChildElement(L"targets"))
                         {
                             pass.renderToScreen = false;
-                            pass.renderTargetList = loadChildMap(passNode, L"targets");
-                            if (pass.renderTargetList.empty())
+                            pass.renderTargetsMap = loadChildMap(passNode, L"targets");
+                            if (pass.renderTargetsMap.empty())
                             {
                                 pass.width = 0;
                                 pass.height = 0;
                             }
                             else
                             {
-                                auto resourceSearch = resourceSizeMap.find(pass.renderTargetList.begin()->first);
+                                auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
                                 if (resourceSearch != resourceSizeMap.end())
                                 {
                                     pass.width = resourceSearch->second.first;
@@ -486,10 +486,10 @@ namespace Gek
 
                         pass.depthState = loadDepthState(resources, passNode->firstChildElement(L"depthstates"), pass.enableDepth, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
                         pass.renderState = loadRenderState(resources, passNode->firstChildElement(L"renderstates"));
-                        pass.blendState = loadBlendState(resources, passNode->firstChildElement(L"blendstates"), pass.renderTargetList);
+                        pass.blendState = loadBlendState(resources, passNode->firstChildElement(L"blendstates"), pass.renderTargetsMap);
 
-                        std::unordered_map<String, String> resourceList;
-                        std::unordered_map<String, String> unorderedAccessList = loadChildMap(passNode, L"unorderedaccess");
+                        std::unordered_map<String, String> resourceAliasMap;
+                        std::unordered_map<String, String> unorderedAccessAliasMap = loadChildMap(passNode, L"unorderedaccess");
                         if (passNode->hasChildElement(L"resources"))
                         {
                             XmlNodePtr resourcesNode(passNode->firstChildElement(L"resources"));
@@ -497,7 +497,7 @@ namespace Gek
                             {
                                 String resourceName(resourceNode->getType());
                                 String alias(resourceNode->getText());
-                                resourceList.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
+                                resourceAliasMap.insert(std::make_pair(resourceName, alias.empty() ? resourceName : alias));
 
                                 if (resourceNode->hasAttribute(L"actions"))
                                 {
@@ -560,10 +560,10 @@ namespace Gek
 
                         uint32_t currentStage = 0;
                         StringUTF8 outputData;
-                        for (auto &resourcePair : pass.renderTargetList)
+                        for (auto &resourcePair : pass.renderTargetsMap)
                         {
-                            auto resourceSearch = resourceMappingList.find(resourcePair.first);
-                            GEK_CHECK_CONDITION(resourceSearch == resourceMappingList.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
+                            auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
+                            GEK_CHECK_CONDITION(resourceSearch == resourceMappingsMap.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
 
                             outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
                         }
@@ -586,13 +586,13 @@ namespace Gek
                             if (materialNode->hasChildElement(passName))
                             {
                                 namedPassMap[passName] = &pass;
-                                std::unordered_map<String, Map> materialList;
+                                std::unordered_map<String, Map> materialMap;
                                 for (XmlNodePtr resourceNode(materialNode->firstChildElement(passName)->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
                                 {
                                     String resourceName(resourceNode->getType());
                                     if (resourceNode->hasAttribute(L"name"))
                                     {
-                                        materialList.insert(std::make_pair(resourceName, Map(resourceNode->getAttribute(L"name"))));
+                                        materialMap.insert(std::make_pair(resourceName, Map(resourceNode->getAttribute(L"name"))));
                                     }
                                     else
                                     {
@@ -601,11 +601,11 @@ namespace Gek
                                         uint32_t flags = getTextureLoadFlags(resourceNode->getAttribute(L"flags"));
                                         if (resourceNode->hasAttribute(L"file"))
                                         {
-                                            materialList.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode->getAttribute(L"file"))));
+                                            materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode->getAttribute(L"file"))));
                                         }
                                         else if (resourceNode->hasAttribute(L"pattern"))
                                         {
-                                            materialList.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode->getAttribute(L"pattern"), resourceNode->getAttribute(L"parameters"))));
+                                            materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode->getAttribute(L"pattern"), resourceNode->getAttribute(L"parameters"))));
                                         }
                                         else
                                         {
@@ -614,8 +614,8 @@ namespace Gek
                                     }
                                 }
 
-                                pass.materialList.reserve(materialList.size());
-                                for (auto &resourcePair : materialList)
+                                pass.materialList.reserve(materialMap.size());
+                                for (auto &resourcePair : materialMap)
                                 {
                                     auto &resourceName = resourcePair.first;
                                     auto &map = resourcePair.second;
@@ -631,8 +631,8 @@ namespace Gek
                                     case MapSource::Resource:
                                         if (true)
                                         {
-                                            auto resourceSearch = resourceMappingList.find(resourceName);
-                                            if (resourceSearch != resourceMappingList.end())
+                                            auto resourceSearch = resourceMappingsMap.find(resourceName);
+                                            if (resourceSearch != resourceMappingsMap.end())
                                             {
                                                 auto &resource = (*resourceSearch).second;
                                                 resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
@@ -645,7 +645,7 @@ namespace Gek
                             }
                         }
 
-                        for (auto &resourcePair : resourceList)
+                        for (auto &resourcePair : resourceAliasMap)
                         {
                             auto resourceSearch = resourceMap.find(resourcePair.first);
                             if (resourceSearch != resourceMap.end())
@@ -654,8 +654,8 @@ namespace Gek
                             }
 
                             uint32_t currentStage = nextResourceStage++;
-                            auto resourceMapSearch = resourceMappingList.find(resourcePair.first);
-                            if (resourceMapSearch != resourceMappingList.end())
+                            auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
+                            if (resourceMapSearch != resourceMappingsMap.end())
                             {
                                 auto &resource = (*resourceMapSearch).second;
                                 if (resource.first == MapType::ByteAddressBuffer)
@@ -670,8 +670,8 @@ namespace Gek
                                 continue;
                             }
                             
-                            auto structureSearch = resourceStructureList.find(resourcePair.first);
-                            if (structureSearch != resourceStructureList.end())
+                            auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                            if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = (*structureSearch).second;
                                 resourceData.format("    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
@@ -693,10 +693,10 @@ namespace Gek
                         uint32_t nextUnorderedStage = 0;
                         if (pass.mode != Pass::Mode::Compute)
                         {
-                            nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                            nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
                         }
 
-                        for (auto &resourcePair : unorderedAccessList)
+                        for (auto &resourcePair : unorderedAccessAliasMap)
                         {
                             auto resourceSearch = resourceMap.find(resourcePair.first);
                             if (resourceSearch != resourceMap.end())
@@ -705,8 +705,8 @@ namespace Gek
                             }
 
                             uint32_t currentStage = nextUnorderedStage++;
-                            auto resourceMapSearch = resourceMappingList.find(resourcePair.first);
-                            if (resourceMapSearch != resourceMappingList.end())
+                            auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
+                            if (resourceMapSearch != resourceMappingsMap.end())
                             {
                                 auto &resource = (*resourceMapSearch).second;
                                 if (resource.first == MapType::ByteAddressBuffer)
@@ -721,8 +721,8 @@ namespace Gek
                                 continue;
                             }
 
-                            auto structureSearch = resourceStructureList.find(resourcePair.first);
-                            if (structureSearch != resourceStructureList.end())
+                            auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                            if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = (*structureSearch).second;
                                 unorderedAccessData.format("    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
@@ -771,7 +771,7 @@ namespace Gek
                             addDefine(defineNode->getType(), evaluate(defineNode->getText()));
                         }
 
-                        for (auto &globalDefine : globalDefinesList)
+                        for (auto &globalDefine : globalDefinesMap)
                         {
                             addDefine(globalDefine.first, globalDefine.second);
                         }
@@ -960,7 +960,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -999,12 +999,12 @@ namespace Gek
                             resources->setBackBuffer(deviceContext, (pass.enableDepth ? &depthBuffer : nullptr));
                         }
                     }
-                    else if (!pass.renderTargetList.empty())
+                    else if (!pass.renderTargetsMap.empty())
                     {
-                        renderTargetCache.resize(std::max(pass.renderTargetList.size(), renderTargetCache.size()));
+                        renderTargetCache.resize(std::max(pass.renderTargetsMap.size(), renderTargetCache.size()));
 
                         uint32_t currentStage = 0;
-                        for (auto &resourcePair : pass.renderTargetList)
+                        for (auto &resourcePair : pass.renderTargetsMap)
                         {
                             ResourceHandle renderTargetHandle;
                             auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -1016,7 +1016,7 @@ namespace Gek
                             renderTargetCache[currentStage++] = renderTargetHandle;
                         }
 
-                        resources->setRenderTargets(deviceContext, renderTargetCache.data(), pass.renderTargetList.size(), (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setRenderTargets(deviceContext, renderTargetCache.data(), pass.renderTargetsMap.size(), (pass.enableDepth ? &depthBuffer : nullptr));
                     }
 
                     break;
@@ -1062,7 +1062,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -1077,9 +1077,9 @@ namespace Gek
                             resources->setRenderTargets(deviceContext, nullptr, 1, nullptr);
                         }
                     }
-                    else if (!pass.renderTargetList.empty())
+                    else if (!pass.renderTargetsMap.empty())
                     {
-                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
+                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetsMap.size(), nullptr);
                     }
                 }
 
@@ -1093,7 +1093,7 @@ namespace Gek
             {
                 if (base == 0)
                 {
-                    for (auto &clearTarget : block.clearList)
+                    for (auto &clearTarget : block.clearResourceMap)
                     {
                         auto resourceSearch = resourceMap.find(clearTarget.first);
                         if (resourceSearch != resourceMap.end())

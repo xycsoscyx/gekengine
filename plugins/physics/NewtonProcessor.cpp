@@ -67,9 +67,9 @@ namespace Gek
 
         Math::Float3 gravity;
         std::vector<Surface> surfaceList;
-        std::unordered_map<std::size_t, uint32_t> surfaceIndexList;
+        std::unordered_map<std::size_t, uint32_t> surfaceIndexMap;
         std::unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
-        std::unordered_map<std::size_t, NewtonCollision *> collisionList;
+        std::unordered_map<std::size_t, NewtonCollision *> collisionMap;
 
     public:
         NewtonProcessor(Context *context, Plugin::Core *core)
@@ -109,14 +109,14 @@ namespace Gek
 
             uint32_t surfaceIndex = 0;
             std::size_t hash = std::hash<String>()(surfaceName);
-            auto surfaceSearch = surfaceIndexList.find(hash);
-            if (surfaceSearch != surfaceIndexList.end())
+            auto surfaceSearch = surfaceIndexMap.find(hash);
+            if (surfaceSearch != surfaceIndexMap.end())
             {
                 surfaceIndex = (*surfaceSearch).second;
             }
             else
             {
-                auto &surfaceIndex = surfaceIndexList[hash] = 0;
+                auto &surfaceIndex = surfaceIndexMap[hash] = 0;
 
                 XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", surfaceName)));
                 XmlNodePtr materialNode(document->getRoot(L"material"));
@@ -296,15 +296,15 @@ namespace Gek
                 //NewtonSerializeToFile(newtonWorld, CW2A(FileSystem::expandPath(L"$root\\data\\newton.bin")), nullptr, nullptr);
             }
 
-            for (auto &collisionPair : collisionList)
+            for (auto &collisionPair : collisionMap)
             {
                 NewtonDestroyCollision(collisionPair.second);
             }
 
-            collisionList.clear();
+            collisionMap.clear();
             entityMap.clear();
             surfaceList.clear();
-            surfaceIndexList.clear();
+            surfaceIndexMap.clear();
 
             if (newtonStaticScene)
             {
@@ -416,8 +416,8 @@ namespace Gek
 
             NewtonCollision *newtonCollision = nullptr;
             std::size_t collisionHash = std::hash<String>()(shape);
-            auto collisionSearch = collisionList.find(collisionHash);
-            if (collisionSearch != collisionList.end())
+            auto collisionSearch = collisionMap.find(collisionHash);
+            if (collisionSearch != collisionMap.end())
             {
                 if ((*collisionSearch).second)
                 {
@@ -426,7 +426,7 @@ namespace Gek
             }
             else
             {
-                collisionList[collisionHash] = nullptr;
+                collisionMap[collisionHash] = nullptr;
 
                 std::vector<String> parameters(shape.split(L'|'));
                 GEK_CHECK_CONDITION(parameters.size() != 2, Trace::Exception, "Invalid parameters passed for shape: %v", shape);
@@ -475,7 +475,7 @@ namespace Gek
                 }
 
                 GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create newton collision shape: %v", shape);
-                collisionList[collisionHash] = newtonCollision;
+                collisionMap[collisionHash] = newtonCollision;
             }
 
             return newtonCollision;
@@ -491,8 +491,8 @@ namespace Gek
             else
             {
                 std::size_t shapeHash = std::hash<String>()(shape);
-                auto collisionSearch = collisionList.find(shapeHash);
-                if (collisionSearch != collisionList.end())
+                auto collisionSearch = collisionMap.find(shapeHash);
+                if (collisionSearch != collisionMap.end())
                 {
                     if ((*collisionSearch).second)
                     {
@@ -501,7 +501,7 @@ namespace Gek
                 }
                 else
                 {
-                    collisionList[shapeHash] = nullptr;
+                    collisionMap[shapeHash] = nullptr;
 
                     String fileName(FileSystem::expandPath(String(L"$root\\data\\models\\%v.bin", shape)));
 
@@ -549,7 +549,7 @@ namespace Gek
 
                     fclose(file);
                     GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create newton collision shape: %v", shape);
-                    collisionList[shapeHash] = newtonCollision;
+                    collisionMap[shapeHash] = newtonCollision;
                 }
             }
 

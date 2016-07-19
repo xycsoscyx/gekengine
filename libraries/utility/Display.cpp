@@ -45,19 +45,19 @@ namespace Gek
     {
         uint32_t displayMode = 0;
         DEVMODE displayModeData = { 0 };
-        std::multimap<uint32_t, DisplayMode> availbleModeList;
+        std::multimap<uint32_t, DisplayMode> availableModesMap;
         while (EnumDisplaySettings(0, displayMode++, &displayModeData))
         {
             DisplayMode displayMode(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight);
-            if (std::find_if(availbleModeList.begin(), availbleModeList.end(), [&displayModeData, &displayMode](auto &modePair) -> bool
+            if (std::find_if(availableModesMap.begin(), availableModesMap.end(), [&displayModeData, &displayMode](auto &modePair) -> bool
             {
                 return (modePair.first == displayModeData.dmBitsPerPel && modePair.second == displayMode);
-            }) == availbleModeList.end())
+            }) == availableModesMap.end())
             {
-                availbleModeList.emplace(displayModeData.dmBitsPerPel, displayMode);
+                availableModesMap.emplace(displayModeData.dmBitsPerPel, displayMode);
             }
         };
 
-        return availbleModeList;
+        return availableModesMap;
     }
 }; // namespace Gek

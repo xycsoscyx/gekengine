@@ -33,7 +33,7 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &modelList, Shapes::AlignedBox &boundingBox)
+void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &modelMap, Shapes::AlignedBox &boundingBox)
 {
     GEK_CHECK_CONDITION(node == nullptr, Trace::Exception, "Missing node data");
     if (node->mNumMeshes > 0)
@@ -110,7 +110,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
 
                 if (!material.empty())
                 {
-                    modelList[material].push_back(model);
+                    modelMap[material].push_back(model);
                 }
             }
         }
@@ -121,7 +121,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
         GEK_CHECK_CONDITION(node->mChildren == nullptr, Trace::Exception, "Node missing child data");
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(scene, node->mChildren[childIndex], modelList, boundingBox);
+            getMeshes(scene, node->mChildren[childIndex], modelMap, boundingBox);
         }
     }
 }
@@ -257,14 +257,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         aiApplyPostProcessing(scene, postProcessFlags);
 
         Shapes::AlignedBox boundingBox;
-        std::unordered_map<StringUTF8, std::list<Model>> modelListUTF8;
-        getMeshes(scene, scene->mRootNode, modelListUTF8, boundingBox);
+        std::unordered_map<StringUTF8, std::list<Model>> modelMapUTF8;
+        getMeshes(scene, scene->mRootNode, modelMapUTF8, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        std::unordered_map<String, std::list<Model>> modelList;
-        for (auto &material : modelListUTF8)
+        std::unordered_map<String, std::list<Model>> modelMap;
+        for (auto &material : modelMapUTF8)
         {
             String materialName(material.first.getLower());
             materialName.replace(L"/", L"\\");
@@ -296,7 +296,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 materialName = FileSystem::Path(materialName).remove_filename().generic_wstring();
             }
 
-            modelList[materialName] = material.second;
+            modelMap[materialName] = material.second;
         }
 
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
@@ -304,7 +304,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         if (mode.compareNoCase(L"model") == 0)
         {
             std::unordered_map<String, Model> sortedModelList;
-            for (auto &material : modelList)
+            for (auto &material : modelMap)
             {
                 Model &sortedModel = sortedModelList[material.first];
                 for (auto &model : material.second)
@@ -357,7 +357,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         {
             NewtonWorld *newtonWorld = NewtonCreate();
             std::vector<Math::Float3> pointCloudList;
-            for (auto &material : modelList)
+            for (auto &material : modelMap)
             {
                 for (auto &model : material.second)
                 {
@@ -390,7 +390,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
         else  if (mode.compareNoCase(L"tree") == 0)
         {
-            printf("> Num. Materials: %d\r\n", modelList.size());
+            printf("> Num. Materials: %d\r\n", modelMap.size());
 
             NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -398,7 +398,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             int materialIdentifier = 0;
             NewtonTreeCollisionBeginBuild(newtonCollision);
-            for (auto &material : modelList)
+            for (auto &material : modelMap)
             {
                 printf("-  %S: %d models\r\n", material.first.c_str(), material.second.size());
                 for (auto &model : material.second)
@@ -432,12 +432,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             uint32_t gekMagic = *(uint32_t *)"GEKX";
             uint16_t gekModelType = 2;
             uint16_t gekModelVersion = 0;
-            uint32_t materialCount = modelList.size();
+            uint32_t materialCount = modelMap.size();
             fwrite(&gekMagic, sizeof(uint32_t), 1, file);
             fwrite(&gekModelType, sizeof(uint16_t), 1, file);
             fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
             fwrite(&materialCount, sizeof(uint32_t), 1, file);
-            for (auto &material : modelList)
+            for (auto &material : modelMap)
             {
                 fwrite(material.first.c_str(), ((material.first.length() + 1) * sizeof(wchar_t)), 1, file);
             }

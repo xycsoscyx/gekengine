@@ -168,16 +168,16 @@ namespace Gek
 
         std::future<void> loadModelRunning;
         concurrency::concurrent_queue<std::function<void(void)>> loadModelQueue;
-        concurrency::concurrent_unordered_map<std::size_t, bool> loadModelSet;
+        concurrency::concurrent_unordered_map<std::size_t, bool> loadModelMap;
 
         std::unordered_map<std::size_t, Model> modelMap;
         using EntityDataMap = std::unordered_map<Plugin::Entity *, Data>;
         EntityDataMap entityDataMap;
 
         using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
-        using MaterialList = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
-        using VisibleList = concurrency::concurrent_unordered_map<Model *, MaterialList>;
-        VisibleList visibleList;
+        using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
+        using VisibleMap = concurrency::concurrent_unordered_map<Model *, MaterialMap>;
+        VisibleMap visibleMap;
 
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
@@ -285,9 +285,9 @@ namespace Gek
         void loadModel(Model &model)
         {
             std::size_t hash = std::hash<String>()(model.fileName);
-            if (loadModelSet.count(hash) == 0)
+            if (loadModelMap.count(hash) == 0)
             {
-                loadModelSet.insert(std::make_pair(hash, true));
+                loadModelMap.insert(std::make_pair(hash, true));
                 loadModelQueue.push(std::bind(&ModelProcessor::loadModelWorker, this, std::ref(model)));
                 if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
                 {
@@ -315,7 +315,7 @@ namespace Gek
 
         void onFree(void)
         {
-            loadModelSet.clear();
+            loadModelMap.clear();
             loadModelQueue.clear();
             if (loadModelRunning.valid() && (loadModelRunning.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready))
             {
@@ -390,7 +390,7 @@ namespace Gek
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
-            visibleList.clear();
+            visibleMap.clear();
             concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
             {
                 Plugin::Entity *entity = entityDataPair.first;
@@ -405,22 +405,22 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    auto &materialList = visibleList[&model];
+                    auto &materialList = visibleMap[&model];
                     auto &instanceList = materialList[data.skin];
                     instanceList.push_back(Instance((matrix * *viewMatrix), data.color, transformComponent.scale));
                 }
             });
 
-            concurrency::parallel_for_each(visibleList.begin(), visibleList.end(), [&](auto &visibleList) -> void
+            concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
-                Model *model = visibleList.first;
+                Model *model = visibleMap.first;
                 if (!model->loaded)
                 {
                     loadModel(*model);
                     return;
                 }
 
-                concurrency::parallel_for_each(visibleList.second.begin(), visibleList.second.end(), [&](auto &materialList) -> void
+                concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialList) -> void
                 {
                     concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](auto &instanceList) -> void
                     {

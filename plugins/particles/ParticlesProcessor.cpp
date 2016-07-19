@@ -176,8 +176,8 @@ namespace Gek
         using EntityEmitterMap = std::unordered_map<Plugin::Entity *, Emitter>;
         EntityEmitterMap entityEmitterMap;
 
-        using VisibleList = concurrency::concurrent_unordered_multimap<Properties, const EntityEmitterMap::value_type *, Properties>;
-        VisibleList visibleList;
+        using VisibleMap = concurrency::concurrent_unordered_multimap<Properties, const EntityEmitterMap::value_type *, Properties>;
+        VisibleMap visibleMap;
 
     public:
         ParticlesProcessor(Context *context, Plugin::Core *core)
@@ -339,7 +339,7 @@ namespace Gek
         }
 
         // Plugin::RendererObserver
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleList::iterator visibleBegin, VisibleList::iterator visibleEnd, ResourceHandle particleBuffer)
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, ResourceHandle particleBuffer)
         {
             GEK_REQUIRE(deviceContext);
             GEK_REQUIRE(resources);
@@ -390,20 +390,20 @@ namespace Gek
             GEK_REQUIRE(cameraEntity);
             GEK_REQUIRE(viewFrustum);
 
-            visibleList.clear();
+            visibleMap.clear();
             concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
             {
                 Plugin::Entity *entity = entityEmitterPair.first;
                 const Emitter &emitter = entityEmitterPair.second;
                 if (viewFrustum->isVisible(emitter))
                 {
-                    visibleList.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &entityEmitterPair));
+                    visibleMap.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &entityEmitterPair));
                 }
             });
 
-            for (auto propertiesSearch = visibleList.begin(); propertiesSearch != visibleList.end(); )
+            for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )
             {
-                auto emittersRange = visibleList.equal_range(propertiesSearch->first);
+                auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
                 renderer->queueDrawCall(visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesSearch->first.colorMap, emittersRange.first, emittersRange.second, particleBuffer));
                 propertiesSearch = emittersRange.second;
             }

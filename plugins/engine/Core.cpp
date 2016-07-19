@@ -55,8 +55,8 @@ namespace Gek
             bool windowActive;
             bool engineRunning;
             using OptionGroup = concurrency::concurrent_unordered_map<String, String>;
-            concurrency::concurrent_unordered_map<String, OptionGroup> options;
-            concurrency::concurrent_unordered_map<String, OptionGroup> newOptions;
+            concurrency::concurrent_unordered_map<String, OptionGroup> optionsMap;
+            concurrency::concurrent_unordered_map<String, OptionGroup> changedOptionsMap;
 
             Timer timer;
             double updateAccumulator;
@@ -74,7 +74,7 @@ namespace Gek
             bool consoleOpen;
             String currentCommand;
             std::list<String> commandLog;
-            std::unordered_map<String, std::function<void(const std::vector<String> &, SCITER_VALUE &result)>> consoleCommands;
+            std::unordered_map<String, std::function<void(const std::vector<String> &, SCITER_VALUE &result)>> consoleCommandsMap;
 
             sciter::dom::element root;
             sciter::dom::element background;
@@ -96,19 +96,19 @@ namespace Gek
                 GEK_TRACE_SCOPE();
                 GEK_REQUIRE(window);
 
-                consoleCommands[L"quit"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"quit"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     engineRunning = false;
                     result = sciter::value(true);
                 };
 
-                consoleCommands[L"begin_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"begin_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     this->beginChanges();
                     result = sciter::value(true);
                 };
 
-                consoleCommands[L"finish_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"finish_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     bool commit = false;
                     if (parameters.size() == 1)
@@ -120,7 +120,7 @@ namespace Gek
                     result = sciter::value(true);
                 };
 
-                consoleCommands[L"set_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"set_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     if (parameters.size() == 3)
                     {
@@ -133,7 +133,7 @@ namespace Gek
                     }
                 };
 
-                consoleCommands[L"get_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"get_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     if (parameters.size() == 2)
                     {
@@ -146,7 +146,7 @@ namespace Gek
                     }
                 };
 
-                consoleCommands[L"load_level"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"load_level"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     if (parameters.size() == 1)
                     {
@@ -156,7 +156,7 @@ namespace Gek
                     result = sciter::value(true);
                 };
 
-                consoleCommands[L"console"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     if (parameters.size() == 1)
                     {
@@ -182,7 +182,7 @@ namespace Gek
 
                 for (XmlNodePtr valueNode(configurationNode->firstChildElement()); valueNode->isValid(); valueNode = valueNode->nextSiblingElement())
                 {
-                    auto &group = options[valueNode->getType()];
+                    auto &group = optionsMap[valueNode->getType()];
                     valueNode->listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
                     {
                         group[name] = value;
@@ -264,8 +264,8 @@ namespace Gek
 
             const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = String()) const
             {
-                auto &optionsSearch = options.find(name);
-                if (optionsSearch != options.end())
+                auto &optionsSearch = optionsMap.find(name);
+                if (optionsSearch != optionsMap.end())
                 {
                     auto &value = (*optionsSearch).second.find(attribute);
                     if (value != (*optionsSearch).second.end())
@@ -279,24 +279,24 @@ namespace Gek
 
             void setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value)
             {
-                auto &newGroup = newOptions[name];
+                auto &newGroup = changedOptionsMap[name];
                 newGroup[attribute] = value;
             }
 
             void beginChanges(void)
             {
-                newOptions = options;
+                changedOptionsMap = optionsMap;
             }
 
             void finishChanges(bool commit)
             {
                 if (commit)
                 {
-                    options = std::move(newOptions);
+                    optionsMap = std::move(changedOptionsMap);
                     sendEvent(Event(std::bind(&Plugin::CoreObserver::onChanged, std::placeholders::_1)));
 
-                    auto &displaySearch = options.find(L"display");
-                    if (displaySearch != options.end())
+                    auto &displaySearch = optionsMap.find(L"display");
+                    if (displaySearch != optionsMap.end())
                     {
                         auto &widthSearch = (*displaySearch).second.find(L"width");
                         auto &heightSearch = (*displaySearch).second.find(L"height");
@@ -622,8 +622,8 @@ namespace Gek
                     parameterList.push_back(parameters->argv[parameter].to_string());
                 }
 
-                auto commandSearch = consoleCommands.find(command);
-                if (commandSearch != consoleCommands.end())
+                auto commandSearch = consoleCommandsMap.find(command);
+                if (commandSearch != consoleCommandsMap.end())
                 {
                     (*commandSearch).second(parameterList, parameters->result);
                 }

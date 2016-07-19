@@ -919,12 +919,12 @@ namespace Gek
                 return resourceManager.getHandle(hash, request, nullptr, true);
             }
 
-            ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+            ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
-                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), defineList](ProgramHandle handle)->Video::ObjectPtr
+                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle handle)->Video::ObjectPtr
                 {
-                    auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, defineList);
+                    auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
                     return program;
                 };
@@ -937,12 +937,12 @@ namespace Gek
                 return programManager.getUniqueHandle(request);
             }
 
-            ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &defineList)
+            ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
-                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), defineList](ProgramHandle handle)->Video::ObjectPtr
+                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle handle)->Video::ObjectPtr
                 {
-                    auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, defineList);
+                    auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
                     return program;
                 };

@@ -5,6 +5,7 @@
 #include <thread>
 #include <mutex>
 #include <json.hpp>
+#include <concurrent_unordered_map.h>
 
 namespace Gek
 {
@@ -81,6 +82,24 @@ namespace Gek
                 WriteFile(file, string.c_str(), string.length(), &bytesWritten, nullptr);
             }
         };
+
+        static uint32_t nextHandle = 0;
+        static concurrency::concurrent_unordered_map<uint32_t, std::function<void(const char *, const char *, uint64_t, const char *)>> observerMap;
+        uint32_t addObserver(std::function<void(const char *, const char *, uint64_t, const char *)> onTrace)
+        {
+            auto currentHandle = InterlockedIncrement(&nextHandle);
+            observerMap[currentHandle] = onTrace;
+            return currentHandle;
+        }
+
+        void removeObserver(uint32_t handle)
+        {
+            auto observer = observerMap.find(handle);
+            if (observer != observerMap.end())
+            {
+                observerMap.unsafe_erase(observer);
+            }
+        }
 
         static std::unique_ptr<std::thread> server;
         void initialize(void)
