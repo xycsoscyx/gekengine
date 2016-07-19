@@ -20,9 +20,11 @@ void mainPixelProgram(InputPixel inputPixel)
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
-    normal.xy = ((Resources::normal.Sample(Global::linearWrapSampler, inputPixel.texCoord) * 2.0) - 1.0);
+    normal.xy = Resources::normal.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    normal.xy = ((normal.xy * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
-    normal = (mul(normal, viewBasis)) * (inputPixel.frontFacing ? 1.0 : -1.0);
+    normal = mul(normal, viewBasis);
+    normal = (inputPixel.frontFacing ? normal : -normal);
 
     int nextPixelIndex;
     int pixelIndex = UnorderedAccess::pixelListBuffer.IncrementCounter();

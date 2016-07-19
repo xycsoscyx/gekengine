@@ -214,6 +214,10 @@ namespace Gek
                 success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
                 GEK_CHECK_CONDITION(!success, Exception, "Unable to load system UI HTML");
 
+                SCITER_VALUE result;
+                String test(L"addConsoleCommand(\"testing\", \"\")");
+                SciterEval(window, test, test.length(), &result);
+
                 root = sciter::dom::element::root_element(window);
                 background = root.find_first("section#back-layer");
                 foreground = root.find_first("section#fore-layer");
@@ -622,10 +626,13 @@ namespace Gek
                 if (commandSearch != consoleCommands.end())
                 {
                     (*commandSearch).second(parameterList, parameters->result);
-                    return true;
+                }
+                else
+                {
+                    parameters->result = sciter::value(false);
                 }
 
-                return false;
+                return true;
             }
 
             BOOL sciterOnTiScriptMethodCall(TISCRIPT_METHOD_PARAMS *parameters)
@@ -699,6 +706,7 @@ namespace Gek
 
             void sciterDebugOutput(UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
             {
+                GEK_TRACE_ERROR("Sciter debug information", GEK_PARAMETER(subsystem), GEK_PARAMETER(severity), GEK_PARAMETER(text));
             }
 
             static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID userData)

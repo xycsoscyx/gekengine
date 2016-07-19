@@ -52,6 +52,7 @@
 
         #console_command {
             height: 20px;
+            background: rgba(255, 0, 0, 0.05);
             font-family: monospace;
             color: darkslategray;
             font-weight: bold;
@@ -86,12 +87,13 @@
         }
     }
 
-    function addConsoleCommand(command)
+    function addConsoleCommand(command, color)
     {
-        $(#console_buffer).append(command + "<br />");
+        $(#console_buffer).append("<div style='border: 0px; width: auto; " + color + "'>" + command + "</div>");
         $(#console_buffer).scrollTo(0, $(#console_buffer).box(#height, #content));
     }
 
+    var highlight = false;
     view.root.subscribe(function(event)
     {
         if (event.keyCode == 0xC0)
@@ -103,18 +105,29 @@
         {
             if (event.keyCode == Event.VK_RETURN || event.keyCode == Event.VK_ENTER)
             {
+                highlight = !highlight;
+                var color = (highlight ? "background-color: rgba(0,255,0,0.05)" : "");
+
                 var text = $(#console_command).text;
                 $(#console_command).text = "";
 
                 var parameters = text.split(" ");
                 var command = parameters.shift();
-                if(eval("view." + text))
+                try
                 {
-                    addConsoleCommand(text);
+                    if(eval("view." + text))
+                    {
+                        addConsoleCommand("> " + text, color);
+                    }
+                    else
+                    {
+                        addConsoleCommand("? unknown command: " + text, color);
+                    }
                 }
-                else
+                catch (exception)
                 {
-                    addConsoleCommand("unknown command: " + text);
+                    addConsoleCommand("! command failed: " + text, color);
+                    addConsoleCommand("  " + exception.message, color);
                 }
             }
             else if (event.keyCode == Event.VK_BACK)

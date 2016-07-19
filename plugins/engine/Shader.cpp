@@ -545,7 +545,7 @@ namespace Gek
                                     "    float3 viewPosition : TEXCOORD1;\r\n" \
                                     "    float3 viewNormal : NORMAL0;\r\n" \
                                     "    float4 color : COLOR0;\r\n" \
-                                    "    bool   frontFacing : SV_ISFRONTFACE;\r\n";
+                                    "    uint frontFacing : SV_ISFRONTFACE;\r\n";
                             }
 
                             engineData +=
