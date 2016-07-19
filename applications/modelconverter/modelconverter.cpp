@@ -303,10 +303,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
         if (mode.compareNoCase(L"model") == 0)
         {
-            std::unordered_map<String, Model> sortedModelList;
+            std::unordered_map<String, Model> sortedModelMap;
             for (auto &material : modelMap)
             {
-                Model &sortedModel = sortedModelList[material.first];
+                Model &sortedModel = sortedModelMap[material.first];
                 for (auto &model : material.second)
                 {
                     for (auto &index : model.indexList)
@@ -325,7 +325,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             uint32_t gekMagic = *(uint32_t *)"GEKX";
             uint16_t gekModelType = 0;
             uint16_t gekModelVersion = 3;
-            uint32_t modelCount = sortedModelList.size();
+            uint32_t modelCount = sortedModelMap.size();
             fwrite(&gekMagic, sizeof(uint32_t), 1, file);
             fwrite(&gekModelType, sizeof(uint16_t), 1, file);
             fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
@@ -333,7 +333,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             fwrite(&modelCount, sizeof(uint32_t), 1, file);
 
             printf("> Num. Models: %d\r\n", modelCount);
-            for (auto &model : sortedModelList)
+            for (auto &model : sortedModelMap)
             {
                 String materialName(model.first);
                 fwrite(materialName.c_str(), ((materialName.length() + 1) * sizeof(wchar_t)), 1, file);

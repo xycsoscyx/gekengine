@@ -674,8 +674,8 @@ namespace Gek
 
                 if (viewFrustum->isVisible(orientedBox))
                 {
-                    auto &materialList = visibleMap[&shape];
-                    auto &instanceList = materialList[data.skin];
+                    auto &materialMap = visibleMap[&shape];
+                    auto &instanceList = materialMap[data.skin];
                     instanceList.push_back(Instance((matrix * *viewMatrix), data.color, transformComponent.scale));
                 }
             });
@@ -689,11 +689,11 @@ namespace Gek
                     return;
                 }
 
-                concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialList) -> void
+                concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                 {
-                    concurrency::parallel_for_each(materialList.second.begin(), materialList.second.end(), [&](auto &instanceList) -> void
+                    concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
                     {
-                        renderer->queueDrawCall(visual, materialList.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
+                        renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
                     });
                 });
             });

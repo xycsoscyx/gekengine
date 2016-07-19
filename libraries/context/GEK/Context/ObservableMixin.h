@@ -30,7 +30,7 @@ namespace Gek
         };
 
     private:
-        std::unordered_set<OBSERVER *> observerList;
+        std::unordered_set<OBSERVER *> observerSet;
 
     public:
         virtual ~ObservableMixin(void)
@@ -40,7 +40,7 @@ namespace Gek
         // ObservableMixin
         void sendEvent(const Event &event) const
         {
-            for (auto &observer : observerList)
+            for (auto &observer : observerSet)
             {
                 event(observer);
             }
@@ -49,19 +49,19 @@ namespace Gek
         // Observable
         void addObserver(Observer *observer)
         {
-            auto observerSearch = observerList.find(dynamic_cast<OBSERVER *>(observer));
-            if (observerSearch == observerList.end())
+            auto observerSearch = observerSet.find(dynamic_cast<OBSERVER *>(observer));
+            if (observerSearch == observerSet.end())
             {
-                observerList.insert(dynamic_cast<OBSERVER *>(observer));
+                observerSet.insert(dynamic_cast<OBSERVER *>(observer));
             }
         }
 
         void removeObserver(Observer *observer)
         {
-            auto observerSearch = observerList.find(dynamic_cast<OBSERVER *>(observer));
-            if (observerSearch != observerList.end())
+            auto observerSearch = observerSet.find(dynamic_cast<OBSERVER *>(observer));
+            if (observerSearch != observerSet.end())
             {
-                observerList.erase(observerSearch);
+                observerSet.erase(observerSearch);
             }
         }
     };
