@@ -16,14 +16,15 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     float reveal = albedo.a;
     float weight = albedo.a;
 
-    const float3 transmission = inputPixel.color1.rgb;
-    //weight *= saturate(1.0 - dot(inputPixel.color1.rgb, (1.0 / 3.0)));
+    const float3 transmission = albedo.rgb;
+    weight *= saturate(1.0 - dot(transmission, (1.0 / 3.0)));
 
     // Soften edges when transparent surfaces intersect solid surfaces
-    const float viewDepth = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    const float depthDelta = saturate((viewDepth - inputPixel.viewPosition.z) * 2.5);
-    //weight *= depthDelta;
-
+    float viewDepth = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
+    float depthDelta = saturate((viewDepth - inputPixel.viewPosition.z) * 2.5);
+    weight *= depthDelta;
+    
+    [branch]
     switch (Settings::Equation)
     {
     case 7: // View Depth

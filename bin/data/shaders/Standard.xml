@@ -13,9 +13,6 @@
         </solid>
         <transparent>
             <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
-            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
-            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
-            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
         </transparent>
     </material>
 
@@ -38,19 +35,13 @@
         <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
-
         <lightAccumulationBuffer bind="float3" flags="target">R11G11B10_FLOAT</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">R8_UNORM</ambientOcclusionBuffer>
-
         <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
-
-        <startIndexBuffer bind="int" flags="unorderedAccess, target">R32_INT</startIndexBuffer>
     </textures>
 
     <buffers>
         <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">R8_UINT</tileIndexList>
-
-        <pixelListBuffer stride="16" size="displayWidth * displayHeight * 5" flags="unorderedAccess, counter">PixelInfo</pixelListBuffer>
     </buffers>
 
     <block>
@@ -72,35 +63,6 @@
             </targets>
 
             <program entry="mainPixelProgram">Standard\StoreDeferred</program>
-        </pass>
-
-        <pass mode="deferred">
-            <targets>
-                <startIndexBuffer />
-            </targets>
-
-            <program entry="mainPixelProgram">Standard\ClearLinkedLists</program>
-        </pass>
-
-        <pass mode="forward" name="transparent">
-            <depthstates>
-                <comparison>less</comparison>
-                <writemask>zero</writemask>
-            </depthstates>
-
-            <renderstates>
-                <cullmode>back</cullmode>
-            </renderstates>
-
-            <unorderedaccess>
-                <startIndexBuffer />
-                <pixelListBuffer />
-            </unorderedaccess>
-
-            <targets>
-            </targets>
-
-            <program entry="mainPixelProgram">Standard\StoreLinkedLists</program>
         </pass>
     </block>
 
@@ -188,6 +150,27 @@
             </targets>
 
             <program entry="mainPixelProgram">Standard\BilateralBlur</program>
+        </pass>
+
+        <pass mode="forward" name="transparent">
+            <blendstates unified="true">
+                <color source="one" destination="inverse_source_alpha" operation="add" />
+            </blendstates>
+
+            <depthstates>
+                <comparison>less</comparison>
+                <writemask>zero</writemask>
+            </depthstates>
+
+            <renderstates>
+                <cullmode>back</cullmode>
+            </renderstates>
+
+            <targets>
+                <lightAccumulationBuffer />
+            </targets>
+
+            <program entry="mainPixelProgram">Standard\Transparent</program>
         </pass>
 
         <pass mode="deferred">

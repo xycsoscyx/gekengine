@@ -59,7 +59,7 @@
                 <depthBuffer copy="depth" />
             </resources>
 
-            <program entry="mainPixelProgram">Transparent\Calculate</program>
+            <program entry="mainPixelProgram">Transparent_Scattered\Calculate</program>
         </pass>
 
         <pass mode="deferred">
@@ -74,7 +74,7 @@
                 <finalBuffer />
             </targets>
 
-            <program entry="mainPixelProgram">Transparent\Combine</program>
+            <program entry="mainPixelProgram">Transparent_Scattered\Combine</program>
         </pass>
     </block>
 </shader>

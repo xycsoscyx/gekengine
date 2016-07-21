@@ -7,21 +7,21 @@
     </material>
 
     <textures>
-        <accumulationBuffer bind="float4" flags="target">half4</accumulationBuffer>
-        <revealBuffer bind="float" flags="target">byte</revealBuffer>
-        <depthBuffer bind="float">float</depthBuffer>
-        <finalBuffer bind="float" source="standard" name="finalBuffer" />
+        <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
+        <revealBuffer bind="float" flags="target">R8_UNORM</revealBuffer>
+        <depthBuffer bind="float">R32_FLOAT</depthBuffer>
+        <finalBuffer bind="float3" source="standard" name="finalBuffer" />
     </textures>
 
     <depth source="standard" />
 
     <block>
         <clear>
-            <accumulationBuffer>(0,0,0,0)</accumulationBuffer>
-            <revealBuffer>1</revealBuffer>
+            <accumulationBuffer type="target">(0,0,0,0)</accumulationBuffer>
+            <revealBuffer type="target">1</revealBuffer>
         </clear>
 
-        <pass mode="forward" colors="2" name="transparent">
+        <pass mode="forward" name="transparent">
             <blendstates>
                 <target>
                     <color source="one" destination="one" operation="add" />
@@ -50,12 +50,12 @@
                 <depthBuffer copy="depth" />
             </resources>
 
-            <program entry="mainPixelProgram">Transparent\Calculate</program>
+            <program entry="mainPixelProgram">Transparent_Simple\Calculate</program>
         </pass>
 
         <pass mode="deferred">
             <blendstates>
-                <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
+                <color source="source_alpha" destination="inverse_source_alpha" operation="add" />
             </blendstates>
 
             <resources>
@@ -67,7 +67,7 @@
                 <finalBuffer />
             </targets>
 
-            <program entry="mainPixelProgram">Transparent\Combine</program>
+            <program entry="mainPixelProgram">Transparent_Simple\Combine</program>
         </pass>
     </block>
 </shader>
