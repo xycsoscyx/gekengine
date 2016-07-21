@@ -105,9 +105,9 @@ namespace Light
     }
 };
 
-OutputPixel mainPixelProgram(InputPixel inputPixel)
+float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float3 materialAlbedo = Resources::albedoBuffer[inputPixel.position.xy];
+    float4 materialAlbedo = Resources::albedoBuffer[inputPixel.position.xy];
     float2 materialInfo = Resources::materialBuffer[inputPixel.position.xy];
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
     float materialMetalness = materialInfo.y;
@@ -126,8 +126,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     uint lightTileStart = (bufferOffset + 1);
     uint lightTileEnd = (lightTileStart + lightTileCount);
 
-    OutputPixel outputPixel;
-    outputPixel.lightAccumulationBuffer = 0.0;
+    float3 surfaceLight = 0.0;
 
     [loop]
     for (uint lightTileIndex = lightTileStart; lightTileIndex < lightTileEnd; ++lightTileIndex)
@@ -138,11 +137,11 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
         Light::Properties lightProperties = Light::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
         float NdotL = dot(surfaceNormal, lightProperties.direction);
-        float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);
+        float3 diffuseAlbedo = lerp(materialAlbedo.xyz, 0.0, materialMetalness);
         float3 diffuseLighting = (diffuseAlbedo * Math::ReciprocalPi);
-        float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightProperties.direction, viewDirection, NdotL);
-        outputPixel.lightAccumulationBuffer += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightProperties.falloff * light.color);
+        float3 specularLighting = getSpecularBRDF(materialAlbedo.xyz, materialRoughness, materialMetalness, surfaceNormal, lightProperties.direction, viewDirection, NdotL);
+        surfaceLight += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightProperties.falloff * light.color);
     }
 
-    return outputPixel;
+    return surfaceLight;
 }

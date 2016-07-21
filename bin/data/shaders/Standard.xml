@@ -32,10 +32,9 @@
     <depth>D32_FLOAT</depth>
 
     <textures>
-        <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
+        <albedoBuffer bind="float4" flags="target">R8G8B8A8_UNORM</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
-        <lightAccumulationBuffer bind="float3" flags="target">R11G11B10_FLOAT</lightAccumulationBuffer>
         <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">R8_UNORM</ambientOcclusionBuffer>
         <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
     </textures>
@@ -64,47 +63,7 @@
 
             <program entry="mainPixelProgram">Standard\StoreDeferred</program>
         </pass>
-    </block>
 
-    <block lighting="true">
-        <clear>
-            <lightAccumulationBuffer type="target">(0,0,0,0)</lightAccumulationBuffer>
-        </clear>
-
-        <pass mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1">
-            <resources>
-                <depth />
-            </resources>
-
-            <unorderedaccess>
-                <tileIndexList />
-            </unorderedaccess>
-
-            <program entry="mainComputeProgram">Standard\TiledLightCulling</program>
-        </pass>
-
-        <pass mode="deferred">
-            <blendstates unified="true">
-                <color source="one" destination="one" operation="add" />
-            </blendstates>
-
-            <resources>
-                <tileIndexList />
-                <albedoBuffer />
-                <materialBuffer />
-                <normalBuffer />
-                <depth />
-            </resources>
-
-            <targets>
-                <lightAccumulationBuffer />
-            </targets>
-
-            <program entry="mainPixelProgram">Standard\AccumulateLighting</program>
-        </pass>
-    </block>
-
-    <block>
         <pass mode="deferred">
             <resources>
                 <normalBuffer />
@@ -152,38 +111,59 @@
             <program entry="mainPixelProgram">Standard\BilateralBlur</program>
         </pass>
 
-        <pass mode="forward" name="transparent">
+        <pass mode="deferred">
             <blendstates unified="true">
-                <color source="one" destination="inverse_source_alpha" operation="add" />
+                <color source="zero" destination="one" operation="add" />
+                <alpha source="one" destination="zero" operation="add" />
             </blendstates>
 
-            <depthstates>
-                <comparison>less</comparison>
-                <writemask>zero</writemask>
-            </depthstates>
-
-            <renderstates>
-                <cullmode>back</cullmode>
-            </renderstates>
+            <resources>
+                <ambientOcclusionBuffer actions="flip" />
+            </resources>
 
             <targets>
-                <lightAccumulationBuffer />
+                <albedoBuffer />
             </targets>
 
-            <program entry="mainPixelProgram">Standard\Transparent</program>
+            <program entry="mainPixelProgram">Standard\Combine</program>
+        </pass>
+    </block>
+
+    <block lighting="true">
+        <clear>
+            <finalBuffer type="target">(0,0,0,0)</finalBuffer>
+        </clear>
+
+        <pass mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1">
+            <resources>
+                <depth />
+            </resources>
+
+            <unorderedaccess>
+                <tileIndexList />
+            </unorderedaccess>
+
+            <program entry="mainComputeProgram">Standard\TiledLightCulling</program>
         </pass>
 
         <pass mode="deferred">
+            <blendstates unified="true">
+                <color source="one" destination="one" operation="add" />
+            </blendstates>
+
             <resources>
-                <lightAccumulationBuffer />
-                <ambientOcclusionBuffer actions="flip" />
+                <tileIndexList />
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+                <depth />
             </resources>
 
             <targets>
                 <finalBuffer />
             </targets>
 
-            <program entry="mainPixelProgram">Standard\Combine</program>
+            <program entry="mainPixelProgram">Standard\AccumulateLighting</program>
         </pass>
     </block>
 </shader>
