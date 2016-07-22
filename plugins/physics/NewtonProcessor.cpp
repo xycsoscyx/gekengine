@@ -1,5 +1,4 @@
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Utility\String.h"
@@ -37,8 +36,7 @@ namespace Gek
     extern Newton::EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
 
     GEK_CONTEXT_USER(NewtonProcessor, Plugin::Core *)
-        , public ObservableMixin<Newton::WorldObserver>
-        , public Plugin::PopulationObserver
+        , public Plugin::PopulationListener
         , public Plugin::Processor
         , public Newton::World
     {
@@ -85,7 +83,7 @@ namespace Gek
             , gravity(0.0f, -32.174f, 0.0f)
         {
             updateHandle = population->setUpdatePriority(this, 50);
-            population->addObserver(Plugin::PopulationObserver::getObserver());
+            population->addListener(this);
         }
 
         ~NewtonProcessor(void)
@@ -94,7 +92,7 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver(Plugin::PopulationObserver::getObserver());
+                population->removeListener(this);
             }
         }
 
@@ -238,7 +236,7 @@ namespace Gek
                 const Surface &surface0 = processor->getSurface(surfaceIndex0);
                 const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                processor->ObservableMixin::sendEvent(Event(std::bind(&Newton::WorldObserver::onCollision, std::placeholders::_1, entity0, entity1, position, normal)));
+                processor->sendEvent(&Newton::WorldListener::onCollision, entity0, entity1, position, normal);
                 if (surface0.ghost || surface1.ghost)
                 {
                     NewtonContactJointRemoveContact(contactJoint, newtonContact);
@@ -255,7 +253,7 @@ namespace Gek
             NewtonWorldCriticalSectionUnlock(newtonWorld);
         }
 
-        // Plugin::PopulationObserver
+        // Plugin::PopulationListener
         void onLoadBegin(void)
         {
             surfaceList.push_back(Surface());

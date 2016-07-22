@@ -2,7 +2,6 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Core.h"
 #include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Resources.h"
@@ -177,8 +176,7 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
-            , public ObservableMixin<Plugin::RendererObserver>
-            , public Plugin::PopulationObserver
+            , public Plugin::PopulationListener
             , public Plugin::Renderer
         {
         public:
@@ -300,7 +298,7 @@ namespace Gek
             {
                 GEK_TRACE_SCOPE();
 
-                population->addObserver(Plugin::PopulationObserver::getObserver());
+                population->addListener(this);
                 backgroundUpdateHandle = population->setUpdatePriority(this, 10);
                 foregroundUpdateHandle = population->setUpdatePriority(this, 100);
 
@@ -359,7 +357,7 @@ namespace Gek
                     population->removeUpdatePriority(backgroundUpdateHandle);
                 }
 
-                population->removeObserver(Plugin::PopulationObserver::getObserver());
+                population->removeListener(this);
             }
 
             // Renderer
@@ -406,7 +404,7 @@ namespace Gek
                 const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
 
                 drawCallList.clear();
-                sendEvent(Event(std::bind(&Plugin::RendererObserver::onRenderScene, std::placeholders::_1, cameraEntity, &cameraConstantData.viewMatrix, &viewFrustum)));
+                sendEvent(&Plugin::RendererListener::onRenderScene, cameraEntity, std::cref(cameraConstantData.viewMatrix), std::cref(viewFrustum));
                 if (!drawCallList.empty())
                 {
                     Video::Device::Context *deviceContext = device->getDefaultContext();
@@ -572,7 +570,7 @@ namespace Gek
                 }
             }
 
-            // Plugin::PopulationObserver
+            // Plugin::PopulationListener
             void onLoadBegin(void)
             {
             }
@@ -598,11 +596,11 @@ namespace Gek
                 GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
                 if (handle == backgroundUpdateHandle)
                 {
-                    sendEvent(Event(std::bind(&Plugin::RendererObserver::onRenderBackground, std::placeholders::_1)));
+                    sendEvent(&Plugin::RendererListener::onRenderBackground);
                 }
                 else if (handle == foregroundUpdateHandle)
                 {
-                    sendEvent(Event(std::bind(&Plugin::RendererObserver::onRenderForeground, std::placeholders::_1)));
+                    sendEvent(&Plugin::RendererListener::onRenderForeground);
                     device->present(false);
                 }
             }

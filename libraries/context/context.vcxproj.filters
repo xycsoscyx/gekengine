@@ -14,16 +14,16 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Context\Observable.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Context\ObservableMixin.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Context\Context.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="GEK\Context\ContextUser.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Context\Broadcaster.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Context\Listener.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

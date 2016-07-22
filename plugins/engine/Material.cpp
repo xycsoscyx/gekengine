@@ -17,7 +17,7 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Material, Engine::Resources *, const wchar_t *, MaterialHandle)
             , public Engine::Material
-            , public Engine::ResourcesObserver
+            , public Engine::ResourcesListener
         {
         private:
             Engine::Resources *resources;
@@ -42,7 +42,7 @@ namespace Gek
                 GEK_CHECK_CONDITION(!shaderNode->hasAttribute(L"name"), Exception, "Materials shader node missing name attribute");
 
                 String shaderName(shaderNode->getAttribute(L"name"));
-                resources->addObserver(Engine::ResourcesObserver::getObserver());
+                resources->addListener(this);
                 shaderHandle = resources->loadShader(shaderName, material);
             }
 
@@ -52,12 +52,12 @@ namespace Gek
                 return data.get();
             }
 
-            // ResourcesObserver
+            // ResourcesListener
             void onShaderLoaded(ShaderHandle handle, Engine::Shader *shader)
             {
                 if (handle == shaderHandle)
                 {
-                    resources->removeObserver(Engine::ResourcesObserver::getObserver());
+                    resources->removeListener(this);
 
                     XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", materialName)));
                     XmlNodePtr materialNode(document->getRoot(L"material"));

@@ -9,7 +9,6 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Renderer.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include <concurrent_unordered_map.h>
 #include <ppl.h>
 #include <set>
@@ -45,11 +44,10 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Core, HWND)
-            , public ObservableMixin<Plugin::CoreObserver>
             , public Application
             , public Plugin::Core
-            , public Plugin::PopulationObserver
-            , public Plugin::RendererObserver
+            , public Plugin::PopulationListener
+            , public Plugin::RendererListener
         {
             HWND window;
             bool windowActive;
@@ -199,7 +197,7 @@ namespace Gek
                 population->loadComponents();
 
                 updateHandle = population->setUpdatePriority(this, 0);
-                renderer->addObserver(Plugin::RendererObserver::getObserver());
+                renderer->addListener(this);
 
                 IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
 
@@ -232,7 +230,7 @@ namespace Gek
 
                 if (renderer)
                 {
-                    renderer->removeObserver(Plugin::RendererObserver::getObserver());
+                    renderer->removeListener(this);
                 }
 
                 renderer = nullptr;
@@ -289,7 +287,7 @@ namespace Gek
                 if (commit)
                 {
                     optionsMap = std::move(changedOptionsMap);
-                    sendEvent(Event(std::bind(&Plugin::CoreObserver::onChanged, std::placeholders::_1)));
+                    sendEvent(&Plugin::CoreListener::onChanged);
 
                     auto &displaySearch = optionsMap.find(L"display");
                     if (displaySearch != optionsMap.end())
@@ -405,7 +403,7 @@ namespace Gek
                 return engineRunning;
             }
 
-            // Plugin::PopulationObserver
+            // Plugin::PopulationListener
             void onUpdate(uint32_t handle, bool isIdle)
             {
                 GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
@@ -423,49 +421,49 @@ namespace Gek
                 {
                     if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
                     {
-                        sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"turn", Plugin::ActionState(cursorMovementX))));
-                        sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"tilt", Plugin::ActionState(cursorMovementY))));
+                        sendEvent(&Plugin::CoreListener::onAction, L"turn", Plugin::ActionParameter(cursorMovementX));
+                        sendEvent(&Plugin::CoreListener::onAction, L"tilt", Plugin::ActionParameter(cursorMovementY));
                     }
 
                     std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
                     for (auto &action : actionCopy)
                     {
-                        Plugin::ActionState state(action.second);
+                        Plugin::ActionParameter parameter(action.second);
                         switch (action.first)
                         {
                         case 'W':
                         case VK_UP:
-                            sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"move_forward", state)));
+                            sendEvent(&Plugin::CoreListener::onAction, L"move_forward", parameter);
                             break;
 
                         case 'S':
                         case VK_DOWN:
-                            sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"move_backward", state)));
+                            sendEvent(&Plugin::CoreListener::onAction, L"move_backward", parameter);
                             break;
 
                         case 'A':
                         case VK_LEFT:
-                            sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"strafe_left", state)));
+                            sendEvent(&Plugin::CoreListener::onAction, L"strafe_left", parameter);
                             break;
 
                         case 'D':
                         case VK_RIGHT:
-                            sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"strafe_right", state)));
+                            sendEvent(&Plugin::CoreListener::onAction, L"strafe_right", parameter);
                             break;
 
                         case VK_SPACE:
-                            sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"jump", state)));
+                            sendEvent(&Plugin::CoreListener::onAction, L"jump", parameter);
                             break;
 
                         case VK_LCONTROL:
-                            sendEvent(Event(std::bind(&Plugin::CoreObserver::onAction, std::placeholders::_1, L"crouch", state)));
+                            sendEvent(&Plugin::CoreListener::onAction, L"crouch", parameter);
                             break;
                         };
                     }
                 }
             }
 
-            // Plugin::RendererObserver
+            // Plugin::RendererListener
             void onRenderBackground(void)
             {
                 if (background)
@@ -482,7 +480,7 @@ namespace Gek
                 }
             }
 
-            // SciterObserver
+            // SciterListener
             UINT onSciterLoadData(LPSCN_LOAD_DATA notification)
             {
                 return 0;

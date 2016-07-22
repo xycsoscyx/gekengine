@@ -4,7 +4,8 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Hash.h"
 #include "GEK\Context\Context.h"
-#include "GEK\Context\Observable.h"
+#include "GEK\Context\Broadcaster.h"
+#include "GEK\Context\Listener.h"
 #include "GEK\System\VideoDevice.h"
 #include <type_traits>
 #include <typeindex>
@@ -96,9 +97,15 @@ namespace Gek
         GEK_PREDECLARE(Filter);
         GEK_PREDECLARE(Material);
 
+        GEK_INTERFACE(ResourcesListener)
+            : public Listener
+        {
+            virtual void onShaderLoaded(ShaderHandle shaderHandle, Engine::Shader *shader) { };
+        };
+
         GEK_INTERFACE(Resources)
             : virtual public Plugin::Resources
-            , virtual public Observable
+            , public Broadcaster<ResourcesListener>
         {
             virtual void clearLocal(void) = 0;
 
@@ -134,12 +141,6 @@ namespace Gek
             virtual void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *deviceContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
             virtual void setBackBuffer(Video::Device::Context *deviceContext, ResourceHandle *depthBuffer) = 0;
-        };
-
-        GEK_INTERFACE(ResourcesObserver)
-            : public Observer
-        {
-            virtual void onShaderLoaded(ShaderHandle shaderHandle, Engine::Shader *shader) { };
         };
     }; // namespace Engine
 }; // namespace Gek

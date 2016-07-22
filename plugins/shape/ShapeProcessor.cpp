@@ -6,7 +6,6 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Engine\Core.h"
 #include "GEK\Engine\ComponentMixin.h"
@@ -413,8 +412,8 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)
-        , public Plugin::PopulationObserver
-        , public Plugin::RendererObserver
+        , public Plugin::PopulationListener
+        , public Plugin::RendererListener
         , public Plugin::Processor
     {
     public:
@@ -511,8 +510,8 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver(Plugin::PopulationObserver::getObserver());
-            renderer->addObserver(Plugin::RendererObserver::getObserver());
+            population->addListener(this);
+            renderer->addListener(this);
 
             visual = resources->loadVisual(L"model");
 
@@ -521,8 +520,8 @@ namespace Gek
 
         ~ShapeProcessor(void)
         {
-            renderer->removeObserver(Plugin::RendererObserver::getObserver());
-            population->removeObserver(Plugin::PopulationObserver::getObserver());
+            renderer->removeListener(this);
+            population->removeListener(this);
         }
 
         void loadBoundingBox(Shape &shape, const String &shapeName, const String &parameters)
@@ -583,7 +582,7 @@ namespace Gek
             }
         }
 
-        // Plugin::PopulationObserver
+        // Plugin::PopulationListener
         void onLoadSucceeded(void)
         {
         }
@@ -643,7 +642,7 @@ namespace Gek
             }
         }
 
-        // Plugin::RendererObserver
+        // Plugin::RendererListener
         static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Shape *shape, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;

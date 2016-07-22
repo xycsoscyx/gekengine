@@ -4,7 +4,6 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Shapes\Sphere.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Core.h"
 #include "GEK\Engine\Visual.h"
 #include "GEK\Engine\Renderer.h"
@@ -148,6 +147,30 @@ namespace Gek
                 return handle;
             }
 
+            HANDLE getImmediateHandle(std::size_t hash, std::function<TypePtr(HANDLE)> load)
+            {
+                HANDLE handle;
+                if (requestedLoadSet.count(hash) > 0)
+                {
+                    auto resourceSearch = resourceHandleMap.find(hash);
+                    if (resourceSearch != resourceHandleMap.end())
+                    {
+                        handle = resourceSearch->second;
+                    }
+                }
+                else
+                {
+                    requestedLoadSet.insert(hash);
+                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    resourceHandleMap[hash] = handle;
+
+                    auto &resource = resourceMap[handle];
+                    resource.set(load(handle));
+                }
+
+                return handle;
+            }
+
             HANDLE getHandle(std::size_t hash) const
             {
                 if (requestedLoadSet.count(hash) > 0)
@@ -175,7 +198,6 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Resources, Plugin::Core *, Video::Device *)
-            , public ObservableMixin<Engine::ResourcesObserver>
             , public Engine::Resources
             , public Messenger
         {
@@ -348,7 +370,10 @@ namespace Gek
                 };
 
                 std::size_t hash = std::hash<String>()(shaderName);
-                return (materialShaderMap[material] = shaderManager.getHandle(hash, load));
+                ShaderHandle shader = shaderManager.getImmediateHandle(hash, load);
+                materialShaderMap[material] = shader;
+                sendEvent(&Engine::ResourcesListener::onShaderLoaded, shader, shaderManager.getResource(shader));
+                return shader;
             }
 
             RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)

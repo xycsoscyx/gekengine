@@ -1,7 +1,6 @@
 ﻿#include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\Engine\Core.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Processor.h"
@@ -59,7 +58,6 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
-            , public ObservableMixin<Plugin::PopulationObserver>
             , public Engine::Population
         {
         private:
@@ -76,7 +74,7 @@ namespace Gek
             std::unordered_map<String, Plugin::Entity *> namedEntityMap;
             std::vector<Plugin::Entity *> killEntityList;
 
-            using UpdatePriorityMap = std::multimap<uint32_t, std::pair<uint32_t, Plugin::PopulationObserver *>>;
+            using UpdatePriorityMap = std::multimap<uint32_t, std::pair<uint32_t, Plugin::PopulationListener *>>;
             UpdatePriorityMap updatePriorityMap;
 
             std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
@@ -197,7 +195,7 @@ namespace Gek
                     try
                     {
                         free();
-                        sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadBegin, std::placeholders::_1)));
+                        sendEvent(&Plugin::PopulationListener::onLoadBegin);
 
                         XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", populationName)));
                         XmlNodePtr worldNode(document->getRoot(L"world"));
@@ -258,11 +256,11 @@ namespace Gek
 
                         frameTime = 0.0f;
                         worldTime = 0.0f;
-                        sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadSucceeded, std::placeholders::_1)));
+                        sendEvent(&Plugin::PopulationListener::onLoadSucceeded);
                     }
                     catch (const Exception &)
                     {
-                        sendEvent(Event(std::bind(&Plugin::PopulationObserver::onLoadFailed, std::placeholders::_1)));
+                        sendEvent(&Plugin::PopulationListener::onLoadFailed);
                     };
                 };
             }
@@ -284,7 +282,7 @@ namespace Gek
 
             void free(void)
             {
-                sendEvent(Event(std::bind(&Plugin::PopulationObserver::onFree, std::placeholders::_1)));
+                sendEvent(&Plugin::PopulationListener::onFree);
                 namedEntityMap.clear();
                 killEntityList.clear();
                 entityList.clear();
@@ -293,7 +291,7 @@ namespace Gek
             Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
             {
                 entityList.push_back(entity);
-                sendEvent(Event(std::bind(&Plugin::PopulationObserver::onEntityCreated, std::placeholders::_1, entity.get())));
+                sendEvent(&Plugin::PopulationListener::onEntityCreated, entity.get());
                 if (entityName)
                 {
                     namedEntityMap[entityName] = entity.get();
@@ -331,7 +329,7 @@ namespace Gek
 
             void killEntity(Plugin::Entity *entity)
             {
-                sendEvent(Event(std::bind(&Plugin::PopulationObserver::onEntityDestroyed, std::placeholders::_1, entity)));
+                sendEvent(&Plugin::PopulationListener::onEntityDestroyed, entity);
                 killEntityList.push_back(entity);
             }
 
@@ -365,7 +363,7 @@ namespace Gek
                 });
             }
 
-            uint32_t setUpdatePriority(Plugin::PopulationObserver *observer, uint32_t priority)
+            uint32_t setUpdatePriority(Plugin::PopulationListener *observer, uint32_t priority)
             {
                 static uint32_t nextHandle = 0;
                 uint32_t updateHandle = InterlockedIncrement(&nextHandle);

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "GEK\Context\Observable.h"
+#include "GEK\Context\Broadcaster.h"
+#include "GEK\Context\Listener.h"
 #include <Windows.h>
 
 namespace Gek
@@ -11,8 +12,35 @@ namespace Gek
         GEK_PREDECLARE(Resources);
         GEK_PREDECLARE(Renderer);
 
+        struct ActionParameter
+        {
+            union
+            {
+                bool state;
+                float value;
+            };
+
+            ActionParameter(bool state)
+                : state(state)
+            {
+            }
+
+            ActionParameter(float value)
+                : value(value)
+            {
+            }
+        };
+
+        GEK_INTERFACE(CoreListener)
+            : public Listener
+        {
+            virtual void onChanged(void) { };
+
+            virtual void onAction(const wchar_t *actionName, const ActionParameter &parameter) { };
+        };
+
         GEK_INTERFACE(Core)
-            : virtual public Observable
+            : public Broadcaster<CoreListener>
         {
             GEK_START_EXCEPTIONS();
 
@@ -25,33 +53,6 @@ namespace Gek
             virtual void beginChanges(void) = 0;
             virtual void setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value) = 0;
             virtual void finishChanges(bool commit) = 0;
-        };
-
-        struct ActionState
-        {
-            union
-            {
-                bool state;
-                float value;
-            };
-
-            ActionState(bool state)
-                : state(state)
-            {
-            }
-
-            ActionState(float value)
-                : value(value)
-            {
-            }
-        };
-
-        GEK_INTERFACE(CoreObserver)
-            : public Observer
-        {
-            virtual void onChanged(void) { };
-
-            virtual void onAction(const wchar_t *actionName, const ActionState &state) { };
         };
     }; // namespace Engine
 }; // namespace Gek

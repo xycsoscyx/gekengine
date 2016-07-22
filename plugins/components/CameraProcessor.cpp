@@ -62,7 +62,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
-        , public Plugin::PopulationObserver
+        , public Plugin::PopulationListener
         , public Plugin::Processor
     {
     public:
@@ -88,7 +88,7 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver(Plugin::PopulationObserver::getObserver());
+            population->addListener(this);
             updateHandle = population->setUpdatePriority(this, 90);
         }
 
@@ -97,11 +97,11 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver(Plugin::PopulationObserver::getObserver());
+                population->removeListener(this);
             }
         }
 
-        // Plugin::PopulationObserver
+        // Plugin::PopulationListener
         void onLoadBegin(void)
         {
         }

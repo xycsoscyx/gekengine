@@ -7,7 +7,6 @@
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Context\ContextUser.h"
-#include "GEK\Context\ObservableMixin.h"
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Engine\Core.h"
 #include "GEK\Engine\Processor.h"
@@ -85,8 +84,8 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ParticlesProcessor, Plugin::Core *)
-        , public Plugin::PopulationObserver
-        , public Plugin::RendererObserver
+        , public Plugin::PopulationListener
+        , public Plugin::RendererListener
         , public Plugin::Processor
     {
     public:
@@ -187,9 +186,9 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver(Plugin::PopulationObserver::getObserver());
+            population->addListener(this);
             updateHandle = population->setUpdatePriority(this, 60);
-            renderer->addObserver(Plugin::RendererObserver::getObserver());
+            renderer->addListener(this);
 
             visual = resources->loadVisual(L"particles");
 
@@ -198,15 +197,15 @@ namespace Gek
 
         ~ParticlesProcessor(void)
         {
-            renderer->removeObserver(Plugin::RendererObserver::getObserver());
+            renderer->removeListener(this);
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver(Plugin::PopulationObserver::getObserver());
+                population->removeListener(this);
             }
         }
 
-        // Plugin::PopulationObserver
+        // Plugin::PopulationListener
         void onLoadSucceeded(void)
         {
         }
@@ -338,7 +337,7 @@ namespace Gek
             }
         }
 
-        // Plugin::RendererObserver
+        // Plugin::RendererListener
         static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, Video::Buffer *particleBuffer)
         {
             GEK_REQUIRE(deviceContext);

@@ -1,7 +1,8 @@
 #pragma once
 
 #include "GEK\Context\Context.h"
-#include "GEK\Context\Observable.h"
+#include "GEK\Context\Broadcaster.h"
+#include "GEK\Context\Listener.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Shapes\Frustum.h"
@@ -25,23 +26,23 @@ namespace Gek
     {
         GEK_PREDECLARE(Entity);
 
+        GEK_INTERFACE(RendererListener)
+            : public Listener
+        {
+            virtual void onRenderBackground(void) { };
+            virtual void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) { };
+            virtual void onRenderForeground(void) { };
+        };
+
         GEK_INTERFACE(Renderer)
-            : virtual public Observable
+            : public Broadcaster<RendererListener>
         {
             GEK_START_EXCEPTIONS();
 
-            virtual Video::Device * getDevice(void) const = 0;
+        virtual Video::Device * getDevice(void) const = 0;
 
-            virtual void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
-            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
-        };
-
-        GEK_INTERFACE(RendererObserver)
-            : public Observer
-        {
-            virtual void onRenderBackground(void) { };
-            virtual void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum) { };
-            virtual void onRenderForeground(void) { };
+        virtual void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
+        virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

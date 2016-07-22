@@ -48,7 +48,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
-        , public Plugin::PopulationObserver
+        , public Plugin::PopulationListener
         , public Plugin::Processor
     {
     public:
@@ -63,7 +63,7 @@ namespace Gek
             , population(core->getPopulation())
             , updateHandle(0)
         {
-            population->addObserver(Plugin::PopulationObserver::getObserver());
+            population->addListener(this);
             updateHandle = population->setUpdatePriority(this, 0);
         }
 
@@ -72,11 +72,11 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver(Plugin::PopulationObserver::getObserver());
+                population->removeListener(this);
             }
         }
 
-        // Plugin::PopulationObserver
+        // Plugin::PopulationListener
         void onLoadBegin(void)
         {
         }

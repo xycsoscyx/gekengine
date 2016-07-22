@@ -2,7 +2,8 @@
 
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Context.h"
-#include "GEK\Context\Observable.h"
+#include "GEK\Context\Broadcaster.h"
+#include "GEK\Context\Listener.h"
 #include "GEK\Engine\Processor.h"
 #include <atlbase.h>
 #include <atlstr.h>
@@ -16,10 +17,24 @@ namespace Gek
     namespace Plugin
     {
         GEK_PREDECLARE(Entity);
-        GEK_PREDECLARE(PopulationObserver);
+        GEK_PREDECLARE(PopulationListener);
+
+        GEK_INTERFACE(PopulationListener)
+            : public Listener
+        {
+            virtual void onLoadBegin(void) { };
+        virtual void onLoadSucceeded(void) { };
+        virtual void onLoadFailed(void) { };
+        virtual void onFree(void) { };
+
+        virtual void onEntityCreated(Plugin::Entity *entity) { };
+        virtual void onEntityDestroyed(Plugin::Entity *entity) { };
+
+        virtual void onUpdate(uint32_t handle, bool isIdle) { };
+        };
 
         GEK_INTERFACE(Population)
-            : virtual public Observable
+            : public Broadcaster<PopulationListener>
         {
             GEK_START_EXCEPTIONS();
 
@@ -63,22 +78,8 @@ namespace Gek
 
             virtual void listProcessors(std::function<void(Processor *)> onProcessor) const = 0;
 
-            virtual uint32_t setUpdatePriority(PopulationObserver *observer, uint32_t priority) = 0;
+            virtual uint32_t setUpdatePriority(PopulationListener *observer, uint32_t priority) = 0;
             virtual void removeUpdatePriority(uint32_t updateHandle) = 0;
-        };
-
-        GEK_INTERFACE(PopulationObserver)
-            : public Observer
-        {
-            virtual void onLoadBegin(void) { };
-            virtual void onLoadSucceeded(void) { };
-            virtual void onLoadFailed(void) { };
-            virtual void onFree(void) { };
-
-            virtual void onEntityCreated(Plugin::Entity *entity) { };
-            virtual void onEntityDestroyed(Plugin::Entity *entity) { };
-
-            virtual void onUpdate(uint32_t handle, bool isIdle) { };
         };
     }; // namespace Plugin
 
