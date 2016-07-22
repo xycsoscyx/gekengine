@@ -184,8 +184,7 @@ namespace Gek
 
                         Video::Format format = Video::getFormat(textureNode->getText());
                         uint32_t flags = getTextureFlags(textureNode->getAttribute(L"flags"));
-                        bool readWrite = textureNode->getAttribute(L"readwrite");
-                        resourceMap[textureName] = resources->createTexture(String(L"%v:%v:resource", textureName, filterName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
+                        resourceMap[textureName] = resources->createTexture(String(L"%v:%v:resource", textureName, filterName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
 
@@ -201,11 +200,10 @@ namespace Gek
 
                     uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
                     uint32_t flags = getBufferFlags(bufferNode->getAttribute(L"flags"));
-                    bool readWrite = bufferNode->getAttribute(L"readwrite");
                     if (bufferNode->hasAttribute(L"stride"))
                     {
                         uint32_t stride = evaluate(bufferNode->getAttribute(L"stride"), true);
-                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), stride, size, Video::BufferType::Structured, flags, readWrite);
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), stride, size, Video::BufferType::Structured, flags);
                         resourceStructuresMap[bufferName] = bufferNode->getText();
                     }
                     else
@@ -228,7 +226,7 @@ namespace Gek
                         }
 
                         resourceMappingMap[bufferName] = std::make_pair(mapType, bindType);
-                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), format, size, Video::BufferType::Raw, flags, readWrite);
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, filterName), format, size, Video::BufferType::Raw, flags);
                     }
                 }
 
@@ -323,10 +321,6 @@ namespace Gek
                                     if (action.compareNoCase(L"generatemipmaps") == 0)
                                     {
                                         pass.actionMap[resourceName].insert(Actions::GenerateMipMaps);
-                                    }
-                                    else if (action.compareNoCase(L"flip") == 0)
-                                    {
-                                        pass.actionMap[resourceName].insert(Actions::Flip);
                                     }
                                 }
                             }
@@ -632,10 +626,6 @@ namespace Gek
                             {
                             case Actions::GenerateMipMaps:
                                 resources->generateMipMaps(deviceContext, resourceSearch->second);
-                                break;
-
-                            case Actions::Flip:
-                                resources->flip(resourceSearch->second);
                                 break;
                             };
                         }

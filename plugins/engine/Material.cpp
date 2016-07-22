@@ -17,15 +17,19 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Material, Engine::Resources *, const wchar_t *, MaterialHandle)
             , public Engine::Material
+            , public Engine::ResourcesObserver
         {
         private:
             Engine::Resources *resources;
+            String materialName;
+            ShaderHandle shaderHandle;
             DataPtr data;
 
         public:
             Material(Context *context, Engine::Resources *resources, const wchar_t *materialName, MaterialHandle material)
                 : ContextRegistration(context)
                 , resources(resources)
+                , materialName(materialName)
             {
                 GEK_TRACE_SCOPE(GEK_PARAMETER(materialName));
                 GEK_REQUIRE(resources);
@@ -38,8 +42,27 @@ namespace Gek
                 GEK_CHECK_CONDITION(!shaderNode->hasAttribute(L"name"), Exception, "Materials shader node missing name attribute");
 
                 String shaderName(shaderNode->getAttribute(L"name"));
-                resources->loadShader(shaderName, material, [this, shaderNode, materialName = String(materialName)](Engine::Shader *shader)->void
+                resources->addObserver(Engine::ResourcesObserver::getObserver());
+                shaderHandle = resources->loadShader(shaderName, material);
+            }
+
+            // Material
+            Data * const getData(void) const
+            {
+                return data.get();
+            }
+
+            // ResourcesObserver
+            void onShaderLoaded(ShaderHandle handle, Engine::Shader *shader)
+            {
+                if (handle == shaderHandle)
                 {
+                    resources->removeObserver(Engine::ResourcesObserver::getObserver());
+
+                    XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", materialName)));
+                    XmlNodePtr materialNode(document->getRoot(L"material"));
+                    XmlNodePtr shaderNode(materialNode->firstChildElement(L"shader"));
+
                     FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
                     String fileSpecifier(FileSystem::Path(materialName).getFileName());
 
@@ -71,12 +94,7 @@ namespace Gek
                     }
 
                     this->data = shader->loadMaterialData(passMap);
-                });
-            }
-
-            Data * const getData(void) const
-            {
-                return data.get();
+                }
             }
         };
 

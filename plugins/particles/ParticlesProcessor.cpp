@@ -170,7 +170,7 @@ namespace Gek
         Plugin::Renderer *renderer;
 
         VisualHandle visual;
-        ResourceHandle particleBuffer;
+        Video::BufferPtr particleBuffer;
 
         ShuntingYard shuntingYard;
         using EntityEmitterMap = std::unordered_map<Plugin::Entity *, Emitter>;
@@ -187,22 +187,22 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver((Plugin::PopulationObserver *)this);
+            population->addObserver(Plugin::PopulationObserver::getObserver());
             updateHandle = population->setUpdatePriority(this, 60);
-            renderer->addObserver((Plugin::RendererObserver *)this);
+            renderer->addObserver(Plugin::RendererObserver::getObserver());
 
-            visual = resources->loadPlugin(L"particles");
+            visual = resources->loadVisual(L"particles");
 
-            particleBuffer = resources->createBuffer(nullptr, sizeof(Particle), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
+            particleBuffer = renderer->getDevice()->createBuffer(sizeof(Particle), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
         }
 
         ~ParticlesProcessor(void)
         {
-            renderer->removeObserver((Plugin::RendererObserver *)this);
+            renderer->removeObserver(Plugin::RendererObserver::getObserver());
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((Plugin::PopulationObserver *)this);
+                population->removeObserver(Plugin::PopulationObserver::getObserver());
             }
         }
 
@@ -339,17 +339,17 @@ namespace Gek
         }
 
         // Plugin::RendererObserver
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, ResourceHandle particleBuffer)
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, Video::Buffer *particleBuffer)
         {
             GEK_REQUIRE(deviceContext);
             GEK_REQUIRE(resources);
 
-            resources->setResource(deviceContext->vertexPipeline(), particleBuffer, 0);
+            deviceContext->vertexPipeline()->setResource(particleBuffer, 0);
             resources->setResource(deviceContext->vertexPipeline(), colorMap, 1);
 
             uint32_t bufferCopied = 0;
             Particle *bufferData = nullptr;
-            resources->mapBuffer(particleBuffer, (void **)&bufferData);
+            deviceContext->getDevice()->mapBuffer(particleBuffer, (void **)&bufferData);
             for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
             {
                 const auto &emitter = emitterSearch->second->second;
@@ -368,15 +368,15 @@ namespace Gek
                     particlesCopied += copyCount;
                     if (bufferCopied >= ParticleBufferCount)
                     {
-                        resources->unmapBuffer(particleBuffer);
+                        deviceContext->getDevice()->unmapBuffer(particleBuffer);
                         deviceContext->drawPrimitive((ParticleBufferCount * 6), 0);
-                        resources->mapBuffer(particleBuffer, (void **)&bufferData);
+                        deviceContext->getDevice()->mapBuffer(particleBuffer, (void **)&bufferData);
                         bufferCopied = 0;
                     }
                 };
             }
 
-            resources->unmapBuffer(particleBuffer);
+            deviceContext->getDevice()->unmapBuffer(particleBuffer);
             if (bufferCopied > 0)
             {
                 deviceContext->drawPrimitive((bufferCopied * 6), 0);
@@ -404,7 +404,7 @@ namespace Gek
             for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )
             {
                 auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
-                renderer->queueDrawCall(visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesSearch->first.colorMap, emittersRange.first, emittersRange.second, particleBuffer));
+                renderer->queueDrawCall(visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesSearch->first.colorMap, emittersRange.first, emittersRange.second, particleBuffer.get()));
                 propertiesSearch = emittersRange.second;
             }
         }

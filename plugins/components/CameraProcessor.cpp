@@ -88,7 +88,7 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver((Plugin::PopulationObserver *)this);
+            population->addObserver(Plugin::PopulationObserver::getObserver());
             updateHandle = population->setUpdatePriority(this, 90);
         }
 
@@ -97,7 +97,7 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((Plugin::PopulationObserver *)this);
+                population->removeObserver(Plugin::PopulationObserver::getObserver());
             }
         }
 
@@ -133,7 +133,7 @@ namespace Gek
                 {
                     String name(L"camera:%v", cameraComponent.name);
                     auto backBuffer = renderer->getDevice()->getBackBuffer();
-                    data.target = resources->createTexture(name, Video::Format::R8G8B8A8_UNORM_SRGB, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource, false);
+                    data.target = resources->createTexture(name, Video::Format::R8G8B8A8_UNORM_SRGB, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
                 }
 
                 entityDataMap.insert(std::make_pair(entity, data));

@@ -199,7 +199,7 @@ namespace Gek
                 population->loadComponents();
 
                 updateHandle = population->setUpdatePriority(this, 0);
-                renderer->addObserver((Plugin::RendererObserver *)this);
+                renderer->addObserver(Plugin::RendererObserver::getObserver());
 
                 IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
 
@@ -213,10 +213,6 @@ namespace Gek
 
                 success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
                 GEK_CHECK_CONDITION(!success, Exception, "Unable to load system UI HTML");
-
-                SCITER_VALUE result;
-                String test(L"addConsoleCommand(\"testing\", \"\")");
-                SciterEval(window, test, test.length(), &result);
 
                 root = sciter::dom::element::root_element(window);
                 background = root.find_first("section#back-layer");
@@ -236,7 +232,7 @@ namespace Gek
 
                 if (renderer)
                 {
-                    renderer->removeObserver((Plugin::RendererObserver *)this);
+                    renderer->removeObserver(Plugin::RendererObserver::getObserver());
                 }
 
                 renderer = nullptr;

@@ -306,7 +306,7 @@ namespace Gek
                         Video::Format format = Video::getFormat(text);
                         GEK_CHECK_CONDITION(format == Video::Format::Unknown, Exception, "Invalid format specified for depth buffer: %v", text);
 
-                        depthBuffer = resources->createTexture(String(L"depth:%v:resource", shaderName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource, false);
+                        depthBuffer = resources->createTexture(String(L"depth:%v:resource", shaderName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource);
                     }
 
                     resourceMappingsMap[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
@@ -347,8 +347,7 @@ namespace Gek
 
                         Video::Format format = Video::getFormat(textureNode->getText());
                         uint32_t flags = getTextureFlags(textureNode->getAttribute(L"flags"));
-                        bool readWrite = textureNode->getAttribute(L"readwrite");
-                        resourceMap[textureName] = resources->createTexture(String(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags, readWrite);
+                        resourceMap[textureName] = resources->createTexture(String(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
 
@@ -364,11 +363,10 @@ namespace Gek
 
                     uint32_t size = evaluate(bufferNode->getAttribute(L"size"), true);
                     uint32_t flags = getBufferFlags(bufferNode->getAttribute(L"flags"));
-                    bool readWrite = bufferNode->getAttribute(L"readwrite");
                     if (bufferNode->hasAttribute(L"stride"))
                     {
                         uint32_t stride = evaluate(bufferNode->getAttribute(L"stride"), true);
-                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags, readWrite);
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
                         resourceStructuresMap[bufferName] = bufferNode->getText();
                     }
                     else
@@ -391,7 +389,7 @@ namespace Gek
                         }
 
                         resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
-                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags, readWrite);
+                        resourceMap[bufferName] = resources->createBuffer(String(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
                     }
                 }
 
@@ -507,10 +505,6 @@ namespace Gek
                                         if (action.compareNoCase(L"generatemipmaps") == 0)
                                         {
                                             pass.actionMap[resourceName].insert(Actions::GenerateMipMaps);
-                                        }
-                                        else if (action.compareNoCase(L"flip") == 0)
-                                        {
-                                            pass.actionMap[resourceName].insert(Actions::Flip);
                                         }
                                     }
                                 }
@@ -891,11 +885,14 @@ namespace Gek
             {
                 uint32_t firstStage = (block.lighting ? 1 : 0);
                 Data *data = dynamic_cast<Data *>(material->getData());
-                auto &passSearch = data->passMap.find(&pass);
-                if (passSearch != data->passMap.end())
+                if (data)
                 {
-                    resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
-                    return true;
+                    auto &passSearch = data->passMap.find(&pass);
+                    if (passSearch != data->passMap.end())
+                    {
+                        resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
+                        return true;
+                    }
                 }
 
                 return false;
@@ -915,10 +912,6 @@ namespace Gek
                             {
                             case Actions::GenerateMipMaps:
                                 resources->generateMipMaps(deviceContext, resourceSearch->second);
-                                break;
-
-                            case Actions::Flip:
-                                resources->flip(resourceSearch->second);
                                 break;
                             };
                         }

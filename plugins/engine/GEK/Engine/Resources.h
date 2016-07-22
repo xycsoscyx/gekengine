@@ -4,6 +4,7 @@
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Hash.h"
 #include "GEK\Context\Context.h"
+#include "GEK\Context\Observable.h"
 #include "GEK\System\VideoDevice.h"
 #include <type_traits>
 #include <typeindex>
@@ -63,15 +64,15 @@ namespace Gek
         {
             GEK_START_EXCEPTIONS();
 
-            virtual VisualHandle loadPlugin(const wchar_t *pluginName) = 0;
+            virtual VisualHandle loadVisual(const wchar_t *pluginName) = 0;
             virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
 
             virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
             virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
 
-            virtual ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, bool readWrite) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData = nullptr) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, bool readWrite, const void *staticData = nullptr) = 0;
+            virtual ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
 
             virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
             virtual void unmapBuffer(ResourceHandle buffer) = 0;
@@ -97,6 +98,7 @@ namespace Gek
 
         GEK_INTERFACE(Resources)
             : virtual public Plugin::Resources
+            , virtual public Observable
         {
             virtual void clearLocal(void) = 0;
 
@@ -110,7 +112,7 @@ namespace Gek
 
             virtual Filter * const loadFilter(const wchar_t *filterName) = 0;
 
-            virtual ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Engine::Shader *)> onLoad = [](Engine::Shader *) {}) = 0;
+            virtual ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material) = 0;
             virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 
@@ -119,7 +121,6 @@ namespace Gek
             virtual BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState) = 0;
             virtual BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
 
-            virtual void flip(ResourceHandle resourceHandle) = 0;
             virtual void generateMipMaps(Video::Device::Context *deviceContext, ResourceHandle resourceHandle) = 0;
             virtual void copyResource(ResourceHandle sourceHandle, ResourceHandle destinationHandle) = 0;
 
@@ -133,6 +134,12 @@ namespace Gek
             virtual void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *deviceContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
             virtual void setBackBuffer(Video::Device::Context *deviceContext, ResourceHandle *depthBuffer) = 0;
+        };
+
+        GEK_INTERFACE(ResourcesObserver)
+            : public Observer
+        {
+            virtual void onShaderLoaded(ShaderHandle shaderHandle, Engine::Shader *shader) { };
         };
     }; // namespace Engine
 }; // namespace Gek

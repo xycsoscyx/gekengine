@@ -164,7 +164,7 @@ namespace Gek
         Plugin::Renderer *renderer;
 
         VisualHandle visual;
-        ResourceHandle constantBuffer;
+        Video::BufferPtr constantBuffer;
 
         std::future<void> loadModelRunning;
         concurrency::concurrent_queue<std::function<void(void)>> loadModelQueue;
@@ -186,18 +186,18 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver((Plugin::PopulationObserver *)this);
-            renderer->addObserver((Plugin::RendererObserver *)this);
+            population->addObserver(Plugin::PopulationObserver::getObserver());
+            renderer->addObserver(Plugin::RendererObserver::getObserver());
 
-            visual = resources->loadPlugin(L"model");
+            visual = resources->loadVisual(L"model");
 
-            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
+            constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
         }
 
         ~ModelProcessor(void)
         {
-            renderer->removeObserver((Plugin::RendererObserver *)this);
-            population->removeObserver((Plugin::PopulationObserver *)this);
+            renderer->removeObserver(Plugin::RendererObserver::getObserver());
+            population->removeObserver(Plugin::PopulationObserver::getObserver());
         }
 
         void loadBoundingBox(Model &model, const String &modelName)
@@ -268,14 +268,14 @@ namespace Gek
                 uint32_t vertexCount = *((uint32_t *)rawFileData);
                 rawFileData += sizeof(uint32_t);
 
-                material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, false, rawFileData);
+                material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(Vertex) * vertexCount)));
                 rawFileData += (sizeof(Vertex) * vertexCount);
 
                 uint32_t indexCount = *((uint32_t *)rawFileData);
                 rawFileData += sizeof(uint32_t);
 
                 material.indexCount = indexCount;
-                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::R16_UINT, indexCount, Video::BufferType::Index, 0, false, rawFileData);
+                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::R16_UINT, indexCount, Video::BufferType::Index, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(uint16_t) * indexCount)));
                 rawFileData += (sizeof(uint16_t) * indexCount);
             }
 
@@ -370,14 +370,14 @@ namespace Gek
         }
 
         // Plugin::RendererObserver
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, ResourceHandle constantBuffer)
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;
-            resources->mapBuffer(constantBuffer, (void **)&instanceData);
+            deviceContext->getDevice()->mapBuffer(constantBuffer, (void **)&instanceData);
             memcpy(instanceData, instanceList, sizeof(Instance));
-            resources->unmapBuffer(constantBuffer);
+            deviceContext->getDevice()->unmapBuffer(constantBuffer);
 
-            resources->setConstantBuffer(deviceContext->vertexPipeline(), constantBuffer, 4);
+            deviceContext->vertexPipeline()->setConstantBuffer(constantBuffer, 4);
             resources->setVertexBuffer(deviceContext, 0, material.vertexBuffer, 0);
             resources->setIndexBuffer(deviceContext, material.indexBuffer, 0);
             deviceContext->drawIndexedPrimitive(material.indexCount, 0, 0);
@@ -426,7 +426,7 @@ namespace Gek
                     {
                         concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
                         {
-                            renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer));
+                            renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
                         });
                     });
                 });

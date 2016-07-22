@@ -63,7 +63,7 @@ namespace Gek
             , population(core->getPopulation())
             , updateHandle(0)
         {
-            population->addObserver((Plugin::PopulationObserver *)this);
+            population->addObserver(Plugin::PopulationObserver::getObserver());
             updateHandle = population->setUpdatePriority(this, 0);
         }
 
@@ -72,7 +72,7 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((Plugin::PopulationObserver *)this);
+                population->removeObserver(Plugin::PopulationObserver::getObserver());
             }
         }
 

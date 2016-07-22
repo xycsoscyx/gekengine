@@ -85,7 +85,7 @@ namespace Gek
             , gravity(0.0f, -32.174f, 0.0f)
         {
             updateHandle = population->setUpdatePriority(this, 50);
-            population->addObserver((Plugin::PopulationObserver *)this);
+            population->addObserver(Plugin::PopulationObserver::getObserver());
         }
 
         ~NewtonProcessor(void)
@@ -94,7 +94,7 @@ namespace Gek
             if (population)
             {
                 population->removeUpdatePriority(updateHandle);
-                population->removeObserver((Plugin::PopulationObserver *)this);
+                population->removeObserver(Plugin::PopulationObserver::getObserver());
             }
         }
 

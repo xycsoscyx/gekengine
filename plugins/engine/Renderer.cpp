@@ -300,7 +300,7 @@ namespace Gek
             {
                 GEK_TRACE_SCOPE();
 
-                population->addObserver((Plugin::PopulationObserver *)this);
+                population->addObserver(Plugin::PopulationObserver::getObserver());
                 backgroundUpdateHandle = population->setUpdatePriority(this, 10);
                 foregroundUpdateHandle = population->setUpdatePriority(this, 100);
 
@@ -359,7 +359,7 @@ namespace Gek
                     population->removeUpdatePriority(backgroundUpdateHandle);
                 }
 
-                population->removeObserver((Plugin::PopulationObserver *)this);
+                population->removeObserver(Plugin::PopulationObserver::getObserver());
             }
 
             // Renderer
@@ -540,19 +540,22 @@ namespace Gek
                         for (auto &filterName : filterList)
                         {
                             Engine::Filter * const filter = resources->loadFilter(filterName);
-                            for (auto pass = filter->begin(deviceContext, cameraTarget); pass; pass = pass->next())
+                            if (filter)
                             {
-                                switch (pass->prepare())
+                                for (auto pass = filter->begin(deviceContext, cameraTarget); pass; pass = pass->next())
                                 {
-                                case Engine::Filter::Pass::Mode::Deferred:
-                                    deviceContext->drawPrimitive(3, 0);
-                                    break;
+                                    switch (pass->prepare())
+                                    {
+                                    case Engine::Filter::Pass::Mode::Deferred:
+                                        deviceContext->drawPrimitive(3, 0);
+                                        break;
 
-                                case Engine::Filter::Pass::Mode::Compute:
-                                    break;
-                                };
+                                    case Engine::Filter::Pass::Mode::Compute:
+                                        break;
+                                    };
 
-                                pass->clear();
+                                    pass->clear();
+                                }
                             }
                         }
                     }

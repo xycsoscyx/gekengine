@@ -347,19 +347,24 @@ namespace Gek
             }
         }
 
-        const std::vector <Vertex> & getVertices() const
+        uint32_t getVertexCount() const
         {
-            return vertices;
+            return vertices.size();
         }
 
-        const std::vector <uint16_t> & getIndices() const
+        uint32_t getIndexCount() const
         {
-            return indices;
+            return indices.size();
         }
 
-        float getInscriptionRadiusMultiplier() const
+        std::vector<uint8_t> getVertexData(void) const
         {
-            return inscriptionRadiusMultiplier;
+            return std::vector<uint8_t>((uint8_t *)vertices.data(), (uint8_t *)vertices.data() + (sizeof(Vertex) * vertices.size()));
+        }
+
+        std::vector<uint8_t> getIndexData(void) const
+        {
+            return std::vector<uint8_t>((uint8_t *)indices.data(), (uint8_t *)indices.data() + (sizeof(Vertex) * indices.size()));
         }
     };
 
@@ -484,7 +489,7 @@ namespace Gek
         Plugin::Renderer *renderer;
 
         VisualHandle visual;
-        ResourceHandle constantBuffer;
+        Video::BufferPtr constantBuffer;
 
         std::future<void> loadShapeRunning;
         concurrency::concurrent_queue<std::function<void(void)>> loadShapeQueue;
@@ -506,18 +511,18 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
-            population->addObserver((Plugin::PopulationObserver *)this);
-            renderer->addObserver((Plugin::RendererObserver *)this);
+            population->addObserver(Plugin::PopulationObserver::getObserver());
+            renderer->addObserver(Plugin::RendererObserver::getObserver());
 
-            visual = resources->loadPlugin(L"model");
+            visual = resources->loadVisual(L"model");
 
-            constantBuffer = resources->createBuffer(nullptr, sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
+            constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
         }
 
         ~ShapeProcessor(void)
         {
-            renderer->removeObserver((Plugin::RendererObserver *)this);
-            population->removeObserver((Plugin::PopulationObserver *)this);
+            renderer->removeObserver(Plugin::RendererObserver::getObserver());
+            population->removeObserver(Plugin::PopulationObserver::getObserver());
         }
 
         void loadBoundingBox(Shape &shape, const String &shapeName, const String &parameters)
@@ -544,9 +549,9 @@ namespace Gek
                     uint32_t divisionCount = shape.parameters;
                     geoSphere.generate(divisionCount);
 
-                    shape.indexCount = geoSphere.getIndices().size();
-                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertices().size(), Video::BufferType::Vertex, 0, false, geoSphere.getVertices().data());
-                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::R16_UINT, geoSphere.getIndices().size(), Video::BufferType::Index, 0, false, geoSphere.getIndices().data());
+                    shape.indexCount = geoSphere.getIndexCount();
+                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertexCount(), Video::BufferType::Vertex, 0, geoSphere.getVertexData());
+                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::R16_UINT, geoSphere.getIndexCount(), Video::BufferType::Index, 0, geoSphere.getIndexData());
                     break;
                 }
             };
@@ -639,14 +644,14 @@ namespace Gek
         }
 
         // Plugin::RendererObserver
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Shape *shape, const Instance *instanceList, ResourceHandle constantBuffer)
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Shape *shape, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;
-            resources->mapBuffer(constantBuffer, (void **)&instanceData);
+            deviceContext->getDevice()->mapBuffer(constantBuffer, (void **)&instanceData);
             memcpy(instanceData, instanceList, sizeof(Instance));
-            resources->unmapBuffer(constantBuffer);
+            deviceContext->getDevice()->unmapBuffer(constantBuffer);
 
-            resources->setConstantBuffer(deviceContext->vertexPipeline(), constantBuffer, 4);
+            deviceContext->vertexPipeline()->setConstantBuffer(constantBuffer, 4);
             resources->setVertexBuffer(deviceContext, 0, shape->vertexBuffer, 0);
             resources->setIndexBuffer(deviceContext, shape->indexBuffer, 0);
             deviceContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
@@ -693,7 +698,7 @@ namespace Gek
                 {
                     concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
                     {
-                        renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer));
+                        renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer.get()));
                     });
                 });
             });

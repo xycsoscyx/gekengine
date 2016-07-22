@@ -35,7 +35,6 @@ namespace Gek
         enum class Actions : uint8_t
         {
             GenerateMipMaps = 0,
-            Flip,
         };
 
         struct Map

@@ -1285,6 +1285,7 @@ namespace Gek
                 };
 
             public:
+                Device *device;
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 PipelinePtr computeSystemHandler;
                 PipelinePtr vertexSystemHandler;
@@ -1292,8 +1293,9 @@ namespace Gek
                 PipelinePtr pixelSystemHandler;
 
             public:
-                Context(ID3D11DeviceContext *d3dDeviceContext)
-                    : d3dDeviceContext(d3dDeviceContext)
+                Context(Device *device, ID3D11DeviceContext *d3dDeviceContext)
+                    : device(device)
+                    , d3dDeviceContext(d3dDeviceContext)
                     , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
                     , vertexSystemHandler(new VertexPipeline(d3dDeviceContext))
                     , geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext))
@@ -1302,6 +1304,11 @@ namespace Gek
                 }
 
                 // Video::Context
+                Device * const getDevice(void)
+                {
+                    return device;
+                }
+
                 Pipeline * const computePipeline(void)
                 {
                     GEK_REQUIRE(computeSystemHandler);
@@ -1584,7 +1591,7 @@ namespace Gek
                     GEK_CHECK_CONDITION(FAILED(resultValue), Video::Exception, "Unable to set fullscreen state (error %v)", resultValue);
                 }
 
-                defaultContext = makeShared<Context>(d3dDeviceContext);
+                defaultContext = makeShared<Context>(this, d3dDeviceContext);
             }
 
             ~Device(void)
@@ -1690,7 +1697,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
                 GEK_CHECK_CONDITION(!d3dDeferredDeviceContext, Video::Exception, "Unable to create deferred context (error %v)", resultValue);
 
-                return makeShared<Context>(d3dDeferredDeviceContext.p);
+                return makeShared<Context>(this, d3dDeferredDeviceContext.p);
             }
 
             Video::ObjectPtr createEvent(void)

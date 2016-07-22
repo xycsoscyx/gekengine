@@ -260,7 +260,7 @@ namespace Gek
             NewtonDestroyCollision(newtonCastingShape);
             NewtonDestroyCollision(newtonSupportShape);
             NewtonDestroyCollision(newtonUpperBodyShape);
-            core->removeObserver((Plugin::CoreObserver *)this);
+            core->removeObserver(Plugin::CoreObserver::getObserver());
         }
 
         // Plugin::CoreObserver
@@ -683,7 +683,7 @@ namespace Gek
             GEK_THROW_EXCEPTION(Trace::Exception, "Unable to allocate new player object: %v", badAllocation.what());
         };
 
-        core->addObserver((Plugin::CoreObserver *)player.get());
+        core->addObserver(player->Plugin::CoreObserver::getObserver());
         return player;
     }
 
