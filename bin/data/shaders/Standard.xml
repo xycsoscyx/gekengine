@@ -11,31 +11,25 @@
             <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
             <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
         </solid>
-        <transparent>
-            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
-        </transparent>
     </material>
 
     <defines>
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <shadowRadius>1.0</shadowRadius>
+        <shadowRadius>2.0</shadowRadius>
         <shadowStrength>0.3</shadowStrength>
-        <shadowTapCount integer="true">12</shadowTapCount>
+        <shadowTapCount integer="true">32</shadowTapCount>
         <shadowSpiralCount>13</shadowSpiralCount>
-        <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
-        <gaussianSigma>2</gaussianSigma>
-        <guassianRadius integer="true">floor(displayHeight / 100)</guassianRadius>
     </defines>
 
     <depth>D32_FLOAT</depth>
 
     <textures>
-        <albedoBuffer bind="float4" flags="target">R8G8B8A8_UNORM</albedoBuffer>
+        <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
-        <ambientOcclusionBuffer bind="float" flags="target" readwrite="true">R8_UNORM</ambientOcclusionBuffer>
+        <ambientBuffer bind="float" flags="target" readwrite="true">R8_UNORM</ambientBuffer>
         <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
     </textures>
 
@@ -71,69 +65,27 @@
             </resources>
 
             <targets>
-                <ambientOcclusionBuffer />
+                <ambientBuffer />
             </targets>
 
-            <program entry="mainPixelProgram">Standard\AmbientOcclusion</program>
+            <program entry="mainPixelProgram">Standard\AmbientCalculation</program>
         </pass>
 
         <pass mode="deferred">
-            <defines>
-                <blurAxis>float2(1,0)</blurAxis>
-            </defines>
-
             <resources>
-                <ambientOcclusionBuffer actions="flip">sourceBuffer</ambientOcclusionBuffer>
-                <depth />
-            </resources>
-
-            <targets>
-                <ambientOcclusionBuffer />
-            </targets>
-
-            <program entry="mainPixelProgram">Standard\BilateralBlur</program>
-        </pass>
-
-        <pass mode="deferred">
-            <defines>
-                <blurAxis>float2(0,1)</blurAxis>
-            </defines>
-
-            <resources>
-                <ambientOcclusionBuffer actions="flip">sourceBuffer</ambientOcclusionBuffer>
-                <depth />
-            </resources>
-
-            <targets>
-                <ambientOcclusionBuffer />
-            </targets>
-
-            <program entry="mainPixelProgram">Standard\BilateralBlur</program>
-        </pass>
-
-        <pass mode="deferred">
-            <blendstates unified="true">
-                <color source="zero" destination="one" operation="add" />
-                <alpha source="one" destination="zero" operation="add" />
-            </blendstates>
-
-            <resources>
-                <ambientOcclusionBuffer actions="flip" />
-            </resources>
-
-            <targets>
                 <albedoBuffer />
+                <ambientBuffer actions="flip" />
+            </resources>
+
+            <targets>
+                <finalBuffer />
             </targets>
 
-            <program entry="mainPixelProgram">Standard\Combine</program>
+            <program entry="mainPixelProgram">Standard\AmbientLighting</program>
         </pass>
     </block>
 
     <block lighting="true">
-        <clear>
-            <finalBuffer type="target">(0,0,0,0)</finalBuffer>
-        </clear>
-
         <pass mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1">
             <resources>
                 <depth />

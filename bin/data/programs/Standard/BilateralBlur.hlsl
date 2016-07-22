@@ -33,6 +33,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     }
 
     OutputPixel outputPixel;
-    outputPixel.ambientOcclusionBuffer = (finalValue * rcp(totalWeight + Math::Epsilon));
+    outputPixel.ambientBuffer = (finalValue * rcp(totalWeight + Math::Epsilon));
     return outputPixel;
 }

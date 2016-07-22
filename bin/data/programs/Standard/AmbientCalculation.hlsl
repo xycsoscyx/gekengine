@@ -48,10 +48,7 @@ float getShadowFactor(InputPixel inputPixel)
     return totalOcclusion;
 }
 
-
-OutputPixel mainPixelProgram(InputPixel inputPixel)
+float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    OutputPixel output;
-    output.ambientOcclusionBuffer = getShadowFactor(inputPixel);
-    return output;
+    return getShadowFactor(inputPixel);
 }

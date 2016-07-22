@@ -25,7 +25,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     normal = (inputPixel.frontFacing ? normal : -normal);
 
     OutputPixel outputPixel;
-    outputPixel.albedoBuffer = albedo;
+    outputPixel.albedoBuffer = albedo.rgb;
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metalness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     outputPixel.normalBuffer = encodeNormal(normal);
