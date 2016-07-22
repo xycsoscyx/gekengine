@@ -22,6 +22,8 @@
 #include <memory>
 #include <map>
 #include <set>
+#include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 
 static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
 {
@@ -66,10 +68,10 @@ namespace Gek
         std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
 
         Math::Float3 gravity;
-        std::vector<Surface> surfaceList;
-        std::unordered_map<std::size_t, uint32_t> surfaceIndexMap;
-        std::unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
-        std::unordered_map<std::size_t, NewtonCollision *> collisionMap;
+        concurrency::concurrent_vector<Surface> surfaceList;
+        concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
+        concurrency::concurrent_unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
+        concurrency::concurrent_unordered_map<std::size_t, NewtonCollision *> collisionMap;
 
     public:
         NewtonProcessor(Context *context, Plugin::Core *core)
@@ -118,36 +120,42 @@ namespace Gek
             {
                 auto &surfaceIndex = surfaceIndexMap[hash] = 0;
 
-                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", surfaceName)));
-                XmlNodePtr materialNode(document->getRoot(L"material"));
-                XmlNodePtr surfaceNode(materialNode->firstChildElement(L"surface"));
-                if (surfaceNode->isValid())
+                try
                 {
-                    Surface surface;
-                    surface.ghost = surfaceNode->getAttribute(L"ghost");
-                    if (surfaceNode->hasAttribute(L"staticfriction"))
+                    XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", surfaceName)));
+                    XmlNodePtr materialNode(document->getRoot(L"material"));
+                    XmlNodePtr surfaceNode(materialNode->firstChildElement(L"surface"));
+                    if (surfaceNode->isValid())
                     {
-                        surface.staticFriction = surfaceNode->getAttribute(L"staticfriction");
-                    }
+                        Surface surface;
+                        surface.ghost = surfaceNode->getAttribute(L"ghost");
+                        if (surfaceNode->hasAttribute(L"staticfriction"))
+                        {
+                            surface.staticFriction = surfaceNode->getAttribute(L"staticfriction");
+                        }
 
-                    if (surfaceNode->hasAttribute(L"kineticfriction"))
-                    {
-                        surface.kineticFriction = surfaceNode->getAttribute(L"kineticfriction");
-                    }
+                        if (surfaceNode->hasAttribute(L"kineticfriction"))
+                        {
+                            surface.kineticFriction = surfaceNode->getAttribute(L"kineticfriction");
+                        }
 
-                    if (surfaceNode->hasAttribute(L"elasticity"))
-                    {
-                        surface.elasticity = surfaceNode->getAttribute(L"elasticity");
-                    }
+                        if (surfaceNode->hasAttribute(L"elasticity"))
+                        {
+                            surface.elasticity = surfaceNode->getAttribute(L"elasticity");
+                        }
 
-                    if (surfaceNode->hasAttribute(L"softness"))
-                    {
-                        surface.softness = surfaceNode->getAttribute(L"softness");
-                    }
+                        if (surfaceNode->hasAttribute(L"softness"))
+                        {
+                            surface.softness = surfaceNode->getAttribute(L"softness");
+                        }
 
-                    surfaceIndex = surfaceList.size();
-                    surfaceList.push_back(surface);
+                        surfaceIndex = surfaceList.size();
+                        surfaceList.push_back(surface);
+                    }
                 }
+                catch (const Exception &)
+                {
+                };
             }
 
             return surfaceIndex;
@@ -298,7 +306,10 @@ namespace Gek
 
             for (auto &collisionPair : collisionMap)
             {
-                NewtonDestroyCollision(collisionPair.second);
+                if (collisionPair.second)
+                {
+                    NewtonDestroyCollision(collisionPair.second);
+                }
             }
 
             collisionMap.clear();
@@ -381,7 +392,7 @@ namespace Gek
             auto entitySearch = entityMap.find(entity);
             if (entitySearch != entityMap.end())
             {
-                entityMap.erase(entitySearch);
+                entityMap.unsafe_erase(entitySearch);
             }
         }
 

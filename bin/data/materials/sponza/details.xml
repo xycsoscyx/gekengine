@@ -5,7 +5,7 @@
             <albedo flags="sRGB" file="$material.Albedo" />
             <normal file="$material.Normal" />
             <roughness file="$material.Roughness" />
-            <metalness pattern="color" parameters="1" />
+            <metalness file="$material.Metalness" />
         </solid>
     </shader>
 </material>
