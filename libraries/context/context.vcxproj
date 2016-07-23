@@ -21,7 +21,6 @@
     <ClInclude Include="GEK\Context\Broadcaster.h" />
     <ClInclude Include="GEK\Context\Context.h" />
     <ClInclude Include="GEK\Context\ContextUser.h" />
-    <ClInclude Include="GEK\Context\Listener.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{E4015F2B-C176-414F-8733-1C2D88EF3FB5}</ProjectGuid>

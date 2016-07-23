@@ -382,19 +382,18 @@ namespace Gek
             }
         }
 
-        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
-            GEK_REQUIRE(viewFrustum);
 
             visibleMap.clear();
             concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
             {
                 Plugin::Entity *entity = entityEmitterPair.first;
                 const Emitter &emitter = entityEmitterPair.second;
-                if (viewFrustum->isVisible(emitter))
+                if (viewFrustum.isVisible(emitter))
                 {
                     visibleMap.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &entityEmitterPair));
                 }

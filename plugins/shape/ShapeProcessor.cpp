@@ -656,12 +656,11 @@ namespace Gek
             deviceContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
         }
 
-        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 *viewMatrix, const Shapes::Frustum *viewFrustum)
+        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
-            GEK_REQUIRE(viewFrustum);
 
             visibleMap.clear();
             concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
@@ -676,11 +675,11 @@ namespace Gek
                 Shapes::OrientedBox orientedBox(shape.alignedBox, matrix);
                 orientedBox.halfsize *= transformComponent.scale;
 
-                if (viewFrustum->isVisible(orientedBox))
+                if (viewFrustum.isVisible(orientedBox))
                 {
                     auto &materialMap = visibleMap[&shape];
                     auto &instanceList = materialMap[data.skin];
-                    instanceList.push_back(Instance((matrix * *viewMatrix), data.color, transformComponent.scale));
+                    instanceList.push_back(Instance((matrix * viewMatrix), data.color, transformComponent.scale));
                 }
             });
 

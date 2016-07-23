@@ -2,7 +2,6 @@
 
 #include "GEK\Context\Context.h"
 #include "GEK\Context\Broadcaster.h"
-#include "GEK\Context\Listener.h"
 #include "GEK\Engine\Resources.h"
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Shapes\Frustum.h"
@@ -27,7 +26,6 @@ namespace Gek
         GEK_PREDECLARE(Entity);
 
         GEK_INTERFACE(RendererListener)
-            : public Listener
         {
             virtual void onRenderBackground(void) { };
             virtual void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) { };

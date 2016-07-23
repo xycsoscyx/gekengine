@@ -1,7 +1,6 @@
 #pragma once
 
 #include "GEK\Context\Broadcaster.h"
-#include "GEK\Context\Listener.h"
 #include <Windows.h>
 
 namespace Gek
@@ -32,7 +31,6 @@ namespace Gek
         };
 
         GEK_INTERFACE(CoreListener)
-            : public Listener
         {
             virtual void onChanged(void) { };
 

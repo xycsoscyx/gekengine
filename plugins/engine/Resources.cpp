@@ -327,7 +327,7 @@ namespace Gek
             VisualHandle loadVisual(const wchar_t *visualName)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(visualName));
-                auto load = [this, visualName = String(visualName)](VisualHandle)->Plugin::VisualPtr
+                auto load = [this, visualName = String(visualName)](VisualHandle) -> Plugin::VisualPtr
                 {
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, visualName.c_str());
                 };
@@ -339,7 +339,7 @@ namespace Gek
             MaterialHandle loadMaterial(const wchar_t *materialName)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(materialName));
-                auto load = [this, materialName = String(materialName)](MaterialHandle handle)->Engine::MaterialPtr
+                auto load = [this, materialName = String(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
                 {
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName.c_str(), handle);
                 };
@@ -351,7 +351,7 @@ namespace Gek
             Engine::Filter * const loadFilter(const wchar_t *filterName)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(filterName));
-                auto load = [this, filterName = String(filterName)](ResourceHandle)->Engine::FilterPtr
+                auto load = [this, filterName = String(filterName)](ResourceHandle) -> Engine::FilterPtr
                 {
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName.c_str());
                 };
@@ -361,10 +361,10 @@ namespace Gek
                 return filterManager.getResource(filter);
             }
 
-            ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material)
+            ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Engine::Shader *)> onShader)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
-                auto load = [this, shaderName = String(shaderName)](ShaderHandle)->Engine::ShaderPtr
+                auto load = [this, shaderName = String(shaderName)](ShaderHandle) -> Engine::ShaderPtr
                 {
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName.c_str());
                 };
@@ -372,7 +372,7 @@ namespace Gek
                 std::size_t hash = std::hash<String>()(shaderName);
                 ShaderHandle shader = shaderManager.getImmediateHandle(hash, load);
                 materialShaderMap[material] = shader;
-                sendEvent(&Engine::ResourcesListener::onShaderLoaded, shader, shaderManager.getResource(shader));
+                onShader(shaderManager.getResource(shader));
                 return shader;
             }
 
@@ -669,7 +669,7 @@ namespace Gek
             ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName));
-                auto load = [this, textureName = String(textureName), flags](ResourceHandle)->Video::TexturePtr
+                auto load = [this, textureName = String(textureName), flags](ResourceHandle) -> Video::TexturePtr
                 {
                     return loadTextureData(textureName, flags);
                 };
@@ -682,7 +682,7 @@ namespace Gek
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(parameters));
 
-                auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle)->Video::TexturePtr
+                auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle) -> Video::TexturePtr
                 {
                     return createTextureData(pattern, parameters);
                 };
@@ -694,7 +694,7 @@ namespace Gek
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
-                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle)->Video::ObjectPtr
+                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
                     auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
@@ -707,7 +707,7 @@ namespace Gek
             ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
-                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle)->Video::ObjectPtr
+                auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
                     auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));

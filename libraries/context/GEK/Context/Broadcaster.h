@@ -1,17 +1,15 @@
 #pragma once
 
 #include "GEK\Context\Context.h"
-#include <unordered_set>
+#include <concurrent_unordered_set.h>
 
 namespace Gek
 {
-    GEK_PREDECLARE(Listener);
-
     template <typename LISTENER>
     class Broadcaster
     {
     private:
-        std::unordered_set<Listener *> listenerSet;
+        concurrency::concurrent_unordered_set<LISTENER *> listenerSet;
 
     public:
         virtual ~Broadcaster(void)
@@ -20,28 +18,20 @@ namespace Gek
 
         void addListener(LISTENER *listener)
         {
-            auto listenerSearch = listenerSet.find(listener);
-            if (listenerSearch == listenerSet.end())
-            {
-                listenerSet.insert(listener);
-            }
+            listenerSet.insert(listener);
         }
 
         void removeListener(LISTENER *listener)
         {
-            auto listenerSearch = listenerSet.find(listener);
-            if (listenerSearch != listenerSet.end())
-            {
-                listenerSet.erase(listenerSearch);
-            }
+            listenerSet.unsafe_erase(listener);
         }
 
-        template <typename... ARGUMENTS>
-        void sendEvent(void(LISTENER::*function)(ARGUMENTS...), ARGUMENTS... arguments) const
+        template <typename... PARAMETERS, typename... ARGUMENTS>
+        void sendEvent(void(LISTENER::*function)(PARAMETERS...), ARGUMENTS&&... arguments) const
         {
             for (auto &listener : listenerSet)
             {
-                (listener->*function)(arguments...);
+                (listener->*function)(std::forward<ARGUMENTS>(arguments)...);
             }
         }
     };

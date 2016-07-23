@@ -2,14 +2,12 @@
 
 #include "GEK\Math\Float3.h"
 #include "GEK\Context\Broadcaster.h"
-#include "GEK\Context\Listener.h"
 
 namespace Gek
 {
     namespace Newton
     {
         GEK_INTERFACE(WorldListener)
-            : public Listener
         {
             virtual void onCollision(Plugin::Entity *entity0, Plugin::Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) { };
         };

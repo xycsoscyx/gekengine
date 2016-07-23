@@ -5,7 +5,6 @@
 #include "GEK\Utility\Hash.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\Broadcaster.h"
-#include "GEK\Context\Listener.h"
 #include "GEK\System\VideoDevice.h"
 #include <type_traits>
 #include <typeindex>
@@ -97,15 +96,8 @@ namespace Gek
         GEK_PREDECLARE(Filter);
         GEK_PREDECLARE(Material);
 
-        GEK_INTERFACE(ResourcesListener)
-            : public Listener
-        {
-            virtual void onShaderLoaded(ShaderHandle shaderHandle, Engine::Shader *shader) { };
-        };
-
         GEK_INTERFACE(Resources)
             : virtual public Plugin::Resources
-            , public Broadcaster<ResourcesListener>
         {
             virtual void clearLocal(void) = 0;
 
@@ -119,7 +111,7 @@ namespace Gek
 
             virtual Filter * const loadFilter(const wchar_t *filterName) = 0;
 
-            virtual ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material) = 0;
+            virtual ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Shader *)> onShader) = 0;
             virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

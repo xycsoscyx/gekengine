@@ -23,8 +23,5 @@
     <ClInclude Include="GEK\Context\Broadcaster.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Context\Listener.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
 </Project>

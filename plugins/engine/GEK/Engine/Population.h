@@ -3,7 +3,6 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Context.h"
 #include "GEK\Context\Broadcaster.h"
-#include "GEK\Context\Listener.h"
 #include "GEK\Engine\Processor.h"
 #include <atlbase.h>
 #include <atlstr.h>
@@ -20,17 +19,16 @@ namespace Gek
         GEK_PREDECLARE(PopulationListener);
 
         GEK_INTERFACE(PopulationListener)
-            : public Listener
         {
             virtual void onLoadBegin(void) { };
-        virtual void onLoadSucceeded(void) { };
-        virtual void onLoadFailed(void) { };
-        virtual void onFree(void) { };
+            virtual void onLoadSucceeded(void) { };
+            virtual void onLoadFailed(void) { };
+            virtual void onFree(void) { };
 
-        virtual void onEntityCreated(Plugin::Entity *entity) { };
-        virtual void onEntityDestroyed(Plugin::Entity *entity) { };
+            virtual void onEntityCreated(Plugin::Entity *entity) { };
+            virtual void onEntityDestroyed(Plugin::Entity *entity) { };
 
-        virtual void onUpdate(uint32_t handle, bool isIdle) { };
+            virtual void onUpdate(uint32_t handle, bool isIdle) { };
         };
 
         GEK_INTERFACE(Population)

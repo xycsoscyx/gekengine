@@ -404,7 +404,7 @@ namespace Gek
                 const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
 
                 drawCallList.clear();
-                sendEvent(&Plugin::RendererListener::onRenderScene, cameraEntity, std::cref(cameraConstantData.viewMatrix), std::cref(viewFrustum));
+                sendEvent(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
                 if (!drawCallList.empty())
                 {
                     Video::Device::Context *deviceContext = device->getDefaultContext();
