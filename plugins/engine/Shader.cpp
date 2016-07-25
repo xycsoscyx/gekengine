@@ -1171,7 +1171,7 @@ namespace Gek
                     {
                         return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                     }
-                    catch (const Gek::Exception &)
+                    catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
                         return Shader::Pass::Mode::Exit;
                     };
@@ -1224,7 +1224,7 @@ namespace Gek
                     {
                         return shaderNode->prepareBlock(base, deviceContext, (*current));
                     }
-                    catch (const Gek::Exception &)
+                    catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
                         return false;
                     };

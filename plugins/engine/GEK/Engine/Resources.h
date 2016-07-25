@@ -63,6 +63,7 @@ namespace Gek
         GEK_INTERFACE(Resources)
         {
             GEK_START_EXCEPTIONS();
+            GEK_ADD_EXCEPTION(ResourceNotLoaded);
 
             virtual VisualHandle loadVisual(const wchar_t *pluginName) = 0;
             virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;

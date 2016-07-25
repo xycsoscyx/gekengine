@@ -518,7 +518,7 @@ namespace Gek
                                                     }
                                                 }
                                             }
-                                            catch (const Gek::Exception &)
+                                            catch (const Plugin::Resources::ResourceNotLoaded &)
                                             {
                                             };
 

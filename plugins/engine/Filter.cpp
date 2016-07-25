@@ -794,7 +794,7 @@ namespace Gek
                     {
                         return filterNode->preparePass(deviceContext, (*current));
                     }
-                    catch (const Gek::Exception &)
+                    catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
                         return Filter::Pass::Mode::Exit;
                     };

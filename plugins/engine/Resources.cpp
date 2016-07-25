@@ -733,14 +733,14 @@ namespace Gek
                 GEK_REQUIRE(data);
 
                 auto buffer = resourceManager.getResource(bufferHandle);
-                GEK_CHECK_CONDITION(buffer == nullptr, Resources::Exception, "Buffer not loaded: %v", bufferHandle.identifier);
+                GEK_CHECK_CONDITION(buffer == nullptr, Resources::ResourceNotLoaded, "Buffer not loaded: %v", bufferHandle.identifier);
                 device->mapBuffer(dynamic_cast<Video::Buffer *>(buffer), data);
             }
 
             void unmapBuffer(ResourceHandle bufferHandle)
             {
                 auto buffer = resourceManager.getResource(bufferHandle);
-                GEK_CHECK_CONDITION(buffer == nullptr, Resources::Exception, "Buffer not loaded: %v", bufferHandle.identifier);
+                GEK_CHECK_CONDITION(buffer == nullptr, Resources::ResourceNotLoaded, "Buffer not loaded: %v", bufferHandle.identifier);
                 device->unmapBuffer(dynamic_cast<Video::Buffer *>(buffer));
             }
 
@@ -749,7 +749,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto resource = resourceManager.getResource(resourceHandle);
-                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Resource not loaded: %v", resourceHandle.identifier);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::ResourceNotLoaded, "Resource not loaded: %v", resourceHandle.identifier);
                 deviceContext->generateMipMaps(dynamic_cast<Video::Texture *>(resource));
             }
 
@@ -757,8 +757,8 @@ namespace Gek
             {
                 auto source = resourceManager.getResource(sourceHandle);
                 auto destination = resourceManager.getResource(destinationHandle);
-                GEK_CHECK_CONDITION(source == nullptr, Resources::Exception, "Source of copy resource not loaded: %v", sourceHandle.identifier);
-                GEK_CHECK_CONDITION(destination == nullptr, Resources::Exception, "Destination of copy resource not loaded: %v", destinationHandle.identifier);
+                GEK_CHECK_CONDITION(source == nullptr, Resources::ResourceNotLoaded, "Source of copy resource not loaded: %v", sourceHandle.identifier);
+                GEK_CHECK_CONDITION(destination == nullptr, Resources::ResourceNotLoaded, "Destination of copy resource not loaded: %v", destinationHandle.identifier);
                 device->copyResource(source, destination);
             }
 
@@ -767,7 +767,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto renderState = renderStateManager.getResource(renderStateHandle);
-                GEK_CHECK_CONDITION(renderState == nullptr, Resources::Exception, "Render state not loaded: %v", renderStateHandle.identifier);
+                GEK_CHECK_CONDITION(renderState == nullptr, Resources::ResourceNotLoaded, "Render state not loaded: %v", renderStateHandle.identifier);
                 deviceContext->setRenderState(renderState);
             }
 
@@ -776,7 +776,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto depthState = depthStateManager.getResource(depthStateHandle);
-                GEK_CHECK_CONDITION(depthState == nullptr, Resources::Exception, "Depth state not loaded: %v", depthStateHandle.identifier);
+                GEK_CHECK_CONDITION(depthState == nullptr, Resources::ResourceNotLoaded, "Depth state not loaded: %v", depthStateHandle.identifier);
                 deviceContext->setDepthState(depthState, stencilReference);
             }
 
@@ -785,7 +785,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto blendState = blendStateManager.getResource(blendStateHandle);
-                GEK_CHECK_CONDITION(blendState == nullptr, Resources::Exception, "Blend state not loaded: %v", blendStateHandle.identifier);
+                GEK_CHECK_CONDITION(blendState == nullptr, Resources::ResourceNotLoaded, "Blend state not loaded: %v", blendStateHandle.identifier);
                 deviceContext->setBlendState(blendState, blendFactor, sampleMask);
             }
 
@@ -839,7 +839,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContextPipeline);
 
                 auto program = programManager.getResource(programHandle);
-                GEK_CHECK_CONDITION(program == nullptr, Resources::Exception, "Program not loaded: %v", programHandle.identifier);
+                GEK_CHECK_CONDITION(program == nullptr, Resources::ResourceNotLoaded, "Program not loaded: %v", programHandle.identifier);
                 deviceContextPipeline->setProgram(program);
             }
 
@@ -848,7 +848,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto resource = resourceManager.getResource(resourceHandle);
-                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Buffer not loaded: %v", resourceHandle.identifier);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::ResourceNotLoaded, "Buffer not loaded: %v", resourceHandle.identifier);
                 deviceContext->setVertexBuffer(slot, dynamic_cast<Video::Buffer *>(resource), offset);
             }
 
@@ -857,7 +857,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto resource = resourceManager.getResource(resourceHandle);
-                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Index buffer not loaded: %v", resourceHandle.identifier);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::ResourceNotLoaded, "Index buffer not loaded: %v", resourceHandle.identifier);
                 deviceContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
             }
 
@@ -866,7 +866,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto resource = resourceManager.getResource(resourceHandle);
-                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Unordered access object not loaded: %v", resourceHandle.identifier);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::ResourceNotLoaded, "Unordered access object not loaded: %v", resourceHandle.identifier);
                 deviceContext->clearUnorderedAccess(resource, value);
             }
 
@@ -875,7 +875,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto resource = resourceManager.getResource(resourceHandle);
-                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Unordered access object not loaded: %v", resourceHandle.identifier);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::ResourceNotLoaded, "Unordered access object not loaded: %v", resourceHandle.identifier);
                 deviceContext->clearUnorderedAccess(resource, value);
             }
 
@@ -884,7 +884,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto resource = resourceManager.getResource(resourceHandle);
-                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Render target not loaded: %v", resourceHandle.identifier);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::ResourceNotLoaded, "Render target not loaded: %v", resourceHandle.identifier);
                 deviceContext->clearRenderTarget(dynamic_cast<Video::Target *>(resource), color);
             }
 
@@ -893,7 +893,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 auto blendState = resourceManager.getResource(depthBufferHandle);
-                GEK_CHECK_CONDITION(blendState == nullptr, Resources::Exception, "Depth stencil target not loaded: %v", depthBufferHandle.identifier);
+                GEK_CHECK_CONDITION(blendState == nullptr, Resources::ResourceNotLoaded, "Depth stencil target not loaded: %v", depthBufferHandle.identifier);
                 deviceContext->clearDepthStencilTarget(blendState, flags, clearDepth, clearStencil);
             }
 
