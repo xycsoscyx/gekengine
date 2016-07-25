@@ -90,7 +90,7 @@ namespace Gek
         {
             HANDLE shutdownEvent = CreateEvent(nullptr, true, false, L"GEK_Trace_Shutdown");
             GEK_CHECK_CONDITION(shutdownEvent == nullptr, Gek::Exception, "Unable to create shutdown event: %v", GetLastError());
-            server.reset(new std::thread([shutdownEvent](void) -> void
+            server = std::make_unique<std::thread>([shutdownEvent](void) -> void
             {
                 nlohmann::json startupData =
                 {
@@ -169,7 +169,7 @@ namespace Gek
 
                 file.write(shutdownData.dump(-1) + "]}");
                 CloseHandle(shutdownEvent);
-            }));
+            });
         }
 
         void shutdown(void)

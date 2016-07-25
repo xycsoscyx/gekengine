@@ -110,9 +110,9 @@ namespace Gek
             virtual Material * const getMaterial(MaterialHandle handle) const = 0;
             virtual Video::Texture * const getTexture(ResourceHandle handle) const = 0;
 
-            virtual Filter * const loadFilter(const wchar_t *filterName) = 0;
+            virtual Filter * const getFilter(const wchar_t *filterName) = 0;
+            virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
 
-            virtual ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Shader *)> onShader) = 0;
             virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
 

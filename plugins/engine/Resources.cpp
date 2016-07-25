@@ -23,7 +23,6 @@
 #include <concurrent_queue.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
-#include <future>
 #include <set>
 
 namespace Gek
@@ -206,6 +205,10 @@ namespace Gek
             Plugin::Core *core;
             Video::Device *device;
 
+            std::atomic<bool> quitLoadThread;
+            std::unique_ptr<std::thread> loadThread;
+            concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
+
             ResourceManager<ProgramHandle, Video::Object> programManager;
             ResourceManager<VisualHandle, Plugin::Visual> visualManager;
             ResourceManager<MaterialHandle, Engine::Material> materialManager;
@@ -217,9 +220,6 @@ namespace Gek
             ResourceManager<BlendStateHandle, Video::Object> blendStateManager;
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
-
-            std::future<void> loadResourceRunning;
-            concurrency::concurrent_queue<std::function<void(void)>> loadResourceQueue;
 
         public:
             Resources(Context *context, Plugin::Core *core, Video::Device *device)
@@ -238,19 +238,27 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
+                createLoadThread();
             }
 
-            // Messenger
-            void addRequest(std::function<void(void)> load)
+            ~Resources(void)
             {
-                loadResourceQueue.push(load);
-                if (!loadResourceRunning.valid() || (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
+                loadQueue.clear();
+                quitLoadThread = true;
+                loadThread->join();
+                loadThread = nullptr;
+            }
+
+            void createLoadThread(void)
+            {
+                quitLoadThread = false;
+                loadThread = std::make_unique<std::thread>([this](void) -> void
                 {
-                    loadResourceRunning = std::async(std::launch::async, [this](void) -> void
+                    CoInitialize(nullptr);
+                    std::function<void(void)> load;
+                    while (!quitLoadThread)
                     {
-                        CoInitialize(nullptr);
-                        std::function<void(void)> load;
-                        while (loadResourceQueue.try_pop(load))
+                        while (loadQueue.try_pop(load))
                         {
                             try
                             {
@@ -264,20 +272,25 @@ namespace Gek
                                 GEK_TRACE_EVENT("General exception occurred when loading resource");
                             };
                         };
+                    };
 
-                        CoUninitialize();
-                    });
-                }
+                    CoUninitialize();
+                });
+            }
+
+            // Messenger
+            void addRequest(std::function<void(void)> load)
+            {
+                loadQueue.push(load);
             }
 
             // Plugin::Resources
             void clearLocal(void)
             {
-                loadResourceQueue.clear();
-                if (loadResourceRunning.valid() && (loadResourceRunning.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready))
-                {
-                    loadResourceRunning.get();
-                }
+                loadQueue.clear();
+                quitLoadThread = true;
+                loadThread->join();
+                loadThread = nullptr;
 
                 materialShaderMap.clear();
                 programManager.clear();
@@ -288,6 +301,8 @@ namespace Gek
                 renderStateManager.clear();
                 depthStateManager.clear();
                 blendStateManager.clear();
+
+                createLoadThread();
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -351,7 +366,7 @@ namespace Gek
                 return materialManager.getHandle(hash, load);
             }
 
-            Engine::Filter * const loadFilter(const wchar_t *filterName)
+            Engine::Filter * const getFilter(const wchar_t *filterName)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(filterName));
                 auto load = [this, filterName = String(filterName)](ResourceHandle) -> Engine::FilterPtr
@@ -364,7 +379,7 @@ namespace Gek
                 return filterManager.getResource(filter);
             }
 
-            ShaderHandle loadShader(const wchar_t *shaderName, MaterialHandle material, std::function<void(Engine::Shader *)> onShader)
+            Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) -> Engine::ShaderPtr
@@ -375,8 +390,7 @@ namespace Gek
                 std::size_t hash = std::hash<String>()(shaderName);
                 ShaderHandle shader = shaderManager.getImmediateHandle(hash, load);
                 materialShaderMap[material] = shader;
-                onShader(shaderManager.getResource(shader));
-                return shader;
+                return shaderManager.getResource(shader);
             }
 
             RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)

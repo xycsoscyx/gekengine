@@ -6,6 +6,7 @@
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
+#include <future>
 #include <map>
 #include <ppl.h>
 
@@ -87,6 +88,14 @@ namespace Gek
                 OutputDebugString(L"");
             }
 
+            ~Population(void)
+            {
+                if (loadThread.valid())
+                {
+                    loadThread.get();
+                }
+            }
+
             // Engine::Population
             void loadComponents(void)
             {
@@ -133,17 +142,16 @@ namespace Gek
 
             void update(bool isIdle, float frameTime)
             {
+                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                {
+                    return;
+                }
+
                 GEK_TRACE_SCOPE(GEK_PARAMETER(isIdle), GEK_PARAMETER(frameTime));
                 if (!isIdle)
                 {
                     this->frameTime = frameTime;
                     this->worldTime += frameTime;
-                }
-
-                if (loadScene)
-                {
-                    loadScene();
-                    loadScene = nullptr;
                 }
 
                 for (auto &priorityPair : updatePriorityMap)
@@ -186,15 +194,21 @@ namespace Gek
                 killEntityList.clear();
             }
 
-            std::function<void(void)> loadScene;
+            std::future<void> loadThread;
             void load(const wchar_t *populationName)
             {
-                loadScene = [this, populationName = String(populationName)](void) -> void
+                if (loadThread.valid())
+                {
+                    loadThread.get();
+                }
+
+                loadThread = std::async(std::launch::async, [this, populationName = String(populationName)](void)->void
                 {
                     GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
+
                     try
                     {
-                        free();
+                        free(false);
                         sendEvent(&Plugin::PopulationListener::onLoadBegin);
 
                         XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", populationName)));
@@ -262,7 +276,7 @@ namespace Gek
                     {
                         sendEvent(&Plugin::PopulationListener::onLoadFailed);
                     };
-                };
+                });
             }
 
             void save(const wchar_t *populationName)
@@ -280,12 +294,22 @@ namespace Gek
                 document->save(String(L"$root\\data\\saves\\%v.xml", populationName));
             }
 
-            void free(void)
+            void free(bool waitForLoad)
             {
+                if (waitForLoad && loadThread.valid())
+                {
+                    loadThread.get();
+                }
+
                 sendEvent(&Plugin::PopulationListener::onFree);
                 namedEntityMap.clear();
                 killEntityList.clear();
                 entityList.clear();
+            }
+
+            void free(void)
+            {
+                free(true);
             }
 
             Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)

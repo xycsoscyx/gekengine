@@ -546,7 +546,7 @@ namespace Gek
                         auto &filterList = cameraEntity->getComponent<Components::Filter>().list;
                         for (auto &filterName : filterList)
                         {
-                            Engine::Filter * const filter = resources->loadFilter(filterName);
+                            Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
                             {
                                 [&](void)->void

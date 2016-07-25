@@ -22,7 +22,6 @@
 #include <ppl.h>
 #include <algorithm>
 #include <memory>
-#include <future>
 #include <array>
 #include <map>
 
@@ -165,9 +164,10 @@ namespace Gek
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
 
-        std::future<void> loadModelRunning;
-        concurrency::concurrent_queue<std::function<void(void)>> loadModelQueue;
-        concurrency::concurrent_unordered_map<std::size_t, bool> loadModelMap;
+        std::atomic<bool> quitLoadThread;
+        std::unique_ptr<std::thread> loadThread;
+        concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
+        concurrency::concurrent_unordered_map<std::size_t, bool> loadMap;
 
         std::unordered_map<std::size_t, Model> modelMap;
         using EntityDataMap = std::unordered_map<Plugin::Entity *, Data>;
@@ -191,12 +191,46 @@ namespace Gek
             visual = resources->loadVisual(L"model");
 
             constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
+
+            createLoadThread();
         }
 
         ~ModelProcessor(void)
         {
+            loadQueue.clear();
+            quitLoadThread = true;
+            loadThread->join();
+            loadThread = nullptr;
             renderer->removeListener(this);
             population->removeListener(this);
+        }
+
+        void createLoadThread(void)
+        {
+            loadThread = std::make_unique<std::thread>([this](void) -> void
+            {
+                CoInitialize(nullptr);
+                std::function<void(void)> load;
+                while (!quitLoadThread)
+                {
+                    while (loadQueue.try_pop(load))
+                    {
+                        try
+                        {
+                            load();
+                        }
+                        catch (const Gek::Exception &)
+                        {
+                        }
+                        catch (...)
+                        {
+                            GEK_TRACE_EVENT("General exception occurred when loading resource");
+                        };
+                    };
+                };
+
+                CoUninitialize();
+            });
         }
 
         void loadBoundingBox(Model &model, const String &modelName)
@@ -284,21 +318,10 @@ namespace Gek
         void loadModel(Model &model)
         {
             std::size_t hash = std::hash<String>()(model.fileName);
-            if (loadModelMap.count(hash) == 0)
+            if (loadMap.count(hash) == 0)
             {
-                loadModelMap.insert(std::make_pair(hash, true));
-                loadModelQueue.push(std::bind(&ModelProcessor::loadModelWorker, this, std::ref(model)));
-                if (!loadModelRunning.valid() || (loadModelRunning.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready))
-                {
-                    loadModelRunning = std::async(std::launch::async, [&](void) -> void
-                    {
-                        std::function<void(void)> function;
-                        while (loadModelQueue.try_pop(function))
-                        {
-                            function();
-                        };
-                    });
-                }
+                loadMap.insert(std::make_pair(hash, true));
+                loadQueue.push(std::bind(&ModelProcessor::loadModelWorker, this, std::ref(model)));
             }
         }
 
@@ -314,15 +337,16 @@ namespace Gek
 
         void onFree(void)
         {
-            loadModelMap.clear();
-            loadModelQueue.clear();
-            if (loadModelRunning.valid() && (loadModelRunning.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready))
-            {
-                loadModelRunning.get();
-            }
+            loadQueue.clear();
+            quitLoadThread = true;
+            loadThread->join();
+            loadThread = nullptr;
+            loadMap.clear();
 
             modelMap.clear();
             entityDataMap.clear();
+
+            createLoadThread();
         }
 
         void onEntityCreated(Plugin::Entity *entity)
