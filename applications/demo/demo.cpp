@@ -250,7 +250,14 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     }
     catch (const Exception &exception)
     {
-        MessageBox(nullptr, String(L"%v\r\n%v: %v", exception.what(), exception.in(), exception.at()), L"GEK Runtime Error", MB_OK | MB_ICONERROR);
+        std::string message;
+        message = exception.what();
+        message += "\r\n";
+        message += exception.in();
+        message += ": ";
+        message += exception.at();
+
+        MessageBoxA(nullptr, message.c_str(), "GEK Runtime Error", MB_OK | MB_ICONERROR);
     }
     catch (...)
     {

@@ -107,8 +107,8 @@ namespace Gek
             join(list, delimiter, addSpaces);
         }
 
-        template<typename TYPE, typename... ARGUMENTS>
-        BaseString(const ELEMENT *formatting, const TYPE &value, ARGUMENTS... arguments)
+        template<typename TYPE, typename... PARAMETERS>
+        BaseString(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
         {
             if (formatting)
             {
@@ -258,8 +258,8 @@ namespace Gek
             append(formatting);
         }
 
-        template<typename TYPE, typename... ARGUMENTS>
-        void format(const ELEMENT *formatting, const TYPE &value, ARGUMENTS... arguments)
+        template<typename TYPE, typename... PARAMETERS>
+        void format(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
         {
             while (formatting && *formatting)
             {

@@ -13,7 +13,7 @@ namespace Gek
         : public std::exception
     {
     private:
-        std::array<char, 256> function;
+        std::array<char, 1024> function;
         uint32_t line;
 
     public:
@@ -48,8 +48,8 @@ namespace Gek
         {
         }
 
-        template<typename VALUE, typename... ARGUMENTS>
-        void getParameters(ParameterMap &parameters, Parameter<VALUE> &pair, ARGUMENTS&... arguments)
+        template<typename VALUE, typename... PARAMETERS>
+        void getParameters(ParameterMap &parameters, Parameter<VALUE> &pair, PARAMETERS&... arguments)
         {
             parameters[pair.name] = pair.value;
             getParameters(parameters, arguments...);
@@ -57,16 +57,16 @@ namespace Gek
 
         void logBase(const char *type, const char *category, uint64_t timeStamp, const char *function, const ParameterMap &parameters);
 
-        template<typename... ARGUMENTS>
-        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, ARGUMENTS&... arguments)
+        template<typename... PARAMETERS>
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, PARAMETERS&... arguments)
         {
             ParameterMap parameters;
             getParameters(parameters, arguments...);
             logBase(type, category, timeStamp, function, parameters);
         }
 
-        template<typename... ARGUMENTS>
-        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, const char *message, ARGUMENTS&... arguments)
+        template<typename... PARAMETERS>
+        void log(const char *type, const char *category, uint64_t timeStamp, const char *function, const char *message, PARAMETERS&... arguments)
         {
             ParameterMap parameters;
             getParameters(parameters, arguments...);
@@ -87,8 +87,8 @@ namespace Gek
             ParameterMap parameters;
 
         public:
-            template<typename... ARGUMENTS>
-            Scope(const char *category, const char *function, ARGUMENTS &... arguments)
+            template<typename... PARAMETERS>
+            Scope(const char *category, const char *function, PARAMETERS &... arguments)
                 : category(category)
                 , function(function)
                 , start(std::chrono::system_clock::now())
@@ -112,8 +112,8 @@ namespace Gek
         };
     }; // namespace Trace
 
-    template <typename TYPE, typename... ARGUMENTS>
-    std::shared_ptr<TYPE> makeShared(ARGUMENTS... arguments)
+    template <typename TYPE, typename... PARAMETERS>
+    std::shared_ptr<TYPE> makeShared(PARAMETERS... arguments)
     {
         std::shared_ptr<TYPE> object;
         try

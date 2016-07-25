@@ -151,7 +151,7 @@ namespace Gek
                         surfaceList.push_back(surface);
                     }
                 }
-                catch (const Exception &)
+                catch (const Gek::Exception &)
                 {
                 };
             }

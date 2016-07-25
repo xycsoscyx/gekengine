@@ -1167,7 +1167,14 @@ namespace Gek
 
                 Mode prepare(void)
                 {
-                    return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                    try
+                    {
+                        return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                    }
+                    catch (const Gek::Exception &)
+                    {
+                        return Shader::Pass::Mode::Exit;
+                    };
                 }
 
                 void clear(void)
@@ -1213,7 +1220,14 @@ namespace Gek
 
                 bool prepare(void)
                 {
-                    return shaderNode->prepareBlock(base, deviceContext, (*current));
+                    try
+                    {
+                        return shaderNode->prepareBlock(base, deviceContext, (*current));
+                    }
+                    catch (const Gek::Exception &)
+                    {
+                        return false;
+                    };
                 }
             };
 

@@ -472,61 +472,70 @@ namespace Gek
                         {
                             while (block->prepare())
                             {
-                                for (auto pass = block->begin(); pass; pass = pass->next())
+                                [&](void) -> void
                                 {
-                                    switch (pass->prepare())
+                                    for (auto pass = block->begin(); pass; pass = pass->next())
                                     {
-                                    case Engine::Shader::Pass::Mode::Forward:
-                                        if (true)
+                                        switch (pass->prepare())
                                         {
-                                            VisualHandle currentVisual;
-                                            MaterialHandle currentMaterial;
-                                            for (auto shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
+                                        case Engine::Shader::Pass::Mode::Exit:
+                                            return;
+
+                                        case Engine::Shader::Pass::Mode::Forward:
+                                            try
                                             {
-                                                if (currentVisual != (*shaderDrawCall).plugin)
+                                                VisualHandle currentVisual;
+                                                MaterialHandle currentMaterial;
+                                                for (auto shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
                                                 {
-                                                    currentVisual = (*shaderDrawCall).plugin;
-                                                    Plugin::Visual *visual = resources->getVisual(currentVisual);
-                                                    if (!visual)
+                                                    if (currentVisual != (*shaderDrawCall).plugin)
                                                     {
-                                                        continue;
+                                                        currentVisual = (*shaderDrawCall).plugin;
+                                                        Plugin::Visual *visual = resources->getVisual(currentVisual);
+                                                        if (!visual)
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        visual->enable(deviceContext);
                                                     }
 
-                                                    visual->enable(deviceContext);
-                                                }
-
-                                                if (currentMaterial != (*shaderDrawCall).material)
-                                                {
-                                                    currentMaterial = (*shaderDrawCall).material;
-                                                    Engine::Material *material = resources->getMaterial(currentMaterial);
-                                                    if (!material)
+                                                    if (currentMaterial != (*shaderDrawCall).material)
                                                     {
-                                                        continue;
+                                                        currentMaterial = (*shaderDrawCall).material;
+                                                        Engine::Material *material = resources->getMaterial(currentMaterial);
+                                                        if (!material)
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        materialEnabled = pass->enableMaterial(material);
                                                     }
 
-                                                    materialEnabled = pass->enableMaterial(material);
-                                                }
-
-                                                if (materialEnabled)
-                                                {
-                                                    (*shaderDrawCall).onDraw(deviceContext);
+                                                    if (materialEnabled)
+                                                    {
+                                                        (*shaderDrawCall).onDraw(deviceContext);
+                                                    }
                                                 }
                                             }
-                                        }
+                                            catch (const Gek::Exception &)
+                                            {
+                                            };
 
-                                        break;
+                                            break;
 
-                                    case Engine::Shader::Pass::Mode::Deferred:
-                                        deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                                        deviceContext->drawPrimitive(3, 0);
-                                        break;
+                                        case Engine::Shader::Pass::Mode::Deferred:
+                                            deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                                            deviceContext->drawPrimitive(3, 0);
+                                            break;
 
-                                    case Engine::Shader::Pass::Mode::Compute:
-                                        break;
-                                    };
+                                        case Engine::Shader::Pass::Mode::Compute:
+                                            break;
+                                        };
 
-                                    pass->clear();
-                                }
+                                        pass->clear();
+                                    }
+                                }();
                             };
                         }
                     }
@@ -540,20 +549,26 @@ namespace Gek
                             Engine::Filter * const filter = resources->loadFilter(filterName);
                             if (filter)
                             {
-                                for (auto pass = filter->begin(deviceContext, cameraTarget); pass; pass = pass->next())
+                                [&](void)->void
                                 {
-                                    switch (pass->prepare())
+                                    for (auto pass = filter->begin(deviceContext, cameraTarget); pass; pass = pass->next())
                                     {
-                                    case Engine::Filter::Pass::Mode::Deferred:
-                                        deviceContext->drawPrimitive(3, 0);
-                                        break;
+                                        switch (pass->prepare())
+                                        {
+                                        case Engine::Filter::Pass::Mode::Exit:
+                                            return;
 
-                                    case Engine::Filter::Pass::Mode::Compute:
-                                        break;
-                                    };
+                                        case Engine::Filter::Pass::Mode::Deferred:
+                                            deviceContext->drawPrimitive(3, 0);
+                                            break;
 
-                                    pass->clear();
-                                }
+                                        case Engine::Filter::Pass::Mode::Compute:
+                                            break;
+                                        };
+
+                                        pass->clear();
+                                    }
+                                }();
                             }
                         }
                     }

@@ -21,7 +21,8 @@ namespace Gek
             {
                 enum class Mode : uint8_t
                 {
-                    Forward = 0,
+                    Exit = 0,
+                    Forward,
                     Deferred,
                     Compute,
                 };

@@ -19,10 +19,10 @@ namespace Gek
                 return hasComponent(typeid(CLASS));
             }
 
-            template<typename... ARGUMENTS>
+            template<typename... PARAMETERS>
             bool hasComponents(void)
             {
-                std::vector<bool> hasComponents({ hasComponent<ARGUMENTS>()... });
+                std::vector<bool> hasComponents({ hasComponent<PARAMETERS>()... });
                 return std::find_if(hasComponents.begin(), hasComponents.end(), [&](bool hasComponent) -> bool
                 {
                     return !hasComponent;

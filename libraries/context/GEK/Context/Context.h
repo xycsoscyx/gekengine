@@ -19,10 +19,10 @@ namespace Gek
 
         virtual ContextUserPtr createBaseClass(const wchar_t *className, void *parameters) const = 0;
 
-        template <typename TYPE, typename... ARGUMENTS>
-        std::shared_ptr<TYPE> createClass(const wchar_t *className, ARGUMENTS... arguments) const
+        template <typename TYPE, typename... PARAMETERS>
+        std::shared_ptr<TYPE> createClass(const wchar_t *className, PARAMETERS... arguments) const
         {
-            std::tuple<ARGUMENTS...> packedArguments(arguments...);
+            std::tuple<PARAMETERS...> packedArguments(arguments...);
             ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&packedArguments));
 
             std::shared_ptr<TYPE> castClass;

@@ -19,7 +19,8 @@ namespace Gek
 
                 enum class Mode : uint8_t
                 {
-                    Deferred = 0,
+                    Exit = 0,
+                    Deferred,
                     Compute,
                 };
 

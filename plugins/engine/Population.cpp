@@ -258,7 +258,7 @@ namespace Gek
                         worldTime = 0.0f;
                         sendEvent(&Plugin::PopulationListener::onLoadSucceeded);
                     }
-                    catch (const Exception &)
+                    catch (const Gek::Exception &)
                     {
                         sendEvent(&Plugin::PopulationListener::onLoadFailed);
                     };

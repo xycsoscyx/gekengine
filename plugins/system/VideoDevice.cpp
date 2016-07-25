@@ -27,13 +27,13 @@ namespace Gek
     };
 
     template <typename RETURN, typename CLASS, typename... ARGUMENTS>
-    struct FunctionCache<RETURN(CLASS::*)(ARGUMENTS...)>
+    struct FunctionCache<RETURN(__stdcall CLASS::*)(ARGUMENTS...)>
     {
         using ReturnType = RETURN;
         using ArgumentTypes = std::tuple<typename std::decay<ARGUMENTS>::type...>;
 
         ArgumentTypes cache;
-        void operator()(CLASS *classObject, RETURN(CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
+        void operator()(CLASS *classObject, RETURN(__stdcall CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
         {
             auto current = std::tie(arguments...);
             if (current != cache)

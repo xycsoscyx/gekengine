@@ -95,6 +95,7 @@ namespace Gek
                 : messenger(messenger)
                 , nextIdentifier(0)
             {
+                GEK_REQUIRE(messenger);
             }
 
             ~ResourceManager(void)
@@ -195,12 +196,6 @@ namespace Gek
 
                 return nullptr;
             }
-
-            template <typename CLASS, typename... PARAMETERS, typename... ARGUMENTS>
-            void setResource(CLASS *object, void(CLASS::*function)(PARAMETERS...), ARGUMENTS&&...)
-            {
-                (object->*function)(std::forward<ARGUMENTS>(arguments)...);8
-            }
         };
 
         GEK_CONTEXT_USER(Resources, Plugin::Core *, Video::Device *)
@@ -241,6 +236,8 @@ namespace Gek
                 , depthStateManager(this)
                 , blendStateManager(this)
             {
+                GEK_REQUIRE(core);
+                GEK_REQUIRE(device);
             }
 
             // Messenger
@@ -259,7 +256,7 @@ namespace Gek
                             {
                                 load();
                             }
-                            catch (const Exception &)
+                            catch (const Gek::Exception &)
                             {
                             }
                             catch (...)
@@ -687,6 +684,8 @@ namespace Gek
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(parameters));
+                GEK_REQUIRE(pattern);
+                GEK_REQUIRE(parameters);
 
                 auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle) -> Video::TexturePtr
                 {
@@ -700,6 +699,9 @@ namespace Gek
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
+                GEK_REQUIRE(fileName);
+                GEK_REQUIRE(entryFunction);
+
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
                     auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
@@ -713,6 +715,9 @@ namespace Gek
             ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
+                GEK_REQUIRE(fileName);
+                GEK_REQUIRE(entryFunction);
+
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
                     auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
@@ -723,39 +728,65 @@ namespace Gek
                 return programManager.getUniqueHandle(load);
             }
 
-            void mapBuffer(ResourceHandle buffer, void **data)
+            void mapBuffer(ResourceHandle bufferHandle, void **data)
             {
-                device->mapBuffer(dynamic_cast<Video::Buffer *>(resourceManager.getResource(buffer)), data);
+                GEK_REQUIRE(data);
+
+                auto buffer = resourceManager.getResource(bufferHandle);
+                GEK_CHECK_CONDITION(buffer == nullptr, Resources::Exception, "Buffer not loaded: %v", bufferHandle.identifier);
+                device->mapBuffer(dynamic_cast<Video::Buffer *>(buffer), data);
             }
 
-            void unmapBuffer(ResourceHandle buffer)
+            void unmapBuffer(ResourceHandle bufferHandle)
             {
-                device->unmapBuffer(dynamic_cast<Video::Buffer *>(resourceManager.getResource(buffer)));
+                auto buffer = resourceManager.getResource(bufferHandle);
+                GEK_CHECK_CONDITION(buffer == nullptr, Resources::Exception, "Buffer not loaded: %v", bufferHandle.identifier);
+                device->unmapBuffer(dynamic_cast<Video::Buffer *>(buffer));
             }
 
             void generateMipMaps(Video::Device::Context *deviceContext, ResourceHandle resourceHandle)
             {
-                deviceContext->generateMipMaps(dynamic_cast<Video::Texture *>(resourceManager.getResource(resourceHandle)));
+                GEK_REQUIRE(deviceContext);
+
+                auto resource = resourceManager.getResource(resourceHandle);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Resource not loaded: %v", resourceHandle.identifier);
+                deviceContext->generateMipMaps(dynamic_cast<Video::Texture *>(resource));
             }
 
             void copyResource(ResourceHandle sourceHandle, ResourceHandle destinationHandle)
             {
-                device->copyResource(resourceManager.getResource(sourceHandle), resourceManager.getResource(destinationHandle));
+                auto source = resourceManager.getResource(sourceHandle);
+                auto destination = resourceManager.getResource(destinationHandle);
+                GEK_CHECK_CONDITION(source == nullptr, Resources::Exception, "Source of copy resource not loaded: %v", sourceHandle.identifier);
+                GEK_CHECK_CONDITION(destination == nullptr, Resources::Exception, "Destination of copy resource not loaded: %v", destinationHandle.identifier);
+                device->copyResource(source, destination);
             }
 
             void setRenderState(Video::Device::Context *deviceContext, RenderStateHandle renderStateHandle)
             {
-                deviceContext->setRenderState(renderStateManager.getResource(renderStateHandle));
+                GEK_REQUIRE(deviceContext);
+
+                auto renderState = renderStateManager.getResource(renderStateHandle);
+                GEK_CHECK_CONDITION(renderState == nullptr, Resources::Exception, "Render state not loaded: %v", renderStateHandle.identifier);
+                deviceContext->setRenderState(renderState);
             }
 
             void setDepthState(Video::Device::Context *deviceContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
             {
-                deviceContext->setDepthState(depthStateManager.getResource(depthStateHandle), stencilReference);
+                GEK_REQUIRE(deviceContext);
+
+                auto depthState = depthStateManager.getResource(depthStateHandle);
+                GEK_CHECK_CONDITION(depthState == nullptr, Resources::Exception, "Depth state not loaded: %v", depthStateHandle.identifier);
+                deviceContext->setDepthState(depthState, stencilReference);
             }
 
             void setBlendState(Video::Device::Context *deviceContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask)
             {
-                deviceContext->setBlendState(blendStateManager.getResource(blendStateHandle), blendFactor, sampleMask);
+                GEK_REQUIRE(deviceContext);
+
+                auto blendState = blendStateManager.getResource(blendStateHandle);
+                GEK_CHECK_CONDITION(blendState == nullptr, Resources::Exception, "Blend state not loaded: %v", blendStateHandle.identifier);
+                deviceContext->setBlendState(blendState, blendFactor, sampleMask);
             }
 
             void setResource(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)
@@ -771,6 +802,8 @@ namespace Gek
             std::vector<Video::Object *> resourceCache;
             void setResourceList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
             {
+                GEK_REQUIRE(deviceContextPipeline);
+
                 resourceCache.resize(std::max(resourceCount, resourceCache.size()));
                 for (uint32_t resource = 0; resource < resourceCount; resource++)
                 {
@@ -783,6 +816,8 @@ namespace Gek
             std::vector<Video::Object *> unorderedAccessCache;
             void setUnorderedAccessList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
             {
+                GEK_REQUIRE(deviceContextPipeline);
+
                 unorderedAccessCache.resize(std::max(resourceCount, unorderedAccessCache.size()));
                 for (uint32_t resource = 0; resource < resourceCount; resource++)
                 {
@@ -794,48 +829,80 @@ namespace Gek
 
             void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)
             {
+                GEK_REQUIRE(deviceContextPipeline);
+
                 deviceContextPipeline->setConstantBuffer((resourceHandle ? dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)) : nullptr), stage);
             }
 
             void setProgram(Video::Device::Context::Pipeline *deviceContextPipeline, ProgramHandle programHandle)
             {
-                deviceContextPipeline->setProgram(programManager.getResource(programHandle));
+                GEK_REQUIRE(deviceContextPipeline);
+
+                auto program = programManager.getResource(programHandle);
+                GEK_CHECK_CONDITION(program == nullptr, Resources::Exception, "Program not loaded: %v", programHandle.identifier);
+                deviceContextPipeline->setProgram(program);
             }
 
             void setVertexBuffer(Video::Device::Context *deviceContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset)
             {
-                deviceContext->setVertexBuffer(slot, dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)), offset);
+                GEK_REQUIRE(deviceContext);
+
+                auto resource = resourceManager.getResource(resourceHandle);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Buffer not loaded: %v", resourceHandle.identifier);
+                deviceContext->setVertexBuffer(slot, dynamic_cast<Video::Buffer *>(resource), offset);
             }
 
             void setIndexBuffer(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, uint32_t offset)
             {
-                deviceContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)), offset);
+                GEK_REQUIRE(deviceContext);
+
+                auto resource = resourceManager.getResource(resourceHandle);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Index buffer not loaded: %v", resourceHandle.identifier);
+                deviceContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
             }
 
             void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Float4 &value)
             {
-                deviceContext->clearUnorderedAccess(dynamic_cast<Video::Object *>(resourceManager.getResource(resourceHandle)), value);
+                GEK_REQUIRE(deviceContext);
+
+                auto resource = resourceManager.getResource(resourceHandle);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Unordered access object not loaded: %v", resourceHandle.identifier);
+                deviceContext->clearUnorderedAccess(resource, value);
             }
 
             void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const uint32_t value[4])
             {
-                deviceContext->clearUnorderedAccess(dynamic_cast<Video::Object *>(resourceManager.getResource(resourceHandle)), value);
+                GEK_REQUIRE(deviceContext);
+
+                auto resource = resourceManager.getResource(resourceHandle);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Unordered access object not loaded: %v", resourceHandle.identifier);
+                deviceContext->clearUnorderedAccess(resource, value);
             }
 
             void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Color &color)
             {
-                deviceContext->clearRenderTarget(dynamic_cast<Video::Target *>(resourceManager.getResource(resourceHandle)), color);
+                GEK_REQUIRE(deviceContext);
+
+                auto resource = resourceManager.getResource(resourceHandle);
+                GEK_CHECK_CONDITION(resource == nullptr, Resources::Exception, "Render target not loaded: %v", resourceHandle.identifier);
+                deviceContext->clearRenderTarget(dynamic_cast<Video::Target *>(resource), color);
             }
 
-            void clearDepthStencilTarget(Video::Device::Context *deviceContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
+            void clearDepthStencilTarget(Video::Device::Context *deviceContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
             {
-                deviceContext->clearDepthStencilTarget(resourceManager.getResource(depthBuffer), flags, clearDepth, clearStencil);
+                GEK_REQUIRE(deviceContext);
+
+                auto blendState = resourceManager.getResource(depthBufferHandle);
+                GEK_CHECK_CONDITION(blendState == nullptr, Resources::Exception, "Depth stencil target not loaded: %v", depthBufferHandle.identifier);
+                deviceContext->clearDepthStencilTarget(blendState, flags, clearDepth, clearStencil);
             }
 
             std::vector<Video::ViewPort> viewPortCache;
             std::vector<Video::Target *> renderTargetCache;
             void setRenderTargets(Video::Device::Context *deviceContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer)
             {
+                GEK_REQUIRE(deviceContext);
+
                 viewPortCache.resize(std::max(renderTargetHandleCount, viewPortCache.size()));
                 renderTargetCache.resize(std::max(renderTargetHandleCount, renderTargetCache.size()));
                 for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
@@ -856,6 +923,8 @@ namespace Gek
 
             void setBackBuffer(Video::Device::Context *deviceContext, ResourceHandle *depthBuffer)
             {
+                GEK_REQUIRE(deviceContext);
+
                 viewPortCache.resize(std::max(1U, viewPortCache.size()));
                 renderTargetCache.resize(std::max(1U, renderTargetCache.size()));
 

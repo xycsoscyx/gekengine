@@ -13,7 +13,9 @@ namespace Gek
         : std::exception(message)
         , line(line)
     {
-        std::copy_n(function, strlen(function), this->function.data());
+        size_t length = std::min(1023U, strlen(function));
+        std::copy_n(function, std::min(1023U, length), this->function.data());
+        this->function[length] = '\0';
     }
 
     const char *Exception::in(void) const

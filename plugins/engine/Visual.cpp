@@ -114,7 +114,7 @@ namespace Gek
                         StringUTF8 programEntryPoint(programNode->getAttribute(L"entry"));
                         geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
                     }
-                    catch (const Exception &)
+                    catch (const Gek::Exception &)
                     {
                     };
                 }

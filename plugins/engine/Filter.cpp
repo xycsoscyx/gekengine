@@ -790,7 +790,14 @@ namespace Gek
 
                 Mode prepare(void)
                 {
-                    return filterNode->preparePass(deviceContext, (*current));
+                    try
+                    {
+                        return filterNode->preparePass(deviceContext, (*current));
+                    }
+                    catch (const Gek::Exception &)
+                    {
+                        return Filter::Pass::Mode::Exit;
+                    };
                 }
 
                 void clear(void)
