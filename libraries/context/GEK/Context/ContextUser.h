@@ -43,7 +43,7 @@ namespace Gek
         virtual ~ContextUser(void) = default;
     };
 
-    template <typename TYPE, typename... ARGUMENTS>
+    template <typename TYPE, typename... PARAMETERS>
     struct ContextRegistration
         : public ContextUser
     {
@@ -64,26 +64,26 @@ namespace Gek
         }
 
     public:
-        static ContextUserPtr createBase(Context *context, ARGUMENTS... arguments)
+        static ContextUserPtr createBase(Context *context, PARAMETERS... arguments)
         {
             return makeShared<TYPE>(context, arguments...);
         }
 
-        template<std::size_t... Size>
-        static ContextUserPtr createFromTupleArguments(Context *context, const std::tuple<ARGUMENTS...>& tuple, std::index_sequence<Size...>)
+        template<std::size_t... SIZE>
+        static ContextUserPtr createFromTupleArguments(Context *context, const std::tuple<PARAMETERS...>& packedArguments, std::index_sequence<SIZE...>)
         {
-            return createBase(context, std::get<Size>(tuple)...);
+            return createBase(context, std::get<SIZE>(packedArguments)...);
         }
 
-        static ContextUserPtr createFromPackedArguments(Context *context, void *arguments)
+        static ContextUserPtr createFromPackedArguments(Context *context, void *typelessArguments)
         {
-            std::tuple<ARGUMENTS...> *tuple = (std::tuple<ARGUMENTS...> *)arguments;
-            return createFromTupleArguments(context, *tuple, std::index_sequence_for<ARGUMENTS...>());
+            auto &packedArguments = *(std::tuple<PARAMETERS...> *)typelessArguments;
+            return createFromTupleArguments(context, packedArguments, std::index_sequence_for<PARAMETERS...>());
         }
 
-        static ContextUserPtr createObject(Context *context, void *arguments)
+        static ContextUserPtr createObject(Context *context, void *typelessArguments)
         {
-            return createFromPackedArguments(context, arguments);
+            return createFromPackedArguments(context, typelessArguments);
         }
     };
 }; // namespace Gek

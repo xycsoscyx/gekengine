@@ -195,6 +195,12 @@ namespace Gek
 
                 return nullptr;
             }
+
+            template <typename CLASS, typename... PARAMETERS, typename... ARGUMENTS>
+            void setResource(CLASS *object, void(CLASS::*function)(PARAMETERS...), ARGUMENTS&&...)
+            {
+                (object->*function)(std::forward<ARGUMENTS>(arguments)...);8
+            }
         };
 
         GEK_CONTEXT_USER(Resources, Plugin::Core *, Video::Device *)
