@@ -163,12 +163,14 @@ namespace Gek
                     auto backBuffer = renderer->getDevice()->getBackBuffer();
                     float width = float(backBuffer->getWidth());
                     float height = float(backBuffer->getHeight());
-                    float displayAspectRatio = (width / height);
+
+                    Math::Float2 fieldOfView(cameraComponent.fieldOfView);
+                    fieldOfView.y *= (height / width);
 
                     Math::Float4x4 projectionMatrix;
-                    projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.nearClip, cameraComponent.farClip);
+                    projectionMatrix.setPerspective(fieldOfView, cameraComponent.nearClip, cameraComponent.farClip);
 
-                    renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
+                    renderer->render(entity, projectionMatrix, camera.target);
                 });
             }
         }

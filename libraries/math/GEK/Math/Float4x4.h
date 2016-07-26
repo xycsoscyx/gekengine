@@ -1,6 +1,7 @@
 #pragma once
 
 #include <xmmintrin.h>
+#include "GEK\Math\Float2.h"
 #include "GEK\Math\Float3.h"
 #include "GEK\Math\Float4.h"
 
@@ -92,8 +93,8 @@ namespace Gek
             void setPitchRotation(float radians);
             void setYawRotation(float radians);
             void setRollRotation(float radians);
-            void setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth);
-            void setPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth);
+            void setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
+            void setPerspective(const Float2 &fieldOfView, float nearClip, float farClip);
             void setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
             void setLookAt(const Float3 &direction, const Float3 &worldUpVector);
 

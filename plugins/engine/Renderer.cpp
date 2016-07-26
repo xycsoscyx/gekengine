@@ -374,7 +374,7 @@ namespace Gek
                 }
             }
 
-            void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
+            void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, ResourceHandle cameraTarget)
             {
                 GEK_TRACE_SCOPE();
                 GEK_REQUIRE(device);
@@ -385,6 +385,8 @@ namespace Gek
                 Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
                 Math::Float4x4 viewMatrix(cameraMatrix.getInverse());
 
+                const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
+
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = population->getFrameTime();
                 engineConstantData.worldTime = population->getWorldTime();
@@ -392,12 +394,10 @@ namespace Gek
                 CameraConstantData cameraConstantData;
                 cameraConstantData.fieldOfView.x = (1.0f / projectionMatrix._11);
                 cameraConstantData.fieldOfView.y = (1.0f / projectionMatrix._22);
-                cameraConstantData.nearClip = nearClip;
-                cameraConstantData.farClip = farClip;
+                cameraConstantData.nearClip = -(projectionMatrix._43 / (projectionMatrix._33 + 1.0f));
+                cameraConstantData.farClip = -(projectionMatrix._43 / (projectionMatrix._33 - 1.0f));
                 cameraConstantData.viewMatrix = viewMatrix;
                 cameraConstantData.projectionMatrix = projectionMatrix;
-
-                const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
 
                 drawCallList.clear();
                 sendEvent(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
@@ -604,11 +604,24 @@ namespace Gek
 
                 if (handle == backgroundUpdateHandle)
                 {
-                    sendEvent(&Plugin::RendererListener::onRenderBackground);
+                    if (state == State::Loading)
+                    {
+                    }
+                    else
+                    {
+                        sendEvent(&Plugin::RendererListener::onRenderBackground);
+                    }
                 }
                 else if (handle == foregroundUpdateHandle)
                 {
-                    sendEvent(&Plugin::RendererListener::onRenderForeground);
+                    if (state == State::Loading)
+                    {
+                    }
+                    else
+                    {
+                        sendEvent(&Plugin::RendererListener::onRenderForeground);
+                    }
+
                     device->present(false);
                 }
             }

@@ -112,8 +112,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
     float materialMetalness = materialInfo.y;
 
-    float sceneDepth = Resources::depth[inputPixel.position.xy];
-    float3 surfacePosition = getPositionFromProjectedDepth(inputPixel.texCoord, sceneDepth);
+    float surfaceDepth = Resources::depth[inputPixel.position.xy];
+    float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.position.xy]);
 
     float3 viewDirection = -normalize(surfacePosition);

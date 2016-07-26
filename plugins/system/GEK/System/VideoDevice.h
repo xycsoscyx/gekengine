@@ -264,18 +264,18 @@ namespace Gek
         {
             Math::Float2 position;
             Math::Float2 size;
-            float nearDepth;
-            float farDepth;
+            float nearClip;
+            float farClip;
 
             ViewPort(void)
             {
             }
 
-            ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearDepth, float farDepth)
+            ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearClip, float farClip)
                 : position(position)
                 , size(size)
-                , nearDepth(nearDepth)
-                , farDepth(farDepth)
+                , nearClip(nearClip)
+                , farClip(farClip)
             {
             }
         };

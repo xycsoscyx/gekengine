@@ -128,24 +128,24 @@ namespace Gek
             rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
-        void Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearDepth, float farDepth)
+        void Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
         {
             rx.set((2.0f / (right - left)), 0.0f, 0.0f, 0.0f);
             ry.set(0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f);
-            rz.set(0.0f, 0.0f, (-2.0f / (farDepth - nearDepth)), 0.0f);
-            rw.set(-((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farDepth + nearDepth) / (farDepth - nearDepth)), 1.0f);
+            rz.set(0.0f, 0.0f, (-2.0f / (farClip - nearClip)), 0.0f);
+            rw.set(-((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farClip + nearClip) / (farClip - nearClip)), 1.0f);
         }
 
-        void Float4x4::setPerspective(float fieldOfView, float aspectRatio, float nearDepth, float farDepth)
+        void Float4x4::setPerspective(const Float2 &fieldOfView, float nearClip, float farClip)
         {
-            float x(1.0f / std::tan(fieldOfView * 0.5f));
-            float y(x * aspectRatio);
-            float distance(farDepth - nearDepth);
+            float x(1.0f / std::tan(fieldOfView.x * 0.5f));
+            float y(1.0f / std::tan(fieldOfView.y * 0.5f));
+            float denominator(farClip - nearClip);
 
             rx.set(x, 0.0f, 0.0f, 0.0f);
             ry.set(0.0f, y, 0.0f, 0.0f);
-            rz.set(0.0f, 0.0f, (farDepth / distance), 1.0f);
-            rw.set(0.0f, 0.0f, ((-nearDepth * farDepth) / distance), 0.0f);
+            rz.set(0.0f, 0.0f, ((farClip + nearClip) / denominator), 1.0f);
+            rw.set(0.0f, 0.0f, ((2.0f * (-farClip * nearClip)) / denominator), 0.0f);
         }
 
         void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)

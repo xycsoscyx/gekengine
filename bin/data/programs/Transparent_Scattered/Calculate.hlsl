@@ -3,7 +3,7 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-float2 computeRefractionOffset(float viewDepth, float3 normal, float3 position, float eta)
+float2 computeRefractionOffset(float linearDepth, float3 normal, float3 position, float eta)
 {
     return 0.0;
 }
@@ -35,8 +35,8 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float transparentDepth = inputPixel.viewPosition.z - 4.0;
     float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : computeRefractionOffset(transparentDepth, inputPixel.viewNormal, inputPixel.viewPosition, etaRatio);
-    float viewDepth = getViewDepthFromProjectedDepth(Resources::depthBuffer[inputPixel.position.xy]);
-    outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - viewDepth)) / abs(inputPixel.viewPosition.z);
+    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.position.xy]);
+    outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - linearDepth)) / abs(inputPixel.viewPosition.z);
     outputPixel.modulationDiffusionBuffer.a *= outputPixel.modulationDiffusionBuffer.a;
 
     [branch]

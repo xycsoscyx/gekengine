@@ -19,8 +19,8 @@ float2 getTapLocation(float tap, float randomAngle)
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 float getShadowFactor(InputPixel inputPixel)
 {
-    float sceneDepth = Resources::depth[inputPixel.position.xy];
-    float3 surfacePosition = getPositionFromProjectedDepth(inputPixel.texCoord, sceneDepth);
+    float surfaceDepth = Resources::depth[inputPixel.position.xy];
+    float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.position.xy]);
 
     float randomAngle = random(inputPixel.position.xy, Engine::worldTime);
@@ -35,12 +35,12 @@ float getShadowFactor(InputPixel inputPixel)
         float2 tapCoord = (inputPixel.texCoord + tapLocation);
 
         float tapDepth = Resources::depth.SampleLevel(Global::pointSampler, tapCoord, 0);
-        float3 tapPosition = getPositionFromProjectedDepth(tapCoord, tapDepth);
+        float3 tapPosition = getPositionFromSample(tapCoord, tapDepth);
 
         float3 tapDelta = (tapPosition - surfacePosition);
         float deltaMagnitude = dot(tapDelta, tapDelta);
         float deltaAngle = dot(tapDelta, surfaceNormal);
-        totalOcclusion += (max(0.0, (deltaAngle + (sceneDepth * 0.001))) / (deltaMagnitude + 0.1));
+        totalOcclusion += (max(0.0, (deltaAngle + (surfaceDepth * 0.001))) / (deltaMagnitude + 0.1));
     }
 
     totalOcclusion *= (Math::Tau * Defines::shadowRadius * Defines::shadowStrength / Defines::shadowTapCount);

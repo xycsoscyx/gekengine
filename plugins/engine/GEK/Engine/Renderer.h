@@ -39,7 +39,7 @@ namespace Gek
 
         virtual Video::Device * getDevice(void) const = 0;
 
-        virtual void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
+        virtual void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, ResourceHandle cameraTarget) = 0;
         virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
         };
     }; // namespace Engine

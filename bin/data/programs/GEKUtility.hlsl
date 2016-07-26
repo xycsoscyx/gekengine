@@ -56,14 +56,14 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
     return float3x3(normalize(tangent * reciprocal), normalize(-biTangent * reciprocal), normal);
 }
 
-float getViewDepthFromProjectedDepth(float projectedDepth)
+float getLinearDepthFromSample(float depthSample)
 {
     projectedDepth = 2.0 * projectedDepth - 1.0;
-    projectedDepth = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - projectedDepth * (Camera::farClip - Camera::nearClip));
+    projectedDepth = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - depthSample * (Camera::farClip - Camera::nearClip));
     return projectedDepth;
 }
 
-float3 getPositionFromViewDepth(float2 texCoord, float viewDepth)
+float3 getPositionFromLinearDepth(float2 texCoord, float viewDepth)
 {
     float2 adjustedCoord = texCoord;
     adjustedCoord.y = (1.0 - adjustedCoord.y);
@@ -71,9 +71,9 @@ float3 getPositionFromViewDepth(float2 texCoord, float viewDepth)
     return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * viewDepth);
 }
 
-float3 getPositionFromProjectedDepth(float2 texCoord, float projectedDepth)
+float3 getPositionFromSample(float2 texCoord, float depthSample)
 {
-    return getPositionFromViewDepth(texCoord, getViewDepthFromProjectedDepth(projectedDepth));
+    return getPositionFromLinearDepth(texCoord, getLinearDepthFromSample(depthSample));
 }
 
 // using stereograpgic projection
