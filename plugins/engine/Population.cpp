@@ -130,23 +130,29 @@ namespace Gek
                 return worldTime;
             }
 
-            void update(bool isIdle, float frameTime)
+            void update(bool isBackgroundProcess, float frameTime)
             {
+                GEK_TRACE_SCOPE(GEK_PARAMETER(isBackgroundProcess), GEK_PARAMETER(frameTime));
+
+                Plugin::PopulationListener::State state = Plugin::PopulationListener::State::Unknown;
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    return;
+                    state = Plugin::PopulationListener::State::Loading;
                 }
-
-                GEK_TRACE_SCOPE(GEK_PARAMETER(isIdle), GEK_PARAMETER(frameTime));
-                if (!isIdle)
+                else if(isBackgroundProcess)
                 {
+                    state = Plugin::PopulationListener::State::Idle;
+                }
+                else
+                {
+                    state = Plugin::PopulationListener::State::Active;
                     this->frameTime = frameTime;
                     this->worldTime += frameTime;
                 }
-
+                
                 for (auto &priorityPair : updatePriorityMap)
                 {
-                    priorityPair.second.second->onUpdate(priorityPair.second.first, isIdle);
+                    priorityPair.second.second->onUpdate(priorityPair.second.first, state);
                 }
 
                 for (auto const &killEntity : killEntityList)

@@ -407,20 +407,16 @@ namespace Gek
             }
 
             // Plugin::PopulationListener
-            void onUpdate(uint32_t handle, bool isIdle)
+            void onUpdate(uint32_t handle, State state)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
+                GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
 
                 POINT currentCursorPosition;
                 GetCursorPos(&currentCursorPosition);
                 float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
                 float cursorMovementY = (float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
                 lastCursorPosition = currentCursorPosition;
-                if (isIdle)
-                {
-                    actionQueue.clear();
-                }
-                else
+                if (state == State::Active)
                 {
                     if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
                     {
@@ -463,6 +459,10 @@ namespace Gek
                             break;
                         };
                     }
+                }
+                else
+                {
+                    actionQueue.clear();
                 }
             }
 

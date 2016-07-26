@@ -96,12 +96,12 @@ namespace Gek
         {
         }
 
-        void onUpdate(uint32_t handle, bool isIdle)
+        void onUpdate(uint32_t handle, State state)
         {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
             GEK_REQUIRE(population);
 
-            if (!isIdle)
+            if (state == State::Active)
             {
                 Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity) -> void

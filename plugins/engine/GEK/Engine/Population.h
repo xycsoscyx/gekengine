@@ -20,6 +20,14 @@ namespace Gek
 
         GEK_INTERFACE(PopulationListener)
         {
+            enum class State : uint8_t
+            {
+                Unknown = 0,
+                Active,
+                Idle,
+                Loading,
+            };
+
             virtual void onLoadBegin(void) { };
             virtual void onLoadSucceeded(void) { };
             virtual void onLoadFailed(void) { };
@@ -27,7 +35,7 @@ namespace Gek
             virtual void onEntityCreated(Plugin::Entity *entity) { };
             virtual void onEntityDestroyed(Plugin::Entity *entity) { };
 
-            virtual void onUpdate(uint32_t handle, bool isIdle) { };
+            virtual void onUpdate(uint32_t handle, State state) { };
         };
 
         GEK_INTERFACE(Population)
@@ -49,7 +57,7 @@ namespace Gek
             virtual float getWorldTime(void) const = 0;
             virtual float getFrameTime(void) const = 0;
 
-            virtual void update(bool isIdle, float frameTime = 0.0f) = 0;
+            virtual void update(bool isBackgroundProcess, float frameTime = 0.0f) = 0;
 
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;

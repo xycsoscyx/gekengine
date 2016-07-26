@@ -3,7 +3,6 @@
 #include "GEK\Utility\String.h"
 #include <unordered_map>
 #include <chrono>
-#include <atomic>
 #include <memory>
 #include <array>
 

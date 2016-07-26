@@ -147,27 +147,30 @@ namespace Gek
             }
         }
 
-        void onUpdate(uint32_t handle, bool isIdle)
+        void onUpdate(uint32_t handle, State state)
         {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
             GEK_REQUIRE(renderer);
 
-            std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
+            if (state != State::Loading)
             {
-                Plugin::Entity *entity = entityDataPair.first;
-                auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
-                auto &camera = entityDataPair.second;
+                std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
+                {
+                    Plugin::Entity *entity = entityDataPair.first;
+                    auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
+                    auto &camera = entityDataPair.second;
 
-                auto backBuffer = renderer->getDevice()->getBackBuffer();
-                float width = float(backBuffer->getWidth());
-                float height = float(backBuffer->getHeight());
-                float displayAspectRatio = (width / height);
+                    auto backBuffer = renderer->getDevice()->getBackBuffer();
+                    float width = float(backBuffer->getWidth());
+                    float height = float(backBuffer->getHeight());
+                    float displayAspectRatio = (width / height);
 
-                Math::Float4x4 projectionMatrix;
-                projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.nearClip, cameraComponent.farClip);
+                    Math::Float4x4 projectionMatrix;
+                    projectionMatrix.setPerspective(cameraComponent.fieldOfView, displayAspectRatio, cameraComponent.nearClip, cameraComponent.farClip);
 
-                renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
-            });
+                    renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
+                });
+            }
         }
     };
 

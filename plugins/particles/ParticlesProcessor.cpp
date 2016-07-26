@@ -289,10 +289,11 @@ namespace Gek
             }
         }
 
-        void onUpdate(uint32_t handle, bool isIdle)
+        void onUpdate(uint32_t handle, State state)
         {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER(isIdle));
-            if (!isIdle)
+            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
+
+            if (state == State::Active)
             {
                 float frameTime = population->getFrameTime();
                 concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void

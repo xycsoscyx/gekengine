@@ -57,8 +57,10 @@ namespace Gek
                 mutex = CreateMutex(nullptr, true, L"GEK_Trace_Mutex");
                 GEK_CHECK_CONDITION(mutex == nullptr, Gek::Exception, "Unable to create mutex: %v", GetLastError());
 
-                ::DeleteFile(FileSystem::expandPath(L"$root\\profile.json"));
-                file = CreateFile(FileSystem::expandPath(L"$root\\profile.json"), GENERIC_ALL, FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+                String fileName(FileSystem::expandPath(String(L"$root\\profile_%v.json", GetCurrentProcessId())));
+
+                ::DeleteFile(fileName);
+                file = CreateFile(fileName, GENERIC_ALL, FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
                 GEK_CHECK_CONDITION(file == INVALID_HANDLE_VALUE, Gek::Exception, "Unable to open profiler data: %v", GetLastError());
                 SetFilePointer(file, 0, 0, FILE_END);
             }
@@ -142,7 +144,7 @@ namespace Gek
 
                             if (!message.empty())
                             {
-                                std::cerr << message << std::endl;
+                                OutputDebugStringA((message + "\r\n").c_str());
                                 file.write(message);
                             }
 
@@ -153,7 +155,7 @@ namespace Gek
                     else
                     {
                         DWORD error = GetLastError();
-                        std::cerr << "Error creating named pipe: " << error << std::endl;
+                        OutputDebugString(String(L"Error creating named pipe: %v\r\n", error));
                     }
                 };
 
