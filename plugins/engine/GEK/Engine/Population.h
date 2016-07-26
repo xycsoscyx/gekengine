@@ -23,7 +23,6 @@ namespace Gek
             virtual void onLoadBegin(void) { };
             virtual void onLoadSucceeded(void) { };
             virtual void onLoadFailed(void) { };
-            virtual void onFree(void) { };
 
             virtual void onEntityCreated(Plugin::Entity *entity) { };
             virtual void onEntityDestroyed(Plugin::Entity *entity) { };
@@ -54,7 +53,6 @@ namespace Gek
 
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
-            virtual void free(void) = 0;
 
             virtual Plugin::Entity *createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName = nullptr) = 0;
             virtual void killEntity(Plugin::Entity *entity) = 0;
@@ -74,20 +72,8 @@ namespace Gek
                 });
             }
 
-            virtual void listProcessors(std::function<void(Processor *)> onProcessor) const = 0;
-
             virtual uint32_t setUpdatePriority(PopulationListener *observer, uint32_t priority) = 0;
             virtual void removeUpdatePriority(uint32_t updateHandle) = 0;
         };
     }; // namespace Plugin
-
-    namespace Engine
-    {
-        GEK_INTERFACE(Population)
-            : virtual public Gek::Plugin::Population
-        {
-            virtual void loadComponents(void) = 0;
-            virtual void freeComponents(void) = 0;
-        };
-    }; // namespace Engine
 }; // namespace Gek

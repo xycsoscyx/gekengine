@@ -186,6 +186,10 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(renderer);
+
             population->addListener(this);
             updateHandle = population->setUpdatePriority(this, 60);
             renderer->addListener(this);
@@ -198,26 +202,22 @@ namespace Gek
         ~ParticlesProcessor(void)
         {
             renderer->removeListener(this);
-            if (population)
-            {
-                population->removeUpdatePriority(updateHandle);
-                population->removeListener(this);
-            }
+            population->removeUpdatePriority(updateHandle);
+            population->removeListener(this);
         }
 
         // Plugin::PopulationListener
+        void onLoadBegin(void)
+        {
+            entityEmitterMap.clear();
+        }
+
         void onLoadSucceeded(void)
         {
         }
 
         void onLoadFailed(void)
         {
-            onFree();
-        }
-
-        void onFree(void)
-        {
-            entityEmitterMap.clear();
         }
 
         template <float const &(*OPERATION)(float const &, float const &)>

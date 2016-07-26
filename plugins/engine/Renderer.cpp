@@ -351,12 +351,8 @@ namespace Gek
 
             ~Renderer(void)
             {
-                if (population)
-                {
-                    population->removeUpdatePriority(foregroundUpdateHandle);
-                    population->removeUpdatePriority(backgroundUpdateHandle);
-                }
-
+                population->removeUpdatePriority(foregroundUpdateHandle);
+                population->removeUpdatePriority(backgroundUpdateHandle);
                 population->removeListener(this);
             }
 
@@ -588,6 +584,9 @@ namespace Gek
             // Plugin::PopulationListener
             void onLoadBegin(void)
             {
+                GEK_REQUIRE(resources);
+
+                resources->clearLocal();
             }
 
             void onLoadSucceeded(void)
@@ -596,14 +595,6 @@ namespace Gek
 
             void onLoadFailed(void)
             {
-                onFree();
-            }
-
-            void onFree(void)
-            {
-                GEK_REQUIRE(resources);
-
-                resources->clearLocal();
             }
 
             void onUpdate(uint32_t handle, bool isIdle)

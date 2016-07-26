@@ -840,10 +840,6 @@ namespace Gek
                 }
             }
 
-            ~Shader(void)
-            {
-            }
-
             // Shader
             uint32_t getPriority(void)
             {

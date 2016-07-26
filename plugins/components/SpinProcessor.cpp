@@ -63,17 +63,16 @@ namespace Gek
             , population(core->getPopulation())
             , updateHandle(0)
         {
+            GEK_REQUIRE(population);
+
             population->addListener(this);
             updateHandle = population->setUpdatePriority(this, 0);
         }
 
         ~SpinProcessor(void)
         {
-            if (population)
-            {
-                population->removeUpdatePriority(updateHandle);
-                population->removeListener(this);
-            }
+            population->removeUpdatePriority(updateHandle);
+            population->removeListener(this);
         }
 
         // Plugin::PopulationListener
@@ -86,11 +85,6 @@ namespace Gek
         }
 
         void onLoadFailed(void)
-        {
-            onFree();
-        }
-
-        void onFree(void)
         {
         }
 

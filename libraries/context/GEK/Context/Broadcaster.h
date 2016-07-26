@@ -2,6 +2,7 @@
 
 #include "GEK\Context\Context.h"
 #include <concurrent_unordered_set.h>
+#include <iostream>
 
 namespace Gek
 {
@@ -14,6 +15,7 @@ namespace Gek
     public:
         virtual ~Broadcaster(void)
         {
+            GEK_REQUIRE(listenerSet.empty());
         }
 
         void addListener(LISTENER *listener)

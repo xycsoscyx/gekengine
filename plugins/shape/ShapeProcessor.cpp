@@ -510,6 +510,10 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(renderer);
+
             population->addListener(this);
             renderer->addListener(this);
 
@@ -599,16 +603,7 @@ namespace Gek
         }
 
         // Plugin::PopulationListener
-        void onLoadSucceeded(void)
-        {
-        }
-
-        void onLoadFailed(void)
-        {
-            onFree();
-        }
-
-        void onFree(void)
+        void onLoadBegin(void)
         {
             loadQueue.clear();
             if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
@@ -619,6 +614,14 @@ namespace Gek
             loadMap.clear();
             shapeMap.clear();
             entityDataMap.clear();
+        }
+
+        void onLoadSucceeded(void)
+        {
+        }
+
+        void onLoadFailed(void)
+        {
         }
 
         void onEntityCreated(Plugin::Entity *entity)

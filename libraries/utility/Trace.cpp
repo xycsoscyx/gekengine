@@ -142,7 +142,7 @@ namespace Gek
 
                             if (!message.empty())
                             {
-                                OutputDebugStringA((message + "\r\n").c_str());
+                                std::cerr << message << std::endl;
                                 file.write(message);
                             }
 
@@ -153,7 +153,7 @@ namespace Gek
                     else
                     {
                         DWORD error = GetLastError();
-                        OutputDebugStringW(String(L"Error creating named pipe: %v", error));
+                        std::cerr << "Error creating named pipe: " << error << std::endl;
                     }
                 };
 

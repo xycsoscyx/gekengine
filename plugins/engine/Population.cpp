@@ -59,7 +59,7 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
-            , public Engine::Population
+            , public Plugin::Population
         {
         private:
             Plugin::Core *core;
@@ -69,7 +69,6 @@ namespace Gek
 
             std::unordered_map<String, std::type_index> componentNamesMap;
             std::unordered_map<std::type_index, Plugin::ComponentPtr> componentsMap;
-            std::list<Plugin::ProcessorPtr> processorList;
 
             std::future<void> loadThread;
 
@@ -79,27 +78,12 @@ namespace Gek
 
             using UpdatePriorityMap = std::multimap<uint32_t, std::pair<uint32_t, Plugin::PopulationListener *>>;
             UpdatePriorityMap updatePriorityMap;
-
             std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
 
         public:
             Population(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-            {
-                OutputDebugString(L"");
-            }
-
-            ~Population(void)
-            {
-                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-                {
-                    loadThread.get();
-                }
-            }
-
-            // Engine::Population
-            void loadComponents(void)
             {
                 GEK_TRACE_SCOPE();
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
@@ -117,18 +101,22 @@ namespace Gek
                     {
                     }
                 });
-
-                getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
-                {
-                    processorList.push_back(getContext()->createClass<Plugin::Processor>(className, core));
-                });
             }
 
-            void freeComponents(void)
+            ~Population(void)
             {
-                processorList.clear();
+                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                {
+                    loadThread.get();
+                }
+
+                namedEntityMap.clear();
+                killEntityList.clear();
+                entityList.clear();
                 componentNamesMap.clear();
                 componentsMap.clear();
+
+                GEK_REQUIRE(updatePriorityMap.empty());
             }
 
             // Plugin::Population
@@ -209,7 +197,10 @@ namespace Gek
 
                     try
                     {
-                        free(false);
+                        namedEntityMap.clear();
+                        killEntityList.clear();
+                        entityList.clear();
+
                         sendEvent(&Plugin::PopulationListener::onLoadBegin);
 
                         XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", populationName)));
@@ -295,24 +286,6 @@ namespace Gek
                 document->save(String(L"$root\\data\\saves\\%v.xml", populationName));
             }
 
-            void free(bool waitForLoad)
-            {
-                if (waitForLoad && loadThread.valid())
-                {
-                    loadThread.get();
-                }
-
-                sendEvent(&Plugin::PopulationListener::onFree);
-                namedEntityMap.clear();
-                killEntityList.clear();
-                entityList.clear();
-            }
-
-            void free(void)
-            {
-                free(true);
-            }
-
             Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
             {
                 entityList.push_back(entity);
@@ -377,14 +350,6 @@ namespace Gek
                 concurrency::parallel_for_each(entityList.begin(), entityList.end(), [&](auto &entity) -> void
                 {
                     onEntity(entity.get());
-                });
-            }
-
-            void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) const
-            {
-                concurrency::parallel_for_each(processorList.begin(), processorList.end(), [&](auto &processor) -> void
-                {
-                    onProcessor(processor.get());
                 });
             }
 

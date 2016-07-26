@@ -77,23 +77,54 @@ namespace Gek
             , core(core)
             , population(core->getPopulation())
             , updateHandle(0)
-            , newtonWorld(nullptr)
+            , newtonWorld(NewtonCreate())
             , newtonStaticScene(nullptr)
             , newtonStaticBody(nullptr)
             , gravity(0.0f, -32.174f, 0.0f)
         {
+            GEK_REQUIRE(core);
+            GEK_REQUIRE(newtonWorld);
+
+            NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
+
+            NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);
+            NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
+
+            int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
+            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
+
             updateHandle = population->setUpdatePriority(this, 50);
             population->addListener(this);
         }
 
         ~NewtonProcessor(void)
         {
-            onFree();
-            if (population)
+            population->removeUpdatePriority(updateHandle);
+            population->removeListener(this);
+
+            NewtonWaitForUpdateToFinish(newtonWorld);
+            for (auto &collisionPair : collisionMap)
             {
-                population->removeUpdatePriority(updateHandle);
-                population->removeListener(this);
+                if (collisionPair.second)
+                {
+                    NewtonDestroyCollision(collisionPair.second);
+                }
             }
+
+            if (newtonStaticScene)
+            {
+                NewtonDestroyCollision(newtonStaticScene);
+            }
+
+            collisionMap.clear();
+            entityMap.clear();
+            surfaceList.clear();
+            surfaceIndexMap.clear();
+            newtonStaticBody = nullptr;
+            NewtonDestroyAllBodies(newtonWorld);
+            NewtonInvalidateCache(newtonWorld);
+            NewtonDestroy(newtonWorld);
+            GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
         }
 
         // Newton::World
@@ -256,52 +287,7 @@ namespace Gek
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
-            surfaceList.push_back(Surface());
-
-            newtonWorld = NewtonCreate();
-            NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
-
-            NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);
-            NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
-
-            int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-            NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
-
-            newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
-            if (newtonStaticScene)
-            {
-                NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-            }
-        }
-
-        void onLoadSucceeded(void)
-        {
-            if (newtonStaticScene)
-            {
-                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
-            }
-        }
-
-        void onLoadFailed(void)
-        {
-            if (newtonStaticScene)
-            {
-                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-            }
-
-            onFree();
-        }
-
-        void onFree(void)
-        {
-            if (newtonWorld)
-            {
-                NewtonWaitForUpdateToFinish(newtonWorld);
-                //NewtonSerializeToFile(newtonWorld, CW2A(FileSystem::expandPath(L"$root\\data\\newton.bin")), nullptr, nullptr);
-            }
-
+            NewtonWaitForUpdateToFinish(newtonWorld);
             for (auto &collisionPair : collisionMap)
             {
                 if (collisionPair.second)
@@ -310,31 +296,45 @@ namespace Gek
                 }
             }
 
-            collisionMap.clear();
-            entityMap.clear();
-            surfaceList.clear();
-            surfaceIndexMap.clear();
-
             if (newtonStaticScene)
             {
                 NewtonDestroyCollision(newtonStaticScene);
                 newtonStaticScene = nullptr;
             }
 
+            collisionMap.clear();
+            entityMap.clear();
+            surfaceList.clear();
+            surfaceIndexMap.clear();
             newtonStaticBody = nullptr;
-            if (newtonWorld)
-            {
-                NewtonDestroyAllBodies(newtonWorld);
-                NewtonInvalidateCache(newtonWorld);
-                NewtonDestroy(newtonWorld);
-                newtonWorld = nullptr;
-            }
+            NewtonDestroyAllBodies(newtonWorld);
+            NewtonInvalidateCache(newtonWorld);
 
-            GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
+            surfaceList.push_back(Surface());
+            newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
+            GEK_CHECK_CONDITION(newtonStaticScene == nullptr, Exception, "Unable to create collision for static scene");
+            NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
+        }
+
+        void onLoadSucceeded(void)
+        {
+            GEK_REQUIRE(newtonStaticScene);
+
+            NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+            newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+            NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
+        }
+
+        void onLoadFailed(void)
+        {
+            GEK_REQUIRE(newtonStaticScene);
+
+            NewtonSceneCollisionEndAddRemove(newtonStaticScene);
         }
 
         void onEntityCreated(Plugin::Entity *entity)
         {
+            GEK_REQUIRE(newtonStaticScene);
             GEK_REQUIRE(entity);
 
             if (entity->hasComponents<Components::Transform>())

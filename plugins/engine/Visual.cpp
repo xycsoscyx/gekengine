@@ -274,10 +274,6 @@ namespace Gek
                 vertexProgram = device->compileVertexProgram(engineData, "mainVertexProgram", elementList, onInclude);
             }
 
-            ~Visual(void)
-            {
-            }
-
             // Plugin
             void enable(Video::Device::Context *deviceContext)
             {

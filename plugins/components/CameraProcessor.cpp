@@ -88,22 +88,24 @@ namespace Gek
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
+            GEK_REQUIRE(population);
+            GEK_REQUIRE(resources);
+            GEK_REQUIRE(renderer);
+
             population->addListener(this);
             updateHandle = population->setUpdatePriority(this, 90);
         }
 
         ~CameraProcessor(void)
         {
-            if (population)
-            {
-                population->removeUpdatePriority(updateHandle);
-                population->removeListener(this);
-            }
+            population->removeUpdatePriority(updateHandle);
+            population->removeListener(this);
         }
 
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
+            entityDataMap.clear();
         }
 
         void onLoadSucceeded(void)
@@ -112,12 +114,6 @@ namespace Gek
 
         void onLoadFailed(void)
         {
-            onFree();
-        }
-
-        void onFree(void)
-        {
-            entityDataMap.clear();
         }
 
         void onEntityCreated(Plugin::Entity *entity)

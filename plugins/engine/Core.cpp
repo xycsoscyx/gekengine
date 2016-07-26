@@ -62,9 +62,10 @@ namespace Gek
             float mouseSensitivity;
 
             Video::DevicePtr device;
-            Engine::ResourcesPtr resources;
-            Engine::PopulationPtr population;
             Plugin::RendererPtr renderer;
+            Engine::ResourcesPtr resources;
+            std::list<Plugin::ProcessorPtr> processorList;
+            Plugin::PopulationPtr population;
 
             uint32_t updateHandle;
             ActionQueue actionQueue;
@@ -191,10 +192,13 @@ namespace Gek
                 GEK_CHECK_CONDITION(FAILED(resultValue), Exception, "Unable to initialize COM (error %v)", resultValue);
 
                 device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, nullptr);
-                population = getContext()->createClass<Engine::Population>(L"Engine::Population", (Plugin::Core *)this);
+                population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
-                population->loadComponents();
+                getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
+                {
+                    processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
+                });
 
                 updateHandle = population->setUpdatePriority(this, 0);
                 renderer->addListener(this);
@@ -223,8 +227,6 @@ namespace Gek
             {
                 if (population)
                 {
-                    population->free();
-                    population->freeComponents();
                     population->removeUpdatePriority(updateHandle);
                 }
 
@@ -233,6 +235,7 @@ namespace Gek
                     renderer->removeListener(this);
                 }
 
+                processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
                 population = nullptr;
