@@ -23,6 +23,7 @@
 #include <concurrent_queue.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
+#include <future>
 #include <set>
 
 namespace Gek
@@ -205,8 +206,7 @@ namespace Gek
             Plugin::Core *core;
             Video::Device *device;
 
-            std::atomic<bool> quitLoadThread;
-            std::unique_ptr<std::thread> loadThread;
+            std::future<void> loadThread;
             concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
 
             ResourceManager<ProgramHandle, Video::Object> programManager;
@@ -238,26 +238,27 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
-                createLoadThread();
             }
 
             ~Resources(void)
             {
                 loadQueue.clear();
-                quitLoadThread = true;
-                loadThread->join();
-                loadThread = nullptr;
+                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                {
+                    loadThread.get();
+                }
             }
 
-            void createLoadThread(void)
+            // Messenger
+            void addRequest(std::function<void(void)> load)
             {
-                quitLoadThread = false;
-                loadThread = std::make_unique<std::thread>([this](void) -> void
+                loadQueue.push(load);
+                if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
                 {
-                    CoInitialize(nullptr);
-                    std::function<void(void)> load;
-                    while (!quitLoadThread)
+                    loadThread = std::async(std::launch::async, [this](void) -> void
                     {
+                        CoInitialize(nullptr);
+                        std::function<void(void)> load;
                         while (loadQueue.try_pop(load))
                         {
                             try
@@ -272,25 +273,20 @@ namespace Gek
                                 GEK_TRACE_EVENT("General exception occurred when loading resource");
                             };
                         };
-                    };
 
-                    CoUninitialize();
-                });
-            }
-
-            // Messenger
-            void addRequest(std::function<void(void)> load)
-            {
-                loadQueue.push(load);
+                        CoUninitialize();
+                    });
+                }
             }
 
             // Plugin::Resources
             void clearLocal(void)
             {
                 loadQueue.clear();
-                quitLoadThread = true;
-                loadThread->join();
-                loadThread = nullptr;
+                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                {
+                    loadThread.get();
+                }
 
                 materialShaderMap.clear();
                 programManager.clear();
@@ -301,8 +297,6 @@ namespace Gek
                 renderStateManager.clear();
                 depthStateManager.clear();
                 blendStateManager.clear();
-
-                createLoadThread();
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -344,9 +338,9 @@ namespace Gek
 
             VisualHandle loadVisual(const wchar_t *visualName)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(visualName));
                 auto load = [this, visualName = String(visualName)](VisualHandle) -> Plugin::VisualPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(visualName));
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, visualName.c_str());
                 };
 
@@ -356,9 +350,9 @@ namespace Gek
 
             MaterialHandle loadMaterial(const wchar_t *materialName)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(materialName));
                 auto load = [this, materialName = String(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(materialName));
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName.c_str(), handle);
                 };
 
@@ -368,9 +362,9 @@ namespace Gek
 
             Engine::Filter * const getFilter(const wchar_t *filterName)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(filterName));
                 auto load = [this, filterName = String(filterName)](ResourceHandle) -> Engine::FilterPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(filterName));
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName.c_str());
                 };
 
@@ -381,9 +375,9 @@ namespace Gek
 
             Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) -> Engine::ShaderPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName.c_str());
                 };
 
@@ -395,9 +389,9 @@ namespace Gek
 
             RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)
             {
-                GEK_TRACE_FUNCTION();
                 auto load = [this, renderState](RenderStateHandle) -> Video::ObjectPtr
                 {
+                    GEK_TRACE_FUNCTION();
                     return device->createRenderState(renderState);
                 };
 
@@ -416,9 +410,9 @@ namespace Gek
 
             DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
             {
-                GEK_TRACE_FUNCTION();
                 auto load = [this, depthState](DepthStateHandle) -> Video::ObjectPtr
                 {
+                    GEK_TRACE_FUNCTION();
                     return device->createDepthState(depthState);
                 };
 
@@ -441,9 +435,9 @@ namespace Gek
 
             BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
             {
-                GEK_TRACE_FUNCTION();
                 auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
+                    GEK_TRACE_FUNCTION();
                     return device->createBlendState(blendState);
                 };
 
@@ -460,9 +454,9 @@ namespace Gek
 
             BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
             {
-                GEK_TRACE_FUNCTION();
                 auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
+                    GEK_TRACE_FUNCTION();
                     return device->createBlendState(blendState);
                 };
 
@@ -487,9 +481,9 @@ namespace Gek
 
             ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName));
                 auto load = [this, textureName = String(textureName), format, width, height, depth, mipmaps, flags](ResourceHandle) -> Video::TexturePtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName), GEK_PARAMETER_TYPE(format, uint8_t), GEK_PARAMETER(width), GEK_PARAMETER(height), GEK_PARAMETER(depth), GEK_PARAMETER(mipmaps), GEK_PARAMETER(flags));
                     auto texture = device->createTexture(format, width, height, depth, mipmaps, flags);
                     texture->setName(textureName);
                     return texture;
@@ -501,9 +495,9 @@ namespace Gek
 
             ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
                 auto load = [this, bufferName = String(bufferName), stride, count, type, flags, staticData](ResourceHandle) -> Video::BufferPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName), GEK_PARAMETER(stride), GEK_PARAMETER(count), GEK_PARAMETER_TYPE(type, uint8_t), GEK_PARAMETER(flags));
                     auto buffer = device->createBuffer(stride, count, type, flags, (void *)staticData.data());
                     buffer->setName(bufferName);
                     return buffer;
@@ -515,9 +509,9 @@ namespace Gek
 
             ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName));
                 auto load = [this, bufferName = String(bufferName), format, count, type, flags, staticData](ResourceHandle) -> Video::BufferPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName), GEK_PARAMETER_TYPE(format, uint8_t), GEK_PARAMETER(count), GEK_PARAMETER_TYPE(type, uint8_t), GEK_PARAMETER(flags));
                     auto buffer = device->createBuffer(format, count, type, flags, (void *)staticData.data());
                     buffer->setName(bufferName);
                     return buffer;
@@ -685,9 +679,9 @@ namespace Gek
 
             ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName));
                 auto load = [this, textureName = String(textureName), flags](ResourceHandle) -> Video::TexturePtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName), GEK_PARAMETER(flags));
                     return loadTextureData(textureName, flags);
                 };
 
@@ -697,12 +691,12 @@ namespace Gek
 
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(parameters));
                 GEK_REQUIRE(pattern);
                 GEK_REQUIRE(parameters);
 
                 auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle) -> Video::TexturePtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(pattern), GEK_PARAMETER(parameters));
                     return createTextureData(pattern, parameters);
                 };
 
@@ -712,12 +706,12 @@ namespace Gek
 
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                 GEK_REQUIRE(fileName);
                 GEK_REQUIRE(entryFunction);
 
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                     auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
                     return program;
@@ -728,12 +722,12 @@ namespace Gek
 
             ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
-                GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                 GEK_REQUIRE(fileName);
                 GEK_REQUIRE(entryFunction);
 
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
+                    GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                     auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
                     return program;
@@ -824,7 +818,7 @@ namespace Gek
                     resourceCache[resource] = (resourceHandleList ? resourceManager.getResource(resourceHandleList[resource]) : nullptr);
                 }
 
-                deviceContextPipeline->setResourceList(resourceCache.data(), resourceCache.size(), firstStage);
+                deviceContextPipeline->setResourceList(resourceCache.data(), resourceCount, firstStage);
             }
 
             std::vector<Video::Object *> unorderedAccessCache;
@@ -838,7 +832,7 @@ namespace Gek
                     unorderedAccessCache[resource] = (resourceHandleList ? resourceManager.getResource(resourceHandleList[resource]) : nullptr);
                 }
 
-                deviceContextPipeline->setUnorderedAccessList(unorderedAccessCache.data(), unorderedAccessCache.size(), firstStage);
+                deviceContextPipeline->setUnorderedAccessList(unorderedAccessCache.data(), resourceCount, firstStage);
             }
 
             void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)

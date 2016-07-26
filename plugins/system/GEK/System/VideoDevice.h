@@ -489,11 +489,11 @@ namespace Gek
                     virtual void setSamplerState(Object *samplerState, uint32_t stage) = 0;
                     virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
 
-                    virtual void setResource(Object *resource, uint32_t stage) = 0;
-                    virtual void setUnorderedAccess(Object *unorderedAccess, uint32_t stage, uint32_t count = 0) = 0;
+                    virtual void setResource(Object *resource, uint32_t firstStage) = 0;
+                    virtual void setUnorderedAccess(Object *unorderedAccess, uint32_t firstStage, uint32_t count = 0) = 0;
 
                     virtual void setResourceList(Object **resourceList, uint32_t resourceCount, uint32_t firstStage) = 0;
-                    virtual void setUnorderedAccessList(Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList = 0) = 0;
+                    virtual void setUnorderedAccessList(Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList = nullptr) = 0;
                 };
 
                 virtual Device * const getDevice(void) = 0;

@@ -384,6 +384,7 @@ namespace Gek
 
         void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
+            return;
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);

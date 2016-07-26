@@ -132,7 +132,8 @@ namespace Gek
 #define _ENABLE_TRACE_
 
 #ifdef _ENABLE_TRACE_
-    #define GEK_PARAMETER(NAME)                                 Trace::Parameter<decltype(NAME)>(#NAME, NAME)
+    #define GEK_PARAMETER(NAME)                                 Trace::Parameter<decltype(NAME)>(#NAME, (NAME))
+    #define GEK_PARAMETER_TYPE(NAME, TYPE)                      Trace::Parameter<TYPE>(#NAME, static_cast<TYPE>(NAME))
     #define GEK_TRACE_SCOPE(...)                                Trace::Scope traceScope("Scope", __FUNCTION__, __VA_ARGS__)
     #define GEK_TRACE_FUNCTION(...)                             Trace::log("I", "Function", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, __VA_ARGS__)
     #define GEK_TRACE_EVENT(MESSAGE, ...)                       Trace::log("I", "Event", std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count(), __FUNCTION__, MESSAGE, __VA_ARGS__)

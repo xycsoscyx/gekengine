@@ -1037,14 +1037,14 @@ namespace Gek
                         d3dDeviceContext->CSSetConstantBuffers(stage, 1, list);
                     }
 
-                    void setResource(Video::Object *resource, uint32_t stage)
+                    void setResource(Video::Object *resource, uint32_t firstStage)
                     {
-                        setResourceList(&resource, 1, stage);
+                        setResourceList(&resource, 1, firstStage);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                     {
-                        setUnorderedAccessList(&unorderedAccess, 1, stage, &count);
+                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                     }
 
                     std::vector<ID3D11ShaderResourceView *> resourceCache;
@@ -1113,14 +1113,14 @@ namespace Gek
                         d3dDeviceContext->VSSetConstantBuffers(stage, 1, list);
                     }
 
-                    void setResource(Video::Object *resource, uint32_t stage)
+                    void setResource(Video::Object *resource, uint32_t firstStage)
                     {
-                        setResourceList(&resource, 1, stage);
+                        setResourceList(&resource, 1, firstStage);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                     {
-                        GEK_THROW_EXCEPTION(Video::Exception, "Unable to set vertex shader unordered access")
+                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                     }
 
                     std::vector<ID3D11ShaderResourceView *> resourceCache;
@@ -1139,7 +1139,7 @@ namespace Gek
 
                     void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
                     {
-                        GEK_THROW_EXCEPTION(Video::Exception, "Unable to set vertex shader unordered access")
+                        GEK_THROW_EXCEPTION(Video::Exception, "Vertex pipeline does not support unordered access")
                     }
                 };
 
@@ -1179,14 +1179,14 @@ namespace Gek
                         d3dDeviceContext->GSSetConstantBuffers(stage, 1, list);
                     }
 
-                    void setResource(Video::Object *resource, uint32_t stage)
+                    void setResource(Video::Object *resource, uint32_t firstStage)
                     {
-                        setResourceList(&resource, 1, stage);
+                        setResourceList(&resource, 1, firstStage);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                     {
-                        GEK_THROW_EXCEPTION(Video::Exception, "Unable to set geometry shader unordered access")
+                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                     }
 
                     std::vector<ID3D11ShaderResourceView *> resourceCache;
@@ -1205,7 +1205,7 @@ namespace Gek
 
                     void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
                     {
-                        GEK_THROW_EXCEPTION(Video::Exception, "Unable to set geometry shader unordered access")
+                        GEK_THROW_EXCEPTION(Video::Exception, "Geometry pipeline does not support unordered access")
                     }
                 };
 
@@ -1245,14 +1245,14 @@ namespace Gek
                         d3dDeviceContext->PSSetConstantBuffers(stage, 1, list);
                     }
 
-                    void setResource(Video::Object *resource, uint32_t stage)
+                    void setResource(Video::Object *resource, uint32_t firstStage)
                     {
-                        setResourceList(&resource, 1, stage);
+                        setResourceList(&resource, 1, firstStage);
                     }
 
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t stage, uint32_t count)
+                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                     {
-                        setUnorderedAccessList(&unorderedAccess, 1, stage, &count);
+                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                     }
 
                     std::vector<ID3D11ShaderResourceView *> resourceCache;

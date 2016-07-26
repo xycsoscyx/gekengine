@@ -71,6 +71,8 @@ namespace Gek
             std::unordered_map<std::type_index, Plugin::ComponentPtr> componentsMap;
             std::list<Plugin::ProcessorPtr> processorList;
 
+            std::future<void> loadThread;
+
             std::vector<Plugin::EntityPtr> entityList;
             std::unordered_map<String, Plugin::Entity *> namedEntityMap;
             std::vector<Plugin::Entity *> killEntityList;
@@ -90,7 +92,7 @@ namespace Gek
 
             ~Population(void)
             {
-                if (loadThread.valid())
+                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
                     loadThread.get();
                 }
@@ -194,15 +196,14 @@ namespace Gek
                 killEntityList.clear();
             }
 
-            std::future<void> loadThread;
             void load(const wchar_t *populationName)
             {
-                if (loadThread.valid())
+                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
                     loadThread.get();
                 }
 
-                loadThread = std::async(std::launch::async, [this, populationName = String(populationName)](void)->void
+                loadThread = std::async(std::launch::async, [this, populationName = String(populationName)](void) -> void
                 {
                     GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
 

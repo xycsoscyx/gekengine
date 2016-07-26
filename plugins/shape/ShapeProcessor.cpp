@@ -20,6 +20,7 @@
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
+#include <future>
 #include <algorithm>
 #include <memory>
 #include <array>
@@ -118,11 +119,11 @@ namespace Gek
             }
         };
 
-        std::vector <Vertex> vertices;
-        std::vector <Edge> edges;
-        std::vector <Edge> newEdges;
-        std::vector <Triangle> triangles;
-        std::vector <Triangle> newTriangles;
+        std::vector<Vertex> vertices;
+        std::vector<Edge> edges;
+        std::vector<Edge> newEdges;
+        std::vector<Triangle> triangles;
+        std::vector<Triangle> newTriangles;
 
         std::vector <uint16_t> indices;
         float inscriptionRadiusMultiplier;
@@ -362,7 +363,7 @@ namespace Gek
 
         std::vector<uint8_t> getIndexData(void) const
         {
-            return std::vector<uint8_t>((uint8_t *)indices.data(), (uint8_t *)indices.data() + (sizeof(Vertex) * indices.size()));
+            return std::vector<uint8_t>((uint8_t *)indices.data(), (uint8_t *)indices.data() + (sizeof(uint16_t) * indices.size()));
         }
     };
 
@@ -489,8 +490,7 @@ namespace Gek
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
 
-        std::atomic<bool> quitLoadThread;
-        std::unique_ptr<std::thread> loadThread;
+        std::future<void> loadThread;
         concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
         concurrency::concurrent_unordered_map<std::size_t, bool> loadMap;
 
@@ -516,46 +516,18 @@ namespace Gek
             visual = resources->loadVisual(L"model");
 
             constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
-
-            createLoadThread();
         }
 
         ~ShapeProcessor(void)
         {
             loadQueue.clear();
-            quitLoadThread = true;
-            loadThread->join();
-            loadThread = nullptr;
+            if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+            {
+                loadThread.get();
+            }
+
             renderer->removeListener(this);
             population->removeListener(this);
-        }
-
-        void createLoadThread(void)
-        {
-            loadThread = std::make_unique<std::thread>([this](void) -> void
-            {
-                CoInitialize(nullptr);
-                std::function<void(void)> load;
-                while (!quitLoadThread)
-                {
-                    while (loadQueue.try_pop(load))
-                    {
-                        try
-                        {
-                            load();
-                        }
-                        catch (const Gek::Exception &)
-                        {
-                        }
-                        catch (...)
-                        {
-                            GEK_TRACE_EVENT("General exception occurred when loading resource");
-                        };
-                    };
-                };
-
-                CoUninitialize();
-            });
         }
 
         void loadBoundingBox(Shape &shape, const String &shapeName, const String &parameters)
@@ -599,6 +571,30 @@ namespace Gek
             {
                 loadMap.insert(std::make_pair(hash, true));
                 loadQueue.push(std::bind(&ShapeProcessor::loadShapeWorker, this, std::ref(shape)));
+                if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+                {
+                    loadThread = std::async(std::launch::async, [this](void) -> void
+                    {
+                        CoInitialize(nullptr);
+                        std::function<void(void)> load;
+                        while (loadQueue.try_pop(load))
+                        {
+                            try
+                            {
+                                load();
+                            }
+                            catch (const Gek::Exception &)
+                            {
+                            }
+                            catch (...)
+                            {
+                                GEK_TRACE_EVENT("General exception occurred when loading resource");
+                            };
+                        };
+
+                        CoUninitialize();
+                    });
+                }
             }
         }
 
@@ -615,15 +611,14 @@ namespace Gek
         void onFree(void)
         {
             loadQueue.clear();
-            quitLoadThread = true;
-            loadThread->join();
-            loadThread = nullptr;
-            loadMap.clear();
+            if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+            {
+                loadThread.get();
+            }
 
+            loadMap.clear();
             shapeMap.clear();
             entityDataMap.clear();
-
-            createLoadThread();
         }
 
         void onEntityCreated(Plugin::Entity *entity)
