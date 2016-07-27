@@ -94,7 +94,7 @@ namespace Gek
             void setYawRotation(float radians);
             void setRollRotation(float radians);
             void setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
-            void setPerspective(const Float2 &fieldOfView, float nearClip, float farClip);
+            void setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
             void setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
             void setLookAt(const Float3 &direction, const Float3 &worldUpVector);
 

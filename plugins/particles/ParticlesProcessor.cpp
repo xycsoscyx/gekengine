@@ -385,7 +385,6 @@ namespace Gek
 
         void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
-            return;
             GEK_TRACE_SCOPE();
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
@@ -410,6 +409,6 @@ namespace Gek
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(Particles)
-    GEK_REGISTER_CONTEXT_USER(ParticlesProcessor)
+    //GEK_REGISTER_CONTEXT_USER(Particles)
+    //GEK_REGISTER_CONTEXT_USER(ParticlesProcessor)
 }; // namespace Gek

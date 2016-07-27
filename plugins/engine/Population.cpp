@@ -70,6 +70,7 @@ namespace Gek
             std::unordered_map<String, std::type_index> componentNamesMap;
             std::unordered_map<std::type_index, Plugin::ComponentPtr> componentsMap;
 
+            std::mutex loadMutex;
             std::future<void> loadThread;
 
             std::vector<Plugin::EntityPtr> entityList;
@@ -197,6 +198,7 @@ namespace Gek
                     loadThread.get();
                 }
 
+                std::lock_guard<std::mutex> lock(loadMutex);
                 loadThread = std::async(std::launch::async, [this, populationName = String(populationName)](void) -> void
                 {
                     GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));

@@ -164,13 +164,10 @@ namespace Gek
                     float width = float(backBuffer->getWidth());
                     float height = float(backBuffer->getHeight());
 
-                    Math::Float2 fieldOfView(cameraComponent.fieldOfView);
-                    fieldOfView.y *= (height / width);
-
                     Math::Float4x4 projectionMatrix;
-                    projectionMatrix.setPerspective(fieldOfView, cameraComponent.nearClip, cameraComponent.farClip);
+                    projectionMatrix.setPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip);
 
-                    renderer->render(entity, projectionMatrix, camera.target);
+                    renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
                 });
             }
         }

@@ -136,16 +136,16 @@ namespace Gek
             rw.set(-((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farClip + nearClip) / (farClip - nearClip)), 1.0f);
         }
 
-        void Float4x4::setPerspective(const Float2 &fieldOfView, float nearClip, float farClip)
+        void Float4x4::setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
         {
-            float x(1.0f / std::tan(fieldOfView.x * 0.5f));
-            float y(1.0f / std::tan(fieldOfView.y * 0.5f));
+            float yScale(1.0f / std::tan(fieldOfView * 0.5f));
+            float xScale(yScale / aspectRatio);
             float denominator(farClip - nearClip);
 
-            rx.set(x, 0.0f, 0.0f, 0.0f);
-            ry.set(0.0f, y, 0.0f, 0.0f);
-            rz.set(0.0f, 0.0f, ((farClip + nearClip) / denominator), 1.0f);
-            rw.set(0.0f, 0.0f, ((2.0f * (-farClip * nearClip)) / denominator), 0.0f);
+            rx.set(xScale, 0.0f, 0.0f, 0.0f);
+            ry.set(0.0f, yScale, 0.0f, 0.0f);
+            rz.set(0.0f, 0.0f, (farClip / denominator), 1.0f);
+            rw.set(0.0f, 0.0f, ((-nearClip * farClip) / denominator), 0.0f);
         }
 
         void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)

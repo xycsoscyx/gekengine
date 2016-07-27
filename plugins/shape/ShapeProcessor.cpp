@@ -490,6 +490,7 @@ namespace Gek
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
 
+        std::mutex loadMutex;
         std::future<void> loadThread;
         concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
         concurrency::concurrent_unordered_map<std::size_t, bool> loadMap;
@@ -575,6 +576,8 @@ namespace Gek
             {
                 loadMap.insert(std::make_pair(hash, true));
                 loadQueue.push(std::bind(&ShapeProcessor::loadShapeWorker, this, std::ref(shape)));
+
+                std::lock_guard<std::mutex> lock(loadMutex);
                 if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
                 {
                     loadThread = std::async(std::launch::async, [this](void) -> void

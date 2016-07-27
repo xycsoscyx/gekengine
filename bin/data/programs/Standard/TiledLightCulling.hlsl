@@ -102,8 +102,8 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         float2 tileScale = (depthBufferSize * rcp(float(2.0 * Defines::tileSize)));
         float2 tileBias = tileScale - float2(tilePosition.xy);
 
-        float3 frustumXPlane = float3(Camera::projectionMatrix[0][0] * tileScale.x, 0.0, tileBias.x);
-        float3 frustumYPlane = float3(0.0, -Camera::projectionMatrix[1][1] * tileScale.y, tileBias.y);
+        float3 frustumXPlane = float3(Camera::projectionMatrix._11 * tileScale.x, 0.0, tileBias.x);
+        float3 frustumYPlane = float3(0.0, -Camera::projectionMatrix._22 * tileScale.y, tileBias.y);
         float3 frustumZPlane = float3(0.0, 0.0, 1.0);
 
         Shared::tileFrustum[0] = float4(normalize(frustumZPlane - frustumXPlane), 0.0),

@@ -206,6 +206,7 @@ namespace Gek
             Plugin::Core *core;
             Video::Device *device;
 
+            std::mutex loadMutex;
             std::future<void> loadThread;
             concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
 
@@ -253,6 +254,7 @@ namespace Gek
             void addRequest(std::function<void(void)> load)
             {
                 loadQueue.push(load);
+                std::lock_guard<std::mutex> lock(loadMutex);
                 if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
                 {
                     loadThread = std::async(std::launch::async, [this](void) -> void

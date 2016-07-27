@@ -13,7 +13,7 @@ namespace Gek
             Plane planes[6];
 
         public:
-            Frustum(const Math::Float4x4 &transform);
+            Frustum(const Math::Float4x4 &perspectiveTransform);
 
             template <class SHAPE>
             bool isVisible(const SHAPE &shape) const

@@ -374,7 +374,7 @@ namespace Gek
                 }
             }
 
-            void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, ResourceHandle cameraTarget)
+            void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
                 GEK_TRACE_SCOPE();
                 GEK_REQUIRE(device);
@@ -394,8 +394,8 @@ namespace Gek
                 CameraConstantData cameraConstantData;
                 cameraConstantData.fieldOfView.x = (1.0f / projectionMatrix._11);
                 cameraConstantData.fieldOfView.y = (1.0f / projectionMatrix._22);
-                cameraConstantData.nearClip = -(projectionMatrix._43 / (projectionMatrix._33 + 1.0f));
-                cameraConstantData.farClip = -(projectionMatrix._43 / (projectionMatrix._33 - 1.0f));
+                cameraConstantData.nearClip = nearClip;
+                cameraConstantData.farClip = farClip;
                 cameraConstantData.viewMatrix = viewMatrix;
                 cameraConstantData.projectionMatrix = projectionMatrix;
 
@@ -604,24 +604,11 @@ namespace Gek
 
                 if (handle == backgroundUpdateHandle)
                 {
-                    if (state == State::Loading)
-                    {
-                    }
-                    else
-                    {
-                        sendEvent(&Plugin::RendererListener::onRenderBackground);
-                    }
+                    sendEvent(&Plugin::RendererListener::onRenderBackground);
                 }
                 else if (handle == foregroundUpdateHandle)
                 {
-                    if (state == State::Loading)
-                    {
-                    }
-                    else
-                    {
-                        sendEvent(&Plugin::RendererListener::onRenderForeground);
-                    }
-
+                    sendEvent(&Plugin::RendererListener::onRenderForeground);
                     device->present(false);
                 }
             }

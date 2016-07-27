@@ -10,6 +10,7 @@
 #include <Windows.h>
 #include <CommCtrl.h>
 #include "resource.h"
+#include <future>
 
 using namespace Gek;
 
