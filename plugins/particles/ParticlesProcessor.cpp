@@ -409,6 +409,6 @@ namespace Gek
         }
     };
 
-    //GEK_REGISTER_CONTEXT_USER(Particles)
-    //GEK_REGISTER_CONTEXT_USER(ParticlesProcessor)
+    GEK_REGISTER_CONTEXT_USER(Particles)
+    GEK_REGISTER_CONTEXT_USER(ParticlesProcessor)
 }; // namespace Gek

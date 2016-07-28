@@ -16,7 +16,6 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
-#include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -230,18 +229,18 @@ namespace Gek
 
             static const Vertex initialVertices[] =
             {
-                Vertex(Math::Float3(-1.0f,  0.0f,   PHI).getNormal()),  // 0
-                Vertex(Math::Float3(1.0f,  0.0f,   PHI).getNormal()),  // 1
-                Vertex(Math::Float3(0.0f,   PHI,  1.0f).getNormal()),  // 2
-                Vertex(Math::Float3(-PHI,  1.0f,  0.0f).getNormal()),  // 3
-                Vertex(Math::Float3(-PHI, -1.0f,  0.0f).getNormal()),  // 4
-                Vertex(Math::Float3(0.0f,  -PHI,  1.0f).getNormal()),  // 5
-                Vertex(Math::Float3(PHI, -1.0f,  0.0f).getNormal()),  // 6
-                Vertex(Math::Float3(PHI,  1.0f,  0.0f).getNormal()),  // 7
-                Vertex(Math::Float3(0.0f,   PHI, -1.0f).getNormal()),  // 8
-                Vertex(Math::Float3(-1.0f,  0.0f,  -PHI).getNormal()),  // 9
-                Vertex(Math::Float3(0.0f,  -PHI, -1.0f).getNormal()),  // 10
-                Vertex(Math::Float3(1.0f,  0.0f,  -PHI).getNormal()),  // 11
+                Vertex(Math::Float3(-1.0f,  0.0f,   PHI).getNormal() * 0.5f),  // 0
+                Vertex(Math::Float3(1.0f,  0.0f,   PHI).getNormal() * 0.5f),  // 1
+                Vertex(Math::Float3(0.0f,   PHI,  1.0f).getNormal() * 0.5f),  // 2
+                Vertex(Math::Float3(-PHI,  1.0f,  0.0f).getNormal() * 0.5f),  // 3
+                Vertex(Math::Float3(-PHI, -1.0f,  0.0f).getNormal() * 0.5f),  // 4
+                Vertex(Math::Float3(0.0f,  -PHI,  1.0f).getNormal() * 0.5f),  // 5
+                Vertex(Math::Float3(PHI, -1.0f,  0.0f).getNormal() * 0.5f),  // 6
+                Vertex(Math::Float3(PHI,  1.0f,  0.0f).getNormal() * 0.5f),  // 7
+                Vertex(Math::Float3(0.0f,   PHI, -1.0f).getNormal() * 0.5f),  // 8
+                Vertex(Math::Float3(-1.0f,  0.0f,  -PHI).getNormal() * 0.5f),  // 9
+                Vertex(Math::Float3(0.0f,  -PHI, -1.0f).getNormal() * 0.5f),  // 10
+                Vertex(Math::Float3(1.0f,  0.0f,  -PHI).getNormal() * 0.5f),  // 11
             };
 
             static const Edge initialEdges[] =
@@ -371,7 +370,7 @@ namespace Gek
     {
         struct Shape
         {
-            String value;
+            String type;
             String parameters;
             String skin;
 
@@ -381,14 +380,14 @@ namespace Gek
 
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
-                saveParameter(componentData, nullptr, value);
+                saveParameter(componentData, nullptr, type);
                 saveParameter(componentData, L"parameters", parameters);
                 saveParameter(componentData, L"skin", skin);
             }
 
             void load(const Plugin::Population::ComponentDefinition &componentData)
             {
-                value = loadParameter(componentData, nullptr, String());
+                type = loadParameter(componentData, nullptr, String());
                 parameters = loadParameter(componentData, L"parameters", String());
                 skin = loadParameter(componentData, L"skin", String());
             }
@@ -417,38 +416,42 @@ namespace Gek
         , public Plugin::Processor
     {
     public:
-        enum class ShapeType : uint8_t
-        {
-            Unknown = 0,
-            Sphere,
-        };
-
         struct Shape
         {
-            ShapeType type;
-            String parameters;
-            std::atomic<bool> loaded;
-            Shapes::AlignedBox alignedBox;
+            std::mutex mutex;
+            std::function<void(Shape &)> load;
+            std::shared_future<void> future;
+
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
             uint32_t indexCount;
 
             Shape(void)
-                : type(ShapeType::Unknown)
-                , loaded(false)
-                , indexCount(0)
+                : indexCount(0)
             {
             }
 
             Shape(const Shape &shape)
-                : type(shape.type)
-                , parameters(shape.parameters)
-                , loaded(shape.loaded ? true : false)
-                , alignedBox(shape.alignedBox)
+                : load(shape.load)
+                , future(shape.future)
                 , vertexBuffer(shape.vertexBuffer)
                 , indexBuffer(shape.indexBuffer)
                 , indexCount(shape.indexCount)
             {
+            }
+
+            bool valid(void)
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (!future.valid())
+                {
+                    future = std::async(std::launch::async, [&](void) -> void
+                    {
+                        load(*this);
+                    });
+                }
+
+                return (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
             }
         };
 
@@ -490,13 +493,8 @@ namespace Gek
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
 
-        std::mutex loadMutex;
-        std::future<void> loadThread;
-        concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
-        concurrency::concurrent_unordered_map<std::size_t, bool> loadMap;
-
-        std::unordered_map<std::size_t, Shape> shapeMap;
-        using EntityDataMap = std::unordered_map<Plugin::Entity *, Data>;
+        concurrency::concurrent_unordered_map<std::size_t, Shape> shapeMap;
+        using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
         EntityDataMap entityDataMap;
 
         using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
@@ -525,96 +523,13 @@ namespace Gek
 
         ~ShapeProcessor(void)
         {
-            loadQueue.clear();
-            if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-            {
-                loadThread.get();
-            }
-
             renderer->removeListener(this);
             population->removeListener(this);
-        }
-
-        void loadBoundingBox(Shape &shape, const String &shapeName, const String &parameters)
-        {
-            if (shapeName.compareNoCase(L"sphere") == 0)
-            {
-                shape.type = ShapeType::Sphere;
-                shape.parameters = parameters;
-            }
-
-            shape.alignedBox.minimum = Math::Float3(-1.0f);
-            shape.alignedBox.maximum = Math::Float3(1.0f);
-        }
-
-        void loadShapeWorker(Shape &shape)
-        {
-            int position = 0;
-            switch (shape.type)
-            {
-            case ShapeType::Sphere:
-                if (true)
-                {
-                    GeoSphere geoSphere;
-                    uint32_t divisionCount = shape.parameters;
-                    geoSphere.generate(divisionCount);
-
-                    shape.indexCount = geoSphere.getIndexCount();
-                    shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), sizeof(Vertex), geoSphere.getVertexCount(), Video::BufferType::Vertex, 0, geoSphere.getVertexData());
-                    shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", static_cast<uint8_t>(shape.type), shape.parameters), Video::Format::R16_UINT, geoSphere.getIndexCount(), Video::BufferType::Index, 0, geoSphere.getIndexData());
-                    break;
-                }
-            };
-
-            shape.loaded = true;
-        }
-
-        void loadShape(Shape &shape)
-        {
-            std::size_t hash = reinterpret_cast<size_t>(&shape);
-            if (loadMap.count(hash) == 0)
-            {
-                loadMap.insert(std::make_pair(hash, true));
-                loadQueue.push(std::bind(&ShapeProcessor::loadShapeWorker, this, std::ref(shape)));
-
-                std::lock_guard<std::mutex> lock(loadMutex);
-                if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-                {
-                    loadThread = std::async(std::launch::async, [this](void) -> void
-                    {
-                        CoInitialize(nullptr);
-                        std::function<void(void)> load;
-                        while (loadQueue.try_pop(load))
-                        {
-                            try
-                            {
-                                load();
-                            }
-                            catch (const Gek::Exception &)
-                            {
-                            }
-                            catch (...)
-                            {
-                                GEK_TRACE_EVENT("General exception occurred when loading resource");
-                            };
-                        };
-
-                        CoUninitialize();
-                    });
-                }
-            }
         }
 
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
-            loadQueue.clear();
-            if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-            {
-                loadThread.get();
-            }
-
-            loadMap.clear();
             shapeMap.clear();
             entityDataMap.clear();
         }
@@ -635,11 +550,23 @@ namespace Gek
             if (entity->hasComponents<Components::Shape, Components::Transform>())
             {
                 auto &shapeComponent = entity->getComponent<Components::Shape>();
-                std::size_t hash = std::hash_combine(shapeComponent.parameters, shapeComponent.value);
+                std::size_t hash = std::hash_combine(shapeComponent.parameters, shapeComponent.type);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {
-                    loadBoundingBox(pair.first->second, shapeComponent.value, shapeComponent.parameters);
+                    pair.first->second.load = [this, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](Shape &shape) -> void
+                    {
+                        if (type.compareNoCase(L"sphere") == 0)
+                        {
+                            GeoSphere geoSphere;
+                            uint32_t divisionCount = parameters;
+                            geoSphere.generate(divisionCount);
+
+                            shape.indexCount = geoSphere.getIndexCount();
+                            shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), geoSphere.getVertexCount(), Video::BufferType::Vertex, 0, geoSphere.getVertexData());
+                            shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, geoSphere.getIndexCount(), Video::BufferType::Index, 0, geoSphere.getIndexData());
+                        }
+                    };
                 }
 
                 std::reference_wrapper<const Math::Color> color = Math::Color::White;
@@ -660,7 +587,7 @@ namespace Gek
             auto entitySearch = entityDataMap.find(entity);
             if (entitySearch != entityDataMap.end())
             {
-                entityDataMap.erase(entitySearch);
+                entityDataMap.unsafe_erase(entitySearch);
             }
         }
 
@@ -689,17 +616,17 @@ namespace Gek
             {
                 Plugin::Entity *entity = entityDataPair.first;
                 Data &data = entityDataPair.second;
-                Shape &shape = data.shape;
 
                 const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
 
-                Shapes::OrientedBox orientedBox(shape.alignedBox, matrix);
+                static const Shapes::AlignedBox unitCube(1.0f);
+                Shapes::OrientedBox orientedBox(unitCube, matrix);
                 orientedBox.halfsize *= transformComponent.scale;
 
                 if (viewFrustum.isVisible(orientedBox))
                 {
-                    auto &materialMap = visibleMap[&shape];
+                    auto &materialMap = visibleMap[&data.shape];
                     auto &instanceList = materialMap[data.skin];
                     instanceList.push_back(Instance((matrix * viewMatrix), data.color, transformComponent.scale));
                 }
@@ -707,20 +634,17 @@ namespace Gek
 
             concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
-                Shape *shape = visibleMap.first;
-                if (!shape->loaded)
+                Shape &shape = *visibleMap.first;
+                if (shape.valid() && shape.indexCount > 0)
                 {
-                    loadShape(*shape);
-                    return;
-                }
-
-                concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
-                {
-                    concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
+                    concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                     {
-                        renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer.get()));
+                        concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
+                        {
+                            renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, &shape, &instanceList, constantBuffer.get()));
+                        });
                     });
-                });
+                }
             });
         }
     };

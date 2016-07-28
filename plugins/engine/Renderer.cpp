@@ -545,7 +545,7 @@ namespace Gek
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
                             {
-                                [&](void)->void
+                                [&](void) -> void
                                 {
                                     for (auto pass = filter->begin(deviceContext, cameraTarget); pass; pass = pass->next())
                                     {

@@ -32,7 +32,7 @@ namespace Gek
     {
         struct Model
         {
-            String value;
+            String name;
             String skin;
 
             Model(void)
@@ -41,13 +41,13 @@ namespace Gek
 
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
-                saveParameter(componentData, nullptr, value);
+                saveParameter(componentData, nullptr, name);
                 saveParameter(componentData, L"skin", skin);
             }
 
             void load(const Plugin::Population::ComponentDefinition &componentData)
             {
-                value = loadParameter(componentData, nullptr, String());
+                name = loadParameter(componentData, nullptr, String());
                 skin = loadParameter(componentData, L"skin", String());
             }
         };
@@ -108,22 +108,39 @@ namespace Gek
 
         struct Model
         {
-            String fileName;
-            std::atomic<bool> loaded;
+            std::mutex mutex;
+            std::shared_future<void> loadBox;
+            std::shared_future<void> loadData;
+            std::function<void(Model &)> load;
+
             Shapes::AlignedBox alignedBox;
             std::vector<Material> materialList;
 
             Model(void)
-                : loaded(false)
             {
             }
 
             Model(const Model &model)
-                : fileName(model.fileName)
-                , loaded(model.loaded ? true : false)
+                : loadBox(model.loadBox)
+                , loadData(model.loadData)
+                , load(model.load)
                 , alignedBox(model.alignedBox)
                 , materialList(model.materialList)
             {
+            }
+
+            bool valid(void)
+            {
+                std::lock_guard<std::mutex> lock(mutex);
+                if (!loadData.valid())
+                {
+                    loadData = std::async(std::launch::async, [&](void) -> void
+                    {
+                        load(*this);
+                    });
+                }
+
+                return (loadData.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
             }
         };
 
@@ -165,13 +182,8 @@ namespace Gek
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
 
-        std::mutex loadMutex;
-        std::future<void> loadThread;
-        concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
-        concurrency::concurrent_unordered_map<std::size_t, bool> loadMap;
-
-        std::unordered_map<std::size_t, Model> modelMap;
-        using EntityDataMap = std::unordered_map<Plugin::Entity *, Data>;
+        concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
+        using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
         EntityDataMap entityDataMap;
 
         using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
@@ -200,144 +212,13 @@ namespace Gek
 
         ~ModelProcessor(void)
         {
-            loadQueue.clear();
-            if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-            {
-                loadThread.get();
-            }
-
             renderer->removeListener(this);
             population->removeListener(this);
-        }
-
-        void loadBoundingBox(Model &model, const String &modelName)
-        {
-            static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
-
-            model.fileName = String(L"$root\\data\\models\\%v.gek", modelName);
-
-            std::vector<uint8_t> fileData;
-            FileSystem::load(model.fileName, fileData, PreReadSize);
-
-            uint8_t *rawFileData = fileData.data();
-            uint32_t gekIdentifier = *((uint32_t *)rawFileData);
-            GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
-            rawFileData += sizeof(uint32_t);
-
-            uint16_t gekModelType = *((uint16_t *)rawFileData);
-            GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
-            rawFileData += sizeof(uint16_t);
-
-            uint16_t gekModelVersion = *((uint16_t *)rawFileData);
-            GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
-            rawFileData += sizeof(uint16_t);
-
-            model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
-        }
-
-        void loadModelWorker(Model &model)
-        {
-            std::vector<uint8_t> fileData;
-            FileSystem::load(model.fileName, fileData);
-
-            uint8_t *rawFileData = fileData.data();
-            uint32_t gekIdentifier = *((uint32_t *)rawFileData);
-            GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
-            rawFileData += sizeof(uint32_t);
-
-            uint16_t gekModelType = *((uint16_t *)rawFileData);
-            GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
-            rawFileData += sizeof(uint16_t);
-
-            uint16_t gekModelVersion = *((uint16_t *)rawFileData);
-            GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
-            rawFileData += sizeof(uint16_t);
-
-            model.alignedBox = *(Shapes::AlignedBox *)rawFileData;
-            rawFileData += sizeof(Shapes::AlignedBox);
-
-            uint32_t materialCount = *((uint32_t *)rawFileData);
-            rawFileData += sizeof(uint32_t);
-
-            model.materialList.resize(materialCount);
-            for (uint32_t modelIndex = 0; modelIndex < materialCount; ++modelIndex)
-            {
-                String materialName((const wchar_t *)rawFileData);
-                rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
-
-                Material &material = model.materialList[modelIndex];
-                if (materialName.compareNoCase(L"skin") == 0)
-                {
-                    material.skin = true;
-                }
-                else
-                {
-                    material.material = resources->loadMaterial(materialName);
-                }
-
-                uint32_t vertexCount = *((uint32_t *)rawFileData);
-                rawFileData += sizeof(uint32_t);
-
-                material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", model.fileName, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(Vertex) * vertexCount)));
-                rawFileData += (sizeof(Vertex) * vertexCount);
-
-                uint32_t indexCount = *((uint32_t *)rawFileData);
-                rawFileData += sizeof(uint32_t);
-
-                material.indexCount = indexCount;
-                material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", model.fileName, modelIndex), Video::Format::R16_UINT, indexCount, Video::BufferType::Index, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(uint16_t) * indexCount)));
-                rawFileData += (sizeof(uint16_t) * indexCount);
-            }
-
-            model.loaded = true;
-        }
-
-        void loadModel(Model &model)
-        {
-            std::size_t hash = std::hash<String>()(model.fileName);
-            if (loadMap.count(hash) == 0)
-            {
-                loadMap.insert(std::make_pair(hash, true));
-                loadQueue.push(std::bind(&ModelProcessor::loadModelWorker, this, std::ref(model)));
-
-                std::lock_guard<std::mutex> lock(loadMutex);
-                if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-                {
-                    loadThread = std::async(std::launch::async, [this](void) -> void
-                    {
-                        CoInitialize(nullptr);
-                        std::function<void(void)> load;
-                        while (loadQueue.try_pop(load))
-                        {
-                            try
-                            {
-                                load();
-                            }
-                            catch (const Gek::Exception &)
-                            {
-                            }
-                            catch (...)
-                            {
-                                GEK_TRACE_EVENT("General exception occurred when loading resource");
-                            };
-                        };
-
-                        CoUninitialize();
-                    });
-                }
-            }
         }
 
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
-            loadQueue.clear();
-            if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-            {
-                loadThread.get();
-            }
-
-            loadMap.clear();
             modelMap.clear();
             entityDataMap.clear();
         }
@@ -358,11 +239,79 @@ namespace Gek
             if (entity->hasComponents<Components::Model, Components::Transform>())
             {
                 auto &modelComponent = entity->getComponent<Components::Model>();
-                std::size_t hash = std::hash<String>()(modelComponent.value);
+                std::size_t hash = std::hash<String>()(modelComponent.name);
+                String fileName(L"$root\\data\\models\\%v.gek", modelComponent.name);
+
                 auto pair = modelMap.insert(std::make_pair(hash, Model()));
                 if (pair.second)
                 {
-                    loadBoundingBox(pair.first->second, modelComponent.value);
+                    pair.first->second.loadBox = std::async(std::launch::async, [this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void
+                    {
+                        static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
+
+                        std::vector<uint8_t> fileData;
+                        FileSystem::load(fileName, fileData, PreReadSize);
+
+                        uint8_t *rawFileData = fileData.data();
+                        uint32_t gekIdentifier = *((uint32_t *)rawFileData);
+                        GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
+                        rawFileData += sizeof(uint32_t);
+
+                        uint16_t gekModelType = *((uint16_t *)rawFileData);
+                        GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
+                        rawFileData += sizeof(uint16_t);
+
+                        uint16_t gekModelVersion = *((uint16_t *)rawFileData);
+                        GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
+                        rawFileData += sizeof(uint16_t);
+
+                        (*alignedBox) = *(Shapes::AlignedBox *)rawFileData;
+                    }).share();
+
+                    pair.first->second.load = [this, name = String(modelComponent.name), fileName](Model &model) -> void
+                    {
+                        std::vector<uint8_t> fileData;
+                        FileSystem::load(fileName, fileData);
+
+                        uint8_t *rawFileData = fileData.data();
+                        rawFileData += sizeof(uint32_t);
+                        rawFileData += sizeof(uint16_t);
+                        rawFileData += sizeof(uint16_t);
+                        rawFileData += sizeof(Shapes::AlignedBox);
+
+                        uint32_t materialCount = *((uint32_t *)rawFileData);
+                        rawFileData += sizeof(uint32_t);
+
+                        model.materialList.resize(materialCount);
+                        for (uint32_t modelIndex = 0; modelIndex < materialCount; ++modelIndex)
+                        {
+                            String materialName((const wchar_t *)rawFileData);
+                            rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
+
+                            Material &material = model.materialList[modelIndex];
+                            if (materialName.compareNoCase(L"skin") == 0)
+                            {
+                                material.skin = true;
+                            }
+                            else
+                            {
+                                material.material = resources->loadMaterial(materialName);
+                            }
+
+                            uint32_t vertexCount = *((uint32_t *)rawFileData);
+                            rawFileData += sizeof(uint32_t);
+
+                            material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", name, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(Vertex) * vertexCount)));
+                            rawFileData += (sizeof(Vertex) * vertexCount);
+
+                            uint32_t indexCount = *((uint32_t *)rawFileData);
+                            rawFileData += sizeof(uint32_t);
+
+                            material.indexCount = indexCount;
+                            material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", name, modelIndex), Video::Format::R16_UINT, indexCount, Video::BufferType::Index, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(uint16_t) * indexCount)));
+                            rawFileData += (sizeof(uint16_t) * indexCount);
+                        }
+                    };
                 }
 
                 MaterialHandle skinMaterial;
@@ -389,7 +338,7 @@ namespace Gek
             auto entitySearch = entityDataMap.find(entity);
             if (entitySearch != entityDataMap.end())
             {
-                entityDataMap.erase(entitySearch);
+                entityDataMap.unsafe_erase(entitySearch);
             }
         }
 
@@ -419,40 +368,39 @@ namespace Gek
                 Plugin::Entity *entity = entityDataPair.first;
                 Data &data = entityDataPair.second;
                 Model &model = data.model;
-
-                const auto &transformComponent = entity->getComponent<Components::Transform>();
-                Math::Float4x4 matrix(transformComponent.getMatrix());
-
-                Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
-                orientedBox.halfsize *= transformComponent.scale;
-
-                if (viewFrustum.isVisible(orientedBox))
+                if (model.loadBox.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
                 {
-                    auto &materialList = visibleMap[&model];
-                    auto &instanceList = materialList[data.skin];
-                    instanceList.push_back(Instance((matrix * viewMatrix), data.color, transformComponent.scale));
+                    const auto &transformComponent = entity->getComponent<Components::Transform>();
+                    Math::Float4x4 matrix(transformComponent.getMatrix());
+
+                    Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
+                    orientedBox.halfsize *= transformComponent.scale;
+
+                    if (viewFrustum.isVisible(orientedBox))
+                    {
+                        auto &materialList = visibleMap[&model];
+                        auto &instanceList = materialList[data.skin];
+                        instanceList.push_back(Instance((matrix * viewMatrix), data.color, transformComponent.scale));
+                    }
                 }
             });
 
             concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
-                Model *model = visibleMap.first;
-                if (!model->loaded)
+                Model &model = *visibleMap.first;
+                if (model.valid() && !model.materialList.empty())
                 {
-                    loadModel(*model);
-                    return;
-                }
-
-                concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
-                {
-                    concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
+                    concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                     {
-                        concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
+                        concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
                         {
-                            renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
+                            concurrency::parallel_for_each(model.materialList.begin(), model.materialList.end(), [&](const Material &material) -> void
+                            {
+                                renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
+                            });
                         });
                     });
-                });
+                }
             });
         }
     };

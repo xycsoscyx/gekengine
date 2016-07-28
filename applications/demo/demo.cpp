@@ -260,9 +260,16 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
         MessageBoxA(nullptr, message.c_str(), "GEK Runtime Error", MB_OK | MB_ICONERROR);
     }
+    catch (const std::exception &exception)
+    {
+        std::string message;
+        message = exception.what();
+
+        MessageBoxA(nullptr, message.c_str(), "STL Runtime Error", MB_OK | MB_ICONERROR);
+    }
     catch (...)
     {
-        MessageBox(nullptr, L"Unhandled Exception", L"GEK Runtime Error", MB_OK | MB_ICONERROR);
+        MessageBox(nullptr, L"Unhandled Exception", L"Runtime Error", MB_OK | MB_ICONERROR);
     };
 
     try
