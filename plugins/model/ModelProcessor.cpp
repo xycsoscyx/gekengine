@@ -134,10 +134,7 @@ namespace Gek
                 std::lock_guard<std::mutex> lock(mutex);
                 if (!loadData.valid())
                 {
-                    loadData = std::async(std::launch::async, [&](void) -> void
-                    {
-                        load(*this);
-                    });
+                    loadData = Gek::asynchronous(load, std::ref(*this)).share();
                 }
 
                 return (loadData.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
@@ -245,7 +242,7 @@ namespace Gek
                 auto pair = modelMap.insert(std::make_pair(hash, Model()));
                 if (pair.second)
                 {
-                    pair.first->second.loadBox = std::async(std::launch::async, [this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void
+                    pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void
                     {
                         static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
 

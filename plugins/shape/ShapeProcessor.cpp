@@ -445,10 +445,7 @@ namespace Gek
                 std::lock_guard<std::mutex> lock(mutex);
                 if (!future.valid())
                 {
-                    future = std::async(std::launch::async, [&](void) -> void
-                    {
-                        load(*this);
-                    });
+                    future = Gek::asynchronous(load, std::ref(*this)).share();
                 }
 
                 return (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
