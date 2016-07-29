@@ -22,7 +22,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     normal.xy = ((normal.xy * 2.0) - 1.0);
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = mul(normal, viewBasis);
-    normal = (inputPixel.frontFacing ? normal : -normal);
+    normal = normalize(inputPixel.frontFacing ? normal : -normal);
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.rgb;

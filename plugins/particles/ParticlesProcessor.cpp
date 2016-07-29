@@ -108,7 +108,7 @@ namespace Gek
             }
         };
 
-        static const uint32_t ParticleBufferCount = ((64 * 1024) / sizeof(Particle));
+        static const uint32_t ParticleBufferCount = 1000000;
 
         struct Emitter
             : public Shapes::AlignedBox
