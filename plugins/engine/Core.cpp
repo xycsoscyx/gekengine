@@ -126,7 +126,7 @@ namespace Gek
                 {
                     configuration = Xml::load(L"$root\\config.xml", L"config");
                 }
-                catch (const Exception &)
+                catch (const Xml::Exception &)
                 {
                     configuration = Xml::Node(L"config");
                 };

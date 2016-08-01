@@ -165,7 +165,7 @@ namespace Gek
                     surfaceList.push_back(surface);
                     surfaceIndexMap[hash] = surfaceIndex;
                 }
-                catch (const Gek::Exception &)
+                catch (const Xml::Exception &)
                 {
                 };
             }

@@ -135,10 +135,10 @@ namespace Gek
         {
             StringUTF8 fileNameUTF8(FileSystem::expandPath(fileName));
             XmlDocument document(xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
-            GEK_CHECK_CONDITION(document == nullptr, Xml::Exception, "Unable to load document: %v", fileName);
+            GEK_CHECK_CONDITION(document == nullptr, Exception, "Unable to load document: %v", fileName);
 
             xmlNodePtr root = xmlDocGetRootElement(document);
-            GEK_CHECK_CONDITION(root == nullptr, Xml::Exception, "Unable to get document root node");
+            GEK_CHECK_CONDITION(root == nullptr, Exception, "Unable to get document root node");
             String rootType(reinterpret_cast<const char *>(root->name));
             if (expectedRootType)
             {
@@ -160,7 +160,7 @@ namespace Gek
             for (auto &childNode : nodeData.children)
             {
                 xmlNodePtr child = xmlNewChild(node, nullptr, BAD_CAST StringUTF8(childNode.type).c_str(), BAD_CAST StringUTF8(childNode.text).c_str());
-                GEK_CHECK_CONDITION(child == nullptr, Xml::Exception, "Unable to create new child node: %v)", childNode.type);
+                GEK_CHECK_CONDITION(child == nullptr, Exception, "Unable to create new child node: %v)", childNode.type);
                 setNodeData(child, childNode);
             }
         }
@@ -170,10 +170,10 @@ namespace Gek
             StringUTF8 expandedFileName(FileSystem::expandPath(fileName));
 
             XmlDocument document(xmlNewDoc(BAD_CAST "1.0"));
-            GEK_CHECK_CONDITION(document == nullptr, Xml::Exception, "Unable to create new document");
+            GEK_CHECK_CONDITION(document == nullptr, Exception, "Unable to create new document");
 
             xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST StringUTF8(rootData.type).c_str());
-            GEK_CHECK_CONDITION(rootNode == nullptr, Xml::Exception, "Unable to create root node: %v", rootData.type);
+            GEK_CHECK_CONDITION(rootNode == nullptr, Exception, "Unable to create root node: %v", rootData.type);
 
             xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
             

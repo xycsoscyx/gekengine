@@ -10,10 +10,10 @@
         <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
         <revealBuffer bind="float" flags="target">R8_UNORM</revealBuffer>
         <depthBuffer bind="float">R32_FLOAT</depthBuffer>
-        <finalBuffer bind="float3" source="$standard" name="finalBuffer" />
+        <finalBuffer bind="float3" source="standard" name="finalBuffer" />
     </textures>
 
-    <depth source="$standard" />
+    <depth source="standard" />
 
     <blocks>
         <weightBlendedOIT>
@@ -53,7 +53,7 @@
                     </resources>
 
                     <program entry="mainPixelProgram">Transparent_Simple\Calculate</program>
-                </</transparent>>
+                </transparent>
 
                 <combine mode="deferred">
                     <blendstates>

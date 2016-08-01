@@ -31,7 +31,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         {
             configRoot = Xml::load(L"$root\\config.xml", L"config");
         }
-        catch (const Exception &)
+        catch (const Xml::Exception &)
         {
             configRoot = Xml::Node(L"config");
         };
@@ -95,7 +95,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             {
                 configRoot = Xml::load(L"$root\\config.xml", L"config");
             }
-            catch (const Exception &)
+            catch (const Xml::Exception &)
             {
                 configRoot = Xml::Node(L"config");
             };
@@ -192,7 +192,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             {
                 configRoot = Xml::load(L"$root\\config.xml", L"config");
             }
-            catch (const Exception &)
+            catch (const Xml::Exception &)
             {
                 configRoot = Xml::Node(L"config");
             };

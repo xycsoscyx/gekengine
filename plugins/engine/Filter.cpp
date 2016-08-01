@@ -294,29 +294,23 @@ namespace Gek
 
                     std::unordered_map<String, String> resourceAliasMap;
                     std::unordered_map<String, String> unorderedAccessAliasMap = loadChildMap(passNode, L"unorderedaccess");
-                    try
+                    for (auto &resourceNode : passNode.getChild(L"resources").children)
                     {
-                        for (auto &resourceNode : passNode.getChild(L"resources").children)
+                        resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
+                        std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
+                        for (auto &action : actionList)
                         {
-                            resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
-                            std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
-                            for (auto &action : actionList)
+                            if (action.compareNoCase(L"generatemipmaps") == 0)
                             {
-                                if (action.compareNoCase(L"generatemipmaps") == 0)
-                                {
-                                    pass.actionMap[resourceNode.type].insert(Actions::GenerateMipMaps);
-                                }
-                            }
-
-                            if (resourceNode.attributes.count(L"copy"))
-                            {
-                                pass.copyResourceMap[resourceNode.type] = resourceNode.attributes[L"copy"];
+                                pass.actionMap[resourceNode.type].insert(Actions::GenerateMipMaps);
                             }
                         }
+
+                        if (resourceNode.attributes.count(L"copy"))
+                        {
+                            pass.copyResourceMap[resourceNode.type] = resourceNode.attributes[L"copy"];
+                        }
                     }
-                    catch (const Exception &)
-                    {
-                    };
 
                     StringUTF8 engineData;
                     if (pass.mode != Pass::Mode::Compute)
