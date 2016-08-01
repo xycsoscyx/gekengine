@@ -410,41 +410,6 @@ namespace Gek
             stencilState.comparisonFunction = Video::getComparisonFunction(stencilNode.children[L"comparison"].text);
         }
 
-        __forceinline DepthStateHandle loadDepthState(Engine::Resources *resources, Xml::Node &depthNode, bool &enableDepth, uint32_t &clearFlags, float &clearDepthValue, uint32_t &clearStencilValue)
-        {
-            Video::DepthStateInformation depthState;
-            if (depthNode->isValid())
-            {
-                enableDepth = true;
-                depthState.enable = true;
-                if (depthNode.children.count(L"clear"))
-                {
-                    clearFlags |= Video::ClearFlags::Depth;
-                    clearDepthValue = depthNode.children[L"clear"].text;
-                }
-
-                depthState.comparisonFunction = Video::getComparisonFunction(depthNode.children[L"comparison"].text);
-                depthState.writeMask = Video::getDepthWriteMask(depthNode.children[L"writemask"].text);
-
-                if (depthNode.children.count(L"stencil"))
-                {
-                    auto &stencilNode = depthNode.children[L"stencil"];
-                    depthState.stencilEnable = true;
-
-                    if (stencilNode.children.count(L"clear"))
-                    {
-                        clearFlags |= Video::ClearFlags::Stencil;
-                        clearStencilValue = stencilNode.children[L"clear"].text;
-                    }
-
-                    loadStencilState(depthState.stencilFrontState, stencilNode.children[L"front"]);
-                    loadStencilState(depthState.stencilBackState, stencilNode.children[L"back"]);
-                }
-            }
-
-            return resources->createDepthState(depthState);
-        }
-
         __forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, Xml::Node &renderNode)
         {
             Video::RenderStateInformation renderState;
@@ -465,7 +430,7 @@ namespace Gek
 
         __forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, Xml::Node &blendNode)
         {
-            blendState.enable = blendNode->isValid();
+            blendState.enable = blendNode.isFromFile();
             if (blendNode.children.count(L"writemask"))
             {
                 String writeMask(blendNode.children[L"writemask"].text.getLower());
@@ -489,20 +454,20 @@ namespace Gek
             }
 
             auto &colorNode = blendNode.children[L"color"];
-            blendState.colorSource = Video::getBlendSource(colorNode.attribute(L"source"));
-            blendState.colorDestination = Video::getBlendSource(colorNode.attribute(L"destination"));
-            blendState.colorOperation = Video::getBlendOperation(colorNode.attribute(L"operation"));
+            blendState.colorSource = Video::getBlendSource(colorNode.getAttribute(L"source"));
+            blendState.colorDestination = Video::getBlendSource(colorNode.getAttribute(L"destination"));
+            blendState.colorOperation = Video::getBlendOperation(colorNode.getAttribute(L"operation"));
 
             auto &alphaNode = blendNode.children[L"alpha"];
-            blendState.alphaSource = Video::getBlendSource(alphaNode.attribute(L"source"));
-            blendState.alphaDestination = Video::getBlendSource(alphaNode.attribute(L"destination"));
-            blendState.alphaOperation = Video::getBlendOperation(alphaNode.attribute(L"operation"));
+            blendState.alphaSource = Video::getBlendSource(alphaNode.getAttribute(L"source"));
+            blendState.alphaDestination = Video::getBlendSource(alphaNode.getAttribute(L"destination"));
+            blendState.alphaOperation = Video::getBlendOperation(alphaNode.getAttribute(L"operation"));
         }
 
         __forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, Xml::Node &blendNode, std::unordered_map<String, String> &renderTargetsMap)
         {
             bool alphaToCoverage = blendNode.children[L"alphatocoverage"].text;
-            bool unifiedStates = blendNode.attribute(L"unified", L"true");
+            bool unifiedStates = blendNode.getAttribute(L"unified", L"true");
             if (unifiedStates)
             {
                 Video::UnifiedBlendStateInformation blendState;

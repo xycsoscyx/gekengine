@@ -147,34 +147,23 @@ namespace Gek
             }
             else
             {
-                auto &surfaceIndex = surfaceIndexMap[hash] = 0;
+                surfaceIndexMap[hash] = 0;
 
                 try
                 {
-                    Xml::Root materialNode;
-                    try
-                    {
-                        materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName));
-                        GEK_CHECK_CONDITION(materialNode.type.compareNoCase(L"material") != 0, Exception, "Invalid material root node: %v", materialNode.type);
-                    }
-                    catch (...)
-                    {
-                    };
+                    Xml::Root materialNode(Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName), L"material"));
+                    auto &surfaceNode = materialNode.getChild(L"surface");
 
-                    if (materialNode.children.count(L"surface"))
-                    {
-                        auto &surfaceNode = materialNode.children[L"surface"];
+                    Surface surface;
+                    surfaceNode.getValue(L"ghost", surface.ghost);
+                    surfaceNode.getValue(L"staticfriction", surface.staticFriction);
+                    surfaceNode.getValue(L"kineticfriction", surface.kineticFriction);
+                    surfaceNode.getValue(L"elasticity", surface.elasticity);
+                    surfaceNode.getValue(L"softness", surface.softness);
 
-                        Surface surface;
-                        surface.ghost = surfaceNode.attribute(L"ghost", L"false");
-                        surface.staticFriction = surfaceNode.attribute(L"staticfriction", L"0.9");
-                        surface.kineticFriction = surfaceNode.attribute(L"kineticfriction", L"0.5");
-                        surface.elasticity = surfaceNode.attribute(L"elasticity", L"0.4");
-                        surface.softness = surfaceNode.attribute(L"softness", L"1.0");
-
-                        surfaceIndex = surfaceList.size();
-                        surfaceList.push_back(surface);
-                    }
+                    surfaceIndex = surfaceList.size();
+                    surfaceList.push_back(surface);
+                    surfaceIndexMap[hash] = surfaceIndex;
                 }
                 catch (const Gek::Exception &)
                 {

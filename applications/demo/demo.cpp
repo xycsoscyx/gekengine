@@ -29,18 +29,17 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         Xml::Root configRoot;
         try
         {
-            configRoot = Xml::load(L"$root\\config.xml");
-            GEK_CHECK_CONDITION(configRoot.type.compareNoCase(L"config") != 0, Exception, "Invalid configuration root node: %v", configRoot.type);
+            configRoot = Xml::load(L"$root\\config.xml", L"config");
         }
         catch (const Exception &)
         {
-            configRoot.type = L"config";
+            configRoot = Xml::Root(L"config");
         };
 
         auto &displayNode = configRoot.children[L"display"];
-        uint32_t width = displayNode.attribute(L"width", L"800");
-        uint32_t height = displayNode.attribute(L"height", L"600");
-        bool fullscreen = displayNode.attribute(L"fullscreen", L"false");
+        uint32_t width = displayNode.getAttribute(L"width", L"800");
+        uint32_t height = displayNode.getAttribute(L"height", L"600");
+        bool fullscreen = displayNode.getAttribute(L"fullscreen", L"false");
 
         uint32_t selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
@@ -94,12 +93,11 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             Xml::Root configRoot;
             try
             {
-                configRoot = Xml::load(L"$root\\config.xml");
-                GEK_CHECK_CONDITION(configRoot.type.compareNoCase(L"config") != 0, Exception, "Invalid configuration root node: %v", configRoot.type);
+                configRoot = Xml::load(L"$root\\config.xml", L"config");
             }
             catch (const Exception &)
             {
-                configRoot.type = L"config";
+                configRoot = Xml::Root(L"config");
             };
 
             auto &displayNode = configRoot.children[L"display"];
@@ -192,18 +190,17 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             Xml::Root configRoot;
             try
             {
-                configRoot = Xml::load(L"$root\\config.xml");
-                GEK_CHECK_CONDITION(configRoot.type.compareNoCase(L"config") != 0, Exception, "Invalid configuration root node: %v", configRoot.type);
+                configRoot = Xml::load(L"$root\\config.xml", L"config");
             }
             catch (const Exception &)
             {
-                configRoot.type = L"config";
+                configRoot = Xml::Root(L"config");
             };
 
             auto &displayNode = configRoot.children[L"display"];
-            uint32_t width = displayNode.attribute(L"width", L"800");
-            uint32_t height = displayNode.attribute(L"height", L"600");
-            bool fullscreen = displayNode.attribute(L"fullscreen", L"false");
+            uint32_t width = displayNode.getAttribute(L"width", L"800");
+            uint32_t height = displayNode.getAttribute(L"height", L"600");
+            bool fullscreen = displayNode.getAttribute(L"fullscreen", L"false");
 
             RECT clientRect;
             clientRect.left = 0;

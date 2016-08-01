@@ -18,65 +18,67 @@
     <depth source="$standard" />
 
     <blocks>
-        <block>
+        <scatteredOIT>
             <clear>
                 <accumulationBuffer type="target">0</accumulationBuffer>
                 <modulationDiffusionBuffer type="target">(1,1,1,0)</modulationDiffusionBuffer>
                 <refractionBuffer type="target">0</refractionBuffer>
             </clear>
 
-            <pass mode="forward" name="transparent">
-                <blendstates unified="false">
-                    <accumulationBuffer>
-                        <color source="one" destination="one" operation="add" />
-                        <alpha source="one" destination="one" operation="add" />
-                    </accumulationBuffer>
-                    <modulationDiffusionBuffer>
-                        <color source="zero" destination="inverse_source_color" operation="add" />
-                        <alpha source="one" destination="one" operation="add" />
-                    </modulationDiffusionBuffer>
-                    <refractionBuffer>
-                        <color source="one" destination="one" operation="add" />
-                        <alpha source="one" destination="one" operation="add" />
-                    </refractionBuffer>
-                </blendstates>
+            <passes>
+                <transparent mode="forward">
+                    <blendstates unified="false">
+                        <accumulationBuffer>
+                            <color source="one" destination="one" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </accumulationBuffer>
+                        <modulationDiffusionBuffer>
+                            <color source="zero" destination="inverse_source_color" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </modulationDiffusionBuffer>
+                        <refractionBuffer>
+                            <color source="one" destination="one" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </refractionBuffer>
+                    </blendstates>
 
-                <renderstates>
-                    <cullmode>back</cullmode>
-                </renderstates>
+                    <renderstates>
+                        <cullmode>back</cullmode>
+                    </renderstates>
 
-                <depthstates>
-                    <comparison>less</comparison>
-                    <writemask>zero</writemask>
-                </depthstates>
+                    <depthstates>
+                        <comparison>less</comparison>
+                        <writemask>zero</writemask>
+                    </depthstates>
 
-                <targets>
-                    <accumulationBuffer />
-                    <modulationDiffusionBuffer />
-                    <refractionBuffer />
-                </targets>
+                    <targets>
+                        <accumulationBuffer />
+                        <modulationDiffusionBuffer />
+                        <refractionBuffer />
+                    </targets>
 
-                <resources>
-                    <depthBuffer copy="depth" />
-                </resources>
+                    <resources>
+                        <depthBuffer copy="depth" />
+                    </resources>
 
-                <program entry="mainPixelProgram">Transparent_Scattered\Calculate</program>
-            </pass>
+                    <program entry="mainPixelProgram">Transparent_Scattered\Calculate</program>
+                </transparent>
 
-            <pass mode="deferred">
-                <resources>
-                    <accumulationBuffer />
-                    <modulationDiffusionBuffer />
-                    <refractionBuffer />
-                    <sourceBuffer copy="finalBuffer" />
-                </resources>
+                <combine mode="deferred">
+                    <resources>
+                        <accumulationBuffer />
+                        <modulationDiffusionBuffer />
+                        <refractionBuffer />
+                        <sourceBuffer copy="finalBuffer" />
+                    </resources>
 
-                <targets>
-                    <finalBuffer />
-                </targets>
+                    <targets>
+                        <finalBuffer />
+                    </targets>
 
-                <program entry="mainPixelProgram">Transparent_Scattered\Combine</program>
-            </pass>
-        </block>
+                    <program entry="mainPixelProgram">Transparent_Scattered\Combine</program>
+                </combine>
+            </passes>
+        </scatteredOIT>
     </blocks>
 </shader>

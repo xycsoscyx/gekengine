@@ -26,149 +26,149 @@ namespace Gek
 {
     namespace Video
     {
-        ElementType getElementType(const wchar_t *elementClassString)
+        ElementType getElementType(const String &elementClassString)
         {
-            if (_wcsicmp(elementClassString, L"instance") == 0) return ElementType::Instance;
-            /*else if (_wcsicmp(elementClassString, L"vertex") == 0) */ return ElementType::Vertex;
+            if (elementClassString.compareNoCase(L"instance") == 0) return ElementType::Instance;
+            /*else if (elementClassString.compareNoCase(L"vertex") == 0) */ return ElementType::Vertex;
         }
 
-        Format getFormat(const wchar_t *formatString)
+        Format getFormat(const String &formatString)
         {
-            if (_wcsicmp(formatString, L"Unknown") == 0) return Format::Unknown;
-            else if (_wcsicmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
-            else if (_wcsicmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
-            else if (_wcsicmp(formatString, L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
-            else if (_wcsicmp(formatString, L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
-            else if (_wcsicmp(formatString, L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
-            else if (_wcsicmp(formatString, L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
-            else if (_wcsicmp(formatString, L"R32_FLOAT") == 0) return Format::R32_FLOAT;
-            else if (_wcsicmp(formatString, L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+            if (formatString.compareNoCase(L"Unknown") == 0) return Format::Unknown;
+            else if (formatString.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
+            else if (formatString.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
+            else if (formatString.compareNoCase(L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
+            else if (formatString.compareNoCase(L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
+            else if (formatString.compareNoCase(L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
+            else if (formatString.compareNoCase(L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
+            else if (formatString.compareNoCase(L"R32_FLOAT") == 0) return Format::R32_FLOAT;
+            else if (formatString.compareNoCase(L"R16_FLOAT") == 0) return Format::R16_FLOAT;
 
-            else if (_wcsicmp(formatString, L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
-            else if (_wcsicmp(formatString, L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
-            else if (_wcsicmp(formatString, L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
-            else if (_wcsicmp(formatString, L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
-            else if (_wcsicmp(formatString, L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
-            else if (_wcsicmp(formatString, L"R32G32_UINT") == 0) return Format::R32G32_UINT;
-            else if (_wcsicmp(formatString, L"R16G16_UINT") == 0) return Format::R16G16_UINT;
-            else if (_wcsicmp(formatString, L"R8G8_UINT") == 0) return Format::R8G8_UINT;
-            else if (_wcsicmp(formatString, L"R32_UINT") == 0) return Format::R32_UINT;
-            else if (_wcsicmp(formatString, L"R16_UINT") == 0) return Format::R16_UINT;
-            else if (_wcsicmp(formatString, L"R8_UINT") == 0) return Format::R8_UINT;
+            else if (formatString.compareNoCase(L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
+            else if (formatString.compareNoCase(L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
+            else if (formatString.compareNoCase(L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
+            else if (formatString.compareNoCase(L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
+            else if (formatString.compareNoCase(L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
+            else if (formatString.compareNoCase(L"R32G32_UINT") == 0) return Format::R32G32_UINT;
+            else if (formatString.compareNoCase(L"R16G16_UINT") == 0) return Format::R16G16_UINT;
+            else if (formatString.compareNoCase(L"R8G8_UINT") == 0) return Format::R8G8_UINT;
+            else if (formatString.compareNoCase(L"R32_UINT") == 0) return Format::R32_UINT;
+            else if (formatString.compareNoCase(L"R16_UINT") == 0) return Format::R16_UINT;
+            else if (formatString.compareNoCase(L"R8_UINT") == 0) return Format::R8_UINT;
 
-            else if (_wcsicmp(formatString, L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
-            else if (_wcsicmp(formatString, L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
-            else if (_wcsicmp(formatString, L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
-            else if (_wcsicmp(formatString, L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
-            else if (_wcsicmp(formatString, L"R32G32_INT") == 0) return Format::R32G32_INT;
-            else if (_wcsicmp(formatString, L"R16G16_INT") == 0) return Format::R16G16_INT;
-            else if (_wcsicmp(formatString, L"R8G8_INT") == 0) return Format::R8G8_INT;
-            else if (_wcsicmp(formatString, L"R32_INT") == 0) return Format::R32_INT;
-            else if (_wcsicmp(formatString, L"R16_INT") == 0) return Format::R16_INT;
-            else if (_wcsicmp(formatString, L"R8_INT") == 0) return Format::R8_INT;
+            else if (formatString.compareNoCase(L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
+            else if (formatString.compareNoCase(L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
+            else if (formatString.compareNoCase(L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
+            else if (formatString.compareNoCase(L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
+            else if (formatString.compareNoCase(L"R32G32_INT") == 0) return Format::R32G32_INT;
+            else if (formatString.compareNoCase(L"R16G16_INT") == 0) return Format::R16G16_INT;
+            else if (formatString.compareNoCase(L"R8G8_INT") == 0) return Format::R8G8_INT;
+            else if (formatString.compareNoCase(L"R32_INT") == 0) return Format::R32_INT;
+            else if (formatString.compareNoCase(L"R16_INT") == 0) return Format::R16_INT;
+            else if (formatString.compareNoCase(L"R8_INT") == 0) return Format::R8_INT;
 
-            else if (_wcsicmp(formatString, L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
-            else if (_wcsicmp(formatString, L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
-            else if (_wcsicmp(formatString, L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
-            else if (_wcsicmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
-            else if (_wcsicmp(formatString, L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
-            else if (_wcsicmp(formatString, L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
-            else if (_wcsicmp(formatString, L"R16_UNORM") == 0) return Format::R16_UNORM;
-            else if (_wcsicmp(formatString, L"R8_UNORM") == 0) return Format::R8_UNORM;
+            else if (formatString.compareNoCase(L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
+            else if (formatString.compareNoCase(L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
+            else if (formatString.compareNoCase(L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
+            else if (formatString.compareNoCase(L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
+            else if (formatString.compareNoCase(L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
+            else if (formatString.compareNoCase(L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
+            else if (formatString.compareNoCase(L"R16_UNORM") == 0) return Format::R16_UNORM;
+            else if (formatString.compareNoCase(L"R8_UNORM") == 0) return Format::R8_UNORM;
 
-            else if (_wcsicmp(formatString, L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
-            else if (_wcsicmp(formatString, L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
-            else if (_wcsicmp(formatString, L"R16G16_NORM") == 0) return Format::R16G16_NORM;
-            else if (_wcsicmp(formatString, L"R8G8_NORM") == 0) return Format::R8G8_NORM;
-            else if (_wcsicmp(formatString, L"R16_NORM") == 0) return Format::R16_NORM;
-            else if (_wcsicmp(formatString, L"R8_NORM") == 0) return Format::R8_NORM;
+            else if (formatString.compareNoCase(L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
+            else if (formatString.compareNoCase(L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
+            else if (formatString.compareNoCase(L"R16G16_NORM") == 0) return Format::R16G16_NORM;
+            else if (formatString.compareNoCase(L"R8G8_NORM") == 0) return Format::R8G8_NORM;
+            else if (formatString.compareNoCase(L"R16_NORM") == 0) return Format::R16_NORM;
+            else if (formatString.compareNoCase(L"R8_NORM") == 0) return Format::R8_NORM;
 
-            else if (_wcsicmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
-            else if (_wcsicmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+            else if (formatString.compareNoCase(L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
+            else if (formatString.compareNoCase(L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
 
-            else if (_wcsicmp(formatString, L"D32_FLOAT") == 0) return Format::D32_FLOAT;
-            else if (_wcsicmp(formatString, L"D16_UNORM") == 0) return Format::D16_UNORM;
+            else if (formatString.compareNoCase(L"D32_FLOAT") == 0) return Format::D32_FLOAT;
+            else if (formatString.compareNoCase(L"D16_UNORM") == 0) return Format::D16_UNORM;
 
             return Format::Unknown;
         }
 
-        DepthWrite getDepthWriteMask(const wchar_t *depthWrite)
+        DepthWrite getDepthWriteMask(const String &depthWrite)
         {
-            if (_wcsicmp(depthWrite, L"zero") == 0) return DepthWrite::Zero;
-            else if (_wcsicmp(depthWrite, L"all") == 0) return DepthWrite::All;
+            if (depthWrite.compareNoCase(L"zero") == 0) return DepthWrite::Zero;
+            else if (depthWrite.compareNoCase(L"all") == 0) return DepthWrite::All;
             else return DepthWrite::Zero;
         }
 
-        ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
+        ComparisonFunction getComparisonFunction(const String &comparisonFunction)
         {
-            if (_wcsicmp(comparisonFunction, L"always") == 0) return ComparisonFunction::Always;
-            else if (_wcsicmp(comparisonFunction, L"never") == 0) return ComparisonFunction::Never;
-            else if (_wcsicmp(comparisonFunction, L"equal") == 0) return ComparisonFunction::Equal;
-            else if (_wcsicmp(comparisonFunction, L"not_equal") == 0) return ComparisonFunction::NotEqual;
-            else if (_wcsicmp(comparisonFunction, L"less") == 0) return ComparisonFunction::Less;
-            else if (_wcsicmp(comparisonFunction, L"less_equal") == 0) return ComparisonFunction::LessEqual;
-            else if (_wcsicmp(comparisonFunction, L"greater") == 0) return ComparisonFunction::Greater;
-            else if (_wcsicmp(comparisonFunction, L"greater_equal") == 0) return ComparisonFunction::GreaterEqual;
+            if (comparisonFunction.compareNoCase(L"always") == 0) return ComparisonFunction::Always;
+            else if (comparisonFunction.compareNoCase(L"never") == 0) return ComparisonFunction::Never;
+            else if (comparisonFunction.compareNoCase(L"equal") == 0) return ComparisonFunction::Equal;
+            else if (comparisonFunction.compareNoCase(L"not_equal") == 0) return ComparisonFunction::NotEqual;
+            else if (comparisonFunction.compareNoCase(L"less") == 0) return ComparisonFunction::Less;
+            else if (comparisonFunction.compareNoCase(L"less_equal") == 0) return ComparisonFunction::LessEqual;
+            else if (comparisonFunction.compareNoCase(L"greater") == 0) return ComparisonFunction::Greater;
+            else if (comparisonFunction.compareNoCase(L"greater_equal") == 0) return ComparisonFunction::GreaterEqual;
             else return ComparisonFunction::Always;
         }
 
-        StencilOperation getStencilOperation(const wchar_t *stencilOperation)
+        StencilOperation getStencilOperation(const String &stencilOperation)
         {
-            if (_wcsicmp(stencilOperation, L"zero") == 0) return StencilOperation::Zero;
-            else if (_wcsicmp(stencilOperation, L"keep") == 0) return StencilOperation::Keep;
-            else if (_wcsicmp(stencilOperation, L"replace") == 0) return StencilOperation::Replace;
-            else if (_wcsicmp(stencilOperation, L"invert") == 0) return StencilOperation::Invert;
-            else if (_wcsicmp(stencilOperation, L"increase") == 0) return StencilOperation::Increase;
-            else if (_wcsicmp(stencilOperation, L"increase_saturated") == 0) return StencilOperation::IncreaseSaturated;
-            else if (_wcsicmp(stencilOperation, L"decrease") == 0) return StencilOperation::Decrease;
-            else if (_wcsicmp(stencilOperation, L"decrease_saturated") == 0) return StencilOperation::DecreaseSaturated;
+            if (stencilOperation.compareNoCase(L"zero") == 0) return StencilOperation::Zero;
+            else if (stencilOperation.compareNoCase(L"keep") == 0) return StencilOperation::Keep;
+            else if (stencilOperation.compareNoCase(L"replace") == 0) return StencilOperation::Replace;
+            else if (stencilOperation.compareNoCase(L"invert") == 0) return StencilOperation::Invert;
+            else if (stencilOperation.compareNoCase(L"increase") == 0) return StencilOperation::Increase;
+            else if (stencilOperation.compareNoCase(L"increase_saturated") == 0) return StencilOperation::IncreaseSaturated;
+            else if (stencilOperation.compareNoCase(L"decrease") == 0) return StencilOperation::Decrease;
+            else if (stencilOperation.compareNoCase(L"decrease_saturated") == 0) return StencilOperation::DecreaseSaturated;
             else return StencilOperation::Keep;
         }
 
-        FillMode getFillMode(const wchar_t *fillMode)
+        FillMode getFillMode(const String &fillMode)
         {
-            if (_wcsicmp(fillMode, L"solid") == 0) return FillMode::Solid;
-            else if (_wcsicmp(fillMode, L"wire") == 0) return FillMode::WireFrame;
+            if (fillMode.compareNoCase(L"solid") == 0) return FillMode::Solid;
+            else if (fillMode.compareNoCase(L"wire") == 0) return FillMode::WireFrame;
             else return FillMode::Solid;
         }
 
-        CullMode getCullMode(const wchar_t *cullMode)
+        CullMode getCullMode(const String &cullMode)
         {
-            if (_wcsicmp(cullMode, L"none") == 0) return CullMode::None;
-            else if (_wcsicmp(cullMode, L"front") == 0) return CullMode::Front;
-            else if (_wcsicmp(cullMode, L"back") == 0) return CullMode::Back;
+            if (cullMode.compareNoCase(L"none") == 0) return CullMode::None;
+            else if (cullMode.compareNoCase(L"front") == 0) return CullMode::Front;
+            else if (cullMode.compareNoCase(L"back") == 0) return CullMode::Back;
             else return CullMode::None;
         }
 
-        BlendSource getBlendSource(const wchar_t *blendSource)
+        BlendSource getBlendSource(const String &blendSource)
         {
-            if (_wcsicmp(blendSource, L"zero") == 0) return BlendSource::Zero;
-            else if (_wcsicmp(blendSource, L"one") == 0) return BlendSource::One;
-            else if (_wcsicmp(blendSource, L"blend_factor") == 0) return BlendSource::BlendFactor;
-            else if (_wcsicmp(blendSource, L"inverse_blend_factor") == 0) return BlendSource::InverseBlendFactor;
-            else if (_wcsicmp(blendSource, L"source_color") == 0) return BlendSource::SourceColor;
-            else if (_wcsicmp(blendSource, L"inverse_source_color") == 0) return BlendSource::InverseSourceColor;
-            else if (_wcsicmp(blendSource, L"source_alpha") == 0) return BlendSource::SourceAlpha;
-            else if (_wcsicmp(blendSource, L"inverse_source_alpha") == 0) return BlendSource::InverseSourceAlpha;
-            else if (_wcsicmp(blendSource, L"source_alpha_saturate") == 0) return BlendSource::SourceAlphaSaturated;
-            else if (_wcsicmp(blendSource, L"destination_color") == 0) return BlendSource::DestinationColor;
-            else if (_wcsicmp(blendSource, L"inverse_destination_color") == 0) return BlendSource::InverseDestinationColor;
-            else if (_wcsicmp(blendSource, L"destination_alpha") == 0) return BlendSource::DestinationAlpha;
-            else if (_wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return BlendSource::InverseDestinationAlpha;
-            else if (_wcsicmp(blendSource, L"secondary_source_color") == 0) return BlendSource::SecondarySourceColor;
-            else if (_wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return BlendSource::InverseSecondarySourceColor;
-            else if (_wcsicmp(blendSource, L"secondary_source_alpha") == 0) return BlendSource::SecondarySourceAlpha;
-            else if (_wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return BlendSource::InverseSecondarySourceAlpha;
+            if (blendSource.compareNoCase(L"zero") == 0) return BlendSource::Zero;
+            else if (blendSource.compareNoCase(L"one") == 0) return BlendSource::One;
+            else if (blendSource.compareNoCase(L"blend_factor") == 0) return BlendSource::BlendFactor;
+            else if (blendSource.compareNoCase(L"inverse_blend_factor") == 0) return BlendSource::InverseBlendFactor;
+            else if (blendSource.compareNoCase(L"source_color") == 0) return BlendSource::SourceColor;
+            else if (blendSource.compareNoCase(L"inverse_source_color") == 0) return BlendSource::InverseSourceColor;
+            else if (blendSource.compareNoCase(L"source_alpha") == 0) return BlendSource::SourceAlpha;
+            else if (blendSource.compareNoCase(L"inverse_source_alpha") == 0) return BlendSource::InverseSourceAlpha;
+            else if (blendSource.compareNoCase(L"source_alpha_saturate") == 0) return BlendSource::SourceAlphaSaturated;
+            else if (blendSource.compareNoCase(L"destination_color") == 0) return BlendSource::DestinationColor;
+            else if (blendSource.compareNoCase(L"inverse_destination_color") == 0) return BlendSource::InverseDestinationColor;
+            else if (blendSource.compareNoCase(L"destination_alpha") == 0) return BlendSource::DestinationAlpha;
+            else if (blendSource.compareNoCase(L"inverse_destination_alpha") == 0) return BlendSource::InverseDestinationAlpha;
+            else if (blendSource.compareNoCase(L"secondary_source_color") == 0) return BlendSource::SecondarySourceColor;
+            else if (blendSource.compareNoCase(L"inverse_secondary_source_color") == 0) return BlendSource::InverseSecondarySourceColor;
+            else if (blendSource.compareNoCase(L"secondary_source_alpha") == 0) return BlendSource::SecondarySourceAlpha;
+            else if (blendSource.compareNoCase(L"inverse_secondary_source_alpha") == 0) return BlendSource::InverseSecondarySourceAlpha;
             else return BlendSource::One;
         }
 
-        BlendOperation getBlendOperation(const wchar_t *blendOperation)
+        BlendOperation getBlendOperation(const String &blendOperation)
         {
-            if (_wcsicmp(blendOperation, L"add") == 0) return BlendOperation::Add;
-            else if (_wcsicmp(blendOperation, L"subtract") == 0) return BlendOperation::Subtract;
-            else if (_wcsicmp(blendOperation, L"reverse_subtract") == 0) return BlendOperation::ReverseSubtract;
-            else if (_wcsicmp(blendOperation, L"minimum") == 0) return BlendOperation::Minimum;
-            else if (_wcsicmp(blendOperation, L"maximum") == 0) return BlendOperation::Maximum;
+            if (blendOperation.compareNoCase(L"add") == 0) return BlendOperation::Add;
+            else if (blendOperation.compareNoCase(L"subtract") == 0) return BlendOperation::Subtract;
+            else if (blendOperation.compareNoCase(L"reverse_subtract") == 0) return BlendOperation::ReverseSubtract;
+            else if (blendOperation.compareNoCase(L"minimum") == 0) return BlendOperation::Minimum;
+            else if (blendOperation.compareNoCase(L"maximum") == 0) return BlendOperation::Maximum;
             else return BlendOperation::Add;
         }
     }; // namespace Video

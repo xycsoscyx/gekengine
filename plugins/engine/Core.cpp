@@ -52,9 +52,8 @@ namespace Gek
             HWND window;
             bool windowActive;
             bool engineRunning;
-            using OptionGroup = concurrency::concurrent_unordered_map<String, String>;
-            concurrency::concurrent_unordered_map<String, OptionGroup> optionsMap;
-            concurrency::concurrent_unordered_map<String, OptionGroup> changedOptionsMap;
+
+            Xml::Root configuration;
 
             Timer timer;
             double updateAccumulator;
@@ -101,50 +100,6 @@ namespace Gek
                     result = sciter::value(true);
                 };
 
-                consoleCommandsMap[L"begin_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
-                {
-                    this->beginChanges();
-                    result = sciter::value(true);
-                };
-
-                consoleCommandsMap[L"finish_options"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
-                {
-                    bool commit = false;
-                    if (parameters.size() == 1)
-                    {
-                        commit = parameters[0];
-                    }
-
-                    this->finishChanges(commit);
-                    result = sciter::value(true);
-                };
-
-                consoleCommandsMap[L"set_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
-                {
-                    if (parameters.size() == 3)
-                    {
-                        this->setValue(parameters[0], parameters[1], parameters[2]);
-                        result = sciter::value(true);
-                    }
-                    else
-                    {
-                        result = sciter::value(false);
-                    }
-                };
-
-                consoleCommandsMap[L"get_option"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
-                {
-                    if (parameters.size() == 2)
-                    {
-                        result = sciter::value(this->getValue(parameters[0], parameters[1]));
-                        result = sciter::value(true);
-                    }
-                    else
-                    {
-                        result = sciter::value(false);
-                    }
-                };
-
                 consoleCommandsMap[L"load_level"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     if (parameters.size() == 1)
@@ -166,27 +121,14 @@ namespace Gek
                     result = sciter::value(true);
                 };
 
-                XmlDocumentPtr document;
-                XmlNodePtr configurationNode;
                 try
                 {
-                    document = XmlDocument::load(L"$root\\config.xml");
-                    configurationNode = document->getRoot(L"config");
+                    configuration = Xml::load(L"$root\\config.xml", L"config");
                 }
-                catch (const Gek::Exception &)
+                catch (const Exception &)
                 {
-                    document = XmlDocument::create(L"config");
-                    configurationNode = document->getRoot(L"config");
+                    configuration = Xml::Root(L"config");
                 };
-
-                for (XmlNodePtr valueNode(configurationNode->firstChildElement()); valueNode->isValid(); valueNode = valueNode->nextSiblingElement())
-                {
-                    auto &group = optionsMap[valueNode->getType()];
-                    valueNode->listAttributes([&](const wchar_t *name, const wchar_t *value) -> void
-                    {
-                        group[name] = value;
-                    });
-                }
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 GEK_CHECK_CONDITION(FAILED(resultValue), Exception, "Unable to initialize COM (error %v)", resultValue);
@@ -244,6 +186,16 @@ namespace Gek
             }
 
             // Plugin::Core
+            Xml::Root &getConfiguration(void)
+            {
+                return configuration;
+            }
+
+            Xml::Root const &getConfiguration(void) const
+            {
+                return configuration;
+            }
+
             Plugin::Population * getPopulation(void) const
             {
                 return population.get();
@@ -257,58 +209,6 @@ namespace Gek
             Plugin::Renderer * getRenderer(void) const
             {
                 return renderer.get();
-            }
-
-            const String &getValue(const wchar_t *name, const wchar_t *attribute, const String &defaultValue = String()) const
-            {
-                auto &optionsSearch = optionsMap.find(name);
-                if (optionsSearch != optionsMap.end())
-                {
-                    auto &value = (*optionsSearch).second.find(attribute);
-                    if (value != (*optionsSearch).second.end())
-                    {
-                        return (*value).second;
-                    }
-                }
-
-                return defaultValue;
-            }
-
-            void setValue(const wchar_t *name, const wchar_t *attribute, const wchar_t *value)
-            {
-                auto &newGroup = changedOptionsMap[name];
-                newGroup[attribute] = value;
-            }
-
-            void beginChanges(void)
-            {
-                changedOptionsMap = optionsMap;
-            }
-
-            void finishChanges(bool commit)
-            {
-                if (commit)
-                {
-                    optionsMap = std::move(changedOptionsMap);
-                    sendEvent(&Plugin::CoreListener::onChanged);
-
-                    auto &displaySearch = optionsMap.find(L"display");
-                    if (displaySearch != optionsMap.end())
-                    {
-                        auto &widthSearch = (*displaySearch).second.find(L"width");
-                        auto &heightSearch = (*displaySearch).second.find(L"height");
-                        if (widthSearch != (*displaySearch).second.end() && heightSearch != (*displaySearch).second.end())
-                        {
-                            device->setSize((*widthSearch).second, (*heightSearch).second, Video::Format::R8G8B8A8_UNORM_SRGB);
-                        }
-
-                        auto &fullscreenSearch = (*displaySearch).second.find(L"fullscreen");
-                        if (fullscreenSearch != (*displaySearch).second.end())
-                        {
-                            device->setFullScreen((*fullscreenSearch).second);
-                        }
-                    }
-                }
             }
 
             // Application

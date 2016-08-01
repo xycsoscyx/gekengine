@@ -31,42 +31,43 @@ namespace Gek
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(materialName);
 
-                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", materialName)));
-                XmlNodePtr materialNode(document->getRoot(L"material"));
+                Xml::Root materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", materialName), L"material");
 
-                XmlNodePtr shaderNode(materialNode->firstChildElement(L"shader"));
-                GEK_CHECK_CONDITION(!shaderNode->hasAttribute(L"name"), Material::Exception, "Materials shader node missing name attribute");
+                auto &shaderNode = materialNode.getChild(L"shader");
+                GEK_CHECK_CONDITION(!shaderNode.attributes.count(L"name"), Material::Exception, "Material missing shader name attribute: %v", materialName);
 
-                String shaderName(shaderNode->getAttribute(L"name"));
-                Engine::Shader *shader = resources->getShader(shaderName, materialHandle);
-                GEK_CHECK_CONDITION(shader == nullptr, Material::Exception, "Unable to load shader for material: %v", shaderName);
+                Engine::Shader *shader = resources->getShader(shaderNode.attributes[L"name"], materialHandle);
 
                 FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
                 String fileSpecifier(FileSystem::Path(materialName).getFileName());
 
                 PassMap passMap;
-                for (XmlNodePtr passNode(shaderNode->firstChildElement()); passNode->isValid(); passNode = passNode->nextSiblingElement())
+                for (auto &passNodePair : shaderNode.children)
                 {
-                    auto &resourceMap = passMap[passNode->getType()];
-                    for (XmlNodePtr resourceNode(passNode->firstChildElement()); resourceNode->isValid(); resourceNode = resourceNode->nextSiblingElement())
+                    const String &passName = passNodePair.first;
+                    auto &passNode = passNodePair.second;
+                    auto &resourceMap = passMap[passName];
+                    for (auto &resourceNodePair : passNode.children)
                     {
-                        ResourceHandle &resource = resourceMap[resourceNode->getType()];
-                        if (resourceNode->hasAttribute(L"file"))
+                        const String &resourceName = resourceNodePair.first;
+                        auto &resourceNode = resourceNodePair.second;
+                        ResourceHandle &resource = resourceMap[resourceName];
+                        if (resourceNode.attributes.count(L"file"))
                         {
-                            String file(resourceNode->getAttribute(L"file"));
+                            String file(resourceNode.attributes[L"file"]);
                             file.replace(L"$directory", filePath);
                             file.replace(L"$filename", fileSpecifier);
                             file.replace(L"$material", materialName);
-                            uint32_t flags = getTextureLoadFlags(resourceNode->getAttribute(L"flags"));
+                            uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
                             resource = this->resources->loadTexture(file, flags);
                         }
-                        else if (resourceNode->hasAttribute(L"pattern"))
+                        else if (resourceNode.attributes.count(L"pattern"))
                         {
-                            resource = this->resources->createTexture(resourceNode->getAttribute(L"pattern"), resourceNode->getAttribute(L"parameters"));
+                            resource = this->resources->createTexture(resourceNode.attributes[L"pattern"], resourceNode.attributes[L"parameters"]);
                         }
-                        else if (resourceNode->hasAttribute(L"name"))
+                        else if (resourceNode.attributes.count(L"name"))
                         {
-                            resource = this->resources->getResourceHandle(resourceNode->getAttribute(L"name"));
+                            resource = this->resources->getResourceHandle(resourceNode.attributes[L"name"]);
                         }
                     }
                 }

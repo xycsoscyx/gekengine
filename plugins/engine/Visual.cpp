@@ -94,29 +94,24 @@ namespace Gek
             Video::ObjectPtr vertexProgram;
 
         public:
-            Visual(Context *context, Video::Device *device, const wchar_t *fileName)
+            Visual(Context *context, Video::Device *device, const wchar_t *visualName)
                 : ContextRegistration(context)
                 , device(device)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
+                GEK_TRACE_SCOPE(GEK_PARAMETER(visualName));
                 GEK_REQUIRE(device);
 
-                Xml::Root pluginNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", fileName));
-                GEK_CHECK_CONDITION(pluginNode.type.compareNoCase(L"plugin") != 0, Visual::Exception, "Invalid visual root node: %v", pluginNode.type);
-
-                if (pluginNode.children.count(L"geometry"))
+                Xml::Root visualNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", visualName), L"visual");
+                try
                 {
-                    auto &geometryNode = pluginNode.children[L"geometry"];
-                    try
-                    {
-                        String programFileName(geometryNode.text);
-                        StringUTF8 programEntryPoint(geometryNode.attribute(L"entry"));
-                        geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
-                    }
-                    catch (const Gek::Exception &)
-                    {
-                    };
+                    auto &geometryNode = visualNode.getChild(L"geometry");
+                    String programFileName(geometryNode.text);
+                    StringUTF8 programEntryPoint(geometryNode.attributes[L"entry"]);
+                    geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
                 }
+                catch (const Gek::Exception &)
+                {
+                };
 
                 StringUTF8 engineData =
                     "struct PluginVertex\r\n" \
@@ -124,10 +119,11 @@ namespace Gek
 
                 std::list<StringUTF8> elementNameList;
                 std::vector<Video::InputElementInformation> elementList;
-                auto &layoutNode = pluginNode.children[L"layout"];
-                for(auto &elementNode : layoutNode.children)
+                auto &layoutNode = visualNode.getChild(L"layout");
+                for(auto &elementNodePair : layoutNode.children)
                 {
-                    String elementType(elementNode.first);
+                    String elementType = elementNodePair.first;
+                    auto &elementNode = elementNodePair.second;
                     if (elementType.compareNoCase(L"instanceIndex") == 0)
                     {
                         engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
@@ -140,18 +136,18 @@ namespace Gek
                     {
                         engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
                     }
-                    else
+                    else if(elementNode.attributes.count(L"name") && elementNode.attributes.count(L"format"))
                     {
-                        StringUTF8 semanticName(elementNode.second.attribute(L"name"));
+                        StringUTF8 semanticName(elementNode.attributes[L"name"]);
                         elementNameList.push_back(semanticName);
 
                         Video::InputElementInformation element;
                         element.semanticName = elementNameList.back();
-                        element.semanticIndex = elementNode.second.attribute(L"index");
-                        element.slotClass = Video::getElementType(elementNode.second.attribute(L"slotclass"));
-                        element.slotIndex = elementNode.second.attribute(L"slotindex");
+                        element.semanticIndex = elementNode.attributes[L"index"];
+                        element.slotClass = Video::getElementType(elementNode.attributes[L"slotclass"]);
+                        element.slotIndex = elementNode.attributes[L"slotindex"];
 
-                        String format(elementNode.second.attribute(L"format"));
+                        String format(elementNode.attributes[L"format"]);
                         if (format.compareNoCase(L"float4x4") == 0)
                         {
                             engineData.format("    float4x4 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
@@ -180,6 +176,10 @@ namespace Gek
                             engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementType, semanticName, element.semanticIndex);
                             elementList.push_back(element);
                         }
+                    }
+                    else
+                    {
+                        GEK_THROW_EXCEPTION(Visual::Exception, "Visual element list with unknown element type");
                     }
                 }
 
@@ -219,7 +219,7 @@ namespace Gek
                     "}\r\n" \
                     "\r\n";
 
-                auto &vertexNode = pluginNode.children[L"vertex"];
+                auto &vertexNode = visualNode.getChild(L"vertex");
                 String programPath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
                 auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
                 {

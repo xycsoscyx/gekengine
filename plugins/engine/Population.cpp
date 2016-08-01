@@ -211,56 +211,51 @@ namespace Gek
 
                         sendEvent(&Plugin::PopulationListener::onLoadBegin);
 
-                        XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\scenes\\%v.xml", populationName)));
-                        XmlNodePtr worldNode(document->getRoot(L"world"));
+                        Xml::Root worldNode = Xml::load(String(L"$root\\data\\scenes\\%v.xml", populationName), L"world");
 
                         std::unordered_map<String, EntityDefinition> prefabsMap;
-                        XmlNodePtr prefabsNode(worldNode->firstChildElement(L"prefabs"));
-                        for (XmlNodePtr prefabNode(prefabsNode->firstChildElement()); prefabNode->isValid(); prefabNode = prefabNode->nextSiblingElement())
+                        for (auto &prefabNodePair : worldNode.children[L"prefabs"].children)
                         {
-                            EntityDefinition &entityDefinition = prefabsMap[prefabNode->getType()];
-                            for (XmlNodePtr componentNode(prefabNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
+                            const String &prefabName = prefabNodePair.first;
+                            auto &prefabNode = prefabNodePair.second;
+                            EntityDefinition &entityDefinition = prefabsMap[prefabName];
+                            for(auto &componentNodePair : prefabNode.children)
                             {
-                                auto &componentData = entityDefinition[componentNode->getType()];
-                                componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
-                                {
-                                    componentData.unordered_map::insert(std::make_pair(name, value));
-                                });
+                                const String &componentName = componentNodePair.first;
+                                auto &componentNode = componentNodePair.second;
 
-                                if (!componentNode->getText().empty())
-                                {
-                                    componentData.value = componentNode->getText();
-                                }
+                                auto &componentData = entityDefinition[componentName];
+                                componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
+                                componentData.value = componentNode.text;
                             }
                         }
 
-                        XmlNodePtr populationNode(worldNode->firstChildElement(L"population"));
-                        for (XmlNodePtr entityNode(populationNode->firstChildElement(L"entity")); entityNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
+                        for(auto &entityNodePair : worldNode.children[L"population"].children)
                         {
+                            auto &entityNode = entityNodePair.second;
+
                             EntityDefinition entityDefinition;
-                            auto prefabSearch = prefabsMap.find(entityNode->getAttribute(L"prefab"));
+                            auto prefabSearch = prefabsMap.find(entityNode.getAttribute(L"prefab"));
                             if (prefabSearch != prefabsMap.end())
                             {
                                 entityDefinition = (*prefabSearch).second;
                             }
-
-                            for (XmlNodePtr componentNode(entityNode->firstChildElement()); componentNode->isValid(); componentNode = componentNode->nextSiblingElement())
+                            
+                            for (auto &componentNodePair : entityNode.children)
                             {
-                                auto &componentData = entityDefinition[componentNode->getType()];
-                                componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
+                                const String &componentName = componentNodePair.first;
+                                auto &componentNode = componentNodePair.second;
+                                auto &componentData = entityDefinition[componentName];
+                                componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
+                                if (!componentNode.text.empty())
                                 {
-                                    componentData[name] = value;
-                                });
-
-                                if (!componentNode->getText().empty())
-                                {
-                                    componentData.value = componentNode->getText();
+                                    componentData.value = componentNode.text;
                                 }
                             }
 
-                            if (entityNode->hasAttribute(L"name"))
+                            if (entityNode.attributes.count(L"name"))
                             {
-                                createEntity(entityDefinition, entityNode->getAttribute(L"name"));
+                                createEntity(entityDefinition, entityNode.getAttribute(L"name"));
                             }
                             else
                             {
@@ -283,15 +278,6 @@ namespace Gek
             {
                 GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
                 GEK_REQUIRE(populationName);
-
-                XmlDocumentPtr document(XmlDocument::create(L"world"));
-                XmlNodePtr worldNode(document->getRoot(L"world"));
-                XmlNodePtr populationNode(worldNode->createChildElement(L"population"));
-                for (auto &entity : entityList)
-                {
-                }
-
-                document->save(String(L"$root\\data\\saves\\%v.xml", populationName));
             }
 
             Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)

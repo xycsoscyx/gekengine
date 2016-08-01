@@ -9,36 +9,38 @@
         <averageLuminanceBuffer size="1" flags="unorderedAccess">R32_FLOAT</averageLuminanceBuffer>
     </buffers>
 
-    <pass mode="deferred">
-        <resources>
-            <finalBuffer />
-        </resources>
+    <passes>
+        <calculate mode="deferred">
+            <resources>
+                <finalBuffer />
+            </resources>
 
-        <targets>
-            <luminanceBuffer />
-        </targets>
+            <targets>
+                <luminanceBuffer />
+            </targets>
 
-        <program entry="mainPixelProgram">ToneMap\CalculateLuminance</program>
-    </pass>
+            <program entry="mainPixelProgram">ToneMap\CalculateLuminance</program>
+        </calculate>
 
-    <pass mode="compute" width="1" height="1" depth="1">
-        <resources>
-            <luminanceBuffer actions="generateMipMaps" />
-        </resources>
+        <adapt mode="compute" width="1" height="1" depth="1">
+            <resources>
+                <luminanceBuffer actions="generateMipMaps" />
+            </resources>
 
-        <unorderedaccess>
-            <averageLuminanceBuffer />
-        </unorderedaccess>
+            <unorderedaccess>
+                <averageLuminanceBuffer />
+            </unorderedaccess>
 
-        <program entry="mainComputeProgram">ToneMap\AdaptLuminance</program>
-    </pass>
+            <program entry="mainComputeProgram">ToneMap\AdaptLuminance</program>
+        </adapt>
 
-    <pass mode="deferred">
-        <resources>
-            <finalBuffer />
-            <averageLuminanceBuffer />
-        </resources>
+        <tonemap mode="deferred">
+            <resources>
+                <finalBuffer />
+                <averageLuminanceBuffer />
+            </resources>
 
-        <program entry="mainPixelProgram">ToneMap\ToneMap</program>
-    </pass>
+            <program entry="mainPixelProgram">ToneMap\ToneMap</program>
+        </tonemap>
+    </passes>
 </filter>

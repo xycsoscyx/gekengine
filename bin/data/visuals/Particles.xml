@@ -1,9 +1,7 @@
 <?xml version="1.0"?>
-<plugin>
+<visual>
     <layout>
         <vertexIndex />
     </layout>
-    <vertex>
-        <program>particles</program>
-    </vertex>
-</plugin>
+    <vertex>particles</vertex>
+</visual>

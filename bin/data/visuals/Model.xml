@@ -1,11 +1,9 @@
 <?xml version="1.0"?>
-<plugin>
+<visual>
     <layout>
 		<position format="R32G32B32_FLOAT" name="POSITION" index="0" slotclass="vertex" slotindex="0" />
 		<texCoord format="R32G32_FLOAT" name="TEXCOORD" index="0" slotclass="vertex" slotindex="0" />
         <normal format="R32G32B32_FLOAT" name="NORMAL" index="0" slotclass="vertex" slotindex="0" />
     </layout>
-    <vertex>
-        <program>model</program>
-    </vertex>
-</plugin>
+    <vertex>model</vertex>
+</visual>
