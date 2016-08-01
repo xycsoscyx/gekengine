@@ -151,8 +151,8 @@ namespace Gek
 
                 try
                 {
-                    Xml::Root materialNode(Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName), L"material"));
-                    auto &surfaceNode = materialNode.getChild(L"surface");
+                    Xml::Node materialNode(Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName), L"material"));
+                    auto &surfaceNode = materialNode.findChild(L"surface");
 
                     Surface surface;
                     surfaceNode.getValue(L"ghost", surface.ghost);

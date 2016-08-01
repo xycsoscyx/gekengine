@@ -26,17 +26,17 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
     case WM_INITDIALOG:
     {
-        Xml::Root configRoot;
+        Xml::Node configRoot(nullptr);
         try
         {
             configRoot = Xml::load(L"$root\\config.xml", L"config");
         }
         catch (const Exception &)
         {
-            configRoot = Xml::Root(L"config");
+            configRoot = Xml::Node(L"config");
         };
 
-        auto &displayNode = configRoot.children[L"display"];
+        auto &displayNode = configRoot.getChild(L"display");
         uint32_t width = displayNode.getAttribute(L"width", L"800");
         uint32_t height = displayNode.getAttribute(L"height", L"600");
         bool fullscreen = displayNode.getAttribute(L"fullscreen", L"false");
@@ -90,17 +90,17 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             uint32_t selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
             auto &mode = *(DisplayMode *)SendDlgItemMessage(dialog, IDC_MODES, CB_GETITEMDATA, selectIndex, 0);
 
-            Xml::Root configRoot;
+            Xml::Node configRoot(nullptr);
             try
             {
                 configRoot = Xml::load(L"$root\\config.xml", L"config");
             }
             catch (const Exception &)
             {
-                configRoot = Xml::Root(L"config");
+                configRoot = Xml::Node(L"config");
             };
 
-            auto &displayNode = configRoot.children[L"display"];
+            auto &displayNode = configRoot.getChild(L"display");
             displayNode.attributes[L"width"] = mode.width;
             displayNode.attributes[L"height"] = mode.height;
             displayNode.attributes[L"fullscreen"] = (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
@@ -187,17 +187,17 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             ATOM classAtom = RegisterClass(&windowClass);
             GEK_CHECK_CONDITION(!classAtom, Trace::Exception, "Unable to register window class: %v", GetLastError());
 
-            Xml::Root configRoot;
+            Xml::Node configRoot(nullptr);
             try
             {
                 configRoot = Xml::load(L"$root\\config.xml", L"config");
             }
             catch (const Exception &)
             {
-                configRoot = Xml::Root(L"config");
+                configRoot = Xml::Node(L"config");
             };
 
-            auto &displayNode = configRoot.children[L"display"];
+            auto &displayNode = configRoot.getChild(L"display");
             uint32_t width = displayNode.getAttribute(L"width", L"800");
             uint32_t height = displayNode.getAttribute(L"height", L"600");
             bool fullscreen = displayNode.getAttribute(L"fullscreen", L"false");

@@ -11,7 +11,7 @@
 
 namespace Gek
 {
-    template <typename TYPE, int UNIQUE>
+    template <typename TYPE, uint8_t UNIQUE>
     struct Handle
     {
         TYPE identifier;

@@ -101,10 +101,10 @@ namespace Gek
                 GEK_TRACE_SCOPE(GEK_PARAMETER(visualName));
                 GEK_REQUIRE(device);
 
-                Xml::Root visualNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", visualName), L"visual");
+                Xml::Node visualNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", visualName), L"visual");
                 try
                 {
-                    auto &geometryNode = visualNode.getChild(L"geometry");
+                    auto &geometryNode = visualNode.findChild(L"geometry");
                     String programFileName(geometryNode.text);
                     StringUTF8 programEntryPoint(geometryNode.attributes[L"entry"]);
                     geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
@@ -119,20 +119,18 @@ namespace Gek
 
                 std::list<StringUTF8> elementNameList;
                 std::vector<Video::InputElementInformation> elementList;
-                auto &layoutNode = visualNode.getChild(L"layout");
-                for(auto &elementNodePair : layoutNode.children)
+                auto &layoutNode = visualNode.findChild(L"layout");
+                for(auto &elementNode : layoutNode.children)
                 {
-                    String elementType = elementNodePair.first;
-                    auto &elementNode = elementNodePair.second;
-                    if (elementType.compareNoCase(L"instanceIndex") == 0)
+                    if (elementNode.type.compareNoCase(L"instanceIndex") == 0)
                     {
                         engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
                     }
-                    else if (elementType.compareNoCase(L"vertexIndex") == 0)
+                    else if (elementNode.type.compareNoCase(L"vertexIndex") == 0)
                     {
                         engineData += ("    uint vertexIndex : SV_VertexId;\r\n");
                     }
-                    else if (elementType.compareNoCase(L"isFrontFace") == 0)
+                    else if (elementNode.type.compareNoCase(L"isFrontFace") == 0)
                     {
                         engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
                     }
@@ -150,7 +148,7 @@ namespace Gek
                         String format(elementNode.attributes[L"format"]);
                         if (format.compareNoCase(L"float4x4") == 0)
                         {
-                            engineData.format("    float4x4 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
+                            engineData.format("    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
                             element.format = Video::Format::R32G32B32A32_FLOAT;
                             elementList.push_back(element);
                             element.semanticIndex++;
@@ -162,7 +160,7 @@ namespace Gek
                         }
                         else if (format.compareNoCase(L"float4x3") == 0)
                         {
-                            engineData.format("    float4x3 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
+                            engineData.format("    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
                             element.format = Video::Format::R32G32B32A32_FLOAT;
                             elementList.push_back(element);
                             element.semanticIndex++;
@@ -173,7 +171,7 @@ namespace Gek
                         else
                         {
                             element.format = Video::getFormat(format);
-                            engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementType, semanticName, element.semanticIndex);
+                            engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode.type, semanticName, element.semanticIndex);
                             elementList.push_back(element);
                         }
                     }
@@ -219,7 +217,7 @@ namespace Gek
                     "}\r\n" \
                     "\r\n";
 
-                auto &vertexNode = visualNode.getChild(L"vertex");
+                auto &vertexNode = visualNode.findChild(L"vertex");
                 String programPath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
                 auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
                 {

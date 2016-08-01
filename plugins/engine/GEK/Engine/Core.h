@@ -43,8 +43,8 @@ namespace Gek
         {
             GEK_START_EXCEPTIONS();
 
-            virtual Xml::Root &getConfiguration(void) = 0;
-            virtual Xml::Root const &getConfiguration(void) const = 0;
+            virtual Xml::Node &getConfiguration(void) = 0;
+            virtual Xml::Node const &getConfiguration(void) const = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;

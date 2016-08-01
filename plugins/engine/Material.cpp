@@ -31,9 +31,9 @@ namespace Gek
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(materialName);
 
-                Xml::Root materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", materialName), L"material");
+                Xml::Node materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", materialName), L"material");
 
-                auto &shaderNode = materialNode.getChild(L"shader");
+                auto &shaderNode = materialNode.findChild(L"shader");
                 GEK_CHECK_CONDITION(!shaderNode.attributes.count(L"name"), Material::Exception, "Material missing shader name attribute: %v", materialName);
 
                 Engine::Shader *shader = resources->getShader(shaderNode.attributes[L"name"], materialHandle);
@@ -42,16 +42,12 @@ namespace Gek
                 String fileSpecifier(FileSystem::Path(materialName).getFileName());
 
                 PassMap passMap;
-                for (auto &passNodePair : shaderNode.children)
+                for (auto &passNode : shaderNode.children)
                 {
-                    const String &passName = passNodePair.first;
-                    auto &passNode = passNodePair.second;
-                    auto &resourceMap = passMap[passName];
-                    for (auto &resourceNodePair : passNode.children)
+                    auto &resourceMap = passMap[passNode.type];
+                    for (auto &resourceNode : passNode.children)
                     {
-                        const String &resourceName = resourceNodePair.first;
-                        auto &resourceNode = resourceNodePair.second;
-                        ResourceHandle &resource = resourceMap[resourceName];
+                        ResourceHandle &resource = resourceMap[resourceNode.type];
                         if (resourceNode.attributes.count(L"file"))
                         {
                             String file(resourceNode.attributes[L"file"]);

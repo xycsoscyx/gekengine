@@ -211,29 +211,22 @@ namespace Gek
 
                         sendEvent(&Plugin::PopulationListener::onLoadBegin);
 
-                        Xml::Root worldNode = Xml::load(String(L"$root\\data\\scenes\\%v.xml", populationName), L"world");
+                        Xml::Node worldNode = Xml::load(String(L"$root\\data\\scenes\\%v.xml", populationName), L"world");
 
                         std::unordered_map<String, EntityDefinition> prefabsMap;
-                        for (auto &prefabNodePair : worldNode.children[L"prefabs"].children)
+                        for (auto &prefabNode : worldNode.getChild(L"prefabs").children)
                         {
-                            const String &prefabName = prefabNodePair.first;
-                            auto &prefabNode = prefabNodePair.second;
-                            EntityDefinition &entityDefinition = prefabsMap[prefabName];
-                            for(auto &componentNodePair : prefabNode.children)
+                            EntityDefinition &entityDefinition = prefabsMap[prefabNode.type];
+                            for(auto &componentNode : prefabNode.children)
                             {
-                                const String &componentName = componentNodePair.first;
-                                auto &componentNode = componentNodePair.second;
-
-                                auto &componentData = entityDefinition[componentName];
+                                auto &componentData = entityDefinition[componentNode.type];
                                 componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
                                 componentData.value = componentNode.text;
                             }
                         }
 
-                        for(auto &entityNodePair : worldNode.children[L"population"].children)
+                        for(auto &entityNode : worldNode.getChild(L"population").children)
                         {
-                            auto &entityNode = entityNodePair.second;
-
                             EntityDefinition entityDefinition;
                             auto prefabSearch = prefabsMap.find(entityNode.getAttribute(L"prefab"));
                             if (prefabSearch != prefabsMap.end())
@@ -241,11 +234,9 @@ namespace Gek
                                 entityDefinition = (*prefabSearch).second;
                             }
                             
-                            for (auto &componentNodePair : entityNode.children)
+                            for (auto &componentNode : entityNode.children)
                             {
-                                const String &componentName = componentNodePair.first;
-                                auto &componentNode = componentNodePair.second;
-                                auto &componentData = entityDefinition[componentName];
+                                auto &componentData = entityDefinition[componentNode.type];
                                 componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
                                 if (!componentNode.text.empty())
                                 {

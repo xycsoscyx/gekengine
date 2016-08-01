@@ -53,7 +53,7 @@ namespace Gek
             bool windowActive;
             bool engineRunning;
 
-            Xml::Root configuration;
+            Xml::Node configuration;
 
             Timer timer;
             double updateAccumulator;
@@ -83,6 +83,7 @@ namespace Gek
                 , window(window)
                 , windowActive(false)
                 , engineRunning(true)
+                , configuration(nullptr)
                 , updateAccumulator(0.0)
                 , consoleOpen(false)
                 , updateHandle(0)
@@ -127,7 +128,7 @@ namespace Gek
                 }
                 catch (const Exception &)
                 {
-                    configuration = Xml::Root(L"config");
+                    configuration = Xml::Node(L"config");
                 };
 
                 HRESULT resultValue = CoInitialize(nullptr);
@@ -186,12 +187,12 @@ namespace Gek
             }
 
             // Plugin::Core
-            Xml::Root &getConfiguration(void)
+            Xml::Node &getConfiguration(void)
             {
                 return configuration;
             }
 
-            Xml::Root const &getConfiguration(void) const
+            Xml::Node const &getConfiguration(void) const
             {
                 return configuration;
             }

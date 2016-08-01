@@ -9,13 +9,15 @@ namespace Gek
 {
     namespace Xml
     {
-        Node::Node(Source source)
+        Node::Node(const wchar_t *type, Source source)
             : source(source)
+            , type(type)
         {
         }
 
         Node::Node(Node &&node)
             : source(node.source)
+            , type(std::move(node.type))
             , text(std::move(node.text))
             , attributes(std::move(node.attributes))
             , children(std::move(node.children))
@@ -25,6 +27,7 @@ namespace Gek
         void Node::operator = (Node &&node)
         {
             const_cast<Source>(source) = node.source;
+            type = std::move(node.type);
             text = std::move(node.text);
             attributes = std::move(node.attributes);
             children = std::move(node.children);
@@ -48,29 +51,33 @@ namespace Gek
             }
         }
 
-        Node & Node::getChild(const wchar_t *name)
+        Node & Node::findChild(const wchar_t *type)
         {
-            auto childSearch = children.find(name);
-            GEK_CHECK_CONDITION(childSearch == children.end(), Exception, "Unable to find child node: %v", name);
-            return childSearch->second;
+            auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
+            {
+                return (node.type.compare(type));
+            });
+
+            GEK_THROW_EXCEPTION(Exception, "Unable to find child node: %v", type);
+            return *childSearch;
         }
 
-        Root::Root(const wchar_t *type, Source source)
-            : Node(source)
-            , type(type)
+        Node & Node::getChild(const wchar_t *type)
         {
-        }
+            auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
+            {
+                return (node.type.compare(type));
+            });
 
-        Root::Root(Root &&root)
-            : Node(std::move((Node &&)root))
-            , type(std::move(root.type))
-        {
-        }
-
-        void Root::operator = (Root &&root)
-        {
-            (Node &&)*this = std::move((Node &&)root);
-            type = std::move(root.type);
+            if (childSearch == children.end())
+            {
+                children.push_back(Node(type));
+                return children.back();
+            }
+            else
+            {
+                return *childSearch;
+            }
         }
 
         void getNodeData(xmlNodePtr node, Node &nodeData)
@@ -92,8 +99,8 @@ namespace Gek
                 if (child->type == XML_ELEMENT_NODE)
                 {
                     String childName(reinterpret_cast<const char *>(child->name));
-                    auto childData = nodeData.children.insert(std::make_pair(Node::Key(childName, index++), Node(Node::Source::File)));
-                    getNodeData(child, childData.first->second);
+                    nodeData.children.push_back(Node(childName, Node::Source::File));
+                    getNodeData(child, nodeData.children.back());
                 }
             }
 
@@ -124,7 +131,7 @@ namespace Gek
             }
         };
 
-        Root load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD)
+        Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD)
         {
             StringUTF8 fileNameUTF8(FileSystem::expandPath(fileName));
             XmlDocument document(xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
@@ -138,7 +145,7 @@ namespace Gek
                 GEK_CHECK_CONDITION(rootType.compare(expectedRootType) != 0, Exception, "XML root node not expected type: %v (%v)", rootType, expectedRootType);
             }
 
-            Root rootData(rootType, Node::Source::File);
+            Node rootData(rootType, Node::Source::File);
             getNodeData(root, rootData);
             return rootData;
         }
@@ -150,17 +157,15 @@ namespace Gek
                 xmlNewProp(node, BAD_CAST StringUTF8(attribute.first).c_str(), BAD_CAST StringUTF8(attribute.second).c_str());
             }
 
-            for (auto &childPair : nodeData.children)
+            for (auto &childNode : nodeData.children)
             {
-                StringUTF8 childName(childPair.first);
-                auto &childNode = childPair.second;
-                xmlNodePtr child = xmlNewChild(node, nullptr, BAD_CAST childName.c_str(), BAD_CAST StringUTF8(childNode.text).c_str());
-                GEK_CHECK_CONDITION(child == nullptr, Xml::Exception, "Unable to create new child node: %v)", childName);
+                xmlNodePtr child = xmlNewChild(node, nullptr, BAD_CAST StringUTF8(childNode.type).c_str(), BAD_CAST StringUTF8(childNode.text).c_str());
+                GEK_CHECK_CONDITION(child == nullptr, Xml::Exception, "Unable to create new child node: %v)", childNode.type);
                 setNodeData(child, childNode);
             }
         }
 
-        void save(Root &rootData, const wchar_t *fileName)
+        void save(Node &rootData, const wchar_t *fileName)
         {
             StringUTF8 expandedFileName(FileSystem::expandPath(fileName));
 
