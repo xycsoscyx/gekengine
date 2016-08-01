@@ -377,11 +377,26 @@ namespace Gek
 
             Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
-                auto load = [this, shaderName = String(shaderName)](ShaderHandle) -> Engine::ShaderPtr
+                auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
                     GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
                     if (!shaderName.empty() && shaderName.at(0) == L'$')
                     {
+                        shaderName = shaderName.subString(1);
+                        auto &shaderNode = core->getConfiguration().getChild(L"shaders").getChild(shaderName);
+                        if (shaderNode.text.empty())
+                        {
+                            if (shaderName.compareNoCase(L"standard") == 0)
+                            {
+                                shaderNode.text = L"CookTorrance";
+                            }
+                            else if (shaderName.compareNoCase(L"transparent") == 0)
+                            {
+                                shaderNode.text = L"WeightBlendedOIT";
+                            }
+                        }
+
+                        shaderName = shaderNode.text;
                     }
 
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName.c_str());
