@@ -260,23 +260,33 @@ namespace Gek
                         pass.width = device->getBackBuffer()->getWidth();
                         pass.height = device->getBackBuffer()->getHeight();
                     }
-                    else if (passNode.children.count(L"targets"))
+                    else
                     {
-                        pass.renderToScreen = false;
-                        pass.renderTargetsMap = loadChildMap(passNode, L"targets");
-                        if (pass.renderTargetsMap.empty())
+                        try
                         {
-                            pass.width = 0;
-                            pass.height = 0;
-                        }
-                        else
-                        {
-                            auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
-                            if (resourceSearch != resourceSizeMap.end())
+                            pass.renderTargetsMap = loadChildMap(passNode.findChild(L"targets"));
+                            pass.renderToScreen = false;
+                            if (pass.renderTargetsMap.empty())
                             {
-                                pass.width = resourceSearch->second.first;
-                                pass.height = resourceSearch->second.second;
+                                pass.width = 0;
+                                pass.height = 0;
                             }
+                            else
+                            {
+                                auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
+                                if (resourceSearch != resourceSizeMap.end())
+                                {
+                                    pass.width = resourceSearch->second.first;
+                                    pass.height = resourceSearch->second.second;
+                                }
+                            }
+                        }
+                        catch (const Xml::Exception &)
+                        {
+                            pass.renderToScreen = true;
+                            pass.width = device->getBackBuffer()->getWidth();
+                            pass.height = device->getBackBuffer()->getHeight();
+                            pass.renderTargetsMap.clear();
                         }
                     }
 

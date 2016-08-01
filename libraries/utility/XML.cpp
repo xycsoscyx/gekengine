@@ -55,10 +55,10 @@ namespace Gek
         {
             auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
             {
-                return (node.type.compare(type));
+                return (node.type.compare(type) == 0);
             });
 
-            GEK_THROW_EXCEPTION(Exception, "Unable to find child node: %v", type);
+            GEK_CHECK_CONDITION((childSearch == children.end()), Exception, "Unable to find child node: %v", type);
             return *childSearch;
         }
 
@@ -66,7 +66,7 @@ namespace Gek
         {
             auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
             {
-                return (node.type.compare(type));
+                return (node.type.compare(type) == 0);
             });
 
             if (childSearch == children.end())

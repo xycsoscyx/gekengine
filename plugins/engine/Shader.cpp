@@ -442,30 +442,34 @@ namespace Gek
                             pass.width = device->getBackBuffer()->getWidth();
                             pass.height = device->getBackBuffer()->getHeight();
                         }
-                        else if (passNode.children.count(L"targets"))
-                        {
-                            pass.renderToScreen = false;
-                            pass.renderTargetsMap = loadChildMap(passNode, L"targets");
-                            if (pass.renderTargetsMap.empty())
-                            {
-                                pass.width = 0;
-                                pass.height = 0;
-                            }
-                            else
-                            {
-                                auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
-                                if (resourceSearch != resourceSizeMap.end())
-                                {
-                                    pass.width = resourceSearch->second.first;
-                                    pass.height = resourceSearch->second.second;
-                                }
-                            }
-                        }
                         else
                         {
-                            pass.renderToScreen = true;
-                            pass.width = device->getBackBuffer()->getWidth();
-                            pass.height = device->getBackBuffer()->getHeight();
+                            try
+                            {
+                                pass.renderTargetsMap = loadChildMap(passNode.findChild(L"targets"));
+                                pass.renderToScreen = false;
+                                if (pass.renderTargetsMap.empty())
+                                {
+                                    pass.width = 0;
+                                    pass.height = 0;
+                                }
+                                else
+                                {
+                                    auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
+                                    if (resourceSearch != resourceSizeMap.end())
+                                    {
+                                        pass.width = resourceSearch->second.first;
+                                        pass.height = resourceSearch->second.second;
+                                    }
+                                }
+                            }
+                            catch (const Xml::Exception &)
+                            {
+                                pass.renderToScreen = true;
+                                pass.width = device->getBackBuffer()->getWidth();
+                                pass.height = device->getBackBuffer()->getHeight();
+                                pass.renderTargetsMap.clear();
+                            }
                         }
 
                         Video::DepthStateInformation depthState;
@@ -475,29 +479,38 @@ namespace Gek
                             depthState.enable = true;
                             pass.enableDepth = true;
 
-                            if (depthNode.children.count(L"clear"))
+                            try
                             {
+                                pass.clearDepthValue = depthNode.findChild(L"clear").text;
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
-                                pass.clearDepthValue = depthNode.getChild(L"clear").text;
                             }
+                            catch (const Xml::Exception &)
+                            {
+                            };
 
                             depthState.comparisonFunction = Video::getComparisonFunction(depthNode.getChild(L"comparison").text);
                             depthState.writeMask = Video::getDepthWriteMask(depthNode.getChild(L"writemask").text);
 
-                            if (depthNode.children.count(L"stencil"))
+                            try
                             {
-                                auto &stencilNode = depthNode.getChild(L"stencil");
+                                auto &stencilNode = depthNode.findChild(L"stencil");
                                 depthState.stencilEnable = true;
 
-                                if (stencilNode.children.count(L"clear"))
+                                try
                                 {
+                                    pass.clearStencilValue = stencilNode.findChild(L"clear").text;
                                     pass.clearDepthFlags |= Video::ClearFlags::Stencil;
-                                    pass.clearStencilValue = stencilNode.getChild(L"clear").text;
                                 }
+                                catch (const Xml::Exception &)
+                                {
+                                };
 
                                 loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
                                 loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
                             }
+                            catch (const Xml::Exception &)
+                            {
+                            };
                         }
                         catch (const Exception &)
                         {
@@ -589,11 +602,13 @@ namespace Gek
 
                         StringUTF8 resourceData;
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
-                        if (materialNode.children.count(passNode.type))
+                        try
                         {
+                            auto &namedMaterialNode = materialNode.findChild(passNode.type);
                             namedPassMap[passNode.type] = &pass;
+
                             std::unordered_map<String, Map> materialMap;
-                            for (auto &resourceNode : materialNode.getChild(passNode.type).children)
+                            for (auto &resourceNode : namedMaterialNode.children)
                             {
                                 if (resourceNode.attributes.count(L"name"))
                                 {
@@ -648,6 +663,9 @@ namespace Gek
                                 };
                             }
                         }
+                        catch (const Xml::Exception &)
+                        {
+                        };
 
                         for (auto &resourcePair : resourceAliasMap)
                         {

@@ -415,10 +415,7 @@ namespace Gek
             Video::RenderStateInformation renderState;
             renderState.fillMode = Video::getFillMode(renderNode.getChild(L"fillmode").text);
             renderState.cullMode = Video::getCullMode(renderNode.getChild(L"cullmode").text);
-            if (renderNode.children.count(L"frontcounterclockwise"))
-            {
-                renderState.frontCounterClockwise = renderNode.getChild(L"frontcounterclockwise").text;
-            }
+            renderState.frontCounterClockwise = renderNode.getChild(L"frontcounterclockwise").text;
 
             renderState.depthBias = renderNode.getChild(L"depthbias").text;
             renderState.depthBiasClamp = renderNode.getChild(L"depthbiasclamp").text;
@@ -431,9 +428,9 @@ namespace Gek
         __forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, Xml::Node &blendNode)
         {
             blendState.enable = blendNode.isFromFile();
-            if (blendNode.children.count(L"writemask"))
+            try
             {
-                String writeMask(blendNode.getChild(L"writemask").text.getLower());
+                String writeMask(blendNode.findChild(L"writemask").text.getLower());
                 if (writeMask.compare(L"all") == 0)
                 {
                     blendState.writeMask = Video::ColorMask::RGBA;
@@ -446,12 +443,11 @@ namespace Gek
                     if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
                     if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
                 }
-
             }
-            else
+            catch (const Xml::Exception &)
             {
                 blendState.writeMask = Video::ColorMask::RGBA;
-            }
+            };
 
             auto &colorNode = blendNode.getChild(L"color");
             blendState.colorSource = Video::getBlendSource(colorNode.getAttribute(L"source"));
