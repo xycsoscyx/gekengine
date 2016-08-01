@@ -380,6 +380,10 @@ namespace Gek
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) -> Engine::ShaderPtr
                 {
                     GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
+                    if (!shaderName.empty() && shaderName.at(0) == L'$')
+                    {
+                    }
+
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName.c_str());
                 };
 

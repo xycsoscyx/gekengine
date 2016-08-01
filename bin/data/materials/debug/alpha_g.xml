@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <material>
-    <shader name="transparent_simple">
+    <shader name="$transparent">
         <transparent>
             <albedo pattern="color" parameters="(0,1,0,0.5)" />
             <normal file="schulz/old_tiles/old_tiles_n" />

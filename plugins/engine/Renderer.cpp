@@ -122,7 +122,7 @@ namespace Gek
             else if (_wcsicmp(stencilOperation, L"increase_saturated") == 0) return StencilOperation::IncreaseSaturated;
             else if (_wcsicmp(stencilOperation, L"decrease") == 0) return StencilOperation::Decrease;
             else if (_wcsicmp(stencilOperation, L"decrease_saturated") == 0) return StencilOperation::DecreaseSaturated;
-            else return StencilOperation::Zero;
+            else return StencilOperation::Keep;
         }
 
         FillMode getFillMode(const wchar_t *fillMode)
@@ -159,7 +159,7 @@ namespace Gek
             else if (_wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return BlendSource::InverseSecondarySourceColor;
             else if (_wcsicmp(blendSource, L"secondary_source_alpha") == 0) return BlendSource::SecondarySourceAlpha;
             else if (_wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return BlendSource::InverseSecondarySourceAlpha;
-            else return BlendSource::Zero;
+            else return BlendSource::One;
         }
 
         BlendOperation getBlendOperation(const wchar_t *blendOperation)

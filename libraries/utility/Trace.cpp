@@ -57,7 +57,7 @@ namespace Gek
                 mutex = CreateMutex(nullptr, true, L"GEK_Trace_Mutex");
                 GEK_CHECK_CONDITION(mutex == nullptr, Gek::Exception, "Unable to create mutex: %v", GetLastError());
 
-                String fileName(FileSystem::expandPath(String(L"$root\\profile_%v.json", GetCurrentProcessId())));
+                String fileName(FileSystem::expandPath(String(L"$root\\profile_%v.json", 0)));
 
                 ::DeleteFile(fileName);
                 file = CreateFile(fileName, GENERIC_ALL, FILE_SHARE_WRITE, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);

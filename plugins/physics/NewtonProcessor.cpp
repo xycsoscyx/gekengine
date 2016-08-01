@@ -151,32 +151,26 @@ namespace Gek
 
                 try
                 {
-                    XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\materials\\%v.xml", surfaceName)));
-                    XmlNodePtr materialNode(document->getRoot(L"material"));
-                    XmlNodePtr surfaceNode(materialNode->firstChildElement(L"surface"));
-                    if (surfaceNode->isValid())
+                    Xml::Root materialNode;
+                    try
                     {
+                        materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName));
+                        GEK_CHECK_CONDITION(materialNode.type.compareNoCase(L"material") != 0, Exception, "Invalid material root node: %v", materialNode.type);
+                    }
+                    catch (...)
+                    {
+                    };
+
+                    if (materialNode.children.count(L"surface"))
+                    {
+                        auto &surfaceNode = materialNode.children[L"surface"];
+
                         Surface surface;
-                        surface.ghost = surfaceNode->getAttribute(L"ghost");
-                        if (surfaceNode->hasAttribute(L"staticfriction"))
-                        {
-                            surface.staticFriction = surfaceNode->getAttribute(L"staticfriction");
-                        }
-
-                        if (surfaceNode->hasAttribute(L"kineticfriction"))
-                        {
-                            surface.kineticFriction = surfaceNode->getAttribute(L"kineticfriction");
-                        }
-
-                        if (surfaceNode->hasAttribute(L"elasticity"))
-                        {
-                            surface.elasticity = surfaceNode->getAttribute(L"elasticity");
-                        }
-
-                        if (surfaceNode->hasAttribute(L"softness"))
-                        {
-                            surface.softness = surfaceNode->getAttribute(L"softness");
-                        }
+                        surface.ghost = surfaceNode.attribute(L"ghost", L"false");
+                        surface.staticFriction = surfaceNode.attribute(L"staticfriction", L"0.9");
+                        surface.kineticFriction = surfaceNode.attribute(L"kineticfriction", L"0.5");
+                        surface.elasticity = surfaceNode.attribute(L"elasticity", L"0.4");
+                        surface.softness = surfaceNode.attribute(L"softness", L"1.0");
 
                         surfaceIndex = surfaceList.size();
                         surfaceList.push_back(surface);

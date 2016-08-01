@@ -2,7 +2,7 @@
 <filter>
     <textures>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">R16_FLOAT</luminanceBuffer>
-        <finalBuffer bind="float3" source="standard" name="finalBuffer" />
+        <finalBuffer bind="float3" source="$standard" name="finalBuffer" />
     </textures>
 
     <buffers>

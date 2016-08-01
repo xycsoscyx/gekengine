@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <material>
-    <shader name="standard">
+    <shader name="$standard">
     <solid>
         <albedo flags="sRGB" file="$directory\$filename\$filename_a" />
         <normal file="$directory\$filename\$filename_n" />

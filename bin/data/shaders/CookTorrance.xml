@@ -1,0 +1,123 @@
+<?xml version="1.0"?>
+<shader priority="1">
+    <lighting>
+        <lightsPerPass>255</lightsPerPass>
+    </lighting>
+
+    <material>
+        <solid>
+            <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
+            <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
+            <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
+            <metalness bind="float" pattern="color" parameters=".5">Texture2D</metalness>
+        </solid>
+    </material>
+
+    <defines>
+        <tileSize>32</tileSize>
+        <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
+		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
+        <shadowRadius>2.0</shadowRadius>
+        <shadowStrength>0.3</shadowStrength>
+        <shadowTapCount integer="true">32</shadowTapCount>
+        <shadowSpiralCount>13</shadowSpiralCount>
+    </defines>
+
+    <depth>D32_FLOAT</depth>
+
+    <textures>
+        <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
+        <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
+        <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
+        <ambientBuffer bind="float" flags="target">R8_UNORM</ambientBuffer>
+        <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
+    </textures>
+
+    <buffers>
+        <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">R8_UINT</tileIndexList>
+    </buffers>
+
+    <blocks>
+        <block>
+            <pass mode="forward" name="solid">
+                <depthstates>
+                    <comparison>less_equal</comparison>
+                    <writemask>all</writemask>
+                    <clear>1</clear>
+                </depthstates>
+
+                <renderstates>
+                    <cullmode>back</cullmode>
+                </renderstates>
+
+                <targets>
+                    <albedoBuffer />
+                    <materialBuffer />
+                    <normalBuffer />
+                </targets>
+
+                <program entry="mainPixelProgram">Standard\StoreDeferred</program>
+            </pass>
+
+            <pass mode="deferred">
+                <resources>
+                    <normalBuffer />
+                    <depth />
+                </resources>
+
+                <targets>
+                    <ambientBuffer />
+                </targets>
+
+                <program entry="mainPixelProgram">Standard\AmbientCalculation</program>
+            </pass>
+
+            <pass mode="deferred">
+                <resources>
+                    <albedoBuffer />
+                    <ambientBuffer />
+                </resources>
+
+                <targets>
+                    <finalBuffer />
+                </targets>
+
+                <program entry="mainPixelProgram">Standard\AmbientLighting</program>
+            </pass>
+        </block>
+
+        <block lighting="true">
+            <pass mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1">
+                <resources>
+                    <depth />
+                </resources>
+
+                <unorderedaccess>
+                    <tileIndexList />
+                </unorderedaccess>
+
+                <program entry="mainComputeProgram">Standard\TiledLightCulling</program>
+            </pass>
+
+            <pass mode="deferred">
+                <blendstates unified="true">
+                    <color source="one" destination="one" operation="add" />
+                </blendstates>
+
+                <resources>
+                    <tileIndexList />
+                    <albedoBuffer />
+                    <materialBuffer />
+                    <normalBuffer />
+                    <depth />
+                </resources>
+
+                <targets>
+                    <finalBuffer />
+                </targets>
+
+                <program entry="mainPixelProgram">Standard\AccumulateLighting</program>
+            </pass>
+        </block>
+    </blocks>
+</shader>

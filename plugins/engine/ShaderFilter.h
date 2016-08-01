@@ -402,80 +402,73 @@ namespace Gek
             return (flags | Video::BufferFlags::Resource);
         }
 
-        __forceinline void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, XmlNodePtr &stencilNode)
+        __forceinline void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, Xml::Node &stencilNode)
         {
-            stencilState.passOperation = Video::getStencilOperation(stencilNode->firstChildElement(L"pass")->getText());
-            stencilState.failOperation = Video::getStencilOperation(stencilNode->firstChildElement(L"fail")->getText());
-            stencilState.depthFailOperation = Video::getStencilOperation(stencilNode->firstChildElement(L"depthfail")->getText());
-            stencilState.comparisonFunction = Video::getComparisonFunction(stencilNode->firstChildElement(L"comparison")->getText());
+            stencilState.passOperation = Video::getStencilOperation(stencilNode.children[L"pass"].text);
+            stencilState.failOperation = Video::getStencilOperation(stencilNode.children[L"fail"].text);
+            stencilState.depthFailOperation = Video::getStencilOperation(stencilNode.children[L"depthfail"].text);
+            stencilState.comparisonFunction = Video::getComparisonFunction(stencilNode.children[L"comparison"].text);
         }
 
-        __forceinline DepthStateHandle loadDepthState(Engine::Resources *resources, XmlNodePtr &depthNode, bool &enableDepth, uint32_t &clearFlags, float &clearDepthValue, uint32_t &clearStencilValue)
+        __forceinline DepthStateHandle loadDepthState(Engine::Resources *resources, Xml::Node &depthNode, bool &enableDepth, uint32_t &clearFlags, float &clearDepthValue, uint32_t &clearStencilValue)
         {
             Video::DepthStateInformation depthState;
             if (depthNode->isValid())
             {
                 enableDepth = true;
                 depthState.enable = true;
-                if (depthNode->hasChildElement(L"clear"))
+                if (depthNode.children.count(L"clear"))
                 {
                     clearFlags |= Video::ClearFlags::Depth;
-                    clearDepthValue = depthNode->firstChildElement(L"clear")->getText();
+                    clearDepthValue = depthNode.children[L"clear"].text;
                 }
 
-                depthState.comparisonFunction = Video::getComparisonFunction(depthNode->firstChildElement(L"comparison")->getText());
-                depthState.writeMask = Video::getDepthWriteMask(depthNode->firstChildElement(L"writemask")->getText());
+                depthState.comparisonFunction = Video::getComparisonFunction(depthNode.children[L"comparison"].text);
+                depthState.writeMask = Video::getDepthWriteMask(depthNode.children[L"writemask"].text);
 
-                if (depthNode->hasChildElement(L"stencil"))
+                if (depthNode.children.count(L"stencil"))
                 {
-                    XmlNodePtr stencilNode(depthNode->firstChildElement(L"stencil"));
+                    auto &stencilNode = depthNode.children[L"stencil"];
                     depthState.stencilEnable = true;
 
-                    if (stencilNode->hasChildElement(L"clear"))
+                    if (stencilNode.children.count(L"clear"))
                     {
                         clearFlags |= Video::ClearFlags::Stencil;
-                        clearStencilValue = stencilNode->firstChildElement(L"clear")->getText();
+                        clearStencilValue = stencilNode.children[L"clear"].text;
                     }
 
-                    if (stencilNode->hasChildElement(L"front"))
-                    {
-                        loadStencilState(depthState.stencilFrontState, stencilNode->firstChildElement(L"front"));
-                    }
-
-                    if (stencilNode->hasChildElement(L"back"))
-                    {
-                        loadStencilState(depthState.stencilBackState, stencilNode->firstChildElement(L"back"));
-                    }
+                    loadStencilState(depthState.stencilFrontState, stencilNode.children[L"front"]);
+                    loadStencilState(depthState.stencilBackState, stencilNode.children[L"back"]);
                 }
             }
 
             return resources->createDepthState(depthState);
         }
 
-        __forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, XmlNodePtr &renderNode)
+        __forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, Xml::Node &renderNode)
         {
             Video::RenderStateInformation renderState;
-            renderState.fillMode = Video::getFillMode(renderNode->firstChildElement(L"fillmode")->getText());
-            renderState.cullMode = Video::getCullMode(renderNode->firstChildElement(L"cullmode")->getText());
-            if (renderNode->hasChildElement(L"frontcounterclockwise"))
+            renderState.fillMode = Video::getFillMode(renderNode.children[L"fillmode"].text);
+            renderState.cullMode = Video::getCullMode(renderNode.children[L"cullmode"].text);
+            if (renderNode.children.count(L"frontcounterclockwise"))
             {
-                renderState.frontCounterClockwise = renderNode->firstChildElement(L"frontcounterclockwise")->getText();
+                renderState.frontCounterClockwise = renderNode.children[L"frontcounterclockwise"].text;
             }
 
-            renderState.depthBias = renderNode->firstChildElement(L"depthbias")->getText();
-            renderState.depthBiasClamp = renderNode->firstChildElement(L"depthbiasclamp")->getText();
-            renderState.slopeScaledDepthBias = renderNode->firstChildElement(L"slopescaleddepthbias")->getText();
-            renderState.depthClipEnable = renderNode->firstChildElement(L"depthclip")->getText();
-            renderState.multisampleEnable = renderNode->firstChildElement(L"multisample")->getText();
+            renderState.depthBias = renderNode.children[L"depthbias"].text;
+            renderState.depthBiasClamp = renderNode.children[L"depthbiasclamp"].text;
+            renderState.slopeScaledDepthBias = renderNode.children[L"slopescaleddepthbias"].text;
+            renderState.depthClipEnable = renderNode.children[L"depthclip"].text;
+            renderState.multisampleEnable = renderNode.children[L"multisample"].text;
             return resources->createRenderState(renderState);
         }
 
-        __forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, XmlNodePtr &blendNode)
+        __forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, Xml::Node &blendNode)
         {
             blendState.enable = blendNode->isValid();
-            if (blendNode->hasChildElement(L"writemask"))
+            if (blendNode.children.count(L"writemask"))
             {
-                String writeMask(blendNode->firstChildElement(L"writemask")->getText().getLower());
+                String writeMask(blendNode.children[L"writemask"].text.getLower());
                 if (writeMask.compare(L"all") == 0)
                 {
                     blendState.writeMask = Video::ColorMask::RGBA;
@@ -495,27 +488,21 @@ namespace Gek
                 blendState.writeMask = Video::ColorMask::RGBA;
             }
 
-            if (blendNode->hasChildElement(L"color"))
-            {
-                XmlNodePtr colorNode(blendNode->firstChildElement(L"color"));
-                blendState.colorSource = Video::getBlendSource(colorNode->getAttribute(L"source"));
-                blendState.colorDestination = Video::getBlendSource(colorNode->getAttribute(L"destination"));
-                blendState.colorOperation = Video::getBlendOperation(colorNode->getAttribute(L"operation"));
-            }
+            auto &colorNode = blendNode.children[L"color"];
+            blendState.colorSource = Video::getBlendSource(colorNode.attribute(L"source"));
+            blendState.colorDestination = Video::getBlendSource(colorNode.attribute(L"destination"));
+            blendState.colorOperation = Video::getBlendOperation(colorNode.attribute(L"operation"));
 
-            if (blendNode->hasChildElement(L"alpha"))
-            {
-                XmlNodePtr alphaNode(blendNode->firstChildElement(L"alpha"));
-                blendState.alphaSource = Video::getBlendSource(alphaNode->getAttribute(L"source"));
-                blendState.alphaDestination = Video::getBlendSource(alphaNode->getAttribute(L"destination"));
-                blendState.alphaOperation = Video::getBlendOperation(alphaNode->getAttribute(L"operation"));
-            }
+            auto &alphaNode = blendNode.children[L"alpha"];
+            blendState.alphaSource = Video::getBlendSource(alphaNode.attribute(L"source"));
+            blendState.alphaDestination = Video::getBlendSource(alphaNode.attribute(L"destination"));
+            blendState.alphaOperation = Video::getBlendOperation(alphaNode.attribute(L"operation"));
         }
 
-        __forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, XmlNodePtr &blendNode, std::unordered_map<String, String> &renderTargetsMap)
+        __forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, Xml::Node &blendNode, std::unordered_map<String, String> &renderTargetsMap)
         {
-            bool alphaToCoverage = blendNode->firstChildElement(L"alphatocoverage")->getText();
-            bool unifiedStates = blendNode->getAttribute(L"unified", L"true");
+            bool alphaToCoverage = blendNode.children[L"alphatocoverage"].text;
+            bool unifiedStates = blendNode.attribute(L"unified", L"true");
             if (unifiedStates)
             {
                 Video::UnifiedBlendStateInformation blendState;
@@ -530,8 +517,7 @@ namespace Gek
                 Video::BlendStateInformation *targetStatesList = blendState.targetStates;
                 for (auto &target : renderTargetsMap)
                 {
-                    XmlNodePtr targetNode(blendNode->firstChildElement(target.first));
-                    GEK_CHECK_CONDITION(!targetNode->isValid(), Exception, "Shader missing blend target parameters: %v", target.first);
+                    auto &targetNode = blendNode.children[target.first];
                     loadBlendTargetState(*targetStatesList++, targetNode);
                 }
 
@@ -540,22 +526,20 @@ namespace Gek
             }
         }
 
-        __forceinline std::unordered_map<String, String> loadChildMap(XmlNodePtr &parentNode)
+        __forceinline std::unordered_map<String, String> loadChildMap(Xml::Node &parentNode)
         {
             std::unordered_map<String, String> childMap;
-            for (XmlNodePtr childNode(parentNode->firstChildElement()); childNode->isValid(); childNode = childNode->nextSiblingElement())
+            for(auto &child : parentNode.children)
             {
-                String type(childNode->getType());
-                String text(childNode->getText());
-                childMap.insert(std::make_pair(type, text.empty() ? type : text));
+                childMap.insert(std::make_pair(child.first, child.second.text.empty() ? child.first : child.second.text));
             }
 
             return childMap;
         }
 
-        __forceinline std::unordered_map<String, String> loadChildMap(XmlNodePtr &rootNode, const wchar_t *childName)
+        __forceinline std::unordered_map<String, String> loadChildMap(Xml::Node &rootNode, const wchar_t *childName)
         {
-            return loadChildMap(rootNode->firstChildElement(childName));
+            return loadChildMap(rootNode.children[childName]);
         }
     }; // namespace Implementation
 }; // namespace Gek

@@ -101,17 +101,16 @@ namespace Gek
                 GEK_TRACE_SCOPE(GEK_PARAMETER(fileName));
                 GEK_REQUIRE(device);
 
-                XmlDocumentPtr document(XmlDocument::load(String(L"$root\\data\\visuals\\%v.xml", fileName)));
-                XmlNodePtr pluginNode(document->getRoot(L"plugin"));
+                Xml::Root pluginNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", fileName));
+                GEK_CHECK_CONDITION(pluginNode.type.compareNoCase(L"plugin") != 0, Visual::Exception, "Invalid visual root node: %v", pluginNode.type);
 
-                XmlNodePtr geometryNode(pluginNode->firstChildElement(L"geometry"));
-                if (geometryNode->isValid())
+                if (pluginNode.children.count(L"geometry"))
                 {
+                    auto &geometryNode = pluginNode.children[L"geometry"];
                     try
                     {
-                        XmlNodePtr programNode(geometryNode->firstChildElement(L"program"));
-                        String programFileName(programNode->getAttribute(L"source"));
-                        StringUTF8 programEntryPoint(programNode->getAttribute(L"entry"));
+                        String programFileName(geometryNode.text);
+                        StringUTF8 programEntryPoint(geometryNode.attribute(L"entry"));
                         geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
                     }
                     catch (const Gek::Exception &)
@@ -125,10 +124,10 @@ namespace Gek
 
                 std::list<StringUTF8> elementNameList;
                 std::vector<Video::InputElementInformation> elementList;
-                XmlNodePtr layoutNode(pluginNode->firstChildElement(L"layout"));
-                for (XmlNodePtr elementNode(layoutNode->firstChildElement()); elementNode->isValid(); elementNode = elementNode->nextSiblingElement())
+                auto &layoutNode = pluginNode.children[L"layout"];
+                for(auto &elementNode : layoutNode.children)
                 {
-                    String elementType(elementNode->getType());
+                    String elementType(elementNode.first);
                     if (elementType.compareNoCase(L"instanceIndex") == 0)
                     {
                         engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
@@ -141,25 +140,18 @@ namespace Gek
                     {
                         engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
                     }
-                    else if (elementNode->hasAttribute(L"format") &&
-                        elementNode->hasAttribute(L"name") &&
-                        elementNode->hasAttribute(L"index"))
+                    else
                     {
-                        StringUTF8 semanticName(elementNode->getAttribute(L"name"));
+                        StringUTF8 semanticName(elementNode.second.attribute(L"name"));
                         elementNameList.push_back(semanticName);
-
-                        String format(elementNode->getAttribute(L"format"));
 
                         Video::InputElementInformation element;
                         element.semanticName = elementNameList.back();
-                        element.semanticIndex = elementNode->getAttribute(L"index");
-                        if (elementNode->hasAttribute(L"slotclass") &&
-                            elementNode->hasAttribute(L"slotindex"))
-                        {
-                            element.slotClass = Video::getElementType(elementNode->getAttribute(L"slotclass"));
-                            element.slotIndex = elementNode->getAttribute(L"slotindex");
-                        }
+                        element.semanticIndex = elementNode.second.attribute(L"index");
+                        element.slotClass = Video::getElementType(elementNode.second.attribute(L"slotclass"));
+                        element.slotIndex = elementNode.second.attribute(L"slotindex");
 
+                        String format(elementNode.second.attribute(L"format"));
                         if (format.compareNoCase(L"float4x4") == 0)
                         {
                             engineData.format("    float4x4 %v : %v%v;\r\n", elementType, semanticName, element.semanticIndex);
@@ -188,10 +180,6 @@ namespace Gek
                             engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementType, semanticName, element.semanticIndex);
                             elementList.push_back(element);
                         }
-                    }
-                    else
-                    {
-                        GEK_THROW_EXCEPTION(Exception, "Invalid vertex layout element found");
                     }
                 }
 
@@ -231,9 +219,8 @@ namespace Gek
                     "}\r\n" \
                     "\r\n";
 
-                XmlNodePtr vertexNode(pluginNode->firstChildElement(L"vertex"));
-                XmlNodePtr programNode(vertexNode->firstChildElement(L"program"));
-                String programPath(String(L"$root\\data\\programs\\%v.hlsl", programNode->getText()));
+                auto &vertexNode = pluginNode.children[L"vertex"];
+                String programPath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
                 auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
                 {
                     if (_stricmp(resourceName, "GEKPlugin") == 0)

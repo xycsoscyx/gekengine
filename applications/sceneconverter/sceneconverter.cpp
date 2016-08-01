@@ -26,27 +26,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 fileNameOutput = argumentList[argumentIndex];
             }
         }
-
-        XmlDocumentPtr document(XmlDocument::load(fileNameInput));
-        XmlNodePtr worldNode(document->getRoot(L"world"));
-        XmlNodePtr populationNode(worldNode->firstChildElement(L"population"));
-        for (XmlNodePtr entityNode(populationNode->firstChildElement(L"entity")); entityNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
-        {
-            Plugin::Population::EntityDefinition entityDefinition;
-            for (XmlNodePtr componentNode(entityNode->firstChildElement()); componentNode->isValid(); entityNode = entityNode->nextSiblingElement(L"entity"))
-            {
-                Plugin::Population::ComponentDefinition &componentData = entityDefinition[componentNode->getType()];
-                componentNode->listAttributes([&componentData](const wchar_t *name, const wchar_t *value) -> void
-                {
-                    componentData.insert(std::make_pair(name, value));
-                });
-
-                if (!componentNode->getText().empty())
-                {
-                    componentData.value = componentNode->getText();
-                }
-            }
-        }
     }
     catch (const Exception &exception)
     {

@@ -9,47 +9,35 @@ namespace Gek
     namespace Xml
     {
         GEK_START_EXCEPTIONS();
+
+        struct Node
+        {
+            enum class Source
+            {
+                File = 0,
+                Code,
+            };
+
+            const Source source;
+
+            String text;
+            std::unordered_map<String, String> attributes;
+            std::unordered_map<String, Node> children;
+
+            Node(Source source = Source::Code);
+
+            String attribute(const wchar_t *name, const wchar_t *value = nullptr) const;
+            Node & child(const wchar_t *name);
+        };
+
+        struct Root : public Node
+        {
+            String type;
+
+            Root(Source source = Source::Code);
+        };
+
+        Root load(const wchar_t *fileName, bool validateDTD = false);
+        void save(Root &rootData, const wchar_t *fileName);
     }; // namespace Xml
-
-    struct XmlNode;
-    using XmlNodePtr = std::shared_ptr<XmlNode>;
-    struct XmlNode
-    {
-        virtual ~XmlNode(void) = default;
-
-        static XmlNodePtr create(const wchar_t *type);
-
-        virtual bool isValid(void) const = 0;
-
-        virtual String getType(void) const = 0;
-
-        virtual String getText(void) const = 0;
-        virtual void setText(const wchar_t *text) = 0;
-
-        virtual bool hasAttribute(const wchar_t *name) const = 0;
-        virtual String getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const = 0;
-        virtual void setAttribute(const wchar_t *name, const wchar_t *value) = 0;
-        virtual void listAttributes(std::function<void(const wchar_t *, const wchar_t *)> onAttribute) const = 0;
-
-        virtual bool hasChildElement(const wchar_t *type = nullptr) const = 0;
-        virtual XmlNodePtr firstChildElement(const wchar_t *type = nullptr, bool create = false) = 0;
-        virtual XmlNodePtr createChildElement(const wchar_t *type, const wchar_t *content = nullptr) = 0;
-
-        virtual bool hasSiblingElement(const wchar_t *type = nullptr) const = 0;
-        virtual XmlNodePtr nextSiblingElement(const wchar_t *type = nullptr) const = 0;
-    };
-
-    struct XmlDocument;
-    using XmlDocumentPtr = std::shared_ptr<XmlDocument>;
-    struct XmlDocument
-    {
-        XmlNode & operator = (const XmlNode &) = delete;
-
-        static XmlDocumentPtr create(const wchar_t *type);
-        static XmlDocumentPtr load(const wchar_t *fileName, bool validateDTD = false);
-
-        virtual void save(const wchar_t *fileName) = 0;;
-
-        virtual XmlNodePtr getRoot(const wchar_t *type) const = 0;
-    };
 }; // namespace Gek

@@ -26,23 +26,21 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
     case WM_INITDIALOG:
     {
-        XmlDocumentPtr document;
-        XmlNodePtr configurationNode;
+        Xml::Root configRoot;
         try
         {
-            document = XmlDocument::load(L"$root\\config.xml");
-            configurationNode = document->getRoot(L"config");
+            configRoot = Xml::load(L"$root\\config.xml");
+            GEK_CHECK_CONDITION(configRoot.type.compareNoCase(L"config") != 0, Exception, "Invalid configuration root node: %v", configRoot.type);
         }
         catch (const Exception &)
         {
-            document = XmlDocument::create(L"config");
-            configurationNode = document->getRoot(L"config");
+            configRoot.type = L"config";
         };
 
-        XmlNodePtr displayNode(configurationNode->firstChildElement(L"display"));
-        uint32_t width = displayNode->getAttribute(L"width", L"800");
-        uint32_t height = displayNode->getAttribute(L"height", L"600");
-        bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
+        auto &displayNode = configRoot.children[L"display"];
+        uint32_t width = displayNode.attribute(L"width", L"800");
+        uint32_t height = displayNode.attribute(L"height", L"600");
+        bool fullscreen = displayNode.attribute(L"fullscreen", L"false");
 
         uint32_t selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
@@ -93,24 +91,22 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             uint32_t selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
             auto &mode = *(DisplayMode *)SendDlgItemMessage(dialog, IDC_MODES, CB_GETITEMDATA, selectIndex, 0);
 
-            XmlDocumentPtr document;
-            XmlNodePtr configurationNode;
+            Xml::Root configRoot;
             try
             {
-                document = XmlDocument::load(L"$root\\config.xml");
-                configurationNode = document->getRoot(L"config");
+                configRoot = Xml::load(L"$root\\config.xml");
+                GEK_CHECK_CONDITION(configRoot.type.compareNoCase(L"config") != 0, Exception, "Invalid configuration root node: %v", configRoot.type);
             }
             catch (const Exception &)
             {
-                document = XmlDocument::create(L"config");
-                configurationNode = document->getRoot(L"config");
+                configRoot.type = L"config";
             };
 
-            XmlNodePtr displayNode(configurationNode->firstChildElement(L"display", true));
-            displayNode->setAttribute(L"width", String(L"%v", mode.width));
-            displayNode->setAttribute(L"height", String(L"%v", mode.height));
-            displayNode->setAttribute(L"fullscreen", SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
-            document->save(L"$root\\config.xml");
+            auto &displayNode = configRoot.children[L"display"];
+            displayNode.attributes[L"width"] = mode.width;
+            displayNode.attributes[L"height"] = mode.height;
+            displayNode.attributes[L"fullscreen"] = (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
+            Xml::save(configRoot, L"$root\\config.xml");
 
             EndDialog(dialog, IDOK);
             return TRUE;
@@ -193,23 +189,21 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             ATOM classAtom = RegisterClass(&windowClass);
             GEK_CHECK_CONDITION(!classAtom, Trace::Exception, "Unable to register window class: %v", GetLastError());
 
-            XmlDocumentPtr document;
-            XmlNodePtr configurationNode;
+            Xml::Root configRoot;
             try
             {
-                document = XmlDocument::load(L"$root\\config.xml");
-                configurationNode = document->getRoot(L"config");
+                configRoot = Xml::load(L"$root\\config.xml");
+                GEK_CHECK_CONDITION(configRoot.type.compareNoCase(L"config") != 0, Exception, "Invalid configuration root node: %v", configRoot.type);
             }
             catch (const Exception &)
             {
-                document = XmlDocument::create(L"config");
-                configurationNode = document->getRoot(L"config");
+                configRoot.type = L"config";
             };
 
-            XmlNodePtr displayNode(configurationNode->firstChildElement(L"display"));
-            uint32_t width = displayNode->getAttribute(L"width", L"800");
-            uint32_t height = displayNode->getAttribute(L"height", L"600");
-            bool fullscreen = displayNode->getAttribute(L"fullscreen", L"false");
+            auto &displayNode = configRoot.children[L"display"];
+            uint32_t width = displayNode.attribute(L"width", L"800");
+            uint32_t height = displayNode.attribute(L"height", L"600");
+            bool fullscreen = displayNode.attribute(L"fullscreen", L"false");
 
             RECT clientRect;
             clientRect.left = 0;
