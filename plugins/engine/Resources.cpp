@@ -267,8 +267,13 @@ namespace Gek
                             {
                                 load();
                             }
+                            catch (const std::exception &exception)
+                            {
+                                String stopper(L"");
+                            }
                             catch (...)
                             {
+                                String stopper(L"");
                             };
                         };
 
