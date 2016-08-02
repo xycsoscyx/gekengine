@@ -777,7 +777,7 @@ namespace Gek
                     }
                     catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
-                        return Filter::Pass::Mode::Exit;
+                        return Mode::None;
                     };
                 }
 

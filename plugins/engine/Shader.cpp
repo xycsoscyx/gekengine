@@ -911,8 +911,15 @@ namespace Gek
                     auto &passSearch = data->passMap.find(&pass);
                     if (passSearch != data->passMap.end())
                     {
-                        resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
-                        return true;
+                        try
+                        {
+                            resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
+                            return true;
+                        }
+                        catch (const Plugin::Resources::ResourceNotLoaded &)
+                        {
+                            return false;
+                        };
                     }
                 }
 
@@ -1194,7 +1201,7 @@ namespace Gek
                     }
                     catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
-                        return Shader::Pass::Mode::Exit;
+                        return Mode::None;
                     };
                 }
 
