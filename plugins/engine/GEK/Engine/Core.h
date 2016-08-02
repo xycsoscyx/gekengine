@@ -42,6 +42,7 @@ namespace Gek
             : public Broadcaster<CoreListener>
         {
             GEK_START_EXCEPTIONS();
+            GEK_ADD_EXCEPTION(InitializationFailed);
 
             virtual Xml::Node &getConfiguration(void) = 0;
             virtual Xml::Node const &getConfiguration(void) const = 0;

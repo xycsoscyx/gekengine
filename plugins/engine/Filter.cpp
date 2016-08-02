@@ -150,7 +150,10 @@ namespace Gek
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 for (auto &textureNode : filterNode.getChild(L"textures").children)
                 {
-                    GEK_CHECK_CONDITION(resourceMap.count(textureNode.type) > 0, Exception, "Resource name already specified: %v", textureNode.type);
+                    if (resourceMap.count(textureNode.type) > 0)
+                    {
+                        throw ResourceAlreadyListed();
+                    }
 
                     if (textureNode.attributes.count(L"source") && textureNode.attributes.count(L"name"))
                     {
@@ -182,7 +185,10 @@ namespace Gek
 
                 for (auto &bufferNode : filterNode.getChild(L"buffers").children)
                 {
-                    GEK_CHECK_CONDITION(resourceMap.count(bufferNode.type) > 0, Exception, "Resource name already specified: %v", bufferNode.type);
+                    if (resourceMap.count(bufferNode.type) > 0)
+                    {
+                        throw ResourceAlreadyListed();
+                    }
 
                     uint32_t size = evaluate(bufferNode.getAttribute(L"size"), true);
                     uint32_t flags = getBufferFlags(bufferNode.getAttribute(L"flags"));
@@ -232,7 +238,7 @@ namespace Gek
                     }
                     else
                     {
-                        GEK_THROW_EXCEPTION(Exception, "Invalid pass mode specified: %v", modeString);
+                        throw InvalidParameters();
                     }
 
                     for (auto &clearTargetNode : passNode.getChild(L"clear").children)
@@ -261,10 +267,10 @@ namespace Gek
                     }
                     else
                     {
-                        try
+                        if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
                         {
-                            pass.renderTargetsMap = loadChildMap(passNode.findChild(L"targets"));
                             pass.renderToScreen = false;
+                            pass.renderTargetsMap = loadChildMap(targetsNode);
                             if (pass.renderTargetsMap.empty())
                             {
                                 pass.width = 0;
@@ -279,8 +285,7 @@ namespace Gek
                                     pass.height = resourceSearch->second.second;
                                 }
                             }
-                        }
-                        catch (const Xml::Exception &)
+                        }))
                         {
                             pass.renderToScreen = true;
                             pass.width = device->getBackBuffer()->getWidth();
@@ -344,7 +349,10 @@ namespace Gek
                     for (auto &resourcePair : pass.renderTargetsMap)
                     {
                         auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                        GEK_CHECK_CONDITION(resourceSearch == resourceMappingsMap.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
+                        if (resourceSearch == resourceMappingsMap.end())
+                        {
+                            throw UnlistedRenderTarget();
+                        }
 
                         outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
                     }
@@ -508,54 +516,58 @@ namespace Gek
                         pass.dispatchDepth = evaluate(passNode.getAttribute(L"depth", L"1"), true);
                     }
 
-                    auto &programNode = passNode.findChild(L"program");
-                    String programName(programNode.text);
-                    StringUTF8 programEntryPoint(programNode.getAttribute(L"entry"));
-                    String programFilePath(L"$root\\data\\programs\\%v.hlsl", programName);
-                    auto onInclude = [engineData = move(engineData), programFilePath](const char *includeName, std::vector<uint8_t> &data) -> void
+                    if (!passNode.findChild(L"program", [&](auto &programNode) -> void
                     {
-                        if (_stricmp(includeName, "GEKEngine") == 0)
+                        StringUTF8 programEntryPoint(programNode.getAttribute(L"entry"));
+                        String programFilePath(L"$root\\data\\programs\\%v.hlsl", programNode.text);
+                        auto onInclude = [engineData = move(engineData), programFilePath](const char *includeName, std::vector<uint8_t> &data) -> void
                         {
-                            data.resize(engineData.size());
-                            memcpy(data.data(), engineData, data.size());
-                        }
-                        else
-                        {
-                            if (std::experimental::filesystem::is_regular_file(includeName))
+                            if (_stricmp(includeName, "GEKEngine") == 0)
                             {
-                                FileSystem::load(String(includeName), data);
+                                data.resize(engineData.size());
+                                memcpy(data.data(), engineData, data.size());
                             }
                             else
                             {
-                                FileSystem::Path filePath(programFilePath);
-                                filePath.remove_filename();
-                                filePath.append(includeName);
-                                filePath = FileSystem::expandPath(filePath);
-                                if (std::experimental::filesystem::is_regular_file(filePath))
+                                if (std::experimental::filesystem::is_regular_file(includeName))
                                 {
-                                    FileSystem::load(filePath, data);
+                                    FileSystem::load(String(includeName), data);
                                 }
                                 else
                                 {
-                                    FileSystem::Path rootPath(L"$root\\data\\programs");
-                                    rootPath.append(includeName);
-                                    rootPath = FileSystem::expandPath(rootPath);
-                                    if (std::experimental::filesystem::is_regular_file(rootPath))
+                                    FileSystem::Path filePath(programFilePath);
+                                    filePath.remove_filename();
+                                    filePath.append(includeName);
+                                    filePath = FileSystem::expandPath(filePath);
+                                    if (std::experimental::filesystem::is_regular_file(filePath))
                                     {
-                                        FileSystem::load(rootPath, data);
+                                        FileSystem::load(filePath, data);
+                                    }
+                                    else
+                                    {
+                                        FileSystem::Path rootPath(L"$root\\data\\programs");
+                                        rootPath.append(includeName);
+                                        rootPath = FileSystem::expandPath(rootPath);
+                                        if (std::experimental::filesystem::is_regular_file(rootPath))
+                                        {
+                                            FileSystem::load(rootPath, data);
+                                        }
                                     }
                                 }
                             }
-                        }
-                    };
+                        };
 
-                    if (pass.mode == Pass::Mode::Compute)
+                        if (pass.mode == Pass::Mode::Compute)
+                        {
+                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                        }
+                        else
+                        {
+                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                        }
+                    }))
                     {
-                        pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
-                    }
-                    else
-                    {
-                        pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                        throw MissingRequiredParameters();
                     }
                 }
             }
@@ -784,9 +796,7 @@ namespace Gek
             Pass::Iterator begin(Video::Device::Context *deviceContext, ResourceHandle cameraTarget)
             {
                 GEK_REQUIRE(deviceContext);
-
                 this->cameraTarget = cameraTarget;
-
                 return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(deviceContext, this, passList.begin(), passList.end()));
             }
         };

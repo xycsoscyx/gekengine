@@ -27,9 +27,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
         }
     }
-    catch (const Exception &exception)
+    catch (const std::exception &exception)
     {
-        printf("[error] Error (%d): %s", exception.at(), exception.what());
+        printf("[error] Exception occurred: %s", exception.what());
     }
     catch (...)
     {

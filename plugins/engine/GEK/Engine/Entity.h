@@ -10,6 +10,9 @@ namespace Gek
     {
         GEK_INTERFACE(Entity)
         {
+            GEK_START_EXCEPTIONS();
+            GEK_ADD_EXCEPTION(ComponentNotFound);
+
             virtual bool hasComponent(const std::type_index &type) = 0;
             virtual void *getComponent(const std::type_index &type) = 0;
 

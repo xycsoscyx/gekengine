@@ -51,19 +51,18 @@ namespace Gek
             }
         }
 
-        Node & Node::findChild(const wchar_t *type)
+        bool Node::findChild(const wchar_t *type, std::function<void(Node &)> onChildFound)
         {
-            auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
+            return (std::find_if(children.begin(), children.end(), [type, onChildFound](Node &node) -> bool
             {
-                return (node.type.compare(type) == 0);
-            });
+                if (node.type.compare(type) == 0)
+                {
+                    onChildFound(node);
+                    return true;
+                }
 
-            if (childSearch == children.end())
-            {
-                throw ChildNotFound();
-            }
-
-            return *childSearch;
+                return false;
+            }) == children.end() ? false : true);
         }
 
         Node & Node::getChild(const wchar_t *type)
@@ -147,7 +146,7 @@ namespace Gek
             xmlNodePtr root = xmlDocGetRootElement(document);
             if (root == nullptr)
             {
-                throw UnableToLoad();
+                throw InvalidRootNode();
             }
 
             String rootType(reinterpret_cast<const char *>(root->name));

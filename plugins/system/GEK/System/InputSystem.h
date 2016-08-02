@@ -9,6 +9,8 @@ namespace Gek
     namespace Input
     {
         GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(CreationFailed);
+        GEK_ADD_EXCEPTION(InitializationFailed);
 
         enum class Key : uint8_t
         {

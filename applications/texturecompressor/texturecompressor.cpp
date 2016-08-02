@@ -32,7 +32,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         {
             String argument(argumentList[argumentIndex]);
             std::vector<String> arguments(argument.split(L':'));
-            GEK_CHECK_CONDITION(arguments.empty(), Trace::Exception, "Invalid argument encountered: %v", argumentList[argumentIndex]);
+            if (arguments.empty())
+            {
+                throw std::exception("No arguments specified for command line parameter");
+            }
+
             if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];
@@ -43,7 +47,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else if (arguments[0].compareNoCase(L"-format") == 0)
             {
-                GEK_CHECK_CONDITION(arguments.size() != 2, Trace::Exception, "Invalid values specified for mode");
+                throw std::exception("Missing parameters for mode");
                 format = arguments[1];
             }
             else if (arguments[0].compareNoCase(L"-overwrite") == 0)
@@ -52,7 +56,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else if (arguments[0].compareNoCase(L"-sRGB") == 0)
             {
-                GEK_CHECK_CONDITION(arguments.size() != 2, Trace::Exception, "Invalid values specified for mode");
+                throw std::exception("Missing parameters for sRGB");
                 if (arguments[1].compareNoCase(L"in") == 0)
                 {
                     sRGBIn = true;
@@ -69,9 +73,20 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
         }
 
-        GEK_CHECK_CONDITION(format.empty(), Trace::Exception, "Compression format required");
-        GEK_CHECK_CONDITION(!fileNameInput.isFile(), Trace::Exception, "Input file not found: %v", fileNameInput.string());
-        GEK_CHECK_CONDITION(!overwrite && fileNameOutput.isFile(), Trace::Exception, "Output already exists (must specify overwrite): %v", fileNameOutput.string());
+        if (format.empty())
+        {
+            throw std::exception("Compression format required");
+        }
+
+        if (!fileNameInput.isFile())
+        {
+            throw std::exception("Input file not found");
+        }
+
+        if (!overwrite && fileNameOutput.isFile())
+        {
+            throw std::exception("Output already exists (must specify overwrite)");
+        }
 
         DeleteFile(fileNameOutput);
         printf("Compressing: -> %S\r\n", fileNameInput.c_str());
@@ -107,16 +122,27 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, nullptr, std::placeholders::_3);
         }
 
-        GEK_CHECK_CONDITION(!load, Trace::Exception, "Invalid file type: %v", extension);
+        if (!load)
+        {
+            throw std::exception("Unknown file tyupe listed for input");
+        }
 
         ::DirectX::ScratchImage image;
         HRESULT resultValue = load(fileData.data(), fileData.size(), image);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file, %v (error %v)", fileNameInput.string(), resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unable to load input file");
+        }
+
         printf(".loaded.");
 
         ::DirectX::ScratchImage mipMapChain;
         resultValue = ::DirectX::GenerateMipMaps(image.GetImages(), image.GetImageCount(), image.GetMetadata(), ::DirectX::TEX_FILTER_TRIANGLE, 0, mipMapChain);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to generate mipmap chain (error %v)", resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unabole to create mipmap chain");
+        }
+
         image = std::move(mipMapChain);
         printf(".mipmapped.");
 
@@ -141,7 +167,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else
             {
-                GEK_THROW_EXCEPTION(Trace::Exception, "Invalid format specified: %v", format);
+                throw std::exception("Invalid conversion format specified");
             }
         }
         else
@@ -176,7 +202,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else
             {
-                GEK_THROW_EXCEPTION(Trace::Exception, "Invalid format specified: %v", format);
+                throw std::exception("Invalid conversion format specified");
             }
         }
 
@@ -193,16 +219,24 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         ::DirectX::ScratchImage output;
         resultValue = ::DirectX::Compress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image (error %v)", resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unable to compress image");
+        }
+
         printf(".compressed.");
 
         resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameOutput);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to compress image (error %v)", resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unable to save image");
+        }
+
         printf(".done!\r\n");
     }
-    catch (const Exception &exception)
+    catch (const std::exception &exception)
     {
-        printf("\r\n[error] Error (%d): %s", exception.at(), exception.what());
+        printf("[error] Exception occurred: %s", exception.what());
     }
     catch (...)
     {

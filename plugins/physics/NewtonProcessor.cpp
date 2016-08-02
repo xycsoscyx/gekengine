@@ -148,22 +148,22 @@ namespace Gek
             else
             {
                 surfaceIndexMap[hash] = 0;
-
                 try
                 {
                     Xml::Node materialNode(Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName), L"material"));
-                    auto &surfaceNode = materialNode.findChild(L"surface");
+                    materialNode.findChild(L"surface", [&](auto &surfaceNode) -> void
+                    {
+                        Surface surface;
+                        surfaceNode.getValue(L"ghost", surface.ghost);
+                        surfaceNode.getValue(L"staticfriction", surface.staticFriction);
+                        surfaceNode.getValue(L"kineticfriction", surface.kineticFriction);
+                        surfaceNode.getValue(L"elasticity", surface.elasticity);
+                        surfaceNode.getValue(L"softness", surface.softness);
 
-                    Surface surface;
-                    surfaceNode.getValue(L"ghost", surface.ghost);
-                    surfaceNode.getValue(L"staticfriction", surface.staticFriction);
-                    surfaceNode.getValue(L"kineticfriction", surface.kineticFriction);
-                    surfaceNode.getValue(L"elasticity", surface.elasticity);
-                    surfaceNode.getValue(L"softness", surface.softness);
-
-                    surfaceIndex = surfaceList.size();
-                    surfaceList.push_back(surface);
-                    surfaceIndexMap[hash] = surfaceIndex;
+                        surfaceIndex = surfaceList.size();
+                        surfaceList.push_back(surface);
+                        surfaceIndexMap[hash] = surfaceIndex;
+                    });
                 }
                 catch (const Xml::Exception &)
                 {

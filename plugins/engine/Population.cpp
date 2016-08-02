@@ -53,7 +53,11 @@ namespace Gek
             void *getComponent(const std::type_index &type)
             {
                 auto componentSearch = componentsMap.find(type);
-                GEK_CHECK_CONDITION(componentSearch == componentsMap.end(), Exception, "Plugin::Entity doesn't contain component %v", type.name());
+                if (componentSearch == componentsMap.end())
+                {
+                    throw ComponentNotFound();
+                }
+
                 return (*componentSearch).second.second;
             }
         };
@@ -253,7 +257,7 @@ namespace Gek
                         worldTime = 0.0f;
                         sendEvent(&Plugin::PopulationListener::onLoadSucceeded);
                     }
-                    catch (const Gek::Exception &)
+                    catch (const std::exception &)
                     {
                         sendEvent(&Plugin::PopulationListener::onLoadFailed);
                     };

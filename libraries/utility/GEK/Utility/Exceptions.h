@@ -3,10 +3,9 @@
 #include "GEK\Utility\String.h"
 #include <future>
 
-#define GEK_START_EXCEPTIONS()                                  class Exception : public std::exception { public: using std::exception::exception; };
-#define GEK_ADD_EXCEPTION(TYPE)                                 class TYPE : public Exception { public: using Exception::Exception; };
-
-#define GEK_REQUIRE(CHECK)                                      do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
+#define GEK_START_EXCEPTIONS()      struct Exception : public std::exception { Exception(const char *type) : std::exception(type) { } };
+#define GEK_ADD_EXCEPTION(TYPE)     struct TYPE : public Exception { TYPE(void) : Exception(#TYPE) { } };
+#define GEK_REQUIRE(CHECK)          do { if ((CHECK) == false) { _ASSERTE(CHECK); exit(-1); } } while (false)
 
 namespace Gek
 {

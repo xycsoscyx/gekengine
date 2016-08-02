@@ -230,12 +230,16 @@ namespace Gek
                 };
 
                 StringUTF8 lightingData;
-                try
+                shaderNode.findChild(L"lighting", [&](auto &lightingNode) -> void
                 {
-                    auto &lightingNode = shaderNode.findChild(L"lighting");
-                    lightsPerPass = lightingNode.findChild(L"lightsPerPass").text;
-                    if (lightsPerPass > 0)
+                    if (!lightingNode.findChild(L"lightsPerPass", [&](auto &lightsPerPassNode) -> void
                     {
+                        lightsPerPass = lightsPerPassNode.text;
+                        if (lightsPerPass <= 0)
+                        {
+                            throw InvalidParameters();
+                        }
+
                         lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
                         lightConstantBuffer->setName(String(L"%v:lightConstantBuffer", shaderName));
 
@@ -277,11 +281,11 @@ namespace Gek
                             "    static const uint lightsPerPass = %v;\r\n" \
                             "};\r\n" \
                             "\r\n", lightsPerPass);
+                    }))
+                    {
+                        throw MissingRequiredParameters();
                     }
-                }
-                catch (const Xml::Exception &)
-                {
-                };
+                });
 
                 for (auto &defineNode : shaderNode.getChild(L"defines").children)
                 {
@@ -291,35 +295,38 @@ namespace Gek
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
                 std::unordered_map<String, String> resourceStructuresMap;
 
-                try
+                shaderNode.findChild(L"depth", [&](auto &depthNode) -> void
                 {
-                    auto &depthNode = shaderNode.findChild(L"depth");
                     if (depthNode.attributes.count(L"source"))
                     {
                         depthBuffer = resources->getResourceHandle(String(L"depth:%v:resource", depthNode.attributes[L"source"]));
                     }
-                    else
+                    if (!depthNode.text.empty())
                     {
-                        String text(depthNode.text);
-                        GEK_CHECK_CONDITION(text.empty(), Exception, "No format specified for depth buffer");
-
-                        Video::Format format = Video::getFormat(text);
-                        GEK_CHECK_CONDITION(format == Video::Format::Unknown, Exception, "Invalid format specified for depth buffer: %v", text);
+                        Video::Format format = Video::getFormat(depthNode.text);
+                        if (format == Video::Format::Unknown)
+                        {
+                            throw InvalidDepthParameters();
+                        }
 
                         depthBuffer = resources->createTexture(String(L"depth:%v:resource", shaderName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource);
+                    }
+                    else
+                    {
+                        throw InvalidDepthParameters();
                     }
 
                     resourceMappingsMap[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
                     resourceMap[L"depth"] = depthBuffer;
-                }
-                catch (const Xml::Exception &)
-                {
-                };
+                });
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 for(auto &textureNode : shaderNode.getChild(L"textures").children)
                 {
-                    GEK_CHECK_CONDITION(resourceMap.count(textureNode.type) > 0, Exception, "Resource name already specified: %v", textureNode.type);
+                    if (resourceMap.count(textureNode.type) > 0)
+                    {
+                        throw ResourceAlreadyListed();
+                    }
 
                     if (textureNode.attributes.count(L"source") && textureNode.attributes.count(L"name"))
                     {
@@ -351,7 +358,10 @@ namespace Gek
 
                 for (auto &bufferNode : shaderNode.getChild(L"buffers").children)
                 {
-                    GEK_CHECK_CONDITION(resourceMap.count(bufferNode.type) > 0, Exception, "Resource name already specified: %v", bufferNode.type);
+                    if (resourceMap.count(bufferNode.type) > 0)
+                    {
+                        throw ResourceAlreadyListed();
+                    }
 
                     uint32_t size = evaluate(bufferNode.getAttribute(L"size"), true);
                     uint32_t flags = getBufferFlags(bufferNode.getAttribute(L"flags"));
@@ -392,7 +402,10 @@ namespace Gek
                     BlockData &block = blockList.back();
 
                     block.lighting = blockNode.getAttribute(L"lighting");
-                    GEK_CHECK_CONDITION(block.lighting && lightsPerPass <= 0, Exception, "Lighting enabled without any lights per pass");
+                    if(block.lighting && lightsPerPass == 0)
+                    {
+                        throw InvalidParameters();
+                    }
 
                     for (auto &clearTargetNode : blockNode.getChild(L"clear").children)
                     {
@@ -432,7 +445,7 @@ namespace Gek
                         }
                         else
                         {
-                            GEK_THROW_EXCEPTION(Exception, "Invalid pass mode specified: %v", modeString);
+                            throw InvalidParameters();
                         }
 
                         if (pass.mode == Pass::Mode::Compute)
@@ -443,10 +456,10 @@ namespace Gek
                         }
                         else
                         {
-                            try
+                            if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
                             {
-                                pass.renderTargetsMap = loadChildMap(passNode.findChild(L"targets"));
                                 pass.renderToScreen = false;
+                                pass.renderTargetsMap = loadChildMap(targetsNode);
                                 if (pass.renderTargetsMap.empty())
                                 {
                                     pass.width = 0;
@@ -461,8 +474,7 @@ namespace Gek
                                         pass.height = resourceSearch->second.second;
                                     }
                                 }
-                            }
-                            catch (const Xml::Exception &)
+                            }))
                             {
                                 pass.renderToScreen = true;
                                 pass.width = device->getBackBuffer()->getWidth();
@@ -472,48 +484,33 @@ namespace Gek
                         }
 
                         Video::DepthStateInformation depthState;
-                        try
+                        passNode.findChild(L"depthstates", [&](auto &depthNode) -> void
                         {
-                            auto &depthNode = passNode.findChild(L"depthstates");
                             depthState.enable = true;
                             pass.enableDepth = true;
 
-                            try
+                            depthNode.findChild(L"clear", [&](auto &clearNode) -> void
                             {
-                                pass.clearDepthValue = depthNode.findChild(L"clear").text;
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
-                            }
-                            catch (const Xml::Exception &)
-                            {
-                            };
+                                pass.clearDepthValue = clearNode.text;
+                            });
 
                             depthState.comparisonFunction = Video::getComparisonFunction(depthNode.getChild(L"comparison").text);
                             depthState.writeMask = Video::getDepthWriteMask(depthNode.getChild(L"writemask").text);
 
-                            try
+                            depthNode.findChild(L"stencil", [&](auto &stencilNode) -> void
                             {
-                                auto &stencilNode = depthNode.findChild(L"stencil");
                                 depthState.stencilEnable = true;
-
-                                try
+                                stencilNode.findChild(L"clear", [&](auto &clearNode) -> void
                                 {
-                                    pass.clearStencilValue = stencilNode.findChild(L"clear").text;
                                     pass.clearDepthFlags |= Video::ClearFlags::Stencil;
-                                }
-                                catch (const Xml::Exception &)
-                                {
-                                };
+                                    pass.clearStencilValue = clearNode.text;
+                                });
 
                                 loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
                                 loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
-                            }
-                            catch (const Xml::Exception &)
-                            {
-                            };
-                        }
-                        catch (const Xml::Exception &)
-                        {
-                        };
+                            });
+                        });
 
                         pass.depthState = resources->createDepthState(depthState);
                         pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstates"));
@@ -578,7 +575,10 @@ namespace Gek
                         for (auto &resourcePair : pass.renderTargetsMap)
                         {
                             auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                            GEK_CHECK_CONDITION(resourceSearch == resourceMappingsMap.end(), Exception, "Unknown render target listed in pass: %v", resourcePair.first);
+                            if (resourceSearch == resourceMappingsMap.end())
+                            {
+                                throw UnlistedRenderTarget();
+                            }
 
                             outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
                         }
@@ -595,9 +595,8 @@ namespace Gek
 
                         StringUTF8 resourceData;
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
-                        try
+                        materialNode.findChild(passNode.type, [&](auto &namedMaterialNode) -> void
                         {
-                            auto &namedMaterialNode = materialNode.findChild(passNode.type);
                             namedPassMap[passNode.type] = &pass;
 
                             std::unordered_map<String, Map> materialMap;
@@ -622,7 +621,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        GEK_THROW_EXCEPTION(Exception, "Unknown resource type found in material data: %v", resourceNode.type);
+                                        throw UnknownMaterialType();
                                     }
                                 }
                             }
@@ -655,10 +654,7 @@ namespace Gek
                                     break;
                                 };
                             }
-                        }
-                        catch (const Xml::Exception &)
-                        {
-                        };
+                        });
 
                         for (auto &resourcePair : resourceAliasMap)
                         {
@@ -807,54 +803,58 @@ namespace Gek
                             pass.dispatchDepth = evaluate(passNode.getAttribute(L"depth", L"1"), true);
                         }
 
-                        auto &programNode = passNode.findChild(L"program");
-                        String programName(programNode.text);
-                        StringUTF8 programEntryPoint(programNode.getAttribute(L"entry"));
-                        String programFilePath(L"$root\\data\\programs\\%v.hlsl", programName);
-                        auto onInclude = [engineData = move(engineData), programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
+                        if (!passNode.findChild(L"program", [&](auto &programNode) -> void
                         {
-                            if (_stricmp(resourceName, "GEKEngine") == 0)
+                            StringUTF8 programEntryPoint(programNode.getAttribute(L"entry"));
+                            String programFilePath(L"$root\\data\\programs\\%v.hlsl", programNode.text);
+                            auto onInclude = [engineData = move(engineData), programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
                             {
-                                data.resize(engineData.size());
-                                memcpy(data.data(), engineData, data.size());
-                            }
-                            else
-                            {
-                                if (std::experimental::filesystem::is_regular_file(resourceName))
+                                if (_stricmp(resourceName, "GEKEngine") == 0)
                                 {
-                                    FileSystem::load(String(resourceName), data);
+                                    data.resize(engineData.size());
+                                    memcpy(data.data(), engineData, data.size());
                                 }
                                 else
                                 {
-                                    FileSystem::Path filePath(programFilePath);
-                                    filePath.remove_filename();
-                                    filePath.append(resourceName);
-                                    filePath = FileSystem::expandPath(filePath);
-                                    if (std::experimental::filesystem::is_regular_file(filePath))
+                                    if (std::experimental::filesystem::is_regular_file(resourceName))
                                     {
-                                        FileSystem::load(filePath, data);
+                                        FileSystem::load(String(resourceName), data);
                                     }
                                     else
                                     {
-                                        FileSystem::Path rootPath(L"$root\\data\\programs");
-                                        rootPath.append(resourceName);
-                                        rootPath = FileSystem::expandPath(rootPath);
-                                        if (std::experimental::filesystem::is_regular_file(rootPath))
+                                        FileSystem::Path filePath(programFilePath);
+                                        filePath.remove_filename();
+                                        filePath.append(resourceName);
+                                        filePath = FileSystem::expandPath(filePath);
+                                        if (std::experimental::filesystem::is_regular_file(filePath))
                                         {
-                                            FileSystem::load(rootPath, data);
+                                            FileSystem::load(filePath, data);
+                                        }
+                                        else
+                                        {
+                                            FileSystem::Path rootPath(L"$root\\data\\programs");
+                                            rootPath.append(resourceName);
+                                            rootPath = FileSystem::expandPath(rootPath);
+                                            if (std::experimental::filesystem::is_regular_file(rootPath))
+                                            {
+                                                FileSystem::load(rootPath, data);
+                                            }
                                         }
                                     }
                                 }
-                            }
-                        };
+                            };
 
-                        if (pass.mode == Pass::Mode::Compute)
+                            if (pass.mode == Pass::Mode::Compute)
+                            {
+                                pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            }
+                            else
+                            {
+                                pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            }
+                        }))
                         {
-                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
-                        }
-                        else
-                        {
-                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            throw MissingRequiredParameters();
                         }
                     }
                 }

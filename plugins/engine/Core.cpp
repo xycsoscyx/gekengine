@@ -131,7 +131,10 @@ namespace Gek
                 };
 
                 HRESULT resultValue = CoInitialize(nullptr);
-                GEK_CHECK_CONDITION(FAILED(resultValue), Exception, "Unable to initialize COM (error %v)", resultValue);
+                if (FAILED(resultValue))
+                {
+                    throw InitializationFailed();
+                }
 
                 device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, nullptr);
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
@@ -148,7 +151,10 @@ namespace Gek
                 IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
 
                 BOOL success = SciterCreateOnDirectXWindow(window, dxSwapChain);
-                GEK_CHECK_CONDITION(!success, Exception, "Unable to initialize Sciter system");
+                if (!success)
+                {
+                    throw InitializationFailed();
+                }
 
                 SciterSetupDebugOutput(window, this, sciterDebugOutput);
                 SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
@@ -156,7 +162,10 @@ namespace Gek
                 SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
 
                 success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
-                GEK_CHECK_CONDITION(!success, Exception, "Unable to load system UI HTML");
+                if (!success)
+                {
+                    throw InitializationFailed();
+                }
 
                 root = sciter::dom::element::root_element(window);
                 background = root.find_first("section#back-layer");

@@ -101,16 +101,12 @@ namespace Gek
                 GEK_REQUIRE(device);
 
                 Xml::Node visualNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", visualName), L"visual");
-                try
+                visualNode.findChild(L"geometry", [&](auto &geometryNode) -> void
                 {
-                    auto &geometryNode = visualNode.findChild(L"geometry");
                     String programFileName(geometryNode.text);
                     StringUTF8 programEntryPoint(geometryNode.attributes[L"entry"]);
                     geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
-                }
-                catch (const Gek::Exception &)
-                {
-                };
+                });
 
                 StringUTF8 engineData =
                     "struct PluginVertex\r\n" \
@@ -118,67 +114,69 @@ namespace Gek
 
                 std::list<StringUTF8> elementNameList;
                 std::vector<Video::InputElementInformation> elementList;
-                auto &layoutNode = visualNode.findChild(L"layout");
-                for(auto &elementNode : layoutNode.children)
+                visualNode.findChild(L"layout", [&](auto &layoutNode) -> void
                 {
-                    if (elementNode.type.compareNoCase(L"instanceIndex") == 0)
+                    for (auto &elementNode : layoutNode.children)
                     {
-                        engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
-                    }
-                    else if (elementNode.type.compareNoCase(L"vertexIndex") == 0)
-                    {
-                        engineData += ("    uint vertexIndex : SV_VertexId;\r\n");
-                    }
-                    else if (elementNode.type.compareNoCase(L"isFrontFace") == 0)
-                    {
-                        engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
-                    }
-                    else if(elementNode.attributes.count(L"name") && elementNode.attributes.count(L"format"))
-                    {
-                        StringUTF8 semanticName(elementNode.attributes[L"name"]);
-                        elementNameList.push_back(semanticName);
-
-                        Video::InputElementInformation element;
-                        element.semanticName = elementNameList.back();
-                        element.semanticIndex = elementNode.attributes[L"index"];
-                        element.slotClass = Video::getElementType(elementNode.attributes[L"slotclass"]);
-                        element.slotIndex = elementNode.attributes[L"slotindex"];
-
-                        String format(elementNode.attributes[L"format"]);
-                        if (format.compareNoCase(L"float4x4") == 0)
+                        if (elementNode.type.compareNoCase(L"instanceIndex") == 0)
                         {
-                            engineData.format("    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
-                            element.format = Video::Format::R32G32B32A32_FLOAT;
-                            elementList.push_back(element);
-                            element.semanticIndex++;
-                            elementList.push_back(element);
-                            element.semanticIndex++;
-                            elementList.push_back(element);
-                            element.semanticIndex++;
-                            elementList.push_back(element);
+                            engineData += ("    uint instanceIndex : SV_InstanceId;\r\n");
                         }
-                        else if (format.compareNoCase(L"float4x3") == 0)
+                        else if (elementNode.type.compareNoCase(L"vertexIndex") == 0)
                         {
-                            engineData.format("    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
-                            element.format = Video::Format::R32G32B32A32_FLOAT;
-                            elementList.push_back(element);
-                            element.semanticIndex++;
-                            elementList.push_back(element);
-                            element.semanticIndex++;
-                            elementList.push_back(element);
+                            engineData += ("    uint vertexIndex : SV_VertexId;\r\n");
+                        }
+                        else if (elementNode.type.compareNoCase(L"isFrontFace") == 0)
+                        {
+                            engineData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
+                        }
+                        else if (elementNode.attributes.count(L"name") && elementNode.attributes.count(L"format"))
+                        {
+                            StringUTF8 semanticName(elementNode.attributes[L"name"]);
+                            elementNameList.push_back(semanticName);
+
+                            Video::InputElementInformation element;
+                            element.semanticName = elementNameList.back();
+                            element.semanticIndex = elementNode.attributes[L"index"];
+                            element.slotClass = Video::getElementType(elementNode.attributes[L"slotclass"]);
+                            element.slotIndex = elementNode.attributes[L"slotindex"];
+
+                            String format(elementNode.attributes[L"format"]);
+                            if (format.compareNoCase(L"float4x4") == 0)
+                            {
+                                engineData.format("    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
+                                element.format = Video::Format::R32G32B32A32_FLOAT;
+                                elementList.push_back(element);
+                                element.semanticIndex++;
+                                elementList.push_back(element);
+                                element.semanticIndex++;
+                                elementList.push_back(element);
+                                element.semanticIndex++;
+                                elementList.push_back(element);
+                            }
+                            else if (format.compareNoCase(L"float4x3") == 0)
+                            {
+                                engineData.format("    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
+                                element.format = Video::Format::R32G32B32A32_FLOAT;
+                                elementList.push_back(element);
+                                element.semanticIndex++;
+                                elementList.push_back(element);
+                                element.semanticIndex++;
+                                elementList.push_back(element);
+                            }
+                            else
+                            {
+                                element.format = Video::getFormat(format);
+                                engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode.type, semanticName, element.semanticIndex);
+                                elementList.push_back(element);
+                            }
                         }
                         else
                         {
-                            element.format = Video::getFormat(format);
-                            engineData.format("    %v %v : %v%v;\r\n", getFormatType(element.format), elementNode.type, semanticName, element.semanticIndex);
-                            elementList.push_back(element);
+                            throw InvalidElementType();
                         }
                     }
-                    else
-                    {
-                        GEK_THROW_EXCEPTION(Visual::Exception, "Visual element list with unknown element type");
-                    }
-                }
+                });
 
                 engineData +=
                     "};\r\n" \
@@ -216,46 +214,51 @@ namespace Gek
                     "}\r\n" \
                     "\r\n";
 
-                auto &vertexNode = visualNode.findChild(L"vertex");
-                String programPath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
-                auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
+                if (!visualNode.findChild(L"vertex", [&](auto &vertexNode) -> void
                 {
-                    if (_stricmp(resourceName, "GEKPlugin") == 0)
+                    String programPath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
+                    auto onInclude = [programPath](const char *resourceName, std::vector<uint8_t> &data) -> void
                     {
-                        FileSystem::load(programPath, data);
-                    }
-                    else
-                    {
-                        FileSystem::Path resourcePath(resourceName);
-                        if (resourcePath.isFile())
+                        if (_stricmp(resourceName, "GEKPlugin") == 0)
                         {
-                            FileSystem::load(resourcePath, data);
+                            FileSystem::load(programPath, data);
                         }
                         else
                         {
-                            FileSystem::Path filePath(programPath);
-                            filePath.remove_filename();
-                            filePath.append(resourceName);
-                            filePath = FileSystem::expandPath(filePath);
-                            if (filePath.isFile())
+                            FileSystem::Path resourcePath(resourceName);
+                            if (resourcePath.isFile())
                             {
-                                FileSystem::load(filePath, data);
+                                FileSystem::load(resourcePath, data);
                             }
                             else
                             {
-                                FileSystem::Path rootPath(L"$root\\data\\programs");
-                                rootPath.append(resourceName);
-                                rootPath = FileSystem::expandPath(rootPath);
-                                if (rootPath.isFile())
+                                FileSystem::Path filePath(programPath);
+                                filePath.remove_filename();
+                                filePath.append(resourceName);
+                                filePath = FileSystem::expandPath(filePath);
+                                if (filePath.isFile())
                                 {
-                                    FileSystem::load(rootPath, data);
+                                    FileSystem::load(filePath, data);
+                                }
+                                else
+                                {
+                                    FileSystem::Path rootPath(L"$root\\data\\programs");
+                                    rootPath.append(resourceName);
+                                    rootPath = FileSystem::expandPath(rootPath);
+                                    if (rootPath.isFile())
+                                    {
+                                        FileSystem::load(rootPath, data);
+                                    }
                                 }
                             }
                         }
-                    }
-                };
+                    };
 
-                vertexProgram = device->compileVertexProgram(engineData, "mainVertexProgram", elementList, onInclude);
+                    vertexProgram = device->compileVertexProgram(engineData, "mainVertexProgram", elementList, onInclude);
+                }))
+                {
+                    throw MissingRequiredParameters();
+                }
             }
 
             // Plugin

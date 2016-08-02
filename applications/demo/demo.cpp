@@ -158,7 +158,6 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
-        Trace::initialize();
         if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
         {
             std::vector<String> searchPathList;
@@ -185,7 +184,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             windowClass.lpszMenuName = nullptr;
             windowClass.lpszClassName = L"GEKvX_Engine_Demo";
             ATOM classAtom = RegisterClass(&windowClass);
-            GEK_CHECK_CONDITION(!classAtom, Trace::Exception, "Unable to register window class: %v", GetLastError());
+            if (!classAtom)
+            {
+                throw std::exception("Unable to register window class");
+            }
 
             Xml::Node configRoot(nullptr);
             try
@@ -213,7 +215,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
             int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
             HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Application - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
-            GEK_CHECK_CONDITION(window == nullptr, Trace::Exception, "Unable to create window: %v", GetLastError());
+            if (window == nullptr)
+            {
+                throw std::exception("Unable to create window");
+            }
 
             ApplicationPtr application(context->createClass<Application>(L"Engine::Core", window));
 
@@ -240,35 +245,13 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             SetWindowLongPtr(window, GWLP_USERDATA, 0);
         }
     }
-    catch (const Exception &exception)
-    {
-        std::string message;
-        message = exception.what();
-        message += "\r\n";
-        message += exception.in();
-        message += ": ";
-        message += exception.at();
-
-        MessageBoxA(nullptr, message.c_str(), "GEK Runtime Error", MB_OK | MB_ICONERROR);
-    }
     catch (const std::exception &exception)
     {
-        std::string message;
-        message = exception.what();
-
-        MessageBoxA(nullptr, message.c_str(), "STL Runtime Error", MB_OK | MB_ICONERROR);
+        MessageBoxA(nullptr, exception.what(), "Unhandled Exception Error", MB_OK | MB_ICONERROR);
     }
     catch (...)
     {
         MessageBox(nullptr, L"Unhandled Exception", L"Runtime Error", MB_OK | MB_ICONERROR);
-    };
-
-    try
-    {
-        Trace::shutdown();
-    }
-    catch (...)
-    {
     };
 
     return 0;

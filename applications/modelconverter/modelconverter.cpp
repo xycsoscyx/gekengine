@@ -35,20 +35,38 @@ struct Model
 
 void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &modelMap, Shapes::AlignedBox &boundingBox)
 {
-    GEK_CHECK_CONDITION(node == nullptr, Trace::Exception, "Missing node data");
+    if (node == nullptr)
+    {
+        throw std::exception("Invalid model node");
+    }
+
     if (node->mNumMeshes > 0)
     {
-        GEK_CHECK_CONDITION(node->mMeshes == nullptr, Trace::Exception, "Node missing mesh data");
+        if (node->mMeshes == nullptr)
+        {
+            throw std::exception("Invalid mesh list");
+        }
+
         for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
         {
             uint32_t nodeMeshIndex = node->mMeshes[meshIndex];
-            GEK_CHECK_CONDITION(nodeMeshIndex >= scene->mNumMeshes, Trace::Exception, "Node mesh index out of range : %v (of %v)", nodeMeshIndex, scene->mNumMeshes);
+            if (nodeMeshIndex >= scene->mNumMeshes)
+            {
+                throw std::exception("Invalid mesh index");
+            }
 
             const aiMesh *mesh = scene->mMeshes[nodeMeshIndex];
             if (mesh->mNumFaces > 0)
             {
-                GEK_CHECK_CONDITION(mesh->mFaces == nullptr, Trace::Exception, "Mesh missing face data");
-                GEK_CHECK_CONDITION(mesh->mVertices == nullptr, Trace::Exception, "Mesh missing vertex data");
+                if (mesh->mFaces == nullptr)
+                {
+                    throw std::exception("Invalid mesh face list");
+                }
+
+                if (mesh->mVertices == nullptr)
+                {
+                    throw std::exception("Invalid mesh vertex list");
+                }
 
                 StringUTF8 material;
                 if (scene->mMaterials != nullptr)
@@ -118,7 +136,11 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
 
     if (node->mNumChildren > 0)
     {
-        GEK_CHECK_CONDITION(node->mChildren == nullptr, Trace::Exception, "Node missing child data");
+        if (node->mChildren == nullptr)
+        {
+            throw std::exception("Invalid child list");
+        }
+
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
             getMeshes(scene, node->mChildren[childIndex], modelMap, boundingBox);
@@ -151,7 +173,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         {
             String argument(argumentList[argumentIndex]);
             std::vector<String> arguments(argument.split(L':'));
-            GEK_CHECK_CONDITION(arguments.empty(), Trace::Exception, "Invalid argument encountered: %v", argumentList[argumentIndex]);
+            if (arguments.empty())
+            {
+                throw std::exception("No arguments specified for command line parameter");
+            }
+
             if (arguments[0].compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
             {
                 fileNameInput = argumentList[argumentIndex];
@@ -162,7 +188,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else if (arguments[0].compareNoCase(L"-mode") == 0)
             {
-                GEK_CHECK_CONDITION(arguments.size() != 2, Trace::Exception, "Invalid values specified for mode");
+                if (arguments.size() != 2)
+                {
+                    throw std::exception("Missing parameters for mode");
+                }
+
                 mode = arguments[1];
             }
             else if (arguments[0].compareNoCase(L"-flipCoords") == 0)
@@ -179,7 +209,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else if (arguments[0].compareNoCase(L"-smoothNormals") == 0)
             {
-                GEK_CHECK_CONDITION(arguments.size() != 2, Trace::Exception, "Invalid values specified for smoothNormals");
+                if (arguments.size() != 2)
+                {
+                    throw std::exception("Missing parameters for smoothNormals");
+                }
 
                 smoothNormals = true;
                 smoothingAngle = arguments[1];
@@ -251,8 +284,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
         const aiScene* scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
-        GEK_CHECK_CONDITION(scene == nullptr, Trace::Exception, "Unable to Load Input: %v", fileNameInput);
-        GEK_CHECK_CONDITION(scene->mMeshes == nullptr, Trace::Exception, "No meshes found in scene: %v", fileNameInput);
+        if (scene == nullptr)
+        {
+            throw std::exception("Unable to load scene with Assimp");
+        }
 
         aiApplyPostProcessing(scene, postProcessFlags);
 
@@ -320,7 +355,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             FILE *file = nullptr;
             _wfopen_s(&file, fileNameOutput, L"wb");
-            GEK_CHECK_CONDITION(file == nullptr, Trace::Exception, "Unable to open output file: %v", fileNameOutput);
+            if (file == nullptr)
+            {
+                throw std::exception("Unable to create output file");
+            }
 
             uint32_t gekMagic = *(uint32_t *)"GEKX";
             uint16_t gekModelType = 0;
@@ -370,11 +408,17 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             printf("> Num. Points: %d\r\n", pointCloudList.size());
             NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4().data);
-            GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create convex hull");
+            if (newtonCollision == nullptr)
+            {
+                throw std::exception("Unable to create convex hull collision object");
+            }
 
             FILE *file = nullptr;
             _wfopen_s(&file, fileNameOutput, L"wb");
-            GEK_CHECK_CONDITION(file == nullptr, Trace::Exception, "Unable to open output file: %v", fileNameOutput);
+            if (file == nullptr)
+            {
+                throw std::exception("Unable to create output file");
+            }
 
             uint32_t gekMagic = *(uint32_t *)"GEKX";
             uint16_t gekModelType = 1;
@@ -394,7 +438,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
-            GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create convex hull");
+            if (newtonCollision == nullptr)
+            {
+                throw std::exception("Unable to create tree collision object");
+            }
 
             int materialIdentifier = 0;
             NewtonTreeCollisionBeginBuild(newtonCollision);
@@ -427,7 +474,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             FILE *file = nullptr;
             _wfopen_s(&file, fileNameOutput, L"wb");
-            GEK_CHECK_CONDITION(file == nullptr, Trace::Exception, "Unable to open output file: %v", fileNameOutput);
+            if (file == nullptr)
+            {
+                throw std::exception("Unable to create output file");
+            }
 
             uint32_t gekMagic = *(uint32_t *)"GEKX";
             uint16_t gekModelType = 2;
@@ -449,12 +499,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
         else
         {
-            GEK_THROW_EXCEPTION(Trace::Exception, "Invalid conversion mode specified: %v", mode);
+            throw std::exception("Invalid conversion mode specified");
         }
     }
-    catch (const Exception &exception)
+    catch (const std::exception &exception)
     {
-        printf("[error] Error (%d): %s", exception.at(), exception.what());
+        printf("[error] Exception occurred: %s", exception.what());
     }
     catch (...)
     {

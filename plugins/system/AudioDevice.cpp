@@ -165,30 +165,45 @@ namespace Gek
                 }
 
                 HRESULT resultValue = DirectSoundCreate8(&deviceGUID, &directSound, nullptr);
-                GEK_CHECK_CONDITION(FAILED(resultValue), Audio::Exception, "Unable to initialize DirectSound8 (error %v)", resultValue);
+                if (FAILED(resultValue))
+                {
+                    throw Audio::CreationFailed();
+                }
 
                 resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
-                GEK_CHECK_CONDITION(FAILED(resultValue), Audio::Exception, "Unable to set cooperative level (error %v)", resultValue);
+                if (FAILED(resultValue))
+                {
+                    throw Audio::InitailizeDeviceFailed();
+                }
 
                 DSBUFFERDESC primaryBufferDescription = { 0 };
                 primaryBufferDescription.dwSize = sizeof(DSBUFFERDESC);
                 primaryBufferDescription.dwFlags = DSBCAPS_CTRL3D | DSBCAPS_CTRLVOLUME | DSBCAPS_PRIMARYBUFFER;
                 resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
-                GEK_CHECK_CONDITION(FAILED(resultValue), Audio::Exception, "Unable to create primary sound buffer (error %v)", resultValue);
+                if (FAILED(resultValue))
+                {
+                    throw Audio::InitailizeDeviceFailed();
+                }
 
                 WAVEFORMATEX primaryBufferFormat;
-                ZeroMemory(&primaryBufferFormat, sizeof(WAVEFORMATEX));
                 primaryBufferFormat.wFormatTag = WAVE_FORMAT_PCM;
                 primaryBufferFormat.nChannels = 2;
                 primaryBufferFormat.wBitsPerSample = 8;
                 primaryBufferFormat.nSamplesPerSec = 48000;
                 primaryBufferFormat.nBlockAlign = (primaryBufferFormat.wBitsPerSample / 8 * primaryBufferFormat.nChannels);
                 primaryBufferFormat.nAvgBytesPerSec = (primaryBufferFormat.nSamplesPerSec * primaryBufferFormat.nBlockAlign);
+                primaryBufferFormat.cbSize = 0;
                 resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
-                GEK_CHECK_CONDITION(FAILED(resultValue), Audio::Exception, "Unable to set primary sound buffer format (error %v)", resultValue);
+                if (FAILED(resultValue))
+                {
+                    throw Audio::InitailizeDeviceFailed();
+                }
 
                 directSoundListener = primarySoundBuffer;
-                GEK_CHECK_CONDITION(!directSoundListener, Audio::Exception, "Unable to query for primary sound listener (error %v)", resultValue);
+                if (!directSoundListener)
+                {
+                    throw Audio::InitailizeDeviceFailed();
+                }
 
                 setVolume(1.0f);
                 setDistanceFactor(1.0f);
@@ -256,10 +271,16 @@ namespace Gek
                 FileSystem::load(fileName, fileData);
 
                 audiere::RefPtr<audiere::File> audiereFile(audiere::CreateMemoryFile(fileData.data(), fileData.size()));
-                GEK_CHECK_CONDITION(!audiereFile, Audio::Exception, "Unable to create memory mapping of audio file");
+                if (!audiereFile)
+                {
+                    throw Audio::LoadFileFailed();
+                }
 
                 audiere::RefPtr<audiere::SampleSource> audiereSample(audiere::OpenSampleSource(audiereFile));
-                GEK_CHECK_CONDITION(!audiereSample, Audio::Exception, "YUnable to open audio sample source data");
+                if (!audiereSample)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 int channelCount = 0;
                 int samplesPerSecond = 0;
@@ -288,11 +309,17 @@ namespace Gek
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
                 HRESULT resultValue = directSound->CreateSoundBuffer(&bufferDescription, &directSoundBuffer, nullptr);
-                GEK_CHECK_CONDITION(!directSoundBuffer, Audio::Exception, "Unable create sound buffer for audio file (error %v)", resultValue);
+                if (!directSoundBuffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 void *sampleData = nullptr;
                 resultValue = directSoundBuffer->Lock(0, sampleLength, &sampleData, &sampleLength, 0, 0, DSBLOCK_ENTIREBUFFER);
-                GEK_CHECK_CONDITION(!sampleData, Audio::Exception, "Unable to lock sound buffer (error %v)", resultValue);
+                if (FAILED(resultValue) || !sampleData)
+                {
+                    throw Audio::WriteSampleFailed();
+                }
 
                 audiereSample->read((sampleLength / bufferFormat.nBlockAlign), sampleData);
                 directSoundBuffer->Unlock(sampleData, sampleLength, 0, 0);
@@ -308,7 +335,10 @@ namespace Gek
                 CComPtr<IDirectSoundBuffer> directSoundBuffer(loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL));
 
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
-                GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
+                if (!directSound8Buffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 return std::make_shared<Effect>(directSound8Buffer.p);
             }
@@ -321,10 +351,16 @@ namespace Gek
                 CComPtr<IDirectSoundBuffer> directSoundBuffer(loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL));
 
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
-                GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
+                if (!directSound8Buffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
-                GEK_CHECK_CONDITION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
+                if (!directSound8Buffer3D)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 return std::make_shared<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
             }
@@ -336,10 +372,16 @@ namespace Gek
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
                 HRESULT resultValue = directSound->DuplicateSoundBuffer(static_cast<IDirectSoundBuffer *>(source->getBuffer()), &directSoundBuffer);
-                GEK_CHECK_CONDITION(!directSoundBuffer, Audio::Exception, "Unable to duplicate sound buffer (error %v)", resultValue);
+                if (!directSoundBuffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
-                GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
+                if (!directSound8Buffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 return std::make_shared<Effect>(directSound8Buffer.p);
             }
@@ -351,13 +393,22 @@ namespace Gek
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer;
                 HRESULT resultValue = directSound->DuplicateSoundBuffer(static_cast<IDirectSoundBuffer *>(source->getBuffer()), &directSoundBuffer);
-                GEK_CHECK_CONDITION(!directSoundBuffer, Audio::Exception, "Unable to duplicate sound buffer (error %v)", resultValue);
+                if (!directSoundBuffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 CComQIPtr<IDirectSoundBuffer8, &IID_IDirectSoundBuffer8> directSound8Buffer(directSoundBuffer);
-                GEK_CHECK_CONDITION(!directSound8Buffer, Audio::Exception, "Unable to query for advanced sound buffer");
+                if (!directSound8Buffer)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 CComQIPtr<IDirectSound3DBuffer8, &IID_IDirectSound3DBuffer8> directSound8Buffer3D(directSound8Buffer);
-                GEK_CHECK_CONDITION(!directSound8Buffer3D, Audio::Exception, "Unable to query for 3D sound buffer");
+                if (!directSound8Buffer3D)
+                {
+                    throw Audio::CreateSampleFailed();
+                }
 
                 return std::make_shared<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
             }

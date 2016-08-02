@@ -13,7 +13,6 @@ namespace Gek
         GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(UnableToLoad);
         GEK_ADD_EXCEPTION(UnableToSave);
-        GEK_ADD_EXCEPTION(ChildNotFound);
         GEK_ADD_EXCEPTION(InvalidRootNode);
 
         struct Node
@@ -38,7 +37,7 @@ namespace Gek
 
             bool isFromFile(void);
             String getAttribute(const wchar_t *name, const wchar_t *value = nullptr) const;
-            Node & findChild(const wchar_t *type);
+            bool findChild(const wchar_t *type, std::function<void(Node &)> onChildFound);
             Node & getChild(const wchar_t *type);
 
             template <typename TYPE>

@@ -187,17 +187,27 @@ typedef SH<Math::Float4, 9> SH9Color;
         load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, nullptr, std::placeholders::_3);
     }
 
-    GEK_CHECK_CONDITION(!load, Trace::Exception, "Invalid file type: %v", extension);
+    if (!load)
+    {
+        throw std::exception("Unknown file tyupe listed for input");
+    }
 
     ::DirectX::ScratchImage image;
     HRESULT resultValue = load(fileData.data(), fileData.size(), image);
-    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to load file, %v (error %v)", fileName, resultValue);
+    if (FAILED(resultValue))
+    {
+        throw std::exception("Unable to load input file");
+    }
 
     if (::DirectX::IsCompressed(image.GetMetadata().format))
     {
         ::DirectX::ScratchImage decompressedImage;
         resultValue = ::DirectX::Decompress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R8G8B8A8_UNORM, decompressedImage);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to decompress image to raw RGBA (error %v)", resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unable to decompress image to raw RGBA");
+        }
+
         image = std::move(decompressedImage);
     }
 
@@ -205,7 +215,11 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
         ::DirectX::ScratchImage rgbImage;
         resultValue = ::DirectX::Convert(image.GetImages(), image.GetImageCount(), image.GetMetadata(), DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0.0f, rgbImage);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to convert image to float (error %v)", resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unable to convert image to float");
+        }
+
         image = std::move(rgbImage);
     }
 
@@ -213,7 +227,11 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
         ::DirectX::ScratchImage resized;
         resultValue = ::DirectX::Resize(image.GetImages()[0], 256, 256, 0, resized);
-        GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to resize image to 256x256 (error %v)", resultValue);
+        if (FAILED(resultValue))
+        {
+            throw std::exception("Unable to resize image to 256x256");
+        }
+
         image = std::move(resized);
     }
 
@@ -241,7 +259,7 @@ typedef SH<Math::Float4, 9> SH9Color;
             {
                 cubeMapList[face] = loadTexture(fileName);
             }
-            catch (const Exception &)
+            catch (const std::exception &)
             {
                 return true;
             };
@@ -262,7 +280,11 @@ typedef SH<Math::Float4, 9> SH9Color;
 
     ::DirectX::ScratchImage image;
     HRESULT resultValue = image.InitializeCubeFromImages(imageList, 6, 0);
-    GEK_CHECK_CONDITION(FAILED(resultValue), FileSystem::Exception, "Unable to initialize cubemap from face list (error %v)", resultValue);
+    if (FAILED(resultValue))
+    {
+        throw std::exception("Unable to initialize cubemap from face list");
+    }
+
     return image;
 }
 
@@ -424,9 +446,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         try
         {
             image = loadTexture(fileNameInput);
-            GEK_CHECK_CONDITION(!image.GetMetadata().IsCubemap(), Trace::Exception, "Image not cubemap format: %v", fileNameInput);
+            if (!image.GetMetadata().IsCubemap())
+            {
+                throw std::exception("Specified input image is not a cubemap");
+            }
         }
-        catch (const Exception &)
+        catch (const std::exception &)
         {
             image = loadIntoCubeMap(fileNameInput);
         };
@@ -444,9 +469,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
         printf(output);
     }
-    catch (const Exception &exception)
+    catch (const std::exception &exception)
     {
-        printf("[error] Error (%d): %s", exception.at(), exception.what());
+        printf("[error] Exception occurred: %s", exception.what());
     }
     catch (...)
     {

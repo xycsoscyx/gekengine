@@ -29,18 +29,7 @@ namespace Gek
         {
             std::tuple<PARAMETERS...> packedArguments(arguments...);
             ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&packedArguments));
-
-            std::shared_ptr<TYPE> castClass;
-            try
-            {
-                castClass = std::dynamic_pointer_cast<TYPE>(baseClass);
-            }
-            catch (const std::bad_cast &badCast)
-            {
-                throw Gek::Exception(__FUNCTION__, __LINE__, StringUTF8("Unable to cast to requested type: %v (%v)", typeid(TYPE).name(), badCast.what()));
-            };
-
-            return castClass;
+            return std::dynamic_pointer_cast<TYPE>(baseClass);
         }
 
         virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const = 0;

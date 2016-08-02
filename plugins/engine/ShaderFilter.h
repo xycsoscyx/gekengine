@@ -428,9 +428,9 @@ namespace Gek
         __forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, Xml::Node &blendNode)
         {
             blendState.enable = blendNode.isFromFile();
-            try
+            if (!blendNode.findChild(L"writemask", [&](auto &writeMaskNode) -> void
             {
-                String writeMask(blendNode.findChild(L"writemask").text.getLower());
+                String writeMask(writeMaskNode.text.getLower());
                 if (writeMask.compare(L"all") == 0)
                 {
                     blendState.writeMask = Video::ColorMask::RGBA;
@@ -443,11 +443,10 @@ namespace Gek
                     if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::ColorMask::B;
                     if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::ColorMask::A;
                 }
-            }
-            catch (const Xml::Exception &)
+            }))
             {
                 blendState.writeMask = Video::ColorMask::RGBA;
-            };
+            }
 
             auto &colorNode = blendNode.getChild(L"color");
             blendState.colorSource = Video::getBlendSource(colorNode.getAttribute(L"source"));
