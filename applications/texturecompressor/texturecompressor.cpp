@@ -2,7 +2,7 @@
 #include "GEK\Math\Float3.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include <Shlwapi.h>

@@ -353,7 +353,7 @@ namespace Gek
                     continue;
                 }
 
-                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token found while parsing equation: %v", match.str());
+                throw UnknownTokenType();
             }
             else if(match[2].matched) // number
             {
@@ -461,17 +461,28 @@ namespace Gek
                 break;
 
             case TokenType::RightParenthesis:
-                GEK_CHECK_CONDITION(stack.empty(), UnbalancedParenthesis, "Unmatched ending parenthesis found");
+                if (stack.empty())
+                {
+                    throw UnbalancedParenthesis();
+                }
+
                 while (stack.top().type != TokenType::LeftParenthesis)
                 {
                     rpnTokenList.push_back(stack.popTop());
-                    GEK_CHECK_CONDITION(stack.empty(), UnbalancedParenthesis, "Unmatched ending parenthesis found while parsing block");
+                    if (stack.empty())
+                    {
+                        throw UnbalancedParenthesis();
+                    }
                 };
 
                 stack.pop();
                 if (stack.empty())
                 {
-                    GEK_CHECK_CONDITION(hasVector, VectorUsedAsParameter, "Vector only supported as return value");
+                    if (hasVector)
+                    {
+                        throw VectorUsedAsParameter();
+                    }
+
                     hasVector = true;
 
                     Token vector(TokenType::Vector);
@@ -502,12 +513,23 @@ namespace Gek
                 break;
 
             case TokenType::Separator:
-                GEK_CHECK_CONDITION(stack.empty(), MisplacedSeparator, "Comma found without a leading value");
-                GEK_CHECK_CONDITION(parameterExistsStack.empty(), MisplacedSeparator, "Comma found without a leading value");
+                if (stack.empty())
+                {
+                    throw MisplacedSeparator();
+                }
+
+                if (parameterExistsStack.empty())
+                {
+                    throw MisplacedSeparator();
+                }
+
                 while (stack.top().type != TokenType::LeftParenthesis)
                 {
                     rpnTokenList.push_back(stack.popTop());
-                    GEK_CHECK_CONDITION(stack.empty(), MisplacedSeparator, "Comma found without a starting parenthesis while parsing block");
+                    if (stack.empty())
+                    {
+                        throw MisplacedSeparator();
+                    }
                 };
 
                 if (parameterExistsStack.top())
@@ -524,18 +546,25 @@ namespace Gek
                 break;
 
             default:
-                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %v", token.string);
+                throw UnknownTokenType();
             };
         }
 
         while (!stack.empty())
         {
-            GEK_CHECK_CONDITION(stack.top().type == TokenType::LeftParenthesis, UnbalancedParenthesis, "Unused left parenthesis found while unwinding the stack");
-            GEK_CHECK_CONDITION(stack.top().type == TokenType::RightParenthesis, UnbalancedParenthesis, "Unused right parenthesis found while unwinding the stack");
+            if (stack.top().type == TokenType::LeftParenthesis || stack.top().type == TokenType::RightParenthesis)
+            {
+                throw UnbalancedParenthesis();
+            }
+
             rpnTokenList.push_back(stack.popTop());
         };
 
-        GEK_CHECK_CONDITION(rpnTokenList.empty(), InvalidEquation, "Empty equation found");
+        if (rpnTokenList.empty())
+        {
+            throw InvalidEquation();
+        }
+
         return rpnTokenList;
     }
 
@@ -556,13 +585,27 @@ namespace Gek
                 if (true)
                 {
                     auto &operationSearch = operationsMap.find(token.string);
-                    GEK_CHECK_CONDITION(operationSearch == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
+                    if (operationSearch == operationsMap.end())
+                    {
+                        throw InvalidOperator();
+                    }
 
                     auto &operation = (*operationSearch).second;
-                    GEK_CHECK_CONDITION(!operation.unaryFunction, InvalidOperator, "No unary function found for operation: %v", token.string);
+                    if (!operation.unaryFunction)
+                    {
+                        throw InvalidOperator();
+                    }
 
-                    GEK_CHECK_CONDITION(stack.empty(), InvalidOperand, "No values found for unary operator: %v", token.string);
-                    GEK_CHECK_CONDITION(stack.top().type != TokenType::Number, InvalidOperand, "Invalid token found for unary operator: %v", stack.top().string);
+                    if (stack.empty())
+                    {
+                        throw InvalidOperand();
+                    }
+
+                    if (stack.top().type != TokenType::Number)
+                    {
+                        throw InvalidOperand();
+                    }
+
                     float functionValue = stack.popTop().value;
 
                     stack.push(Token(operation.unaryFunction(functionValue)));
@@ -573,20 +616,39 @@ namespace Gek
                 if (true)
                 {
                     auto &operationSearch = operationsMap.find(token.string);
-                    GEK_CHECK_CONDITION(operationSearch == operationsMap.end(), InvalidOperator, "Unable to find operation: %v", token.string);
+                    if (operationSearch == operationsMap.end())
+                    {
+                        throw InvalidOperator();
+                    }
 
                     auto &operation = (*operationSearch).second;
-                    GEK_CHECK_CONDITION(!operation.binaryFunction, InvalidOperator, "No binary function found for operation: %v", token.string);
+                    if (!operation.binaryFunction)
+                    {
+                        throw InvalidOperator();
+                    }
 
+                    if (stack.empty())
+                    {
+                        throw InvalidOperand();
+                    }
 
-                    GEK_CHECK_CONDITION(stack.empty(), InvalidOperand, "No right value found for unary operator: %v", token.string);
-                    GEK_CHECK_CONDITION(stack.top().type != TokenType::Number, InvalidOperand, "Invalid right token found for unary operator: %v", stack.top().string);
+                    if (stack.top().type != TokenType::Number)
+                    {
+                        throw InvalidOperand();
+                    }
+
                     float functionValueRight = stack.popTop().value;
+                    if (stack.empty())
+                    {
+                        throw InvalidOperand();
+                    }
 
-                    GEK_CHECK_CONDITION(stack.empty(), InvalidOperand, "No left value found for unary operator: %v", token.string);
-                    GEK_CHECK_CONDITION(stack.top().type != TokenType::Number, InvalidOperand, "Invalid left token found for unary operator: %v", stack.top().string);
+                    if (stack.top().type != TokenType::Number)
+                    {
+                        throw InvalidOperand();
+                    }
+
                     float functionValueLeft = stack.popTop().value;
-
                     stack.push(Token(operation.binaryFunction(functionValueLeft, functionValueRight)));
                     break;
                 }
@@ -595,28 +657,50 @@ namespace Gek
                 if (true)
                 {
                     auto &functionSearch = functionsMap.find(token.string);
-                    GEK_CHECK_CONDITION(functionSearch == functionsMap.end(), InvalidFunction, "Unable to find operation: %v", token.string);
+                    if (functionSearch == functionsMap.end())
+                    {
+                        throw InvalidFunction();
+                    }
 
                     auto &function = (*functionSearch).second;
-                    GEK_CHECK_CONDITION(function.parameterCount != token.parameterCount, InvalidFunctionParameters, "Mismatched function parameters found");
-                    GEK_CHECK_CONDITION(stack.size() < function.parameterCount, NotEnoughFunctionParameters, "Not enough function parameters found");
+                    if (function.parameterCount != token.parameterCount)
+                    {
+                        throw InvalidFunctionParameters();
+                    }
+
+                    if (stack.size() < function.parameterCount)
+                    {
+                        throw NotEnoughFunctionParameters();
+                    }
 
                     stack.push(Token(function.function(stack)));
                     break;
                 }
 
             case TokenType::Vector:
-                GEK_CHECK_CONDITION(hasVector, VectorUsedAsParameter, "Vector only supported as return value");
+                if (hasVector)
+                {
+                    throw VectorUsedAsParameter();
+                }
+
                 hasVector = true;
                 break;
 
             default:
-                GEK_THROW_EXCEPTION(UnknownTokenType, "Unknown token type: %v", token.string);
+                throw UnknownTokenType();
             };
         }
 
-        GEK_CHECK_CONDITION(rpnTokenList.empty(), InvalidEquation, "Empty equation found");
-        GEK_CHECK_CONDITION(stack.size() != valueSize, InvalidVector, "Not enough parameters for requested return value");
+        if (rpnTokenList.empty())
+        {
+            throw InvalidEquation();
+        }
+
+        if (stack.size() != valueSize)
+        {
+            throw InvalidVector();
+        }
+
         for (uint32_t axis = valueSize; axis > 0; axis--)
         {
             value[axis - 1] = stack.popTop().value;

@@ -27,7 +27,6 @@ namespace Gek
                 : ContextRegistration(context)
                 , resources(resources)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(materialName));
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(materialName);
 

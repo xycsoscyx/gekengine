@@ -159,7 +159,10 @@ namespace Gek
         {
             String expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_CHECK_CONDITION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to open file: %v", fileName);
+            if (fileHandle == INVALID_HANDLE_VALUE)
+            {
+                throw FileNotFound();
+            }
 
             DWORD fileSize = GetFileSize(fileHandle, nullptr);
             if (fileSize > 0)
@@ -175,8 +178,10 @@ namespace Gek
 
                 DWORD bytesRead = 0;
                 BOOL success = ReadFile(fileHandle, buffer.data(), buffer.size(), &bytesRead, nullptr);
-                GEK_CHECK_CONDITION(!success, FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
-                GEK_CHECK_CONDITION(bytesRead != buffer.size(), FileReadError, "Unable to read %v bytes from file: %v", buffer.size(), fileName);
+                if (!success || bytesRead != buffer.size())
+                {
+                    throw FileReadError();
+                }
             }
 
             CloseHandle(fileHandle);
@@ -201,12 +206,18 @@ namespace Gek
         {
             String expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            GEK_CHECK_CONDITION(fileHandle == INVALID_HANDLE_VALUE, FileNotFound, "Unable to create file: %v", fileName);
+            if (fileHandle == INVALID_HANDLE_VALUE)
+            {
+                throw FileNotFound();
+            }
 
             DWORD bytesWritten = 0;
             BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-            GEK_CHECK_CONDITION(!success, FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
-            GEK_CHECK_CONDITION(bytesWritten != buffer.size(), FileWriteError, "Unable to write %v bytes from file: %v", buffer.size(), fileName);
+            if (!success || bytesWritten != buffer.size())
+            {
+                throw FileWriteError();
+            }
+
             CloseHandle(fileHandle);
         }
 

@@ -98,7 +98,6 @@ namespace Gek
                 : ContextRegistration(context)
                 , device(device)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(visualName));
                 GEK_REQUIRE(device);
 
                 Xml::Node visualNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", visualName), L"visual");
@@ -262,8 +261,6 @@ namespace Gek
             // Plugin
             void enable(Video::Device::Context *deviceContext)
             {
-                GEK_TRACE_SCOPE();
-
                 deviceContext->geometryPipeline()->setProgram(geometryProgram.get());
                 deviceContext->vertexPipeline()->setProgram(vertexProgram.get());
             }

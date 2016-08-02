@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Math\Float3.h"
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Context\Context.h"
 
 namespace Gek

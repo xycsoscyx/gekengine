@@ -5,7 +5,7 @@
 #include "GEK\Math\Float2.h"
 #include "GEK\Math\Float4.h"
 #include "GEK\Shapes\Rectangle.h"
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Context\Context.h"
 #include <unordered_map>

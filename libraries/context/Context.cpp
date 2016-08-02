@@ -1,4 +1,4 @@
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\Context.h"
@@ -20,8 +20,6 @@ namespace Gek
     public:
         ContextImplementation(std::vector<String> searchPathList)
         {
-            GEK_TRACE_FUNCTION();
-
             searchPathList.push_back(L"$root");
             for (auto &searchPath : searchPathList)
             {
@@ -33,8 +31,6 @@ namespace Gek
                         InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
                         if (initializePlugin)
                         {
-                            GEK_TRACE_EVENT("Plugin found", GEK_PARAMETER(fileName));
-
                             initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *)> creator) -> void
                             {
                                 if (classMap.count(className) == 0)
@@ -43,7 +39,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    GEK_TRACE_ERROR("Duplicate class entry located", GEK_PARAMETER(className));
+                                    throw DuplicateClass();
                                 }
                             }, [this](const wchar_t *typeName, const wchar_t *className) -> void
                             {
@@ -59,8 +55,7 @@ namespace Gek
                     }
                     else
                     {
-                        DWORD errorCode = GetLastError();
-                        GEK_TRACE_ERROR("Unable to load plugin", GEK_PARAMETER(fileName), GEK_PARAMETER(errorCode));
+                        throw InvalidPlugin();
                     }
 
                     return true;
@@ -82,7 +77,10 @@ namespace Gek
         ContextUserPtr createBaseClass(const wchar_t *className, void *arguments) const
         {
             auto classSearch = classMap.find(className);
-            GEK_CHECK_CONDITION(classSearch == classMap.end(), Trace::Exception, "Unable to find requested class creator: %v", className);
+            if (classSearch == classMap.end())
+            {
+                throw ClassNotFound();
+            }
 
             return (*classSearch).second((Context *)this, arguments);
         }
@@ -102,7 +100,6 @@ namespace Gek
 
     ContextPtr Context::create(const std::vector<String> &searchPathList)
     {
-        GEK_TRACE_FUNCTION();
-        return makeShared<ContextImplementation>(searchPathList);
+        return std::make_shared<ContextImplementation>(searchPathList);
     }
 };

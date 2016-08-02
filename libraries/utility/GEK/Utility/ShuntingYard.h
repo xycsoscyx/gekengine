@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\Hash.h"
 #include <functional>
 #include <unordered_map>

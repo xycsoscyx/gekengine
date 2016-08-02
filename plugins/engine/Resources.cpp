@@ -267,12 +267,8 @@ namespace Gek
                             {
                                 load();
                             }
-                            catch (const Gek::Exception &)
-                            {
-                            }
                             catch (...)
                             {
-                                GEK_TRACE_EVENT("General exception occurred when loading resource");
                             };
                         };
 
@@ -342,7 +338,6 @@ namespace Gek
             {
                 auto load = [this, visualName = String(visualName)](VisualHandle) -> Plugin::VisualPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(visualName));
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, visualName.c_str());
                 };
 
@@ -354,7 +349,6 @@ namespace Gek
             {
                 auto load = [this, materialName = String(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(materialName));
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName.c_str(), handle);
                 };
 
@@ -366,7 +360,6 @@ namespace Gek
             {
                 auto load = [this, filterName = String(filterName)](ResourceHandle) -> Engine::FilterPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(filterName));
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName.c_str());
                 };
 
@@ -379,7 +372,6 @@ namespace Gek
             {
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(shaderName));
                     if (!shaderName.empty() && shaderName.at(0) == L'$')
                     {
                         shaderName = shaderName.subString(1);
@@ -412,7 +404,6 @@ namespace Gek
             {
                 auto load = [this, renderState](RenderStateHandle) -> Video::ObjectPtr
                 {
-                    GEK_TRACE_FUNCTION();
                     return device->createRenderState(renderState);
                 };
 
@@ -433,7 +424,6 @@ namespace Gek
             {
                 auto load = [this, depthState](DepthStateHandle) -> Video::ObjectPtr
                 {
-                    GEK_TRACE_FUNCTION();
                     return device->createDepthState(depthState);
                 };
 
@@ -458,7 +448,6 @@ namespace Gek
             {
                 auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
-                    GEK_TRACE_FUNCTION();
                     return device->createBlendState(blendState);
                 };
 
@@ -477,7 +466,6 @@ namespace Gek
             {
                 auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
-                    GEK_TRACE_FUNCTION();
                     return device->createBlendState(blendState);
                 };
 
@@ -504,7 +492,6 @@ namespace Gek
             {
                 auto load = [this, textureName = String(textureName), format, width, height, depth, mipmaps, flags](ResourceHandle) -> Video::TexturePtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName), GEK_PARAMETER_TYPE(format, uint8_t), GEK_PARAMETER(width), GEK_PARAMETER(height), GEK_PARAMETER(depth), GEK_PARAMETER(mipmaps), GEK_PARAMETER(flags));
                     auto texture = device->createTexture(format, width, height, depth, mipmaps, flags);
                     texture->setName(textureName);
                     return texture;
@@ -518,7 +505,6 @@ namespace Gek
             {
                 auto load = [this, bufferName = String(bufferName), stride, count, type, flags, staticData](ResourceHandle) -> Video::BufferPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName), GEK_PARAMETER(stride), GEK_PARAMETER(count), GEK_PARAMETER_TYPE(type, uint8_t), GEK_PARAMETER(flags));
                     auto buffer = device->createBuffer(stride, count, type, flags, (void *)staticData.data());
                     buffer->setName(bufferName);
                     return buffer;
@@ -532,7 +518,6 @@ namespace Gek
             {
                 auto load = [this, bufferName = String(bufferName), format, count, type, flags, staticData](ResourceHandle) -> Video::BufferPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(bufferName), GEK_PARAMETER_TYPE(format, uint8_t), GEK_PARAMETER(count), GEK_PARAMETER_TYPE(type, uint8_t), GEK_PARAMETER(flags));
                     auto buffer = device->createBuffer(format, count, type, flags, (void *)staticData.data());
                     buffer->setName(bufferName);
                     return buffer;
@@ -702,7 +687,6 @@ namespace Gek
             {
                 auto load = [this, textureName = String(textureName), flags](ResourceHandle) -> Video::TexturePtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(textureName), GEK_PARAMETER(flags));
                     return loadTextureData(textureName, flags);
                 };
 
@@ -717,7 +701,6 @@ namespace Gek
 
                 auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle) -> Video::TexturePtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(pattern), GEK_PARAMETER(parameters));
                     return createTextureData(pattern, parameters);
                 };
 
@@ -732,7 +715,6 @@ namespace Gek
 
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                     auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
                     return program;
@@ -748,7 +730,6 @@ namespace Gek
 
                 auto load = [this, fileName = String(fileName), entryFunction = StringUTF8(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
-                    GEK_TRACE_FUNCTION(GEK_PARAMETER(fileName), GEK_PARAMETER(entryFunction));
                     auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
                     program->setName(String(L"%v:%v", fileName, entryFunction));
                     return program;

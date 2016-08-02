@@ -1,4 +1,4 @@
-﻿#include "GEK\Utility\Trace.h"
+﻿#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
@@ -92,7 +92,6 @@ namespace Gek
                 , background(nullptr)
                 , foreground(nullptr)
             {
-                GEK_TRACE_SCOPE();
                 GEK_REQUIRE(window);
 
                 consoleCommandsMap[L"quit"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
@@ -310,8 +309,6 @@ namespace Gek
             // Plugin::PopulationListener
             void onUpdate(uint32_t handle, State state)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
-
                 POINT currentCursorPosition;
                 GetCursorPos(&currentCursorPosition);
                 float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
@@ -604,7 +601,6 @@ namespace Gek
 
             void sciterDebugOutput(UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
             {
-                GEK_TRACE_ERROR("Sciter debug information", GEK_PARAMETER(subsystem), GEK_PARAMETER(severity), GEK_PARAMETER(text));
             }
 
             static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID userData)

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Context\Context.h"
 #include <unordered_map>
 
@@ -66,7 +66,7 @@ namespace Gek
     public:
         static ContextUserPtr createBase(Context *context, PARAMETERS... arguments)
         {
-            return makeShared<TYPE>(context, arguments...);
+            return std::make_shared<TYPE>(context, arguments...);
         }
 
         template<std::size_t... SIZE>

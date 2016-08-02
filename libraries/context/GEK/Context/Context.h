@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include <functional>
 #include <memory>
@@ -15,6 +15,11 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
+        GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(DuplicateClass);
+        GEK_ADD_EXCEPTION(InvalidPlugin);
+        GEK_ADD_EXCEPTION(ClassNotFound);
+
         static ContextPtr create(const std::vector<String> &searchPathList);
 
         virtual ContextUserPtr createBaseClass(const wchar_t *className, void *parameters) const = 0;

@@ -296,8 +296,6 @@ namespace Gek
                 , foregroundUpdateHandle(0)
                 , resources(resources)
             {
-                GEK_TRACE_SCOPE();
-
                 population->addListener(this);
                 backgroundUpdateHandle = population->setUpdatePriority(this, 10);
                 foregroundUpdateHandle = population->setUpdatePriority(this, 100);
@@ -376,7 +374,6 @@ namespace Gek
 
             void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
-                GEK_TRACE_SCOPE();
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(cameraEntity);
@@ -599,7 +596,6 @@ namespace Gek
 
             void onUpdate(uint32_t handle, State state)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
                 GEK_REQUIRE(device);
 
                 if (handle == backgroundUpdateHandle)

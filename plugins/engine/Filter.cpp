@@ -87,7 +87,6 @@ namespace Gek
                 , device(device)
                 , resources(resources)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(filterName));
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
 

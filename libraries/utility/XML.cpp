@@ -58,7 +58,11 @@ namespace Gek
                 return (node.type.compare(type) == 0);
             });
 
-            GEK_CHECK_CONDITION((childSearch == children.end()), Exception, "Unable to find child node: %v", type);
+            if (childSearch == children.end())
+            {
+                throw ChildNotFound();
+            }
+
             return *childSearch;
         }
 
@@ -135,14 +139,24 @@ namespace Gek
         {
             StringUTF8 fileNameUTF8(FileSystem::expandPath(fileName));
             XmlDocument document(xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
-            GEK_CHECK_CONDITION(document == nullptr, Exception, "Unable to load document: %v", fileName);
+            if (document == nullptr)
+            {
+                throw UnableToLoad();
+            }
 
             xmlNodePtr root = xmlDocGetRootElement(document);
-            GEK_CHECK_CONDITION(root == nullptr, Exception, "Unable to get document root node");
+            if (root == nullptr)
+            {
+                throw UnableToLoad();
+            }
+
             String rootType(reinterpret_cast<const char *>(root->name));
             if (expectedRootType)
             {
-                GEK_CHECK_CONDITION(rootType.compare(expectedRootType) != 0, Exception, "XML root node not expected type: %v (%v)", rootType, expectedRootType);
+                if (rootType.compare(expectedRootType) != 0)
+                {
+                    throw InvalidRootNode();
+                }
             }
 
             Node rootData(rootType, Node::Source::File);
@@ -160,7 +174,11 @@ namespace Gek
             for (auto &childNode : nodeData.children)
             {
                 xmlNodePtr child = xmlNewChild(node, nullptr, BAD_CAST StringUTF8(childNode.type).c_str(), BAD_CAST StringUTF8(childNode.text).c_str());
-                GEK_CHECK_CONDITION(child == nullptr, Exception, "Unable to create new child node: %v)", childNode.type);
+                if (child == nullptr)
+                {
+                    throw UnableToSave();
+                }
+
                 setNodeData(child, childNode);
             }
         }
@@ -170,10 +188,16 @@ namespace Gek
             StringUTF8 expandedFileName(FileSystem::expandPath(fileName));
 
             XmlDocument document(xmlNewDoc(BAD_CAST "1.0"));
-            GEK_CHECK_CONDITION(document == nullptr, Exception, "Unable to create new document");
+            if (document == nullptr)
+            {
+                throw UnableToSave();
+            }
 
             xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST StringUTF8(rootData.type).c_str());
-            GEK_CHECK_CONDITION(rootNode == nullptr, Exception, "Unable to create root node: %v", rootData.type);
+            if (rootNode == nullptr)
+            {
+                throw UnableToSave();
+            }
 
             xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
             

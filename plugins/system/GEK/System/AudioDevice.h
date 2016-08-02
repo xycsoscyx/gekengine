@@ -2,7 +2,7 @@
 
 #include "GEK\Math\Float4.h"
 #include "GEK\Math\Float4x4.h"
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Context\Context.h"
 
 namespace Gek

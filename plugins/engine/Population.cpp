@@ -86,7 +86,6 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
             {
-                GEK_TRACE_SCOPE();
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className));
@@ -133,8 +132,6 @@ namespace Gek
 
             void update(bool isBackgroundProcess, float frameTime)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(isBackgroundProcess), GEK_PARAMETER(frameTime));
-
                 Plugin::PopulationListener::State state = Plugin::PopulationListener::State::Unknown;
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
@@ -201,8 +198,6 @@ namespace Gek
                 std::lock_guard<std::mutex> lock(loadMutex);
                 loadThread = std::async(std::launch::async, [this, populationName = String(populationName)](void) -> void
                 {
-                    GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
-
                     try
                     {
                         namedEntityMap.clear();
@@ -267,7 +262,6 @@ namespace Gek
 
             void save(const wchar_t *populationName)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(populationName));
                 GEK_REQUIRE(populationName);
             }
 
@@ -285,7 +279,7 @@ namespace Gek
 
             Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName)
             {
-                std::shared_ptr<Entity> entity(makeShared<Entity>());
+                std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentInfo : entityDefinition)
                 {
                     auto &componentName = componentInfo.first;

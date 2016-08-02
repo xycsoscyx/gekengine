@@ -177,7 +177,6 @@ namespace Gek
                 , priority(0)
                 , lightsPerPass(0)
             {
-                GEK_TRACE_SCOPE(GEK_PARAMETER(shaderName));
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(population);
@@ -875,7 +874,7 @@ namespace Gek
 
             Engine::Material::DataPtr loadMaterialData(const Engine::Material::PassMap &passMap)
             {
-                DataPtr data(makeShared<Data>());
+                DataPtr data(std::make_shared<Data>());
                 std::for_each(passMap.begin(), passMap.end(), [&](auto &passPair) -> void
                 {
                     auto &passName = passPair.first;

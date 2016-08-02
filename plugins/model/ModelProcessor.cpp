@@ -74,6 +74,11 @@ namespace Gek
         , public Plugin::RendererListener
         , public Plugin::Processor
     {
+        GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(InvalidModelIdentifier);
+        GEK_ADD_EXCEPTION(InvalidModelType);
+        GEK_ADD_EXCEPTION(InvalidModelVersion);
+
     public:
         struct Vertex
         {
@@ -251,17 +256,28 @@ namespace Gek
 
                         uint8_t *rawFileData = fileData.data();
                         uint32_t gekIdentifier = *((uint32_t *)rawFileData);
-                        GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
+                        if (gekIdentifier != *(uint32_t *)"GEKX")
+                        {
+                            throw InvalidModelIdentifier();
+                        }
+
                         rawFileData += sizeof(uint32_t);
 
                         uint16_t gekModelType = *((uint16_t *)rawFileData);
-                        GEK_CHECK_CONDITION(gekModelType != 0, Trace::Exception, "Invalid model type found: %v", gekModelType);
+                        if (gekModelType != 0)
+                        {
+                            throw InvalidModelType();
+                        }
+
                         rawFileData += sizeof(uint16_t);
 
                         uint16_t gekModelVersion = *((uint16_t *)rawFileData);
-                        GEK_CHECK_CONDITION(gekModelVersion != 3, Trace::Exception, "Invalid model version found: %v", gekModelVersion);
-                        rawFileData += sizeof(uint16_t);
+                        if (gekModelVersion != 3)
+                        {
+                            throw InvalidModelVersion();
+                        }
 
+                        rawFileData += sizeof(uint16_t);
                         (*alignedBox) = *(Shapes::AlignedBox *)rawFileData;
                     }).share();
 
@@ -355,7 +371,6 @@ namespace Gek
 
         void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
-            GEK_TRACE_SCOPE();
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
 

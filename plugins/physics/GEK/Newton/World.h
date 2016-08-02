@@ -7,6 +7,12 @@ namespace Gek
 {
     namespace Newton
     {
+        GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(UnableToCreateCollision);
+        GEK_ADD_EXCEPTION(InvalidModelIdentifier);
+        GEK_ADD_EXCEPTION(InvalidModelType);
+        GEK_ADD_EXCEPTION(InvalidModelVersion);
+
         GEK_INTERFACE(WorldListener)
         {
             virtual void onCollision(Plugin::Entity *entity0, Plugin::Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) { };

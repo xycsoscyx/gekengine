@@ -3,6 +3,7 @@
 #include "GEK\Utility\Evaluator.h"
 #include "GEK\Engine\Population.h"
 #include "GEK\Engine\Component.h"
+#include <new>
 
 namespace Gek
 {
@@ -62,10 +63,7 @@ namespace Gek
             void *create(const Plugin::Population::ComponentDefinition &componentData)
             {
                 DATA *data = new DATA();
-                GEK_CHECK_CONDITION(data == nullptr, Trace::Exception, "Unable to create component data: %v", typeid(DATA).name());
-
                 data->load(componentData);
-
                 return data;
             }
 

@@ -145,28 +145,18 @@ namespace Gek
 
         BaseString subString(size_t position = 0, size_t length = std::string::npos) const
         {
-            if (position < 0)
+            if (position < 0 || position >= size())
             {
-                throw Exception(__FUNCTION__, __LINE__, "Negative string position encountered");
-            }
-            else if (position >= size())
-            {
-                return BaseString();
+                throw std::out_of_range("BaseString<ELEMENT>::subString() - position out of range");
             }
 
-            try
-            {
-                return BaseString(substr(position, length));
-            }
-            catch (const std::out_of_range &)
-            {
-                throw Exception(__FUNCTION__, __LINE__, "Out of range exception encountered");
-            }
+            return BaseString(substr(position, length));
         }
 
         bool replace(const BaseString &from, const BaseString &to)
         {
             bool replaced = false;
+
             size_t position = 0;
             while ((position = find(from, position)) != std::string::npos)
             {

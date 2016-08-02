@@ -1,15 +1,20 @@
 #pragma once
 
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include <functional>
-#include <map>
+#include <unordered_map>
+#include <list>
 
 namespace Gek
 {
     namespace Xml
     {
         GEK_START_EXCEPTIONS();
+        GEK_ADD_EXCEPTION(UnableToLoad);
+        GEK_ADD_EXCEPTION(UnableToSave);
+        GEK_ADD_EXCEPTION(ChildNotFound);
+        GEK_ADD_EXCEPTION(InvalidRootNode);
 
         struct Node
         {

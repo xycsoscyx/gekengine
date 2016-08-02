@@ -81,7 +81,7 @@ namespace Gek
 
             if (size > max_size())
             {
-                throw std::length_error("AlignedAllocator<TYPE>::allocate() - Integer overflow.");
+                throw std::length_error("AlignedAllocator<TYPE>::allocate() - integer overflow.");
             }
 
             void *const nebulous = _mm_malloc(size * sizeof(TYPE), ALIGNMENT);

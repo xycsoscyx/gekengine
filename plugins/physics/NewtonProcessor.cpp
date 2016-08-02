@@ -295,7 +295,11 @@ namespace Gek
 
             surfaceList.push_back(Surface());
             newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
-            GEK_CHECK_CONDITION(newtonStaticScene == nullptr, Exception, "Unable to create collision for static scene");
+            if (newtonStaticScene == nullptr)
+            {
+                throw Newton::UnableToCreateCollision();
+            }
+
             NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
         }
 
@@ -379,7 +383,6 @@ namespace Gek
 
         void onUpdate(uint32_t handle, State state)
         {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
             GEK_REQUIRE(population);
             GEK_REQUIRE(newtonWorld);
 
@@ -422,7 +425,10 @@ namespace Gek
                 collisionMap[collisionHash] = nullptr;
 
                 std::vector<String> parameters(shape.split(L'|'));
-                GEK_CHECK_CONDITION(parameters.size() != 2, Trace::Exception, "Invalid parameters passed for shape: %v", shape);
+                if (parameters.size() != 2)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
 
                 if (parameters[0].compareNoCase(L"*cube") == 0)
                 {
@@ -467,7 +473,11 @@ namespace Gek
                     newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
                 }
 
-                GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create newton collision shape: %v", shape);
+                if (newtonCollision == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 collisionMap[collisionHash] = newtonCollision;
             }
 
@@ -496,27 +506,35 @@ namespace Gek
                 {
                     collisionMap[shapeHash] = nullptr;
 
-                    String fileName(FileSystem::expandPath(String(L"$root\\data\\models\\%v.bin", shape)));
-
                     FILE *file = nullptr;
-                    _wfopen_s(&file, fileName, L"rb");
-                    GEK_CHECK_CONDITION(file == nullptr, FileSystem::Exception, "Unable to load collision model: %v", fileName);
+                    _wfopen_s(&file, FileSystem::expandPath(String(L"$root\\data\\models\\%v.bin", shape)), L"rb");
+                    if (file == nullptr)
+                    {
+                        throw FileSystem::FileNotFound();
+                    }
 
                     uint32_t gekIdentifier = 0;
                     fread(&gekIdentifier, sizeof(uint32_t), 1, file);
-                    GEK_CHECK_CONDITION(gekIdentifier != *(uint32_t *)"GEKX", Trace::Exception, "Invalid model idetifier found: %v", gekIdentifier);
+                    if (gekIdentifier != *(uint32_t *)"GEKX")
+                    {
+                        throw Newton::InvalidModelIdentifier();
+                    }
 
                     uint16_t gekModelType = 0;
                     fread(&gekModelType, sizeof(uint16_t), 1, file);
 
                     uint16_t gekModelVersion = 0;
                     fread(&gekModelVersion, sizeof(uint16_t), 1, file);
+                    if (gekModelVersion != 0)
+                    {
+                        throw Newton::InvalidModelVersion();
+                    }
 
-                    if (gekModelType == 1 && gekModelVersion == 0)
+                    if (gekModelType == 1)
                     {
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
                     }
-                    else if (gekModelType == 2 && gekModelVersion == 0)
+                    else if (gekModelType == 2)
                     {
                         uint32_t materialCount = 0;
                         fread(&materialCount, sizeof(uint32_t), 1, file);
@@ -537,11 +555,15 @@ namespace Gek
                     }
                     else
                     {
-                        GEK_THROW_EXCEPTION(Trace::Exception, "Invalid model format/version specified: %v, %v", gekModelType, gekModelVersion);
+                        throw Newton::InvalidModelType();
                     }
 
                     fclose(file);
-                    GEK_CHECK_CONDITION(newtonCollision == nullptr, Trace::Exception, "Unable to create newton collision shape: %v", shape);
+                    if (newtonCollision == nullptr)
+                    {
+                        throw Newton::UnableToCreateCollision();
+                    }
+
                     collisionMap[shapeHash] = newtonCollision;
                 }
             }

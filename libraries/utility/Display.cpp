@@ -1,6 +1,6 @@
 #include "GEK\Utility\Display.h"
 #include <algorithm>
-#include "GEK\Utility\Trace.h"
+#include "GEK\Utility\Exceptions.h"
 #include <Windows.h>
 
 namespace Gek

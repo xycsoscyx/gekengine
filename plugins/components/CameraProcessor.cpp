@@ -149,7 +149,6 @@ namespace Gek
 
         void onUpdate(uint32_t handle, State state)
         {
-            GEK_TRACE_SCOPE(GEK_PARAMETER(handle), GEK_PARAMETER_TYPE(state, uint8_t));
             GEK_REQUIRE(renderer);
 
             if (state != State::Loading)
