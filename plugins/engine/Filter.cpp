@@ -516,58 +516,52 @@ namespace Gek
                         pass.dispatchDepth = evaluate(passNode.getAttribute(L"depth", L"1"), true);
                     }
 
-                    if (!passNode.findChild(L"program", [&](auto &programNode) -> void
+                    StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));
+                    String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", filterName, passNode.type);
+                    auto onInclude = [engineData = move(engineData), programFilePath](const char *includeName, std::vector<uint8_t> &data) -> void
                     {
-                        StringUTF8 programEntryPoint(programNode.getAttribute(L"entry"));
-                        String programFilePath(L"$root\\data\\programs\\%v.hlsl", programNode.text);
-                        auto onInclude = [engineData = move(engineData), programFilePath](const char *includeName, std::vector<uint8_t> &data) -> void
+                        if (_stricmp(includeName, "GEKEngine") == 0)
                         {
-                            if (_stricmp(includeName, "GEKEngine") == 0)
-                            {
-                                data.resize(engineData.size());
-                                memcpy(data.data(), engineData, data.size());
-                            }
-                            else
-                            {
-                                if (std::experimental::filesystem::is_regular_file(includeName))
-                                {
-                                    FileSystem::load(String(includeName), data);
-                                }
-                                else
-                                {
-                                    FileSystem::Path filePath(programFilePath);
-                                    filePath.remove_filename();
-                                    filePath.append(includeName);
-                                    filePath = FileSystem::expandPath(filePath);
-                                    if (std::experimental::filesystem::is_regular_file(filePath))
-                                    {
-                                        FileSystem::load(filePath, data);
-                                    }
-                                    else
-                                    {
-                                        FileSystem::Path rootPath(L"$root\\data\\programs");
-                                        rootPath.append(includeName);
-                                        rootPath = FileSystem::expandPath(rootPath);
-                                        if (std::experimental::filesystem::is_regular_file(rootPath))
-                                        {
-                                            FileSystem::load(rootPath, data);
-                                        }
-                                    }
-                                }
-                            }
-                        };
-
-                        if (pass.mode == Pass::Mode::Compute)
-                        {
-                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            data.resize(engineData.size());
+                            memcpy(data.data(), engineData, data.size());
                         }
                         else
                         {
-                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            if (std::experimental::filesystem::is_regular_file(includeName))
+                            {
+                                FileSystem::load(String(includeName), data);
+                            }
+                            else
+                            {
+                                FileSystem::Path filePath(programFilePath);
+                                filePath.remove_filename();
+                                filePath.append(includeName);
+                                filePath = FileSystem::expandPath(filePath);
+                                if (std::experimental::filesystem::is_regular_file(filePath))
+                                {
+                                    FileSystem::load(filePath, data);
+                                }
+                                else
+                                {
+                                    FileSystem::Path rootPath(L"$root\\data\\programs");
+                                    rootPath.append(includeName);
+                                    rootPath = FileSystem::expandPath(rootPath);
+                                    if (std::experimental::filesystem::is_regular_file(rootPath))
+                                    {
+                                        FileSystem::load(rootPath, data);
+                                    }
+                                }
+                            }
                         }
-                    }))
+                    };
+
+                    if (pass.mode == Pass::Mode::Compute)
                     {
-                        throw MissingRequiredParameters();
+                        pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                    }
+                    else
+                    {
+                        pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
                     }
                 }
             }

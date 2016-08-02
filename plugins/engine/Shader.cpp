@@ -164,7 +164,7 @@ namespace Gek
             std::unordered_map<String, ResourceHandle> resourceMap;
 
             std::list<BlockData> blockList;
-            std::unordered_map<String, PassData *> namedPassMap;
+            std::unordered_map<String, PassData *> forwardPassMap;
 
             ResourceHandle cameraTarget;
 
@@ -301,7 +301,7 @@ namespace Gek
                     {
                         depthBuffer = resources->getResourceHandle(String(L"depth:%v:resource", depthNode.attributes[L"source"]));
                     }
-                    if (!depthNode.text.empty())
+                    else if (!depthNode.text.empty())
                     {
                         Video::Format format = Video::getFormat(depthNode.text);
                         if (format == Video::Format::Unknown)
@@ -595,66 +595,77 @@ namespace Gek
 
                         StringUTF8 resourceData;
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
-                        materialNode.findChild(passNode.type, [&](auto &namedMaterialNode) -> void
+                        if (pass.mode == Pass::Mode::Forward)
                         {
-                            namedPassMap[passNode.type] = &pass;
-
-                            std::unordered_map<String, Map> materialMap;
-                            for (auto &resourceNode : namedMaterialNode.children)
+                            if (!passNode.attributes.count(L"material"))
                             {
-                                if (resourceNode.attributes.count(L"name"))
+                                throw MissingRequiredParameters();
+                            }
+
+                            if (!materialNode.findChild(passNode.getAttribute(L"material"), [&](auto &namedMaterialNode) -> void
+                            {
+                                forwardPassMap[passNode.type] = &pass;
+
+                                std::unordered_map<String, Map> materialMap;
+                                for (auto &resourceNode : namedMaterialNode.children)
                                 {
-                                    materialMap.insert(std::make_pair(resourceNode.type, Map(resourceNode.getAttribute(L"name"))));
-                                }
-                                else
-                                {
-                                    MapType mapType = getMapType(resourceNode.text);
-                                    BindType bindType = getBindType(resourceNode.getAttribute(L"bind"));
-                                    uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags"));
-                                    if (resourceNode.attributes.count(L"file"))
+                                    if (resourceNode.attributes.count(L"name"))
                                     {
-                                        materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"file"))));
-                                    }
-                                    else if (resourceNode.attributes.count(L"pattern"))
-                                    {
-                                        materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"))));
+                                        materialMap.insert(std::make_pair(resourceNode.type, Map(resourceNode.getAttribute(L"name"))));
                                     }
                                     else
                                     {
-                                        throw UnknownMaterialType();
-                                    }
-                                }
-                            }
-
-                            pass.materialList.reserve(materialMap.size());
-                            for (auto &resourcePair : materialMap)
-                            {
-                                auto &resourceName = resourcePair.first;
-                                auto &map = resourcePair.second;
-                                pass.materialList.push_back(resourceName);
-                                uint32_t currentStage = nextResourceStage++;
-                                switch (map.source)
-                                {
-                                case MapSource::File:
-                                case MapSource::Pattern:
-                                    resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
-                                    break;
-
-                                case MapSource::Resource:
-                                    if (true)
-                                    {
-                                        auto resourceSearch = resourceMappingsMap.find(resourceName);
-                                        if (resourceSearch != resourceMappingsMap.end())
+                                        MapType mapType = getMapType(resourceNode.text);
+                                        BindType bindType = getBindType(resourceNode.getAttribute(L"bind"));
+                                        uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags"));
+                                        if (resourceNode.attributes.count(L"file"))
                                         {
-                                            auto &resource = (*resourceSearch).second;
-                                            resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
+                                            materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"file"))));
+                                        }
+                                        else if (resourceNode.attributes.count(L"pattern"))
+                                        {
+                                            materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"))));
+                                        }
+                                        else
+                                        {
+                                            throw UnknownMaterialType();
                                         }
                                     }
+                                }
 
-                                    break;
-                                };
+                                pass.materialList.reserve(materialMap.size());
+                                for (auto &resourcePair : materialMap)
+                                {
+                                    auto &resourceName = resourcePair.first;
+                                    auto &map = resourcePair.second;
+                                    pass.materialList.push_back(resourceName);
+                                    uint32_t currentStage = nextResourceStage++;
+                                    switch (map.source)
+                                    {
+                                    case MapSource::File:
+                                    case MapSource::Pattern:
+                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
+                                        break;
+
+                                    case MapSource::Resource:
+                                        if (true)
+                                        {
+                                            auto resourceSearch = resourceMappingsMap.find(resourceName);
+                                            if (resourceSearch != resourceMappingsMap.end())
+                                            {
+                                                auto &resource = (*resourceSearch).second;
+                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
+                                            }
+                                        }
+
+                                        break;
+                                    };
+                                }
+                            }))
+                            {
+                                throw MissingRequiredParameters();
                             }
-                        });
+                        }
 
                         for (auto &resourcePair : resourceAliasMap)
                         {
@@ -803,58 +814,52 @@ namespace Gek
                             pass.dispatchDepth = evaluate(passNode.getAttribute(L"depth", L"1"), true);
                         }
 
-                        if (!passNode.findChild(L"program", [&](auto &programNode) -> void
+                        StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));
+                        String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", shaderName, passNode.type);
+                        auto onInclude = [engineData = move(engineData), programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
                         {
-                            StringUTF8 programEntryPoint(programNode.getAttribute(L"entry"));
-                            String programFilePath(L"$root\\data\\programs\\%v.hlsl", programNode.text);
-                            auto onInclude = [engineData = move(engineData), programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
+                            if (_stricmp(resourceName, "GEKEngine") == 0)
                             {
-                                if (_stricmp(resourceName, "GEKEngine") == 0)
-                                {
-                                    data.resize(engineData.size());
-                                    memcpy(data.data(), engineData, data.size());
-                                }
-                                else
-                                {
-                                    if (std::experimental::filesystem::is_regular_file(resourceName))
-                                    {
-                                        FileSystem::load(String(resourceName), data);
-                                    }
-                                    else
-                                    {
-                                        FileSystem::Path filePath(programFilePath);
-                                        filePath.remove_filename();
-                                        filePath.append(resourceName);
-                                        filePath = FileSystem::expandPath(filePath);
-                                        if (std::experimental::filesystem::is_regular_file(filePath))
-                                        {
-                                            FileSystem::load(filePath, data);
-                                        }
-                                        else
-                                        {
-                                            FileSystem::Path rootPath(L"$root\\data\\programs");
-                                            rootPath.append(resourceName);
-                                            rootPath = FileSystem::expandPath(rootPath);
-                                            if (std::experimental::filesystem::is_regular_file(rootPath))
-                                            {
-                                                FileSystem::load(rootPath, data);
-                                            }
-                                        }
-                                    }
-                                }
-                            };
-
-                            if (pass.mode == Pass::Mode::Compute)
-                            {
-                                pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                                data.resize(engineData.size());
+                                memcpy(data.data(), engineData, data.size());
                             }
                             else
                             {
-                                pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                                if (std::experimental::filesystem::is_regular_file(resourceName))
+                                {
+                                    FileSystem::load(String(resourceName), data);
+                                }
+                                else
+                                {
+                                    FileSystem::Path filePath(programFilePath);
+                                    filePath.remove_filename();
+                                    filePath.append(resourceName);
+                                    filePath = FileSystem::expandPath(filePath);
+                                    if (std::experimental::filesystem::is_regular_file(filePath))
+                                    {
+                                        FileSystem::load(filePath, data);
+                                    }
+                                    else
+                                    {
+                                        FileSystem::Path rootPath(L"$root\\data\\programs");
+                                        rootPath.append(resourceName);
+                                        rootPath = FileSystem::expandPath(rootPath);
+                                        if (std::experimental::filesystem::is_regular_file(rootPath))
+                                        {
+                                            FileSystem::load(rootPath, data);
+                                        }
+                                    }
+                                }
                             }
-                        }))
+                        };
+
+                        if (pass.mode == Pass::Mode::Compute)
                         {
-                            throw MissingRequiredParameters();
+                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                        }
+                        else
+                        {
+                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
                         }
                     }
                 }
@@ -878,8 +883,8 @@ namespace Gek
                 std::for_each(passMap.begin(), passMap.end(), [&](auto &passPair) -> void
                 {
                     auto &passName = passPair.first;
-                    auto passSearch = namedPassMap.find(passName);
-                    if (passSearch != namedPassMap.end())
+                    auto passSearch = forwardPassMap.find(passName);
+                    if (passSearch != forwardPassMap.end())
                     {
                         PassData *pass = passSearch->second;
                         auto &resourceMap = passPair.second;

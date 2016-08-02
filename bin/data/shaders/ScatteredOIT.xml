@@ -18,7 +18,7 @@
     <depth source="standard" />
 
     <blocks>
-        <scatteredOIT>
+        <TransparentPass>
             <clear>
                 <accumulationBuffer type="target">0</accumulationBuffer>
                 <modulationDiffusionBuffer type="target">(1,1,1,0)</modulationDiffusionBuffer>
@@ -26,7 +26,7 @@
             </clear>
 
             <passes>
-                <transparent mode="forward">
+                <Calculate mode="forward" material="transparent" entry="mainPixelProgram">
                     <blendstates unified="false">
                         <accumulationBuffer>
                             <color source="one" destination="one" operation="add" />
@@ -60,11 +60,9 @@
                     <resources>
                         <depthBuffer copy="depth" />
                     </resources>
+                </Calculate>
 
-                    <program entry="mainPixelProgram">Transparent_Scattered\Calculate</program>
-                </transparent>
-
-                <combine mode="deferred">
+                <Combine mode="deferred" entry="mainPixelProgram">
                     <resources>
                         <accumulationBuffer />
                         <modulationDiffusionBuffer />
@@ -75,10 +73,8 @@
                     <targets>
                         <finalBuffer />
                     </targets>
-
-                    <program entry="mainPixelProgram">Transparent_Scattered\Combine</program>
-                </combine>
+                </Combine>
             </passes>
-        </scatteredOIT>
+        </TransparentPass>
     </blocks>
 </shader>

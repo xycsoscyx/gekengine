@@ -16,14 +16,14 @@
     <depth source="standard" />
 
     <blocks>
-        <weightBlendedOIT>
+        <TransparentPass>
             <clear>
                 <accumulationBuffer type="target">(0,0,0,0)</accumulationBuffer>
                 <revealBuffer type="target">1</revealBuffer>
             </clear>
 
             <passes>
-                <transparent mode="forward">
+                <Calculate mode="forward" material="transparent" entry="mainPixelProgram">
                     <blendstates>
                         <target>
                             <color source="one" destination="one" operation="add" />
@@ -51,11 +51,9 @@
                     <resources>
                         <depthBuffer copy="depth" />
                     </resources>
+                </Calculate>
 
-                    <program entry="mainPixelProgram">Transparent_Simple\Calculate</program>
-                </transparent>
-
-                <combine mode="deferred">
+                <Combine mode="deferred" entry="mainPixelProgram">
                     <blendstates>
                         <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
                     </blendstates>
@@ -68,10 +66,8 @@
                     <targets>
                         <finalBuffer />
                     </targets>
-
-                    <program entry="mainPixelProgram">Transparent_Simple\Combine</program>
-                </combine>
+                </Combine>
             </passes>
-        </weightBlendedOIT>
+        </TransparentPass>
     </blocks>
 </shader>

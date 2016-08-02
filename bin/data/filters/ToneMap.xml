@@ -10,7 +10,7 @@
     </buffers>
 
     <passes>
-        <calculate mode="deferred">
+        <CalculateLuminance mode="deferred" entry="mainPixelProgram">
             <resources>
                 <finalBuffer />
             </resources>
@@ -18,11 +18,9 @@
             <targets>
                 <luminanceBuffer />
             </targets>
+        </CalculateLuminance>
 
-            <program entry="mainPixelProgram">ToneMap\CalculateLuminance</program>
-        </calculate>
-
-        <adapt mode="compute" width="1" height="1" depth="1">
+        <AdaptLuminance mode="compute" width="1" height="1" depth="1" entry="mainComputeProgram">
             <resources>
                 <luminanceBuffer actions="generateMipMaps" />
             </resources>
@@ -30,17 +28,13 @@
             <unorderedaccess>
                 <averageLuminanceBuffer />
             </unorderedaccess>
+        </AdaptLuminance>
 
-            <program entry="mainComputeProgram">ToneMap\AdaptLuminance</program>
-        </adapt>
-
-        <tonemap mode="deferred">
+        <ToneMap mode="deferred" entry="mainPixelProgram">
             <resources>
                 <finalBuffer />
                 <averageLuminanceBuffer />
             </resources>
-
-            <program entry="mainPixelProgram">ToneMap\ToneMap</program>
-        </tonemap>
+        </ToneMap>
     </passes>
 </filter>

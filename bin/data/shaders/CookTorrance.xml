@@ -38,9 +38,9 @@
     </buffers>
 
     <blocks>
-        <prepass>
+        <DeferredPass>
             <passes>
-                <solid mode="forward">
+                <StoreDeferred mode="forward" material="solid" entry="mainPixelProgram">
                     <depthstates>
                         <comparison>less_equal</comparison>
                         <writemask>all</writemask>
@@ -56,11 +56,9 @@
                         <materialBuffer />
                         <normalBuffer />
                     </targets>
+                </StoreDeferred>
 
-                    <program entry="mainPixelProgram">Standard\StoreDeferred</program>
-                </solid>
-
-                <calculate mode="deferred">
+                <AmbientCalculation mode="deferred" entry="mainPixelProgram">
                     <resources>
                         <normalBuffer />
                         <depth />
@@ -69,11 +67,9 @@
                     <targets>
                         <ambientBuffer />
                     </targets>
+                </AmbientCalculation>
 
-                    <program entry="mainPixelProgram">Standard\AmbientCalculation</program>
-                </calculate>
-
-                <lighting mode="deferred">
+                <AmbientLighting mode="deferred" entry="mainPixelProgram">
                     <resources>
                         <albedoBuffer />
                         <ambientBuffer />
@@ -82,15 +78,13 @@
                     <targets>
                         <finalBuffer />
                     </targets>
-
-                    <program entry="mainPixelProgram">Standard\AmbientLighting</program>
-                </lighting>
+                </AmbientLighting>
             </passes>
-        </prepass>
+        </DeferredPass>
 
-        <lighting lighting="true">
+        <LightingPass lighting="true">
             <passes>
-                <culling mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1">
+                <TiledLightCulling mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1" entry="mainComputeProgram">
                     <resources>
                         <depth />
                     </resources>
@@ -98,11 +92,9 @@
                     <unorderedaccess>
                         <tileIndexList />
                     </unorderedaccess>
+                </TiledLightCulling>
 
-                    <program entry="mainComputeProgram">Standard\TiledLightCulling</program>
-                </culling>
-
-                <lighting mode="deferred">
+                <AccumulateLighting mode="deferred" entry="mainPixelProgram">
                     <blendstates unified="true">
                         <color source="one" destination="one" operation="add" />
                     </blendstates>
@@ -118,10 +110,8 @@
                     <targets>
                         <finalBuffer />
                     </targets>
-
-                    <program entry="mainPixelProgram">Standard\AccumulateLighting</program>
-                </lighting>
+                </AccumulateLighting>
             </passes>
-        </lighting>
+        </LightingPass>
     </blocks>
 </shader>
