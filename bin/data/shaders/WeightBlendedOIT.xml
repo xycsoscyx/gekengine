@@ -23,7 +23,7 @@
             </clear>
 
             <passes>
-                <Calculate mode="forward" material="transparent" entry="mainPixelProgram">
+                <Calculate forward="transparent" entry="mainPixelProgram">
                     <blendstates>
                         <target>
                             <color source="one" destination="one" operation="add" />
@@ -53,7 +53,7 @@
                     </resources>
                 </Calculate>
 
-                <Combine mode="deferred" entry="mainPixelProgram">
+                <Combine entry="mainPixelProgram">
                     <blendstates>
                         <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
                     </blendstates>

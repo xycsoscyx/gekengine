@@ -26,7 +26,7 @@
             </clear>
 
             <passes>
-                <Calculate mode="forward" material="transparent" entry="mainPixelProgram">
+                <Calculate forward="transparent" entry="mainPixelProgram">
                     <blendstates unified="false">
                         <accumulationBuffer>
                             <color source="one" destination="one" operation="add" />
@@ -62,7 +62,7 @@
                     </resources>
                 </Calculate>
 
-                <Combine mode="deferred" entry="mainPixelProgram">
+                <Combine entry="mainPixelProgram">
                     <resources>
                         <accumulationBuffer />
                         <modulationDiffusionBuffer />

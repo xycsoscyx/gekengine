@@ -228,46 +228,32 @@ namespace Gek
                     passList.push_back(PassData());
                     PassData &pass = passList.back();
 
-                    String modeString(passNode.getAttribute(L"mode", L"deferred"));
-                    if (modeString.compareNoCase(L"deferred") == 0)
-                    {
-                        pass.mode = Pass::Mode::Deferred;
-                    }
-                    else if (modeString.compareNoCase(L"compute") == 0)
+                    StringUTF8 engineData;
+                    if (passNode.attributes.count(L"compute"))
                     {
                         pass.mode = Pass::Mode::Compute;
-                    }
-                    else
-                    {
-                        throw InvalidParameters();
-                    }
 
-                    for (auto &clearTargetNode : passNode.getChild(L"clear").children)
-                    {
-                        switch (getClearType(clearTargetNode.getAttribute(L"type")))
-                        {
-                        case ClearType::Target:
-                            pass.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((Math::Color)clearTargetNode.text)));
-                            break;
-
-                        case ClearType::Float:
-                            pass.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((Math::Float4)clearTargetNode.text)));
-                            break;
-
-                        case ClearType::UInt:
-                            pass.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((uint32_t)clearTargetNode.text)));
-                            break;
-                        };
-                    }
-
-                    if (pass.mode == Pass::Mode::Compute)
-                    {
                         pass.renderToScreen = false;
                         pass.width = device->getBackBuffer()->getWidth();
                         pass.height = device->getBackBuffer()->getHeight();
+
+                        Math::Float3 dispatch = evaluate(String(L"float3(%v)", passNode.getAttribute(L"compute")), false, false);
+                        pass.dispatchWidth = std::min(uint32_t(dispatch.x), 1U);
+                        pass.dispatchHeight = std::min(uint32_t(dispatch.y), 1U);
+                        pass.dispatchDepth = std::min(uint32_t(dispatch.z), 1U);
                     }
                     else
                     {
+                        pass.mode = Pass::Mode::Deferred;
+
+                        engineData =
+                            "struct InputPixel\r\n" \
+                            "{\r\n" \
+                            "    float4 position : SV_POSITION;\r\n" \
+                            "    float2 texCoord : TEXCOORD0;\r\n" \
+                            "};\r\n" \
+                            "\r\n";
+
                         if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
                         {
                             pass.renderToScreen = false;
@@ -293,6 +279,47 @@ namespace Gek
                             pass.height = device->getBackBuffer()->getHeight();
                             pass.renderTargetsMap.clear();
                         }
+
+                        uint32_t currentStage = 0;
+                        StringUTF8 outputData;
+                        for (auto &resourcePair : pass.renderTargetsMap)
+                        {
+                            auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
+                            if (resourceSearch == resourceMappingsMap.end())
+                            {
+                                throw UnlistedRenderTarget();
+                            }
+
+                            outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
+                        }
+
+                        if (!outputData.empty())
+                        {
+                            engineData.format(
+                                "struct OutputPixel\r\n" \
+                                "{\r\n" \
+                                "%v" \
+                                "};\r\n" \
+                                "\r\n", outputData);
+                        }
+                    }
+
+                    for (auto &clearTargetNode : passNode.getChild(L"clear").children)
+                    {
+                        switch (getClearType(clearTargetNode.getAttribute(L"type")))
+                        {
+                        case ClearType::Target:
+                            pass.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((Math::Color)clearTargetNode.text)));
+                            break;
+
+                        case ClearType::Float:
+                            pass.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((Math::Float4)clearTargetNode.text)));
+                            break;
+
+                        case ClearType::UInt:
+                            pass.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((uint32_t)clearTargetNode.text)));
+                            break;
+                        };
                     }
 
                     pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), pass.renderTargetsMap);
@@ -315,57 +342,6 @@ namespace Gek
                         {
                             pass.copyResourceMap[resourceNode.type] = resourceNode.attributes[L"copy"];
                         }
-                    }
-
-                    StringUTF8 engineData;
-                    if (pass.mode != Pass::Mode::Compute)
-                    {
-                        engineData +=
-                            "struct InputPixel\r\n" \
-                            "{\r\n";
-                        if (pass.mode == Pass::Mode::Deferred)
-                        {
-                            engineData +=
-                                "    float4 position : SV_POSITION;\r\n" \
-                                "    float2 texCoord : TEXCOORD0;\r\n";
-                        }
-                        else
-                        {
-                            engineData +=
-                                "    float4 position : SV_POSITION;\r\n" \
-                                "    float2 texCoord : TEXCOORD0;\r\n" \
-                                "    float3 viewPosition : TEXCOORD1;\r\n" \
-                                "    float3 viewNormal : NORMAL0;\r\n" \
-                                "    float4 color : COLOR0;\r\n" \
-                                "    uint frontFacing : SV_ISFRONTFACE;\r\n";
-                        }
-
-                        engineData +=
-                            "};\r\n" \
-                            "\r\n";
-                    }
-
-                    uint32_t currentStage = 0;
-                    StringUTF8 outputData;
-                    for (auto &resourcePair : pass.renderTargetsMap)
-                    {
-                        auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceSearch == resourceMappingsMap.end())
-                        {
-                            throw UnlistedRenderTarget();
-                        }
-
-                        outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
-                    }
-
-                    if (!outputData.empty())
-                    {
-                        engineData.format(
-                            "struct OutputPixel\r\n" \
-                            "{\r\n" \
-                            "%v" \
-                            "};\r\n" \
-                            "\r\n", outputData);
                     }
 
                     StringUTF8 resourceData;
@@ -508,14 +484,6 @@ namespace Gek
                             "%v" \
                             "};\r\n" \
                             "\r\n", defineData);
-                    }
-
-                    if (pass.mode == Pass::Mode::Compute)
-                    {
-                        Math::Float3 dispatch = evaluate(String(L"float3(%v)", passNode.getAttribute(L"dispatch")));
-                        pass.dispatchWidth = uint32_t(dispatch.x);
-                        pass.dispatchHeight = uint32_t(dispatch.y);
-                        pass.dispatchDepth = uint32_t(dispatch.z);
                     }
 
                     StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));

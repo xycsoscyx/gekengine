@@ -40,7 +40,7 @@
     <blocks>
         <DeferredPass>
             <passes>
-                <StoreDeferred mode="forward" material="solid" entry="mainPixelProgram">
+                <StoreDeferred forward="solid" entry="mainPixelProgram">
                     <depthstates>
                         <comparison>less_equal</comparison>
                         <writemask>all</writemask>
@@ -58,7 +58,7 @@
                     </targets>
                 </StoreDeferred>
 
-                <AmbientCalculation mode="deferred" entry="mainPixelProgram">
+                <AmbientCalculation entry="mainPixelProgram">
                     <resources>
                         <normalBuffer />
                         <depth />
@@ -69,7 +69,7 @@
                     </targets>
                 </AmbientCalculation>
 
-                <AmbientLighting mode="deferred" entry="mainPixelProgram">
+                <AmbientLighting entry="mainPixelProgram">
                     <resources>
                         <albedoBuffer />
                         <ambientBuffer />
@@ -84,7 +84,7 @@
 
         <LightingPass lighting="true">
             <passes>
-                <TiledLightCulling mode="compute" dispatch="dispatchWidth, dispatchHeight, 1" entry="mainComputeProgram">
+                <TiledLightCulling compute="dispatchWidth, dispatchHeight, 1" entry="mainComputeProgram">
                     <resources>
                         <depth />
                     </resources>
@@ -94,7 +94,7 @@
                     </unorderedaccess>
                 </TiledLightCulling>
 
-                <AccumulateLighting mode="deferred" entry="mainPixelProgram">
+                <AccumulateLighting entry="mainPixelProgram">
                     <blendstates unified="true">
                         <color source="one" destination="one" operation="add" />
                     </blendstates>

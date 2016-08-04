@@ -20,7 +20,7 @@
             </targets>
         </CalculateLuminance>
 
-        <AdaptLuminance mode="compute" dispatch="1, 1, 1" entry="mainComputeProgram">
+        <AdaptLuminance compute="1, 1, 1" entry="mainComputeProgram">
             <resources>
                 <luminanceBuffer actions="generateMipMaps" />
             </resources>
@@ -30,7 +30,7 @@
             </unorderedaccess>
         </AdaptLuminance>
 
-        <ToneMap mode="deferred" entry="mainPixelProgram">
+        <ToneMap entry="mainPixelProgram">
             <resources>
                 <finalBuffer />
                 <averageLuminanceBuffer />
