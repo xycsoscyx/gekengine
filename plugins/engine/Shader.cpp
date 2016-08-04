@@ -602,9 +602,10 @@ namespace Gek
                                 throw MissingRequiredParameters();
                             }
 
-                            if (!materialNode.findChild(passNode.getAttribute(L"material"), [&](auto &namedMaterialNode) -> void
+                            String passMaterial(passNode.getAttribute(L"material"));
+                            if (!materialNode.findChild(passMaterial, [&](auto &namedMaterialNode) -> void
                             {
-                                forwardPassMap[passNode.type] = &pass;
+                                forwardPassMap[passMaterial] = &pass;
 
                                 std::unordered_map<String, Map> materialMap;
                                 for (auto &resourceNode : namedMaterialNode.children)
@@ -880,7 +881,7 @@ namespace Gek
             Engine::Material::DataPtr loadMaterialData(const Engine::Material::PassMap &passMap)
             {
                 DataPtr data(std::make_shared<Data>());
-                std::for_each(passMap.begin(), passMap.end(), [&](auto &passPair) -> void
+                for(auto &passPair : passMap)
                 {
                     auto &passName = passPair.first;
                     auto passSearch = forwardPassMap.find(passName);
@@ -897,7 +898,7 @@ namespace Gek
                             }
                         }
                     }
-                });
+                }
 
                 return data;
             }

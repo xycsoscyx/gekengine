@@ -1614,6 +1614,14 @@ namespace Gek
                     throw Video::InitializationFailed();
                 }
 
+#ifdef _DEBUG
+                CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
+                CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
+                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
+                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
+                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+#endif
+
                 if (fullScreen && !isChildWindow)
                 {
                     resultValue = dxSwapChain->SetFullscreenState(true, nullptr);

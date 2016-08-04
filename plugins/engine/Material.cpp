@@ -38,6 +38,12 @@ namespace Gek
                         throw MissingRequiredParameters();
                     }
 
+                    Engine::Shader *shader = resources->getShader(shaderNode.attributes[L"name"], materialHandle);
+                    if (!shader)
+                    {
+                        throw MissingRequiredParameters();
+                    }
+
                     FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
                     String fileSpecifier(FileSystem::Path(materialName).getFileName());
 
@@ -66,12 +72,6 @@ namespace Gek
                                 resource = this->resources->getResourceHandle(resourceNode.attributes[L"name"]);
                             }
                         }
-                    }
-
-                    Engine::Shader *shader = resources->getShader(shaderNode.attributes[L"name"], materialHandle);
-                    if (!shader)
-                    {
-                        throw MissingRequiredParameters();
                     }
 
                     this->data = shader->loadMaterialData(passMap);

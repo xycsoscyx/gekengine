@@ -257,7 +257,7 @@ namespace Gek
                 std::lock_guard<std::mutex> lock(loadMutex);
                 if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
                 {
-                    loadThread = std::async(std::launch::async, [this](void) -> void
+                    loadThread = Gek::asynchronous([this](void) -> void
                     {
                         CoInitialize(nullptr);
                         std::function<void(void)> load;
@@ -267,13 +267,8 @@ namespace Gek
                             {
                                 load();
                             }
-                            catch (const std::exception &exception)
-                            {
-                                String stopper(L"");
-                            }
                             catch (...)
                             {
-                                String stopper(L"");
                             };
                         };
 
@@ -564,6 +559,8 @@ namespace Gek
                 Video::TexturePtr texture;
                 if (pattern.compareNoCase(L"color") == 0)
                 {
+                    uint8_t colorData[4];
+                    Video::Format format = Video::Format::Unknown;
                     try
                     {
                         auto rpnTokenList = shuntingYard.getTokenList(parameters);
@@ -572,61 +569,50 @@ namespace Gek
                         {
                             float color;
                             shuntingYard.evaluate(rpnTokenList, color);
-                            uint8_t colorData[4] =
-                            {
-                                uint8_t(color * 255.0f),
-                            };
-
-                            texture = device->createTexture(Video::Format::R8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            colorData[0] = uint8_t(color * 255.0f);
+                            format = Video::Format::R8_UNORM;
                         }
                         else if (colorSize == 2)
                         {
                             Math::Float2 color;
                             shuntingYard.evaluate(rpnTokenList, color);
-                            uint8_t colorData[4] =
-                            {
-                                uint8_t(color.x * 255.0f),
-                                uint8_t(color.y * 255.0f),
-                            };
-
-                            texture = device->createTexture(Video::Format::R8G8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            colorData[0] = uint8_t(color.x * 255.0f);
+                            colorData[1] = uint8_t(color.y * 255.0f);
+                            colorData[2] = 0;
+                            colorData[3] = 0;
+                            format = Video::Format::R8G8_UNORM;
                         }
                         else if (colorSize == 3)
                         {
                             Math::Float3 color;
                             shuntingYard.evaluate(rpnTokenList, color);
-                            uint8_t colorData[4] =
-                            {
-                                uint8_t(color.x * 255.0f),
-                                uint8_t(color.y * 255.0f),
-                                uint8_t(color.z * 255.0f),
-                                255,
-                            };
-
-                            texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                            colorData[0] = uint8_t(color.x * 255.0f);
+                            colorData[1] = uint8_t(color.y * 255.0f);
+                            colorData[2] = uint8_t(color.z * 255.0f);
+                            colorData[3] = 0;
+                            format = Video::Format::R8G8B8A8_UNORM;
                         }
                         else if (colorSize == 4)
                         {
                             Math::Float4 color;
                             shuntingYard.evaluate(rpnTokenList, color);
-                            uint8_t colorData[4] =
-                            {
-                                uint8_t(color.x * 255.0f),
-                                uint8_t(color.y * 255.0f),
-                                uint8_t(color.z * 255.0f),
-                                uint8_t(color.w * 255.0f),
-                            };
-
-                            texture = device->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
-                        }
-                        else
-                        {
-                            throw InvalidParameter();
+                            colorData[0] = uint8_t(color.x * 255.0f);
+                            colorData[1] = uint8_t(color.y * 255.0f);
+                            colorData[2] = uint8_t(color.z * 255.0f);
+                            colorData[3] = uint8_t(color.w * 255.0f);
+                            format = Video::Format::R8G8B8A8_UNORM;
                         }
                     }
                     catch (const ShuntingYard::Exception &)
                     {
                     };
+
+                    if (format == Video::Format::Unknown)
+                    {
+                        throw InvalidParameter();
+                    }
+
+                    texture = device->createTexture(format, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
                 }
                 else if (pattern.compareNoCase(L"normal") == 0)
                 {
