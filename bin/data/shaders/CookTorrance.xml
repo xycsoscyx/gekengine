@@ -84,7 +84,7 @@
 
         <LightingPass lighting="true">
             <passes>
-                <TiledLightCulling mode="compute" width="dispatchWidth" height="dispatchHeight" depth="1" entry="mainComputeProgram">
+                <TiledLightCulling mode="compute" dispatch="dispatchWidth, dispatchHeight, 1" entry="mainComputeProgram">
                     <resources>
                         <depth />
                     </resources>

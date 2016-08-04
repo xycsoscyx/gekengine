@@ -235,11 +235,16 @@ namespace Gek
             });
         }
 
-        int compareNoCase(const ELEMENT *string) const
+        int compareNoCase(const BaseString<ELEMENT> &string) const
         {
-            return std::equal(begin(), end(), string, [](const ELEMENT &left, const ELEMENT &right) -> bool
+            if (size() != string.size())
             {
-                return (std::toupper(left) == std::toupper(right));
+                return 1;
+            }
+
+            return std::equal(begin(), end(), string.begin(), [](const ELEMENT &left, const ELEMENT &right) -> bool
+            {
+                return (std::tolower(left) == std::tolower(right));
             }) ? 0 : 1;
         }
 

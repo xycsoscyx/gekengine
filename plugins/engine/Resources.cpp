@@ -239,6 +239,19 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
+
+                auto &shadersNode = core->getConfiguration().getChild(L"shaders");
+                auto &standardNode = shadersNode.getChild(L"standard");
+                if (standardNode.text.empty())
+                {
+                    standardNode.text = L"CookTorrance";
+                }
+
+                auto &transparentNode = shadersNode.getChild(L"transparent");
+                if (transparentNode.text.empty())
+                {
+                    transparentNode.text = L"WeightBlendedOIT";
+                }
             }
 
             ~Resources(void)
@@ -310,7 +323,10 @@ namespace Gek
 
             ResourceHandle getResourceHandle(const wchar_t *resourceName) const
             {
-                std::size_t hash = std::hash<String>()(resourceName);
+                String fixedName(resourceName);
+                fixedName.replace(L"$standard", core->getConfiguration().getChild(L"shaders").getChild(L"standard").text);
+                fixedName.replace(L"$transparent", core->getConfiguration().getChild(L"shaders").getChild(L"transparent").text);
+                std::size_t hash = std::hash<String>()(fixedName);
                 return resourceManager.getHandle(hash);
             }
 
@@ -372,31 +388,18 @@ namespace Gek
             {
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
-                    if (!shaderName.empty() && shaderName.at(0) == L'$')
-                    {
-                        shaderName = shaderName.subString(1);
-                        auto &shaderNode = core->getConfiguration().getChild(L"shaders").getChild(shaderName);
-                        if (shaderNode.text.empty())
-                        {
-                            if (shaderName.compareNoCase(L"standard") == 0)
-                            {
-                                shaderNode.text = L"CookTorrance";
-                            }
-                            else if (shaderName.compareNoCase(L"transparent") == 0)
-                            {
-                                shaderNode.text = L"WeightBlendedOIT";
-                            }
-                        }
-
-                        shaderName = shaderNode.text;
-                    }
-
+                    shaderName.replace(L"$standard", core->getConfiguration().getChild(L"shaders").getChild(L"standard").text);
+                    shaderName.replace(L"$transparent", core->getConfiguration().getChild(L"shaders").getChild(L"transparent").text);
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName.c_str());
                 };
 
                 std::size_t hash = std::hash<String>()(shaderName);
                 ShaderHandle shader = shaderManager.getImmediateHandle(hash, load);
-                materialShaderMap[material] = shader;
+                if (material)
+                {
+                    materialShaderMap[material] = shader;
+                }
+
                 return shaderManager.getResource(shader);
             }
 

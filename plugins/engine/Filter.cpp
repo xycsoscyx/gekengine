@@ -110,7 +110,7 @@ namespace Gek
                     return foundDefine;
                 };
 
-                auto evaluate = [&](const wchar_t *value, bool integer = false) -> String
+                auto evaluate = [&](const wchar_t *value, bool integer = false, bool includeType = true) -> String
                 {
                     String finalValue(value);
                     finalValue.replace(L"displayWidth", String(L"%v", device->getBackBuffer()->getWidth()));
@@ -119,15 +119,15 @@ namespace Gek
 
                     if (finalValue.find(L"float2") != std::string::npos)
                     {
-                        return String(L"float2%v", Evaluator::get<Math::Float2>(finalValue.subString(6)));
+                        return String((includeType ? L"float2%v" : L"%v"), Evaluator::get<Math::Float2>(finalValue.subString(6)));
                     }
                     else if (finalValue.find(L"float3") != std::string::npos)
                     {
-                        return String(L"float3%v", Evaluator::get<Math::Float3>(finalValue.subString(6)));
+                        return String((includeType ? L"float3%v" : L"%v"), Evaluator::get<Math::Float3>(finalValue.subString(6)));
                     }
                     else if (finalValue.find(L"float4") != std::string::npos)
                     {
-                        return String(L"float4%v", Evaluator::get<Math::Float4>(finalValue.subString(6)));
+                        return String((includeType ? L"float4%v" : L"%v"), Evaluator::get<Math::Float4>(finalValue.subString(6)));
                     }
                     else if (integer)
                     {
@@ -157,6 +157,7 @@ namespace Gek
 
                     if (textureNode.attributes.count(L"source") && textureNode.attributes.count(L"name"))
                     {
+                        resources->getShader(textureNode.attributes[L"source"], MaterialHandle());
                         String resourceName(L"%v:%v:resource", textureNode.attributes[L"name"], textureNode.attributes[L"source"]);
                         resourceMap[textureNode.type] = resources->getResourceHandle(resourceName);
                     }
@@ -166,7 +167,7 @@ namespace Gek
                         uint32_t textureHeight = device->getBackBuffer()->getHeight();
                         if (textureNode.attributes.count(L"size"))
                         {
-                            Math::Float2 size = evaluate(textureNode.attributes[L"size"]);
+                            Math::Float2 size = evaluate(String(L"float2(%v)", textureNode.attributes[L"size"]), false, false);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
@@ -511,9 +512,10 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        pass.dispatchWidth = evaluate(passNode.getAttribute(L"width", L"1"), true);
-                        pass.dispatchHeight = evaluate(passNode.getAttribute(L"height", L"1"), true);
-                        pass.dispatchDepth = evaluate(passNode.getAttribute(L"depth", L"1"), true);
+                        Math::Float3 dispatch = evaluate(String(L"float3(%v)", passNode.getAttribute(L"dispatch")));
+                        pass.dispatchWidth = uint32_t(dispatch.x);
+                        pass.dispatchHeight = uint32_t(dispatch.y);
+                        pass.dispatchDepth = uint32_t(dispatch.z);
                     }
 
                     StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));

@@ -11,11 +11,11 @@
         <modulationDiffusionBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</modulationDiffusionBuffer>
         <refractionBuffer bind="float2" flags="target">R8G8_NORM</refractionBuffer>
         <depthBuffer bind="float">R32_FLOAT</depthBuffer>
-        <finalBuffer bind="float3" source="standard" name="finalBuffer" />
+        <finalBuffer bind="float3" source="$standard" name="finalBuffer" />
         <sourceBuffer bind="float3">R11G11B10_FLOAT</sourceBuffer>
     </textures>
 
-    <depth source="standard" />
+    <depth source="$standard" />
 
     <blocks>
         <TransparentPass>

@@ -40,14 +40,14 @@ namespace Gek
                     if(true)
                     {
                         float value;
-                        shuntingYard.evaluate(expression, value);
+                        shuntingYard.evaluate(rpnTokenList, value);
                         result.set(value);
                     }
 
                     break;
 
                 default:
-                    shuntingYard.evaluate(expression, result);
+                    shuntingYard.evaluate(rpnTokenList, result);
                     break;
                 };
 
