@@ -310,7 +310,7 @@ namespace Gek
             bool update(void)
             {
                 timer.update();
-                float frameTime = timer.getUpdateTime();
+                float frameTime = float(timer.getUpdateTime());
                 population->update((!windowActive || consoleOpen), frameTime);
                 return engineRunning;
             }

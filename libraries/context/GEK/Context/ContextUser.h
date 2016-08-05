@@ -85,12 +85,9 @@ namespace Gek
             }
 
             std::vector<std::type_index> expectedTypes = { typeid(PARAMETERS)... };
-            for (std::size_t index = 0; index < argumentCount; index++)
+            if (expectedTypes != argumentTypes)
             {
-                if(expectedTypes[index] != argumentTypes[index])
-                {
-                    throw ContextUser::InvalidParameterType();
-                }
+                throw ContextUser::InvalidParameterType();
             }
 
             return createBase(context, std::get<SIZE>(packedArguments)...);
