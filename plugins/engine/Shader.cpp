@@ -442,9 +442,9 @@ namespace Gek
                             pass.height = device->getBackBuffer()->getHeight();
 
                             Math::Float3 dispatch = evaluate(String(L"float3(%v)", passNode.getAttribute(L"compute")), false, false);
-                            pass.dispatchWidth = std::min(uint32_t(dispatch.x), 1U);
-                            pass.dispatchHeight = std::min(uint32_t(dispatch.y), 1U);
-                            pass.dispatchDepth = std::min(uint32_t(dispatch.z), 1U);
+                            pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
+                            pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
+                            pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
                         }
                         else
                         {

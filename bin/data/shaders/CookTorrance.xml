@@ -18,7 +18,7 @@
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
         <shadowRadius>2.0</shadowRadius>
-        <shadowStrength>0.3</shadowStrength>
+        <shadowStrength>0.25</shadowStrength>
         <shadowTapCount integer="true">32</shadowTapCount>
         <shadowSpiralCount>13</shadowSpiralCount>
     </defines>
