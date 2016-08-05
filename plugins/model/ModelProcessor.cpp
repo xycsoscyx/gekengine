@@ -28,6 +28,8 @@
 
 namespace Gek
 {
+    static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
+
     namespace Components
     {
         struct Model
@@ -249,8 +251,6 @@ namespace Gek
                 {
                     pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void
                     {
-                        static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
-
                         std::vector<uint8_t> fileData;
                         FileSystem::load(fileName, fileData, PreReadSize);
 

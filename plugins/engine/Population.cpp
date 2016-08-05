@@ -81,6 +81,7 @@ namespace Gek
             std::unordered_map<String, Plugin::Entity *> namedEntityMap;
             std::vector<Plugin::Entity *> killEntityList;
 
+            uint32_t nextHandle;
             using UpdatePriorityMap = std::multimap<uint32_t, std::pair<uint32_t, Plugin::PopulationListener *>>;
             UpdatePriorityMap updatePriorityMap;
             std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
@@ -89,6 +90,7 @@ namespace Gek
             Population(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
+                , nextHandle(0)
             {
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
@@ -338,7 +340,6 @@ namespace Gek
 
             uint32_t setUpdatePriority(Plugin::PopulationListener *observer, uint32_t priority)
             {
-                static uint32_t nextHandle = 0;
                 uint32_t updateHandle = InterlockedIncrement(&nextHandle);
                 auto pair = std::make_pair(priority, std::make_pair(updateHandle, observer));
                 auto updateSearch = updatePriorityMap.insert(pair);

@@ -45,6 +45,7 @@ namespace Gek
 
         float Plane::getDistance(const Math::Float3 &point) const
         {
+            // +distance because we negated it when creating
             return (normal.dot(point) + distance);
         }
     }; // namespace Shapes
