@@ -769,7 +769,7 @@ namespace Gek
                 deviceContext->generateMipMaps(dynamic_cast<Video::Texture *>(resource));
             }
 
-            void copyResource(ResourceHandle sourceHandle, ResourceHandle destinationHandle)
+            void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
                 auto source = resourceManager.getResource(sourceHandle);
                 auto destination = resourceManager.getResource(destinationHandle);
@@ -778,7 +778,7 @@ namespace Gek
                     throw ResourceNotLoaded();
                 }
 
-                device->copyResource(source, destination);
+                device->copyResource(destination, source);
             }
 
             void setRenderState(Video::Device::Context *deviceContext, RenderStateHandle renderStateHandle)

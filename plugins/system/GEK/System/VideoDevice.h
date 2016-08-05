@@ -579,7 +579,7 @@ namespace Gek
             virtual void unmapBuffer(Buffer *buffer) = 0;
 
             virtual void updateResource(Object *buffer, const void *data) = 0;
-            virtual void copyResource(Object *source, Object *destination) = 0;
+            virtual void copyResource(Object *destination, Object *source) = 0;
 
             virtual ObjectPtr compileComputeProgram(const char *programScript, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
             virtual ObjectPtr compileVertexProgram(const char *programScript, const char *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout = std::vector<Video::InputElementInformation>(), std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;

@@ -39,17 +39,18 @@ namespace Gek
                 RenderStateHandle renderState;
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
-                uint32_t width, height;
+                float width, height;
                 std::vector<String> materialList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
-                std::unordered_map<String, String> renderTargetsMap;
-                std::unordered_map<String, std::set<Actions>> actionMap;
-                std::unordered_map<String, String> copyResourceMap;
+                std::vector<ResourceHandle> renderTargetList;
                 ProgramHandle program;
                 uint32_t dispatchWidth;
                 uint32_t dispatchHeight;
                 uint32_t dispatchDepth;
+
+                std::vector<ResourceHandle> generateMipMapsList;
+                std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
 
                 PassData(void)
                     : mode(Pass::Mode::Forward)
@@ -58,8 +59,8 @@ namespace Gek
                     , clearDepthFlags(0)
                     , clearDepthValue(1.0f)
                     , clearStencilValue(0)
-                    , width(0)
-                    , height(0)
+                    , width(0.0f)
+                    , height(0.0f)
                     , blendFactor(1.0f)
                     , dispatchWidth(0)
                     , dispatchHeight(0)
@@ -71,7 +72,7 @@ namespace Gek
             struct BlockData
             {
                 bool lighting;
-                std::unordered_map<String, ClearData> clearResourceMap;
+                std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::list<PassData> passList;
 
                 BlockData(void)
@@ -161,8 +162,6 @@ namespace Gek
             std::vector<LightData> lightList;
 
             ResourceHandle depthBuffer;
-            std::unordered_map<String, ResourceHandle> resourceMap;
-
             std::list<BlockData> blockList;
             std::unordered_map<String, PassData *> forwardPassMap;
 
@@ -292,6 +291,7 @@ namespace Gek
                     globalDefinesMap[defineNode.type] = evaluate(defineNode.text, defineNode.getAttribute(L"integer", L"false"));
                 }
 
+                std::unordered_map<String, ResourceHandle> resourceMap;
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
                 std::unordered_map<String, String> resourceStructuresMap;
 
@@ -411,18 +411,24 @@ namespace Gek
 
                     for (auto &clearTargetNode : blockNode.getChild(L"clear").children)
                     {
+                        auto resourceSearch = resourceMap.find(clearTargetNode.type);
+                        if (resourceSearch == resourceMap.end())
+                        {
+                            throw InvalidParameters();
+                        }
+
                         switch (getClearType(clearTargetNode.getAttribute(L"type")))
                         {
                         case ClearType::Target:
-                            block.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((Math::Color)clearTargetNode.text)));
+                            block.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Color)clearTargetNode.text)));
                             break;
 
                         case ClearType::Float:
-                            block.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((Math::Float4)clearTargetNode.text)));
+                            block.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
                             break;
 
                         case ClearType::UInt:
-                            block.clearResourceMap.insert(std::make_pair(clearTargetNode.type, ClearData((uint32_t)clearTargetNode.text)));
+                            block.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((uint32_t)clearTargetNode.text)));
                             break;
                         };
                     }
@@ -438,8 +444,8 @@ namespace Gek
                             pass.mode = Pass::Mode::Compute;
 
                             pass.renderToScreen = false;
-                            pass.width = device->getBackBuffer()->getWidth();
-                            pass.height = device->getBackBuffer()->getHeight();
+                            pass.width = float(device->getBackBuffer()->getWidth());
+                            pass.height = float(device->getBackBuffer()->getHeight());
 
                             Math::Float3 dispatch = evaluate(String(L"float3(%v)", passNode.getAttribute(L"compute")), false, false);
                             pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
@@ -474,35 +480,47 @@ namespace Gek
                                 "};\r\n" \
                                 "\r\n", passData);
 
+                            std::unordered_map<String, String> renderTargetsMap;
                             if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
                             {
                                 pass.renderToScreen = false;
-                                pass.renderTargetsMap = loadChildMap(targetsNode);
-                                if (pass.renderTargetsMap.empty())
+                                renderTargetsMap = loadChildMap(targetsNode);
+                                if (renderTargetsMap.empty())
                                 {
-                                    pass.width = 0;
-                                    pass.height = 0;
+                                    pass.width = 0.0f;
+                                    pass.height = 0.0f;
                                 }
                                 else
                                 {
-                                    auto resourceSearch = resourceSizeMap.find(pass.renderTargetsMap.begin()->first);
+                                    auto resourceSearch = resourceSizeMap.find(renderTargetsMap.begin()->first);
                                     if (resourceSearch != resourceSizeMap.end())
                                     {
-                                        pass.width = resourceSearch->second.first;
-                                        pass.height = resourceSearch->second.second;
+                                        pass.width = float(resourceSearch->second.first);
+                                        pass.height = float(resourceSearch->second.second);
+                                    }
+
+                                    for (auto &renderTarget : renderTargetsMap)
+                                    {
+                                        auto resourceSearch = resourceMap.find(renderTarget.first);
+                                        if (resourceSearch == resourceMap.end())
+                                        {
+                                            throw UnlistedRenderTarget();
+                                        }
+
+                                        pass.renderTargetList.push_back(resourceSearch->second);
                                     }
                                 }
                             }))
                             {
                                 pass.renderToScreen = true;
-                                pass.width = device->getBackBuffer()->getWidth();
-                                pass.height = device->getBackBuffer()->getHeight();
-                                pass.renderTargetsMap.clear();
+                                pass.width = float(device->getBackBuffer()->getWidth());
+                                pass.height = float(device->getBackBuffer()->getHeight());
+                                renderTargetsMap.clear();
                             }
 
                             uint32_t currentStage = 0;
                             StringUTF8 outputData;
-                            for (auto &resourcePair : pass.renderTargetsMap)
+                            for (auto &resourcePair : renderTargetsMap)
                             {
                                 auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
                                 if (resourceSearch == resourceMappingsMap.end())
@@ -522,59 +540,70 @@ namespace Gek
                                     "};\r\n" \
                                     "\r\n", outputData);
                             }
-                        }
 
-                        Video::DepthStateInformation depthState;
-                        passNode.findChild(L"depthstates", [&](auto &depthNode) -> void
-                        {
-                            depthState.enable = true;
-                            pass.enableDepth = true;
-
-                            depthNode.findChild(L"clear", [&](auto &clearNode) -> void
+                            Video::DepthStateInformation depthState;
+                            passNode.findChild(L"depthstates", [&](auto &depthNode) -> void
                             {
-                                pass.clearDepthFlags |= Video::ClearFlags::Depth;
-                                pass.clearDepthValue = clearNode.text;
-                            });
+                                depthState.enable = true;
+                                pass.enableDepth = true;
 
-                            depthState.comparisonFunction = Video::getComparisonFunction(depthNode.getChild(L"comparison").text);
-                            depthState.writeMask = Video::getDepthWriteMask(depthNode.getChild(L"writemask").text);
-
-                            depthNode.findChild(L"stencil", [&](auto &stencilNode) -> void
-                            {
-                                depthState.stencilEnable = true;
-                                stencilNode.findChild(L"clear", [&](auto &clearNode) -> void
+                                depthNode.findChild(L"clear", [&](auto &clearNode) -> void
                                 {
-                                    pass.clearDepthFlags |= Video::ClearFlags::Stencil;
-                                    pass.clearStencilValue = clearNode.text;
+                                    pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                                    pass.clearDepthValue = clearNode.text;
                                 });
 
-                                loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
-                                loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
-                            });
-                        });
+                                depthState.comparisonFunction = Video::getComparisonFunction(depthNode.getChild(L"comparison").text);
+                                depthState.writeMask = Video::getDepthWriteMask(depthNode.getChild(L"writemask").text);
 
-                        pass.depthState = resources->createDepthState(depthState);
-                        pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstates"));
-                        pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), pass.renderTargetsMap);
+                                depthNode.findChild(L"stencil", [&](auto &stencilNode) -> void
+                                {
+                                    depthState.stencilEnable = true;
+                                    stencilNode.findChild(L"clear", [&](auto &clearNode) -> void
+                                    {
+                                        pass.clearDepthFlags |= Video::ClearFlags::Stencil;
+                                        pass.clearStencilValue = clearNode.text;
+                                    });
+
+                                    loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
+                                    loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
+                                });
+                            });
+
+                            pass.depthState = resources->createDepthState(depthState);
+                            pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
+                            pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstates"));
+                        }
 
                         std::unordered_map<String, String> resourceAliasMap;
                         std::unordered_map<String, String> unorderedAccessAliasMap = loadChildMap(passNode, L"unorderedaccess");
                         for(auto &resourceNode : passNode.getChild(L"resources").children)
                         {
-                            resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
+                            auto resourceSearch = resourceMap.find(resourceNode.type);
+                            if (resourceSearch == resourceMap.end())
+                            {
+                                throw InvalidParameters();
+                            }
 
+                            resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
                             std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
                             for (auto &action : actionList)
                             {
                                 if (action.compareNoCase(L"generatemipmaps") == 0)
                                 {
-                                    pass.actionMap[resourceNode.type].insert(Actions::GenerateMipMaps);
+                                    pass.generateMipMapsList.push_back(resourceSearch->second);
                                 }
                             }
 
                             if (resourceNode.attributes.count(L"copy"))
                             {
-                                pass.copyResourceMap[resourceNode.type] = resourceNode.attributes[L"copy"];
+                                auto sourceResourceSearch = resourceMap.find(resourceNode.attributes[L"copy"]);
+                                if (sourceResourceSearch == resourceMap.end())
+                                {
+                                    throw InvalidParameters();
+                                }
+
+                                pass.copyResourceMap[resourceSearch->second] = sourceResourceSearch->second;
                             }
                         }
 
@@ -701,7 +730,7 @@ namespace Gek
                         uint32_t nextUnorderedStage = 0;
                         if (pass.mode != Pass::Mode::Compute)
                         {
-                            nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
+                            nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                         }
 
                         for (auto &resourcePair : unorderedAccessAliasMap)
@@ -905,34 +934,16 @@ namespace Gek
                 return false;
             }
 
-            std::vector<ResourceHandle> renderTargetCache;
             Pass::Mode preparePass(Video::Device::Context *deviceContext, BlockData &block, PassData &pass)
             {
-                for (auto &actionSearch : pass.actionMap)
+                for (auto &resource : pass.generateMipMapsList)
                 {
-                    auto resourceSearch = resourceMap.find(actionSearch.first);
-                    if (resourceSearch != resourceMap.end())
-                    {
-                        for (auto &action : actionSearch.second)
-                        {
-                            switch (action)
-                            {
-                            case Actions::GenerateMipMaps:
-                                resources->generateMipMaps(deviceContext, resourceSearch->second);
-                                break;
-                            };
-                        }
-                    }
+                    resources->generateMipMaps(deviceContext, resource);
                 }
 
-                for (auto &copySearch : pass.copyResourceMap)
+                for (auto &copyResource : pass.copyResourceMap)
                 {
-                    auto sourceSearch = resourceMap.find(copySearch.second);
-                    auto destinationSearch = resourceMap.find(copySearch.first);
-                    if (sourceSearch != resourceMap.end() && destinationSearch != resourceMap.end())
-                    {
-                        resources->copyResource(sourceSearch->second, destinationSearch->second);
-                    }
+                    resources->copyResource(copyResource.first, copyResource.second);
                 }
 
                 Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
@@ -960,7 +971,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -969,11 +980,18 @@ namespace Gek
                 resources->setProgram(deviceContextPipeline, pass.program);
 
                 ShaderConstantData shaderConstantData;
-                shaderConstantData.targetSize.x = float(pass.width);
-                shaderConstantData.targetSize.y = float(pass.height);
+                shaderConstantData.targetSize.x = pass.width;
+                shaderConstantData.targetSize.y = pass.height;
+                device->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
+                deviceContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                deviceContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                deviceContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                deviceContext->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+
                 switch (pass.mode)
                 {
                 case Pass::Mode::Compute:
+                    deviceContext->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                     break;
 
                 default:
@@ -990,47 +1008,20 @@ namespace Gek
                     {
                         if (cameraTarget)
                         {
-                            renderTargetCache.resize(std::max(1U, renderTargetCache.size()));
-                            renderTargetCache[0] = cameraTarget;
-                            resources->setRenderTargets(deviceContext, renderTargetCache.data(), 1, (pass.enableDepth ? &depthBuffer : nullptr));
+                            resources->setRenderTargets(deviceContext, &cameraTarget, 1, (pass.enableDepth ? &depthBuffer : nullptr));
                         }
                         else
                         {
                             resources->setBackBuffer(deviceContext, (pass.enableDepth ? &depthBuffer : nullptr));
                         }
                     }
-                    else if (!pass.renderTargetsMap.empty())
+                    else if (!pass.renderTargetList.empty())
                     {
-                        renderTargetCache.resize(std::max(pass.renderTargetsMap.size(), renderTargetCache.size()));
-
-                        uint32_t currentStage = 0;
-                        for (auto &resourcePair : pass.renderTargetsMap)
-                        {
-                            ResourceHandle renderTargetHandle;
-                            auto resourceSearch = resourceMap.find(resourcePair.first);
-                            if (resourceSearch != resourceMap.end())
-                            {
-                                renderTargetHandle = (*resourceSearch).second;
-                            }
-
-                            renderTargetCache[currentStage++] = renderTargetHandle;
-                        }
-
-                        resources->setRenderTargets(deviceContext, renderTargetCache.data(), pass.renderTargetsMap.size(), (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setRenderTargets(deviceContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &depthBuffer : nullptr));
                     }
 
                     break;
                 };
-
-                device->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
-                deviceContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                deviceContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                deviceContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                deviceContext->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                if (pass.mode == Pass::Mode::Compute)
-                {
-                    deviceContext->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
-                }
 
                 return pass.mode;
             }
@@ -1062,7 +1053,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetsMap.size());
+                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -1077,9 +1068,9 @@ namespace Gek
                             resources->setRenderTargets(deviceContext, nullptr, 1, nullptr);
                         }
                     }
-                    else if (!pass.renderTargetsMap.empty())
+                    else if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetsMap.size(), nullptr);
+                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
                     }
                 }
 
@@ -1095,24 +1086,20 @@ namespace Gek
                 {
                     for (auto &clearTarget : block.clearResourceMap)
                     {
-                        auto resourceSearch = resourceMap.find(clearTarget.first);
-                        if (resourceSearch != resourceMap.end())
+                        switch (clearTarget.second.type)
                         {
-                            switch (clearTarget.second.type)
-                            {
-                            case ClearType::Target:
-                                resources->clearRenderTarget(deviceContext, resourceSearch->second, clearTarget.second.color);
-                                break;
+                        case ClearType::Target:
+                            resources->clearRenderTarget(deviceContext, clearTarget.first, clearTarget.second.color);
+                            break;
 
-                            case ClearType::Float:
-                                resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.value);
-                                break;
+                        case ClearType::Float:
+                            resources->clearUnorderedAccess(deviceContext, clearTarget.first, clearTarget.second.value);
+                            break;
 
-                            case ClearType::UInt:
-                                resources->clearUnorderedAccess(deviceContext, resourceSearch->second, clearTarget.second.uint);
-                                break;
-                            };
-                        }
+                        case ClearType::UInt:
+                            resources->clearUnorderedAccess(deviceContext, clearTarget.first, clearTarget.second.uint);
+                            break;
+                        };
                     }
                 }
 

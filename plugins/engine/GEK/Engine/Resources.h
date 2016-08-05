@@ -123,7 +123,7 @@ namespace Gek
             virtual BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
 
             virtual void generateMipMaps(Video::Device::Context *deviceContext, ResourceHandle resourceHandle) = 0;
-            virtual void copyResource(ResourceHandle sourceHandle, ResourceHandle destinationHandle) = 0;
+            virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
             virtual void setRenderState(Video::Device::Context *deviceContext, RenderStateHandle renderStateHandle) = 0;
             virtual void setDepthState(Video::Device::Context *deviceContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;

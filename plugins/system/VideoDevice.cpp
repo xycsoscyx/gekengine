@@ -2152,7 +2152,7 @@ namespace Gek
                 d3dDeviceContext->UpdateSubresource(dynamic_cast<Resource *>(object)->d3dResource, 0, nullptr, data, 0, 0);
             }
 
-            void copyResource(Video::Object *source, Video::Object *destination)
+            void copyResource(Video::Object *destination, Video::Object *source)
             {
                 GEK_REQUIRE(d3dDeviceContext);
                 GEK_REQUIRE(destination);
