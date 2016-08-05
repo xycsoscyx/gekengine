@@ -14,7 +14,7 @@ namespace Gek
     {
     private:
         std::list<HMODULE> moduleList;
-        std::unordered_map<String, std::function<ContextUserPtr(Context *, void *)>> classMap;
+        std::unordered_map<String, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
         std::unordered_multimap<String, String> typeMap;
 
     public:
@@ -31,7 +31,7 @@ namespace Gek
                         InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
                         if (initializePlugin)
                         {
-                            initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *)> creator) -> void
+                            initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
                             {
                                 if (classMap.count(className) == 0)
                                 {
@@ -74,7 +74,7 @@ namespace Gek
         }
 
         // Context
-        ContextUserPtr createBaseClass(const wchar_t *className, void *arguments) const
+        ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
             if (classSearch == classMap.end())
@@ -82,7 +82,7 @@ namespace Gek
                 throw ClassNotFound();
             }
 
-            return (*classSearch).second((Context *)this, arguments);
+            return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
         }
 
         void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const

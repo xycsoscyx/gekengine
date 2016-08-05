@@ -3,6 +3,7 @@
 #include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include <functional>
+#include <typeindex>
 #include <memory>
 #include <vector>
 
@@ -22,13 +23,14 @@ namespace Gek
 
         static ContextPtr create(const std::vector<String> &searchPathList);
 
-        virtual ContextUserPtr createBaseClass(const wchar_t *className, void *parameters) const = 0;
+        virtual ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 
         template <typename TYPE, typename... PARAMETERS>
         std::shared_ptr<TYPE> createClass(const wchar_t *className, PARAMETERS... arguments) const
         {
             std::tuple<PARAMETERS...> packedArguments(arguments...);
-            ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&packedArguments));
+            std::vector<std::type_index> argumentTypes = { typeid(PARAMETERS)... };
+            ContextUserPtr baseClass = createBaseClass(className, static_cast<void *>(&packedArguments), argumentTypes);
             return std::dynamic_pointer_cast<TYPE>(baseClass);
         }
 

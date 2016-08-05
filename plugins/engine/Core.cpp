@@ -136,7 +136,7 @@ namespace Gek
                     throw InitializationFailed();
                 }
 
-                device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, nullptr);
+                device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, L"default");
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());

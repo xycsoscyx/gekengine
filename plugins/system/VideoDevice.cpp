@@ -1598,10 +1598,6 @@ namespace Gek
                     D3D_FEATURE_LEVEL_11_0,
                 };
 
-                if (device)
-                {
-                }
-
                 D3D_FEATURE_LEVEL featureLevel;
                 HRESULT resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext);
                 if (featureLevel != featureLevelList[0])
