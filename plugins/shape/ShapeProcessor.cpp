@@ -71,6 +71,13 @@ namespace Gek
             , texCoord(encodeNormal(position))
         {
         }
+
+        Vertex(const Math::Float3 &position, const Math::Float2 &texCoord)
+            : position(position)
+            , normal(position)
+            , texCoord(texCoord)
+        {
+        }
     };
 
     class GeoSphere
@@ -559,9 +566,41 @@ namespace Gek
                             uint32_t divisionCount = parameters;
                             geoSphere.generate(divisionCount);
 
-                            shape.indexCount = geoSphere.getIndexCount();
                             shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), geoSphere.getVertexCount(), Video::BufferType::Vertex, 0, geoSphere.getVertexData());
                             shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, geoSphere.getIndexCount(), Video::BufferType::Index, 0, geoSphere.getIndexData());
+                            shape.indexCount = geoSphere.getIndexCount();
+                        }
+                        else if (type.compareNoCase(L"cube") == 0)
+                        {
+                            static const Vertex vertices[] =
+                            {
+                                { Math::Float3(-0.5f, +0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //0
+                                { Math::Float3(+0.5f, +0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //1
+                                { Math::Float3(+0.5f, +0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //2
+                                { Math::Float3(-0.5f, +0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //3
+
+                                { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //4
+                                { Math::Float3(+0.5f, -0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //5
+                                { Math::Float3(+0.5f, -0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //6
+                                { Math::Float3(-0.5f, -0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //7
+                            };
+
+                            static const uint16_t indices[] =
+                            {
+                                3,1,0,2,1,3, //top
+                                0,5,4,1,5,0,
+                                3,4,7,0,4,3,
+                                1,6,5,2,6,1,
+                                2,7,6,3,7,2,
+                                6,4,5,7,4,6,
+                            };
+
+                            static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
+                            static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
+
+                            shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
+                            shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
+                            shape.indexCount = 36;
                         }
                     };
                 }
