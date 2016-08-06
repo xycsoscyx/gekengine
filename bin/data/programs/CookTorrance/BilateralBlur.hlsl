@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -13,7 +13,7 @@ float calculateGaussianWeight(float offset)
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     float2 pixelSize = rcp(Shader::targetSize);
-    float surfaceDepth = Resources::depth[inputPixel.position.xy];
+    float surfaceDepth = Resources::depth[inputPixel.screen.xy];
 
     float finalValue = 0.0;
     float totalWeight = 0.0;
@@ -22,12 +22,12 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     for (int offset = -Defines::guassianRadius; offset <= Defines::guassianRadius; offset++)
     {
         int2 sampleOffset = (offset * Defines::blurAxis);
-        float sampleDepth = Resources::depth[inputPixel.position.xy + sampleOffset];
+        float sampleDepth = Resources::depth[inputPixel.screen.xy + sampleOffset];
         float depthDelta = abs(surfaceDepth - sampleDepth);
 
         float sampleWeight = calculateGaussianWeight(offset) * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
 
-        float sampleValue = Resources::sourceBuffer[inputPixel.position.xy + sampleOffset];
+        float sampleValue = Resources::sourceBuffer[inputPixel.screen.xy + sampleOffset];
         finalValue += (sampleValue * sampleWeight);
         totalWeight += sampleWeight;
     }

@@ -52,7 +52,7 @@ namespace Gek
 
             String parameters;
 
-            Map(MapType type, BindType binding, uint32_t flags, const wchar_t *fileName)
+            Map(MapType type, BindType binding, uint32_t flags, const String &fileName)
                 : source(MapSource::File)
                 , type(type)
                 , binding(binding)
@@ -61,7 +61,7 @@ namespace Gek
             {
             }
 
-            Map(MapType type, BindType binding, uint32_t flags, const wchar_t *pattern, const wchar_t *parameters)
+            Map(MapType type, BindType binding, uint32_t flags, const String &pattern, const String &parameters)
                 : source(MapSource::Pattern)
                 , type(type)
                 , binding(binding)
@@ -71,7 +71,7 @@ namespace Gek
             {
             }
 
-            Map(const wchar_t *resourceName)
+            Map(const String &resourceName)
                 : source(MapSource::Resource)
                 , resourceName(resourceName)
             {
@@ -190,25 +190,25 @@ namespace Gek
             }
         };
 
-        __forceinline ClearType getClearType(const wchar_t *clearType)
+        __forceinline ClearType getClearType(const String &clearType)
         {
-            if (_wcsicmp(clearType, L"Target") == 0) return ClearType::Target;
-            else if (_wcsicmp(clearType, L"Float") == 0) return ClearType::Float;
-            else if (_wcsicmp(clearType, L"UInt") == 0) return ClearType::UInt;
+            if (clearType.compareNoCase(L"Target") == 0) return ClearType::Target;
+            else if (clearType.compareNoCase(L"Float") == 0) return ClearType::Float;
+            else if (clearType.compareNoCase(L"UInt") == 0) return ClearType::UInt;
             return ClearType::Unknown;
         }
 
-        __forceinline MapType getMapType(const wchar_t *mapType)
+        __forceinline MapType getMapType(const String &mapType)
         {
-            if (_wcsicmp(mapType, L"Texture1D") == 0) return MapType::Texture1D;
-            else if (_wcsicmp(mapType, L"Texture2D") == 0) return MapType::Texture2D;
-            else if (_wcsicmp(mapType, L"Texture3D") == 0) return MapType::Texture3D;
-            else if (_wcsicmp(mapType, L"Buffer") == 0) return MapType::Buffer;
-            else if (_wcsicmp(mapType, L"ByteAddressBuffer") == 0) return MapType::ByteAddressBuffer;
+            if (mapType.compareNoCase(L"Texture1D") == 0) return MapType::Texture1D;
+            else if (mapType.compareNoCase(L"Texture2D") == 0) return MapType::Texture2D;
+            else if (mapType.compareNoCase(L"Texture3D") == 0) return MapType::Texture3D;
+            else if (mapType.compareNoCase(L"Buffer") == 0) return MapType::Buffer;
+            else if (mapType.compareNoCase(L"ByteAddressBuffer") == 0) return MapType::ByteAddressBuffer;
             return MapType::Unknown;
         }
 
-        __forceinline const wchar_t *getMapType(MapType mapType)
+        __forceinline String getMapType(MapType mapType)
         {
             switch (mapType)
             {
@@ -223,29 +223,29 @@ namespace Gek
             return L"void";
         }
 
-        __forceinline BindType getBindType(const wchar_t *bindType)
+        __forceinline BindType getBindType(const String &bindType)
         {
-            if (_wcsicmp(bindType, L"Float") == 0) return BindType::Float;
-            else if (_wcsicmp(bindType, L"Float2") == 0) return BindType::Float2;
-            else if (_wcsicmp(bindType, L"Float3") == 0) return BindType::Float3;
-            else if (_wcsicmp(bindType, L"Float4") == 0) return BindType::Float4;
-            else if (_wcsicmp(bindType, L"Half") == 0) return BindType::Half;
-            else if (_wcsicmp(bindType, L"Half2") == 0) return BindType::Half2;
-            else if (_wcsicmp(bindType, L"Half3") == 0) return BindType::Half3;
-            else if (_wcsicmp(bindType, L"Half4") == 0) return BindType::Half4;
-            else if (_wcsicmp(bindType, L"Int") == 0) return BindType::Int;
-            else if (_wcsicmp(bindType, L"Int2") == 0) return BindType::Int2;
-            else if (_wcsicmp(bindType, L"Int3") == 0) return BindType::Int3;
-            else if (_wcsicmp(bindType, L"Int4") == 0) return BindType::Int4;
-            else if (_wcsicmp(bindType, L"Int") == 0) return BindType::UInt;
-            else if (_wcsicmp(bindType, L"UInt2") == 0) return BindType::UInt2;
-            else if (_wcsicmp(bindType, L"UInt3") == 0) return BindType::UInt3;
-            else if (_wcsicmp(bindType, L"UInt4") == 0) return BindType::UInt4;
-            else if (_wcsicmp(bindType, L"Boolean") == 0) return BindType::Boolean;
+            if (bindType.compareNoCase(L"Float") == 0) return BindType::Float;
+            else if (bindType.compareNoCase(L"Float2") == 0) return BindType::Float2;
+            else if (bindType.compareNoCase(L"Float3") == 0) return BindType::Float3;
+            else if (bindType.compareNoCase(L"Float4") == 0) return BindType::Float4;
+            else if (bindType.compareNoCase(L"Half") == 0) return BindType::Half;
+            else if (bindType.compareNoCase(L"Half2") == 0) return BindType::Half2;
+            else if (bindType.compareNoCase(L"Half3") == 0) return BindType::Half3;
+            else if (bindType.compareNoCase(L"Half4") == 0) return BindType::Half4;
+            else if (bindType.compareNoCase(L"Int") == 0) return BindType::Int;
+            else if (bindType.compareNoCase(L"Int2") == 0) return BindType::Int2;
+            else if (bindType.compareNoCase(L"Int3") == 0) return BindType::Int3;
+            else if (bindType.compareNoCase(L"Int4") == 0) return BindType::Int4;
+            else if (bindType.compareNoCase(L"Int") == 0) return BindType::UInt;
+            else if (bindType.compareNoCase(L"UInt2") == 0) return BindType::UInt2;
+            else if (bindType.compareNoCase(L"UInt3") == 0) return BindType::UInt3;
+            else if (bindType.compareNoCase(L"UInt4") == 0) return BindType::UInt4;
+            else if (bindType.compareNoCase(L"Boolean") == 0) return BindType::Boolean;
             return BindType::Unknown;
         }
 
-        __forceinline const wchar_t *getBindType(BindType bindType)
+        __forceinline String getBindType(BindType bindType)
         {
             switch (bindType)
             {
@@ -497,7 +497,7 @@ namespace Gek
             return childMap;
         }
 
-        __forceinline std::unordered_map<String, String> loadChildMap(Xml::Node &rootNode, const wchar_t *childName)
+        __forceinline std::unordered_map<String, String> loadChildMap(Xml::Node &rootNode, const String &childName)
         {
             return loadChildMap(rootNode.getChild(childName));
         }

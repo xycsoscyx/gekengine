@@ -238,7 +238,11 @@ namespace Gek
                             for (auto &componentNode : entityNode.children)
                             {
                                 auto &componentData = entityDefinition[componentNode.type];
-                                componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
+                                for (auto &attribute : componentNode.attributes)
+                                {
+                                    componentData[attribute.first] = attribute.second;
+                                }
+
                                 if (!componentNode.text.empty())
                                 {
                                     componentData.value = componentNode.text;

@@ -24,14 +24,14 @@
 
             <passes>
                 <Calculate forward="transparent" entry="mainPixelProgram">
-                    <blendstates>
-                        <target>
+                    <blendstates unified="false">
+                        <accumulationBuffer>
                             <color source="one" destination="one" operation="add" />
                             <alpha source="one" destination="one" operation="add" />
-                        </target>
-                        <target>
+                        </accumulationBuffer>
+                        <revealBuffer>
                             <color source="zero" destination="inverse_source_color" operation="add" />
-                        </target>
+                        </revealBuffer>
                     </blendstates>
 
                     <renderstates>
@@ -54,10 +54,6 @@
                 </Calculate>
 
                 <Combine entry="mainPixelProgram">
-                    <blendstates>
-                        <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
-                    </blendstates>
-
                     <resources>
                         <accumulationBuffer />
                         <revealBuffer />

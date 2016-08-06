@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -11,18 +11,18 @@ static const int stride = diffusionStridePixels;
 // http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float4 backgroundModulationAndDiffusion = Resources::modulationDiffusionBuffer[inputPixel.position.xy];
+    float4 backgroundModulationAndDiffusion = Resources::modulationDiffusionBuffer[inputPixel.screen.xy];
     float3 backgroundModulation = backgroundModulationAndDiffusion.rgb;
 
     [branch]
     if (minComponent(backgroundModulation) == 1.0)
     {
-        return Resources::sourceBuffer[inputPixel.position.xy];
+        return Resources::sourceBuffer[inputPixel.screen.xy];
     }
 
     float diffusionSquared = backgroundModulationAndDiffusion.a * pixelsPerDiffusion2;
-    float2 refraction = 3.0 * Resources::refractionBuffer[inputPixel.position.xy] * (1.0 / 8.0);
-    float4 accumulation = Resources::accumulationBuffer[inputPixel.position.xy];
+    float2 refraction = 3.0 * Resources::refractionBuffer[inputPixel.screen.xy] * (1.0 / 8.0);
+    float4 accumulation = Resources::accumulationBuffer[inputPixel.screen.xy];
 
     [branch]
     if (isinf(accumulation.a))
@@ -58,7 +58,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
                 [branch]
                 if (radiusSquared <= diffusionSquared)
                 {
-                    int2 tapCoord = inputPixel.position.xy + tapOffset;
+                    int2 tapCoord = inputPixel.screen.xy + tapOffset;
                     float backgroundBlurRadiusSquared = Resources::modulationDiffusionBuffer[tapCoord].a * pixelsPerDiffusion2;
 
                     [branch]
@@ -81,7 +81,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     }
     else
     {
-        background = Resources::sourceBuffer[inputPixel.position.xy];
+        background = Resources::sourceBuffer[inputPixel.screen.xy];
     }
 
     return background * backgroundModulation + (1.0 - backgroundModulation) * accumulation.rgb / max(accumulation.a, Math::Epsilon);

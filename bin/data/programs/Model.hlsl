@@ -1,21 +1,23 @@
 #include "GEKGlobal.hlsl"
 
+#include "GEKVisual"
+
 namespace Model
 {
     cbuffer Constants : register(b4)
     {
         float4x4 transform;
-        float4 c;
+        float4 baseColor;
         float4 scale;
     };
 };
 
-ViewVertex getViewVertex(PluginVertex pluginVertex)
+OutputVertex mainVertexProgram(InputVertex inputVertex)
 {
-    ViewVertex viewVertex;
-    viewVertex.position = mul(Model::transform, float4(pluginVertex.position * Model::scale.xyz, 1.0)).xyz;
-    viewVertex.normal = mul((float3x3)Model::transform, pluginVertex.normal);
-    viewVertex.texCoord = pluginVertex.texCoord;
-    viewVertex.color = Model::c;
-    return viewVertex;
+    OutputVertex outputVertex;
+    outputVertex.position = mul(Model::transform, float4(inputVertex.position * Model::scale.xyz, 1.0)).xyz;
+    outputVertex.normal = mul((float3x3)Model::transform, inputVertex.normal);
+    outputVertex.texCoord = inputVertex.texCoord;
+    outputVertex.color = Model::baseColor;
+    return getProjection(outputVertex);
 }

@@ -1,11 +1,11 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
 namespace Settings
 {
-    static const uint Equation = 10;
+    static const uint Equation = 9;
 };
 
 // Weight Based OIT
@@ -20,27 +20,27 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     weight *= saturate(1.0 - dot(transmission, (1.0 / 3.0)));
 
     // Soften edges when transparent surfaces intersect solid surfaces
-    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.position.xy]);
-    float depthDelta = saturate((linearDepth - inputPixel.viewPosition.z) * 2.5);
+    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    float depthDelta = saturate((linearDepth - inputPixel.position.z) * 2.5);
     weight *= depthDelta;
     
     [branch]
     switch (Settings::Equation)
     {
     case 7: // View Depth
-        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 5.0), 2.0) + pow((inputPixel.viewPosition.z / 200.0), 6.0)));
+        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.position.z / 5.0), 2.0) + pow((inputPixel.position.z / 200.0), 6.0)));
         break;
 
     case 8: // View Depth
-        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 10.0), 3.0) + pow((inputPixel.viewPosition.z / 200.0), 6.0)));
+        weight *= (10.0 / (Math::Epsilon + pow((inputPixel.position.z / 10.0), 3.0) + pow((inputPixel.position.z / 200.0), 6.0)));
         break;
 
     case 9: // View Depth
-        weight *= (0.03 / (Math::Epsilon + pow((inputPixel.viewPosition.z / 200.0), 4.0)));
+        weight *= (0.03 / (Math::Epsilon + pow((inputPixel.position.z / 200.0), 4.0)));
         break;
 
     case 10: // Clip Depth
-        weight *= dot(3e3, pow((1.0 - inputPixel.position.z), 3.0));
+        weight *= dot(3e3, pow((1.0 - inputPixel.screen.z), 3.0));
         break;
     };
 

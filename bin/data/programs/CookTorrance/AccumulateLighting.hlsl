@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -107,19 +107,19 @@ namespace Light
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float3 materialAlbedo = Resources::albedoBuffer[inputPixel.position.xy];
-    float2 materialInfo = Resources::materialBuffer[inputPixel.position.xy];
+    float3 materialAlbedo = Resources::albedoBuffer[inputPixel.screen.xy];
+    float2 materialInfo = Resources::materialBuffer[inputPixel.screen.xy];
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
     float materialMetalness = materialInfo.y;
 
-    float surfaceDepth = Resources::depth[inputPixel.position.xy];
+    float surfaceDepth = Resources::depth[inputPixel.screen.xy];
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
-    float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.position.xy]);
+    float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
     float3 viewDirection = -normalize(surfacePosition);
     float3 reflectNormal = reflect(-viewDirection, surfaceNormal);
 
-    const uint2 tilePosition = uint2(floor(inputPixel.position.xy / float(Defines::tileSize).xx));
+    const uint2 tilePosition = uint2(floor(inputPixel.screen.xy / float(Defines::tileSize).xx));
     const uint tileIndex = ((tilePosition.y * Defines::dispatchWidth) + tilePosition.x);
     const uint bufferOffset = (tileIndex * (Lighting::lightsPerPass + 1));
     uint lightTileCount = Resources::tileIndexList[bufferOffset];

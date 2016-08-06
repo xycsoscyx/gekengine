@@ -248,7 +248,7 @@ namespace Gek
                         engineData =
                             "struct InputPixel\r\n" \
                             "{\r\n" \
-                            "    float4 position : SV_POSITION;\r\n" \
+                            "    float4 screen : SV_POSITION;\r\n" \
                             "    float2 texCoord : TEXCOORD0;\r\n" \
                             "};\r\n" \
                             "\r\n";
@@ -519,7 +519,7 @@ namespace Gek
                     String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", filterName, passNode.type);
                     auto onInclude = [engineData = move(engineData), programFilePath](const char *includeName, std::vector<uint8_t> &data) -> void
                     {
-                        if (_stricmp(includeName, "GEKEngine") == 0)
+                        if (_stricmp(includeName, "GEKFilter") == 0)
                         {
                             data.resize(engineData.size());
                             memcpy(data.data(), engineData, data.size());

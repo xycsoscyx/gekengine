@@ -1,5 +1,7 @@
 #include "GEKGlobal.hlsl"
 
+#include "GEKVisual"
+
 namespace Particles
 {
     struct Instance
@@ -22,10 +24,10 @@ static const uint indexBuffer[6] =
     1, 3, 2,
 };
 
-ViewVertex getViewVertex(PluginVertex pluginVertex)
+OutputVertex mainVertexProgram(InputVertex inputVertex)
 {
-    uint particleIndex = (pluginVertex.vertexIndex / 6);
-    uint cornerIndex = indexBuffer[pluginVertex.vertexIndex % 6];
+    uint particleIndex = (inputVertex.vertexIndex / 6);
+    uint cornerIndex = indexBuffer[inputVertex.vertexIndex % 6];
 
     Particles::Instance instanceData = Particles::list[particleIndex];
 
@@ -50,15 +52,11 @@ ViewVertex getViewVertex(PluginVertex pluginVertex)
     position.y = (instanceData.origin.y + instanceData.age);
     position.z = (instanceData.origin.z + (instanceData.offset.y * wave));
 
-    ViewVertex viewVertex;
-    viewVertex.position = (edge + mul(Camera::viewMatrix, float4(position, 1.0)).xyz);
-
-    viewVertex.normal = normalize(float3(normal.xy, -1.0));
-
-    viewVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
-    viewVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
-
-    viewVertex.color = (instanceData.age > 0.0 ? Particles::colorMap.SampleLevel(Global::linearClampSampler, age, 0) : 0.0);
-
-    return viewVertex;
+    OutputVertex outputVertex;
+    outputVertex.position = (edge + mul(Camera::viewMatrix, float4(position, 1.0)).xyz);
+    outputVertex.normal = normalize(float3(normal.xy, -1.0));
+    outputVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
+    outputVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
+    outputVertex.color = (instanceData.age > 0.0 ? Particles::colorMap.SampleLevel(Global::linearClampSampler, age, 0) : 0.0);
+    return getProjection(outputVertex);
 }

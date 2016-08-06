@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -19,11 +19,11 @@ float2 getTapLocation(float tap, float randomAngle)
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 float getShadowFactor(InputPixel inputPixel)
 {
-    float surfaceDepth = Resources::depth[inputPixel.position.xy];
+    float surfaceDepth = Resources::depth[inputPixel.screen.xy];
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
-    float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.position.xy]);
+    float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
-    float randomAngle = random(inputPixel.position.xy, Engine::worldTime);
+    float randomAngle = random(inputPixel.screen.xy, Engine::worldTime);
     float sampleRadius = (Defines::shadowRadius / (2.0 * surfacePosition.z * Camera::fieldOfView.x));
 
     float totalOcclusion = 0.0;

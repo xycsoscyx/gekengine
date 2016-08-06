@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -29,14 +29,14 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     outputPixel.modulationDiffusionBuffer.rgb = coverage * (1.0 - transmissionCoefficient);
 
     coverage *= 1.0 - (transmissionCoefficient.r + transmissionCoefficient.g + transmissionCoefficient.b) * (1.0 / 3.0);
-    float adjustedDepth = 1.0 - inputPixel.position.z * 0.99;
+    float adjustedDepth = 1.0 - inputPixel.screen.z * 0.99;
     float weight = clamp(coverage * adjustedDepth * adjustedDepth * adjustedDepth * 1e3, 1e-2, 3e2 * 0.1);
     outputPixel.accumulationBuffer = float4(premultipliedReflectionAndEmission, coverage) * weight;
 
-    float transparentDepth = inputPixel.viewPosition.z - 4.0;
-    float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : computeRefractionOffset(transparentDepth, inputPixel.viewNormal, inputPixel.viewPosition, etaRatio);
-    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.position.xy]);
-    outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.viewPosition.z - linearDepth)) / abs(inputPixel.viewPosition.z);
+    float transparentDepth = inputPixel.position.z - 4.0;
+    float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : computeRefractionOffset(transparentDepth, inputPixel.normal, inputPixel.position, etaRatio);
+    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.position.z - linearDepth)) / abs(inputPixel.position.z);
     outputPixel.modulationDiffusionBuffer.a *= outputPixel.modulationDiffusionBuffer.a;
 
     [branch]

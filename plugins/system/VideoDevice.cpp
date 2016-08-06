@@ -1404,7 +1404,8 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
 
-                    d3dDeviceContext->ClearUnorderedAccessViewFloat(dynamic_cast<UnorderedAccessView *>(object)->d3dUnorderedAccessView.p, value.data);
+                    auto unorderedAccessView = dynamic_cast<UnorderedAccessView *>(object);
+                    d3dDeviceContext->ClearUnorderedAccessViewFloat(unorderedAccessView->d3dUnorderedAccessView.p, value.data);
                 }
 
                 void clearUnorderedAccess(Video::Object *object, const uint32_t value[4])
@@ -1412,7 +1413,8 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
 
-                    d3dDeviceContext->ClearUnorderedAccessViewUint(dynamic_cast<UnorderedAccessView *>(object)->d3dUnorderedAccessView.p, value);
+                    auto unorderedAccessView = dynamic_cast<UnorderedAccessView *>(object);
+                    d3dDeviceContext->ClearUnorderedAccessViewUint(unorderedAccessView->d3dUnorderedAccessView.p, value);
                 }
 
                 void clearRenderTarget(Video::Target *renderTarget, const Math::Color &clearColor)
@@ -1420,8 +1422,8 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(renderTarget);
 
-                    auto renderTargetView = dynamic_cast<TargetViewTexture *>(renderTarget);
-                    d3dDeviceContext->ClearRenderTargetView(dynamic_cast<RenderTargetView *>(renderTarget)->d3dRenderTargetView, clearColor.data);
+                    auto targetViewTexture = dynamic_cast<TargetViewTexture *>(renderTarget);
+                    d3dDeviceContext->ClearRenderTargetView(targetViewTexture->d3dRenderTargetView, clearColor.data);
                 }
 
                 void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
@@ -1429,7 +1431,8 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(depthBuffer);
 
-                    d3dDeviceContext->ClearDepthStencilView(dynamic_cast<DepthTexture *>(depthBuffer)->d3dDepthStencilView,
+                    auto depthTexture = dynamic_cast<DepthTexture *>(depthBuffer);
+                    d3dDeviceContext->ClearDepthStencilView(depthTexture->d3dDepthStencilView,
                         ((flags & Video::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
                         (flags & Video::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                         clearDepth, clearStencil);
@@ -2183,6 +2186,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
+                    StringUTF8 errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 
@@ -2222,6 +2226,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
+                    StringUTF8 errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 
@@ -2307,6 +2312,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
+                    StringUTF8 errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 
@@ -2346,6 +2352,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), CW2A(fileName), d3dShaderMacroList.data(), includes, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
+                    StringUTF8 errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 

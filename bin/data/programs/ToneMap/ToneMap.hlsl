@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKFilter"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -173,7 +173,7 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float3 baseColor = Resources::finalBuffer[inputPixel.position.xy];
+    float3 baseColor = Resources::finalBuffer[inputPixel.screen.xy];
 
     float exposure = 0.0;
     float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));

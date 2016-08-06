@@ -1,4 +1,4 @@
-#include "GEKEngine"
+#include "GEKShader"
 
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
@@ -14,7 +14,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
         discard;
     }
 
-    float3x3 viewBasis = getCoTangentFrame(inputPixel.viewPosition, inputPixel.viewNormal, inputPixel.texCoord);
+    float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
