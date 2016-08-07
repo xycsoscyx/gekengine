@@ -23,6 +23,23 @@ namespace Gek
 {
     namespace Implementation
     {
+        static Video::Format getType(const StringUTF8 &type)
+        {
+            if (type.compareNoCase("float") == 0) return Video::Format::R32_FLOAT;
+            else if (type.compareNoCase("float2") == 0) return Video::Format::R32G32_FLOAT;
+            else if (type.compareNoCase("float3") == 0) return Video::Format::R32G32B32_FLOAT;
+            else if (type.compareNoCase("float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
+            else if (type.compareNoCase("int") == 0) return Video::Format::R32_INT;
+            else if (type.compareNoCase("int2") == 0) return Video::Format::R32G32_INT;
+            else if (type.compareNoCase("int3") == 0) return Video::Format::R32G32B32_INT;
+            else if (type.compareNoCase("int4") == 0) return Video::Format::R32G32B32A32_INT;
+            else if (type.compareNoCase("uint") == 0) return Video::Format::R32_UINT;
+            else if (type.compareNoCase("uint2") == 0) return Video::Format::R32G32_UINT;
+            else if (type.compareNoCase("uint3") == 0) return Video::Format::R32G32B32_UINT;
+            else if (type.compareNoCase("uint4") == 0) return Video::Format::R32G32B32A32_UINT;
+            return Video::Format::Unknown;
+        }
+
         GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, const wchar_t *)
             , public Engine::Shader
         {
@@ -227,6 +244,49 @@ namespace Gek
                         return String(L"%v", Evaluator::get<float>(finalValue));
                     }
                 };
+
+                StringUTF8 inputData;
+                shaderNode.findChild(L"input", [&](auto &inputNode) -> void
+                {
+                    for (auto &elementNode : inputNode.children)
+                    {
+                        String type(elementNode.attributes[L"type"]);
+                        if (type.compareNoCase(L"isFrontFacing") == 0)
+                        {
+                            inputData.format("    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                        }
+                        else
+                        {
+                            StringUTF8 semanticName(elementNode.attributes[L"semantic"]);
+                            if (semanticName.compareNoCase(L"POSITION") != 0 &&
+                                semanticName.compareNoCase(L"TEXCOORD") != 0 &&
+                                semanticName.compareNoCase(L"NORMAL") != 0 &&
+                                semanticName.compareNoCase(L"COLOR") != 0)
+                            {
+                                throw InvalidElementType();
+                            }
+
+                            uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
+                            if (type.compareNoCase(L"float4x4") == 0)
+                            {
+                                inputData.format("    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                            }
+                            else if (type.compareNoCase(L"float4x3") == 0)
+                            {
+                                inputData.format("    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                            }
+                            else
+                            {
+                                if (getType(type) == Video::Format::Unknown)
+                                {
+                                    throw InvalidElementType();
+                                }
+
+                                inputData.format("    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+                            }
+                        }
+                    }
+                });
 
                 StringUTF8 lightingData;
                 shaderNode.findChild(L"lighting", [&](auto &lightingNode) -> void
@@ -454,31 +514,28 @@ namespace Gek
                         }
                         else
                         {
-                            StringUTF8 passData;
                             if (passNode.attributes.count("forward"))
                             {
                                 pass.mode = Pass::Mode::Forward;
-                                passData =
+                                engineData.format(
+                                "struct InputPixel\r\n" \
+                                    "{\r\n" \
                                     "    float4 screen : SV_POSITION;\r\n" \
-                                    "    float3 position : POSITION;\r\n" \
-                                    "    float2 texCoord : TEXCOORD0;\r\n" \
-                                    "    float3 normal : NORMAL0;\r\n" \
-                                    "    float4 color : COLOR0;\r\n" \
-                                    "    uint frontFacing : SV_ISFRONTFACE;\r\n";
+                                    "%v" \
+                                    "};\r\n" \
+                                    "\r\n", inputData);
                             }
                             else
                             {
                                 pass.mode = Pass::Mode::Deferred;
-                                passData =
+                                engineData +=
+                                    "struct InputPixel\r\n" \
+                                    "{\r\n" \
                                     "    float4 screen : SV_POSITION;\r\n" \
-                                    "    float2 texCoord : TEXCOORD0;\r\n";
+                                    "    float2 texCoord : TEXCOORD0;\r\n" \
+                                    "};\r\n" \
+                                    "\r\n";
                             }
-
-                            engineData.format("struct InputPixel\r\n" \
-                                "{\r\n" \
-                                "%v" \
-                                "};\r\n" \
-                                "\r\n", passData);
 
                             std::unordered_map<String, String> renderTargetsMap;
                             if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void

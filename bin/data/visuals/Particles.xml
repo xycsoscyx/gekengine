@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <visual>
     <input>
-        <vertexIndex />
+        <vertexIndex type="vertexid" />
     </input>
     <output>
         <position type="float3" semantic="POSITION" semanticindex="0" />

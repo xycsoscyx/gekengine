@@ -1,5 +1,12 @@
 <?xml version="1.0"?>
 <shader priority="2">
+    <input>
+        <position type="float3" semantic="POSITION" semanticindex="0" />
+        <texCoord type="float2" semantic="TEXCOORD" semanticindex="0" />
+        <normal type="float3" semantic="NORMAL" semanticindex="0" />
+        <color type="float4" semantic="COLOR" semanticindex="0" />
+    </input>
+
     <material>
         <transparent>
             <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>

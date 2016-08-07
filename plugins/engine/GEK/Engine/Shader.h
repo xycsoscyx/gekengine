@@ -20,6 +20,7 @@ namespace Gek
             GEK_ADD_EXCEPTION(ResourceAlreadyListed);
             GEK_ADD_EXCEPTION(UnlistedRenderTarget);
             GEK_ADD_EXCEPTION(UnknownMaterialType);
+            GEK_ADD_EXCEPTION(InvalidElementType);
 
             GEK_PREDECLARE(Block);
 

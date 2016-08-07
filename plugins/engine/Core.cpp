@@ -100,7 +100,7 @@ namespace Gek
                     result = sciter::value(true);
                 };
 
-                consoleCommandsMap[L"load_level"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"loadlevel"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
                 {
                     if (parameters.size() == 1)
                     {
@@ -526,7 +526,7 @@ namespace Gek
                     parameterList.push_back(parameters->argv[parameter].to_string());
                 }
 
-                auto commandSearch = consoleCommandsMap.find(command);
+                auto commandSearch = consoleCommandsMap.find(command.getLower());
                 if (commandSearch != consoleCommandsMap.end())
                 {
                     (*commandSearch).second(parameterList, parameters->result);

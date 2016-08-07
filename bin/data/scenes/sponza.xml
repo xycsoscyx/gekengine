@@ -16,7 +16,7 @@
 
         <basic_particles>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" transmission_map="Flames.Transmission" size="(0.5, 1.0)" density="5000">Flames</particles>
+            <particles life_expectancy="(2, 5)" color_map="Flames.Color" transmission_map="Flames.Transmission" size="(0.01, 0.05)" density="5000">Flames</particles>
         </basic_particles>
     </prefabs>
 

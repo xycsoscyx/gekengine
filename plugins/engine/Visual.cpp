@@ -61,17 +61,18 @@ namespace Gek
                     {
                         for (auto &elementNode : inputNode.children)
                         {
-                            if (elementNode.type.compareNoCase(L"instanceIndex") == 0)
+                            String type(elementNode.attributes[L"type"]);
+                            if (type.compareNoCase(L"InstanceID") == 0)
                             {
-                                inputVertexData += ("    uint instanceIndex : SV_InstanceId;\r\n");
+                                inputVertexData.format("    uint %v : SV_InstanceId;\r\n", elementNode.type);
                             }
-                            else if (elementNode.type.compareNoCase(L"vertexIndex") == 0)
+                            else if (type.compareNoCase(L"VertexID") == 0)
                             {
-                                inputVertexData += ("    uint vertexIndex : SV_VertexId;\r\n");
+                                inputVertexData.format("    uint %v : SV_VertexId;\r\n", elementNode.type);
                             }
-                            else if (elementNode.type.compareNoCase(L"isFrontFace") == 0)
+                            else if (type.compareNoCase(L"isFrontFacing") == 0)
                             {
-                                inputVertexData += ("    bool isFrontFace : SV_IsFrontFace;\r\n");
+                                inputVertexData.format("    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else
                             {
@@ -91,8 +92,6 @@ namespace Gek
                                 element.semanticIndex = elementNode.attributes[L"semanticindex"];
                                 element.slotClass = Video::getElementType(elementNode.attributes[L"slotclass"]);
                                 element.slotIndex = elementNode.attributes[L"slotindex"];
-
-                                String type(elementNode.attributes[L"type"]);
                                 if (type.compareNoCase(L"float4x4") == 0)
                                 {
                                     inputVertexData.format("    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
