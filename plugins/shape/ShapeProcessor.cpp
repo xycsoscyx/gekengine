@@ -236,18 +236,18 @@ namespace Gek
 
             static const Vertex initialVertices[] =
             {
-                Vertex(Math::Float3(-1.0f,  0.0f,   PHI).getNormal() * 0.5f),  // 0
-                Vertex(Math::Float3(1.0f,  0.0f,   PHI).getNormal() * 0.5f),  // 1
-                Vertex(Math::Float3(0.0f,   PHI,  1.0f).getNormal() * 0.5f),  // 2
-                Vertex(Math::Float3(-PHI,  1.0f,  0.0f).getNormal() * 0.5f),  // 3
-                Vertex(Math::Float3(-PHI, -1.0f,  0.0f).getNormal() * 0.5f),  // 4
-                Vertex(Math::Float3(0.0f,  -PHI,  1.0f).getNormal() * 0.5f),  // 5
-                Vertex(Math::Float3(PHI, -1.0f,  0.0f).getNormal() * 0.5f),  // 6
-                Vertex(Math::Float3(PHI,  1.0f,  0.0f).getNormal() * 0.5f),  // 7
-                Vertex(Math::Float3(0.0f,   PHI, -1.0f).getNormal() * 0.5f),  // 8
-                Vertex(Math::Float3(-1.0f,  0.0f,  -PHI).getNormal() * 0.5f),  // 9
-                Vertex(Math::Float3(0.0f,  -PHI, -1.0f).getNormal() * 0.5f),  // 10
-                Vertex(Math::Float3(1.0f,  0.0f,  -PHI).getNormal() * 0.5f),  // 11
+                Vertex(Math::Float3(-1.0f,  0.0f,   PHI).getNormal()),  // 0
+                Vertex(Math::Float3(1.0f,  0.0f,   PHI).getNormal()),  // 1
+                Vertex(Math::Float3(0.0f,   PHI,  1.0f).getNormal()),  // 2
+                Vertex(Math::Float3(-PHI,  1.0f,  0.0f).getNormal()),  // 3
+                Vertex(Math::Float3(-PHI, -1.0f,  0.0f).getNormal()),  // 4
+                Vertex(Math::Float3(0.0f,  -PHI,  1.0f).getNormal()),  // 5
+                Vertex(Math::Float3(PHI, -1.0f,  0.0f).getNormal()),  // 6
+                Vertex(Math::Float3(PHI,  1.0f,  0.0f).getNormal()),  // 7
+                Vertex(Math::Float3(0.0f,   PHI, -1.0f).getNormal()),  // 8
+                Vertex(Math::Float3(-1.0f,  0.0f,  -PHI).getNormal()),  // 9
+                Vertex(Math::Float3(0.0f,  -PHI, -1.0f).getNormal()),  // 10
+                Vertex(Math::Float3(1.0f,  0.0f,  -PHI).getNormal()),  // 11
             };
 
             static const Edge initialEdges[] =
@@ -350,26 +350,30 @@ namespace Gek
                 indices.push_back((uint16_t)triangles[i].vertices[1]);
                 indices.push_back((uint16_t)triangles[i].vertices[2]);
             }
+
+            for (auto &vertex : vertices)
+            {
+                vertex.position *= 0.5f;
+            }
         }
 
-        uint32_t getVertexCount() const
+        ResourceHandle createVertexBuffer(const String &name, Plugin::Resources *resources)
         {
-            return vertices.size();
+            uint8_t *data = (uint8_t *)vertices.data();
+            uint32_t size = (vertices.size() * sizeof(Vertex));
+            return resources->createBuffer(name, sizeof(Vertex), vertices.size(), Video::BufferType::Vertex, 0, std::vector<uint8_t>(data, data + size));
         }
 
-        uint32_t getIndexCount() const
+        ResourceHandle createIndexBuffer(const String &name, Plugin::Resources *resources)
+        {
+            uint8_t *data = (uint8_t *)indices.data();
+            uint32_t size = (indices.size() * sizeof(uint16_t));
+            return resources->createBuffer(name, Video::Format::R16_UINT, indices.size(), Video::BufferType::Index, 0, std::vector<uint8_t>(data, data + size));
+        }
+
+        uint32_t getIndexCount(void) const
         {
             return indices.size();
-        }
-
-        std::vector<uint8_t> getVertexData(void) const
-        {
-            return std::vector<uint8_t>((uint8_t *)vertices.data(), (uint8_t *)vertices.data() + (sizeof(Vertex) * vertices.size()));
-        }
-
-        std::vector<uint8_t> getIndexData(void) const
-        {
-            return std::vector<uint8_t>((uint8_t *)indices.data(), (uint8_t *)indices.data() + (sizeof(uint16_t) * indices.size()));
         }
     };
 
@@ -566,8 +570,8 @@ namespace Gek
                             uint32_t divisionCount = parameters;
                             geoSphere.generate(divisionCount);
 
-                            shape.vertexBuffer = resources->createBuffer(String(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), geoSphere.getVertexCount(), Video::BufferType::Vertex, 0, geoSphere.getVertexData());
-                            shape.indexBuffer = resources->createBuffer(String(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, geoSphere.getIndexCount(), Video::BufferType::Index, 0, geoSphere.getIndexData());
+                            shape.vertexBuffer = geoSphere.createVertexBuffer(String(L"shape:vertex:%v:%v", type, parameters), resources);
+                            shape.indexBuffer = geoSphere.createIndexBuffer(String(L"shape:index:%v:%v", type, parameters), resources);
                             shape.indexCount = geoSphere.getIndexCount();
                         }
                         else if (type.compareNoCase(L"cube") == 0)

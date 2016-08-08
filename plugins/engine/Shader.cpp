@@ -253,7 +253,23 @@ namespace Gek
                         String type(elementNode.attributes[L"type"]);
                         if (type.compareNoCase(L"isFrontFacing") == 0)
                         {
-                            inputData.format("    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                            String format(elementNode.getAttribute(L"format", L"bool"));
+                            if (format.compareNoCase(L"int") == 0)
+                            {
+                                inputData.format("    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+                            }
+                            else if (format.compareNoCase(L"uint") == 0)
+                            {
+                                inputData.format("    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                            }
+                            else if (format.compareNoCase(L"bool") == 0)
+                            {
+                                inputData.format("    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                            }
+                            else
+                            {
+                                throw InvalidParameters();
+                            }
                         }
                         else
                         {
