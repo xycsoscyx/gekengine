@@ -25,10 +25,9 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <shadowRadius>2.0</shadowRadius>
-        <shadowStrength>0.25</shadowStrength>
-        <shadowTapCount integer="true">32</shadowTapCount>
-        <shadowSpiralCount>13</shadowSpiralCount>
+        <gaussianRadius type="int">16</gaussianRadius>
+        <gaussianSigma>1.0</gaussianSigma>
+        <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
     </defines>
 
     <depth>D32_FLOAT</depth>
@@ -37,7 +36,8 @@
         <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
-        <ambientBuffer bind="float" flags="target" mipmaps="4">R8_UNORM</ambientBuffer>
+        <ambientBuffer bind="float" flags="target">R8_UNORM</ambientBuffer>
+        <gaussianBuffer bind="float" flags="target">R8_UNORM</gaussianBuffer>
         <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
     </textures>
 
@@ -67,6 +67,12 @@
                 </StoreDeferred>
 
                 <AmbientCalculation entry="mainPixelProgram">
+                    <defines>
+                        <ambientRadius>2.0</ambientRadius>
+                        <ambientTapCount type="uint">32</ambientTapCount>
+                        <ambientSpiralCount>13</ambientSpiralCount>
+                    </defines>
+
                     <resources>
                         <normalBuffer />
                         <depth />
@@ -77,10 +83,41 @@
                     </targets>
                 </AmbientCalculation>
 
+                <AmbientBlur entry="mainPixelProgram">
+                    <defines>
+                        <blurAxis type="float2">(1,0)</blurAxis>
+                    </defines>
+
+                    <resources>
+                        <depth />
+                        <ambientBuffer>sourceBuffer</ambientBuffer>
+                    </resources>
+
+                    <targets>
+                        <gaussianBuffer />
+                    </targets>                
+                </AmbientBlur>
+
+                <AmbientBlur entry="mainPixelProgram">
+                    <defines>
+                        <blurAxis type="float2">(0,1)</blurAxis>
+                    </defines>
+
+                    <resources>
+                        <depth />
+                        <ambientBuffer />
+                    </resources>
+
+                    <targets>
+                        <ambientBuffer />
+                    </targets>                
+                </AmbientBlur>
+                
                 <AmbientLighting entry="mainPixelProgram">
                     <resources>
                         <albedoBuffer />
-                        <ambientBuffer actions="generatemipmaps" />
+                        <gaussianBuffer>ambientBuffer</gaussianBuffer>
+                        <depth />
                     </resources>
 
                     <targets>
@@ -92,7 +129,7 @@
 
         <LightingPass lighting="true">
             <passes>
-                <TiledLightCulling compute="dispatchWidth, dispatchHeight, 1" entry="mainComputeProgram">
+                <TiledLightCulling compute="(dispatchWidth, dispatchHeight, 1)" entry="mainComputeProgram">
                     <resources>
                         <depth />
                     </resources>

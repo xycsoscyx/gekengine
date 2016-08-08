@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getType(const StringUTF8 &type)
+        static Video::Format getElementType(const StringUTF8 &type)
         {
             if (type.compareNoCase("float") == 0) return Video::Format::R32_FLOAT;
             else if (type.compareNoCase("float2") == 0) return Video::Format::R32G32_FLOAT;
@@ -204,45 +204,63 @@ namespace Gek
 
                 shaderNode.getValue(L"priority", priority);
 
-                std::unordered_map<String, String> globalDefinesMap;
-                auto replaceDefines = [&globalDefinesMap](String &value) -> bool
+                std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
+                uint32_t displayWidth = device->getBackBuffer()->getWidth();
+                uint32_t displayHeight = device->getBackBuffer()->getHeight();
+                globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, String(L"%v", displayWidth));
+                globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, String(L"%v", displayHeight));
+                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, String(L"(%v,%v)", displayWidth, displayHeight));
+                for (auto &defineNode : shaderNode.getChild(L"defines").children)
                 {
-                    bool foundDefine = false;
-                    for (auto &define : globalDefinesMap)
-                    {
-                        foundDefine = (foundDefine | value.replace(define.first, define.second));
-                    }
+                    BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
+                    globalDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
+                }
 
-                    return foundDefine;
-                };
-
-                auto evaluate = [&](const wchar_t *value, bool integer = false, bool includeType = false) -> String
+                auto evaluate = [](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
                 {
-                    String finalValue(value);
-                    finalValue.replace(L"displayWidth", String(L"%v", device->getBackBuffer()->getWidth()));
-                    finalValue.replace(L"displayHeight", String(L"%v", device->getBackBuffer()->getHeight()));
-                    while (replaceDefines(finalValue));
+                    bool foundDefine = true;
+                    while (foundDefine)
+                    {
+                        foundDefine = false;
+                        for (auto &define : definesMap)
+                        {
+                            foundDefine = (foundDefine | value.replace(define.first, define.second.second));
+                        }
+                    };
 
-                    if (finalValue.find(L"float2") != std::string::npos)
+                    String result;
+                    switch (bindType)
                     {
-                        return String((includeType ? L"float2%v" : L"%v"), Evaluator::get<Math::Float2>(finalValue.subString(6)));
-                    }
-                    else if (finalValue.find(L"float3") != std::string::npos)
-                    {
-                        return String((includeType ? L"float3%v" : L"%v"), Evaluator::get<Math::Float3>(finalValue.subString(6)));
-                    }
-                    else if (finalValue.find(L"float4") != std::string::npos)
-                    {
-                        return String((includeType ? L"float4%v" : L"%v"), Evaluator::get<Math::Float4>(finalValue.subString(6)));
-                    }
-                    else if (integer)
-                    {
-                        return String(L"%v", Evaluator::get<uint32_t>(finalValue));
-                    }
-                    else
-                    {
-                        return String(L"%v", Evaluator::get<float>(finalValue));
-                    }
+                    case BindType::Boolean:
+                        result = (bool)value;
+                        break;
+
+                    case BindType::Int:
+                    case BindType::UInt:
+                    case BindType::Float:
+                        result = Evaluator::get<float>(value);
+                        break;
+
+                    case BindType::Int2:
+                    case BindType::UInt2:
+                    case BindType::Float2:
+                        result = Evaluator::get<Math::Float2>(value);
+                        break;
+
+                    case BindType::Int3:
+                    case BindType::UInt3:
+                    case BindType::Float3:
+                        result = Evaluator::get<Math::Float3>(value);
+                        break;
+
+                    case BindType::Int4:
+                    case BindType::UInt4:
+                    case BindType::Float4:
+                        result = Evaluator::get<Math::Float4>(value);
+                        break;
+                    };
+
+                    return result;
                 };
 
                 StringUTF8 inputData;
@@ -293,7 +311,7 @@ namespace Gek
                             }
                             else
                             {
-                                if (getType(type) == Video::Format::Unknown)
+                                if (getElementType(type) == Video::Format::Unknown)
                                 {
                                     throw InvalidElementType();
                                 }
@@ -321,7 +339,7 @@ namespace Gek
                         lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
                         lightDataBuffer->setName(String(L"%v:lightDataBuffer", shaderName));
 
-                        globalDefinesMap[L"lightsPerPass"] = lightsPerPass;
+                        globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
 
                         lightingData.format(
                             "namespace Lighting\r\n" \
@@ -361,11 +379,6 @@ namespace Gek
                         throw MissingRequiredParameters();
                     }
                 });
-
-                for (auto &defineNode : shaderNode.getChild(L"defines").children)
-                {
-                    globalDefinesMap[defineNode.type] = evaluate(defineNode.text, defineNode.getAttribute(L"integer", L"false"));
-                }
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
@@ -417,12 +430,12 @@ namespace Gek
                         uint32_t textureHeight = device->getBackBuffer()->getHeight();
                         if (textureNode.attributes.count(L"size"))
                         {
-                            Math::Float2 size = evaluate(String(L"float2(%v)", textureNode.attributes[L"size"]), false, false);
+                            Math::Float2 size = evaluate(globalDefinesMap, textureNode.attributes[L"size"], BindType::UInt2);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t textureMipMaps = evaluate(textureNode.getAttribute(L"mipmaps", L"1"), true);
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
 
                         Video::Format format = Video::getFormat(textureNode.text);
                         uint32_t flags = getTextureFlags(textureNode.getAttribute(L"flags", L"0"));
@@ -441,11 +454,11 @@ namespace Gek
                         throw ResourceAlreadyListed();
                     }
 
-                    uint32_t size = evaluate(bufferNode.getAttribute(L"size"), true);
+                    uint32_t size = evaluate(globalDefinesMap, bufferNode.getAttribute(L"size"), BindType::UInt);
                     uint32_t flags = getBufferFlags(bufferNode.getAttribute(L"flags"));
                     if (bufferNode.attributes.count(L"stride"))
                     {
-                        uint32_t stride = evaluate(bufferNode.getAttribute(L"stride"), true);
+                        uint32_t stride = evaluate(globalDefinesMap, bufferNode.getAttribute(L"stride"), BindType::UInt);
                         resourceMap[bufferNode.type] = resources->createBuffer(String(L"%v:%v:buffer", bufferNode.type, shaderName), stride, size, Video::BufferType::Structured, flags);
                         resourceStructuresMap[bufferNode.type] = bufferNode.text;
                     }
@@ -514,7 +527,45 @@ namespace Gek
                         block.passList.push_back(PassData());
                         PassData &pass = block.passList.back();
 
+                        std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
+                        for (auto &defineNode : passNode.getChild(L"defines").children)
+                        {
+                            BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
+                            localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
+                        }
+
+                        StringUTF8 definesData;
+                        for (auto &define : localDefinesMap)
+                        {
+                            String value(evaluate(localDefinesMap, define.second.second, define.second.first));
+                            String bindType(getBindType(define.second.first));
+                            switch (define.second.first)
+                            {
+                            case BindType::Boolean:
+                            case BindType::Int:
+                            case BindType::UInt:
+                            case BindType::Half:
+                            case BindType::Float:
+                                definesData.format("    static const %v %v = %v;\r\n", bindType, define.first, value);
+                                break;
+
+                            default:
+                                definesData.format("    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                                break;
+                            };
+                        }
+
                         StringUTF8 engineData;
+                        if (!definesData.empty())
+                        {
+                            engineData.format(
+                                "namespace Defines\r\n" \
+                                "{\r\n" \
+                                "%v" \
+                                "};\r\n" \
+                                "\r\n", definesData);
+                        }
+
                         if (passNode.attributes.count(L"compute"))
                         {
                             pass.mode = Pass::Mode::Compute;
@@ -523,7 +574,7 @@ namespace Gek
                             pass.width = float(device->getBackBuffer()->getWidth());
                             pass.height = float(device->getBackBuffer()->getHeight());
 
-                            Math::Float3 dispatch = evaluate(String(L"float3(%v)", passNode.getAttribute(L"compute")), false, false);
+                            Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
                             pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
                             pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
                             pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
@@ -848,51 +899,6 @@ namespace Gek
                                 "%v" \
                                 "};\r\n" \
                                 "\r\n", unorderedAccessData);
-                        }
-
-                        StringUTF8 defineData;
-                        auto addDefine = [&defineData](const String &name, const String &value) -> void
-                        {
-                            if (value.find(L"float2") != std::string::npos)
-                            {
-                                defineData.format("    static const float2 %v = %v;\r\n", name, value);
-                            }
-                            else if (value.find(L"float3") != std::string::npos)
-                            {
-                                defineData.format("    static const float3 %v = %v;\r\n", name, value);
-                            }
-                            else if (value.find(L"float4") != std::string::npos)
-                            {
-                                defineData.format("    static const float4 %v = %v;\r\n", name, value);
-                            }
-                            else if (value.find(L".") == std::string::npos)
-                            {
-                                defineData.format("    static const int %v = %v;\r\n", name, value);
-                            }
-                            else
-                            {
-                                defineData.format("    static const float %v = %v;\r\n", name, value);
-                            }
-                        };
-
-                        for (auto &defineNode : passNode.getChild(L"defines").children)
-                        {
-                            addDefine(defineNode.type, evaluate(defineNode.text));
-                        }
-
-                        for (auto &globalDefine : globalDefinesMap)
-                        {
-                            addDefine(globalDefine.first, globalDefine.second);
-                        }
-
-                        if (!defineData.empty())
-                        {
-                            engineData.format(
-                                "namespace Defines\r\n" \
-                                "{\r\n" \
-                                "%v" \
-                                "};\r\n" \
-                                "\r\n", defineData);
                         }
 
                         StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));

@@ -229,18 +229,22 @@ namespace Gek
             else if (bindType.compareNoCase(L"Float2") == 0) return BindType::Float2;
             else if (bindType.compareNoCase(L"Float3") == 0) return BindType::Float3;
             else if (bindType.compareNoCase(L"Float4") == 0) return BindType::Float4;
+
             else if (bindType.compareNoCase(L"Half") == 0) return BindType::Half;
             else if (bindType.compareNoCase(L"Half2") == 0) return BindType::Half2;
             else if (bindType.compareNoCase(L"Half3") == 0) return BindType::Half3;
             else if (bindType.compareNoCase(L"Half4") == 0) return BindType::Half4;
+
             else if (bindType.compareNoCase(L"Int") == 0) return BindType::Int;
             else if (bindType.compareNoCase(L"Int2") == 0) return BindType::Int2;
             else if (bindType.compareNoCase(L"Int3") == 0) return BindType::Int3;
             else if (bindType.compareNoCase(L"Int4") == 0) return BindType::Int4;
-            else if (bindType.compareNoCase(L"Int") == 0) return BindType::UInt;
+
+            else if (bindType.compareNoCase(L"UInt") == 0) return BindType::UInt;
             else if (bindType.compareNoCase(L"UInt2") == 0) return BindType::UInt2;
             else if (bindType.compareNoCase(L"UInt3") == 0) return BindType::UInt3;
             else if (bindType.compareNoCase(L"UInt4") == 0) return BindType::UInt4;
+
             else if (bindType.compareNoCase(L"Boolean") == 0) return BindType::Boolean;
             return BindType::Unknown;
         }
@@ -253,18 +257,22 @@ namespace Gek
             case BindType::Float2:      return L"float2";
             case BindType::Float3:      return L"float3";
             case BindType::Float4:      return L"float4";
+
             case BindType::Half:        return L"half";
             case BindType::Half2:       return L"half2";
             case BindType::Half3:       return L"half3";
             case BindType::Half4:       return L"half4";
+
             case BindType::Int:        return L"int";
             case BindType::Int2:       return L"int2";
             case BindType::Int3:       return L"int3";
             case BindType::Int4:       return L"int4";
+
             case BindType::UInt:        return L"uint";
             case BindType::UInt2:       return L"uint2";
             case BindType::UInt3:       return L"uint3";
             case BindType::UInt4:       return L"uint4";
+
             case BindType::Boolean:     return L"boolean";
             };
 

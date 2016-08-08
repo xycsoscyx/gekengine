@@ -12,7 +12,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getType(const StringUTF8 &type)
+        static Video::Format getElementType(const StringUTF8 &type)
         {
             if (type.compareNoCase("float") == 0) return Video::Format::R32_FLOAT;
             else if (type.compareNoCase("float2") == 0) return Video::Format::R32G32_FLOAT;
@@ -116,7 +116,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    element.format = getType(type);
+                                    element.format = getElementType(type);
                                     if (element.format == Video::Format::Unknown)
                                     {
                                         throw InvalidElementType();

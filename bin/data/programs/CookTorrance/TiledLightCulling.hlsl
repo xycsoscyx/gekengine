@@ -87,12 +87,10 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
 
     float linearDepth = getLinearDepthFromSample(Resources::depth[screenPosition.xy]);
     uint linearDepthInteger = asuint(linearDepth);
-
     GroupMemoryBarrierWithGroupSync();
 
     InterlockedMin(Shared::tileMinimumDepth, linearDepthInteger);
     InterlockedMax(Shared::tileMaximumDepth, linearDepthInteger);
-
     GroupMemoryBarrierWithGroupSync();
 
     [branch]

@@ -5,13 +5,13 @@
 
 namespace Defines
 {
-    static const float inverseShadowTapCount = rcp(Defines::shadowTapCount);
+    static const float inverseAmbientTapCount = rcp(Defines::ambientTapCount);
 };
 
 float2 getTapLocation(float tap, float randomAngle)
 {
-    float alpha = ((tap + 0.5) * Defines::inverseShadowTapCount);
-    float angle = ((alpha * (Defines::shadowSpiralCount * Math::Tau)) + randomAngle);
+    float alpha = ((tap + 0.5) * Defines::inverseAmbientTapCount);
+    float angle = ((alpha * (Defines::ambientSpiralCount * Math::Tau)) + randomAngle);
     return (alpha * float2(cos(angle), sin(angle)));
 }
 
@@ -24,12 +24,12 @@ float getShadowFactor(InputPixel inputPixel)
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
     float randomAngle = random(inputPixel.screen.xy, Engine::worldTime);
-    float sampleRadius = (Defines::shadowRadius / (2.0 * surfacePosition.z * Camera::fieldOfView.x));
+    float sampleRadius = (Defines::ambientRadius / (2.0 * surfacePosition.z * Camera::fieldOfView.x));
 
     float totalOcclusion = 0.0;
 
     [unroll]
-    for (int tap = 0; tap < Defines::shadowTapCount; tap++)
+    for (int tap = 0; tap < Defines::ambientTapCount; tap++)
     {
         float2 tapLocation = (getTapLocation(tap, randomAngle) * sampleRadius);
         float2 tapCoord = (inputPixel.texCoord + tapLocation);
@@ -43,7 +43,7 @@ float getShadowFactor(InputPixel inputPixel)
         totalOcclusion += (max(0.0, (deltaAngle + (surfaceDepth * 0.001))) / (deltaMagnitude + 0.1));
     }
 
-    totalOcclusion *= (Math::Tau * Defines::shadowRadius * Defines::shadowStrength / Defines::shadowTapCount);
+    totalOcclusion *= (Math::Tau * Defines::ambientRadius / Defines::ambientTapCount);
     totalOcclusion = saturate(1.0 - totalOcclusion);
     return totalOcclusion;
 }

@@ -20,7 +20,7 @@
             </targets>
         </CalculateLuminance>
 
-        <AdaptLuminance compute="1, 1, 1" entry="mainComputeProgram">
+        <AdaptLuminance compute="(1, 1, 1)" entry="mainComputeProgram">
             <resources>
                 <luminanceBuffer actions="generateMipMaps" />
             </resources>
