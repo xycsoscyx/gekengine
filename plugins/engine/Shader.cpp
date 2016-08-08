@@ -236,25 +236,73 @@ namespace Gek
                         break;
 
                     case BindType::Int:
+                        result = Evaluator::get<int32_t>(value);
+                        break;
+
                     case BindType::UInt:
+                        result = Evaluator::get<uint32_t>(value);
+                        break;
+
                     case BindType::Float:
                         result = Evaluator::get<float>(value);
                         break;
 
                     case BindType::Int2:
+                        if (true)
+                        {
+                            Math::Float2 vector = Evaluator::get<Math::Float2>(value);
+                            result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
+                            break;
+                        }
+
                     case BindType::UInt2:
+                        if (true)
+                        {
+                            Math::Float2 vector = Evaluator::get<Math::Float2>(value);
+                            result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
+                            break;
+                        }
+
                     case BindType::Float2:
                         result = Evaluator::get<Math::Float2>(value);
                         break;
 
                     case BindType::Int3:
+                        if (true)
+                        {
+                            Math::Float3 vector = Evaluator::get<Math::Float3>(value);
+                            result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
+                            break;
+                        }
+
                     case BindType::UInt3:
+                        if (true)
+                        {
+                            Math::Float3 vector = Evaluator::get<Math::Float3>(value);
+                            result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
+                            break;
+                        }
+
                     case BindType::Float3:
                         result = Evaluator::get<Math::Float3>(value);
                         break;
 
                     case BindType::Int4:
+                        if (true)
+                        {
+                            Math::Float4 vector = Evaluator::get<Math::Float4>(value);
+                            result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
+                            break;
+                        }
+
                     case BindType::UInt4:
+                        if (true)
+                        {
+                            Math::Float4 vector = Evaluator::get<Math::Float4>(value);
+                            result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
+                            break;
+                        }
+
                     case BindType::Float4:
                         result = Evaluator::get<Math::Float4>(value);
                         break;
