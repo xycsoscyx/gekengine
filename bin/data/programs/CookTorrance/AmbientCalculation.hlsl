@@ -23,7 +23,7 @@ float getShadowFactor(InputPixel inputPixel)
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
-    float randomAngle = random(inputPixel.screen.xy, Engine::worldTime);
+    float randomAngle = random(inputPixel.screen.xy);//, Engine::worldTime);
     float sampleRadius = (Defines::ambientRadius / (2.0 * surfacePosition.z * Camera::fieldOfView.x));
 
     float totalOcclusion = 0.0;
@@ -43,7 +43,7 @@ float getShadowFactor(InputPixel inputPixel)
         totalOcclusion += (max(0.0, (deltaAngle + (surfaceDepth * 0.001))) / (deltaMagnitude + 0.1));
     }
 
-    totalOcclusion *= (Math::Tau * Defines::ambientRadius / Defines::ambientTapCount);
+    totalOcclusion *= (Math::Tau * Defines::ambientRadius * Defines::ambientStrength / Defines::ambientTapCount);
     totalOcclusion = saturate(1.0 - totalOcclusion);
     return totalOcclusion;
 }

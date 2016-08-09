@@ -107,8 +107,6 @@ namespace Light
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    return 0;
-
     float3 materialAlbedo = Resources::albedoBuffer[inputPixel.screen.xy];
     float2 materialInfo = Resources::materialBuffer[inputPixel.screen.xy];
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights

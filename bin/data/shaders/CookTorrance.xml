@@ -25,8 +25,8 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
 		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <gaussianRadius type="int">6</gaussianRadius>
-        <gaussianSigma>5.0</gaussianSigma>
+        <gaussianRadius type="int">3</gaussianRadius>
+        <gaussianSigma>2.3</gaussianSigma>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
     </defines>
 
@@ -68,9 +68,10 @@
 
                 <AmbientCalculation entry="mainPixelProgram">
                     <defines>
-                        <ambientRadius>2.0</ambientRadius>
-                        <ambientTapCount type="uint">32</ambientTapCount>
+                        <ambientRadius>2</ambientRadius>
+                        <ambientTapCount type="uint">24</ambientTapCount>
                         <ambientSpiralCount>13</ambientSpiralCount>
+                        <ambientStrength>0.3</ambientStrength>
                     </defines>
 
                     <resources>
@@ -85,7 +86,7 @@
 
                 <AmbientBlur entry="mainPixelProgram">
                     <defines>
-                        <blurAxis type="int2">(2,0)</blurAxis>
+                        <blurAxis type="int2">(1,0)</blurAxis>
                     </defines>
 
                     <resources>
@@ -100,7 +101,7 @@
 
                 <AmbientBlur entry="mainPixelProgram">
                     <defines>
-                        <blurAxis type="int2">(0,2)</blurAxis>
+                        <blurAxis type="int2">(1,0)</blurAxis>
                     </defines>
 
                     <resources>
@@ -110,9 +111,39 @@
 
                     <targets>
                         <ambientBuffer />
-                    </targets>                
+                    </targets>
                 </AmbientBlur>
-                
+
+                <AmbientBlur entry="mainPixelProgram">
+                    <defines>
+                        <blurAxis type="int2">(0,1)</blurAxis>
+                    </defines>
+
+                    <resources>
+                        <depth />
+                        <ambientBuffer>sourceBuffer</ambientBuffer>
+                    </resources>
+
+                    <targets>
+                        <gaussianBuffer />
+                    </targets>
+                </AmbientBlur>
+
+                <AmbientBlur entry="mainPixelProgram">
+                    <defines>
+                        <blurAxis type="int2">(0,1)</blurAxis>
+                    </defines>
+
+                    <resources>
+                        <depth />
+                        <gaussianBuffer>sourceBuffer</gaussianBuffer>
+                    </resources>
+
+                    <targets>
+                        <ambientBuffer />
+                    </targets>
+                </AmbientBlur>
+
                 <AmbientLighting entry="mainPixelProgram">
                     <resources>
                         <albedoBuffer />
