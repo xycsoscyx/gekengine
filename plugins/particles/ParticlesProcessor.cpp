@@ -85,7 +85,7 @@ namespace Gek
 
     GEK_CONTEXT_USER(ParticlesProcessor, Plugin::Core *)
         , public Plugin::PopulationListener
-        , public Plugin::UpdateListener
+        , public Plugin::PopulationStep
         , public Plugin::RendererListener
         , public Plugin::Processor
     {
@@ -189,8 +189,8 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->Broadcaster::addListener(this);
-            population->OrderedBroadcaster::addListener(this, 60);
+            population->addListener(this);
+            population->addStep(this, 60);
             renderer->addListener(this);
 
             visual = resources->loadVisual(L"particles");
@@ -201,8 +201,8 @@ namespace Gek
         ~ParticlesProcessor(void)
         {
             renderer->removeListener(this);
-            population->OrderedBroadcaster::removeListener(this);
-            population->Broadcaster::removeListener(this);
+            population->removeStep(this);
+            population->removeListener(this);
         }
 
         // Plugin::PopulationListener
@@ -288,7 +288,7 @@ namespace Gek
             }
         }
 
-        // Plugin::UpdateListener
+        // Plugin::PopulationStep
         void onUpdate(uint32_t order, State state)
         {
             if (state == State::Active)

@@ -206,7 +206,7 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->Broadcaster::addListener(this);
+            population->addListener(this);
             renderer->addListener(this);
 
             visual = resources->loadVisual(L"model");
@@ -217,7 +217,7 @@ namespace Gek
         ~ModelProcessor(void)
         {
             renderer->removeListener(this);
-            population->Broadcaster::removeListener(this);
+            population->removeListener(this);
         }
 
         // Plugin::PopulationListener

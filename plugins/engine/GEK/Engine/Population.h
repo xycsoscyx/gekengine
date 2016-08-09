@@ -27,7 +27,7 @@ namespace Gek
             virtual void onEntityDestroyed(Plugin::Entity *entity) { };
         };
 
-        GEK_INTERFACE(UpdateListener)
+        GEK_INTERFACE(PopulationStep)
         {
             enum class State : uint8_t
             {
@@ -42,7 +42,7 @@ namespace Gek
 
         GEK_INTERFACE(Population)
             : public Broadcaster<PopulationListener>
-            , public OrderedBroadcaster<UpdateListener>
+            , public Sequencer<PopulationStep>
         {
             GEK_START_EXCEPTIONS();
 

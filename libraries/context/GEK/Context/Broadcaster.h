@@ -1,9 +1,9 @@
 #pragma once
 
 #include "GEK\Context\Context.h"
+#include <mutex>
 #include <unordered_set>
 #include <map>
-#include <mutex>
 
 namespace Gek
 {
@@ -34,7 +34,7 @@ namespace Gek
         }
 
         template <typename... PARAMETERS, typename... ARGUMENTS>
-        void sendEvent(void(LISTENER::*function)(PARAMETERS...), ARGUMENTS&&... arguments) const
+        void sendShout(void(LISTENER::*function)(PARAMETERS...), ARGUMENTS&&... arguments) const
         {
             for (auto &listenerSearch : listenerSet)
             {
@@ -43,49 +43,49 @@ namespace Gek
         }
     };
 
-    template <typename LISTENER>
-    class OrderedBroadcaster
+    template <typename STEP>
+    class Sequencer
     {
     private:
         std::mutex mutex;
-        std::multimap<uint32_t, LISTENER *> listenerMap;
+        std::multimap<uint32_t, STEP *> stepMap;
 
     public:
-        virtual ~OrderedBroadcaster(void)
+        virtual ~Sequencer(void)
         {
             std::lock_guard<std::mutex> lock(mutex);
-            GEK_REQUIRE(listenerMap.empty());
+            GEK_REQUIRE(stepMap.empty());
         }
 
         template<typename... ORDER>
-        void addListener(LISTENER *listener, ORDER... orderList)
+        void addStep(STEP *step, ORDER... orderList)
         {
             std::lock_guard<std::mutex> lock(mutex);
             for (const auto &order : { orderList... })
             {
-                listenerMap.insert(std::make_pair(order, listener));
+                stepMap.insert(std::make_pair(order, step));
             }
         }
 
-        void removeListener(LISTENER *listener)
+        void removeStep(STEP *step)
         {
             std::lock_guard<std::mutex> lock(mutex);
-            for (auto listenerSearch = listenerMap.begin(); listenerSearch != listenerMap.end(); )
+            for (auto stepSearch = stepMap.begin(); stepSearch != stepMap.end(); )
             {
-                auto current = listenerSearch++;
-                if (current->second == listener)
+                auto currentStep = stepSearch++;
+                if (currentStep->second == step)
                 {
-                    listenerMap.erase(current);
+                    stepMap.erase(currentStep);
                 }
             }
         }
 
         template <typename... PARAMETERS, typename... ARGUMENTS>
-        void sendEvent(void(LISTENER::*function)(uint32_t order, PARAMETERS...), ARGUMENTS&&... arguments) const
+        void sendUpdate(void(STEP::*function)(uint32_t order, PARAMETERS...), ARGUMENTS&&... arguments) const
         {
-            for (auto &listenerSearch : listenerMap)
+            for (auto &stepSearch : stepMap)
             {
-                (listenerSearch.second->*function)(listenerSearch.first, std::forward<ARGUMENTS>(arguments)...);
+                (stepSearch.second->*function)(stepSearch.first, std::forward<ARGUMENTS>(arguments)...);
             }
         }
     };

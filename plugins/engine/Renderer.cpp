@@ -177,7 +177,7 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::PopulationListener
-            , public Plugin::UpdateListener
+            , public Plugin::PopulationStep
             , public Plugin::Renderer
         {
         public:
@@ -293,8 +293,8 @@ namespace Gek
                 , population(population)
                 , resources(resources)
             {
-                population->Broadcaster::addListener(this);
-                population->OrderedBroadcaster::addListener(this, 10, 100);
+                population->addListener(this);
+                population->addStep(this, 10, 100);
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::FilterMode::AllPoint;
@@ -345,8 +345,8 @@ namespace Gek
 
             ~Renderer(void)
             {
-                population->OrderedBroadcaster::removeListener(this);
-                population->Broadcaster::removeListener(this);
+                population->removeStep(this);
+                population->removeListener(this);
             }
 
             // Renderer
@@ -392,7 +392,7 @@ namespace Gek
                 cameraConstantData.projectionMatrix = projectionMatrix;
 
                 drawCallList.clear();
-                sendEvent(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
+                sendShout(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
                 if (!drawCallList.empty())
                 {
                     Video::Device::Context *deviceContext = device->getDefaultContext();
@@ -584,18 +584,18 @@ namespace Gek
             {
             }
 
-            // Plugin::UpdateListener
+            // Plugin::PopulationStep
             void onUpdate(uint32_t order, State state)
             {
                 GEK_REQUIRE(device);
 
                 if (order == 10)
                 {
-                    sendEvent(&Plugin::RendererListener::onRenderBackground);
+                    sendShout(&Plugin::RendererListener::onRenderBackground);
                 }
                 else if (order == 100)
                 {
-                    sendEvent(&Plugin::RendererListener::onRenderForeground);
+                    sendShout(&Plugin::RendererListener::onRenderForeground);
                     device->present(false);
                 }
             }

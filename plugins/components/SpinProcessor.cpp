@@ -49,7 +49,7 @@ namespace Gek
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
         , public Plugin::PopulationListener
-        , public Plugin::UpdateListener
+        , public Plugin::PopulationStep
         , public Plugin::Processor
     {
     public:
@@ -64,14 +64,14 @@ namespace Gek
         {
             GEK_REQUIRE(population);
 
-            population->Broadcaster::addListener(this);
-            population->OrderedBroadcaster::addListener(this, 0);
+            population->addListener(this);
+            population->addStep(this, 0);
         }
 
         ~SpinProcessor(void)
         {
-            population->OrderedBroadcaster::removeListener(this);
-            population->Broadcaster::removeListener(this);
+            population->removeStep(this);
+            population->removeListener(this);
         }
 
         // Plugin::PopulationListener
@@ -95,7 +95,7 @@ namespace Gek
         {
         }
 
-        // Plugin::UpdateListener
+        // Plugin::PopulationStep
         void onUpdate(uint32_t order, State state)
         {
             GEK_REQUIRE(population);

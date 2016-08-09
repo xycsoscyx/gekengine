@@ -37,7 +37,7 @@ namespace Gek
 
     GEK_CONTEXT_USER(NewtonProcessor, Plugin::Core *)
         , public Plugin::PopulationListener
-        , public Plugin::UpdateListener
+        , public Plugin::PopulationStep
         , public Plugin::Processor
         , public Newton::World
     {
@@ -94,14 +94,14 @@ namespace Gek
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
             NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
 
-            population->Broadcaster::addListener(this);
-            population->OrderedBroadcaster::addListener(this, 50);
+            population->addListener(this);
+            population->addStep(this, 50);
         }
 
         ~NewtonProcessor(void)
         {
-            population->OrderedBroadcaster::removeListener(this);
-            population->Broadcaster::removeListener(this);
+            population->removeStep(this);
+            population->removeListener(this);
 
             NewtonWaitForUpdateToFinish(newtonWorld);
             for (auto &collisionPair : collisionMap)
@@ -251,7 +251,7 @@ namespace Gek
                 const Surface &surface0 = processor->getSurface(surfaceIndex0);
                 const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                processor->sendEvent(&Newton::WorldListener::onCollision, entity0, entity1, position, normal);
+                processor->sendShout(&Newton::WorldListener::onCollision, entity0, entity1, position, normal);
                 if (surface0.ghost || surface1.ghost)
                 {
                     NewtonContactJointRemoveContact(contactJoint, newtonContact);
@@ -382,7 +382,7 @@ namespace Gek
             }
         }
 
-        // Plugin::UpdateListener
+        // Plugin::PopulationStep
         void onUpdate(uint32_t order, State state)
         {
             GEK_REQUIRE(population);

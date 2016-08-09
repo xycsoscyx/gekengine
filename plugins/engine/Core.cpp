@@ -47,7 +47,7 @@ namespace Gek
             , public Application
             , public Plugin::Core
             , public Plugin::PopulationListener
-            , public Plugin::UpdateListener
+            , public Plugin::PopulationStep
             , public Plugin::RendererListener
         {
             HWND window;
@@ -144,7 +144,7 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
-                population->OrderedBroadcaster::addListener(this, 0);
+                population->addStep(this, 0);
                 renderer->addListener(this);
 
                 IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
@@ -177,7 +177,7 @@ namespace Gek
             {
                 if (population)
                 {
-                    population->OrderedBroadcaster::removeListener(this);
+                    population->removeStep(this);
                 }
 
                 if (renderer)
@@ -314,7 +314,7 @@ namespace Gek
                 return engineRunning;
             }
 
-            // Plugin::UpdateListener
+            // Plugin::PopulationStep
             void onUpdate(uint32_t order, State state)
             {
                 POINT currentCursorPosition;
@@ -326,8 +326,8 @@ namespace Gek
                 {
                     if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
                     {
-                        sendEvent(&Plugin::CoreListener::onAction, L"turn", Plugin::ActionParameter(cursorMovementX));
-                        sendEvent(&Plugin::CoreListener::onAction, L"tilt", Plugin::ActionParameter(cursorMovementY));
+                        sendShout(&Plugin::CoreListener::onAction, L"turn", Plugin::ActionParameter(cursorMovementX));
+                        sendShout(&Plugin::CoreListener::onAction, L"tilt", Plugin::ActionParameter(cursorMovementY));
                     }
 
                     std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
@@ -338,30 +338,30 @@ namespace Gek
                         {
                         case 'W':
                         case VK_UP:
-                            sendEvent(&Plugin::CoreListener::onAction, L"move_forward", parameter);
+                            sendShout(&Plugin::CoreListener::onAction, L"move_forward", parameter);
                             break;
 
                         case 'S':
                         case VK_DOWN:
-                            sendEvent(&Plugin::CoreListener::onAction, L"move_backward", parameter);
+                            sendShout(&Plugin::CoreListener::onAction, L"move_backward", parameter);
                             break;
 
                         case 'A':
                         case VK_LEFT:
-                            sendEvent(&Plugin::CoreListener::onAction, L"strafe_left", parameter);
+                            sendShout(&Plugin::CoreListener::onAction, L"strafe_left", parameter);
                             break;
 
                         case 'D':
                         case VK_RIGHT:
-                            sendEvent(&Plugin::CoreListener::onAction, L"strafe_right", parameter);
+                            sendShout(&Plugin::CoreListener::onAction, L"strafe_right", parameter);
                             break;
 
                         case VK_SPACE:
-                            sendEvent(&Plugin::CoreListener::onAction, L"jump", parameter);
+                            sendShout(&Plugin::CoreListener::onAction, L"jump", parameter);
                             break;
 
                         case VK_LCONTROL:
-                            sendEvent(&Plugin::CoreListener::onAction, L"crouch", parameter);
+                            sendShout(&Plugin::CoreListener::onAction, L"crouch", parameter);
                             break;
                         };
                     }

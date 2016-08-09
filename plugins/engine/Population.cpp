@@ -130,23 +130,23 @@ namespace Gek
 
             void update(bool isBackgroundProcess, float frameTime)
             {
-                Plugin::UpdateListener::State state = Plugin::UpdateListener::State::Unknown;
+                Plugin::PopulationStep::State state = Plugin::PopulationStep::State::Unknown;
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    state = Plugin::UpdateListener::State::Loading;
+                    state = Plugin::PopulationStep::State::Loading;
                 }
                 else if(isBackgroundProcess)
                 {
-                    state = Plugin::UpdateListener::State::Idle;
+                    state = Plugin::PopulationStep::State::Idle;
                 }
                 else
                 {
-                    state = Plugin::UpdateListener::State::Active;
+                    state = Plugin::PopulationStep::State::Active;
                     this->frameTime = frameTime;
                     this->worldTime += frameTime;
                 }
                 
-                OrderedBroadcaster::sendEvent(&Plugin::UpdateListener::onUpdate, state);
+                Sequencer::sendUpdate(&Plugin::PopulationStep::onUpdate, state);
                 for (auto const &killEntity : killEntityList)
                 {
                     auto namedSearch = std::find_if(namedEntityMap.begin(), namedEntityMap.end(), [&](auto &namedEntityPair) -> bool
@@ -198,7 +198,7 @@ namespace Gek
                         killEntityList.clear();
                         entityList.clear();
 
-                        Broadcaster::sendEvent(&Plugin::PopulationListener::onLoadBegin);
+                        sendShout(&Plugin::PopulationListener::onLoadBegin);
 
                         Xml::Node worldNode = Xml::load(String(L"$root\\data\\scenes\\%v.xml", populationName), L"world");
 
@@ -249,11 +249,11 @@ namespace Gek
 
                         frameTime = 0.0f;
                         worldTime = 0.0f;
-                        Broadcaster::sendEvent(&Plugin::PopulationListener::onLoadSucceeded);
+                        sendShout(&Plugin::PopulationListener::onLoadSucceeded);
                     }
                     catch (const std::exception &)
                     {
-                        Broadcaster::sendEvent(&Plugin::PopulationListener::onLoadFailed);
+                        sendShout(&Plugin::PopulationListener::onLoadFailed);
                     };
                 });
             }
@@ -266,7 +266,7 @@ namespace Gek
             Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
             {
                 entityList.push_back(entity);
-                Broadcaster::sendEvent(&Plugin::PopulationListener::onEntityCreated, entity.get());
+                sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get());
                 if (entityName)
                 {
                     namedEntityMap[entityName] = entity.get();
@@ -304,7 +304,7 @@ namespace Gek
 
             void killEntity(Plugin::Entity *entity)
             {
-                Broadcaster::sendEvent(&Plugin::PopulationListener::onEntityDestroyed, entity);
+                sendShout(&Plugin::PopulationListener::onEntityDestroyed, entity);
                 killEntityList.push_back(entity);
             }
 
