@@ -121,7 +121,7 @@ namespace Gek
         {
             if (string)
             {
-                converter<ELEMENT, CONVERSION>::convert(*this, string);
+                converter<ELEMENT, CONVERSION>::convert((*this), string);
             }
         }
 
@@ -130,7 +130,7 @@ namespace Gek
         {
             if (!string.empty())
             {
-                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
             }
         }
 
@@ -139,7 +139,7 @@ namespace Gek
         {
             if (!string.empty())
             {
-                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
             }
         }
 
@@ -228,7 +228,7 @@ namespace Gek
 
         void join(std::vector<BaseString<ELEMENT>> list, ELEMENT delimiter, bool addSpaces = true)
         {
-            std::accumulate(list.begin(), list.end(), *this, 
+            std::accumulate(list.begin(), list.end(), (*this), 
                 [delimiter](const BaseString<ELEMENT> &a, const BaseString<ELEMENT> &b) -> BaseString<ELEMENT>
             {
                 return (a.empty() ? b : (a + delimiter + b));
@@ -385,7 +385,7 @@ namespace Gek
         {
             if (string)
             {
-                converter<ELEMENT, CONVERSION>::convert(*this, string);
+                converter<ELEMENT, CONVERSION>::convert((*this), string);
             }
             else
             {
@@ -404,7 +404,7 @@ namespace Gek
             }
             else
             {
-                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
             }
 
             return (*this);
@@ -419,7 +419,7 @@ namespace Gek
             }
             else
             {
-                converter<ELEMENT, CONVERSION>::convert(*this, string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
             }
 
             return (*this);

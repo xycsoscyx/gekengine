@@ -63,6 +63,7 @@ namespace Gek
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
         , public Plugin::PopulationListener
+        , public Plugin::UpdateListener
         , public Plugin::Processor
     {
     public:
@@ -73,7 +74,6 @@ namespace Gek
 
     private:
         Plugin::Population *population;
-        uint32_t updateHandle;
         Plugin::Resources *resources;
         Plugin::Renderer *renderer;
 
@@ -84,7 +84,6 @@ namespace Gek
         CameraProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
             , population(core->getPopulation())
-            , updateHandle(0)
             , resources(core->getResources())
             , renderer(core->getRenderer())
         {
@@ -92,14 +91,14 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->addListener(this);
-            updateHandle = population->setUpdatePriority(this, 90);
+            population->Broadcaster::addListener(this);
+            population->OrderedBroadcaster::addListener(this, 90);
         }
 
         ~CameraProcessor(void)
         {
-            population->removeUpdatePriority(updateHandle);
-            population->removeListener(this);
+            population->OrderedBroadcaster::removeListener(this);
+            population->Broadcaster::removeListener(this);
         }
 
         // Plugin::PopulationListener
@@ -147,7 +146,8 @@ namespace Gek
             }
         }
 
-        void onUpdate(uint32_t handle, State state)
+        // Plugin::UpdateListener
+        void onUpdate(uint32_t order, State state)
         {
             GEK_REQUIRE(renderer);
 

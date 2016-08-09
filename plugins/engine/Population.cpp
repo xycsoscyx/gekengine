@@ -58,7 +58,7 @@ namespace Gek
                     throw ComponentNotFound();
                 }
 
-                return (*componentSearch).second.second;
+                return componentSearch->second.second;
             }
         };
 
@@ -81,16 +81,10 @@ namespace Gek
             std::unordered_map<String, Plugin::Entity *> namedEntityMap;
             std::vector<Plugin::Entity *> killEntityList;
 
-            uint32_t nextHandle;
-            using UpdatePriorityMap = std::multimap<uint32_t, std::pair<uint32_t, Plugin::PopulationListener *>>;
-            UpdatePriorityMap updatePriorityMap;
-            std::map<uint32_t, UpdatePriorityMap::value_type *> updateHandleMap;
-
         public:
             Population(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , nextHandle(0)
             {
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
@@ -121,8 +115,6 @@ namespace Gek
                 entityList.clear();
                 componentNamesMap.clear();
                 componentsMap.clear();
-
-                GEK_REQUIRE(updatePriorityMap.empty());
             }
 
             // Plugin::Population
@@ -138,27 +130,23 @@ namespace Gek
 
             void update(bool isBackgroundProcess, float frameTime)
             {
-                Plugin::PopulationListener::State state = Plugin::PopulationListener::State::Unknown;
+                Plugin::UpdateListener::State state = Plugin::UpdateListener::State::Unknown;
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    state = Plugin::PopulationListener::State::Loading;
+                    state = Plugin::UpdateListener::State::Loading;
                 }
                 else if(isBackgroundProcess)
                 {
-                    state = Plugin::PopulationListener::State::Idle;
+                    state = Plugin::UpdateListener::State::Idle;
                 }
                 else
                 {
-                    state = Plugin::PopulationListener::State::Active;
+                    state = Plugin::UpdateListener::State::Active;
                     this->frameTime = frameTime;
                     this->worldTime += frameTime;
                 }
                 
-                for (auto &priorityPair : updatePriorityMap)
-                {
-                    priorityPair.second.second->onUpdate(priorityPair.second.first, state);
-                }
-
+                OrderedBroadcaster::sendEvent(&Plugin::UpdateListener::onUpdate, state);
                 for (auto const &killEntity : killEntityList)
                 {
                     auto namedSearch = std::find_if(namedEntityMap.begin(), namedEntityMap.end(), [&](auto &namedEntityPair) -> bool
@@ -210,7 +198,7 @@ namespace Gek
                         killEntityList.clear();
                         entityList.clear();
 
-                        sendEvent(&Plugin::PopulationListener::onLoadBegin);
+                        Broadcaster::sendEvent(&Plugin::PopulationListener::onLoadBegin);
 
                         Xml::Node worldNode = Xml::load(String(L"$root\\data\\scenes\\%v.xml", populationName), L"world");
 
@@ -232,7 +220,7 @@ namespace Gek
                             auto prefabSearch = prefabsMap.find(entityNode.getAttribute(L"prefab"));
                             if (prefabSearch != prefabsMap.end())
                             {
-                                entityDefinition = (*prefabSearch).second;
+                                entityDefinition = prefabSearch->second;
                             }
                             
                             for (auto &componentNode : entityNode.children)
@@ -261,11 +249,11 @@ namespace Gek
 
                         frameTime = 0.0f;
                         worldTime = 0.0f;
-                        sendEvent(&Plugin::PopulationListener::onLoadSucceeded);
+                        Broadcaster::sendEvent(&Plugin::PopulationListener::onLoadSucceeded);
                     }
                     catch (const std::exception &)
                     {
-                        sendEvent(&Plugin::PopulationListener::onLoadFailed);
+                        Broadcaster::sendEvent(&Plugin::PopulationListener::onLoadFailed);
                     };
                 });
             }
@@ -278,7 +266,7 @@ namespace Gek
             Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
             {
                 entityList.push_back(entity);
-                sendEvent(&Plugin::PopulationListener::onEntityCreated, entity.get());
+                Broadcaster::sendEvent(&Plugin::PopulationListener::onEntityCreated, entity.get());
                 if (entityName)
                 {
                     namedEntityMap[entityName] = entity.get();
@@ -316,7 +304,7 @@ namespace Gek
 
             void killEntity(Plugin::Entity *entity)
             {
-                sendEvent(&Plugin::PopulationListener::onEntityDestroyed, entity);
+                Broadcaster::sendEvent(&Plugin::PopulationListener::onEntityDestroyed, entity);
                 killEntityList.push_back(entity);
             }
 
@@ -328,7 +316,7 @@ namespace Gek
                 auto namedSearch = namedEntityMap.find(entityName);
                 if (namedSearch != namedEntityMap.end())
                 {
-                    return (*namedSearch).second;
+                    return namedSearch->second;
                 }
 
                 return nullptr;
@@ -340,36 +328,6 @@ namespace Gek
                 {
                     onEntity(entity.get());
                 });
-            }
-
-            uint32_t setUpdatePriority(Plugin::PopulationListener *observer, uint32_t priority)
-            {
-                uint32_t updateHandle = InterlockedIncrement(&nextHandle);
-                auto pair = std::make_pair(priority, std::make_pair(updateHandle, observer));
-                auto updateSearch = updatePriorityMap.insert(pair);
-                updateHandleMap[updateHandle] = &(*updateSearch);
-                return updateHandle;
-            }
-
-            void removeUpdatePriority(uint32_t updateHandle)
-            {
-                auto updateSearch = updateHandleMap.find(updateHandle);
-                if (updateSearch != updateHandleMap.end())
-                {
-                    uint32_t priority = updateSearch->second->first;
-                    auto priorityRange = updatePriorityMap.equal_range(priority);
-                    auto prioritySearch = std::find_if(priorityRange.first, priorityRange.second, [&](auto &priorityPair) -> bool
-                    {
-                        return (updateSearch->second == &priorityPair);
-                    });
-
-                    if (prioritySearch != updatePriorityMap.end())
-                    {
-                        updatePriorityMap.erase(prioritySearch);
-                    }
-
-                    updateHandleMap.erase(updateSearch);
-                }
             }
         };
 

@@ -30,7 +30,7 @@ namespace Gek
                 auto componentSearch = componentData.find(name);
                 if (componentSearch != componentData.end())
                 {
-                    return Evaluator::get<TYPE>((*componentSearch).second);
+                    return Evaluator::get<TYPE>(componentSearch->second);
                 }
             }
             else if (!componentData.value.empty())

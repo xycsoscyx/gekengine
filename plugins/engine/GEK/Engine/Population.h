@@ -16,9 +16,18 @@ namespace Gek
     namespace Plugin
     {
         GEK_PREDECLARE(Entity);
-        GEK_PREDECLARE(PopulationListener);
 
         GEK_INTERFACE(PopulationListener)
+        {
+            virtual void onLoadBegin(void) { };
+            virtual void onLoadSucceeded(void) { };
+            virtual void onLoadFailed(void) { };
+
+            virtual void onEntityCreated(Plugin::Entity *entity) { };
+            virtual void onEntityDestroyed(Plugin::Entity *entity) { };
+        };
+
+        GEK_INTERFACE(UpdateListener)
         {
             enum class State : uint8_t
             {
@@ -28,18 +37,12 @@ namespace Gek
                 Loading,
             };
 
-            virtual void onLoadBegin(void) { };
-            virtual void onLoadSucceeded(void) { };
-            virtual void onLoadFailed(void) { };
-
-            virtual void onEntityCreated(Plugin::Entity *entity) { };
-            virtual void onEntityDestroyed(Plugin::Entity *entity) { };
-
-            virtual void onUpdate(uint32_t handle, State state) { };
+            virtual void onUpdate(uint32_t order, State state) = 0;
         };
 
         GEK_INTERFACE(Population)
             : public Broadcaster<PopulationListener>
+            , public OrderedBroadcaster<UpdateListener>
         {
             GEK_START_EXCEPTIONS();
 
@@ -79,9 +82,6 @@ namespace Gek
                     }
                 });
             }
-
-            virtual uint32_t setUpdatePriority(PopulationListener *observer, uint32_t priority) = 0;
-            virtual void removeUpdatePriority(uint32_t updateHandle) = 0;
         };
     }; // namespace Plugin
 }; // namespace Gek

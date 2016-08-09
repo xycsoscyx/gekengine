@@ -312,10 +312,10 @@ namespace Gek
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
             {
-                auto ShaderSearch = materialShaderMap.find(material);
-                if (ShaderSearch != materialShaderMap.end())
+                auto shaderSearch = materialShaderMap.find(material);
+                if (shaderSearch != materialShaderMap.end())
                 {
-                    return (*ShaderSearch).second;
+                    return shaderSearch->second;
                 }
 
                 return ShaderHandle();

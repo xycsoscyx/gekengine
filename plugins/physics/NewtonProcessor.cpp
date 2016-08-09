@@ -37,6 +37,7 @@ namespace Gek
 
     GEK_CONTEXT_USER(NewtonProcessor, Plugin::Core *)
         , public Plugin::PopulationListener
+        , public Plugin::UpdateListener
         , public Plugin::Processor
         , public Newton::World
     {
@@ -93,14 +94,14 @@ namespace Gek
             int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
             NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
 
-            updateHandle = population->setUpdatePriority(this, 50);
-            population->addListener(this);
+            population->Broadcaster::addListener(this);
+            population->OrderedBroadcaster::addListener(this, 50);
         }
 
         ~NewtonProcessor(void)
         {
-            population->removeUpdatePriority(updateHandle);
-            population->removeListener(this);
+            population->OrderedBroadcaster::removeListener(this);
+            population->Broadcaster::removeListener(this);
 
             NewtonWaitForUpdateToFinish(newtonWorld);
             for (auto &collisionPair : collisionMap)
@@ -143,7 +144,7 @@ namespace Gek
             auto surfaceSearch = surfaceIndexMap.find(hash);
             if (surfaceSearch != surfaceIndexMap.end())
             {
-                surfaceIndex = (*surfaceSearch).second;
+                surfaceIndex = surfaceSearch->second;
             }
             else
             {
@@ -381,7 +382,8 @@ namespace Gek
             }
         }
 
-        void onUpdate(uint32_t handle, State state)
+        // Plugin::UpdateListener
+        void onUpdate(uint32_t order, State state)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(newtonWorld);
@@ -415,9 +417,9 @@ namespace Gek
             auto collisionSearch = collisionMap.find(collisionHash);
             if (collisionSearch != collisionMap.end())
             {
-                if ((*collisionSearch).second)
+                if (collisionSearch->second)
                 {
-                    newtonCollision = (*collisionSearch).second;
+                    newtonCollision = collisionSearch->second;
                 }
             }
             else
@@ -497,9 +499,9 @@ namespace Gek
                 auto collisionSearch = collisionMap.find(shapeHash);
                 if (collisionSearch != collisionMap.end())
                 {
-                    if ((*collisionSearch).second)
+                    if (collisionSearch->second)
                     {
-                        newtonCollision = (*collisionSearch).second;
+                        newtonCollision = collisionSearch->second;
                     }
                 }
                 else

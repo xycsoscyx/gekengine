@@ -93,7 +93,7 @@ namespace Gek
             auto typeRange = typeMap.equal_range(typeName);
             for (auto typeSearch = typeRange.first; typeSearch != typeRange.second; ++typeSearch)
             {
-                onType((*typeSearch).second);
+                onType(typeSearch->second);
             }
         }
     };

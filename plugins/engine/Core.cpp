@@ -47,6 +47,7 @@ namespace Gek
             , public Application
             , public Plugin::Core
             , public Plugin::PopulationListener
+            , public Plugin::UpdateListener
             , public Plugin::RendererListener
         {
             HWND window;
@@ -66,7 +67,6 @@ namespace Gek
             std::list<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
 
-            uint32_t updateHandle;
             ActionQueue actionQueue;
 
             bool consoleOpen;
@@ -86,7 +86,6 @@ namespace Gek
                 , configuration(nullptr)
                 , updateAccumulator(0.0)
                 , consoleOpen(false)
-                , updateHandle(0)
                 , mouseSensitivity(0.5f)
                 , root(nullptr)
                 , background(nullptr)
@@ -145,7 +144,7 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
-                updateHandle = population->setUpdatePriority(this, 0);
+                population->OrderedBroadcaster::addListener(this, 0);
                 renderer->addListener(this);
 
                 IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
@@ -178,7 +177,7 @@ namespace Gek
             {
                 if (population)
                 {
-                    population->removeUpdatePriority(updateHandle);
+                    population->OrderedBroadcaster::removeListener(this);
                 }
 
                 if (renderer)
@@ -315,8 +314,8 @@ namespace Gek
                 return engineRunning;
             }
 
-            // Plugin::PopulationListener
-            void onUpdate(uint32_t handle, State state)
+            // Plugin::UpdateListener
+            void onUpdate(uint32_t order, State state)
             {
                 POINT currentCursorPosition;
                 GetCursorPos(&currentCursorPosition);
@@ -529,7 +528,7 @@ namespace Gek
                 auto commandSearch = consoleCommandsMap.find(command.getLower());
                 if (commandSearch != consoleCommandsMap.end())
                 {
-                    (*commandSearch).second(parameterList, parameters->result);
+                    commandSearch->second(parameterList, parameters->result);
                 }
                 else
                 {

@@ -700,7 +700,7 @@ namespace Gek
                                     throw UnlistedRenderTarget();
                                 }
 
-                                outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType((*resourceSearch).second.second), resourcePair.second, currentStage++);
+                                outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                             }
 
                             if (!outputData.empty())
@@ -840,7 +840,7 @@ namespace Gek
                                             auto resourceSearch = resourceMappingsMap.find(resourceName);
                                             if (resourceSearch != resourceMappingsMap.end())
                                             {
-                                                auto &resource = (*resourceSearch).second;
+                                                auto &resource = resourceSearch->second;
                                                 resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
                                             }
                                         }
@@ -866,7 +866,7 @@ namespace Gek
                             auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
                             if (resourceMapSearch != resourceMappingsMap.end())
                             {
-                                auto &resource = (*resourceMapSearch).second;
+                                auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
                                     resourceData.format("    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
@@ -882,7 +882,7 @@ namespace Gek
                             auto structureSearch = resourceStructuresMap.find(resourcePair.first);
                             if (structureSearch != resourceStructuresMap.end())
                             {
-                                auto &structure = (*structureSearch).second;
+                                auto &structure = structureSearch->second;
                                 resourceData.format("    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
@@ -917,7 +917,7 @@ namespace Gek
                             auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
                             if (resourceMapSearch != resourceMappingsMap.end())
                             {
-                                auto &resource = (*resourceMapSearch).second;
+                                auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
                                     unorderedAccessData.format("    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
@@ -933,7 +933,7 @@ namespace Gek
                             auto structureSearch = resourceStructuresMap.find(resourcePair.first);
                             if (structureSearch != resourceStructuresMap.end())
                             {
-                                auto &structure = (*structureSearch).second;
+                                auto &structure = structureSearch->second;
                                 unorderedAccessData.format("    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }

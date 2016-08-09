@@ -177,6 +177,7 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::PopulationListener
+            , public Plugin::UpdateListener
             , public Plugin::Renderer
         {
         public:
@@ -273,8 +274,6 @@ namespace Gek
         private:
             Video::Device *device;
             Plugin::Population *population;
-            uint32_t backgroundUpdateHandle;
-            uint32_t foregroundUpdateHandle;
             Engine::Resources *resources;
 
             Video::ObjectPtr pointSamplerState;
@@ -292,13 +291,10 @@ namespace Gek
                 : ContextRegistration(context)
                 , device(device)
                 , population(population)
-                , backgroundUpdateHandle(0)
-                , foregroundUpdateHandle(0)
                 , resources(resources)
             {
-                population->addListener(this);
-                backgroundUpdateHandle = population->setUpdatePriority(this, 10);
-                foregroundUpdateHandle = population->setUpdatePriority(this, 100);
+                population->Broadcaster::addListener(this);
+                population->OrderedBroadcaster::addListener(this, 10, 100);
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::FilterMode::AllPoint;
@@ -349,9 +345,8 @@ namespace Gek
 
             ~Renderer(void)
             {
-                population->removeUpdatePriority(foregroundUpdateHandle);
-                population->removeUpdatePriority(backgroundUpdateHandle);
-                population->removeListener(this);
+                population->OrderedBroadcaster::removeListener(this);
+                population->Broadcaster::removeListener(this);
             }
 
             // Renderer
@@ -434,10 +429,10 @@ namespace Gek
                     std::list<DrawCallSet> drawCallSetList;
                     for (auto &drawCall = drawCallList.begin(); drawCall != drawCallList.end(); )
                     {
-                        currentShader = (*drawCall).shader;
+                        currentShader = drawCall->shader;
 
                         auto beginShaderList = drawCall;
-                        while (drawCall != drawCallList.end() && (*drawCall).shader == currentShader)
+                        while (drawCall != drawCallList.end() && drawCall->shader == currentShader)
                         {
                             ++drawCall;
                         };
@@ -477,10 +472,10 @@ namespace Gek
                                             MaterialHandle currentMaterial;
                                             for (auto shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
                                             {
-                                                if (currentVisual != (*shaderDrawCall).plugin)
+                                                if (currentVisual != shaderDrawCall->plugin)
                                                 {
                                                     visualEnabled = false;
-                                                    currentVisual = (*shaderDrawCall).plugin;
+                                                    currentVisual = shaderDrawCall->plugin;
                                                     Plugin::Visual *visual = resources->getVisual(currentVisual);
                                                     if (!visual)
                                                     {
@@ -491,10 +486,10 @@ namespace Gek
                                                     visual->enable(deviceContext);
                                                 }
 
-                                                if (currentMaterial != (*shaderDrawCall).material)
+                                                if (currentMaterial != shaderDrawCall->material)
                                                 {
                                                     materialEnabled = false;
-                                                    currentMaterial = (*shaderDrawCall).material;
+                                                    currentMaterial = shaderDrawCall->material;
                                                     Engine::Material *material = resources->getMaterial(currentMaterial);
                                                     if (!material)
                                                     {
@@ -508,7 +503,7 @@ namespace Gek
                                                 {
                                                     try
                                                     {
-                                                        (*shaderDrawCall).onDraw(deviceContext);
+                                                        shaderDrawCall->onDraw(deviceContext);
                                                     }
                                                     catch (const Plugin::Resources::ResourceNotLoaded &)
                                                     {
@@ -589,15 +584,16 @@ namespace Gek
             {
             }
 
-            void onUpdate(uint32_t handle, State state)
+            // Plugin::UpdateListener
+            void onUpdate(uint32_t order, State state)
             {
                 GEK_REQUIRE(device);
 
-                if (handle == backgroundUpdateHandle)
+                if (order == 10)
                 {
                     sendEvent(&Plugin::RendererListener::onRenderBackground);
                 }
-                else if (handle == foregroundUpdateHandle)
+                else if (order == 100)
                 {
                     sendEvent(&Plugin::RendererListener::onRenderForeground);
                     device->present(false);

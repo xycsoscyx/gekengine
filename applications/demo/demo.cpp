@@ -1,4 +1,4 @@
-#include "GEK\Utility\Exceptions.h"
+﻿#include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\Display.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
@@ -47,7 +47,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         auto modesRange = displayModes.equal_range(32);
         for (auto &modeSearch = modesRange.first; modeSearch != modesRange.second; ++modeSearch)
         {
-            auto &mode = (*modeSearch).second;
+            auto &mode = modeSearch->second;
 
             String aspectRatio(L"");
             switch (mode.aspectRatio)
@@ -243,8 +243,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
             DestroyWindow(window);
             SetWindowLongPtr(window, GWLP_USERDATA, 0);
+            }
         }
-    }
     catch (const std::exception &exception)
     {
         MessageBoxA(nullptr, exception.what(), "Unhandled Exception Error", MB_OK | MB_ICONERROR);
@@ -255,4 +255,4 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     };
 
     return 0;
-}
+    }

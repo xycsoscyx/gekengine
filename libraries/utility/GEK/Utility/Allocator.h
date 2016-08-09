@@ -53,7 +53,7 @@ namespace Gek
 
         bool operator != (const AlignedAllocator &other) const
         {
-            return !(*this == other);
+            return !((*this) == other);
         }
 
         void construct(TYPE *const value, const TYPE &data) const

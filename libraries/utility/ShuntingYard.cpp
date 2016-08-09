@@ -342,14 +342,14 @@ namespace Gek
                 auto variableSearch = variableMap.find(value);
                 if (variableSearch != variableMap.end())
                 {
-                    insertToken(infixTokenList, Token((*variableSearch).second));
+                    insertToken(infixTokenList, Token(variableSearch->second));
                     continue;
                 }
 
                 auto functionSearch = functionsMap.find(value);
                 if (functionSearch != functionsMap.end())
                 {
-                    insertToken(infixTokenList, Token(TokenType::Function, (*functionSearch).first));
+                    insertToken(infixTokenList, Token(TokenType::Function, functionSearch->first));
                     continue;
                 }
 
@@ -590,7 +590,7 @@ namespace Gek
                         throw InvalidOperator();
                     }
 
-                    auto &operation = (*operationSearch).second;
+                    auto &operation = operationSearch->second;
                     if (!operation.unaryFunction)
                     {
                         throw InvalidOperator();
@@ -621,7 +621,7 @@ namespace Gek
                         throw InvalidOperator();
                     }
 
-                    auto &operation = (*operationSearch).second;
+                    auto &operation = operationSearch->second;
                     if (!operation.binaryFunction)
                     {
                         throw InvalidOperator();
@@ -662,7 +662,7 @@ namespace Gek
                         throw InvalidFunction();
                     }
 
-                    auto &function = (*functionSearch).second;
+                    auto &function = functionSearch->second;
                     if (function.parameterCount != token.parameterCount)
                     {
                         throw InvalidFunctionParameters();
