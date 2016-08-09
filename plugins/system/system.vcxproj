@@ -150,10 +150,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="AudioDevice.cpp" />
+    <ClCompile Include="Direct3D11VideoDevice.cpp" />
+    <ClCompile Include="DirectInput8InputSystem.cpp" />
+    <ClCompile Include="DirectSound8AudioDevice.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="InputSystem.cpp" />
-    <ClCompile Include="VideoDevice.cpp" />
+    <ClCompile Include="OpenGL4_5VideoDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj">

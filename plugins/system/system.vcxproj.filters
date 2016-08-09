@@ -2,13 +2,16 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="InputSystem.cpp">
+    <ClCompile Include="DirectSound8AudioDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="AudioDevice.cpp">
+    <ClCompile Include="Direct3D11VideoDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="VideoDevice.cpp">
+    <ClCompile Include="DirectInput8InputSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL4_5VideoDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
