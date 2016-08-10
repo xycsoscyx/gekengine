@@ -35,7 +35,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float transparentDepth = inputPixel.position.z - 4.0;
     float2 refractionOffset = (etaRatio == 1.0) ? 0.0 : computeRefractionOffset(transparentDepth, inputPixel.normal, inputPixel.position, etaRatio);
-    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    float linearDepth = getLinearDepthFromSample(Resources::depthCopy[inputPixel.screen.xy]);
     outputPixel.modulationDiffusionBuffer.a = k_0 * coverage * (1.0 - collimation) * (1.0 - k_1 / (k_1 + inputPixel.position.z - linearDepth)) / abs(inputPixel.position.z);
     outputPixel.modulationDiffusionBuffer.a *= outputPixel.modulationDiffusionBuffer.a;
 

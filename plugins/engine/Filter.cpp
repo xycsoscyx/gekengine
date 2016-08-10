@@ -167,14 +167,20 @@ namespace Gek
                         throw ResourceAlreadyListed();
                     }
 
-                    if (textureNode.attributes.count(L"source") && textureNode.attributes.count(L"name"))
+                    if (textureNode.attributes.count(L"source"))
                     {
                         resources->getShader(textureNode.attributes[L"source"], MaterialHandle());
-                        String resourceName(L"%v:%v:resource", textureNode.attributes[L"name"], textureNode.attributes[L"source"]);
+                        String resourceName(L"%v:%v:resource", textureNode.type, textureNode.attributes[L"source"]);
                         resourceMap[textureNode.type] = resources->getResourceHandle(resourceName);
                     }
                     else
                     {
+                        Video::Format format = Video::getFormat(textureNode.text);
+                        if (format == Video::Format::Unknown)
+                        {
+                            throw InvalidParameters();
+                        }
+
                         uint32_t textureWidth = device->getBackBuffer()->getWidth();
                         uint32_t textureHeight = device->getBackBuffer()->getHeight();
                         if (textureNode.attributes.count(L"size"))
@@ -184,10 +190,8 @@ namespace Gek
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
-
-                        Video::Format format = Video::getFormat(textureNode.text);
                         uint32_t flags = getTextureFlags(textureNode.getAttribute(L"flags", L"0"));
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
                         resourceMap[textureNode.type] = resources->createTexture(String(L"%v:%v:resource", textureNode.type, filterName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureNode.type, std::make_pair(textureWidth, textureHeight)));
                     }
@@ -296,7 +300,7 @@ namespace Gek
                     {
                         pass.mode = Pass::Mode::Deferred;
 
-                        engineData =
+                        engineData +=
                             "struct InputPixel\r\n" \
                             "{\r\n" \
                             "    float4 screen : SV_POSITION;\r\n" \

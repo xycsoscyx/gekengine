@@ -47,8 +47,9 @@ namespace Gek
             struct PassData
             {
                 Pass::Mode mode;
-                bool enableDepth;
                 bool renderToScreen;
+                bool enableDepth;
+                ResourceHandle depthBuffer;
                 uint32_t clearDepthFlags;
                 float clearDepthValue;
                 uint32_t clearStencilValue;
@@ -71,8 +72,8 @@ namespace Gek
 
                 PassData(void)
                     : mode(Pass::Mode::Forward)
-                    , enableDepth(false)
                     , renderToScreen(true)
+                    , enableDepth(false)
                     , clearDepthFlags(0)
                     , clearDepthValue(1.0f)
                     , clearStencilValue(0)
@@ -178,7 +179,6 @@ namespace Gek
             Video::BufferPtr lightDataBuffer;
             std::vector<LightData> lightList;
 
-            ResourceHandle depthBuffer;
             std::list<BlockData> blockList;
             std::unordered_map<String, PassData *> forwardPassMap;
 
@@ -424,39 +424,13 @@ namespace Gek
                             "\r\n", lightsPerPass);
                     }))
                     {
-                        throw MissingRequiredParameters();
+                        throw MissingParameters();
                     }
                 });
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
                 std::unordered_map<String, String> resourceStructuresMap;
-
-                shaderNode.findChild(L"depth", [&](auto &depthNode) -> void
-                {
-                    if (depthNode.attributes.count(L"source"))
-                    {
-                        resources->getShader(depthNode.attributes[L"source"], MaterialHandle());
-                        depthBuffer = resources->getResourceHandle(String(L"depth:%v:resource", depthNode.attributes[L"source"]));
-                    }
-                    else if (!depthNode.text.empty())
-                    {
-                        Video::Format format = Video::getFormat(depthNode.text);
-                        if (format == Video::Format::Unknown)
-                        {
-                            throw InvalidDepthParameters();
-                        }
-
-                        depthBuffer = resources->createTexture(String(L"depth:%v:resource", shaderName), format, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::DepthTarget | Video::TextureFlags::Resource);
-                    }
-                    else
-                    {
-                        throw InvalidDepthParameters();
-                    }
-
-                    resourceMappingsMap[L"depth"] = std::make_pair(MapType::Texture2D, BindType::Float);
-                    resourceMap[L"depth"] = depthBuffer;
-                });
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 for(auto &textureNode : shaderNode.getChild(L"textures").children)
@@ -466,14 +440,20 @@ namespace Gek
                         throw ResourceAlreadyListed();
                     }
 
-                    if (textureNode.attributes.count(L"source") && textureNode.attributes.count(L"name"))
+                    if (textureNode.attributes.count(L"source"))
                     {
                         resources->getShader(textureNode.attributes[L"source"], MaterialHandle());
-                        String resourceName(L"%v:%v:resource", textureNode.attributes[L"name"], textureNode.attributes[L"source"]);
+                        String resourceName(L"%v:%v:resource", textureNode.type, textureNode.attributes[L"source"]);
                         resourceMap[textureNode.type] = resources->getResourceHandle(resourceName);
                     }
                     else
                     {
+                        Video::Format format = Video::getFormat(textureNode.text);
+                        if (format == Video::Format::Unknown)
+                        {
+                            throw InvalidParameters();
+                        }
+
                         uint32_t textureWidth = device->getBackBuffer()->getWidth();
                         uint32_t textureHeight = device->getBackBuffer()->getHeight();
                         if (textureNode.attributes.count(L"size"))
@@ -483,10 +463,8 @@ namespace Gek
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
-
-                        Video::Format format = Video::getFormat(textureNode.text);
                         uint32_t flags = getTextureFlags(textureNode.getAttribute(L"flags", L"0"));
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
                         resourceMap[textureNode.type] = resources->createTexture(String(L"%v:%v:resource", textureNode.type, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureNode.type, std::make_pair(textureWidth, textureHeight)));
                     }
@@ -716,6 +694,18 @@ namespace Gek
                             Video::DepthStateInformation depthState;
                             passNode.findChild(L"depthstates", [&](auto &depthNode) -> void
                             {
+                                if (depthNode.attributes.count(L"target") == 0)
+                                {
+                                    throw MissingParameters();
+                                }
+
+                                auto resourceSearch = resourceMap.find(depthNode.attributes["target"]);
+                                if (resourceSearch == resourceMap.end())
+                                {
+                                    throw InvalidParameters();
+                                }
+
+                                pass.depthBuffer = resourceSearch->second;
                                 depthState.enable = true;
                                 pass.enableDepth = true;
 
@@ -850,7 +840,7 @@ namespace Gek
                                 }
                             }))
                             {
-                                throw MissingRequiredParameters();
+                                throw MissingParameters();
                             }
                         }
 
@@ -1128,23 +1118,23 @@ namespace Gek
 
                     if (pass.clearDepthFlags > 0)
                     {
-                        resources->clearDepthStencilTarget(deviceContext, depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
+                        resources->clearDepthStencilTarget(deviceContext, pass.depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
                     }
 
                     if (pass.renderToScreen)
                     {
                         if (cameraTarget)
                         {
-                            resources->setRenderTargets(deviceContext, &cameraTarget, 1, (pass.enableDepth ? &depthBuffer : nullptr));
+                            resources->setRenderTargets(deviceContext, &cameraTarget, 1, (pass.enableDepth ? &pass.depthBuffer : nullptr));
                         }
                         else
                         {
-                            resources->setBackBuffer(deviceContext, (pass.enableDepth ? &depthBuffer : nullptr));
+                            resources->setBackBuffer(deviceContext, (pass.enableDepth ? &pass.depthBuffer : nullptr));
                         }
                     }
                     else if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargets(deviceContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &depthBuffer : nullptr));
+                        resources->setRenderTargets(deviceContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &pass.depthBuffer : nullptr));
                     }
 
                     break;

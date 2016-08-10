@@ -14,9 +14,8 @@ namespace Gek
         GEK_INTERFACE(Shader)
         {
             GEK_START_EXCEPTIONS();
-            GEK_ADD_EXCEPTION(InvalidDepthParameters);
             GEK_ADD_EXCEPTION(InvalidParameters);
-            GEK_ADD_EXCEPTION(MissingRequiredParameters);
+            GEK_ADD_EXCEPTION(MissingParameters);
             GEK_ADD_EXCEPTION(ResourceAlreadyListed);
             GEK_ADD_EXCEPTION(UnlistedRenderTarget);
             GEK_ADD_EXCEPTION(UnknownMaterialType);

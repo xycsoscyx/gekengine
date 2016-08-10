@@ -205,11 +205,11 @@ namespace Gek
                         vertexProgram = device->loadVertexProgram(programFilePath, programEntryPoint, elementList, onInclude);
                     }))
                     {
-                        throw MissingRequiredParameters();
+                        throw MissingParameters();
                     }
                 }))
                 {
-                    throw MissingRequiredParameters();
+                    throw MissingParameters();
                 }
             }
 

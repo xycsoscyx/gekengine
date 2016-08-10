@@ -11,7 +11,7 @@ namespace Gek
         GEK_INTERFACE(Material)
         {
             GEK_START_EXCEPTIONS();
-            GEK_ADD_EXCEPTION(MissingRequiredParameters);
+            GEK_ADD_EXCEPTION(MissingParameters);
 
             using ResourceMap = std::unordered_map<String, ResourceHandle>;
             using PassMap = std::unordered_map<String, ResourceMap>;

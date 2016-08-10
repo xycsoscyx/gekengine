@@ -17,7 +17,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     [branch]
     if (minComponent(backgroundModulation) == 1.0)
     {
-        return Resources::sourceBuffer[inputPixel.screen.xy];
+        return Resources::finalCopy[inputPixel.screen.xy];
     }
 
     float diffusionSquared = backgroundModulationAndDiffusion.a * pixelsPerDiffusion2;
@@ -70,7 +70,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
                         // Gaussian weight (slightly higher quality but much slower
                         // float weight = exp(-radiusSquared / (8 * backgroundBlurRadiusSquared)) / sqrt(4 * pi * backgroundBlurRadiusSquared);
 
-                        background += weight * Resources::sourceBuffer[tapCoord];
+                        background += weight * Resources::finalCopy[tapCoord];
                         weightSum += weight;
                     }
                 }
@@ -81,7 +81,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     }
     else
     {
-        background = Resources::sourceBuffer[inputPixel.screen.xy];
+        background = Resources::finalCopy[inputPixel.screen.xy];
     }
 
     return background * backgroundModulation + (1.0 - backgroundModulation) * accumulation.rgb / max(accumulation.a, Math::Epsilon);

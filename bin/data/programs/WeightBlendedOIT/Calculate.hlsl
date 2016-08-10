@@ -20,7 +20,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     weight *= saturate(1.0 - dot(transmission, (1.0 / 3.0)));
 
     // Soften edges when transparent surfaces intersect solid surfaces
-    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    float linearDepth = getLinearDepthFromSample(Resources::depthCopy[inputPixel.screen.xy]);
     float depthDelta = saturate((linearDepth - inputPixel.position.z) * 2.5);
     weight *= depthDelta;
     

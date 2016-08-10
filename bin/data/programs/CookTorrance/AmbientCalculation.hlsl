@@ -19,7 +19,7 @@ float2 getTapLocation(float tap, float randomAngle)
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 float getShadowFactor(InputPixel inputPixel)
 {
-    float surfaceDepth = Resources::depth[inputPixel.screen.xy];
+    float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
@@ -34,7 +34,7 @@ float getShadowFactor(InputPixel inputPixel)
         float2 tapLocation = (getTapLocation(tap, randomAngle) * sampleRadius);
         float2 tapCoord = (inputPixel.texCoord + tapLocation);
 
-        float tapDepth = Resources::depth.SampleLevel(Global::pointSampler, tapCoord, 0);
+        float tapDepth = Resources::depthBuffer.SampleLevel(Global::pointSampler, tapCoord, 0);
         float3 tapPosition = getPositionFromSample(tapCoord, tapDepth);
 
         float3 tapDelta = (tapPosition - surfacePosition);

@@ -1,29 +1,53 @@
 <?xml version="1.0"?>
 <filter>
     <textures>
-        <finalBuffer bind="float3" source="$standard" name="finalBuffer" />
-        <depth bind="float" source="$standard" name="depth"/>
+        <backBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</backBuffer>
+        <frontBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</frontBuffer>
+        <depthBuffer bind="float" source="$standard" />
+        <finalBuffer bind="float3" source="$standard" />
     </textures>
 
     <buffers>
-        <focalDepth size="1" flags="unorderedAccess">R32_FLOAT</focalDepth>
+        <averageFocalDepth size="1" flags="unorderedAccess">R32_FLOAT</averageFocalDepth>
     </buffers>
-    
+
+    <defines>
+        <focusOuterDepth>5.0</focusOuterDepth>
+        <focusInnerDepth>5.0</focusInnerDepth>
+    </defines>
+
     <passes>
-        <AdaptFocalDepth compute="(1, 1, 1)" entry="mainComputeProgram">
+        <AdaptaverageFocalDepth compute="(1, 1, 1)" entry="mainComputeProgram">
             <resources>
-                <depth />
+                <depthBuffer />
             </resources>
 
             <unorderedaccess>
-                <focalDepth />
+                <averageFocalDepth />
             </unorderedaccess>
-        </AdaptFocalDepth>
+        </AdaptaverageFocalDepth>
+
+        <SeparateFields entry="mainPixelProgram">
+            <resources>
+                <averageFocalDepth />
+                <finalBuffer />
+                <depthBuffer />
+            </resources>
+
+            <targets>
+                <backBuffer />
+                <frontBuffer />
+            </targets>
+        </SeparateFields>
+
 
         <CalculateBlur entry="mainPixelProgram">
             <resources>
-                <focalDepth />
-                <depth />
+                <backBuffer />
+                <frontBuffer />
+                <averageFocalDepth />
+                <finalBuffer />
+                <depthBuffer />
             </resources>
         </CalculateBlur>
     </passes>

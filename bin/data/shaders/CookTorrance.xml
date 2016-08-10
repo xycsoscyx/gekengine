@@ -30,9 +30,8 @@
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
     </defines>
 
-    <depth>D32_FLOAT</depth>
-
     <textures>
+        <depthBuffer bind="float" flags="depth">D32_FLOAT</depthBuffer>
         <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
@@ -49,7 +48,7 @@
         <DeferredPass>
             <passes>
                 <StoreDeferred forward="solid" entry="mainPixelProgram">
-                    <depthstates>
+                    <depthstates target="depthBuffer">
                         <comparison>less_equal</comparison>
                         <writemask>all</writemask>
                         <clear>1</clear>
@@ -76,7 +75,7 @@
 
                     <resources>
                         <normalBuffer />
-                        <depth />
+                        <depthBuffer />
                     </resources>
 
                     <targets>
@@ -90,8 +89,8 @@
                     </defines>
 
                     <resources>
-                        <depth />
-                        <ambientBuffer>sourceBuffer</ambientBuffer>
+                        <depthBuffer />
+                        <ambientBuffer>finalCopy</ambientBuffer>
                     </resources>
 
                     <targets>
@@ -105,8 +104,8 @@
                     </defines>
 
                     <resources>
-                        <depth />
-                        <gaussianBuffer>sourceBuffer</gaussianBuffer>
+                        <depthBuffer />
+                        <gaussianBuffer>finalCopy</gaussianBuffer>
                     </resources>
 
                     <targets>
@@ -120,8 +119,8 @@
                     </defines>
 
                     <resources>
-                        <depth />
-                        <ambientBuffer>sourceBuffer</ambientBuffer>
+                        <depthBuffer />
+                        <ambientBuffer>finalCopy</ambientBuffer>
                     </resources>
 
                     <targets>
@@ -135,8 +134,8 @@
                     </defines>
 
                     <resources>
-                        <depth />
-                        <gaussianBuffer>sourceBuffer</gaussianBuffer>
+                        <depthBuffer />
+                        <gaussianBuffer>finalCopy</gaussianBuffer>
                     </resources>
 
                     <targets>
@@ -148,7 +147,7 @@
                     <resources>
                         <albedoBuffer />
                         <ambientBuffer />
-                        <depth />
+                        <depthBuffer />
                     </resources>
 
                     <targets>
@@ -162,7 +161,7 @@
             <passes>
                 <TiledLightCulling compute="(dispatchWidth, dispatchHeight, 1)" entry="mainComputeProgram">
                     <resources>
-                        <depth />
+                        <depthBuffer />
                     </resources>
 
                     <unorderedaccess>
@@ -180,7 +179,7 @@
                         <albedoBuffer />
                         <materialBuffer />
                         <normalBuffer />
-                        <depth />
+                        <depthBuffer />
                     </resources>
 
                     <targets>

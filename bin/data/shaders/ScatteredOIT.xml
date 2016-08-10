@@ -17,12 +17,11 @@
         <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
         <modulationDiffusionBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</modulationDiffusionBuffer>
         <refractionBuffer bind="float2" flags="target">R8G8_NORM</refractionBuffer>
-        <depthBuffer bind="float">R32_FLOAT</depthBuffer>
-        <finalBuffer bind="float3" source="$standard" name="finalBuffer" />
-        <sourceBuffer bind="float3">R11G11B10_FLOAT</sourceBuffer>
+        <depthBuffer bind="float" source="$standard" />
+        <depthCopy bind="float">R32_FLOAT</depthCopy>
+        <finalBuffer bind="float3" source="$standard" />
+        <finalCopy bind="float3">R11G11B10_FLOAT</finalCopy>
     </textures>
-
-    <depth source="$standard" />
 
     <blocks>
         <TransparentPass>
@@ -53,7 +52,7 @@
                         <cullmode>back</cullmode>
                     </renderstates>
 
-                    <depthstates>
+                    <depthstates target="depthBuffer">
                         <comparison>less</comparison>
                         <writemask>zero</writemask>
                     </depthstates>
@@ -65,7 +64,7 @@
                     </targets>
 
                     <resources>
-                        <depthBuffer copy="depth" />
+                        <depthCopy copy="depthBuffer" />
                     </resources>
                 </Calculate>
 
@@ -74,7 +73,7 @@
                         <accumulationBuffer />
                         <modulationDiffusionBuffer />
                         <refractionBuffer />
-                        <sourceBuffer copy="finalBuffer" />
+                        <finalCopy copy="finalBuffer" />
                     </resources>
 
                     <targets>

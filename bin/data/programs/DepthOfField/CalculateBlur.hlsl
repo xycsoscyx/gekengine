@@ -5,7 +5,8 @@
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float focalDepth = Resources::focalDepth[0];
-    float surfaceDepth = Resources::depth[inputPixel.screen.xy];
-    return (surfaceDepth > focalDepth ? float3(1, 0, 0) : float3(0, 0, 1));
+    float4 backColor = Resources::backBuffer[inputPixel.screen.xy];
+    float3 finalColor = Resources::finalBuffer[inputPixel.screen.xy];
+    float4 frontColor = Resources::frontBuffer[inputPixel.screen.xy];
+    return backColor.rgb + frontColor.rgb;
 }

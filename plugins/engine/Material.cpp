@@ -35,13 +35,13 @@ namespace Gek
                 {
                     if (!shaderNode.attributes.count(L"name"))
                     {
-                        throw MissingRequiredParameters();
+                        throw MissingParameters();
                     }
 
                     Engine::Shader *shader = resources->getShader(shaderNode.attributes[L"name"], materialHandle);
                     if (!shader)
                     {
-                        throw MissingRequiredParameters();
+                        throw MissingParameters();
                     }
 
                     FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
@@ -77,7 +77,7 @@ namespace Gek
                     this->data = shader->loadMaterialData(passMap);
                 }))
                 {
-                    throw MissingRequiredParameters();
+                    throw MissingParameters();
                 }
             }
 

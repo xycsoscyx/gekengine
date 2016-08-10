@@ -85,7 +85,7 @@ void mainComputeProgram(uint3 screenPosition : SV_DispatchThreadID, uint3 tilePo
         Shared::tileMaximumDepth = 0;
     }
 
-    float linearDepth = getLinearDepthFromSample(Resources::depth[screenPosition.xy]);
+    float linearDepth = getLinearDepthFromSample(Resources::depthBuffer[screenPosition.xy]);
     uint linearDepthInteger = asuint(linearDepth);
     GroupMemoryBarrierWithGroupSync();
 

@@ -380,6 +380,10 @@ namespace Gek
                 {
                     flags |= Video::TextureFlags::RenderTarget;
                 }
+                else if (flag.compareNoCase(L"depth") == 0)
+                {
+                    flags |= Video::TextureFlags::DepthTarget;
+                }
                 else if (flag.compareNoCase(L"unorderedaccess") == 0)
                 {
                     flags |= Video::TextureFlags::UnorderedAccess;

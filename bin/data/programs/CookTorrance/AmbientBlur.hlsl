@@ -12,7 +12,7 @@ float calculateGaussianWeight(float offset)
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float surfaceDepth = Resources::depth[inputPixel.screen.xy];
+    float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
 
     float finalValue = 0.0;
     float totalWeight = 0.0;
@@ -22,12 +22,12 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     {
         int2 sampleOffset = (offset * Defines::blurAxis);
         int2 sampleCoord = (inputPixel.screen.xy + sampleOffset);
-        float sampleDepth = Resources::depth[sampleCoord];
+        float sampleDepth = Resources::depthBuffer[sampleCoord];
         float depthDelta = abs(surfaceDepth - sampleDepth);
 
         float sampleWeight = calculateGaussianWeight(offset) * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
 
-        float sampleValue = Resources::sourceBuffer[sampleCoord];
+        float sampleValue = Resources::finalCopy[sampleCoord];
         finalValue += (sampleValue * sampleWeight);
         totalWeight += sampleWeight;
     }

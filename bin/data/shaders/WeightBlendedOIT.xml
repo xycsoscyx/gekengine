@@ -16,11 +16,10 @@
     <textures>
         <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
         <revealBuffer bind="float" flags="target">R8_UNORM</revealBuffer>
-        <depthBuffer bind="float">R32_FLOAT</depthBuffer>
-        <finalBuffer bind="float3" source="$standard" name="finalBuffer" />
+        <depthBuffer bind="float" source="$standard" />
+        <depthCopy bind="float">R32_FLOAT</depthCopy>
+        <finalBuffer bind="float3" source="$standard" />
     </textures>
-
-    <depth source="$standard" />
 
     <blocks>
         <TransparentPass>
@@ -45,7 +44,7 @@
                         <cullmode>back</cullmode>
                     </renderstates>
 
-                    <depthstates>
+                    <depthstates target="depthBuffer">
                         <comparison>less</comparison>
                         <writemask>zero</writemask>
                     </depthstates>
@@ -56,7 +55,7 @@
                     </targets>
 
                     <resources>
-                        <depthBuffer copy="depth" />
+                        <depthCopy copy="depthBuffer" />
                     </resources>
                 </Calculate>
 
