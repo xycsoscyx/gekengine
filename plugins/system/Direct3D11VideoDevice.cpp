@@ -2437,6 +2437,10 @@ namespace Gek
             Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
             {
                 GEK_REQUIRE(d3dDevice);
+                GEK_REQUIRE(format != Video::Format::Unknown);
+                GEK_REQUIRE(width != 0);
+                GEK_REQUIRE(height != 0);
+                GEK_REQUIRE(depth != 0);
 
                 uint32_t bindFlags = 0;
                 if (flags & Video::TextureFlags::RenderTarget)

@@ -1152,8 +1152,8 @@ namespace Gek
                     uint32_t firstResourceStage = 0;
                     if (block.lighting)
                     {
-                        deviceContextPipeline->setResource(lightDataBuffer.get(), 0);
-                        deviceContextPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
+                        deviceContextPipeline->setResource(nullptr, 0);
+                        deviceContextPipeline->setConstantBuffer(nullptr, 3);
                         firstResourceStage = 1;
                     }
 

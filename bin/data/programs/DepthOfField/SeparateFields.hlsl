@@ -9,11 +9,11 @@ OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float surfaceDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
     float3 finalColor = Resources::finalBuffer[inputPixel.screen.xy];
 
-    float backInner = (surfaceDepth + Defines::focusInnerDepth);
+    float backInner = (averageDepth + Defines::focusInnerDepth);
     float backOuter = (backInner + Defines::focusOuterDepth);
     float backFactor = saturate((surfaceDepth - backInner) / backOuter);
 
-    float frontInner = (surfaceDepth - Defines::focusInnerDepth);
+    float frontInner = (averageDepth - Defines::focusInnerDepth);
     float frontOuter = (frontInner - Defines::focusOuterDepth);
     float frontFactor = saturate((frontInner - surfaceDepth) / frontOuter);
 

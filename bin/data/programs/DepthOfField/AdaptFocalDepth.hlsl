@@ -1,13 +1,14 @@
 #include "GEKFilter"
 
 #include "GEKGlobal.hlsl"
+#include "GEKUtility.hlsl"
 
 namespace Defines
 {
     static const float adaptionRate = 2.0;
 };
 
-[numthreads(uint(1), uint(1), 1)]
+[numthreads(1, 1, 1)]
 void mainComputeProgram(void)
 {
     float averageDepth = UnorderedAccess::averageFocalDepth[0];

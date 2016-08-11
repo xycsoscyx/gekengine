@@ -1,10 +1,9 @@
 <?xml version="1.0"?>
 <filter>
     <textures>
-        <backBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</backBuffer>
-        <frontBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</frontBuffer>
         <depthBuffer bind="float" source="$standard" />
         <finalBuffer bind="float3" source="$standard" />
+        <finalCopy bind="float3">R11G11B10_FLOAT</finalCopy>
     </textures>
 
     <buffers>
@@ -12,12 +11,10 @@
     </buffers>
 
     <defines>
-        <focusOuterDepth>5.0</focusOuterDepth>
-        <focusInnerDepth>5.0</focusInnerDepth>
     </defines>
 
     <passes>
-        <AdaptaverageFocalDepth compute="(1, 1, 1)" entry="mainComputeProgram">
+        <AdaptFocalDepth compute="(1, 1, 1)" entry="mainComputeProgram">
             <resources>
                 <depthBuffer />
             </resources>
@@ -25,30 +22,18 @@
             <unorderedaccess>
                 <averageFocalDepth />
             </unorderedaccess>
-        </AdaptaverageFocalDepth>
-
-        <SeparateFields entry="mainPixelProgram">
-            <resources>
-                <averageFocalDepth />
-                <finalBuffer />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <backBuffer />
-                <frontBuffer />
-            </targets>
-        </SeparateFields>
-
+        </AdaptFocalDepth>
 
         <CalculateBlur entry="mainPixelProgram">
             <resources>
-                <backBuffer />
-                <frontBuffer />
                 <averageFocalDepth />
-                <finalBuffer />
                 <depthBuffer />
+                <finalCopy copy="finalBuffer" />
             </resources>
+
+            <targets>
+                <finalBuffer />
+            </targets>
         </CalculateBlur>
     </passes>
 </filter>
