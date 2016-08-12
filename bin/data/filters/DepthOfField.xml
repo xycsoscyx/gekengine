@@ -2,8 +2,6 @@
 <filter>
     <textures>
         <depthBuffer bind="float" source="$standard" />
-        <background bind="float3" flags="target">R11G11B10_FLOAT</background>
-        <foreground bind="float4" flags="target">R8G8B8A8_UNORM</foreground>
     </textures>
 
     <buffers>
@@ -12,6 +10,31 @@
 
     <defines>
         <focalRange>10.0</focalRange>
+
+        <sampleCount type="int">4</sampleCount>
+        <ringCount type="int">7</ringCount>
+
+        <highlightThreshold>0.5</highlightThreshold>
+        <highlightGain>10.0</highlightGain>
+
+        <bokehEdgeBias>0.4</bokehEdgeBias>
+
+        <enableChromaticAberation type="bool">true</enableChromaticAberation>
+        <bokehChromaticAberation>0.5</bokehChromaticAberation>
+
+        <enableDithering type="bool">true</enableDithering>
+
+        <noiseStrength>0.0001</noiseStrength>
+
+        <enableDepthBlur type="bool">true</enableDepthBlur>
+        <depthBlurSize>2.0</depthBlurSize>
+
+        <!-- next part is experimental
+                    not looking good with small sample and ring count
+                    looks okay starting from sampleCount = 4, ringCount = 4
+                    -->
+        <enablePentagon type="bool">false</enablePentagon>
+        <pentagonFeathering>0.4</pentagonFeathering>
     </defines>
 
     <passes>
@@ -29,51 +52,11 @@
             </unorderedaccess>
         </AdaptFocalDepth>
 
-        <SeparateFields entry="mainPixelProgram">
-            <resources>
-                <averageFocalDepth />
-                <depthBuffer />
-                <screen />
-            </resources>
-
-            <targets>
-                <background />
-                <foreground />
-            </targets>
-        </SeparateFields>
-
         <CalculateBlur entry="mainPixelProgram">
-            <defines>
-                <sampleCount type="int">4</sampleCount>
-                <ringCount type="int">7</ringCount>
-
-                <highlightThreshold>0.5</highlightThreshold>
-                <highlightGain>10.0</highlightGain>
-
-                <bokehEdgeBias>0.4</bokehEdgeBias>
-
-                <enableChromaticAberation type="bool">true</enableChromaticAberation>
-                <bokehChromaticAberation>0.5</bokehChromaticAberation>
-
-                <enableNoise type="bool">true</enableNoise>
-                <noiseAmount>0.0001</noiseAmount>
-
-                <enableDepthBlur type="bool">true</enableDepthBlur>
-                <depthBlurSize>2.0</depthBlurSize>
-
-                <!-- next part is experimental
-                    not looking good with small sample and ring count
-                    looks okay starting from sampleCount = 4, ringCount = 4
-                    -->
-                <enablePentagon type="bool">false</enablePentagon>
-                <pentagonFeathering>0.4</pentagonFeathering>
-            </defines>
-
             <resources>
                 <averageFocalDepth />
                 <depthBuffer />
-                <background />
-                <foreground />
+                <screenBuffer copy="screen"/>
             </resources>
 
             <targets>

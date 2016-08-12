@@ -13,6 +13,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     OutputPixel outputPixel;
     outputPixel.background = color;
-    outputPixel.foreground = float4((color * foregroundDistance), foregroundDistance);
+    outputPixel.foreground = (color * foregroundDistance);
     return outputPixel;
 }
