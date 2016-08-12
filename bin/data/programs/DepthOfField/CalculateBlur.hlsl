@@ -146,13 +146,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         [unroll]
         for (float tap = 0.0; tap < ringsamples; tap++)
         {
-            float2 offset = float2(
+            float2 tapOffset = float2(
                 (cos(tap * step) * ring), 
                 (sin(tap * step) * ring));
 
-            float modifier = getModifier(offset);
+            float modifier = getModifier(tapOffset);
             float weight = (lerp(1.0, (ring / float(Defines::ringCount)), Defines::bokehEdgeBias) * modifier);
-            finalColor += (getCorrectedColor(inputPixel.texCoord + (offset * noise), blurDistance) * weight);
+            finalColor += (getCorrectedColor(inputPixel.texCoord + (tapOffset * noise), blurDistance) * weight);
             totalWeight += weight;
         }
     }
