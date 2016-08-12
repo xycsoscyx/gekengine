@@ -58,7 +58,7 @@ namespace Gek
 
             virtual Material::DataPtr loadMaterialData(const Material::PassMap &passMap) = 0;
 
-            virtual Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget) = 0;
+            virtual Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

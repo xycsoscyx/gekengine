@@ -13,27 +13,6 @@
 #define TechniqueFilmicALU          6
 #define TechniqueFilmicU2           7
 
-namespace Defines
-{
-    static const int techniqueMode = TechniqueFilmicALU;
-    static const int autoExposureMode = 2;
-
-    static const float luminanceSaturation = 1.0;
-    static const float keyValue = 0.18;
-    static const float exposure = 0.0;
-    static const float whiteLevel = 5.0;
-    static const float bias = 0.5;
-
-    // Uncharted 2 Filmic ALU Defines
-    static const float shoulderStrength = 0.22;
-    static const float linearStrength = 0.3;
-    static const float linearAngle = 0.1;
-    static const float toeStrength = 0.2;
-    static const float toeNumerator = 0.01;
-    static const float toeDenominator = 0.3;
-    static const float linearWhite = 11.2;
-};
-
 float3 getExposedColor(float3 color, float averageLuminance, float threshold, out float exposure)
 {
     exposure = 0.0;
@@ -173,7 +152,7 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float3 baseColor = Resources::finalBuffer[inputPixel.screen.xy];
+    float3 baseColor = Resources::screenBuffer[inputPixel.screen.xy];
 
     float exposure = 0.0;
     float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));

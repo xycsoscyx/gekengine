@@ -2,11 +2,6 @@
 
 #include "GEKGlobal.hlsl"
 
-namespace Defines
-{
-    static const float adaptionRate = 1.25;
-};
-
 [numthreads(1, 1, 1)]
 void mainComputeProgram(void)
 {

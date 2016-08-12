@@ -18,7 +18,6 @@
         <revealBuffer bind="float" flags="target">R8_UNORM</revealBuffer>
         <depthBuffer bind="float" source="$standard" />
         <depthCopy bind="float">R32_FLOAT</depthCopy>
-        <finalBuffer bind="float3" source="$standard" />
     </textures>
 
     <blocks>
@@ -70,7 +69,7 @@
                     </resources>
 
                     <targets>
-                        <finalBuffer />
+                        <screen />
                     </targets>
                 </Combine>
             </passes>

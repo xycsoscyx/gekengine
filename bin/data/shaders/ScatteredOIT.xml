@@ -19,8 +19,6 @@
         <refractionBuffer bind="float2" flags="target">R8G8_NORM</refractionBuffer>
         <depthBuffer bind="float" source="$standard" />
         <depthCopy bind="float">R32_FLOAT</depthCopy>
-        <finalBuffer bind="float3" source="$standard" />
-        <finalCopy bind="float3">R11G11B10_FLOAT</finalCopy>
     </textures>
 
     <blocks>
@@ -73,11 +71,11 @@
                         <accumulationBuffer />
                         <modulationDiffusionBuffer />
                         <refractionBuffer />
-                        <finalCopy copy="finalBuffer" />
+                        <screenBuffer copy="screen" />
                     </resources>
 
                     <targets>
-                        <finalBuffer />
+                        <screen />
                     </targets>
                 </Combine>
             </passes>

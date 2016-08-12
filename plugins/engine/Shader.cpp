@@ -47,7 +47,6 @@ namespace Gek
             struct PassData
             {
                 Pass::Mode mode;
-                bool renderToScreen;
                 bool enableDepth;
                 ResourceHandle depthBuffer;
                 uint32_t clearDepthFlags;
@@ -72,7 +71,6 @@ namespace Gek
 
                 PassData(void)
                     : mode(Pass::Mode::Forward)
-                    , renderToScreen(true)
                     , enableDepth(false)
                     , clearDepthFlags(0)
                     , clearDepthValue(1.0f)
@@ -182,8 +180,6 @@ namespace Gek
             std::list<BlockData> blockList;
             std::unordered_map<String, PassData *> forwardPassMap;
 
-            ResourceHandle cameraTarget;
-
         public:
             Shader(Context *context, Video::Device *device, Engine::Resources *resources, Plugin::Population *population, const wchar_t *shaderName)
                 : ContextRegistration(context)
@@ -231,7 +227,7 @@ namespace Gek
                     String result;
                     switch (bindType)
                     {
-                    case BindType::Boolean:
+                    case BindType::Bool:
                         result = (bool)value;
                         break;
 
@@ -429,10 +425,17 @@ namespace Gek
                 });
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
+                resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
+                resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
+
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
-                std::unordered_map<String, String> resourceStructuresMap;
+                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
+                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight());
+
+                std::unordered_map<String, String> resourceStructuresMap;
+
                 for(auto &textureNode : shaderNode.getChild(L"textures").children)
                 {
                     if (resourceMap.count(textureNode.type) > 0)
@@ -567,7 +570,7 @@ namespace Gek
                             String bindType(getBindType(define.second.first));
                             switch (define.second.first)
                             {
-                            case BindType::Boolean:
+                            case BindType::Bool:
                             case BindType::Int:
                             case BindType::UInt:
                             case BindType::Half:
@@ -596,7 +599,6 @@ namespace Gek
                         {
                             pass.mode = Pass::Mode::Compute;
 
-                            pass.renderToScreen = false;
                             pass.width = float(device->getBackBuffer()->getWidth());
                             pass.height = float(device->getBackBuffer()->getHeight());
 
@@ -633,12 +635,11 @@ namespace Gek
                             std::unordered_map<String, String> renderTargetsMap;
                             if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
                             {
-                                pass.renderToScreen = false;
                                 renderTargetsMap = loadChildMap(targetsNode);
                                 if (renderTargetsMap.empty())
                                 {
-                                    pass.width = 0.0f;
-                                    pass.height = 0.0f;
+                                    pass.width = float(device->getBackBuffer()->getWidth());
+                                    pass.height = float(device->getBackBuffer()->getHeight());
                                 }
                                 else
                                 {
@@ -662,10 +663,7 @@ namespace Gek
                                 }
                             }))
                             {
-                                pass.renderToScreen = true;
-                                pass.width = float(device->getBackBuffer()->getWidth());
-                                pass.height = float(device->getBackBuffer()->getHeight());
-                                renderTargetsMap.clear();
+                                throw MissingParameters();
                             }
 
                             uint32_t currentStage = 0;
@@ -892,7 +890,7 @@ namespace Gek
                         uint32_t nextUnorderedStage = 0;
                         if (pass.mode != Pass::Mode::Compute)
                         {
-                            nextUnorderedStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                            nextUnorderedStage = pass.renderTargetList.size();
                         }
 
                         for (auto &resourcePair : unorderedAccessAliasMap)
@@ -1088,7 +1086,7 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
@@ -1121,18 +1119,7 @@ namespace Gek
                         resources->clearDepthStencilTarget(deviceContext, pass.depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
                     }
 
-                    if (pass.renderToScreen)
-                    {
-                        if (cameraTarget)
-                        {
-                            resources->setRenderTargets(deviceContext, &cameraTarget, 1, (pass.enableDepth ? &pass.depthBuffer : nullptr));
-                        }
-                        else
-                        {
-                            resources->setBackBuffer(deviceContext, (pass.enableDepth ? &pass.depthBuffer : nullptr));
-                        }
-                    }
-                    else if (!pass.renderTargetList.empty())
+                    if (!pass.renderTargetList.empty())
                     {
                         resources->setRenderTargets(deviceContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &pass.depthBuffer : nullptr));
                     }
@@ -1170,25 +1157,15 @@ namespace Gek
                     uint32_t firstUnorderedAccessStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
-                        firstUnorderedAccessStage = (pass.renderToScreen ? 1 : pass.renderTargetList.size());
+                        firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
                     resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
-                if (pass.mode != Pass::Mode::Compute)
+                if (!pass.renderTargetList.empty())
                 {
-                    if (pass.renderToScreen)
-                    {
-                        if (cameraTarget)
-                        {
-                            resources->setRenderTargets(deviceContext, nullptr, 1, nullptr);
-                        }
-                    }
-                    else if (!pass.renderTargetList.empty())
-                    {
-                        resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
-                    }
+                    resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
                 }
 
                 deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
@@ -1342,12 +1319,11 @@ namespace Gek
                 }
             };
 
-            Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum, ResourceHandle cameraTarget)
+            Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(deviceContext);
 
-                this->cameraTarget = cameraTarget;
                 concurrency::concurrent_vector<LightData> lightData;
                 population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity) -> void
                 {

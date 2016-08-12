@@ -36,7 +36,7 @@ namespace Gek
                 virtual void clear(void) = 0;
             };
 
-            virtual Pass::Iterator begin(Video::Device::Context *deviceContext, ResourceHandle cameraTarget) = 0;
+            virtual Pass::Iterator begin(Video::Device::Context *deviceContext) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

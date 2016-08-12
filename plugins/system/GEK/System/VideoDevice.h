@@ -517,8 +517,8 @@ namespace Gek
 
                 virtual void clearState(void) = 0;
 
-                virtual void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
-                virtual void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
+                virtual void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
+                virtual void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
 
                 virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;
                 virtual void clearUnorderedAccess(Object *object, const uint32_t value[4]) = 0;

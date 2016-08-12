@@ -2,7 +2,6 @@
 <filter>
     <textures>
         <luminanceBuffer bind="float" flags="target" mipmaps="0">R16_FLOAT</luminanceBuffer>
-        <finalBuffer bind="float3" source="$standard" />
     </textures>
 
     <buffers>
@@ -12,7 +11,7 @@
     <passes>
         <CalculateLuminance mode="deferred" entry="mainPixelProgram">
             <resources>
-                <finalBuffer />
+                <screen />
             </resources>
 
             <targets>
@@ -21,6 +20,10 @@
         </CalculateLuminance>
 
         <AdaptLuminance compute="(1, 1, 1)" entry="mainComputeProgram">
+            <defines>
+                <adaptionRate>1.25</adaptionRate>
+            </defines>
+
             <resources>
                 <luminanceBuffer actions="generateMipMaps" />
             </resources>
@@ -31,10 +34,34 @@
         </AdaptLuminance>
 
         <ToneMap entry="mainPixelProgram">
+            <defines>
+                <techniqueMode type="int">6</techniqueMode>
+                <autoExposureMode type="int">2</autoExposureMode>
+
+                <luminanceSaturation>1.0</luminanceSaturation>
+                <keyValue>0.18</keyValue>
+                <exposure>0.0</exposure>
+                <whiteLevel>5.0</whiteLevel>
+                <bias>0.5</bias>
+
+                <!-- Uncharted 2 Filmic ALU Defines -->
+                <shoulderStrength>0.22</shoulderStrength>
+                <linearStrength>0.3</linearStrength>
+                <linearAngle>0.1</linearAngle>
+                <toeStrength>0.2</toeStrength>
+                <toeNumerator>0.01</toeNumerator>
+                <toeDenominator>0.3</toeDenominator>
+                <linearWhite>11.2</linearWhite>
+            </defines>
+
             <resources>
-                <finalBuffer />
                 <averageLuminanceBuffer />
+                <screenBuffer copy="screen" />
             </resources>
+
+            <targets>
+                <screen />
+            </targets>
         </ToneMap>
     </passes>
 </filter>

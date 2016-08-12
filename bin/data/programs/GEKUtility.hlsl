@@ -81,7 +81,7 @@ float3 getPositionFromSample(float2 texCoord, float depthSample)
 half2 encodeNormal(float3 n)
 {
     half scale = 1.7777;
-    half2 enc = (n.z == -1.0 ? 0.0 : n.xy / (n.z + 1.0));
+    half2 enc = n.xy / (n.z + 1.0);
     enc /= scale;
     enc = enc * 0.5 + 0.5;
     return enc;
@@ -91,8 +91,7 @@ float3 decodeNormal(half2 enc)
 {
     half scale = 1.7777;
     half3 nn = half3(enc * 2.0 * scale - scale, 1.0);
-    float denom = dot(nn.xyz, nn.xyz);
-    half g = (denom == 0.0 ? 0.0 : 2.0 / denom);
+    half g = 2.0 / dot(nn.xyz, nn.xyz);
     half3 n;
     n.xy = g*nn.xy;
     n.z = g - 1.0;

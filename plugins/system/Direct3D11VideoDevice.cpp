@@ -1373,7 +1373,7 @@ namespace Gek
                     d3dDeviceContext->ClearState();
                 }
 
-                void setViewports(Video::ViewPort *viewPortList, uint32_t viewPortCount)
+                void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
@@ -1383,7 +1383,7 @@ namespace Gek
                     }
                 }
 
-                void setScissorRect(Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
+                void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 

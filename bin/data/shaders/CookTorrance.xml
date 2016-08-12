@@ -37,7 +37,6 @@
         <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
         <ambientBuffer bind="float" flags="target">R8_UNORM</ambientBuffer>
         <gaussianBuffer bind="float" flags="target">R8_UNORM</gaussianBuffer>
-        <finalBuffer bind="float3" flags="target">R11G11B10_FLOAT</finalBuffer>
     </textures>
 
     <buffers>
@@ -90,7 +89,7 @@
 
                     <resources>
                         <depthBuffer />
-                        <ambientBuffer>finalCopy</ambientBuffer>
+                        <ambientBuffer>inputBuffer</ambientBuffer>
                     </resources>
 
                     <targets>
@@ -105,7 +104,7 @@
 
                     <resources>
                         <depthBuffer />
-                        <gaussianBuffer>finalCopy</gaussianBuffer>
+                        <gaussianBuffer>inputBuffer</gaussianBuffer>
                     </resources>
 
                     <targets>
@@ -120,7 +119,7 @@
 
                     <resources>
                         <depthBuffer />
-                        <ambientBuffer>finalCopy</ambientBuffer>
+                        <ambientBuffer>inputBuffer</ambientBuffer>
                     </resources>
 
                     <targets>
@@ -135,7 +134,7 @@
 
                     <resources>
                         <depthBuffer />
-                        <gaussianBuffer>finalCopy</gaussianBuffer>
+                        <gaussianBuffer>inputBuffer</gaussianBuffer>
                     </resources>
 
                     <targets>
@@ -151,7 +150,7 @@
                     </resources>
 
                     <targets>
-                        <finalBuffer />
+                        <screen />
                     </targets>
                 </AmbientLighting>
             </passes>
@@ -183,7 +182,7 @@
                     </resources>
 
                     <targets>
-                        <finalBuffer />
+                        <screen />
                     </targets>
                 </AccumulateLighting>
             </passes>

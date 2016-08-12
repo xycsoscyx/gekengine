@@ -283,6 +283,7 @@ namespace Gek
             Video::BufferPtr cameraConstantBuffer;
 
             Video::ObjectPtr deferredVertexProgram;
+            Video::ObjectPtr deferredPixelProgram;
 
             DrawCallList drawCallList;
 
@@ -325,7 +326,7 @@ namespace Gek
                 static const char program[] =
                     "struct Pixel                                                                       \r\n" \
                     "{                                                                                  \r\n" \
-                    "    float4 position : SV_POSITION;                                                 \r\n" \
+                    "    float4 screen : SV_POSITION;                                                   \r\n" \
                     "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
                     "};                                                                                 \r\n" \
                     "                                                                                   \r\n" \
@@ -333,14 +334,23 @@ namespace Gek
                     "{                                                                                  \r\n" \
                     "    Pixel pixel;                                                                   \r\n" \
                     "    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
-                    "    pixel.position = float4(pixel.texCoord * float2(2.0f, -2.0f)                   \r\n" \
+                    "    pixel.screen = float4(pixel.texCoord * float2(2.0f, -2.0f)                     \r\n" \
                     "                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
                     "    return pixel;                                                                  \r\n" \
+                    "}                                                                                  \r\n" \
+                    "                                                                                   \r\n" \
+                    "Texture2D<float3> screenBuffer : register(t0);                                     \r\n" \
+                    "float3 mainPixelProgram(Pixel inputPixel) : SV_TARGET0                             \r\n" \
+                    "{                                                                                  \r\n" \
+                    "    return screenBuffer[inputPixel.screen.xy];                                     \r\n" \
                     "}                                                                                  \r\n" \
                     "                                                                                   \r\n";
 
                 deferredVertexProgram = device->compileVertexProgram(program, "mainVertexProgram");
                 deferredVertexProgram->setName(L"deferredVertexProgram");
+
+                deferredPixelProgram = device->compilePixelProgram(program, "mainPixelProgram");
+                deferredPixelProgram->setName(L"deferredPixelProgram");
             }
 
             ~Renderer(void)
@@ -457,7 +467,7 @@ namespace Gek
                         bool visualEnabled = false;
                         bool materialEnabled = false;
                         auto &shader = drawCallSet.shader;
-                        for (auto block = shader->begin(deviceContext, cameraConstantData.viewMatrix, viewFrustum, cameraTarget); block; block = block->next())
+                        for (auto block = shader->begin(deviceContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                         {
                             while (block->prepare())
                             {
@@ -529,16 +539,16 @@ namespace Gek
                         }
                     }
 
+                    deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                     if (cameraEntity->hasComponent<Components::Filter>())
                     {
-                        deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                         auto &filterList = cameraEntity->getComponent<Components::Filter>().list;
                         for (auto &filterName : filterList)
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
                             {
-                                for (auto pass = filter->begin(deviceContext, cameraTarget); pass; pass = pass->next())
+                                for (auto pass = filter->begin(deviceContext); pass; pass = pass->next())
                                 {
                                     switch (pass->prepare())
                                     {
@@ -555,6 +565,21 @@ namespace Gek
                             }
                         }
                     }
+
+                    deviceContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
+                    resources->setResource(deviceContext->pixelPipeline(), resources->getResourceHandle(L"screen"), 0);
+                    auto backBuffer = device->getBackBuffer();
+                    if (cameraTarget)
+                    {
+                        resources->setRenderTargets(deviceContext, &cameraTarget, 1, nullptr);
+                    }
+                    else
+                    {
+                        deviceContext->setRenderTargets(&backBuffer, 1, nullptr);
+                        deviceContext->setViewports(&backBuffer->getViewPort(), 1);
+                    }
+
+                    deviceContext->drawPrimitive(3, 0);
 
                     deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 0);
                     deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 0);
@@ -574,6 +599,8 @@ namespace Gek
                 GEK_REQUIRE(resources);
 
                 resources->clearLocal();
+                resources->createTexture(L"screen", Video::Format::R11G11B10_FLOAT, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                resources->createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
             }
 
             void onLoadSucceeded(void)

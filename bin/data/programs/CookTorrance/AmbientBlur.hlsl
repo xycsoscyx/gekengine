@@ -27,7 +27,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
         float sampleWeight = calculateGaussianWeight(offset) * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
 
-        float sampleValue = Resources::finalCopy[sampleCoord];
+        float sampleValue = Resources::inputBuffer[sampleCoord];
         finalValue += (sampleValue * sampleWeight);
         totalWeight += sampleWeight;
     }
