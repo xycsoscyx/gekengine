@@ -63,9 +63,6 @@
         }
     </style>
     <script type="text/tiscript">
-    var (width, height) = view.box(#dimension, #client);
-    $(#machine).text = Sciter.machineName() + ", " + width + ", " + height;
-
     function getCharacter(event)
     {
         if(event.keyCode != 16)
@@ -158,7 +155,6 @@
 
     <section id="back-layer">
         <h1>GEK Engine Demo</h1>
-        <p>Running on <em #machine /> machine</p>
     </section>
 
     <section id="fore-layer">

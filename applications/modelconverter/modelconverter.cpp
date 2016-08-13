@@ -33,7 +33,7 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &modelMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std::unordered_map<StringUTF8, std::list<Model>> &modelMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -89,9 +89,9 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices == 3)
                     {
-                        model.indexList.push_back(face.mIndices[0]);
+                        model.indexList.push_back(face.mIndices[fixMaxCoords ? 2 : 0]);
                         model.indexList.push_back(face.mIndices[1]);
-                        model.indexList.push_back(face.mIndices[2]);
+                        model.indexList.push_back(face.mIndices[fixMaxCoords ? 0 : 2]);
                     }
                     else
                     {
@@ -103,7 +103,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
                 {
                     Vertex vertex;
                     vertex.position.set(
-                        mesh->mVertices[vertexIndex].x,
+                        mesh->mVertices[vertexIndex].x * (fixMaxCoords ? -1.0f : 1.0f),
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
                     boundingBox.extend(vertex.position);
@@ -118,7 +118,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
                     if (mesh->mNormals)
                     {
                         vertex.normal.set(
-                            mesh->mNormals[vertexIndex].x,
+                            mesh->mNormals[vertexIndex].x * (fixMaxCoords ? -1.0f : 1.0f),
                             mesh->mNormals[vertexIndex].y,
                             mesh->mNormals[vertexIndex].z);
                     }
@@ -143,7 +143,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, std::unordered_map<Stri
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(scene, node->mChildren[childIndex], modelMap, boundingBox);
+            getMeshes(scene, node->mChildren[childIndex], fixMaxCoords, modelMap, boundingBox);
         }
     }
 }
@@ -164,6 +164,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         String fileNameOutput;
         String mode(L"model");
 
+        bool fixMaxCoords = false;
         bool flipCoords = false;
         bool flipWinding = false;
         bool generateNormals = false;
@@ -216,6 +217,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
                 smoothNormals = true;
                 smoothingAngle = arguments[1];
+            }
+            else if (arguments[0].compareNoCase(L"-fixMaxCoords") == 0)
+            {
+                fixMaxCoords = true;
             }
         }
 
@@ -293,7 +298,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         Shapes::AlignedBox boundingBox;
         std::unordered_map<StringUTF8, std::list<Model>> modelMapUTF8;
-        getMeshes(scene, scene->mRootNode, modelMapUTF8, boundingBox);
+        getMeshes(scene, scene->mRootNode, fixMaxCoords, modelMapUTF8, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);

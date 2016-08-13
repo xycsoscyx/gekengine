@@ -23,8 +23,8 @@
     <population>
         <entity>
             <transform position="(0, 0, 0)" rotation="(0, 0, 0)" />
-            <model>sponza</model>
-            <static_body>sponza</static_body>
+            <model>half_sponza</model>
+            <static_body>half_sponza</static_body>
         </entity>
 
         <entity name="player_body">
