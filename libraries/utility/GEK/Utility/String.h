@@ -366,7 +366,7 @@ namespace Gek
             }
             else
             {
-                empty();
+                clear();
             }
 
             return (*this);
@@ -389,7 +389,7 @@ namespace Gek
             }
             else
             {
-                empty();
+                clear();
             }
 
             return (*this);
@@ -400,7 +400,7 @@ namespace Gek
         {
             if (string.empty())
             {
-                empty();
+                clear();
             }
             else
             {
@@ -415,7 +415,7 @@ namespace Gek
         {
             if (string.empty())
             {
-                empty();
+                clear();
             }
             else
             {

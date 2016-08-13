@@ -1423,7 +1423,7 @@ namespace Gek
                     GEK_REQUIRE(renderTarget);
 
                     auto targetViewTexture = dynamic_cast<TargetViewTexture *>(renderTarget);
-                    d3dDeviceContext->ClearRenderTargetView(targetViewTexture->d3dRenderTargetView, clearColor.data);
+                    d3dDeviceContext->ClearRenderTargetView(targetViewTexture->d3dRenderTargetView.p, clearColor.data);
                 }
 
                 void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
@@ -1446,10 +1446,10 @@ namespace Gek
                     d3dRenderTargetViewCache.resize(std::max(renderTargetCount, d3dRenderTargetViewCache.size()));
                     for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
                     {
-                        d3dRenderTargetViewCache[renderTarget] = (renderTargetList && renderTargetList[renderTarget] ? dynamic_cast<RenderTargetView *>(renderTargetList[renderTarget])->d3dRenderTargetView : nullptr);
+                        d3dRenderTargetViewCache[renderTarget] = (renderTargetList && renderTargetList[renderTarget] ? dynamic_cast<RenderTargetView *>(renderTargetList[renderTarget])->d3dRenderTargetView.p : nullptr);
                     }
 
-                    d3dDeviceContext->OMSetRenderTargets(renderTargetCount, d3dRenderTargetViewCache.data(), (depthBuffer ? dynamic_cast<DepthTexture *>(depthBuffer)->d3dDepthStencilView : nullptr));
+                    d3dDeviceContext->OMSetRenderTargets(renderTargetCount, d3dRenderTargetViewCache.data(), (depthBuffer ? dynamic_cast<DepthTexture *>(depthBuffer)->d3dDepthStencilView.p : nullptr));
                 }
 
                 void setRenderState(Video::Object *renderState)
@@ -1555,7 +1555,7 @@ namespace Gek
             HWND window;
             bool isChildWindow;
             bool fullScreen;
-            Video::Format format;
+            Video::Format backBufferFormat;
 
             CComPtr<ID3D11Device> d3dDevice;
             CComPtr<ID3D11DeviceContext> d3dDeviceContext;
@@ -1565,19 +1565,19 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, bool fullScreen, Video::Format format, const wchar_t *device)
+            Device(Gek::Context *context, HWND window, bool fullScreen, Video::Format backBufferFormat, const wchar_t *device)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent(window) != nullptr)
                 , fullScreen(fullScreen)
-                , format(format)
+                , backBufferFormat(backBufferFormat)
             {
                 GEK_REQUIRE(window);
 
                 DXGI_SWAP_CHAIN_DESC swapChainDescription;
                 swapChainDescription.BufferDesc.Width = 0;
                 swapChainDescription.BufferDesc.Height = 0;
-                swapChainDescription.BufferDesc.Format = DirectX::TextureFormatList[static_cast<uint8_t>(format)];
+                swapChainDescription.BufferDesc.Format = DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)];
                 swapChainDescription.BufferDesc.RefreshRate.Numerator = 60;
                 swapChainDescription.BufferDesc.RefreshRate.Denominator = 1;
                 swapChainDescription.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
@@ -1612,6 +1612,28 @@ namespace Gek
                 {
                     throw Video::InitializationFailed();
                 }
+
+                CComQIPtr<IDXGIDevice> dxgiDevice(d3dDevice);
+                if (!dxgiDevice)
+                {
+                    throw Video::InitializationFailed();
+                }
+
+                CComPtr<IDXGIAdapter> dxgiAdapter;
+                dxgiDevice->GetParent(IID_PPV_ARGS(&dxgiAdapter));
+                if (!dxgiAdapter)
+                {
+                    throw Video::InitializationFailed();
+                }
+
+                CComPtr<IDXGIFactory> dxgiFactory;
+                dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
+                if (!dxgiFactory)
+                {
+                    throw Video::InitializationFailed();
+                }
+
+                dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
 
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
@@ -1659,7 +1681,7 @@ namespace Gek
                 }
             }
 
-            void setSize(uint32_t width, uint32_t height, Video::Format format)
+            void setSize(uint32_t width, uint32_t height, Video::Format backBufferFormat)
             {
                 GEK_REQUIRE(dxSwapChain);
 
@@ -1668,14 +1690,14 @@ namespace Gek
                 dxSwapChain->GetDesc(&chainDescription);
                 if (width != modeDescription.Width ||
                     height != modeDescription.Height ||
-                    DirectX::TextureFormatList[static_cast<uint8_t>(format)] != modeDescription.Format)
+                    DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)] != modeDescription.Format)
                 {
-                    this->format = format;
+                    this->backBufferFormat = backBufferFormat;
 
                     DXGI_MODE_DESC description;
                     description.Width = width;
                     description.Height = height;
-                    description.Format = DirectX::TextureFormatList[static_cast<uint8_t>(format)];
+                    description.Format = DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)];
                     description.RefreshRate.Numerator = 60;
                     description.RefreshRate.Denominator = 1;
                     description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
@@ -1725,7 +1747,7 @@ namespace Gek
 
                     D3D11_TEXTURE2D_DESC description;
                     d3dRenderTarget->GetDesc(&description);
-                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1);
+                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, backBufferFormat, description.Width, description.Height, 1);
                 }
 
                 return backBuffer.get();
@@ -2691,7 +2713,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags && Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
                     throw Video::CreateObjectFailed();
@@ -2772,7 +2794,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags && Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, cubeMap.GetImages(), cubeMap.GetImageCount(), cubeMap.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
                     throw Video::CreateObjectFailed();

@@ -269,6 +269,22 @@ namespace Gek
                     , end(std::move(drawCallSet.end))
                 {
                 }
+
+                DrawCallSet &operator = (const DrawCallSet &drawCallSet)
+                {
+                    shader = drawCallSet.shader;
+                    begin = drawCallSet.begin;
+                    end = drawCallSet.end;
+                    return (*this);
+                }
+
+                DrawCallSet &operator = (DrawCallSet &&drawCallSet)
+                {
+                    shader = std::move(drawCallSet.shader);
+                    begin = std::move(drawCallSet.begin);
+                    end = std::move(drawCallSet.end);
+                    return (*this);
+                }
             };
 
         private:

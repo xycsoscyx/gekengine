@@ -467,7 +467,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
-        printf(output);
+        printf("%s", output.c_str());
     }
     catch (const std::exception &exception)
     {
