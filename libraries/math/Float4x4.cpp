@@ -128,14 +128,16 @@ namespace Gek
             rw.set(0.0f, 0.0f, 0.0f, 1.0f);
         }
 
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205347(v=vs.85).aspx
         void Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
         {
             rx.set((2.0f / (right - left)), 0.0f, 0.0f, 0.0f);
             ry.set(0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f);
-            rz.set(0.0f, 0.0f, (-2.0f / (farClip - nearClip)), 0.0f);
-            rw.set(-((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((farClip + nearClip) / (farClip - nearClip)), 1.0f);
+            rz.set(0.0f, 0.0f, (1.0f / (farClip - nearClip)), 0.0f);
+            rw.set(((left + right) / (left - right)), ((top + bottom) / (bottom - top)), (nearClip / (nearClip - farClip)), 1.0f);
         }
 
+        // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205350(v=vs.85).aspx
         void Float4x4::setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
         {
             float yScale(1.0f / std::tan(fieldOfView * 0.5f));
@@ -150,15 +152,10 @@ namespace Gek
 
         void Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
         {
-            setLookAt((target - source), worldUpVector);
-        }
-
-        void Float4x4::setLookAt(const Float3 &direction, const Float3 &worldUpVector)
-        {
-            rz = direction.getNormal().w(0.0f);
+            rz = (target - source).getNormal().w(0.0f);
             rx = worldUpVector.cross(nz).getNormal().w(0.0f);
             ry = nz.cross(nx).getNormal().w(0.0f);
-            rw.set(0.0f, 0.0f, 0.0f, 1.0f);
+            rw = source.w(1.0f);
         }
 
         Quaternion Float4x4::getQuaternion(void) const

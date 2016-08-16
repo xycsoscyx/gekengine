@@ -159,6 +159,7 @@ namespace Gek
                 SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
                 SciterSetCallback(window, sciterHostCallback, this);
                 SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
+				SciterEval(window, L"", 0, nullptr);
 
                 success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
                 if (!success)

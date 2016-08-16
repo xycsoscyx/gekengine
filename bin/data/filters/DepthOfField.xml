@@ -9,7 +9,7 @@
     </buffers>
 
     <defines>
-        <focalRange>10.0</focalRange>
+        <focalRange>20.0</focalRange>
 
         <sampleCount type="int">4</sampleCount>
         <ringCount type="int">7</ringCount>
@@ -20,13 +20,13 @@
         <bokehEdgeBias>0.4</bokehEdgeBias>
 
         <enableChromaticAberation type="bool">true</enableChromaticAberation>
-        <bokehChromaticAberation>0.5</bokehChromaticAberation>
+        <bokehChromaticAberation>0.75</bokehChromaticAberation>
 
         <enableDithering type="bool">true</enableDithering>
 
         <noiseStrength>0.0001</noiseStrength>
 
-        <enableDepthBlur type="bool">true</enableDepthBlur>
+        <enableDepthBlur type="bool">false</enableDepthBlur>
         <depthBlurSize>2.0</depthBlurSize>
 
         <!-- next part is experimental

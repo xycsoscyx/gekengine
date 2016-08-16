@@ -356,9 +356,9 @@ namespace Gek
                     "}                                                                                  \r\n" \
                     "                                                                                   \r\n" \
                     "Texture2D<float3> screenBuffer : register(t0);                                     \r\n" \
-                    "float3 mainPixelProgram(Pixel inputPixel) : SV_TARGET0                             \r\n" \
+                    "float4 mainPixelProgram(Pixel inputPixel) : SV_TARGET0                             \r\n" \
                     "{                                                                                  \r\n" \
-                    "    return screenBuffer[inputPixel.screen.xy];                                     \r\n" \
+                    "    return float4(screenBuffer[inputPixel.screen.xy], 1.0);                        \r\n" \
                     "}                                                                                  \r\n" \
                     "                                                                                   \r\n";
 
