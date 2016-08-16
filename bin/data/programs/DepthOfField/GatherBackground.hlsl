@@ -3,46 +3,6 @@
 #include "GEKGlobal.hlsl"
 #include "GEKUtility.hlsl"
 
-float getBlurredDepth(float2 texCoord) // blurring depth
-{
-    static const float2 blurOffset = (Shader::pixelSize * Defines::depthBlurSize);
-    float2 offset[9] =
-    {
-        float2(-blurOffset.x, -blurOffset.y), float2(0.0, -blurOffset.y), float2(blurOffset.x, -blurOffset.y), 
-        float2(-blurOffset.x,           0.0), float2(0.0,           0.0), float2(blurOffset.x,           0.0), 
-        float2(-blurOffset.x,  blurOffset.y), float2(0.0,  blurOffset.y), float2(blurOffset.x,  blurOffset.y), 
-    };
-
-    float kernel[9] = 
-    {
-        (1.0 / 16.0), (2.0 / 16.0), (1.0 / 16.0),
-        (2.0 / 16.0), (4.0 / 16.0), (2.0 / 16.0),
-        (1.0 / 16.0), (2.0 / 16.0), (1.0 / 16.0),
-    };
-
-    float blurredDepth = 0.0;
-
-    [unroll]
-    for (int index = 0; index < 9; index++)
-    {
-        blurredDepth += (getLinearDepthFromSample(Resources::depthBuffer.SampleLevel(Global::pointSampler, texCoord + offset[index], 0)) * kernel[index]);
-    }
-
-    return blurredDepth;
-}
-
-float getDepth(float2 texCoord)
-{
-    if (Defines::enableDepthBlur)
-    {
-        return getBlurredDepth(texCoord);
-    }
-    else
-    {
-        return getLinearDepthFromSample(Resources::depthBuffer.SampleLevel(Global::pointSampler, texCoord, 0));
-    }
-}
-
 float2 getNoise(float2 coord)
 {
     if (Defines::enableDithering)
@@ -129,9 +89,7 @@ float getModifier(float2 offset)
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float focalDepth = Resources::averageFocalDepth[0];
-    float sceneDepth = getDepth(inputPixel.texCoord);
-    float blurDistance = saturate(abs(sceneDepth - focalDepth) / Defines::focalRange);
+    float blurDistance = saturate(Resources::circleOfConfusion[inputPixel.screen.xy]);
     float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
 
     float totalWeight = 1.0;

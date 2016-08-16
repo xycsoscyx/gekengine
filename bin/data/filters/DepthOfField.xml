@@ -2,6 +2,8 @@
 <filter>
     <textures>
         <depthBuffer bind="float" source="$standard" />
+        <foregroundBuffer bind="float3" flags="target">R11G11B10_FLOAT</foregroundBuffer>
+        <circleOfConfusion bind="float" flags="target">R16_FLOAT</circleOfConfusion>
     </textures>
 
     <buffers>
@@ -52,16 +54,44 @@
             </unorderedaccess>
         </AdaptFocalDepth>
 
-        <CalculateBlur entry="mainPixelProgram">
+        <SeparateLayers entry="mainPixelProgram">
             <resources>
                 <averageFocalDepth />
                 <depthBuffer />
-                <screenBuffer copy="screen"/>
+                <screenBuffer copy="screen" />
+            </resources>
+
+            <targets>
+                <circleOfConfusion />
+                <foregroundBuffer />
+            </targets>
+        </SeparateLayers>
+        
+        <GatherBackground entry="mainPixelProgram">
+            <resources>
+                <circleOfConfusion />
+                <screenBuffer />
             </resources>
 
             <targets>
                 <screen />
             </targets>
-        </CalculateBlur>
+        </GatherBackground>
+
+        <ScatterForeground entry="mainPixelProgram">
+            <blendstates>
+                <color source="one" destination="inverse_source_alpha" operation="add" />
+                <alpha source="one" destination="one" operation="add" />
+            </blendstates>
+
+            <resources>
+                <circleOfConfusion />
+                <foregroundBuffer />
+            </resources>
+
+            <targets>
+                <screen />
+            </targets>
+        </ScatterForeground>
     </passes>
 </filter>
