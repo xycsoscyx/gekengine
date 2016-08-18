@@ -45,11 +45,15 @@ float getDepth(float2 texCoord)
 
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
+	static const float reciprocalFocalRange = (1.0 / Defines::focalRange);
+
+	float3 screenColor = Resources::screen[inputPixel.screen.xy];
     float focalDepth = Resources::averageFocalDepth[0];
     float sceneDepth = getDepth(inputPixel.texCoord);
 
     OutputPixel outputPixel;
-    outputPixel.circleOfConfusion = clamp((sceneDepth - focalDepth) / Defines::focalRange, -1.0, 1.0);
-    outputPixel.foregroundBuffer = (Resources::screenBuffer[inputPixel.screen.xy] * saturate(-outputPixel.circleOfConfusion));
+	outputPixel.circleOfConfusion = clamp(((sceneDepth - focalDepth) * reciprocalFocalRange), -1.0, 1.0);
+    outputPixel.foregroundBuffer = (screenColor * saturate(-outputPixel.circleOfConfusion));
+	outputPixel.screenBuffer = screenColor;
     return outputPixel;
 }

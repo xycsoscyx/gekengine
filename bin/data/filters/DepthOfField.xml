@@ -37,6 +37,10 @@
                     -->
         <enablePentagon type="bool">false</enablePentagon>
         <pentagonFeathering>0.4</pentagonFeathering>
+
+        <gaussianRadius type="int">7</gaussianRadius>
+        <gaussianSigma>1</gaussianSigma>
+
     </defines>
 
     <passes>
@@ -58,12 +62,13 @@
             <resources>
                 <averageFocalDepth />
                 <depthBuffer />
-                <screenBuffer copy="screen" />
+                <screen />
             </resources>
 
             <targets>
                 <circleOfConfusion />
                 <foregroundBuffer />
+                <screenBuffer />
             </targets>
         </SeparateLayers>
         

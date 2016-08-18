@@ -24,7 +24,7 @@
     <defines>
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
-		<dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
+        <dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
         <gaussianRadius type="int">3</gaussianRadius>
         <gaussianSigma>2.3</gaussianSigma>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
