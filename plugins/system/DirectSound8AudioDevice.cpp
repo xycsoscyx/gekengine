@@ -129,7 +129,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, const wchar_t *)
+        GEK_CONTEXT_USER(Device, HWND, String)
             , public Audio::Device
         {
         private:
@@ -138,7 +138,7 @@ namespace Gek
             CComQIPtr<IDirectSoundBuffer, &IID_IDirectSoundBuffer> primarySoundBuffer;
 
         public:
-            Device(Context *context, HWND window, const wchar_t *device)
+            Device(Context *context, HWND window, String device)
                 : ContextRegistration(context)
             {
                 GEK_REQUIRE(window);
@@ -262,10 +262,9 @@ namespace Gek
                 directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
             }
 
-            CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, uint32_t flags, GUID soundAlgorithm)
+            CComPtr<IDirectSoundBuffer> loadFromFile(const String &fileName, uint32_t flags, GUID soundAlgorithm)
             {
                 GEK_REQUIRE(directSound);
-                GEK_REQUIRE(fileName);
 
                 std::vector<uint8_t> fileData;
                 FileSystem::load(fileName, fileData);
@@ -327,10 +326,9 @@ namespace Gek
                 return directSoundBuffer;
             }
 
-            Audio::EffectPtr loadEffect(const wchar_t *fileName)
+            Audio::EffectPtr loadEffect(const String &fileName)
             {
                 GEK_REQUIRE(directSound);
-                GEK_REQUIRE(fileName);
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer(loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL));
 
@@ -343,10 +341,9 @@ namespace Gek
                 return std::make_shared<Effect>(directSound8Buffer.p);
             }
 
-            Audio::SoundPtr loadSound(const wchar_t *fileName)
+            Audio::SoundPtr loadSound(const String &fileName)
             {
                 GEK_REQUIRE(directSound);
-                GEK_REQUIRE(fileName);
 
                 CComPtr<IDirectSoundBuffer> directSoundBuffer(loadFromFile(fileName, DSBCAPS_STATIC | DSBCAPS_CTRLVOLUME | DSBCAPS_CTRLPAN | DSBCAPS_CTRLFREQUENCY, GUID_NULL));
 

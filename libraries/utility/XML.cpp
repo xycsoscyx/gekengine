@@ -9,7 +9,7 @@ namespace Gek
 {
     namespace Xml
     {
-        Node::Node(const wchar_t *type, Source source)
+        Node::Node(const String &type, Source source)
             : source(source)
             , type(type)
         {
@@ -38,12 +38,12 @@ namespace Gek
             return (source == Source::File);
         }
 
-        String Node::getAttribute(const wchar_t *name, const wchar_t *value) const
+        String Node::getAttribute(const String &name, const String &defaultValue) const
         {
             auto &attributeSearch = attributes.find(name);
             if (attributeSearch == attributes.end())
             {
-                return value;
+                return defaultValue;
             }
             else
             {
@@ -51,7 +51,7 @@ namespace Gek
             }
         }
 
-        bool Node::findChild(const wchar_t *type, std::function<void(Node &)> onChildFound)
+        bool Node::findChild(const String &type, std::function<void(Node &)> onChildFound)
         {
             return (std::find_if(children.begin(), children.end(), [type, onChildFound](Node &node) -> bool
             {
@@ -65,7 +65,7 @@ namespace Gek
             }) == children.end() ? false : true);
         }
 
-        Node & Node::getChild(const wchar_t *type)
+        Node & Node::getChild(const String &type)
         {
             auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
             {
@@ -134,7 +134,7 @@ namespace Gek
             }
         };
 
-        Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD)
+        Node load(const String &fileName, const String &expectedRootType, bool validateDTD)
         {
             StringUTF8 fileNameUTF8(FileSystem::expandPath(fileName));
             XmlDocument document(xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
@@ -150,12 +150,9 @@ namespace Gek
             }
 
             String rootType(reinterpret_cast<const char *>(root->name));
-            if (expectedRootType)
+            if (rootType.compare(expectedRootType) != 0)
             {
-                if (rootType.compare(expectedRootType) != 0)
-                {
-                    throw InvalidRootNode();
-                }
+                throw InvalidRootNode();
             }
 
             Node rootData(rootType, Node::Source::File);
@@ -182,7 +179,7 @@ namespace Gek
             }
         }
 
-        void save(Node &rootData, const wchar_t *fileName)
+        void save(Node &rootData, const String &fileName)
         {
             StringUTF8 expandedFileName(FileSystem::expandPath(fileName));
 

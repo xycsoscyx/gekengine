@@ -23,7 +23,7 @@ namespace Gek
             searchPathList.push_back(L"$root");
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::find(searchPath, L"*.dll", false, [&](const wchar_t *fileName) -> bool
+                FileSystem::find(searchPath, L"*.dll", false, [&](const String &fileName) -> bool
                 {
                     HMODULE module = LoadLibrary(fileName);
                     if (module)
@@ -31,7 +31,7 @@ namespace Gek
                         InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
                         if (initializePlugin)
                         {
-                            initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+                            initializePlugin([this](const String &className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
                             {
                                 if (classMap.count(className) == 0)
                                 {
@@ -41,7 +41,7 @@ namespace Gek
                                 {
                                     throw DuplicateClass();
                                 }
-                            }, [this](const wchar_t *typeName, const wchar_t *className) -> void
+                            }, [this](const String &typeName, const String &className) -> void
                             {
                                 typeMap.insert(std::make_pair(typeName, className));
                             });
@@ -74,7 +74,7 @@ namespace Gek
         }
 
         // Context
-        ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
+        ContextUserPtr createBaseClass(const String &className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
             if (classSearch == classMap.end())
@@ -85,9 +85,8 @@ namespace Gek
             return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
         }
 
-        void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const
+        void listTypes(const String &typeName, std::function<void(const String &)> onType) const
         {
-            GEK_REQUIRE(typeName);
             GEK_REQUIRE(onType);
 
             auto typeRange = typeMap.equal_range(typeName);

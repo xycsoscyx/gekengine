@@ -14,7 +14,7 @@ namespace Gek
         static ShuntingYard shuntingYard;
 
         template <typename TYPE>
-        void castResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)
+        void castResult(const String &expression, TYPE &result, TYPE defaultValue)
         {
             try
             {
@@ -29,7 +29,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        void getResult(const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
+        void getResult(const String &expression, TYPE &result, const TYPE &defaultValue)
         {
             try
             {
@@ -58,37 +58,37 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, int32_t &result, int32_t defaultValue)
+        void get(const String &expression, int32_t &result, int32_t defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
+        void get(const String &expression, uint32_t &result, uint32_t defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, float &result, float defaultValue)
+        void get(const String &expression, float &result, float defaultValue)
         {
             castResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
+        void get(const String &expression, Math::Float2 &result, const Math::Float2 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
+        void get(const String &expression, Math::Float3 &result, const Math::Float3 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
+        void get(const String &expression, Math::Float4 &result, const Math::Float4 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Color &result, const Math::Color &defaultValue)
+        void get(const String &expression, Math::Color &result, const Math::Color &defaultValue)
         {
             try
             {
@@ -126,7 +126,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
+        void get(const String &expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
         {
             try
             {
@@ -154,7 +154,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, String &result)
+        void get(const String &expression, String &result)
         {
             result = expression;
         }

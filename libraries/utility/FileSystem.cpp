@@ -9,61 +9,26 @@ namespace Gek
         {
         }
 
-        Path::Path(const char *path)
+        Path::Path(const String &path)
             : path(path)
         {
         }
 
-        Path::Path(const wchar_t *path)
+        Path::Path(const Path &path)
             : path(path)
         {
         }
 
-        Path &Path::operator = (const char *path)
+        Path &Path::operator = (const String &path)
         {
-            if (path)
-            {
-                assign(path);
-            }
-            else
-            {
-                empty();
-            }
-
-            return (*this);
-        }
-
-        Path &Path::operator = (const wchar_t *path)
-        {
-            if (path)
-            {
-                assign(path);
-            }
-            else
-            {
-                empty();
-            }
-
+            assign(path);
             return (*this);
         }
 
         Path &Path::operator = (const Path &path)
         {
-            if (path)
-            {
-                assign(path);
-            }
-            else
-            {
-                empty();
-            }
-
+            assign(path);
             return (*this);
-        }
-
-        Path::operator const wchar_t * () const
-        {
-            return c_str();
         }
 
         Path::operator String () const
@@ -83,7 +48,7 @@ namespace Gek
 
         Path Path::getPath(void) const
         {
-            return parent_path().c_str();
+            return String(parent_path().string());
         }
 
         bool Path::isFile(void) const
@@ -96,7 +61,7 @@ namespace Gek
             return std::experimental::filesystem::is_directory(*this);
         }
 
-        String expandPath(const wchar_t *fileName)
+        String expandPath(const String &fileName)
         {
             String expandedFileName(fileName);
             if (expandedFileName.find(L"$root") != std::string::npos)
@@ -120,7 +85,7 @@ namespace Gek
             return expandedFileName;
         }
 
-        void find(const wchar_t *fileName, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
+        void find(const String &fileName, const String &filterTypes, bool searchRecursively, std::function<bool(const String &)> onFileFound)
         {
             String expandedFileName(expandPath(fileName));
 
@@ -128,7 +93,7 @@ namespace Gek
             expandedPath.append(filterTypes);
 
             WIN32_FIND_DATA findData;
-            HANDLE findHandle = FindFirstFile(expandedPath, &findData);
+            HANDLE findHandle = FindFirstFile(expandedPath.c_str(), &findData);
             if (findHandle != INVALID_HANDLE_VALUE)
             {
                 do
@@ -155,7 +120,7 @@ namespace Gek
             }
         }
 
-        void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, size_t limitReadSize)
+        void load(const String &fileName, std::vector<uint8_t> &buffer, size_t limitReadSize)
         {
             String expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -187,7 +152,7 @@ namespace Gek
             CloseHandle(fileHandle);
         }
 
-        void load(const wchar_t *fileName, StringUTF8 &fileData)
+        void load(const String &fileName, StringUTF8 &fileData)
         {
             std::vector<uint8_t> buffer;
             load(fileName, buffer);
@@ -195,14 +160,14 @@ namespace Gek
             fileData = reinterpret_cast<const char *>(buffer.data());
         }
 
-        void load(const wchar_t *fileName, String &fileData)
+        void load(const String &fileName, String &fileData)
         {
             StringUTF8 rawFileData;
             load(fileName, rawFileData);
             fileData = rawFileData;
         }
 
-        void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
+        void save(const String &fileName, const std::vector<uint8_t> &buffer)
         {
             String expandedFileName(expandPath(fileName));
             HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
@@ -221,14 +186,14 @@ namespace Gek
             CloseHandle(fileHandle);
         }
 
-        void save(const wchar_t *fileName, const StringUTF8 &fileData)
+        void save(const String &fileName, const StringUTF8 &fileData)
         {
             std::vector<uint8_t> buffer(fileData.length());
             std::copy(fileData.begin(), fileData.end(), buffer.begin());
             save(fileName, buffer);
         }
 
-        void save(const wchar_t *fileName, const String &fileData)
+        void save(const String &fileName, const String &fileData)
         {
             save(fileName, StringUTF8(fileData));
         }

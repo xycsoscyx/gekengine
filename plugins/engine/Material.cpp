@@ -15,7 +15,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Material, Engine::Resources *, const wchar_t *, MaterialHandle)
+        GEK_CONTEXT_USER(Material, Engine::Resources *, String, MaterialHandle)
             , public Engine::Material
         {
         private:
@@ -23,12 +23,11 @@ namespace Gek
             DataPtr data;
 
         public:
-            Material(Context *context, Engine::Resources *resources, const wchar_t *materialName, MaterialHandle materialHandle)
+            Material(Context *context, Engine::Resources *resources, String materialName, MaterialHandle materialHandle)
                 : ContextRegistration(context)
                 , resources(resources)
             {
                 GEK_REQUIRE(resources);
-                GEK_REQUIRE(materialName);
 
                 Xml::Node materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", materialName), L"material");
                 if (!materialNode.findChild(L"shader", [&](auto &shaderNode) -> void

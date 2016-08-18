@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Filter, Video::Device *, Engine::Resources *, const wchar_t *)
+        GEK_CONTEXT_USER(Filter, Video::Device *, Engine::Resources *, String)
             , public Engine::Filter
         {
         public:
@@ -76,7 +76,7 @@ namespace Gek
             std::list<PassData> passList;
 
         public:
-            Filter(Context *context, Video::Device *device, Engine::Resources *resources, const wchar_t *filterName)
+            Filter(Context *context, Video::Device *device, Engine::Resources *resources, String filterName)
                 : ContextRegistration(context)
                 , device(device)
                 , resources(resources)
@@ -254,7 +254,7 @@ namespace Gek
                         localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
                     }
 
-                    StringUTF8 definesData;
+                    String definesData;
                     for (auto &define : localDefinesMap)
                     {
                         String value(evaluate(localDefinesMap, define.second.second, define.second.first));
@@ -266,24 +266,24 @@ namespace Gek
                         case BindType::UInt:
                         case BindType::Half:
                         case BindType::Float:
-                            definesData.format("    static const %v %v = %v;\r\n", bindType, define.first, value);
+                            definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
                             break;
 
                         default:
-                            definesData.format("    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                            definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
                             break;
                         };
                     }
 
-                    StringUTF8 engineData;
+                    String engineData;
                     if (!definesData.empty())
                     {
                         engineData.format(
-                            "namespace Defines\r\n" \
-                            "{\r\n" \
-                            "%v" \
-                            "};\r\n" \
-                            "\r\n", definesData);
+                            L"namespace Defines\r\n" \
+                            L"{\r\n" \
+                            L"%v" \
+                            L"};\r\n" \
+                            L"\r\n", definesData);
                     }
 
                     if (passNode.attributes.count(L"compute"))
@@ -303,12 +303,12 @@ namespace Gek
                         pass.mode = Pass::Mode::Deferred;
 
                         engineData +=
-                            "struct InputPixel\r\n" \
-                            "{\r\n" \
-                            "    float4 screen : SV_POSITION;\r\n" \
-                            "    float2 texCoord : TEXCOORD0;\r\n" \
-                            "};\r\n" \
-                            "\r\n";
+                            L"struct InputPixel\r\n" \
+                            L"{\r\n" \
+                            L"    float4 screen : SV_POSITION;\r\n" \
+                            L"    float2 texCoord : TEXCOORD0;\r\n" \
+                            L"};\r\n" \
+                            L"\r\n";
 
                         std::unordered_map<String, String> renderTargetsMap;
                         if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
@@ -345,7 +345,7 @@ namespace Gek
                         }
 
                         uint32_t currentStage = 0;
-                        StringUTF8 outputData;
+                        String outputData;
                         for (auto &resourcePair : renderTargetsMap)
                         {
                             auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
@@ -354,17 +354,17 @@ namespace Gek
                                 throw UnlistedRenderTarget();
                             }
 
-                            outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
+                            outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                         }
 
                         if (!outputData.empty())
                         {
                             engineData.format(
-                                "struct OutputPixel\r\n" \
-                                "{\r\n" \
-                                "%v" \
-                                "};\r\n" \
-                                "\r\n", outputData);
+                                L"struct OutputPixel\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", outputData);
                         }
 
                         pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
@@ -426,7 +426,7 @@ namespace Gek
                         }
                     }
 
-                    StringUTF8 resourceData;
+                    String resourceData;
                     uint32_t nextResourceStage = 0;
                     for (auto &resourcePair : resourceAliasMap)
                     {
@@ -443,11 +443,11 @@ namespace Gek
                             auto &resource = resourceMapSearch->second;
                             if (resource.first == MapType::ByteAddressBuffer)
                             {
-                                resourceData.format("    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                             }
                             else
                             {
-                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                             }
 
                             continue;
@@ -457,7 +457,7 @@ namespace Gek
                         if (structureSearch != resourceStructuresMap.end())
                         {
                             auto &structure = structureSearch->second;
-                            resourceData.format("    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
+                            resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
                             continue;
                         }
                     }
@@ -465,14 +465,14 @@ namespace Gek
                     if (!resourceData.empty())
                     {
                         engineData.format(
-                            "namespace Resources\r\n" \
-                            "{\r\n" \
-                            "%v" \
-                            "};\r\n" \
-                            "\r\n", resourceData);
+                            L"namespace Resources\r\n" \
+                            L"{\r\n" \
+                            L"%v" \
+                            L"};\r\n" \
+                            L"\r\n", resourceData);
                     }
 
-                    StringUTF8 unorderedAccessData;
+                    String unorderedAccessData;
                     uint32_t nextUnorderedStage = 0;
                     if (pass.mode != Pass::Mode::Compute)
                     {
@@ -494,11 +494,11 @@ namespace Gek
                             auto &resource = resourceMapSearch->second;
                             if (resource.first == MapType::ByteAddressBuffer)
                             {
-                                unorderedAccessData.format("    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                             }
                             else
                             {
-                                unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                             }
 
                             continue;
@@ -508,7 +508,7 @@ namespace Gek
                         if (structureSearch != resourceStructuresMap.end())
                         {
                             auto &structure = structureSearch->second;
-                            unorderedAccessData.format("    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                            unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
                             continue;
                         }
                     }
@@ -516,27 +516,28 @@ namespace Gek
                     if (!unorderedAccessData.empty())
                     {
                         engineData.format(
-                            "namespace UnorderedAccess\r\n" \
-                            "{\r\n" \
-                            "%v" \
-                            "};\r\n" \
-                            "\r\n", unorderedAccessData);
+                            L"namespace UnorderedAccess\r\n" \
+                            L"{\r\n" \
+                            L"%v" \
+                            L"};\r\n" \
+                            L"\r\n", unorderedAccessData);
                     }
 
-                    StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));
+                    String programEntryPoint(passNode.getAttribute(L"entry"));
                     String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", filterName, passNode.type);
-                    auto onInclude = [engineData = move(engineData), programFilePath](const char *includeName, std::vector<uint8_t> &data) -> void
+                    auto onInclude = [engineData = move(engineData), programFilePath](const String &includeName, String &data) -> bool
                     {
-                        if (_stricmp(includeName, "GEKFilter") == 0)
+                        if (includeName.compareNoCase(L"GEKFilter") == 0)
                         {
-                            data.resize(engineData.size());
-                            memcpy(data.data(), engineData, data.size());
+                            data = engineData;
+                            return true;
                         }
                         else
                         {
                             if (std::experimental::filesystem::is_regular_file(includeName))
                             {
                                 FileSystem::load(String(includeName), data);
+                                return true;
                             }
                             else
                             {
@@ -547,6 +548,7 @@ namespace Gek
                                 if (std::experimental::filesystem::is_regular_file(filePath))
                                 {
                                     FileSystem::load(filePath, data);
+                                    return true;
                                 }
                                 else
                                 {
@@ -556,10 +558,13 @@ namespace Gek
                                     if (std::experimental::filesystem::is_regular_file(rootPath))
                                     {
                                         FileSystem::load(rootPath, data);
+                                        return true;
                                     }
                                 }
                             }
                         }
+
+                        return false;
                     };
 
                     if (pass.mode == Pass::Mode::Compute)

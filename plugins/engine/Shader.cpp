@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getElementType(const StringUTF8 &type)
+        static Video::Format getElementType(const String &type)
         {
             if (type.compareNoCase("float") == 0) return Video::Format::R32_FLOAT;
             else if (type.compareNoCase("float2") == 0) return Video::Format::R32G32_FLOAT;
@@ -40,7 +40,7 @@ namespace Gek
             return Video::Format::Unknown;
         }
 
-        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, const wchar_t *)
+        GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, String)
             , public Engine::Shader
         {
         public:
@@ -181,7 +181,7 @@ namespace Gek
             std::unordered_map<String, PassData *> forwardPassMap;
 
         public:
-            Shader(Context *context, Video::Device *device, Engine::Resources *resources, Plugin::Population *population, const wchar_t *shaderName)
+            Shader(Context *context, Video::Device *device, Engine::Resources *resources, Plugin::Population *population, String shaderName)
                 : ContextRegistration(context)
                 , device(device)
                 , resources(resources)
@@ -307,7 +307,7 @@ namespace Gek
                     return result;
                 };
 
-                StringUTF8 inputData;
+                String inputData;
                 shaderNode.findChild(L"input", [&](auto &inputNode) -> void
                 {
                     for (auto &elementNode : inputNode.children)
@@ -318,15 +318,15 @@ namespace Gek
                             String format(elementNode.getAttribute(L"format", L"bool"));
                             if (format.compareNoCase(L"int") == 0)
                             {
-                                inputData.format("    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else if (format.compareNoCase(L"uint") == 0)
                             {
-                                inputData.format("    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else if (format.compareNoCase(L"bool") == 0)
                             {
-                                inputData.format("    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else
                             {
@@ -335,7 +335,7 @@ namespace Gek
                         }
                         else
                         {
-                            StringUTF8 semanticName(elementNode.attributes[L"semantic"]);
+                            String semanticName(elementNode.attributes[L"semantic"]);
                             if (semanticName.compareNoCase(L"POSITION") != 0 &&
                                 semanticName.compareNoCase(L"TEXCOORD") != 0 &&
                                 semanticName.compareNoCase(L"NORMAL") != 0 &&
@@ -347,11 +347,11 @@ namespace Gek
                             uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
                             if (type.compareNoCase(L"float4x4") == 0)
                             {
-                                inputData.format("    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else if (type.compareNoCase(L"float4x3") == 0)
                             {
-                                inputData.format("    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else
                             {
@@ -360,13 +360,13 @@ namespace Gek
                                     throw InvalidElementType();
                                 }
 
-                                inputData.format("    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
                             }
                         }
                     }
                 });
 
-                StringUTF8 lightingData;
+                String lightingData;
                 shaderNode.findChild(L"lighting", [&](auto &lightingNode) -> void
                 {
                     if (!lightingNode.findChild(L"lightsPerPass", [&](auto &lightsPerPassNode) -> void
@@ -386,38 +386,38 @@ namespace Gek
                         globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
 
                         lightingData.format(
-                            "namespace Lighting\r\n" \
-                            "{\r\n" \
-                            "    cbuffer Parameters : register(b3)\r\n" \
-                            "    {\r\n" \
-                            "        uint count;\r\n" \
-                            "        uint padding[3];\r\n" \
-                            "    };\r\n" \
-                            "\r\n" \
-                            "    namespace Type\r\n" \
-                            "    {\r\n" \
-                            "        static const uint Point = 0;\r\n" \
-                            "        static const uint Directional = 1;\r\n" \
-                            "        static const uint Spot = 2;\r\n" \
-                            "    };\r\n" \
-                            "\r\n" \
-                            "    struct Data\r\n" \
-                            "    {\r\n" \
-                            "        uint   type;\r\n" \
-                            "        float3 color;\r\n" \
-                            "        float3 position;\r\n" \
-                            "        float3 direction;\r\n" \
-                            "        float  range;\r\n" \
-                            "        float  radius;\r\n" \
-                            "        float  innerAngle;\r\n" \
-                            "        float  outerAngle;\r\n" \
-                            "        float  falloff;\r\n" \
-                            "    };\r\n" \
-                            "\r\n" \
-                            "    StructuredBuffer<Data> list : register(t0);\r\n" \
-                            "    static const uint lightsPerPass = %v;\r\n" \
-                            "};\r\n" \
-                            "\r\n", lightsPerPass);
+                            L"namespace Lighting\r\n" \
+                            L"{\r\n" \
+                            L"    cbuffer Parameters : register(b3)\r\n" \
+                            L"    {\r\n" \
+                            L"        uint count;\r\n" \
+                            L"        uint padding[3];\r\n" \
+                            L"    };\r\n" \
+                            L"\r\n" \
+                            L"    namespace Type\r\n" \
+                            L"    {\r\n" \
+                            L"        static const uint Point = 0;\r\n" \
+                            L"        static const uint Directional = 1;\r\n" \
+                            L"        static const uint Spot = 2;\r\n" \
+                            L"    };\r\n" \
+                            L"\r\n" \
+                            L"    struct Data\r\n" \
+                            L"    {\r\n" \
+                            L"        uint   type;\r\n" \
+                            L"        float3 color;\r\n" \
+                            L"        float3 position;\r\n" \
+                            L"        float3 direction;\r\n" \
+                            L"        float  range;\r\n" \
+                            L"        float  radius;\r\n" \
+                            L"        float  innerAngle;\r\n" \
+                            L"        float  outerAngle;\r\n" \
+                            L"        float  falloff;\r\n" \
+                            L"    };\r\n" \
+                            L"\r\n" \
+                            L"    StructuredBuffer<Data> list : register(t0);\r\n" \
+                            L"    static const uint lightsPerPass = %v;\r\n" \
+                            L"};\r\n" \
+                            L"\r\n", lightsPerPass);
                     }))
                     {
                         throw MissingParameters();
@@ -563,7 +563,7 @@ namespace Gek
                             localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
                         }
 
-                        StringUTF8 definesData;
+                        String definesData;
                         for (auto &define : localDefinesMap)
                         {
                             String value(evaluate(localDefinesMap, define.second.second, define.second.first));
@@ -575,24 +575,24 @@ namespace Gek
                             case BindType::UInt:
                             case BindType::Half:
                             case BindType::Float:
-                                definesData.format("    static const %v %v = %v;\r\n", bindType, define.first, value);
+                                definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
                                 break;
 
                             default:
-                                definesData.format("    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                                definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
                                 break;
                             };
                         }
 
-                        StringUTF8 engineData;
+                        String engineData;
                         if (!definesData.empty())
                         {
                             engineData.format(
-                                "namespace Defines\r\n" \
-                                "{\r\n" \
-                                "%v" \
-                                "};\r\n" \
-                                "\r\n", definesData);
+                                L"namespace Defines\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", definesData);
                         }
 
                         if (passNode.attributes.count(L"compute"))
@@ -613,23 +613,23 @@ namespace Gek
                             {
                                 pass.mode = Pass::Mode::Forward;
                                 engineData.format(
-                                "struct InputPixel\r\n" \
-                                    "{\r\n" \
-                                    "    float4 screen : SV_POSITION;\r\n" \
-                                    "%v" \
-                                    "};\r\n" \
-                                    "\r\n", inputData);
+                                    L"struct InputPixel\r\n" \
+                                    L"{\r\n" \
+                                    L"    float4 screen : SV_POSITION;\r\n" \
+                                    L"%v" \
+                                    L"};\r\n" \
+                                    L"\r\n", inputData);
                             }
                             else
                             {
                                 pass.mode = Pass::Mode::Deferred;
                                 engineData +=
-                                    "struct InputPixel\r\n" \
-                                    "{\r\n" \
-                                    "    float4 screen : SV_POSITION;\r\n" \
-                                    "    float2 texCoord : TEXCOORD0;\r\n" \
-                                    "};\r\n" \
-                                    "\r\n";
+                                    L"struct InputPixel\r\n" \
+                                    L"{\r\n" \
+                                    L"    float4 screen : SV_POSITION;\r\n" \
+                                    L"    float2 texCoord : TEXCOORD0;\r\n" \
+                                    L"};\r\n" \
+                                    L"\r\n";
                             }
 
                             std::unordered_map<String, String> renderTargetsMap;
@@ -667,7 +667,7 @@ namespace Gek
                             }
 
                             uint32_t currentStage = 0;
-                            StringUTF8 outputData;
+                            String outputData;
                             for (auto &resourcePair : renderTargetsMap)
                             {
                                 auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
@@ -676,17 +676,17 @@ namespace Gek
                                     throw UnlistedRenderTarget();
                                 }
 
-                                outputData.format("    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
+                                outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                             }
 
                             if (!outputData.empty())
                             {
                                 engineData.format(
-                                    "struct OutputPixel\r\n" \
-                                    "{\r\n" \
-                                    "%v" \
-                                    "};\r\n" \
-                                    "\r\n", outputData);
+                                    L"struct OutputPixel\r\n" \
+                                    L"{\r\n" \
+                                    L"%v" \
+                                    L"};\r\n" \
+                                    L"\r\n", outputData);
                             }
 
                             Video::DepthStateInformation depthState;
@@ -772,7 +772,7 @@ namespace Gek
                             engineData += lightingData;
                         }
 
-                        StringUTF8 resourceData;
+                        String resourceData;
                         uint32_t nextResourceStage(block.lighting ? 1 : 0);
                         if (pass.mode == Pass::Mode::Forward)
                         {
@@ -819,7 +819,7 @@ namespace Gek
                                     {
                                     case MapSource::File:
                                     case MapSource::Pattern:
-                                        resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
+                                        resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
                                         break;
 
                                     case MapSource::Resource:
@@ -829,7 +829,7 @@ namespace Gek
                                             if (resourceSearch != resourceMappingsMap.end())
                                             {
                                                 auto &resource = resourceSearch->second;
-                                                resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
+                                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
                                             }
                                         }
 
@@ -857,11 +857,11 @@ namespace Gek
                                 auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
-                                    resourceData.format("    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                    resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                                 }
                                 else
                                 {
-                                    resourceData.format("    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                    resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                                 }
 
                                 continue;
@@ -871,7 +871,7 @@ namespace Gek
                             if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = structureSearch->second;
-                                resourceData.format("    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
+                                resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
                         }
@@ -879,14 +879,14 @@ namespace Gek
                         if (!resourceData.empty())
                         {
                             engineData.format(
-                                "namespace Resources\r\n" \
-                                "{\r\n" \
-                                "%v" \
-                                "};\r\n" \
-                                "\r\n", resourceData);
+                                L"namespace Resources\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", resourceData);
                         }
 
-                        StringUTF8 unorderedAccessData;
+                        String unorderedAccessData;
                         uint32_t nextUnorderedStage = 0;
                         if (pass.mode != Pass::Mode::Compute)
                         {
@@ -908,11 +908,11 @@ namespace Gek
                                 auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
-                                    unorderedAccessData.format("    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                    unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                                 }
                                 else
                                 {
-                                    unorderedAccessData.format("    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                    unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                                 }
 
                                 continue;
@@ -922,7 +922,7 @@ namespace Gek
                             if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = structureSearch->second;
-                                unorderedAccessData.format("    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                                unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
                         }
@@ -930,50 +930,55 @@ namespace Gek
                         if (!unorderedAccessData.empty())
                         {
                             engineData.format(
-                                "namespace UnorderedAccess\r\n" \
-                                "{\r\n" \
-                                "%v" \
-                                "};\r\n" \
-                                "\r\n", unorderedAccessData);
+                                L"namespace UnorderedAccess\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", unorderedAccessData);
                         }
 
-                        StringUTF8 programEntryPoint(passNode.getAttribute(L"entry"));
+                        String programEntryPoint(passNode.getAttribute(L"entry"));
                         String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", shaderName, passNode.type);
-                        auto onInclude = [engineData = move(engineData), programFilePath](const char *resourceName, std::vector<uint8_t> &data) -> void
+                        auto onInclude = [engineData = move(engineData), programFilePath](const String &includeName, String &data) -> bool
                         {
-                            if (_stricmp(resourceName, "GEKShader") == 0)
+                            if (includeName.compareNoCase(L"GEKShader") == 0)
                             {
-                                data.resize(engineData.size());
-                                memcpy(data.data(), engineData, data.size());
+                                data = engineData;
+                                return true;
                             }
                             else
                             {
-                                if (std::experimental::filesystem::is_regular_file(resourceName))
+                                if (std::experimental::filesystem::is_regular_file(includeName))
                                 {
-                                    FileSystem::load(String(resourceName), data);
+                                    FileSystem::load(String(includeName), data);
+                                    return true;
                                 }
                                 else
                                 {
                                     FileSystem::Path filePath(programFilePath);
                                     filePath.remove_filename();
-                                    filePath.append(resourceName);
+                                    filePath.append(includeName);
                                     filePath = FileSystem::expandPath(filePath);
                                     if (std::experimental::filesystem::is_regular_file(filePath))
                                     {
                                         FileSystem::load(filePath, data);
+                                        return true;
                                     }
                                     else
                                     {
                                         FileSystem::Path rootPath(L"$root\\data\\programs");
-                                        rootPath.append(resourceName);
+                                        rootPath.append(includeName);
                                         rootPath = FileSystem::expandPath(rootPath);
                                         if (std::experimental::filesystem::is_regular_file(rootPath))
                                         {
                                             FileSystem::load(rootPath, data);
+                                            return true;
                                         }
                                     }
                                 }
                             }
+
+                            return false;
                         };
 
                         if (pass.mode == Pass::Mode::Compute)

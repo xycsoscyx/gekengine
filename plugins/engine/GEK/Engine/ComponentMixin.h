@@ -10,9 +10,9 @@ namespace Gek
     namespace Plugin
     {
         template <typename TYPE>
-        void saveParameter(Plugin::Population::ComponentDefinition &componentData, const wchar_t *name, const TYPE &value)
+        void saveParameter(Plugin::Population::ComponentDefinition &componentData, const String &name, const TYPE &value)
         {
-            if (name)
+            if (!name.empty())
             {
                 componentData[name] = value;
             }
@@ -23,9 +23,9 @@ namespace Gek
         }
 
         template <typename TYPE>
-        TYPE loadParameter(const Plugin::Population::ComponentDefinition &componentData, const wchar_t *name, const TYPE &defaultValue)
+        TYPE loadParameter(const Plugin::Population::ComponentDefinition &componentData, const String &name, const TYPE &defaultValue)
         {
-            if (name)
+            if (!name.empty())
             {
                 auto componentSearch = componentData.find(name);
                 if (componentSearch != componentData.end())

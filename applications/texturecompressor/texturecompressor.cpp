@@ -88,7 +88,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             throw std::exception("Output already exists (must specify overwrite)");
         }
 
-        DeleteFile(fileNameOutput);
+        DeleteFile(fileNameOutput.c_str());
         printf("Compressing: -> %S\r\n", fileNameInput.c_str());
         printf("             <- %S\r\n", fileNameOutput.c_str());
         printf("Format: %S\r\n", format.c_str());
@@ -226,7 +226,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         printf(".compressed.");
 
-        resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameOutput);
+        resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameOutput.c_str());
         if (FAILED(resultValue))
         {
             throw std::exception("Unable to save image");

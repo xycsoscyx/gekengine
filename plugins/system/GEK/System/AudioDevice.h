@@ -47,8 +47,8 @@ namespace Gek
             virtual void setDopplerFactor(float factor) = 0;
             virtual void setRollOffFactor(float factor) = 0;
 
-            virtual EffectPtr loadEffect(const wchar_t *fileName) = 0;
-            virtual SoundPtr loadSound(const wchar_t *fileName) = 0;
+            virtual EffectPtr loadEffect(const String &fileName) = 0;
+            virtual SoundPtr loadSound(const String &fileName) = 0;
 
             virtual EffectPtr copyEffect(Effect *source) = 0;
             virtual SoundPtr copySound(Sound *source) = 0;

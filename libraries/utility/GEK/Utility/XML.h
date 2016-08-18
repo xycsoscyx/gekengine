@@ -30,18 +30,18 @@ namespace Gek
             std::unordered_map<String, String> attributes;
             std::list<Node> children;
 
-            Node(const wchar_t *type, Source source = Source::Code);
+            Node(const String &type, Source source = Source::Code);
             Node(Node &&node);
 
             void operator = (Node &&node);
 
             bool isFromFile(void);
-            String getAttribute(const wchar_t *name, const wchar_t *value = nullptr) const;
-            bool findChild(const wchar_t *type, std::function<void(Node &)> onChildFound);
-            Node & getChild(const wchar_t *type);
+            String getAttribute(const String &name, const String &defaultValue = String(L"")) const;
+            bool findChild(const String &type, std::function<void(Node &)> onChildFound);
+            Node & getChild(const String &type);
 
             template <typename TYPE>
-            bool getValue(const wchar_t *name, TYPE &value) const
+            bool getValue(const String &name, TYPE &value) const
             {
                 auto attributeSearch = attributes.find(name);
                 if (attributeSearch != attributes.end())
@@ -54,7 +54,7 @@ namespace Gek
             }
         };
 
-        Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD = false);
-        void save(Node &rootData, const wchar_t *fileName);
+        Node load(const String &fileName, const String &expectedRootType, bool validateDTD = false);
+        void save(Node &rootData, const String &fileName);
     }; // namespace Xml
 }; // namespace Gek

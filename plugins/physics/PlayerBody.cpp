@@ -60,7 +60,7 @@ namespace Gek
         virtual void onExit(PlayerNewtonBody *player) { };
 
         virtual StatePtr onUpdate(PlayerNewtonBody *player, float frameTime) { return nullptr; };
-        virtual StatePtr onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter) { return nullptr; };
+        virtual StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter) { return nullptr; };
     };
 
     class IdleState
@@ -68,7 +68,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter);
+        StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter);
     };
 
     class CrouchingState
@@ -76,7 +76,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter);
+        StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter);
     };
 
     class WalkingState
@@ -84,7 +84,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter);
+        StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter);
     };
 
     class JumpingState
@@ -263,29 +263,29 @@ namespace Gek
         }
 
         // Plugin::CoreListener
-        void onAction(const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+        void onAction(String &actionName, const Plugin::ActionParameter &parameter)
         {
-            if (_wcsicmp(actionName, L"turn") == 0)
+            if (actionName.compareNoCase(L"turn") == 0)
             {
                 headingAngle += (parameter.value * 0.01f);
             }
-            else if (_wcsicmp(actionName, L"move_forward") == 0)
+            else if (actionName.compareNoCase(L"move_forward") == 0)
             {
                 moveForward = parameter.state;
             }
-            else if (_wcsicmp(actionName, L"move_backward") == 0)
+            else if (actionName.compareNoCase(L"move_backward") == 0)
             {
                 moveBackward = parameter.state;
             }
-            else if (_wcsicmp(actionName, L"strafe_left") == 0)
+            else if (actionName.compareNoCase(L"strafe_left") == 0)
             {
                 strafeLeft = parameter.state;
             }
-            else if (_wcsicmp(actionName, L"strafe_right") == 0)
+            else if (actionName.compareNoCase(L"strafe_right") == 0)
             {
                 strafeRight = parameter.state;
             }
-            else if (_wcsicmp(actionName, L"crouch") == 0)
+            else if (actionName.compareNoCase(L"crouch") == 0)
             {
                 crouching = parameter.state;
             }
@@ -691,29 +691,29 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr IdleState::onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+    StatePtr IdleState::onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter)
     {
-        if (_wcsicmp(actionName, L"crouch") == 0 && parameter.state)
+        if (actionName.compareNoCase(L"crouch") == 0 && parameter.state)
         {
             return std::make_shared<CrouchingState>();
         }
-        else if (_wcsicmp(actionName, L"move_forward") == 0 && parameter.state)
+        else if (actionName.compareNoCase(L"move_forward") == 0 && parameter.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(actionName, L"move_backward") == 0 && parameter.state)
+        else if (actionName.compareNoCase(L"move_backward") == 0 && parameter.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(actionName, L"strafe_left") == 0 && parameter.state)
+        else if (actionName.compareNoCase(L"strafe_left") == 0 && parameter.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(actionName, L"strafe_right") == 0 && parameter.state)
+        else if (actionName.compareNoCase(L"strafe_right") == 0 && parameter.state)
         {
             return std::make_shared<WalkingState>();
         }
-        else if (_wcsicmp(actionName, L"jump") == 0 && parameter.state)
+        else if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
         {
             return std::make_shared<JumpingState>();
         }
@@ -742,7 +742,7 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter)
     {
         return nullptr;
     }
@@ -764,9 +764,9 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr WalkingState::onAction(PlayerNewtonBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+    StatePtr WalkingState::onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter)
     {
-        if (_wcsicmp(actionName, L"jump") == 0 && parameter.state)
+        if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
         {
             return std::make_shared<JumpingState>();
         }

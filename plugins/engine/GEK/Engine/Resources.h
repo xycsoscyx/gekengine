@@ -66,15 +66,15 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidParameter);
             GEK_ADD_EXCEPTION(ResourceNotLoaded);
 
-            virtual VisualHandle loadVisual(const wchar_t *pluginName) = 0;
-            virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
+            virtual VisualHandle loadVisual(const String &pluginName) = 0;
+            virtual MaterialHandle loadMaterial(const String &materialName) = 0;
 
-            virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
-            virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
+            virtual ResourceHandle loadTexture(const String &textureName, uint32_t flags) = 0;
+            virtual ResourceHandle createTexture(const String &pattern, const String &parameters) = 0;
 
-            virtual ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
+            virtual ResourceHandle createTexture(const String &textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags) = 0;
+            virtual ResourceHandle createBuffer(const String &bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
+            virtual ResourceHandle createBuffer(const String &bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
 
             virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
             virtual void unmapBuffer(ResourceHandle buffer) = 0;
@@ -104,18 +104,18 @@ namespace Gek
             virtual void clearLocal(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
-            virtual ResourceHandle getResourceHandle(const wchar_t *reosurceNme) const = 0;
+            virtual ResourceHandle getResourceHandle(const String &resourceName) const = 0;
 
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Plugin::Visual * const getVisual(VisualHandle handle) const = 0;
             virtual Material * const getMaterial(MaterialHandle handle) const = 0;
             virtual Video::Texture * const getTexture(ResourceHandle handle) const = 0;
 
-            virtual Filter * const getFilter(const wchar_t *filterName) = 0;
-            virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
+            virtual Filter * const getFilter(const String &filterName) = 0;
+            virtual Shader * const getShader(const String &shaderName, MaterialHandle materialHandle) = 0;
 
-            virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-            virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const char *entryFunction, std::function<void(const char *, std::vector<uint8_t> &)> onInclude = nullptr, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+            virtual ProgramHandle loadComputeProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude = nullptr, const std::unordered_map<String, String> &definesMap = std::unordered_map<String, String>()) = 0;
+            virtual ProgramHandle loadPixelProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude = nullptr, const std::unordered_map<String, String> &definesMap = std::unordered_map<String, String>()) = 0;
 
             virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;

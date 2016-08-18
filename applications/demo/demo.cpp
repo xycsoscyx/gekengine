@@ -243,8 +243,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
             DestroyWindow(window);
             SetWindowLongPtr(window, GWLP_USERDATA, 0);
-            }
         }
+    }
     catch (const std::exception &exception)
     {
         MessageBoxA(nullptr, exception.what(), "Unhandled Exception Error", MB_OK | MB_ICONERROR);
@@ -255,4 +255,4 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     };
 
     return 0;
-    }
+}

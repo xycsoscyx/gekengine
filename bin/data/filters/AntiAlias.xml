@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<filter>
+    <textures>
+        <depthBuffer bind="float" source="$standard" />
+    </textures>
+
+    <passes>
+        <AntiAlias mode="deferred" entry="mainPixelProgram">
+            <resources>
+                <screenBuffer copy="screen" />
+                <depthBuffer />
+            </resources>
+
+            <targets>
+                <screen />
+            </targets>
+        </AntiAlias>
+    </passes>
+</filter>
