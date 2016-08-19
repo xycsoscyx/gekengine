@@ -229,10 +229,18 @@ namespace Gek
 
         Float4x4 Float4x4::getTranspose(void) const
         {
-            return Float4x4({ _11, _21, _31, _41,
-                              _12, _22, _32, _42,
-                              _13, _23, _33, _43,
-                              _14, _24, _34, _44 });
+            __m128 tmp3, tmp2, tmp1, tmp0;
+            tmp0 = _mm_shuffle_ps(simd[0], simd[1], 0x44);
+            tmp2 = _mm_shuffle_ps(simd[0], simd[1], 0xEE);
+            tmp1 = _mm_shuffle_ps(simd[2], simd[3], 0x44);
+            tmp3 = _mm_shuffle_ps(simd[2], simd[3], 0xEE);
+            return Float4x4(
+            {
+                _mm_shuffle_ps(tmp0, tmp1, 0x88),
+                _mm_shuffle_ps(tmp0, tmp1, 0xDD),
+                _mm_shuffle_ps(tmp2, tmp3, 0x88),
+                _mm_shuffle_ps(tmp2, tmp3, 0xDD),
+            });
         }
 
         Float4x4 Float4x4::getInverse(void) const
@@ -269,16 +277,28 @@ namespace Gek
 
         Float4x4 Float4x4::getRotation(void) const
         {
+            static const __m128 identity = _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f);
             // Sets row/column 4 to identity
-            return Float4x4({ rows[0].xyz.w(0.0f).simd,
-                              rows[1].xyz.w(0.0f).simd,
-                              rows[2].xyz.w(0.0f).simd,
-                   Float4(0.0f, 0.0f, 0.0f, 1.0f).simd });
+            return Float4x4(
+            { 
+                _mm_setr_ps(rows[0].x, rows[0].y, rows[0].z, 0.0f),
+                _mm_setr_ps(rows[1].x, rows[1].y, rows[1].z, 0.0f),
+                _mm_setr_ps(rows[2].x, rows[2].y, rows[2].z, 0.0f),
+                identity,
+            });
         }
 
         void Float4x4::transpose(void)
         {
-            (*this) = getTranspose();
+            __m128 tmp3, tmp2, tmp1, tmp0;
+            tmp0 = _mm_shuffle_ps(simd[0], simd[1], 0x44);
+            tmp2 = _mm_shuffle_ps(simd[0], simd[1], 0xEE);
+            tmp1 = _mm_shuffle_ps(simd[2], simd[3], 0x44);
+            tmp3 = _mm_shuffle_ps(simd[2], simd[3], 0xEE);
+            simd[0] = _mm_shuffle_ps(tmp0, tmp1, 0x88);
+            simd[1] = _mm_shuffle_ps(tmp0, tmp1, 0xDD);
+            simd[2] = _mm_shuffle_ps(tmp2, tmp3, 0x88);
+            simd[3] = _mm_shuffle_ps(tmp2, tmp3, 0xDD);
         }
 
         void Float4x4::invert(void)
