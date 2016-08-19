@@ -112,7 +112,7 @@ namespace Gek
         {
             if (formatting)
             {
-                format(formatting, value, arguments...);
+                append(formatting, value, arguments...);
             }
         }
 
@@ -199,21 +199,21 @@ namespace Gek
             std::transform(begin(), end(), begin(), std::toupper<ELEMENT>);
         }
 
-        BaseString<ELEMENT> getLower(void) const
+        BaseString getLower(void) const
         {
             BaseString transformed;
             std::transform(begin(), end(), std::back_inserter(transformed), ::tolower);
             return transformed;
         }
 
-        BaseString<ELEMENT> getUpper(void) const
+        BaseString getUpper(void) const
         {
             BaseString transformed;
             std::transform(begin(), end(), std::back_inserter(transformed), ::toupper);
             return transformed;
         }
 
-        std::vector<BaseString<ELEMENT>> split(ELEMENT delimiter, bool clearSpaces = true) const
+        std::vector<BaseString> split(ELEMENT delimiter, bool clearSpaces = true) const
         {
             BaseString current;
             std::vector<BaseString> tokens;
@@ -231,7 +231,7 @@ namespace Gek
             return tokens;
         }
 
-        void join(std::vector<BaseString<ELEMENT>> list, ELEMENT delimiter, bool addSpaces = true)
+        void join(std::vector<BaseString> list, ELEMENT delimiter, bool addSpaces = true)
         {
             std::accumulate(list.begin(), list.end(), (*this), 
                 [delimiter](const BaseString<ELEMENT> &a, const BaseString<ELEMENT> &b) -> BaseString<ELEMENT>
@@ -240,7 +240,7 @@ namespace Gek
             });
         }
 
-        int compareNoCase(const BaseString<ELEMENT> &string) const
+        int compareNoCase(const BaseString &string) const
         {
             if (size() != string.size())
             {
@@ -253,117 +253,119 @@ namespace Gek
             }) ? 0 : 1;
         }
 
-        void format(const ELEMENT *formatting)
+        BaseString & append(const BaseString &string)
         {
-            append(formatting);
+            return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
         }
 
         template<typename TYPE, typename... PARAMETERS>
-        void format(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
+        BaseString & append(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
         {
             while (formatting && *formatting)
             {
                 ELEMENT currentCharacter = *formatting++;
-                if (currentCharacter == '%' && formatting && *formatting)
+                if (currentCharacter == ELEMENT('%') && formatting && *formatting)
                 {
                     ELEMENT nextCharacter = *formatting++;
-                    if (nextCharacter == '%')
+                    if (nextCharacter == ELEMENT('%'))
                     {
                         // %%
-                        (*this) += nextCharacter;
+                        std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, nextCharacter);
                     }
-                    else if (nextCharacter == 'v')
+                    else if (nextCharacter == ELEMENT('v'))
                     {
                         // %v
                         (*this) += value;
-                        format(formatting, arguments...);
-                        return;
+                        append(formatting, arguments...);
+                        return (*this);
                     }
                     else
                     {
                         // %(other)
-                        (*this) += currentCharacter;
-                        (*this) += nextCharacter;
+                        std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, currentCharacter);
+                        std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, nextCharacter);
                     }
                 }
                 else
                 {
-                    (*this) += currentCharacter;
+                    std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, currentCharacter);
                 }
             };
+
+            return (*this);
         }
 
-        BaseString<ELEMENT> &operator = (const ELEMENT &value)
+        BaseString &operator = (const ELEMENT &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const bool &value)
+        BaseString &operator = (const bool &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << std::boolalpha << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const float &value)
+        BaseString &operator = (const float &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << std::showpoint << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const long &value)
+        BaseString &operator = (const long &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const unsigned long &value)
+        BaseString &operator = (const unsigned long &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << std::uppercase << std::setfill(ELEMENT('0')) << std::setw(8) << std::hex << value;
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const Math::Float2 &value)
+        BaseString &operator = (const Math::Float2 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const Math::Float3 &value)
+        BaseString &operator = (const Math::Float3 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const Math::Float4 &value)
+        BaseString &operator = (const Math::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const Math::Color &value)
+        BaseString &operator = (const Math::Color &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.r << ',' << value.g << ',' << value.b << ',' << value.a << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const Math::Quaternion &value)
+        BaseString &operator = (const Math::Quaternion &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString<ELEMENT> &operator = (const ELEMENT *string)
+        BaseString &operator = (const ELEMENT *string)
         {
             if (string)
             {
@@ -378,7 +380,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        BaseString<ELEMENT> &operator = (const TYPE &value)
+        BaseString &operator = (const TYPE &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << value;
@@ -386,7 +388,7 @@ namespace Gek
         }
 
         template <typename CONVERSION>
-        BaseString<ELEMENT> &operator = (const CONVERSION *string)
+        BaseString &operator = (const CONVERSION *string)
         {
             if (string)
             {
@@ -401,7 +403,7 @@ namespace Gek
         }
 
         template <typename CONVERSION>
-        BaseString<ELEMENT> &operator = (const basic_string<CONVERSION> &string)
+        BaseString &operator = (const basic_string<CONVERSION> &string)
         {
             if (string.empty())
             {
@@ -416,7 +418,7 @@ namespace Gek
         }
 
         template <typename CONVERSION>
-        BaseString<ELEMENT> &operator = (const BaseString<CONVERSION> &string)
+        BaseString &operator = (const BaseString<CONVERSION> &string)
         {
             if (string.empty())
             {

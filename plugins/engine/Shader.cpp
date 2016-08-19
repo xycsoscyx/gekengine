@@ -247,7 +247,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float2 vector = Evaluator::get<Math::Float2>(value);
-                            result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
+                            result.append(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
                             break;
                         }
 
@@ -255,7 +255,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float2 vector = Evaluator::get<Math::Float2>(value);
-                            result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
+                            result.append(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
                             break;
                         }
 
@@ -267,7 +267,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float3 vector = Evaluator::get<Math::Float3>(value);
-                            result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
+                            result.append(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
                             break;
                         }
 
@@ -275,7 +275,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float3 vector = Evaluator::get<Math::Float3>(value);
-                            result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
+                            result.append(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
                             break;
                         }
 
@@ -287,7 +287,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float4 vector = Evaluator::get<Math::Float4>(value);
-                            result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
+                            result.append(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
                             break;
                         }
 
@@ -295,7 +295,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float4 vector = Evaluator::get<Math::Float4>(value);
-                            result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
+                            result.append(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
                             break;
                         }
 
@@ -318,15 +318,15 @@ namespace Gek
                             String format(elementNode.getAttribute(L"format", L"bool"));
                             if (format.compareNoCase(L"int") == 0)
                             {
-                                inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.append(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else if (format.compareNoCase(L"uint") == 0)
                             {
-                                inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.append(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else if (format.compareNoCase(L"bool") == 0)
                             {
-                                inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.append(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else
                             {
@@ -347,11 +347,11 @@ namespace Gek
                             uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
                             if (type.compareNoCase(L"float4x4") == 0)
                             {
-                                inputData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                                inputData.append(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else if (type.compareNoCase(L"float4x3") == 0)
                             {
-                                inputData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                                inputData.append(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else
                             {
@@ -360,7 +360,7 @@ namespace Gek
                                     throw InvalidElementType();
                                 }
 
-                                inputData.format(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+                                inputData.append(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
                             }
                         }
                     }
@@ -385,7 +385,7 @@ namespace Gek
 
                         globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
 
-                        lightingData.format(
+                        lightingData.append(
                             L"namespace Lighting\r\n" \
                             L"{\r\n" \
                             L"    cbuffer Parameters : register(b3)\r\n" \
@@ -575,11 +575,11 @@ namespace Gek
                             case BindType::UInt:
                             case BindType::Half:
                             case BindType::Float:
-                                definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
+                                definesData.append(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
                                 break;
 
                             default:
-                                definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                                definesData.append(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
                                 break;
                             };
                         }
@@ -587,7 +587,7 @@ namespace Gek
                         String engineData;
                         if (!definesData.empty())
                         {
-                            engineData.format(
+                            engineData.append(
                                 L"namespace Defines\r\n" \
                                 L"{\r\n" \
                                 L"%v" \
@@ -612,7 +612,7 @@ namespace Gek
                             if (passNode.attributes.count("forward"))
                             {
                                 pass.mode = Pass::Mode::Forward;
-                                engineData.format(
+                                engineData.append(
                                     L"struct InputPixel\r\n" \
                                     L"{\r\n" \
                                     L"    float4 screen : SV_POSITION;\r\n" \
@@ -676,12 +676,12 @@ namespace Gek
                                     throw UnlistedRenderTarget();
                                 }
 
-                                outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
+                                outputData.append(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                             }
 
                             if (!outputData.empty())
                             {
-                                engineData.format(
+                                engineData.append(
                                     L"struct OutputPixel\r\n" \
                                     L"{\r\n" \
                                     L"%v" \
@@ -819,7 +819,7 @@ namespace Gek
                                     {
                                     case MapSource::File:
                                     case MapSource::Pattern:
-                                        resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
+                                        resourceData.append(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
                                         break;
 
                                     case MapSource::Resource:
@@ -829,7 +829,7 @@ namespace Gek
                                             if (resourceSearch != resourceMappingsMap.end())
                                             {
                                                 auto &resource = resourceSearch->second;
-                                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
+                                                resourceData.append(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
                                             }
                                         }
 
@@ -857,11 +857,11 @@ namespace Gek
                                 auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
-                                    resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                    resourceData.append(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                                 }
                                 else
                                 {
-                                    resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                    resourceData.append(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                                 }
 
                                 continue;
@@ -871,14 +871,14 @@ namespace Gek
                             if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = structureSearch->second;
-                                resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
+                                resourceData.append(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
                         }
 
                         if (!resourceData.empty())
                         {
-                            engineData.format(
+                            engineData.append(
                                 L"namespace Resources\r\n" \
                                 L"{\r\n" \
                                 L"%v" \
@@ -908,11 +908,11 @@ namespace Gek
                                 auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
-                                    unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                    unorderedAccessData.append(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                                 }
                                 else
                                 {
-                                    unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                    unorderedAccessData.append(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                                 }
 
                                 continue;
@@ -922,14 +922,14 @@ namespace Gek
                             if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = structureSearch->second;
-                                unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                                unorderedAccessData.append(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
                         }
 
                         if (!unorderedAccessData.empty())
                         {
-                            engineData.format(
+                            engineData.append(
                                 L"namespace UnorderedAccess\r\n" \
                                 L"{\r\n" \
                                 L"%v" \

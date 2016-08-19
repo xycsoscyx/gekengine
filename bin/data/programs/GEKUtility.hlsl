@@ -76,43 +76,27 @@ float3 getPositionFromSample(float2 texCoord, float depthSample)
     return getPositionFromLinearDepth(texCoord, getLinearDepthFromSample(depthSample));
 }
 
-// using stereograpgic projection
 // http://aras-p.info/texts/CompactNormalStorage.html
-half2 encodeNormal(float3 n)
+// http://jcgt.org/published/0003/02/01/paper.pdf
+
+// Returns ±1
+float2 signNotZero(float2 v)
 {
-    half scale = 1.7777;
-    half2 enc = n.xy / (n.z + 1.0);
-    enc /= scale;
-    enc = enc * 0.5 + 0.5;
-    return enc;
+    return float2((v.x >= 0.0) ? +1.0 : -1.0, (v.y >= 0.0) ? +1.0 : -1.0);
 }
 
-float3 decodeNormal(half2 enc)
+// Assume normalized input. Output is on [-1, 1] for each component.
+float2 encodeNormal(float3 v)
 {
-    half scale = 1.7777;
-    half3 nn = half3(enc * 2.0 * scale - scale, 1.0);
-    half g = 2.0 / dot(nn.xyz, nn.xyz);
-    half3 n;
-    n.xy = g*nn.xy;
-    n.z = g - 1.0;
-    return n;
+    // Project the sphere onto the octahedron, and then onto the xy plane
+    float2 p = v.xy * (1.0 / (abs(v.x) + abs(v.y) + abs(v.z)));
+    // Reflect the folds of the lower hemisphere over the diagonals
+    return (v.z <= 0.0) ? ((1.0 - abs(p.yx)) * signNotZero(p)) : p;
 }
 
-uint packFloat4(float4 value)
+float3 decodeNormal(float2 e)
 {
-    value = min(max(value, 0.0), 1.0);
-    value = value * 255.0 + 0.5;
-    value = floor(value);
-    return (((uint)value.x) |
-           (((uint)value.y) << 8) |
-           (((uint)value.z) << 16) |
-           (((uint)value.w) << 24));
-}
-
-float4 unpackFloat4(uint value)
-{
-    return float4((float)(value & 0x000000ff) / 255.0,
-                  (float)((value >> 8) & 0x000000ff) / 255.0,
-                  (float)((value >> 16) & 0x000000ff) / 255.0,
-                  (float)((value >> 24) & 0x000000ff) / 255.0);
+    float3 v = float3(e.xy, 1.0 - abs(e.x) - abs(e.y));
+    if (v.z < 0) v.xy = (1.0 - abs(v.yx)) * signNotZero(v.xy);
+    return normalize(v);
 }

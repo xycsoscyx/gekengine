@@ -34,7 +34,7 @@
         <depthBuffer bind="float" flags="depth">D32_FLOAT</depthBuffer>
         <albedoBuffer bind="float3" flags="target">R11G11B10_FLOAT</albedoBuffer>
         <materialBuffer bind="float2" flags="target">R8G8_UNORM</materialBuffer>
-        <normalBuffer bind="half2" flags="target">R16G16_FLOAT</normalBuffer>
+        <normalBuffer bind="float2" flags="target">R8G8_NORM</normalBuffer>
         <ambientBuffer bind="float" flags="target">R8_UNORM</ambientBuffer>
         <gaussianBuffer bind="float" flags="target">R8_UNORM</gaussianBuffer>
     </textures>

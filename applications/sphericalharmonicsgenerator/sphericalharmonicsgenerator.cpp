@@ -463,7 +463,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         StringUTF8 output;
         for (int i = 0; i < 9; i++)
         {
-            output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
+            output.append("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
         }
 
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
