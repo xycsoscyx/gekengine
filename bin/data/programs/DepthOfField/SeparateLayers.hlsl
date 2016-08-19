@@ -53,7 +53,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     OutputPixel outputPixel;
 	outputPixel.circleOfConfusion = clamp(((sceneDepth - focalDepth) * reciprocalFocalRange), -1.0, 1.0);
-    outputPixel.foregroundBuffer = (screenColor * saturate(-outputPixel.circleOfConfusion));
+    //outputPixel.foregroundBuffer = (screenColor * saturate(-outputPixel.circleOfConfusion));
 	outputPixel.screenBuffer = screenColor;
     return outputPixel;
 }

@@ -143,6 +143,11 @@ namespace Gek
             }
         }
 
+		std::size_t getHash(void) const
+		{
+			return std::hash<std::basic_string<ELEMENT, TRAITS, ALLOCATOR>>()(*this);
+		}
+
         BaseString subString(size_t position = 0, size_t length = std::string::npos) const
         {
             if (position < 0 || position >= size())
@@ -645,21 +650,21 @@ namespace Gek
 
 namespace std
 {
-    template <>
-    struct hash<Gek::StringUTF8>
-    {
-        size_t operator()(const Gek::StringUTF8 &value) const
-        {
-            return hash<string>()(value);
-        }
-    };
+	template <>
+	struct hash<Gek::StringUTF8>
+	{
+		size_t operator()(const Gek::StringUTF8 &value) const
+		{
+			return hash<string>()(value);
+		}
+	};
 
-    template <>
-    struct hash<Gek::String>
-    {
-        size_t operator()(const Gek::String &value) const
-        {
-            return hash<wstring>()(value);
-        }
-    };
+	template <>
+	struct hash<Gek::String>
+	{
+		size_t operator()(const Gek::String &value) const
+		{
+			return hash<wstring>()(value);
+		}
+	};
 }; // namespace std

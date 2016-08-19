@@ -28,5 +28,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     edgeDepth.w = (sampleDepthNP + sampleDepthPN);
     edgeDepth = abs((2.0 * centerDepth) - edgeDepth) - Defines::depthBias;
     edgeDepth = step(edgeDepth, 0.0);
-    return (1.0 - saturate(dot(edgeDepth, Defines::depthThreshold)));
+    float factor = (1.0 - saturate(dot(edgeDepth, Defines::depthThreshold)));
+
+	float3 centerColor = Resources::screenBuffer[inputPixel.screen.xy];
+	float3 sampleColorP0 = Resources::screenBuffer[inputPixel.screen.xy + float2(+1.0, +0.0)];
+	float3 sampleColorN0 = Resources::screenBuffer[inputPixel.screen.xy + float2(-1.0, +0.0)];
+	float3 sampleColor0P = Resources::screenBuffer[inputPixel.screen.xy + float2(+0.0, +1.0)];
+	float3 sampleColor0N = Resources::screenBuffer[inputPixel.screen.xy + float2(+0.0, -1.0)];
+	float3 sampleColor = ((sampleColorP0 + sampleColorN0 + sampleColor0P + sampleColor0N) * 0.25);
+	return lerp(centerColor, sampleColor, factor);
 }

@@ -2,7 +2,7 @@
 <filter>
     <textures>
         <depthBuffer bind="float" source="$standard" />
-        <foregroundBuffer bind="float3" flags="target">R11G11B10_FLOAT</foregroundBuffer>
+        <!--foregroundBuffer bind="float3" flags="target">R11G11B10_FLOAT</foregroundBuffer-->
         <circleOfConfusion bind="float" flags="target">R16_FLOAT</circleOfConfusion>
     </textures>
 
@@ -67,7 +67,7 @@
 
             <targets>
                 <circleOfConfusion />
-                <foregroundBuffer />
+                <!--foregroundBuffer /-->
                 <screenBuffer />
             </targets>
         </SeparateLayers>
@@ -83,7 +83,7 @@
             </targets>
         </GatherBackground>
 
-        <ScatterForeground entry="mainPixelProgram">
+        <!--ScatterForeground entry="mainPixelProgram">
             <blendstates>
                 <color source="one" destination="inverse_source_alpha" operation="add" />
                 <alpha source="one" destination="one" operation="add" />
@@ -97,6 +97,6 @@
             <targets>
                 <screen />
             </targets>
-        </ScatterForeground>
+        </ScatterForeground-->
     </passes>
 </filter>

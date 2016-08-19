@@ -60,7 +60,7 @@ namespace Gek
         virtual void onExit(PlayerNewtonBody *player) { };
 
         virtual StatePtr onUpdate(PlayerNewtonBody *player, float frameTime) { return nullptr; };
-        virtual StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter) { return nullptr; };
+        virtual StatePtr onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter) { return nullptr; };
     };
 
     class IdleState
@@ -68,7 +68,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter);
+        StatePtr onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter);
     };
 
     class CrouchingState
@@ -76,7 +76,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter);
+        StatePtr onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter);
     };
 
     class WalkingState
@@ -84,7 +84,7 @@ namespace Gek
     {
     public:
         StatePtr onUpdate(PlayerNewtonBody *player, float frameTime);
-        StatePtr onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter);
+        StatePtr onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter);
     };
 
     class JumpingState
@@ -263,7 +263,7 @@ namespace Gek
         }
 
         // Plugin::CoreListener
-        void onAction(String &actionName, const Plugin::ActionParameter &parameter)
+        void onAction(const String &actionName, const Plugin::ActionParameter &parameter)
         {
             if (actionName.compareNoCase(L"turn") == 0)
             {
@@ -691,7 +691,7 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr IdleState::onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter)
+    StatePtr IdleState::onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter)
     {
         if (actionName.compareNoCase(L"crouch") == 0 && parameter.state)
         {
@@ -742,7 +742,7 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter)
+    StatePtr CrouchingState::onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter)
     {
         return nullptr;
     }
@@ -764,7 +764,7 @@ namespace Gek
         return nullptr;
     }
 
-    StatePtr WalkingState::onAction(PlayerNewtonBody *player, String &actionName, const Plugin::ActionParameter &parameter)
+    StatePtr WalkingState::onAction(PlayerNewtonBody *player, const String &actionName, const Plugin::ActionParameter &parameter)
     {
         if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
         {

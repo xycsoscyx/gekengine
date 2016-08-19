@@ -558,7 +558,7 @@ namespace Gek
             if (entity->hasComponents<Components::Shape, Components::Transform>())
             {
                 auto &shapeComponent = entity->getComponent<Components::Shape>();
-                std::size_t hash = std::hash_combine(shapeComponent.parameters, shapeComponent.type);
+                auto hash = hashCombine(shapeComponent.parameters.getHash(), shapeComponent.type.getHash());
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {

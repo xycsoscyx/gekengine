@@ -243,10 +243,8 @@ namespace Gek
             if (entity->hasComponents<Components::Model, Components::Transform>())
             {
                 auto &modelComponent = entity->getComponent<Components::Model>();
-                std::size_t hash = std::hash<String>()(modelComponent.name);
                 String fileName(L"$root\\data\\models\\%v.gek", modelComponent.name);
-
-                auto pair = modelMap.insert(std::make_pair(hash, Model()));
+                auto pair = modelMap.insert(std::make_pair(modelComponent.name.getHash(), Model()));
                 if (pair.second)
                 {
                     pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void

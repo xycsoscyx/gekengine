@@ -89,7 +89,7 @@ float getModifier(float2 offset)
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float blurDistance = saturate(Resources::circleOfConfusion[inputPixel.screen.xy]);
+    float blurDistance = abs(Resources::circleOfConfusion[inputPixel.screen.xy]);
     float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
 
     float totalWeight = 1.0;

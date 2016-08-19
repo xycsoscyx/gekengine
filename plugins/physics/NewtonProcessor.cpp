@@ -135,12 +135,11 @@ namespace Gek
             return Gravity;
         }
 
-        uint32_t loadSurface(const wchar_t *surfaceName)
+        uint32_t loadSurface(const String &surfaceName)
         {
-            GEK_REQUIRE(surfaceName);
-
             uint32_t surfaceIndex = 0;
-            std::size_t hash = std::hash<String>()(surfaceName);
+
+			auto hash = surfaceName.getHash();
             auto surfaceSearch = surfaceIndexMap.find(hash);
             if (surfaceSearch != surfaceIndexMap.end())
             {
@@ -413,8 +412,9 @@ namespace Gek
             GEK_REQUIRE(population);
 
             NewtonCollision *newtonCollision = nullptr;
-            std::size_t collisionHash = std::hash<String>()(shape);
-            auto collisionSearch = collisionMap.find(collisionHash);
+
+			auto hash = shape.getHash();
+            auto collisionSearch = collisionMap.find(hash);
             if (collisionSearch != collisionMap.end())
             {
                 if (collisionSearch->second)
@@ -424,7 +424,7 @@ namespace Gek
             }
             else
             {
-                collisionMap[collisionHash] = nullptr;
+                collisionMap[hash] = nullptr;
 
                 std::vector<String> parameters(shape.split(L'|'));
                 if (parameters.size() != 2)
@@ -435,44 +435,44 @@ namespace Gek
                 if (parameters[0].compareNoCase(L"*cube") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
-                    newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
                 }
                 else if (parameters[0].compareNoCase(L"*sphere") == 0)
                 {
                     float size = Evaluator::get<float>(parameters[1]);
-                    newtonCollision = NewtonCreateSphere(newtonWorld, size, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::Float4x4::Identity.data);
                 }
                 else if (parameters[0].compareNoCase(L"*cone") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
-                    newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
                 }
                 else if (parameters[0].compareNoCase(L"*capsule") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
-                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
                 }
                 else if (parameters[0].compareNoCase(L"*cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
-                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
                 }
 /*
                 else if (parameters[0].compareNoCase(L"*tapered_capsule") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
-                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
                 }
                 else if (parameters[0].compareNoCase(L"*tapered_cylinder") == 0)
                 {
                     Math::Float3 size(Evaluator::get<Math::Float3>(parameters[1]));
-                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
                 }
 */
                 else if (parameters[0].compareNoCase(L"*chamfer_cylinder") == 0)
                 {
                     Math::Float2 size(Evaluator::get<Math::Float2>(parameters[1]));
-                    newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, collisionHash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
                 }
 
                 if (newtonCollision == nullptr)
@@ -480,7 +480,7 @@ namespace Gek
                     throw Newton::UnableToCreateCollision();
                 }
 
-                collisionMap[collisionHash] = newtonCollision;
+                collisionMap[hash] = newtonCollision;
             }
 
             return newtonCollision;
@@ -495,8 +495,8 @@ namespace Gek
             }
             else
             {
-                std::size_t shapeHash = std::hash<String>()(shape);
-                auto collisionSearch = collisionMap.find(shapeHash);
+				auto hash = shape.getHash();
+                auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != collisionMap.end())
                 {
                     if (collisionSearch->second)
@@ -506,7 +506,7 @@ namespace Gek
                 }
                 else
                 {
-                    collisionMap[shapeHash] = nullptr;
+                    collisionMap[hash] = nullptr;
 
                     FILE *file = nullptr;
                     _wfopen_s(&file, FileSystem::expandPath(String(L"$root\\data\\models\\%v.bin", shape)), L"rb");
@@ -566,7 +566,7 @@ namespace Gek
                         throw Newton::UnableToCreateCollision();
                     }
 
-                    collisionMap[shapeHash] = newtonCollision;
+                    collisionMap[hash] = newtonCollision;
                 }
             }
 

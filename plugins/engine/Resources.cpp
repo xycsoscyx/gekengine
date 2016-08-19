@@ -326,8 +326,7 @@ namespace Gek
                 String fixedName(resourceName);
                 fixedName.replace(L"$standard", core->getConfiguration().getChild(L"shaders").getChild(L"standard").text);
                 fixedName.replace(L"$transparent", core->getConfiguration().getChild(L"shaders").getChild(L"transparent").text);
-                std::size_t hash = std::hash<String>()(fixedName);
-                return resourceManager.getHandle(hash);
+                return resourceManager.getHandle(fixedName.getHash());
             }
 
             Engine::Shader * const getShader(ShaderHandle handle) const
@@ -357,8 +356,7 @@ namespace Gek
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, visualName);
                 };
 
-                std::size_t hash = std::hash<String>()(visualName);
-                return visualManager.getHandle(hash, load);
+                return visualManager.getHandle(visualName.getHash(), load);
             }
 
             MaterialHandle loadMaterial(const String &materialName)
@@ -368,8 +366,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
 
-                std::size_t hash = std::hash<String>()(materialName);
-                return materialManager.getHandle(hash, load);
+                return materialManager.getHandle(materialName.getHash(), load);
             }
 
             Engine::Filter * const getFilter(const String &filterName)
@@ -379,8 +376,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName);
                 };
 
-                std::size_t hash = std::hash<String>()(filterName);
-                ResourceHandle filter = filterManager.getHandle(hash, load);
+                ResourceHandle filter = filterManager.getHandle(filterName.getHash(), load);
                 return filterManager.getResource(filter);
             }
 
@@ -393,8 +389,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
-                std::size_t hash = std::hash<String>()(shaderName);
-                ShaderHandle shader = shaderManager.getImmediateHandle(hash, load);
+                ShaderHandle shader = shaderManager.getImmediateHandle(shaderName.getHash(), load);
                 if (material)
                 {
                     materialShaderMap[material] = shader;
@@ -410,7 +405,7 @@ namespace Gek
                     return device->createRenderState(renderState);
                 };
 
-                std::size_t hash = std::hash_combine(static_cast<uint8_t>(renderState.fillMode),
+                auto hash = hashCombine(static_cast<uint8_t>(renderState.fillMode),
                     static_cast<uint8_t>(renderState.cullMode),
                     renderState.frontCounterClockwise,
                     renderState.depthBias,
@@ -430,7 +425,7 @@ namespace Gek
                     return device->createDepthState(depthState);
                 };
 
-                std::size_t hash = std::hash_combine(depthState.enable,
+                auto hash = hashCombine(depthState.enable,
                     static_cast<uint8_t>(depthState.writeMask),
                     static_cast<uint8_t>(depthState.comparisonFunction),
                     depthState.stencilEnable,
@@ -454,7 +449,7 @@ namespace Gek
                     return device->createBlendState(blendState);
                 };
 
-                std::size_t hash = std::hash_combine(blendState.enable,
+                auto hash = hashCombine(blendState.enable,
                     static_cast<uint8_t>(blendState.colorSource),
                     static_cast<uint8_t>(blendState.colorDestination),
                     static_cast<uint8_t>(blendState.colorOperation),
@@ -472,19 +467,19 @@ namespace Gek
                     return device->createBlendState(blendState);
                 };
 
-                std::size_t hash = 0;
+                auto hash = 0;
                 for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
                 {
                     if (blendState.targetStates[renderTarget].enable)
                     {
-                        std::hash_combine(hash, std::hash_combine(renderTarget,
+                        hash = hashCombine(hash, renderTarget,
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaSource),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaDestination),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaOperation),
-                            blendState.targetStates[renderTarget].writeMask));
+                            blendState.targetStates[renderTarget].writeMask);
                     }
                 }
 
@@ -500,8 +495,7 @@ namespace Gek
                     return texture;
                 };
 
-                std::size_t hash = std::hash<String>()(textureName);
-                return resourceManager.getHandle(hash, load);
+                return resourceManager.getHandle(textureName.getHash(), load);
             }
 
             ResourceHandle createBuffer(const String &bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -513,8 +507,7 @@ namespace Gek
                     return buffer;
                 };
 
-                std::size_t hash = std::hash<String>()(bufferName);
-                return resourceManager.getHandle(hash, load);
+                return resourceManager.getHandle(bufferName.getHash(), load);
             }
 
             ResourceHandle createBuffer(const String &bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -526,8 +519,7 @@ namespace Gek
                     return buffer;
                 };
 
-                std::size_t hash = std::hash<String>()(bufferName);
-                return resourceManager.getHandle(hash, load);
+                return resourceManager.getHandle(bufferName.getHash(), load);
             }
 
             Video::TexturePtr loadTextureData(const String &textureName, uint32_t flags)
@@ -684,8 +676,7 @@ namespace Gek
                     return loadTextureData(textureName, flags);
                 };
 
-                std::size_t hash = std::hash<String>()(textureName);
-                return resourceManager.getHandle(hash, load);
+                return resourceManager.getHandle(textureName.getHash(), load);
             }
 
             ResourceHandle createTexture(const String &pattern, const String &parameters)
@@ -695,7 +686,7 @@ namespace Gek
                     return createTextureData(pattern, parameters);
                 };
 
-                std::size_t hash = std::hash_combine<String, String>(pattern, parameters);
+				auto hash = hashCombine(pattern.getHash(), parameters.getHash());
                 return resourceManager.getHandle(hash, load);
             }
 

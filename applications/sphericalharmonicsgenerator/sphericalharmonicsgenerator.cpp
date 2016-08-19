@@ -158,7 +158,7 @@ public:
 typedef SH<float, 9> SH9;
 typedef SH<Math::Float4, 9> SH9Color;
 
-::DirectX::ScratchImage loadTexture(const wchar_t *fileName)
+::DirectX::ScratchImage loadTexture(const String &fileName)
 {
     std::vector<uint8_t> fileData;
     FileSystem::load(fileName, fileData);
@@ -238,7 +238,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     return image;
 }
 
-::DirectX::ScratchImage loadIntoCubeMap(const wchar_t *directory)
+::DirectX::ScratchImage loadIntoCubeMap(const String &directory)
 {
     ::DirectX::ScratchImage cubeMapList[6];
     for (uint32_t face = 0; face < 6; face++)
@@ -253,7 +253,7 @@ typedef SH<Math::Float4, 9> SH9Color;
             L"negz",
         };
 
-        FileSystem::find(directory, String(L"%v.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
+        FileSystem::find(directory, String(L"%v.*", directions[face]), false, [&](const String &fileName) -> bool
         {
             try
             {
