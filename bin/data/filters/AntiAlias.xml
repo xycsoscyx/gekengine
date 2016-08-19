@@ -4,6 +4,12 @@
         <depthBuffer bind="float" source="$standard" />
     </textures>
 
+    <defines>
+        <reduceMinimum>1.0 / 128.0</reduceMinimum>
+        <reduceMultiplier>1.0 / 8.0</reduceMultiplier>
+        <spanMaximum>8.0</spanMaximum>
+    </defines>
+
     <passes>
         <AntiAlias mode="deferred" entry="mainPixelProgram">
             <resources>
