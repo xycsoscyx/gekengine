@@ -39,7 +39,7 @@ namespace Gek
 
         void find(const String &fileName, const String &filterTypes, bool searchRecursively, std::function<bool(const String &fileName)> onFileFound);
 
-        void load(const String &fileName, std::vector<uint8_t> &buffer, size_t limitReadSize = 0);
+        void load(const String &fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize = 0);
         void load(const String &fileName, StringUTF8 &string);
         void load(const String &fileName, String &string);
 
