@@ -60,7 +60,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\model;$(SolutionDir)..\plugins\shape;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -68,7 +68,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\model;$(SolutionDir)..\plugins\shape;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\engine;$(SolutionDir)..\plugins\components;$(SolutionDir)..\plugins\model;$(SolutionDir)..\plugins\shape;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <LibraryPath>$(LibraryPath)</LibraryPath>
@@ -181,22 +181,17 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Mass.cpp" />
     <ClCompile Include="NewtonProcessor.cpp" />
+    <ClCompile Include="Physical.cpp" />
+    <ClCompile Include="Player.cpp" />
     <ClCompile Include="PlayerBody.cpp" />
     <ClCompile Include="RigidBody.cpp" />
-    <ClCompile Include="StaticBody.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="GEK\Newton\Entity.h" />
-    <ClInclude Include="GEK\Newton\Mass.h" />
-    <ClInclude Include="GEK\Newton\PlayerBody.h" />
-    <ClInclude Include="GEK\Newton\RigidBody.h" />
-    <ClInclude Include="GEK\Newton\StaticBody.h" />
-    <ClInclude Include="GEK\Newton\World.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Newton\Base.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
