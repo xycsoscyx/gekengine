@@ -15,36 +15,33 @@ namespace Gek
         GEK_ADD_EXCEPTION(FileReadError);
         GEK_ADD_EXCEPTION(FileWriteError);
 
-        class Path : public std::experimental::filesystem::path
+        template <typename... PARAMETERS>
+        String getFileName(const wchar_t *rootDirectory, PARAMETERS... nameList)
         {
-        public:
-            Path(void);
-            Path(const String &path);
-            Path(const Path &path);
+            std::experimental::filesystem::path fileName(rootDirectory);
+            for (const auto &name : { nameList... })
+            {
+                fileName.append(name);
+            }
 
-            Path &operator = (const String &path);
-            Path &operator = (const Path &path);
+            return fileName.wstring();
+        }
 
-            operator String () const;
+        String getExtension(const wchar_t *fileName);
+        String removeFileName(const wchar_t *fileName);
+        String removeDirectory(const wchar_t *fileName);
 
-            String getExtension(void) const;
-            String getFileName(void) const;
-            Path getPath(void) const;
+        bool isFile(const wchar_t *fileName);
+        bool isDirectory(const wchar_t *fileName);
 
-            bool isFile(void) const;
-            bool isDirectory(void) const;
-        };
+        void find(const wchar_t *rootDirectory, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
 
-        String expandPath(const String &fileName);
+        void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize = 0);
+        void load(const wchar_t *fileName, StringUTF8 &string);
+        void load(const wchar_t *fileName, String &string);
 
-        void find(const String &fileName, const String &filterTypes, bool searchRecursively, std::function<bool(const String &fileName)> onFileFound);
-
-        void load(const String &fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize = 0);
-        void load(const String &fileName, StringUTF8 &string);
-        void load(const String &fileName, String &string);
-
-        void save(const String &fileName, const std::vector<uint8_t> &buffer);
-        void save(const String &fileName, const StringUTF8 &string);
-        void save(const String &fileName, const String &string);
+        void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer);
+        void save(const wchar_t *fileName, const StringUTF8 &string);
+        void save(const wchar_t *fileName, const wchar_t *string);
     }; // namespace File
 }; // namespace Gek

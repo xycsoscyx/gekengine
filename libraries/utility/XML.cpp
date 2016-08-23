@@ -7,9 +7,14 @@
 
 namespace Gek
 {
+    namespace FileSystem
+    {
+        extern String replaceRoot(const wchar_t *originalFileName);
+    }; // namespace FileSystem
+
     namespace Xml
     {
-        Node::Node(const String &type, Source source)
+        Node::Node(const wchar_t *type, Source source)
             : source(source)
             , type(type)
         {
@@ -38,7 +43,7 @@ namespace Gek
             return (source == Source::File);
         }
 
-        String Node::getAttribute(const String &name, const String &defaultValue) const
+        String Node::getAttribute(const wchar_t *name, const wchar_t *defaultValue) const
         {
             auto &attributeSearch = attributes.find(name);
             if (attributeSearch == attributes.end())
@@ -51,7 +56,7 @@ namespace Gek
             }
         }
 
-        bool Node::findChild(const String &type, std::function<void(Node &)> onChildFound)
+        bool Node::findChild(const wchar_t *type, std::function<void(Node &)> onChildFound)
         {
             return (std::find_if(children.begin(), children.end(), [type, onChildFound](Node &node) -> bool
             {
@@ -65,7 +70,7 @@ namespace Gek
             }) == children.end() ? false : true);
         }
 
-        Node & Node::getChild(const String &type)
+        Node & Node::getChild(const wchar_t *type)
         {
             auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
             {
@@ -134,9 +139,9 @@ namespace Gek
             }
         };
 
-        Node load(const String &fileName, const String &expectedRootType, bool validateDTD)
+        Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD)
         {
-            StringUTF8 fileNameUTF8(FileSystem::expandPath(fileName));
+            StringUTF8 fileNameUTF8(FileSystem::replaceRoot(fileName));
             XmlDocument document(xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
             if (document == nullptr)
             {
@@ -179,10 +184,8 @@ namespace Gek
             }
         }
 
-        void save(Node &rootData, const String &fileName)
+        void save(Node &rootData, const wchar_t *fileName)
         {
-            StringUTF8 expandedFileName(FileSystem::expandPath(fileName));
-
             XmlDocument document(xmlNewDoc(BAD_CAST "1.0"));
             if (document == nullptr)
             {
@@ -199,7 +202,8 @@ namespace Gek
             
             setNodeData(rootNode, rootData);
 
-            xmlSaveFormatFileEnc(expandedFileName, document, "UTF-8", 1);
+            StringUTF8 fileNameUTF8(FileSystem::replaceRoot(fileName));
+            xmlSaveFormatFileEnc(fileNameUTF8, document, "UTF-8", 1);
         }
     };
 }; // namespace Gek

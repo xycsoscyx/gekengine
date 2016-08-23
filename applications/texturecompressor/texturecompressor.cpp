@@ -21,8 +21,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
     try
     {
-        FileSystem::Path fileNameInput;
-        FileSystem::Path fileNameOutput;
+        String fileNameInput;
+        String fileNameOutput;
 
         String format;
         bool overwrite = false;
@@ -98,7 +98,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         std::vector<uint8_t> fileData;
         FileSystem::load(fileNameInput, fileData);
 
-        String extension(FileSystem::Path(fileNameInput).getExtension());
+        String extension(String(fileNameInput).getExtension());
         std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
         if (extension.compareNoCase(L".dds") == 0)
         {

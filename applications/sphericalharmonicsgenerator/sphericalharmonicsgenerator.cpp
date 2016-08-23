@@ -158,12 +158,12 @@ public:
 typedef SH<float, 9> SH9;
 typedef SH<Math::Float4, 9> SH9Color;
 
-::DirectX::ScratchImage loadTexture(const String &fileName)
+::DirectX::ScratchImage loadTexture(const wchar_t *fileName)
 {
     std::vector<uint8_t> fileData;
     FileSystem::load(fileName, fileData);
 
-    String extension(FileSystem::Path(fileName).getExtension());
+    String extension(String(fileName).getExtension());
     std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
     if (extension.compareNoCase(L".dds") == 0)
     {
@@ -238,7 +238,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     return image;
 }
 
-::DirectX::ScratchImage loadIntoCubeMap(const String &directory)
+::DirectX::ScratchImage loadIntoCubeMap(const wchar_t *directory)
 {
     ::DirectX::ScratchImage cubeMapList[6];
     for (uint32_t face = 0; face < 6; face++)
@@ -253,7 +253,7 @@ typedef SH<Math::Float4, 9> SH9Color;
             L"negz",
         };
 
-        FileSystem::find(directory, String(L"%v.*", directions[face]), false, [&](const String &fileName) -> bool
+        FileSystem::find(directory, String(L"%v.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
         {
             try
             {
@@ -438,9 +438,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
 #ifdef _DEBUG
-        SetCurrentDirectory(FileSystem::expandPath(L"$root\\Debug"));
+        SetCurrentDirectory(String::create(L"$root\\Debug"));
 #else
-        SetCurrentDirectory(FileSystem::expandPath(L"$root\\Release"));
+        SetCurrentDirectory(String::create(L"$root\\Release"));
 #endif
         ::DirectX::ScratchImage image;
         try

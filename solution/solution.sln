@@ -121,9 +121,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dScene", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dScene.vcxproj", "{B5EEC82D-938F-44C9-89BB-4A058581750B}"
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64

@@ -163,10 +163,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             std::vector<String> searchPathList;
 
 #ifdef _DEBUG
-            SetCurrentDirectory(FileSystem::expandPath(L"$root\\Debug"));
+            SetCurrentDirectory(String::create(L"$root\\Debug"));
             searchPathList.push_back(L"$root\\Debug\\Plugins");
 #else
-            SetCurrentDirectory(FileSystem::expandPath(L"$root\\Release"));
+            SetCurrentDirectory(String::create(L"$root\\Release"));
             searchPathList.push_back(L"$root\\Release\\Plugins");
 #endif
 

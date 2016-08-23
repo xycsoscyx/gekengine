@@ -6,112 +6,84 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		Path::Path(void)
+        String getExtension(const wchar_t *fileName)
+        {
+            std::experimental::filesystem::path filePath(fileName);
+            return filePath.extension().wstring();
+        }
+
+        String removeFileName(const wchar_t *fileName)
+        {
+            std::experimental::filesystem::path filePath(fileName);
+            return filePath.parent_path().wstring();
+        }
+
+        String removeDirectory(const wchar_t *fileName)
+        {
+            std::experimental::filesystem::path filePath(fileName);
+            return filePath.filename().wstring();
+        }
+
+        bool isFile(const wchar_t *fileName)
+        {
+            return std::experimental::filesystem::is_regular_file(fileName);
+        }
+
+        bool isDirectory(const wchar_t *fileName)
+        {
+            return std::experimental::filesystem::is_directory(fileName);
+        }
+
+        String replaceRoot(const wchar_t *originalFileName)
+        {
+            String fileName(originalFileName);
+            if (fileName.find(L"$root") != std::string::npos)
+            {
+                String currentModuleName(L' ', MAX_PATH + 1);
+                GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+                currentModuleName.trimRight();
+
+                String fullModuleName(L' ', MAX_PATH + 1);
+                GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
+                fullModuleName.trimRight();
+
+                std::experimental::filesystem::path fullModulePath(fullModuleName);
+                fullModulePath.remove_filename();
+                fullModulePath.remove_filename();
+
+                fileName.replace(L"$root", fullModulePath.wstring());
+            }
+
+            fileName.replace(L"/", L"\\");
+
+            String fullPathName(L' ', (MAX_PATH + 1));
+            GetFullPathName(fileName, MAX_PATH, &fullPathName.at(0), nullptr);
+            fullPathName.trimRight();
+            return fullPathName;
+        }
+
+		void find(const wchar_t *originalRootDirectory, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
 		{
-		}
-
-		Path::Path(const String &path)
-			: path(path)
-		{
-		}
-
-		Path::Path(const Path &path)
-			: path(path)
-		{
-		}
-
-		Path &Path::operator = (const String &path)
-		{
-			assign(path);
-			return (*this);
-		}
-
-		Path &Path::operator = (const Path &path)
-		{
-			assign(path);
-			return (*this);
-		}
-
-		Path::operator String () const
-		{
-			return string();
-		}
-
-		String Path::getExtension(void) const
-		{
-			return extension().string();
-		}
-
-		String Path::getFileName(void) const
-		{
-			return filename().string();
-		}
-
-		Path Path::getPath(void) const
-		{
-			return String(parent_path().string());
-		}
-
-		bool Path::isFile(void) const
-		{
-			return std::experimental::filesystem::is_regular_file(*this);
-		}
-
-		bool Path::isDirectory(void) const
-		{
-			return std::experimental::filesystem::is_directory(*this);
-		}
-
-		String expandPath(const String &fileName)
-		{
-			String expandedFileName(fileName);
-			if (expandedFileName.find(L"$root") != std::string::npos)
-			{
-				String currentModuleName(L' ', MAX_PATH + 1);
-				GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-				currentModuleName.trimRight();
-
-				String expandedModuleName(L' ', MAX_PATH + 1);
-				GetFullPathName(currentModuleName, MAX_PATH, &expandedModuleName.at(0), nullptr);
-				expandedModuleName.trimRight();
-
-				FileSystem::Path currentModulePath(expandedModuleName);
-				currentModulePath.remove_filename();
-				currentModulePath.remove_filename();
-
-				expandedFileName.replace(L"$root", currentModulePath);
-			}
-
-			expandedFileName.replace(L"/", L"\\");
-			return expandedFileName;
-		}
-
-		void find(const String &fileName, const String &filterTypes, bool searchRecursively, std::function<bool(const String &)> onFileFound)
-		{
-			String expandedFileName(expandPath(fileName));
-
-			FileSystem::Path expandedPath(expandedFileName);
-			expandedPath.append(filterTypes);
+            String rootDirectory(replaceRoot(originalRootDirectory));
+            String filtersPath(getFileName(rootDirectory, filterTypes));
 
 			WIN32_FIND_DATA findData;
-			HANDLE findHandle = FindFirstFile(expandedPath.c_str(), &findData);
+			HANDLE findHandle = FindFirstFile(filtersPath, &findData);
 			if (findHandle != INVALID_HANDLE_VALUE)
 			{
 				do
 				{
-					FileSystem::Path foundPath(expandedFileName);
-					foundPath.append(findData.cFileName);
-
+                    String foundFileName(getFileName(rootDirectory, findData.cFileName));
 					if (findData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY)
 					{
 						if (searchRecursively && findData.cFileName[0] != L'.')
 						{
-							find(foundPath, filterTypes, searchRecursively, onFileFound);
+							find(foundFileName, filterTypes, searchRecursively, onFileFound);
 						}
 					}
 					else
 					{
-						if (!onFileFound(foundPath))
+						if (!onFileFound(foundFileName))
 						{
 							break;
 						}
@@ -121,10 +93,10 @@ namespace Gek
 			}
 		}
 
-		void load(const String &fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize)
+		void load(const wchar_t *originalFileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize)
 		{
-			String expandedFileName(expandPath(fileName));
-			std::basic_ifstream<uint8_t, std::char_traits<uint8_t>> fileStream(expandedFileName, std::ios::in | std::ios::binary | std::ios::ate);
+            String fileName(replaceRoot(originalFileName));
+			std::basic_ifstream<uint8_t, std::char_traits<uint8_t>> fileStream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
 			if (fileStream.is_open())
 			{
 				std::size_t size = static_cast<std::size_t>(fileStream.tellg());
@@ -139,7 +111,7 @@ namespace Gek
 			}
 		}
 
-		void load(const String &fileName, StringUTF8 &string)
+		void load(const wchar_t *fileName, StringUTF8 &string)
 		{
 			std::vector<uint8_t> buffer;
 			load(fileName, buffer);
@@ -147,7 +119,7 @@ namespace Gek
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-		void load(const String &fileName, String &string)
+		void load(const wchar_t *fileName, String &string)
 		{
 			std::vector<uint8_t> buffer;
 			load(fileName, buffer);
@@ -155,10 +127,10 @@ namespace Gek
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-        void save(const String &fileName, const std::vector<uint8_t> &buffer)
+        void save(const wchar_t *originalFileName, const std::vector<uint8_t> &buffer)
         {
-            String expandedFileName(expandPath(fileName));
-            HANDLE fileHandle = CreateFile(expandedFileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+            String fileName(getFileName(originalFileName));
+            HANDLE fileHandle = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
             if (fileHandle == INVALID_HANDLE_VALUE)
             {
                 throw FileNotFound();
@@ -174,14 +146,14 @@ namespace Gek
             CloseHandle(fileHandle);
         }
 
-        void save(const String &fileName, const StringUTF8 &fileData)
+        void save(const wchar_t *fileName, const StringUTF8 &fileData)
         {
             std::vector<uint8_t> buffer(fileData.length());
             std::copy(fileData.begin(), fileData.end(), buffer.begin());
             save(fileName, buffer);
         }
 
-        void save(const String &fileName, const String &fileData)
+        void save(const wchar_t *fileName, const wchar_t *fileData)
         {
             save(fileName, StringUTF8(fileData));
         }

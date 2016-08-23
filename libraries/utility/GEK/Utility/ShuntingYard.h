@@ -55,7 +55,7 @@ namespace Gek
             float value;
 
             Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, const String &string, uint32_t parameterCount = 0);
+            Token(TokenType type, const wchar_t *string, uint32_t parameterCount = 0);
             Token(float value);
         };
 
@@ -97,7 +97,7 @@ namespace Gek
     public:
         ShuntingYard(void);
 
-        TokenList getTokenList(const String &expression);
+        TokenList getTokenList(const wchar_t *expression);
         uint32_t getReturnSize(const TokenList &rpnTokenList);
 
         inline void evaluate(TokenList &rpnTokenList, float &value)
@@ -117,34 +117,34 @@ namespace Gek
             evaluate(rpnTokenList, value.data);
         }
 
-        inline void evaluate(const String &expression, float &value)
+        inline void evaluate(const wchar_t *expression, float &value)
         {
             evaluateValue(expression, &value, 1);
         }
 
         template <std::size_t SIZE>
-        void evaluate(const String &expression, float(&value)[SIZE])
+        void evaluate(const wchar_t *expression, float(&value)[SIZE])
         {
             evaluateValue(expression, value, SIZE);
         }
 
         template <class TYPE>
-        void evaluate(const String &expression, TYPE &value)
+        void evaluate(const wchar_t *expression, TYPE &value)
         {
             evaluate(expression, value.data);
         }
 
     private:
-        bool isNumber(const String &token);
-        bool isOperation(const String &token);
-        bool isFunction(const String &token);
-        bool isLeftParenthesis(const String &token);
-        bool isRightParenthesis(const String &token);
-        bool isParenthesis(const String &token);
-        bool isSeparator(const String &token);
-        bool isAssociative(const String &token, const Associations &type);
-        int comparePrecedence(const String &token1, const String &token2);
-        TokenType getTokenType(const String &token);
+        bool isNumber(const wchar_t *token);
+        bool isOperation(const wchar_t *token);
+        bool isFunction(const wchar_t *token);
+        bool isLeftParenthesis(const wchar_t *token);
+        bool isRightParenthesis(const wchar_t *token);
+        bool isParenthesis(const wchar_t *token);
+        bool isSeparator(const wchar_t *token);
+        bool isAssociative(const wchar_t *token, const Associations &type);
+        int comparePrecedence(const wchar_t *token1, const wchar_t *token2);
+        TokenType getTokenType(const wchar_t *token);
         bool isValidReturnType(const Token &token);
 
     private:
@@ -161,6 +161,6 @@ namespace Gek
         }
 
         void evaluateValue(TokenList &rpnTokenList, float *value, uint32_t valueSize);
-        void evaluateValue(const String &expression, float *value, uint32_t valueSize);
+        void evaluateValue(const wchar_t *expression, float *value, uint32_t valueSize);
     };
 }; // namespace Gek

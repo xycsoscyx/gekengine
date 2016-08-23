@@ -29,7 +29,7 @@ namespace Gek
         {
             static void convert(std::basic_string<wchar_t> &result, const char *input)
             {
-                static const std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+                static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
 				result.assign(convert.from_bytes(input));
             }
         };
@@ -39,7 +39,7 @@ namespace Gek
         {
             static void convert(std::basic_string<char> &result, const wchar_t *input)
             {
-                static const std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+                static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
 				result.assign(convert.to_bytes(input));
 			}
         };
@@ -130,7 +130,7 @@ namespace Gek
         {
             if (!string.empty())
             {
-                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.data());
             }
         }
 
@@ -139,7 +139,7 @@ namespace Gek
         {
             if (!string.empty())
             {
-                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.data());
             }
         }
 
@@ -217,7 +217,7 @@ namespace Gek
         {
             BaseString current;
             std::vector<BaseString> tokens;
-            std::basic_stringstream<ELEMENT, TRAITS, ALLOCATOR> stream(c_str());
+            std::basic_stringstream<ELEMENT, TRAITS, ALLOCATOR> stream(data());
             while (std::getline(stream, current, delimiter))
             {
                 if (clearSpaces)
@@ -411,7 +411,7 @@ namespace Gek
             }
             else
             {
-                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.data());
             }
 
             return (*this);
@@ -426,7 +426,7 @@ namespace Gek
             }
             else
             {
-                converter<ELEMENT, CONVERSION>::convert((*this), string.c_str());
+                converter<ELEMENT, CONVERSION>::convert((*this), string.data());
             }
 
             return (*this);
@@ -642,7 +642,7 @@ namespace Gek
 
         operator const ELEMENT * () const
         {
-            return c_str();
+            return data();
         }
     };
 
