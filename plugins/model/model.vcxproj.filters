@@ -17,4 +17,9 @@
       <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GEK\Model\Base.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>

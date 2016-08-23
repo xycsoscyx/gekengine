@@ -16,6 +16,7 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
+#include "GEK\Shape\Base.h"
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -357,14 +358,14 @@ namespace Gek
             }
         }
 
-        ResourceHandle createVertexBuffer(const String &name, Plugin::Resources *resources)
+        ResourceHandle createVertexBuffer(const wchar_t *name, Plugin::Resources *resources)
         {
             uint8_t *data = (uint8_t *)vertices.data();
             uint32_t size = (vertices.size() * sizeof(Vertex));
             return resources->createBuffer(name, sizeof(Vertex), vertices.size(), Video::BufferType::Vertex, 0, std::vector<uint8_t>(data, data + size));
         }
 
-        ResourceHandle createIndexBuffer(const String &name, Plugin::Resources *resources)
+        ResourceHandle createIndexBuffer(const wchar_t *name, Plugin::Resources *resources)
         {
             uint8_t *data = (uint8_t *)indices.data();
             uint32_t size = (indices.size() * sizeof(uint16_t));
@@ -379,30 +380,23 @@ namespace Gek
 
     namespace Components
     {
-        struct Shape
+        Shape::Shape(void)
         {
-            String type;
-            String parameters;
-            String skin;
+        }
 
-            Shape(void)
-            {
-            }
+        void Shape::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, type);
+            saveParameter(componentData, L"parameters", parameters);
+            saveParameter(componentData, L"skin", skin);
+        }
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const
-            {
-                saveParameter(componentData, nullptr, type);
-                saveParameter(componentData, L"parameters", parameters);
-                saveParameter(componentData, L"skin", skin);
-            }
-
-            void load(const Plugin::Population::ComponentDefinition &componentData)
-            {
-                type = loadParameter(componentData, nullptr, String());
-                parameters = loadParameter(componentData, L"parameters", String());
-                skin = loadParameter(componentData, L"skin", String());
-            }
-        };
+        void Shape::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            type = loadParameter(componentData, nullptr, String());
+            parameters = loadParameter(componentData, L"parameters", String());
+            skin = loadParameter(componentData, L"skin", String());
+        }
     }; // namespace Components
 
     GEK_CONTEXT_USER(Shape)
@@ -558,7 +552,7 @@ namespace Gek
             if (entity->hasComponents<Components::Shape, Components::Transform>())
             {
                 auto &shapeComponent = entity->getComponent<Components::Shape>();
-                auto hash = hashCombine(shapeComponent.parameters.getHash(), shapeComponent.type.getHash());
+                auto hash = getHash(shapeComponent.parameters.getHash(), shapeComponent.type.getHash());
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {

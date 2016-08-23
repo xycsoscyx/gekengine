@@ -86,7 +86,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
             {
-                getContext()->listTypes(L"ComponentType", [&](const String &className) -> void
+                getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className));
                     auto componentSearch = componentsMap.insert(std::make_pair(component->getIdentifier(), component));
@@ -182,7 +182,7 @@ namespace Gek
                 killEntityList.clear();
             }
 
-            void load(const String &populationName)
+            void load(const wchar_t *populationName)
             {
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
@@ -258,15 +258,15 @@ namespace Gek
                 });
             }
 
-            void save(const String &populationName)
+            void save(const wchar_t *populationName)
             {
             }
 
-            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const String &entityName)
+            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
             {
                 entityList.push_back(entity);
                 sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get());
-                if (!entityName.empty())
+                if (entityName)
                 {
                     namedEntityMap[entityName] = entity.get();
                 }
@@ -274,7 +274,7 @@ namespace Gek
                 return entity.get();
             }
 
-            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const String &entityName)
+            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentInfo : entityDefinition)
@@ -307,7 +307,7 @@ namespace Gek
                 killEntityList.push_back(entity);
             }
 
-            Plugin::Entity * getNamedEntity(const String &entityName) const
+            Plugin::Entity * getNamedEntity(const wchar_t *entityName) const
             {
                 auto namedSearch = namedEntityMap.find(entityName);
                 if (namedSearch != namedEntityMap.end())

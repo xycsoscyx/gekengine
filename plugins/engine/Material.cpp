@@ -43,8 +43,8 @@ namespace Gek
                         throw MissingParameters();
                     }
 
-                    FileSystem::Path filePath(FileSystem::Path(materialName).getPath());
-                    String fileSpecifier(FileSystem::Path(materialName).getFileName());
+                    String filePath(String(materialName).getPath());
+                    String fileSpecifier(String(materialName).getFileName());
 
                     PassMap passMap;
                     for (auto &passNode : shaderNode.children)

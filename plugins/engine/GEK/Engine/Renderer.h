@@ -10,15 +10,15 @@ namespace Gek
 {
     namespace Video
     {
-        ElementType getElementType(const String &elementClassString);
-        Format getFormat(const String &formatString);
-        DepthWrite getDepthWriteMask(const String &depthWrite);
-        ComparisonFunction getComparisonFunction(const String &comparisonFunction);
-        StencilOperation getStencilOperation(const String &stencilOperation);
-        FillMode getFillMode(const String &fillMode);
-        CullMode getCullMode(const String &cullMode);
-        BlendSource getBlendSource(const String &blendSource);
-        BlendOperation getBlendOperation(const String &blendOperation);
+        ElementType getElementType(const wchar_t *elementClassString);
+        Format getFormat(const wchar_t *formatString);
+        DepthWrite getDepthWriteMask(const wchar_t *depthWrite);
+        ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction);
+        StencilOperation getStencilOperation(const wchar_t *stencilOperation);
+        FillMode getFillMode(const wchar_t *fillMode);
+        CullMode getCullMode(const wchar_t *cullMode);
+        BlendSource getBlendSource(const wchar_t *blendSource);
+        BlendOperation getBlendOperation(const wchar_t *blendOperation);
     };
 
     namespace Plugin

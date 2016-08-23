@@ -21,7 +21,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -36,7 +36,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -51,7 +51,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -66,7 +66,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -81,7 +81,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -96,7 +96,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -111,7 +111,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -126,7 +126,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -141,7 +141,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -156,7 +156,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -233,7 +233,7 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
 
@@ -311,7 +311,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -381,7 +381,7 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-            virtual void setName(const String &name)
+            virtual void setName(const wchar_t *name)
             {
             }
         };
@@ -401,7 +401,7 @@ namespace Gek
 
             virtual ~TargetViewTexture(void) = default;
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -425,7 +425,7 @@ namespace Gek
 
             virtual ~DepthTexture(void) = default;
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
             }
         };
@@ -962,47 +962,47 @@ namespace Gek
                 dynamic_cast<Resource *>(destination);
             }
 
-            Video::ObjectPtr compileComputeProgram(const String &name, const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileComputeProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return std::make_shared<ComputeProgram>();
             }
 
-            Video::ObjectPtr compileVertexProgram(const String &name, const String &programScript, const String &entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileVertexProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return std::make_shared<VertexProgram>();
             }
 
-            Video::ObjectPtr compileGeometryProgram(const String &name, const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileGeometryProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return std::make_shared<GeometryProgram>();
             }
 
-            Video::ObjectPtr compilePixelProgram(const String &name, const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compilePixelProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return std::make_shared<PixelProgram>();
             }
 
-            Video::ObjectPtr compileComputeProgram(const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileComputeProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return compileComputeProgram(nullptr, programScript, entryFunction, onInclude, definesMap);
             }
 
-            Video::ObjectPtr compileVertexProgram(const String &programScript, const String &entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileVertexProgram(const wchar_t *programScript, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, onInclude, definesMap);
             }
 
-            Video::ObjectPtr compileGeometryProgram(const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileGeometryProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return compileGeometryProgram(nullptr, programScript, entryFunction, onInclude, definesMap);
             }
 
-            Video::ObjectPtr compilePixelProgram(const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compilePixelProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 return compilePixelProgram(nullptr, programScript, entryFunction, onInclude, definesMap);
             }
 
-            Video::ObjectPtr loadComputeProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -1010,7 +1010,7 @@ namespace Gek
                 return compileComputeProgram(fileName, progamScript, entryFunction, onInclude, definesMap);
             }
 
-            Video::ObjectPtr loadVertexProgram(const String &fileName, const String &entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadVertexProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -1018,7 +1018,7 @@ namespace Gek
                 return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, onInclude, definesMap);
             }
 
-            Video::ObjectPtr loadGeometryProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadGeometryProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -1026,7 +1026,7 @@ namespace Gek
                 return compileGeometryProgram(fileName, progamScript, entryFunction, onInclude, definesMap);
             }
 
-            Video::ObjectPtr loadPixelProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -1050,7 +1050,7 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(const String &fileName, uint32_t flags)
+            Video::TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
             {
                 return std::make_shared<ViewTexture>(Video::Format::Unknown, 0, 0, 0);
             }

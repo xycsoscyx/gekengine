@@ -321,7 +321,7 @@ namespace Gek
                 return ShaderHandle();
             }
 
-            ResourceHandle getResourceHandle(const String &resourceName) const
+            ResourceHandle getResourceHandle(const wchar_t *resourceName) const
             {
                 String fixedName(resourceName);
                 fixedName.replace(L"$standard", core->getConfiguration().getChild(L"shaders").getChild(L"standard").text);
@@ -349,38 +349,41 @@ namespace Gek
                 return dynamic_cast<Video::Texture *>(resourceManager.getResource(handle));
             }
 
-            VisualHandle loadVisual(const String &visualName)
+            VisualHandle loadVisual(const wchar_t *visualName)
             {
                 auto load = [this, visualName = String(visualName)](VisualHandle) -> Plugin::VisualPtr
                 {
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, visualName);
                 };
 
-                return visualManager.getHandle(visualName.getHash(), load);
+                auto hash = getHash(visualName);
+                return visualManager.getHandle(hash, load);
             }
 
-            MaterialHandle loadMaterial(const String &materialName)
+            MaterialHandle loadMaterial(const wchar_t *materialName)
             {
                 auto load = [this, materialName = String(materialName)](MaterialHandle handle) -> Engine::MaterialPtr
                 {
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
 
-                return materialManager.getHandle(materialName.getHash(), load);
+                auto hash = getHash(materialName);
+                return materialManager.getHandle(hash, load);
             }
 
-            Engine::Filter * const getFilter(const String &filterName)
+            Engine::Filter * const getFilter(const wchar_t *filterName)
             {
                 auto load = [this, filterName = String(filterName)](ResourceHandle) -> Engine::FilterPtr
                 {
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", device, (Engine::Resources *)this, filterName);
                 };
 
-                ResourceHandle filter = filterManager.getHandle(filterName.getHash(), load);
+                auto hash = getHash(filterName);
+                ResourceHandle filter = filterManager.getHandle(hash, load);
                 return filterManager.getResource(filter);
             }
 
-            Engine::Shader * const getShader(const String &shaderName, MaterialHandle material)
+            Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
@@ -389,7 +392,8 @@ namespace Gek
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
-                ShaderHandle shader = shaderManager.getImmediateHandle(shaderName.getHash(), load);
+                auto hash = getHash(shaderName);
+                ShaderHandle shader = shaderManager.getImmediateHandle(hash, load);
                 if (material)
                 {
                     materialShaderMap[material] = shader;
@@ -405,7 +409,7 @@ namespace Gek
                     return device->createRenderState(renderState);
                 };
 
-                auto hash = hashCombine(static_cast<uint8_t>(renderState.fillMode),
+                auto hash = getHash(static_cast<uint8_t>(renderState.fillMode),
                     static_cast<uint8_t>(renderState.cullMode),
                     renderState.frontCounterClockwise,
                     renderState.depthBias,
@@ -425,7 +429,7 @@ namespace Gek
                     return device->createDepthState(depthState);
                 };
 
-                auto hash = hashCombine(depthState.enable,
+                auto hash = getHash(depthState.enable,
                     static_cast<uint8_t>(depthState.writeMask),
                     static_cast<uint8_t>(depthState.comparisonFunction),
                     depthState.stencilEnable,
@@ -449,7 +453,7 @@ namespace Gek
                     return device->createBlendState(blendState);
                 };
 
-                auto hash = hashCombine(blendState.enable,
+                auto hash = getHash(blendState.enable,
                     static_cast<uint8_t>(blendState.colorSource),
                     static_cast<uint8_t>(blendState.colorDestination),
                     static_cast<uint8_t>(blendState.colorOperation),
@@ -472,7 +476,7 @@ namespace Gek
                 {
                     if (blendState.targetStates[renderTarget].enable)
                     {
-                        hash = hashCombine(hash, renderTarget,
+                        hash = getHash(hash, renderTarget,
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation),
@@ -486,7 +490,7 @@ namespace Gek
                 return blendStateManager.getHandle(hash, load);
             }
 
-            ResourceHandle createTexture(const String &textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
+            ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
             {
                 auto load = [this, textureName = String(textureName), format, width, height, depth, mipmaps, flags](ResourceHandle) -> Video::TexturePtr
                 {
@@ -495,10 +499,11 @@ namespace Gek
                     return texture;
                 };
 
-                return resourceManager.getHandle(textureName.getHash(), load);
+                auto hash = getHash(textureName);
+                return resourceManager.getHandle(hash, load);
             }
 
-            ResourceHandle createBuffer(const String &bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
             {
                 auto load = [this, bufferName = String(bufferName), stride, count, type, flags, staticData](ResourceHandle) -> Video::BufferPtr
                 {
@@ -507,10 +512,11 @@ namespace Gek
                     return buffer;
                 };
 
-                return resourceManager.getHandle(bufferName.getHash(), load);
+                auto hash = getHash(bufferName);
+                return resourceManager.getHandle(hash, load);
             }
 
-            ResourceHandle createBuffer(const String &bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
             {
                 auto load = [this, bufferName = String(bufferName), format, count, type, flags, staticData](ResourceHandle) -> Video::BufferPtr
                 {
@@ -519,10 +525,11 @@ namespace Gek
                     return buffer;
                 };
 
-                return resourceManager.getHandle(bufferName.getHash(), load);
+                auto hash = getHash(bufferName);
+                return resourceManager.getHandle(hash, load);
             }
 
-            Video::TexturePtr loadTextureData(const String &textureName, uint32_t flags)
+            Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
             {
                 // iterate over formats in case the texture name has no extension
                 static const wchar_t *formatList[] =
@@ -537,7 +544,7 @@ namespace Gek
 
                 for (auto &format : formatList)
                 {
-                    FileSystem::Path filePath(FileSystem::expandPath(String(L"$root\\data\\textures\\%v%v", textureName, format)));
+                    String filePath(String::create(String(L"$root\\data\\textures\\%v%v", textureName, format)));
                     if (filePath.isFile())
                     {
                         auto texture = device->loadTexture(filePath, flags);
@@ -669,28 +676,29 @@ namespace Gek
                 return texture;
             }
 
-            ResourceHandle loadTexture(const String &textureName, uint32_t flags)
+            ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
             {
                 auto load = [this, textureName = String(textureName), flags](ResourceHandle) -> Video::TexturePtr
                 {
                     return loadTextureData(textureName, flags);
                 };
 
-                return resourceManager.getHandle(textureName.getHash(), load);
+                auto hash = getHash(textureName);
+                return resourceManager.getHandle(hash, load);
             }
 
-            ResourceHandle createTexture(const String &pattern, const String &parameters)
+            ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
             {
                 auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle) -> Video::TexturePtr
                 {
                     return createTextureData(pattern, parameters);
                 };
 
-				auto hash = hashCombine(pattern.getHash(), parameters.getHash());
+				auto hash = getHash(pattern, parameters);
                 return resourceManager.getHandle(hash, load);
             }
 
-            ProgramHandle loadComputeProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
@@ -702,7 +710,7 @@ namespace Gek
                 return programManager.getUniqueHandle(load);
             }
 
-            ProgramHandle loadPixelProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {

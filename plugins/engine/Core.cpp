@@ -139,7 +139,7 @@ namespace Gek
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
-                getContext()->listTypes(L"ProcessorType", [&](const String &className) -> void
+                getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
@@ -161,7 +161,7 @@ namespace Gek
                 SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
 				SciterEval(window, L"", 0, nullptr);
 
-                success = SciterLoadFile(window, FileSystem::expandPath(L"$root\\data\\pages\\system.html"));
+                success = SciterLoadFile(window, String::create(L"$root\\data\\pages\\system.html"));
                 if (!success)
                 {
                     throw InitializationFailed();

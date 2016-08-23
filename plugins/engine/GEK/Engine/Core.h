@@ -35,7 +35,7 @@ namespace Gek
         {
             virtual void onChanged(void) { };
 
-            virtual void onAction(const String &actionName, const ActionParameter &parameter) { };
+            virtual void onAction(const wchar_t *actionName, const ActionParameter &parameter) { };
         };
 
         GEK_INTERFACE(Core)

@@ -12,20 +12,20 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getElementType(const String &type)
+        static Video::Format getElementType(const wchar_t *type)
         {
-            if (type.compareNoCase(L"float") == 0) return Video::Format::R32_FLOAT;
-            else if (type.compareNoCase(L"float2") == 0) return Video::Format::R32G32_FLOAT;
-            else if (type.compareNoCase(L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-            else if (type.compareNoCase(L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-            else if (type.compareNoCase(L"int") == 0) return Video::Format::R32_INT;
-            else if (type.compareNoCase(L"int2") == 0) return Video::Format::R32G32_INT;
-            else if (type.compareNoCase(L"int3") == 0) return Video::Format::R32G32B32_INT;
-            else if (type.compareNoCase(L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-            else if (type.compareNoCase(L"uint") == 0) return Video::Format::R32_UINT;
-            else if (type.compareNoCase(L"uint2") == 0) return Video::Format::R32G32_UINT;
-            else if (type.compareNoCase(L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-            else if (type.compareNoCase(L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
+            if (wcscmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
+            else if (wcscmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
+            else if (wcscmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
+            else if (wcscmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
+            else if (wcscmp(type, L"int") == 0) return Video::Format::R32_INT;
+            else if (wcscmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
+            else if (wcscmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
+            else if (wcscmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
+            else if (wcscmp(type, L"uint") == 0) return Video::Format::R32_UINT;
+            else if (wcscmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
+            else if (wcscmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
+            else if (wcscmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
             return Video::Format::Unknown;
         }
 
@@ -160,17 +160,18 @@ namespace Gek
                     if (!programsNode.findChild(L"vertex", [&](auto &vertexNode) -> void
                     {
                         String programEntryPoint(vertexNode.getAttribute(L"entry"));
+                        String programsPath(FileSystem::parsePath(L"$root\\data\\programs"));
                         String programFilePath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
-                        auto onInclude = [engineData = move(engineData), programFilePath](const String &includeName, String &data) -> bool
+                        auto onInclude = [engineData = move(engineData), programsPath, programFilePath](const wchar_t *includeName, String &data) -> bool
                         {
-                            if (includeName.compareNoCase(L"GEKVisual") == 0)
+                            if (wcscmp(includeName, L"GEKVisual") == 0)
                             {
                                 data = engineData;
                                 return true;
                             }
                             else
                             {
-                                FileSystem::Path resourcePath(includeName);
+                                String resourcePath(includeName);
                                 if (resourcePath.isFile())
                                 {
                                     FileSystem::load(resourcePath, data);
@@ -178,10 +179,10 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    FileSystem::Path filePath(programFilePath);
+                                    String filePath(programFilePath);
                                     filePath.remove_filename();
                                     filePath.append(includeName);
-                                    filePath = FileSystem::expandPath(filePath);
+                                    filePath = String::create(filePath);
                                     if (filePath.isFile())
                                     {
                                         FileSystem::load(filePath, data);
@@ -189,12 +190,10 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        FileSystem::Path rootPath(L"$root\\data\\programs");
-                                        rootPath.append(includeName);
-                                        rootPath = FileSystem::expandPath(rootPath);
-                                        if (rootPath.isFile())
+                                        String filePath(FileSystem::appendPath(FileSystem::parsePath(L"$root\\data\\programs"), includeName));
+                                        if (FileSystem::isFile(filePath));
                                         {
-                                            FileSystem::load(rootPath, data);
+                                            FileSystem::load(filePath, data);
                                             return true;
                                         }
                                     }

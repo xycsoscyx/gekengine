@@ -16,6 +16,7 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
+#include "GEK\Model\Base.h"
 #include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
@@ -32,27 +33,21 @@ namespace Gek
 
     namespace Components
     {
-        struct Model
+        Model::Model(void)
         {
-            String name;
-            String skin;
+        }
 
-            Model(void)
-            {
-            }
+        void Model::save(Plugin::Population::ComponentDefinition &componentData) const
+        {
+            saveParameter(componentData, nullptr, name);
+            saveParameter(componentData, L"skin", skin);
+        }
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const
-            {
-                saveParameter(componentData, nullptr, name);
-                saveParameter(componentData, L"skin", skin);
-            }
-
-            void load(const Plugin::Population::ComponentDefinition &componentData)
-            {
-                name = loadParameter(componentData, nullptr, String());
-                skin = loadParameter(componentData, L"skin", String());
-            }
-        };
+        void Model::load(const Plugin::Population::ComponentDefinition &componentData)
+        {
+            name = loadParameter(componentData, nullptr, String());
+            skin = loadParameter(componentData, L"skin", String());
+        }
     }; // namespace Components
 
     GEK_CONTEXT_USER(Model)

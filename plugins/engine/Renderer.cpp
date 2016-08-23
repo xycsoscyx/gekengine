@@ -26,149 +26,149 @@ namespace Gek
 {
     namespace Video
     {
-        ElementType getElementType(const String &elementClassString)
+        ElementType getElementType(const wchar_t *elementClassString)
         {
-            if (elementClassString.compareNoCase(L"instance") == 0) return ElementType::Instance;
-            /*else if (elementClassString.compareNoCase(L"vertex") == 0) */ return ElementType::Vertex;
+            if (wcscmp(elementClassString, L"instance") == 0) return ElementType::Instance;
+            /*else if (wcscmp(elementClassString, L"vertex") == 0) */ return ElementType::Vertex;
         }
 
-        Format getFormat(const String &formatString)
+        Format getFormat(const wchar_t *formatString)
         {
-            if (formatString.compareNoCase(L"Unknown") == 0) return Format::Unknown;
-            else if (formatString.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
-            else if (formatString.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
-            else if (formatString.compareNoCase(L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
-            else if (formatString.compareNoCase(L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
-            else if (formatString.compareNoCase(L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
-            else if (formatString.compareNoCase(L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
-            else if (formatString.compareNoCase(L"R32_FLOAT") == 0) return Format::R32_FLOAT;
-            else if (formatString.compareNoCase(L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+            if (wcscmp(formatString, L"Unknown") == 0) return Format::Unknown;
+            else if (wcscmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
+            else if (wcscmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
+            else if (wcscmp(formatString, L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
+            else if (wcscmp(formatString, L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
+            else if (wcscmp(formatString, L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
+            else if (wcscmp(formatString, L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
+            else if (wcscmp(formatString, L"R32_FLOAT") == 0) return Format::R32_FLOAT;
+            else if (wcscmp(formatString, L"R16_FLOAT") == 0) return Format::R16_FLOAT;
 
-            else if (formatString.compareNoCase(L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
-            else if (formatString.compareNoCase(L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
-            else if (formatString.compareNoCase(L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
-            else if (formatString.compareNoCase(L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
-            else if (formatString.compareNoCase(L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
-            else if (formatString.compareNoCase(L"R32G32_UINT") == 0) return Format::R32G32_UINT;
-            else if (formatString.compareNoCase(L"R16G16_UINT") == 0) return Format::R16G16_UINT;
-            else if (formatString.compareNoCase(L"R8G8_UINT") == 0) return Format::R8G8_UINT;
-            else if (formatString.compareNoCase(L"R32_UINT") == 0) return Format::R32_UINT;
-            else if (formatString.compareNoCase(L"R16_UINT") == 0) return Format::R16_UINT;
-            else if (formatString.compareNoCase(L"R8_UINT") == 0) return Format::R8_UINT;
+            else if (wcscmp(formatString, L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
+            else if (wcscmp(formatString, L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
+            else if (wcscmp(formatString, L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
+            else if (wcscmp(formatString, L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
+            else if (wcscmp(formatString, L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
+            else if (wcscmp(formatString, L"R32G32_UINT") == 0) return Format::R32G32_UINT;
+            else if (wcscmp(formatString, L"R16G16_UINT") == 0) return Format::R16G16_UINT;
+            else if (wcscmp(formatString, L"R8G8_UINT") == 0) return Format::R8G8_UINT;
+            else if (wcscmp(formatString, L"R32_UINT") == 0) return Format::R32_UINT;
+            else if (wcscmp(formatString, L"R16_UINT") == 0) return Format::R16_UINT;
+            else if (wcscmp(formatString, L"R8_UINT") == 0) return Format::R8_UINT;
 
-            else if (formatString.compareNoCase(L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
-            else if (formatString.compareNoCase(L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
-            else if (formatString.compareNoCase(L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
-            else if (formatString.compareNoCase(L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
-            else if (formatString.compareNoCase(L"R32G32_INT") == 0) return Format::R32G32_INT;
-            else if (formatString.compareNoCase(L"R16G16_INT") == 0) return Format::R16G16_INT;
-            else if (formatString.compareNoCase(L"R8G8_INT") == 0) return Format::R8G8_INT;
-            else if (formatString.compareNoCase(L"R32_INT") == 0) return Format::R32_INT;
-            else if (formatString.compareNoCase(L"R16_INT") == 0) return Format::R16_INT;
-            else if (formatString.compareNoCase(L"R8_INT") == 0) return Format::R8_INT;
+            else if (wcscmp(formatString, L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
+            else if (wcscmp(formatString, L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
+            else if (wcscmp(formatString, L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
+            else if (wcscmp(formatString, L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
+            else if (wcscmp(formatString, L"R32G32_INT") == 0) return Format::R32G32_INT;
+            else if (wcscmp(formatString, L"R16G16_INT") == 0) return Format::R16G16_INT;
+            else if (wcscmp(formatString, L"R8G8_INT") == 0) return Format::R8G8_INT;
+            else if (wcscmp(formatString, L"R32_INT") == 0) return Format::R32_INT;
+            else if (wcscmp(formatString, L"R16_INT") == 0) return Format::R16_INT;
+            else if (wcscmp(formatString, L"R8_INT") == 0) return Format::R8_INT;
 
-            else if (formatString.compareNoCase(L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
-            else if (formatString.compareNoCase(L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
-            else if (formatString.compareNoCase(L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
-            else if (formatString.compareNoCase(L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
-            else if (formatString.compareNoCase(L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
-            else if (formatString.compareNoCase(L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
-            else if (formatString.compareNoCase(L"R16_UNORM") == 0) return Format::R16_UNORM;
-            else if (formatString.compareNoCase(L"R8_UNORM") == 0) return Format::R8_UNORM;
+            else if (wcscmp(formatString, L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
+            else if (wcscmp(formatString, L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
+            else if (wcscmp(formatString, L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
+            else if (wcscmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
+            else if (wcscmp(formatString, L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
+            else if (wcscmp(formatString, L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
+            else if (wcscmp(formatString, L"R16_UNORM") == 0) return Format::R16_UNORM;
+            else if (wcscmp(formatString, L"R8_UNORM") == 0) return Format::R8_UNORM;
 
-            else if (formatString.compareNoCase(L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
-            else if (formatString.compareNoCase(L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
-            else if (formatString.compareNoCase(L"R16G16_NORM") == 0) return Format::R16G16_NORM;
-            else if (formatString.compareNoCase(L"R8G8_NORM") == 0) return Format::R8G8_NORM;
-            else if (formatString.compareNoCase(L"R16_NORM") == 0) return Format::R16_NORM;
-            else if (formatString.compareNoCase(L"R8_NORM") == 0) return Format::R8_NORM;
+            else if (wcscmp(formatString, L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
+            else if (wcscmp(formatString, L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
+            else if (wcscmp(formatString, L"R16G16_NORM") == 0) return Format::R16G16_NORM;
+            else if (wcscmp(formatString, L"R8G8_NORM") == 0) return Format::R8G8_NORM;
+            else if (wcscmp(formatString, L"R16_NORM") == 0) return Format::R16_NORM;
+            else if (wcscmp(formatString, L"R8_NORM") == 0) return Format::R8_NORM;
 
-            else if (formatString.compareNoCase(L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
-            else if (formatString.compareNoCase(L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+            else if (wcscmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
+            else if (wcscmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
 
-            else if (formatString.compareNoCase(L"D32_FLOAT") == 0) return Format::D32_FLOAT;
-            else if (formatString.compareNoCase(L"D16_UNORM") == 0) return Format::D16_UNORM;
+            else if (wcscmp(formatString, L"D32_FLOAT") == 0) return Format::D32_FLOAT;
+            else if (wcscmp(formatString, L"D16_UNORM") == 0) return Format::D16_UNORM;
 
             return Format::Unknown;
         }
 
-        DepthWrite getDepthWriteMask(const String &depthWrite)
+        DepthWrite getDepthWriteMask(const wchar_t *depthWrite)
         {
-            if (depthWrite.compareNoCase(L"zero") == 0) return DepthWrite::Zero;
-            else if (depthWrite.compareNoCase(L"all") == 0) return DepthWrite::All;
+            if (wcscmp(depthWrite, L"zero") == 0) return DepthWrite::Zero;
+            else if (wcscmp(depthWrite, L"all") == 0) return DepthWrite::All;
             else return DepthWrite::Zero;
         }
 
-        ComparisonFunction getComparisonFunction(const String &comparisonFunction)
+        ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
         {
-            if (comparisonFunction.compareNoCase(L"always") == 0) return ComparisonFunction::Always;
-            else if (comparisonFunction.compareNoCase(L"never") == 0) return ComparisonFunction::Never;
-            else if (comparisonFunction.compareNoCase(L"equal") == 0) return ComparisonFunction::Equal;
-            else if (comparisonFunction.compareNoCase(L"not_equal") == 0) return ComparisonFunction::NotEqual;
-            else if (comparisonFunction.compareNoCase(L"less") == 0) return ComparisonFunction::Less;
-            else if (comparisonFunction.compareNoCase(L"less_equal") == 0) return ComparisonFunction::LessEqual;
-            else if (comparisonFunction.compareNoCase(L"greater") == 0) return ComparisonFunction::Greater;
-            else if (comparisonFunction.compareNoCase(L"greater_equal") == 0) return ComparisonFunction::GreaterEqual;
+            if (wcscmp(comparisonFunction, L"always") == 0) return ComparisonFunction::Always;
+            else if (wcscmp(comparisonFunction, L"never") == 0) return ComparisonFunction::Never;
+            else if (wcscmp(comparisonFunction, L"equal") == 0) return ComparisonFunction::Equal;
+            else if (wcscmp(comparisonFunction, L"not_equal") == 0) return ComparisonFunction::NotEqual;
+            else if (wcscmp(comparisonFunction, L"less") == 0) return ComparisonFunction::Less;
+            else if (wcscmp(comparisonFunction, L"less_equal") == 0) return ComparisonFunction::LessEqual;
+            else if (wcscmp(comparisonFunction, L"greater") == 0) return ComparisonFunction::Greater;
+            else if (wcscmp(comparisonFunction, L"greater_equal") == 0) return ComparisonFunction::GreaterEqual;
             else return ComparisonFunction::Always;
         }
 
-        StencilOperation getStencilOperation(const String &stencilOperation)
+        StencilOperation getStencilOperation(const wchar_t *stencilOperation)
         {
-            if (stencilOperation.compareNoCase(L"zero") == 0) return StencilOperation::Zero;
-            else if (stencilOperation.compareNoCase(L"keep") == 0) return StencilOperation::Keep;
-            else if (stencilOperation.compareNoCase(L"replace") == 0) return StencilOperation::Replace;
-            else if (stencilOperation.compareNoCase(L"invert") == 0) return StencilOperation::Invert;
-            else if (stencilOperation.compareNoCase(L"increase") == 0) return StencilOperation::Increase;
-            else if (stencilOperation.compareNoCase(L"increase_saturated") == 0) return StencilOperation::IncreaseSaturated;
-            else if (stencilOperation.compareNoCase(L"decrease") == 0) return StencilOperation::Decrease;
-            else if (stencilOperation.compareNoCase(L"decrease_saturated") == 0) return StencilOperation::DecreaseSaturated;
+            if (wcscmp(stencilOperation, L"zero") == 0) return StencilOperation::Zero;
+            else if (wcscmp(stencilOperation, L"keep") == 0) return StencilOperation::Keep;
+            else if (wcscmp(stencilOperation, L"replace") == 0) return StencilOperation::Replace;
+            else if (wcscmp(stencilOperation, L"invert") == 0) return StencilOperation::Invert;
+            else if (wcscmp(stencilOperation, L"increase") == 0) return StencilOperation::Increase;
+            else if (wcscmp(stencilOperation, L"increase_saturated") == 0) return StencilOperation::IncreaseSaturated;
+            else if (wcscmp(stencilOperation, L"decrease") == 0) return StencilOperation::Decrease;
+            else if (wcscmp(stencilOperation, L"decrease_saturated") == 0) return StencilOperation::DecreaseSaturated;
             else return StencilOperation::Keep;
         }
 
-        FillMode getFillMode(const String &fillMode)
+        FillMode getFillMode(const wchar_t *fillMode)
         {
-            if (fillMode.compareNoCase(L"solid") == 0) return FillMode::Solid;
-            else if (fillMode.compareNoCase(L"wire") == 0) return FillMode::WireFrame;
+            if (wcscmp(fillMode, L"solid") == 0) return FillMode::Solid;
+            else if (wcscmp(fillMode, L"wire") == 0) return FillMode::WireFrame;
             else return FillMode::Solid;
         }
 
-        CullMode getCullMode(const String &cullMode)
+        CullMode getCullMode(const wchar_t *cullMode)
         {
-            if (cullMode.compareNoCase(L"none") == 0) return CullMode::None;
-            else if (cullMode.compareNoCase(L"front") == 0) return CullMode::Front;
-            else if (cullMode.compareNoCase(L"back") == 0) return CullMode::Back;
+            if (wcscmp(cullMode, L"none") == 0) return CullMode::None;
+            else if (wcscmp(cullMode, L"front") == 0) return CullMode::Front;
+            else if (wcscmp(cullMode, L"back") == 0) return CullMode::Back;
             else return CullMode::None;
         }
 
-        BlendSource getBlendSource(const String &blendSource)
+        BlendSource getBlendSource(const wchar_t *blendSource)
         {
-            if (blendSource.compareNoCase(L"zero") == 0) return BlendSource::Zero;
-            else if (blendSource.compareNoCase(L"one") == 0) return BlendSource::One;
-            else if (blendSource.compareNoCase(L"blend_factor") == 0) return BlendSource::BlendFactor;
-            else if (blendSource.compareNoCase(L"inverse_blend_factor") == 0) return BlendSource::InverseBlendFactor;
-            else if (blendSource.compareNoCase(L"source_color") == 0) return BlendSource::SourceColor;
-            else if (blendSource.compareNoCase(L"inverse_source_color") == 0) return BlendSource::InverseSourceColor;
-            else if (blendSource.compareNoCase(L"source_alpha") == 0) return BlendSource::SourceAlpha;
-            else if (blendSource.compareNoCase(L"inverse_source_alpha") == 0) return BlendSource::InverseSourceAlpha;
-            else if (blendSource.compareNoCase(L"source_alpha_saturate") == 0) return BlendSource::SourceAlphaSaturated;
-            else if (blendSource.compareNoCase(L"destination_color") == 0) return BlendSource::DestinationColor;
-            else if (blendSource.compareNoCase(L"inverse_destination_color") == 0) return BlendSource::InverseDestinationColor;
-            else if (blendSource.compareNoCase(L"destination_alpha") == 0) return BlendSource::DestinationAlpha;
-            else if (blendSource.compareNoCase(L"inverse_destination_alpha") == 0) return BlendSource::InverseDestinationAlpha;
-            else if (blendSource.compareNoCase(L"secondary_source_color") == 0) return BlendSource::SecondarySourceColor;
-            else if (blendSource.compareNoCase(L"inverse_secondary_source_color") == 0) return BlendSource::InverseSecondarySourceColor;
-            else if (blendSource.compareNoCase(L"secondary_source_alpha") == 0) return BlendSource::SecondarySourceAlpha;
-            else if (blendSource.compareNoCase(L"inverse_secondary_source_alpha") == 0) return BlendSource::InverseSecondarySourceAlpha;
+            if (wcscmp(blendSource, L"zero") == 0) return BlendSource::Zero;
+            else if (wcscmp(blendSource, L"one") == 0) return BlendSource::One;
+            else if (wcscmp(blendSource, L"blend_factor") == 0) return BlendSource::BlendFactor;
+            else if (wcscmp(blendSource, L"inverse_blend_factor") == 0) return BlendSource::InverseBlendFactor;
+            else if (wcscmp(blendSource, L"source_color") == 0) return BlendSource::SourceColor;
+            else if (wcscmp(blendSource, L"inverse_source_color") == 0) return BlendSource::InverseSourceColor;
+            else if (wcscmp(blendSource, L"source_alpha") == 0) return BlendSource::SourceAlpha;
+            else if (wcscmp(blendSource, L"inverse_source_alpha") == 0) return BlendSource::InverseSourceAlpha;
+            else if (wcscmp(blendSource, L"source_alpha_saturate") == 0) return BlendSource::SourceAlphaSaturated;
+            else if (wcscmp(blendSource, L"destination_color") == 0) return BlendSource::DestinationColor;
+            else if (wcscmp(blendSource, L"inverse_destination_color") == 0) return BlendSource::InverseDestinationColor;
+            else if (wcscmp(blendSource, L"destination_alpha") == 0) return BlendSource::DestinationAlpha;
+            else if (wcscmp(blendSource, L"inverse_destination_alpha") == 0) return BlendSource::InverseDestinationAlpha;
+            else if (wcscmp(blendSource, L"secondary_source_color") == 0) return BlendSource::SecondarySourceColor;
+            else if (wcscmp(blendSource, L"inverse_secondary_source_color") == 0) return BlendSource::InverseSecondarySourceColor;
+            else if (wcscmp(blendSource, L"secondary_source_alpha") == 0) return BlendSource::SecondarySourceAlpha;
+            else if (wcscmp(blendSource, L"inverse_secondary_source_alpha") == 0) return BlendSource::InverseSecondarySourceAlpha;
             else return BlendSource::One;
         }
 
-        BlendOperation getBlendOperation(const String &blendOperation)
+        BlendOperation getBlendOperation(const wchar_t *blendOperation)
         {
-            if (blendOperation.compareNoCase(L"add") == 0) return BlendOperation::Add;
-            else if (blendOperation.compareNoCase(L"subtract") == 0) return BlendOperation::Subtract;
-            else if (blendOperation.compareNoCase(L"reverse_subtract") == 0) return BlendOperation::ReverseSubtract;
-            else if (blendOperation.compareNoCase(L"minimum") == 0) return BlendOperation::Minimum;
-            else if (blendOperation.compareNoCase(L"maximum") == 0) return BlendOperation::Maximum;
+            if (wcscmp(blendOperation, L"add") == 0) return BlendOperation::Add;
+            else if (wcscmp(blendOperation, L"subtract") == 0) return BlendOperation::Subtract;
+            else if (wcscmp(blendOperation, L"reverse_subtract") == 0) return BlendOperation::ReverseSubtract;
+            else if (wcscmp(blendOperation, L"minimum") == 0) return BlendOperation::Minimum;
+            else if (wcscmp(blendOperation, L"maximum") == 0) return BlendOperation::Maximum;
             else return BlendOperation::Add;
         }
     }; // namespace Video
@@ -339,33 +339,33 @@ namespace Gek
                 cameraConstantBuffer = device->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
                 cameraConstantBuffer->setName(L"cameraConstantBuffer");
 
-                static const char program[] =
-                    "struct Pixel                                                                       \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    float4 screen : SV_POSITION;                                                   \r\n" \
-                    "    float2 texCoord : TEXCOORD0;                                                   \r\n" \
-                    "};                                                                                 \r\n" \
-                    "                                                                                   \r\n" \
-                    "Pixel mainVertexProgram(in uint vertexID : SV_VertexID)                            \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    Pixel pixel;                                                                   \r\n" \
-                    "    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
-                    "    pixel.screen = float4(pixel.texCoord * float2(2.0f, -2.0f)                     \r\n" \
-                    "                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
-                    "    return pixel;                                                                  \r\n" \
-                    "}                                                                                  \r\n" \
-                    "                                                                                   \r\n" \
-                    "Texture2D<float3> screenBuffer : register(t0);                                     \r\n" \
-                    "float4 mainPixelProgram(Pixel inputPixel) : SV_TARGET0                             \r\n" \
-                    "{                                                                                  \r\n" \
-                    "    return float4(screenBuffer[inputPixel.screen.xy], 1.0);                        \r\n" \
-                    "}                                                                                  \r\n" \
-                    "                                                                                   \r\n";
+                static const wchar_t program[] =
+                    L"struct Pixel                                                                       \r\n" \
+                    L"{                                                                                  \r\n" \
+                    L"    float4 screen : SV_POSITION;                                                   \r\n" \
+                    L"    float2 texCoord : TEXCOORD0;                                                   \r\n" \
+                    L"};                                                                                 \r\n" \
+                    L"                                                                                   \r\n" \
+                    L"Pixel mainVertexProgram(in uint vertexID : SV_VertexID)                            \r\n" \
+                    L"{                                                                                  \r\n" \
+                    L"    Pixel pixel;                                                                   \r\n" \
+                    L"    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
+                    L"    pixel.screen = float4(pixel.texCoord * float2(2.0f, -2.0f)                     \r\n" \
+                    L"                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
+                    L"    return pixel;                                                                  \r\n" \
+                    L"}                                                                                  \r\n" \
+                    L"                                                                                   \r\n" \
+                    L"Texture2D<float3> screenBuffer : register(t0);                                     \r\n" \
+                    L"float4 mainPixelProgram(Pixel inputPixel) : SV_TARGET0                             \r\n" \
+                    L"{                                                                                  \r\n" \
+                    L"    return float4(screenBuffer[inputPixel.screen.xy], 1.0);                        \r\n" \
+                    L"}                                                                                  \r\n" \
+                    L"                                                                                   \r\n";
 
-                deferredVertexProgram = device->compileVertexProgram(program, "mainVertexProgram");
+                deferredVertexProgram = device->compileVertexProgram(program, L"mainVertexProgram");
                 deferredVertexProgram->setName(L"deferredVertexProgram");
 
-                deferredPixelProgram = device->compilePixelProgram(program, "mainPixelProgram");
+                deferredPixelProgram = device->compilePixelProgram(program, L"mainPixelProgram");
                 deferredPixelProgram->setName(L"deferredPixelProgram");
             }
 

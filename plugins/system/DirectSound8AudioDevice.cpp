@@ -262,7 +262,7 @@ namespace Gek
                 directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
             }
 
-            CComPtr<IDirectSoundBuffer> loadFromFile(const String &fileName, uint32_t flags, GUID soundAlgorithm)
+            CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, uint32_t flags, GUID soundAlgorithm)
             {
                 GEK_REQUIRE(directSound);
 
@@ -326,7 +326,7 @@ namespace Gek
                 return directSoundBuffer;
             }
 
-            Audio::EffectPtr loadEffect(const String &fileName)
+            Audio::EffectPtr loadEffect(const wchar_t *fileName)
             {
                 GEK_REQUIRE(directSound);
 
@@ -341,7 +341,7 @@ namespace Gek
                 return std::make_shared<Effect>(directSound8Buffer.p);
             }
 
-            Audio::SoundPtr loadSound(const String &fileName)
+            Audio::SoundPtr loadSound(const wchar_t *fileName)
             {
                 GEK_REQUIRE(directSound);
 

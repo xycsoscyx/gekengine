@@ -470,7 +470,7 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, const String &name)
+        void setDebugName(CComPtr<CLASS> &object, const wchar_t *name)
         {
             if (object)
             {
@@ -492,7 +492,7 @@ namespace Gek
                 GEK_REQUIRE(d3dCommandList);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dCommandList, name);
             }
@@ -511,7 +511,7 @@ namespace Gek
                 GEK_REQUIRE(d3dRenderState);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dRenderState, name);
             }
@@ -530,7 +530,7 @@ namespace Gek
                 GEK_REQUIRE(d3dDepthState);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dDepthState, name);
             }
@@ -549,7 +549,7 @@ namespace Gek
                 GEK_REQUIRE(d3dBlendState);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dBlendState, name);
             }
@@ -568,7 +568,7 @@ namespace Gek
                 GEK_REQUIRE(d3dSamplerState);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dSamplerState, name);
             }
@@ -587,7 +587,7 @@ namespace Gek
                 GEK_REQUIRE(d3dQuery);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dQuery, name);
             }
@@ -606,7 +606,7 @@ namespace Gek
                 GEK_REQUIRE(d3dShader);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dShader, name);
             }
@@ -627,7 +627,7 @@ namespace Gek
                 GEK_REQUIRE(d3dShader);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dShader, name);
                 setDebugName(d3dInputLayout, name);
@@ -647,7 +647,7 @@ namespace Gek
                 GEK_REQUIRE(d3dShader);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dShader, name);
             }
@@ -666,7 +666,7 @@ namespace Gek
                 GEK_REQUIRE(d3dShader);
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dShader, name);
             }
@@ -756,7 +756,7 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dResource, name);
                 setDebugName(d3dBuffer, name);
@@ -838,7 +838,7 @@ namespace Gek
             {
             }
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dResource, name);
                 setDebugName(d3dShaderResourceView, name);
@@ -911,7 +911,7 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-            virtual void setName(const String &name)
+            virtual void setName(const wchar_t *name)
             {
                 setDebugName(d3dResource, name);
                 setDebugName(d3dRenderTargetView, name);
@@ -933,7 +933,7 @@ namespace Gek
 
             virtual ~TargetViewTexture(void) = default;
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dResource, name);
                 setDebugName(d3dRenderTargetView, name);
@@ -963,7 +963,7 @@ namespace Gek
 
             virtual ~DepthTexture(void) = default;
 
-            void setName(const String &name)
+            void setName(const wchar_t *name)
             {
                 setDebugName(d3dResource, name);
                 setDebugName(d3dShaderResourceView, name);
@@ -976,11 +976,11 @@ namespace Gek
             : public ID3DInclude
         {
         public:
-            std::function<bool(const String &, String &)> onInclude;
+            std::function<bool(const wchar_t *, String &)> onInclude;
             std::unordered_map<StringUTF8, StringUTF8> includeMap;
 
         public:
-            Include(std::function<bool(const String &, String &)> onInclude)
+            Include(std::function<bool(const wchar_t *, String &)> onInclude)
                 : onInclude(onInclude)
             {
             }
@@ -2393,31 +2393,31 @@ namespace Gek
                 return convertedDefinesMap;
             }
 
-            Video::ObjectPtr compileComputeProgram(const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileComputeProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 Include includeHandler(onInclude);
                 return compileComputeProgram(nullptr, programScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr compileVertexProgram(const String &programScript, const String &entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileVertexProgram(const wchar_t *programScript, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 Include includeHandler(onInclude);
                 return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr compileGeometryProgram(const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compileGeometryProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 Include includeHandler(onInclude);
                 return compileGeometryProgram(nullptr, programScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr compilePixelProgram(const String &programScript, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr compilePixelProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 Include includeHandler(onInclude);
                 return compilePixelProgram(nullptr, programScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr loadComputeProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -2426,7 +2426,7 @@ namespace Gek
                 return compileComputeProgram(fileName, progamScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr loadVertexProgram(const String &fileName, const String &entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadVertexProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -2435,7 +2435,7 @@ namespace Gek
                 return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr loadGeometryProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadGeometryProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -2444,7 +2444,7 @@ namespace Gek
                 return compileGeometryProgram(fileName, progamScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
             }
 
-            Video::ObjectPtr loadPixelProgram(const String &fileName, const String &entryFunction, std::function<bool(const String &, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            Video::ObjectPtr loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 String progamScript;
                 FileSystem::load(fileName, progamScript);
@@ -2663,7 +2663,7 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(const String &fileName, uint32_t flags)
+            Video::TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2673,7 +2673,7 @@ namespace Gek
                 ::DirectX::ScratchImage scratchImage;
                 ::DirectX::TexMetadata textureMetaData;
 
-                String extension(FileSystem::Path(fileName).getExtension());
+                String extension(String(fileName).getExtension());
                 std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
                 if (extension.compareNoCase(L".dds") == 0)
                 {
