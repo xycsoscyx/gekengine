@@ -90,7 +90,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                Xml::Node filterNode = Xml::load(FileSystem::getRootFileName(L"data\\filters", filterName, L".xml"), L"filter");
+                Xml::Node filterNode = Xml::load(getContext()->getFileName(L"data\\filters", filterName).append(L".xml"), L"filter");
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = device->getBackBuffer()->getWidth();
@@ -524,8 +524,8 @@ namespace Gek
                     }
 
                     String programEntryPoint(passNode.getAttribute(L"entry"));
-					String rootProgramsDirectory(FileSystem::getRootFileName(L"data\\programs"));
-					String programFileName(FileSystem::getFileName(rootProgramsDirectory, filterName, passNode.type, L".hlsl"));
+					String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
+					String programFileName(FileSystem::getFileName(rootProgramsDirectory, filterName, passNode.type).append(L".hlsl"));
 					String programDirectory(FileSystem::getDirectory(programFileName));
 					auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 					{

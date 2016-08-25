@@ -18,17 +18,11 @@ namespace Gek
 
 		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list);
 
-		template <typename... PARAMETERS>
-		String getFileName(const wchar_t *rootDirectory, PARAMETERS... nameList)
-		{
-			return getFileName(rootDirectory, { nameList... });
-		}
-
-		template <typename... PARAMETERS>
-		String getRootFileName(PARAMETERS... nameList)
-		{
-			return getFileName(getRoot(), { nameList... });
-		}
+        template <typename... PARAMETERS>
+        String getFileName(const wchar_t *rootDirectory, PARAMETERS... nameList)
+        {
+            return getFileName(rootDirectory, { nameList... });
+        }
 
 		String replaceExtension(const wchar_t *fileName, const wchar_t *extension = nullptr);
 		String getExtension(const wchar_t *fileName);

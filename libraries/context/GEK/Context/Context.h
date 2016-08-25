@@ -2,6 +2,7 @@
 
 #include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\FileSystem.h"
 #include <functional>
 #include <typeindex>
 #include <memory>
@@ -21,7 +22,9 @@ namespace Gek
         GEK_ADD_EXCEPTION(InvalidPlugin);
         GEK_ADD_EXCEPTION(ClassNotFound);
 
-        static ContextPtr create(const std::vector<String> &searchPathList);
+        static ContextPtr create(const wchar_t *rootPath, const std::vector<String> &searchPathList);
+
+        virtual const wchar_t *getRootPath(void) const = 0;
 
         virtual ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 
@@ -35,5 +38,12 @@ namespace Gek
         }
 
         virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const = 0;
+
+        template <typename... PARAMETERS>
+        String getFileName(PARAMETERS... nameList)
+        {
+            return FileSystem::getFileName(getRootPath(), { nameList... });
+        }
+
     };
 }; // namespace Gek

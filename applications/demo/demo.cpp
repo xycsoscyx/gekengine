@@ -7,10 +7,10 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\Application.h"
 #include "GEK\Engine\Core.h"
+#include <experimental\filesystem>
 #include <Windows.h>
 #include <CommCtrl.h>
 #include "resource.h"
-#include <future>
 
 using namespace Gek;
 
@@ -18,6 +18,7 @@ auto displayModes = getDisplayModes();
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
+    Context *context = (Context *)GetWindowLongPtr(dialog, GWLP_USERDATA);
     switch (message)
     {
     case WM_CLOSE:
@@ -26,10 +27,12 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
     case WM_INITDIALOG:
     {
+        context = (Context *)lParam;
+        SetWindowLongPtr(dialog, GWLP_USERDATA, (LONG)context);
         Xml::Node configRoot(nullptr);
         try
         {
-            configRoot = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
+            configRoot = Xml::load(context->getFileName(L"config.xml"), L"config");
         }
         catch (const Xml::Exception &)
         {
@@ -93,7 +96,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             Xml::Node configRoot(nullptr);
             try
             {
-				configRoot = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
+				configRoot = Xml::load(context->getFileName(L"config.xml"), L"config");
 			}
             catch (const Xml::Exception &)
             {
@@ -104,7 +107,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             displayNode.attributes[L"width"] = mode.width;
             displayNode.attributes[L"height"] = mode.height;
             displayNode.attributes[L"fullscreen"] = (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
-			Xml::save(configRoot, FileSystem::getRootFileName(L"config.xml"));
+			Xml::save(configRoot, context->getFileName(L"config.xml"));
 
             EndDialog(dialog, IDOK);
             return TRUE;
@@ -158,20 +161,34 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
-        if (DialogBox(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc) == IDOK)
-        {
-            std::vector<String> searchPathList;
+        String rootPath;
+        String currentModuleName(L' ', MAX_PATH + 1);
+        GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+        currentModuleName.trimRight();
+
+        String fullModuleName(L' ', MAX_PATH + 1);
+        GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
+        fullModuleName.trimRight();
+
+        std::experimental::filesystem::path fullModulePath(fullModuleName);
+        fullModulePath.remove_filename();
+        fullModulePath.remove_filename();
+
+        rootPath = fullModulePath.wstring();
+
+        std::vector<String> searchPathList;
 
 #ifdef _DEBUG
-			SetCurrentDirectory(FileSystem::getRootFileName(L"Debug"));
-			searchPathList.push_back(FileSystem::getRootFileName(L"Debug\\Plugins"));
+        SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Debug"));
+        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Debug\\Plugins"));
 #else
-			SetCurrentDirectory(FileSystem::getRootFileName(L"Release"));
-			searchPathList.push_back(FileSystem::getRootFileName(L"Release\\Plugins"));
+        SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Release"));
+        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Release\\Plugins"));
 #endif
 
-            ContextPtr context(Context::create(searchPathList));
-
+        ContextPtr context(Context::create(rootPath, searchPathList));
+        if (DialogBoxParam(hInstance, MAKEINTRESOURCE(IDD_SETTINGS), nullptr, DialogProc, (LPARAM)context.get()) == IDOK)
+        {
             WNDCLASS windowClass;
             windowClass.style = 0;
             windowClass.lpfnWndProc = WindowProc;
@@ -192,7 +209,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             Xml::Node configRoot(nullptr);
             try
             {
-				configRoot = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
+				configRoot = Xml::load(context->getFileName(L"config.xml"), L"config");
 			}
             catch (const Xml::Exception &)
             {

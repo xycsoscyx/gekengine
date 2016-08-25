@@ -265,14 +265,12 @@ typedef SH<Math::Float4, 9> SH9Color;
     {
 		for (auto &format : formatList)
 		{
-			try
-			{
-				cubeMapList[face] = loadTexture(FileSystem::getFileName(directory, faceList[face], format));
-				break;
-			}
-			catch (const std::exception &)
-			{
-			};
+            String fileName(FileSystem::getFileName(directory, faceList[face]).append(format));
+            if (FileSystem::isFile(fileName))
+            {
+                cubeMapList[face] = loadTexture(FileSystem::getFileName(directory, faceList[face]).append(format));
+                break;
+            }
 		}
 
 		if (cubeMapList[face].GetImage(0, 0, 0) == nullptr)
@@ -450,11 +448,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
         }
 
-#ifdef _DEBUG
-		SetCurrentDirectory(FileSystem::getRootFileName(L"Debug"));
-#else
-		SetCurrentDirectory(FileSystem::getRootFileName(L"Release"));
-#endif
         ::DirectX::ScratchImage image;
         try
         {

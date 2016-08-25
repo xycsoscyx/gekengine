@@ -195,7 +195,7 @@ namespace Gek
 
 				auto backBuffer = device->getBackBuffer();
 
-                Xml::Node shaderNode = Xml::load(FileSystem::getRootFileName(L"data\\shaders", shaderName, L".xml"), L"shader");
+                Xml::Node shaderNode = Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader");
 
                 shaderNode.getValue(L"priority", priority);
 
@@ -937,8 +937,8 @@ namespace Gek
                         }
 
                         String programEntryPoint(passNode.getAttribute(L"entry"));
-						String rootProgramsDirectory(FileSystem::getRootFileName(L"data\\programs"));
-						String programFileName(FileSystem::getFileName(rootProgramsDirectory, shaderName, passNode.type, L".hlsl"));
+						String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
+						String programFileName(FileSystem::getFileName(rootProgramsDirectory, shaderName, passNode.type).append(L".hlsl"));
 						String programDirectory(FileSystem::getDirectory(programFileName));
 						auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 						{

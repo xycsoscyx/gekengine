@@ -238,7 +238,7 @@ namespace Gek
             if (entity->hasComponents<Components::Model, Components::Transform>())
             {
                 auto &modelComponent = entity->getComponent<Components::Model>();
-                String fileName(FileSystem::getRootFileName(L"data\\models", modelComponent.name, L".gek"));
+                String fileName(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".gek"));
                 auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
                 if (pair.second)
                 {

@@ -29,7 +29,7 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                Xml::Node materialNode = Xml::load(FileSystem::getRootFileName(L"data\\materials", materialName, L".xml"), L"material");
+                Xml::Node materialNode = Xml::load(getContext()->getFileName(L"data\\materials", materialName).append(L".xml"), L"material");
                 if (!materialNode.findChild(L"shader", [&](auto &shaderNode) -> void
                 {
                     if (!shaderNode.attributes.count(L"name"))

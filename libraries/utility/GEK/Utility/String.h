@@ -30,7 +30,7 @@ namespace Gek
             static void convert(std::basic_string<wchar_t> &result, const char *input)
             {
                 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-				result.assign(convert.from_bytes(input));
+                result.assign(convert.from_bytes(input));
             }
         };
 
@@ -40,8 +40,8 @@ namespace Gek
             static void convert(std::basic_string<char> &result, const wchar_t *input)
             {
                 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-				result.assign(convert.to_bytes(input));
-			}
+    			result.assign(convert.to_bytes(input));
+            }
         };
 
         template <typename DESTINATION, typename SOURCE>

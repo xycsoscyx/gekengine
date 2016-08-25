@@ -44,14 +44,14 @@ namespace Gek
             {
                 GEK_REQUIRE(device);
 
-                Xml::Node visualNode = Xml::load(FileSystem::getRootFileName(L"data\\visuals", visualName, L".xml"), L"visual");
+                Xml::Node visualNode = Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual");
                 if (!visualNode.findChild(L"programs", [&](auto &programsNode) -> void
                 {
                     programsNode.findChild(L"geometry", [&](auto &geometryNode) -> void
                     {
                         String programFileName(geometryNode.text);
                         String programEntryPoint(geometryNode.attributes[L"entry"]);
-                        geometryProgram = device->loadGeometryProgram(FileSystem::getRootFileName(L"data\\programs", programFileName, L".hlsl"), programEntryPoint);
+                        geometryProgram = device->loadGeometryProgram(getContext()->getFileName(L"data\\programs", programFileName).append(L".hlsl"), programEntryPoint);
                     });
 
                     String inputVertexData;
@@ -160,8 +160,8 @@ namespace Gek
                     if (!programsNode.findChild(L"vertex", [&](auto &vertexNode) -> void
                     {
                         String programEntryPoint(vertexNode.getAttribute(L"entry"));
-						String rootProgramsDirectory(FileSystem::getRootFileName(L"data\\programs"));
-						String programFileName(FileSystem::getFileName(rootProgramsDirectory, vertexNode.text, L".hlsl"));
+						String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
+						String programFileName(FileSystem::getFileName(rootProgramsDirectory, vertexNode.text).append(L".hlsl"));
 						String programDirectory(FileSystem::getDirectory(programFileName));
                         auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
                         {

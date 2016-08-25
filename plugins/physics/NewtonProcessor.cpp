@@ -151,7 +151,7 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        Xml::Node materialNode(Xml::load(FileSystem::getRootFileName(L"data\\materials", surfaceName, L".xml"), L"material"));
+                        Xml::Node materialNode(Xml::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".xml"), L"material"));
                         materialNode.findChild(L"surface", [&](auto &surfaceNode) -> void
                         {
                             Surface surface;
@@ -503,7 +503,7 @@ namespace Gek
                     collisionMap[hash] = nullptr;
 
 					std::vector<uint8_t> buffer;
-					FileSystem::load(FileSystem::getRootFileName(L"data\\models", modelComponent.name, L".bin"), buffer);
+					FileSystem::load(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".bin"), buffer);
 					uint8_t *data = buffer.data();
 
 					uint32_t gekIdentifier = *(uint32_t *)data;

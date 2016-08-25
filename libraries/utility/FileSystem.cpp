@@ -7,29 +7,22 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		static String rootPath;
 		String getRoot(void)
 		{
-			static std::mutex mutex;
-			std::lock_guard<std::mutex> lock(mutex);
-			if (rootPath.empty())
-			{
-				String currentModuleName(L' ', MAX_PATH + 1);
-				GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-				currentModuleName.trimRight();
+            String rootPath;
+            String currentModuleName(L' ', MAX_PATH + 1);
+			GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+			currentModuleName.trimRight();
 
-				String fullModuleName(L' ', MAX_PATH + 1);
-				GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-				fullModuleName.trimRight();
+			String fullModuleName(L' ', MAX_PATH + 1);
+			GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
+			fullModuleName.trimRight();
 
-				std::experimental::filesystem::path fullModulePath(fullModuleName);
-				fullModulePath.remove_filename();
-				fullModulePath.remove_filename();
+			std::experimental::filesystem::path fullModulePath(fullModuleName);
+			fullModulePath.remove_filename();
+			fullModulePath.remove_filename();
 
-				rootPath = fullModulePath.wstring();
-			}
-
-			return rootPath;
+			return fullModulePath.wstring();
 		}
 		
 		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list)
@@ -37,14 +30,7 @@ namespace Gek
 			std::experimental::filesystem::path fileName(rootDirectory);
 			for (auto name : list)
 			{
-				if (name.at(0) == L'.')
-				{
-					fileName.concat(name.begin(), name.end());
-				}
-				else
-				{
-					fileName.append(name.begin(), name.end());
-				}
+                fileName.append(name.begin(), name.end());
 			}
 
 			return fileName.wstring();

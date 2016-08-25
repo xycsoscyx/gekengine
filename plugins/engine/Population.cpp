@@ -201,7 +201,7 @@ namespace Gek
 
                         sendShout(&Plugin::PopulationListener::onLoadBegin);
 
-                        Xml::Node worldNode = Xml::load(FileSystem::getRootFileName(L"data\\scenes", populationName, L".xml"), L"world");
+                        Xml::Node worldNode = Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world");
 
                         std::unordered_map<String, EntityDefinition> prefabsMap;
                         for (auto &prefabNode : worldNode.getChild(L"prefabs").children)

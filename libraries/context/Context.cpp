@@ -13,12 +13,14 @@ namespace Gek
         : public Context
     {
     private:
+        String rootPath;
         std::list<HMODULE> moduleList;
         std::unordered_map<String, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
         std::unordered_multimap<String, String> typeMap;
 
     public:
-        ContextImplementation(std::vector<String> searchPathList)
+        ContextImplementation(const wchar_t *rootPath, std::vector<String> searchPathList)
+            : rootPath(rootPath)
         {
 			searchPathList.push_back(FileSystem::getRoot());
             for (auto &searchPath : searchPathList)
@@ -77,6 +79,11 @@ namespace Gek
         }
 
         // Context
+        const wchar_t *getRootPath(void) const
+        {
+            return rootPath.data();
+        }
+
         ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
@@ -100,8 +107,8 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::create(const std::vector<String> &searchPathList)
+    ContextPtr Context::create(const wchar_t *rootPath, const std::vector<String> &searchPathList)
     {
-        return std::make_shared<ContextImplementation>(searchPathList);
+        return std::make_shared<ContextImplementation>(rootPath, searchPathList);
     }
 };

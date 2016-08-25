@@ -544,7 +544,7 @@ namespace Gek
 
                 for (auto &format : formatList)
                 {
-					String fileName(FileSystem::getRootFileName(L"data\\textures", textureName, format));
+                    String fileName(getContext()->getFileName(L"data\\textures", textureName).append(format));
 					if (FileSystem::isFile(fileName))
                     {
                         auto texture = device->loadTexture(fileName, flags);
