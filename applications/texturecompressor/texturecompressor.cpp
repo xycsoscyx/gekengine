@@ -78,12 +78,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             throw std::exception("Compression format required");
         }
 
-        if (!fileNameInput.isFile())
+        if (!FileSystem::isFile(fileNameInput))
         {
             throw std::exception("Input file not found");
         }
 
-        if (!overwrite && fileNameOutput.isFile())
+        if (!overwrite && FileSystem::isFile(fileNameOutput))
         {
             throw std::exception("Output already exists (must specify overwrite)");
         }
@@ -98,7 +98,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         std::vector<uint8_t> fileData;
         FileSystem::load(fileNameInput, fileData);
 
-        String extension(String(fileNameInput).getExtension());
+        String extension(FileSystem::getExtension(fileNameInput));
         std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
         if (extension.compareNoCase(L".dds") == 0)
         {

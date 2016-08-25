@@ -584,14 +584,14 @@ namespace Gek
 
                     deviceContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
                     resources->setResource(deviceContext->pixelPipeline(), resources->getResourceHandle(L"screen"), 0);
-                    auto backBuffer = device->getBackBuffer();
                     if (cameraTarget)
                     {
                         resources->setRenderTargets(deviceContext, &cameraTarget, 1, nullptr);
                     }
                     else
                     {
-                        deviceContext->setRenderTargets(&backBuffer, 1, nullptr);
+						auto backBuffer = device->getBackBuffer();
+						deviceContext->setRenderTargets(&backBuffer, 1, nullptr);
                         deviceContext->setViewports(&backBuffer->getViewPort(), 1);
                     }
 
@@ -615,8 +615,10 @@ namespace Gek
                 GEK_REQUIRE(resources);
 
                 resources->clearLocal();
-                resources->createTexture(L"screen", Video::Format::R11G11B10_FLOAT, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
-                resources->createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+				
+				auto backBuffer = device->getBackBuffer();
+                resources->createTexture(L"screen", Video::Format::R11G11B10_FLOAT, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                resources->createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
             }
 
             void onLoadSucceeded(void)

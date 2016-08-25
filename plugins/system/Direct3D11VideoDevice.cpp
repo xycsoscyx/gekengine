@@ -2673,7 +2673,7 @@ namespace Gek
                 ::DirectX::ScratchImage scratchImage;
                 ::DirectX::TexMetadata textureMetaData;
 
-                String extension(String(fileName).getExtension());
+				String extension(FileSystem::getExtension(fileName));
                 std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
                 if (extension.compareNoCase(L".dds") == 0)
                 {

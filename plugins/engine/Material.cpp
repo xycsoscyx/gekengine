@@ -29,7 +29,7 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                Xml::Node materialNode = Xml::load(String(L"$root\\data\\materials\\%v.xml", materialName), L"material");
+                Xml::Node materialNode = Xml::load(FileSystem::getRootFileName(L"data\\materials", materialName, L".xml"), L"material");
                 if (!materialNode.findChild(L"shader", [&](auto &shaderNode) -> void
                 {
                     if (!shaderNode.attributes.count(L"name"))
@@ -43,8 +43,8 @@ namespace Gek
                         throw MissingParameters();
                     }
 
-                    String filePath(String(materialName).getPath());
-                    String fileSpecifier(String(materialName).getFileName());
+					String directory(FileSystem::getDirectory(materialName));
+					String fileName(FileSystem::getFileName(materialName));
 
                     PassMap passMap;
                     for (auto &passNode : shaderNode.children)
@@ -55,12 +55,12 @@ namespace Gek
                             ResourceHandle &resource = resourceMap[resourceNode.type];
                             if (resourceNode.attributes.count(L"file"))
                             {
-                                String file(resourceNode.attributes[L"file"]);
-                                file.replace(L"$directory", filePath);
-                                file.replace(L"$filename", fileSpecifier);
-                                file.replace(L"$material", materialName);
+                                String resourceFileName(resourceNode.attributes[L"file"]);
+                                resourceFileName.replace(L"$directory", directory);
+                                resourceFileName.replace(L"$filename", fileName);
+                                resourceFileName.replace(L"$material", materialName);
                                 uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
-                                resource = this->resources->loadTexture(file, flags);
+                                resource = this->resources->loadTexture(resourceFileName, flags);
                             }
                             else if (resourceNode.attributes.count(L"pattern"))
                             {

@@ -7,11 +7,6 @@
 
 namespace Gek
 {
-    namespace FileSystem
-    {
-        extern String replaceRoot(const wchar_t *originalFileName);
-    }; // namespace FileSystem
-
     namespace Xml
     {
         Node::Node(const wchar_t *type, Source source)
@@ -141,8 +136,7 @@ namespace Gek
 
         Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD)
         {
-            StringUTF8 fileNameUTF8(FileSystem::replaceRoot(fileName));
-            XmlDocument document(xmlReadFile(fileNameUTF8, nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
+            XmlDocument document(xmlReadFile(StringUTF8(fileName), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
             if (document == nullptr)
             {
                 throw UnableToLoad();
@@ -202,8 +196,7 @@ namespace Gek
             
             setNodeData(rootNode, rootData);
 
-            StringUTF8 fileNameUTF8(FileSystem::replaceRoot(fileName));
-            xmlSaveFormatFileEnc(fileNameUTF8, document, "UTF-8", 1);
+			xmlSaveFormatFileEnc(StringUTF8(fileName), document, "UTF-8", 1);
         }
     };
 }; // namespace Gek

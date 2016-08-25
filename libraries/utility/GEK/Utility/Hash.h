@@ -1,5 +1,26 @@
 #pragma once
 
+namespace std
+{
+	template <>
+	struct hash<const char *>
+	{
+		size_t operator()(const char *value) const
+		{
+			return hash<string>()(value);
+		}
+	};
+
+	template <>
+	struct hash<const wchar_t *>
+	{
+		size_t operator()(const wchar_t *value) const
+		{
+			return hash<wstring>()(value);
+		}
+	};
+}; // namespace std
+
 namespace Gek
 {
     inline size_t combineHashes(const size_t upper, const size_t lower)

@@ -29,7 +29,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         Xml::Node configRoot(nullptr);
         try
         {
-            configRoot = Xml::load(L"$root\\config.xml", L"config");
+            configRoot = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
         }
         catch (const Xml::Exception &)
         {
@@ -93,8 +93,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             Xml::Node configRoot(nullptr);
             try
             {
-                configRoot = Xml::load(L"$root\\config.xml", L"config");
-            }
+				configRoot = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
+			}
             catch (const Xml::Exception &)
             {
                 configRoot = Xml::Node(L"config");
@@ -104,7 +104,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             displayNode.attributes[L"width"] = mode.width;
             displayNode.attributes[L"height"] = mode.height;
             displayNode.attributes[L"fullscreen"] = (SendDlgItemMessage(dialog, IDC_FULLSCREEN, BM_GETCHECK, 0, 0) == BST_CHECKED ? L"true" : L"false");
-            Xml::save(configRoot, L"$root\\config.xml");
+			Xml::save(configRoot, FileSystem::getRootFileName(L"config.xml"));
 
             EndDialog(dialog, IDOK);
             return TRUE;
@@ -163,11 +163,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             std::vector<String> searchPathList;
 
 #ifdef _DEBUG
-            SetCurrentDirectory(String::create(L"$root\\Debug"));
-            searchPathList.push_back(L"$root\\Debug\\Plugins");
+			SetCurrentDirectory(FileSystem::getRootFileName(L"Debug"));
+			searchPathList.push_back(FileSystem::getRootFileName(L"Debug\\Plugins"));
 #else
-            SetCurrentDirectory(String::create(L"$root\\Release"));
-            searchPathList.push_back(L"$root\\Release\\Plugins");
+			SetCurrentDirectory(FileSystem::getRootFileName(L"Release"));
+			searchPathList.push_back(FileSystem::getRootFileName(L"Release\\Plugins"));
 #endif
 
             ContextPtr context(Context::create(searchPathList));
@@ -192,8 +192,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             Xml::Node configRoot(nullptr);
             try
             {
-                configRoot = Xml::load(L"$root\\config.xml", L"config");
-            }
+				configRoot = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
+			}
             catch (const Xml::Exception &)
             {
                 configRoot = Xml::Node(L"config");

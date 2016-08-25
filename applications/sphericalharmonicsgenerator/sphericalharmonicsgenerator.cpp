@@ -163,7 +163,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     std::vector<uint8_t> fileData;
     FileSystem::load(fileName, fileData);
 
-    String extension(String(fileName).getExtension());
+	String extension(FileSystem::getExtension(fileName));
     std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
     if (extension.compareNoCase(L".dds") == 0)
     {
@@ -240,32 +240,45 @@ typedef SH<Math::Float4, 9> SH9Color;
 
 ::DirectX::ScratchImage loadIntoCubeMap(const wchar_t *directory)
 {
-    ::DirectX::ScratchImage cubeMapList[6];
-    for (uint32_t face = 0; face < 6; face++)
+	static const wchar_t *faceList[] =
+	{
+		L"posx",
+		L"negx",
+		L"posy",
+		L"negy",
+		L"posz",
+		L"negz",
+	};
+	
+	static const wchar_t *formatList[] =
+	{
+		L"",
+		L".dds",
+		L".tga",
+		L".png",
+		L".jpg",
+		L".bmp",
+	};
+
+	::DirectX::ScratchImage cubeMapList[6];
+	for (auto &face : { 0, 1, 2, 3, 4, 5 })
     {
-        static const wchar_t *directions[] =
-        {
-            L"posx",
-            L"negx",
-            L"posy",
-            L"negy",
-            L"posz",
-            L"negz",
-        };
+		for (auto &format : formatList)
+		{
+			try
+			{
+				cubeMapList[face] = loadTexture(FileSystem::getFileName(directory, faceList[face], format));
+				break;
+			}
+			catch (const std::exception &)
+			{
+			};
+		}
 
-        FileSystem::find(directory, String(L"%v.*", directions[face]), false, [&](const wchar_t *fileName) -> bool
-        {
-            try
-            {
-                cubeMapList[face] = loadTexture(fileName);
-            }
-            catch (const std::exception &)
-            {
-                return true;
-            };
-
-            return false;
-        });
+		if (cubeMapList[face].GetImage(0, 0, 0) == nullptr)
+		{
+			throw std::exception("Unable to load cubemap face");
+		}
     }
 
     ::DirectX::Image imageList[6] =
@@ -438,9 +451,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
 #ifdef _DEBUG
-        SetCurrentDirectory(String::create(L"$root\\Debug"));
+		SetCurrentDirectory(FileSystem::getRootFileName(L"Debug"));
 #else
-        SetCurrentDirectory(String::create(L"$root\\Release"));
+		SetCurrentDirectory(FileSystem::getRootFileName(L"Release"));
 #endif
         ::DirectX::ScratchImage image;
         try

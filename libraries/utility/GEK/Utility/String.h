@@ -143,11 +143,6 @@ namespace Gek
             }
         }
 
-		std::size_t getHash(void) const
-		{
-			return std::hash<std::basic_string<ELEMENT, TRAITS, ALLOCATOR>>()(*this);
-		}
-
         BaseString subString(size_t position = 0, size_t length = std::string::npos) const
         {
             if (position < 0 || position >= size())

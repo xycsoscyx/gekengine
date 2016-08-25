@@ -2,7 +2,6 @@
 
 #include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
-#include <experimental\filesystem>
 #include <functional>
 #include <vector>
 
@@ -15,26 +14,31 @@ namespace Gek
         GEK_ADD_EXCEPTION(FileReadError);
         GEK_ADD_EXCEPTION(FileWriteError);
 
-        template <typename... PARAMETERS>
-        String getFileName(const wchar_t *rootDirectory, PARAMETERS... nameList)
-        {
-            std::experimental::filesystem::path fileName(rootDirectory);
-            for (const auto &name : { nameList... })
-            {
-                fileName.append(name);
-            }
+		String getRoot(void);
 
-            return fileName.wstring();
-        }
+		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list);
 
-        String getExtension(const wchar_t *fileName);
-        String removeFileName(const wchar_t *fileName);
-        String removeDirectory(const wchar_t *fileName);
+		template <typename... PARAMETERS>
+		String getFileName(const wchar_t *rootDirectory, PARAMETERS... nameList)
+		{
+			return getFileName(rootDirectory, { nameList... });
+		}
+
+		template <typename... PARAMETERS>
+		String getRootFileName(PARAMETERS... nameList)
+		{
+			return getFileName(getRoot(), { nameList... });
+		}
+
+		String replaceExtension(const wchar_t *fileName, const wchar_t *extension = nullptr);
+		String getExtension(const wchar_t *fileName);
+        String getFileName(const wchar_t *fileName);
+        String getDirectory(const wchar_t *fileName);
 
         bool isFile(const wchar_t *fileName);
         bool isDirectory(const wchar_t *fileName);
 
-        void find(const wchar_t *rootDirectory, const wchar_t *filterTypes, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
+        void find(const wchar_t *rootDirectory, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
 
         void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize = 0);
         void load(const wchar_t *fileName, StringUTF8 &string);

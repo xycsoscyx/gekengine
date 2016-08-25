@@ -24,8 +24,9 @@
 
 static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
 {
-    FILE *file = (FILE *)serializeHandle;
-    fread(buffer, 1, size, file);
+	uint8_t **data = (uint8_t **)serializeHandle;
+	memcpy(buffer, (*data), size);
+	(*data) += size;
 }
 
 namespace Gek
@@ -150,7 +151,7 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        Xml::Node materialNode(Xml::load(String(L"$root\\data\\materials\\%v.xml", surfaceName), L"material"));
+                        Xml::Node materialNode(Xml::load(FileSystem::getRootFileName(L"data\\materials", surfaceName, L".xml"), L"material"));
                         materialNode.findChild(L"surface", [&](auto &surfaceNode) -> void
                         {
                             Surface surface;
@@ -501,59 +502,52 @@ namespace Gek
                 {
                     collisionMap[hash] = nullptr;
 
-                    FILE *file = nullptr;
-                    _wfopen_s(&file, String::create(String(L"$root\\data\\models\\%v.bin", modelComponent.name)), L"rb");
-                    if (file == nullptr)
-                    {
-                        throw FileSystem::FileNotFound();
-                    }
+					std::vector<uint8_t> buffer;
+					FileSystem::load(FileSystem::getRootFileName(L"data\\models", modelComponent.name, L".bin"), buffer);
+					uint8_t *data = buffer.data();
 
-                    uint32_t gekIdentifier = 0;
-                    fread(&gekIdentifier, sizeof(uint32_t), 1, file);
+					uint32_t gekIdentifier = *(uint32_t *)data;
+					data += sizeof(uint32_t);
+
                     if (gekIdentifier != *(uint32_t *)"GEKX")
                     {
                         throw Newton::InvalidModelIdentifier();
                     }
 
-                    uint16_t gekModelType = 0;
-                    fread(&gekModelType, sizeof(uint16_t), 1, file);
+                    uint16_t gekModelType = *(uint16_t *)data;
+					data += sizeof(uint16_t);
 
-                    uint16_t gekModelVersion = 0;
-                    fread(&gekModelVersion, sizeof(uint16_t), 1, file);
-                    if (gekModelVersion != 0)
+                    uint16_t gekModelVersion = *(uint16_t *)data;
+					data += sizeof(uint16_t);
+
+					if (gekModelVersion != 0)
                     {
                         throw Newton::InvalidModelVersion();
                     }
 
                     if (gekModelType == 1)
                     {
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, data);
                     }
                     else if (gekModelType == 2)
                     {
-                        uint32_t materialCount = 0;
-                        fread(&materialCount, sizeof(uint32_t), 1, file);
+						uint32_t materialCount = *(uint32_t *)data;
+						data += sizeof(uint32_t);
+						
                         for (uint32_t materialIndex = 0; materialIndex < materialCount; materialIndex++)
                         {
-                            String materialName;
-                            wchar_t letter = 0;
-                            do
-                            {
-                                fread(&letter, sizeof(wchar_t), 1, file);
-                                materialName += letter;
-                            } while (letter != 0);
-
+							String materialName = (wchar_t *)data;
+							data += ((materialName.size() + 1) * sizeof(wchar_t));
                             staticSurfaceMap[materialIndex] = loadSurface(materialName);
                         }
 
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, file);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, data);
                     }
                     else
                     {
                         throw Newton::InvalidModelType();
                     }
 
-                    fclose(file);
                     if (newtonCollision == nullptr)
                     {
                         throw Newton::UnableToCreateCollision();

@@ -122,7 +122,7 @@ namespace Gek
 
                 try
                 {
-                    configuration = Xml::load(L"$root\\config.xml", L"config");
+                    configuration = Xml::load(FileSystem::getRootFileName(L"config.xml"), L"config");
                 }
                 catch (const Xml::Exception &)
                 {
@@ -161,8 +161,8 @@ namespace Gek
                 SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
 				SciterEval(window, L"", 0, nullptr);
 
-                success = SciterLoadFile(window, String::create(L"$root\\data\\pages\\system.html"));
-                if (!success)
+				success = SciterLoadFile(window, FileSystem::getRootFileName(L"data\\pages\\system.html"));
+				if (!success)
                 {
                     throw InitializationFailed();
                 }

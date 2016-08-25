@@ -20,43 +20,46 @@ namespace Gek
     public:
         ContextImplementation(std::vector<String> searchPathList)
         {
-            searchPathList.push_back(L"$root");
+			searchPathList.push_back(FileSystem::getRoot());
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::find(searchPath, L"*.dll", false, [&](const wchar_t *fileName) -> bool
+                FileSystem::find(searchPath, false, [&](const wchar_t *fileName) -> bool
                 {
-                    HMODULE module = LoadLibrary(fileName);
-                    if (module)
-                    {
-                        InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
-                        if (initializePlugin)
-                        {
-                            initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
-                            {
-                                if (classMap.count(className) == 0)
-                                {
-                                    classMap[className] = creator;
-                                }
-                                else
-                                {
-                                    throw DuplicateClass();
-                                }
-                            }, [this](const wchar_t *typeName, const wchar_t *className) -> void
-                            {
-                                typeMap.insert(std::make_pair(typeName, className));
-                            });
+					if (FileSystem::getExtension(fileName).compareNoCase(L".dll") == 0)
+					{
+						HMODULE module = LoadLibrary(fileName);
+						if (module)
+						{
+							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
+							if (initializePlugin)
+							{
+								initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								{
+									if (classMap.count(className) == 0)
+									{
+										classMap[className] = creator;
+									}
+									else
+									{
+										throw DuplicateClass();
+									}
+								}, [this](const wchar_t *typeName, const wchar_t *className) -> void
+								{
+									typeMap.insert(std::make_pair(typeName, className));
+								});
 
-                            moduleList.push_back(module);
-                        }
-                        else
-                        {
-                            FreeLibrary(module);
-                        }
-                    }
-                    else
-                    {
-                        throw InvalidPlugin();
-                    }
+								moduleList.push_back(module);
+							}
+							else
+							{
+								FreeLibrary(module);
+							}
+						}
+						else
+						{
+							throw InvalidPlugin();
+						}
+					}
 
                     return true;
                 });

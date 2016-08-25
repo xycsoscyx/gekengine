@@ -308,8 +308,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         {
             String materialName(material.first.getLower());
             materialName.replace(L"/", L"\\");
-            materialName = String(materialName).replace_extension();
-
+			materialName = FileSystem::replaceExtension(materialName, nullptr);
             int texturesPathIndex = materialName.find(L"\\textures\\");
             if (texturesPathIndex != std::string::npos)
             {
@@ -329,11 +328,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 materialName = materialName.subString(0, materialName.length() - 2);
             }
 
-            auto fileSpecifier = String(materialName).filename();
-            auto folderName = String(materialName).remove_filename().filename();
+			auto fileSpecifier = FileSystem::getFileName(materialName);
+			auto folderPath = FileSystem::getDirectory(materialName);
+			auto folderName = FileSystem::getFileName(folderPath);
             if (fileSpecifier == folderName)
             {
-                materialName = String(materialName).remove_filename().generic_wstring();
+                materialName = folderPath;
             }
 
             modelMap[materialName] = material.second;

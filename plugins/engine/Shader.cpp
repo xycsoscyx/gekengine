@@ -193,16 +193,15 @@ namespace Gek
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(population);
 
-                shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
-                shaderConstantBuffer->setName(String(L"%v:shaderConstantBuffer", shaderName));
+				auto backBuffer = device->getBackBuffer();
 
-                Xml::Node shaderNode = Xml::load(String(L"$root\\data\\shaders\\%v.xml", shaderName), L"shader");
+                Xml::Node shaderNode = Xml::load(FileSystem::getRootFileName(L"data\\shaders", shaderName, L".xml"), L"shader");
 
                 shaderNode.getValue(L"priority", priority);
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
-                uint32_t displayWidth = device->getBackBuffer()->getWidth();
-                uint32_t displayHeight = device->getBackBuffer()->getHeight();
+                uint32_t displayWidth = backBuffer->getWidth();
+                uint32_t displayHeight = backBuffer->getHeight();
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, String(L"%v", displayWidth));
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, String(L"%v", displayHeight));
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, String(L"(%v,%v)", displayWidth, displayHeight));
@@ -432,7 +431,7 @@ namespace Gek
                 resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
-                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight());
+                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(backBuffer->getWidth(), backBuffer->getHeight());
 
                 std::unordered_map<String, String> resourceStructuresMap;
 
@@ -457,8 +456,8 @@ namespace Gek
                             throw InvalidParameters();
                         }
 
-                        uint32_t textureWidth = device->getBackBuffer()->getWidth();
-                        uint32_t textureHeight = device->getBackBuffer()->getHeight();
+                        uint32_t textureWidth = backBuffer->getWidth();
+                        uint32_t textureHeight = backBuffer->getHeight();
                         if (textureNode.attributes.count(L"size"))
                         {
                             Math::Float2 size = evaluate(globalDefinesMap, textureNode.attributes[L"size"], BindType::UInt2);
@@ -599,8 +598,8 @@ namespace Gek
                         {
                             pass.mode = Pass::Mode::Compute;
 
-                            pass.width = float(device->getBackBuffer()->getWidth());
-                            pass.height = float(device->getBackBuffer()->getHeight());
+                            pass.width = float(backBuffer->getWidth());
+                            pass.height = float(backBuffer->getHeight());
 
                             Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
                             pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
@@ -638,8 +637,8 @@ namespace Gek
                                 renderTargetsMap = loadChildMap(targetsNode);
                                 if (renderTargetsMap.empty())
                                 {
-                                    pass.width = float(device->getBackBuffer()->getWidth());
-                                    pass.height = float(device->getBackBuffer()->getHeight());
+                                    pass.width = float(backBuffer->getWidth());
+                                    pass.height = float(backBuffer->getHeight());
                                 }
                                 else
                                 {
@@ -938,60 +937,55 @@ namespace Gek
                         }
 
                         String programEntryPoint(passNode.getAttribute(L"entry"));
-                        String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", shaderName, passNode.type);
-                        auto onInclude = [engineData = move(engineData), programFilePath](const wchar_t *includeName, String &data) -> bool
-                        {
+						String rootProgramsDirectory(FileSystem::getRootFileName(L"data\\programs"));
+						String programFileName(FileSystem::getFileName(rootProgramsDirectory, shaderName, passNode.type, L".hlsl"));
+						String programDirectory(FileSystem::getDirectory(programFileName));
+						auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
+						{
                             if (wcscmp(includeName, L"GEKShader") == 0)
                             {
                                 data = engineData;
                                 return true;
                             }
-                            else
-                            {
-                                if (FileSystem::isFile(includeName))
-                                {
-                                    FileSystem::load(String(includeName), data);
-                                    return true;
-                                }
-                                else
-                                {
-                                    String filePath(programFilePath);
-                                    filePath.remove_filename();
-                                    filePath.append(includeName);
-                                    filePath = String::create(filePath);
-                                    if (FileSystem::isFile(filePath))
-                                    {
-                                        FileSystem::load(filePath, data);
-                                        return true;
-                                    }
-                                    else
-                                    {
-                                        String rootPath(L"$root\\data\\programs");
-                                        rootPath.append(includeName);
-                                        rootPath = String::create(rootPath);
-                                        if (FileSystem::isFile(rootPath))
-                                        {
-                                            FileSystem::load(rootPath, data);
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
 
-                            return false;
-                        };
+							if (FileSystem::isFile(includeName))
+							{
+								FileSystem::load(includeName, data);
+								return true;
+							}
+
+							String localFileName(FileSystem::getFileName(programDirectory, includeName));
+							if (FileSystem::isFile(localFileName))
+							{
+								FileSystem::load(localFileName, data);
+								return true;
+							}
+
+							String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
+							if (FileSystem::isFile(rootFileName))
+							{
+								FileSystem::load(rootFileName, data);
+								return true;
+							}
+
+							return false;
+						};
 
                         if (pass.mode == Pass::Mode::Compute)
                         {
-                            pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            pass.program = resources->loadComputeProgram(programFileName, programEntryPoint, std::move(onInclude));
                         }
                         else
                         {
-                            pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                            pass.program = resources->loadPixelProgram(programFileName, programEntryPoint, std::move(onInclude));
                         }
                     }
                 }
-            }
+
+				shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+				shaderConstantBuffer->setName(String(L"%v:shaderConstantBuffer", shaderName));
+
+			}
 
             // Shader
             uint32_t getPriority(void)

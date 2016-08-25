@@ -90,7 +90,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                Xml::Node filterNode = Xml::load(String(L"$root\\data\\filters\\%v.xml", filterName), L"filter");
+                Xml::Node filterNode = Xml::load(FileSystem::getRootFileName(L"data\\filters", filterName, L".xml"), L"filter");
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = device->getBackBuffer()->getWidth();
@@ -524,56 +524,47 @@ namespace Gek
                     }
 
                     String programEntryPoint(passNode.getAttribute(L"entry"));
-                    String programFilePath(L"$root\\data\\programs\\%v\\%v.hlsl", filterName, passNode.type);
-                    auto onInclude = [engineData = move(engineData), programFilePath](const wchar_t *includeName, String &data) -> bool
-                    {
+					String rootProgramsDirectory(FileSystem::getRootFileName(L"data\\programs"));
+					String programFileName(FileSystem::getFileName(rootProgramsDirectory, filterName, passNode.type, L".hlsl"));
+					String programDirectory(FileSystem::getDirectory(programFileName));
+					auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
+					{
                         if (wcscmp(includeName, L"GEKFilter") == 0)
                         {
                             data = engineData;
                             return true;
                         }
-                        else
-                        {
-                            if (FileSystem::isFile(includeName))
-                            {
-                                FileSystem::load(String(includeName), data);
-                                return true;
-                            }
-                            else
-                            {
-                                String filePath(programFilePath);
-                                filePath.remove_filename();
-                                filePath.append(includeName);
-                                filePath = String::create(filePath);
-                                if (FileSystem::isFile(filePath))
-                                {
-                                    FileSystem::load(filePath, data);
-                                    return true;
-                                }
-                                else
-                                {
-                                    String rootPath(L"$root\\data\\programs");
-                                    rootPath.append(includeName);
-                                    rootPath = String::create(rootPath);
-                                    if (FileSystem::isFile(rootPath))
-                                    {
-                                        FileSystem::load(rootPath, data);
-                                        return true;
-                                    }
-                                }
-                            }
-                        }
 
-                        return false;
-                    };
+						if (FileSystem::isFile(includeName))
+						{
+							FileSystem::load(includeName, data);
+							return true;
+						}
+
+						String localFileName(FileSystem::getFileName(programDirectory, includeName));
+						if (FileSystem::isFile(localFileName))
+						{
+							FileSystem::load(localFileName, data);
+							return true;
+						}
+
+						String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
+						if (FileSystem::isFile(rootFileName))
+						{
+							FileSystem::load(rootFileName, data);
+							return true;
+						}
+
+						return false;
+					};
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        pass.program = resources->loadComputeProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                        pass.program = resources->loadComputeProgram(programFileName, programEntryPoint, std::move(onInclude));
                     }
                     else
                     {
-                        pass.program = resources->loadPixelProgram(programFilePath, programEntryPoint, std::move(onInclude));
+                        pass.program = resources->loadPixelProgram(programFileName, programEntryPoint, std::move(onInclude));
                     }
                 }
             }

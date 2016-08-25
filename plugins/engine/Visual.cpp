@@ -44,14 +44,14 @@ namespace Gek
             {
                 GEK_REQUIRE(device);
 
-                Xml::Node visualNode = Xml::load(String(L"$root\\data\\visuals\\%v.xml", visualName), L"visual");
+                Xml::Node visualNode = Xml::load(FileSystem::getRootFileName(L"data\\visuals", visualName, L".xml"), L"visual");
                 if (!visualNode.findChild(L"programs", [&](auto &programsNode) -> void
                 {
                     programsNode.findChild(L"geometry", [&](auto &geometryNode) -> void
                     {
                         String programFileName(geometryNode.text);
                         String programEntryPoint(geometryNode.attributes[L"entry"]);
-                        geometryProgram = device->loadGeometryProgram(String(L"$root\\data\\programs\\%v.hlsl", programFileName), programEntryPoint);
+                        geometryProgram = device->loadGeometryProgram(FileSystem::getRootFileName(L"data\\programs", programFileName, L".hlsl"), programEntryPoint);
                     });
 
                     String inputVertexData;
@@ -160,50 +160,41 @@ namespace Gek
                     if (!programsNode.findChild(L"vertex", [&](auto &vertexNode) -> void
                     {
                         String programEntryPoint(vertexNode.getAttribute(L"entry"));
-                        String programsPath(FileSystem::parsePath(L"$root\\data\\programs"));
-                        String programFilePath(String(L"$root\\data\\programs\\%v.hlsl", vertexNode.text));
-                        auto onInclude = [engineData = move(engineData), programsPath, programFilePath](const wchar_t *includeName, String &data) -> bool
+						String rootProgramsDirectory(FileSystem::getRootFileName(L"data\\programs"));
+						String programFileName(FileSystem::getFileName(rootProgramsDirectory, vertexNode.text, L".hlsl"));
+						String programDirectory(FileSystem::getDirectory(programFileName));
+                        auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
                         {
                             if (wcscmp(includeName, L"GEKVisual") == 0)
                             {
                                 data = engineData;
                                 return true;
                             }
-                            else
-                            {
-                                String resourcePath(includeName);
-                                if (resourcePath.isFile())
-                                {
-                                    FileSystem::load(resourcePath, data);
-                                    return true;
-                                }
-                                else
-                                {
-                                    String filePath(programFilePath);
-                                    filePath.remove_filename();
-                                    filePath.append(includeName);
-                                    filePath = String::create(filePath);
-                                    if (filePath.isFile())
-                                    {
-                                        FileSystem::load(filePath, data);
-                                        return true;
-                                    }
-                                    else
-                                    {
-                                        String filePath(FileSystem::appendPath(FileSystem::parsePath(L"$root\\data\\programs"), includeName));
-                                        if (FileSystem::isFile(filePath));
-                                        {
-                                            FileSystem::load(filePath, data);
-                                            return true;
-                                        }
-                                    }
-                                }
-                            }
+
+							if (FileSystem::isFile(includeName))
+							{
+								FileSystem::load(includeName, data);
+								return true;
+							}
+
+							String localFileName(FileSystem::getFileName(programDirectory, includeName));
+							if (FileSystem::isFile(localFileName))
+							{
+								FileSystem::load(localFileName, data);
+								return true;
+							}
+
+							String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
+							if (FileSystem::isFile(rootFileName))
+							{
+								FileSystem::load(rootFileName, data);
+								return true;
+							}
 
                             return false;
                         };
 
-                        vertexProgram = device->loadVertexProgram(programFilePath, programEntryPoint, elementList, onInclude);
+                        vertexProgram = device->loadVertexProgram(programFileName, programEntryPoint, elementList, onInclude);
                     }))
                     {
                         throw MissingParameters();
