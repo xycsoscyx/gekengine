@@ -77,18 +77,21 @@ namespace Gek
     public:
         struct Header
         {
-            uint32_t identifier;
-            uint16_t type;
-            uint16_t version;
-            Shapes::AlignedBox boundingBox;
-            uint32_t materialCount;
-
             struct Material
             {
                 wchar_t name[64];
                 uint32_t vertexCount;
                 uint32_t indexCount;
             };
+
+            uint32_t identifier;
+            uint16_t type;
+            uint16_t version;
+
+            Shapes::AlignedBox boundingBox;
+
+            uint32_t materialCount;
+            Material materialList[1];
         };
 
         struct Vertex
@@ -244,6 +247,15 @@ namespace Gek
         {
         }
 
+        template <typename TYPE>
+        std::vector<uint8_t> getBuffer(uint8_t **bufferData, uint32_t count)
+        {
+            auto start = (*bufferData);
+            (*bufferData) += (sizeof(TYPE) * count);
+            auto end = (*bufferData);
+            return std::vector<uint8_t>(start, end);
+        }
+
         void onEntityCreated(Plugin::Entity *entity)
         {
             GEK_REQUIRE(resources);
@@ -285,37 +297,25 @@ namespace Gek
                         std::vector<uint8_t> buffer;
                         FileSystem::load(fileName, buffer);
 
-                        auto data = buffer.data();
-                        Header *header = (Header *)data;
-                        data += sizeof(Header);
-
+                        Header *header = (Header *)buffer.data();
                         model.materialList.resize(header->materialCount);
-                        for (uint32_t modelIndex = 0; modelIndex < header->materialCount; ++modelIndex)
+                        uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
+                        for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
                         {
-                            Header::Material *materialHeader = (Header::Material *)data;
-                            data += sizeof(Header::Material);
-
-                            Material &material = model.materialList[modelIndex];
-                            if (wcscmp(materialHeader->name, L"skin") == 0)
+                            Header::Material &materialHeader = header->materialList[materialIndex];
+                            Material &material = model.materialList[materialIndex];
+                            if (wcscmp(materialHeader.name, L"skin") == 0)
                             {
                                 material.skin = true;
                             }
                             else
                             {
-                                material.material = resources->loadMaterial(materialHeader->name);
+                                material.material = resources->loadMaterial(materialHeader.name);
                             }
 
-                            auto vertexStart = data;
-                            data += (sizeof(Vertex) * materialHeader->vertexCount);
-                            auto vertexEnd = data;
-
-                            auto indexStart = data;
-                            data += (sizeof(uint16_t) * materialHeader->indexCount);
-                            auto indexEnd = data;
-
-                            material.indexCount = materialHeader->indexCount;
-                            material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", name, modelIndex), Video::Format::R16_UINT, materialHeader->indexCount, Video::BufferType::Index, 0, std::vector<uint8_t>(indexStart, indexEnd));
-                            material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", name, modelIndex), sizeof(Vertex), materialHeader->vertexCount, Video::BufferType::Vertex, 0, std::vector<uint8_t>(vertexStart, vertexEnd));
+                            material.indexCount = materialHeader.indexCount;
+                            material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
+                            material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
                         }
                     };
                 }

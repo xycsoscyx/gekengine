@@ -29,23 +29,26 @@ struct Header
 
 struct TreeHeader : public Header
 {
-    uint32_t materialCount;
     struct Material
     {
         wchar_t name[64];
     };
+
+    uint32_t materialCount;
 };
 
 struct ModelHeader : public Header
 {
-    Shapes::AlignedBox boundingBox;
-    uint32_t materialCount;
     struct Material
     {
         wchar_t name[64];
         uint32_t vertexCount;
         uint32_t indexCount;
     };
+
+    Shapes::AlignedBox boundingBox;
+
+    uint32_t materialCount;
 };
 
 struct Vertex
@@ -61,7 +64,7 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std::unordered_map<StringUTF8, std::list<Model>> &modelMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std::unordered_map<StringUTF8, std::list<Model>> &materialMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -156,7 +159,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std:
 
                 if (!material.empty())
                 {
-                    modelMap[material].push_back(model);
+                    materialMap[material].push_back(model);
                 }
             }
         }
@@ -171,7 +174,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std:
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(scene, node->mChildren[childIndex], fixMaxCoords, modelMap, boundingBox);
+            getMeshes(scene, node->mChildren[childIndex], fixMaxCoords, materialMap, boundingBox);
         }
     }
 }
@@ -331,7 +334,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        std::unordered_map<String, std::list<Model>> modelMap;
+        std::unordered_map<String, std::list<Model>> materialMap;
         for (auto &material : modelMapUTF8)
         {
             String materialName(material.first.getLower());
@@ -364,17 +367,17 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 materialName = folderPath;
             }
 
-            modelMap[materialName] = material.second;
+            materialMap[materialName] = material.second;
         }
 
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
         if (mode.compareNoCase(L"model") == 0)
         {
-            std::unordered_map<String, Model> sortedModelMap;
-            for (auto &material : modelMap)
+            std::unordered_map<String, Model> condensedMaterialMap;
+            for (auto &material : materialMap)
             {
-                Model &sortedModel = sortedModelMap[material.first];
+                Model &sortedModel = condensedMaterialMap[material.first];
                 for (auto &model : material.second)
                 {
                     for (auto &index : model.indexList)
@@ -385,6 +388,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                     sortedModel.vertexList.insert(sortedModel.vertexList.end(), model.vertexList.begin(), model.vertexList.end());
                 }
             }
+
+            printf("> Num. Models: %d\r\n", condensedMaterialMap.size());
 
             FILE *file = nullptr;
             _wfopen_s(&file, fileNameOutput, L"wb");
@@ -397,32 +402,33 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 0;
             header.version = 3;
-            header.materialCount = sortedModelMap.size();
+            header.materialCount = condensedMaterialMap.size();
             fwrite(&header, sizeof(ModelHeader), 1, file);
-
-            printf("> Num. Models: %d\r\n", sortedModelMap.size());
-            for (auto &model : sortedModelMap)
+            for (auto &material : condensedMaterialMap)
             {
-                ModelHeader::Material materialHeader;
-                wcsncpy(materialHeader.name, model.first, 63);
-                materialHeader.vertexCount = model.second.vertexList.size();
-                materialHeader.indexCount = model.second.indexList.size();
-                fwrite(&materialHeader, sizeof(ModelHeader::Material), 1, file);
-                fwrite(model.second.vertexList.data(), sizeof(Vertex), model.second.vertexList.size(), file);
-                fwrite(model.second.indexList.data(), sizeof(uint16_t), model.second.indexList.size(), file);
+                printf("-  %S\r\n", material.first.c_str());
+                printf("    %d vertices\r\n", material.second.vertexList.size());
+                printf("    %d indices\r\n", material.second.indexList.size());
 
-                printf("-  %S\r\n", model.first.c_str());
-                printf("    %d vertices\r\n", model.second.vertexList.size());
-                printf("    %d indices\r\n", model.second.indexList.size());
+                ModelHeader::Material materialHeader;
+                wcsncpy(materialHeader.name, material.first, 63);
+                materialHeader.vertexCount = material.second.vertexList.size();
+                materialHeader.indexCount = material.second.indexList.size();
+                fwrite(&materialHeader, sizeof(ModelHeader::Material), 1, file);
+            }
+
+            for (auto &material : condensedMaterialMap)
+            {
+                fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
+                fwrite(material.second.vertexList.data(), sizeof(Vertex), material.second.vertexList.size(), file);
             }
 
             fclose(file);
         }
         else  if (mode.compareNoCase(L"hull") == 0)
         {
-            NewtonWorld *newtonWorld = NewtonCreate();
             std::vector<Math::Float3> pointCloudList;
-            for (auto &material : modelMap)
+            for (auto &material : materialMap)
             {
                 for (auto &model : material.second)
                 {
@@ -434,6 +440,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
 
             printf("> Num. Points: %d\r\n", pointCloudList.size());
+
+            NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4().data);
             if (newtonCollision == nullptr)
             {
@@ -452,15 +460,30 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.type = 1;
             header.version = 0;
             fwrite(&header, sizeof(Header), 1, file);
-
             NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
             fclose(file);
+
             NewtonDestroyCollision(newtonCollision);
             NewtonDestroy(newtonWorld);
         }
         else  if (mode.compareNoCase(L"tree") == 0)
         {
-            printf("> Num. Materials: %d\r\n", modelMap.size());
+            std::unordered_map<String, Model> condensedMaterialMap;
+            for (auto &material : materialMap)
+            {
+                Model &sortedModel = condensedMaterialMap[material.first];
+                for (auto &model : material.second)
+                {
+                    for (auto &index : model.indexList)
+                    {
+                        sortedModel.indexList.push_back(uint16_t(index + sortedModel.vertexList.size()));
+                    }
+
+                    sortedModel.vertexList.insert(sortedModel.vertexList.end(), model.vertexList.begin(), model.vertexList.end());
+                }
+            }
+
+            printf("> Num. Materials: %d\r\n", materialMap.size());
 
             NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -471,26 +494,25 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             int materialIdentifier = 0;
             NewtonTreeCollisionBeginBuild(newtonCollision);
-            for (auto &material : modelMap)
+            for (auto &material : condensedMaterialMap)
             {
-                printf("-  %S: %d models\r\n", material.first.c_str(), material.second.size());
-                for (auto &model : material.second)
+                printf("-  %S\r\n", material.first.c_str());
+                printf("    %d vertices\r\n", material.second.vertexList.size());
+                printf("    %d indices\r\n", material.second.indexList.size());
+
+                std::vector<Math::Float3> faceVertexList;
+                auto &indexList = material.second.indexList;
+                auto &vertexList = material.second.vertexList;
+                for(uint32_t index = 0; index < indexList.size(); index += 3)
                 {
-                    printf("-    %d vertices\r\n", model.vertexList.size());
-                    printf("     %d indices\r\n", model.indexList.size());
-
-                    std::vector<Math::Float3> faceVertexList;
-                    auto &indexList = model.indexList;
-                    auto &vertexList = model.vertexList;
-                    for (auto &index : indexList)
+                    Math::Float3 faceList[3] = 
                     {
-                        faceVertexList.push_back(vertexList[index].position);
-                    }
+                        vertexList[indexList[index + 0]].position,
+                        vertexList[indexList[index + 1]].position,
+                        vertexList[indexList[index + 2]].position,
+                    };
 
-                    for (uint32_t index = 0; index < faceVertexList.size(); index += 3)
-                    {
-                        NewtonTreeCollisionAddFace(newtonCollision, 3, faceVertexList[index].data, sizeof(Math::Float3), materialIdentifier);
-                    }
+                    NewtonTreeCollisionAddFace(newtonCollision, 3, faceList[0].data, sizeof(Math::Float3), materialIdentifier);
                 }
 
                 ++materialIdentifier;
@@ -509,17 +531,18 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 2;
             header.version = 0;
-            header.materialCount = modelMap.size();
+            header.materialCount = materialMap.size();
             fwrite(&header, sizeof(TreeHeader), 1, file);
-            for (auto &model : modelMap)
+            for (auto &material : materialMap)
             {
                 TreeHeader::Material materialHeader;
-                wcsncpy(materialHeader.name, model.first, 63);
+                wcsncpy(materialHeader.name, material.first, 63);
                 fwrite(&materialHeader, sizeof(TreeHeader::Material), 1, file);
             }
 
             NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
             fclose(file);
+
             NewtonDestroyCollision(newtonCollision);
             NewtonDestroy(newtonWorld);
         }
