@@ -1,34 +1,15 @@
 #include "GEK\Utility\FileSystem.h"
 #include <experimental\filesystem>
-#include <fstream>
 #include <Windows.h>
 
 namespace Gek
 {
 	namespace FileSystem
 	{
-		String getRoot(void)
-		{
-            String rootPath;
-            String currentModuleName(L' ', MAX_PATH + 1);
-			GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-			currentModuleName.trimRight();
-
-			String fullModuleName(L' ', MAX_PATH + 1);
-			GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-			fullModuleName.trimRight();
-
-			std::experimental::filesystem::path fullModulePath(fullModuleName);
-			fullModulePath.remove_filename();
-			fullModulePath.remove_filename();
-
-			return fullModulePath.wstring();
-		}
-		
 		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list)
 		{
 			std::experimental::filesystem::path fileName(rootDirectory);
-			for (auto name : list)
+			for (const auto &name : list)
 			{
                 fileName.append(name.begin(), name.end());
 			}
@@ -87,21 +68,53 @@ namespace Gek
 			}
 		}
 
-		void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize)
+		void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
-			std::basic_ifstream<uint8_t, std::char_traits<uint8_t>> fileStream(fileName, std::ios::in | std::ios::binary | std::ios::ate);
-			if (fileStream.is_open())
-			{
-				std::size_t size = static_cast<std::size_t>(fileStream.tellg());
-				fileStream.seekg(0, std::ios::beg);
-				buffer.resize(limitReadSize ? std::min(limitReadSize, size) : size);
-				fileStream.read(buffer.data(), buffer.size());
-				fileStream.close();
-			}
-			else
-			{
-				throw FileNotFound();
-			}
+            std::experimental::filesystem::path filePath(fileName);
+            if (!std::experimental::filesystem::is_regular_file(filePath))
+            {
+                throw FileNotFound();
+            }
+
+            auto size = std::experimental::filesystem::file_size(filePath);
+            if (size > 0)
+            {
+                HANDLE fileHandle = CreateFile(fileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+                if (fileHandle == INVALID_HANDLE_VALUE)
+                {
+                    throw FileNotFound();
+                }
+
+                size = (limitReadSize > 0 ? std::min(size, limitReadSize) : size);
+                buffer.resize(size);
+                auto bufferData = buffer.data();
+
+                static const uint32_t chunkSize = 65536;
+                while (size >= chunkSize)
+                {
+                    DWORD bytesRead = 0;
+                    BOOL success = ReadFile(fileHandle, bufferData, chunkSize, &bytesRead, nullptr);
+                    if (!success || bytesRead != chunkSize)
+                    {
+                        throw FileReadError();
+                    }
+
+                    bufferData += chunkSize;
+                    size -= chunkSize;
+                };
+
+                if (size > 0)
+                {
+                    DWORD bytesRead = 0;
+                    BOOL success = ReadFile(fileHandle, bufferData, chunkSize, &bytesRead, nullptr);
+                    if (!success || bytesRead != chunkSize)
+                    {
+                        throw FileReadError();
+                    }
+                }
+
+                CloseHandle(fileHandle);
+            }
 		}
 
 		void load(const wchar_t *fileName, StringUTF8 &string)
@@ -122,28 +135,32 @@ namespace Gek
 
         void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
         {
-			std::basic_ofstream<uint8_t, std::char_traits<uint8_t>> fileStream(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
-			if (fileStream.is_open())
-			{
-				fileStream.write(buffer.data(), buffer.size());
-				fileStream.close();
-			}
-			else
-			{
-				throw FileNotFound();
-			}
+            HANDLE fileHandle = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+            if (fileHandle == INVALID_HANDLE_VALUE)
+            {
+                throw FileNotFound();
+            }
+
+            DWORD bytesWritten = 0;
+            BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
+            if (!success || bytesWritten != buffer.size())
+            {
+                throw FileWriteError();
+            }
+
+            CloseHandle(fileHandle);
         }
 
-        void save(const wchar_t *fileName, const StringUTF8 &fileData)
+        void save(const wchar_t *fileName, const StringUTF8 &string)
         {
-            std::vector<uint8_t> buffer(fileData.length());
-            std::copy(fileData.begin(), fileData.end(), buffer.begin());
+            std::vector<uint8_t> buffer(string.length());
+            std::copy(string.begin(), string.end(), buffer.begin());
             save(fileName, buffer);
         }
 
-        void save(const wchar_t *fileName, const wchar_t *fileData)
+        void save(const wchar_t *fileName, const String &string)
         {
-            save(fileName, StringUTF8(fileData));
+            save(fileName, StringUTF8(string));
         }
     } // namespace FileSystem
 }; // namespace Gek

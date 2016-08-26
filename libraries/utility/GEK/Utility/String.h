@@ -85,6 +85,8 @@ namespace Gek
         };
 
     public:
+        using ElementType = ELEMENT;
+
         BaseString(void)
         {
         }
@@ -647,21 +649,21 @@ namespace Gek
 
 namespace std
 {
-	template <>
-	struct hash<Gek::StringUTF8>
-	{
-		size_t operator()(const Gek::StringUTF8 &value) const
-		{
-			return hash<string>()(value);
-		}
-	};
+    template<>
+    struct hash<Gek::StringUTF8>
+    {
+        size_t operator()(const Gek::StringUTF8 &value) const
+        {
+            return hash<string>()(value);
+        }
+    };
 
-	template <>
-	struct hash<Gek::String>
-	{
-		size_t operator()(const Gek::String &value) const
-		{
-			return hash<wstring>()(value);
-		}
-	};
+    template<>
+    struct hash<Gek::String>
+    {
+        size_t operator()(const Gek::String &value) const
+        {
+            return hash<wstring>()(value);
+        }
+    };
 }; // namespace std

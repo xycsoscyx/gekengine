@@ -14,8 +14,6 @@ namespace Gek
         GEK_ADD_EXCEPTION(FileReadError);
         GEK_ADD_EXCEPTION(FileWriteError);
 
-		String getRoot(void);
-
 		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list);
 
         template <typename... PARAMETERS>
@@ -34,12 +32,12 @@ namespace Gek
 
         void find(const wchar_t *rootDirectory, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
 
-        void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::size_t limitReadSize = 0);
+        void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);
         void load(const wchar_t *fileName, StringUTF8 &string);
         void load(const wchar_t *fileName, String &string);
 
         void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer);
         void save(const wchar_t *fileName, const StringUTF8 &string);
-        void save(const wchar_t *fileName, const wchar_t *string);
+        void save(const wchar_t *fileName, const String &string);
     }; // namespace File
 }; // namespace Gek

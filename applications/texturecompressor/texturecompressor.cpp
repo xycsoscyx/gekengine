@@ -95,8 +95,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         printf("In: %s, Out: %s\r\n", sRGBIn ? "sRGB" : "RGB", sRGBOut ? "sRGB" : "RGB");
         printf("Progress...");
 
-        std::vector<uint8_t> fileData;
-        FileSystem::load(fileNameInput, fileData);
+        std::vector<uint8_t> buffer;
+        FileSystem::load(fileNameInput, buffer);
 
         String extension(FileSystem::getExtension(fileNameInput));
         std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
@@ -128,7 +128,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         ::DirectX::ScratchImage image;
-        HRESULT resultValue = load(fileData.data(), fileData.size(), image);
+        HRESULT resultValue = load(buffer.data(), buffer.size(), image);
         if (FAILED(resultValue))
         {
             throw std::exception("Unable to load input file");

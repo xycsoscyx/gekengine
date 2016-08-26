@@ -29,8 +29,6 @@
 
 namespace Gek
 {
-    static const uint32_t PreReadSize = (sizeof(uint32_t) + sizeof(uint16_t) + sizeof(uint16_t) + sizeof(Shapes::AlignedBox));
-
     namespace Components
     {
         Model::Model(void)
@@ -77,6 +75,22 @@ namespace Gek
         GEK_ADD_EXCEPTION(InvalidModelVersion);
 
     public:
+        struct Header
+        {
+            uint32_t identifier;
+            uint16_t type;
+            uint16_t version;
+            Shapes::AlignedBox boundingBox;
+            uint32_t materialCount;
+
+            struct Material
+            {
+                wchar_t name[64];
+                uint32_t vertexCount;
+                uint32_t indexCount;
+            };
+        };
+
         struct Vertex
         {
             Math::Float3 position;
@@ -244,78 +258,64 @@ namespace Gek
                 {
                     pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void
                     {
-                        std::vector<uint8_t> fileData;
-                        FileSystem::load(fileName, fileData, PreReadSize);
+                        std::vector<uint8_t> buffer;
+                        FileSystem::load(fileName, buffer, sizeof(Header));
 
-                        uint8_t *rawFileData = fileData.data();
-                        uint32_t gekIdentifier = *((uint32_t *)rawFileData);
-                        if (gekIdentifier != *(uint32_t *)"GEKX")
+                        Header *header = (Header *)buffer.data();
+                        if (header->identifier != *(uint32_t *)"GEKX")
                         {
                             throw InvalidModelIdentifier();
                         }
 
-                        rawFileData += sizeof(uint32_t);
-
-                        uint16_t gekModelType = *((uint16_t *)rawFileData);
-                        if (gekModelType != 0)
+                        if (header->type != 0)
                         {
                             throw InvalidModelType();
                         }
 
-                        rawFileData += sizeof(uint16_t);
-
-                        uint16_t gekModelVersion = *((uint16_t *)rawFileData);
-                        if (gekModelVersion != 3)
+                        if (header->version != 3)
                         {
                             throw InvalidModelVersion();
                         }
 
-                        rawFileData += sizeof(uint16_t);
-                        (*alignedBox) = *(Shapes::AlignedBox *)rawFileData;
+                        (*alignedBox) = header->boundingBox;
                     }).share();
 
                     pair.first->second.load = [this, name = String(modelComponent.name), fileName](Model &model) -> void
                     {
-                        std::vector<uint8_t> fileData;
-                        FileSystem::load(fileName, fileData);
+                        std::vector<uint8_t> buffer;
+                        FileSystem::load(fileName, buffer);
 
-                        uint8_t *rawFileData = fileData.data();
-                        rawFileData += sizeof(uint32_t);
-                        rawFileData += sizeof(uint16_t);
-                        rawFileData += sizeof(uint16_t);
-                        rawFileData += sizeof(Shapes::AlignedBox);
+                        auto data = buffer.data();
+                        Header *header = (Header *)data;
+                        data += sizeof(Header);
 
-                        uint32_t materialCount = *((uint32_t *)rawFileData);
-                        rawFileData += sizeof(uint32_t);
-
-                        model.materialList.resize(materialCount);
-                        for (uint32_t modelIndex = 0; modelIndex < materialCount; ++modelIndex)
+                        model.materialList.resize(header->materialCount);
+                        for (uint32_t modelIndex = 0; modelIndex < header->materialCount; ++modelIndex)
                         {
-                            String materialName((const wchar_t *)rawFileData);
-                            rawFileData += ((materialName.length() + 1) * sizeof(wchar_t));
+                            Header::Material *materialHeader = (Header::Material *)data;
+                            data += sizeof(Header::Material);
 
                             Material &material = model.materialList[modelIndex];
-                            if (materialName.compareNoCase(L"skin") == 0)
+                            if (wcscmp(materialHeader->name, L"skin") == 0)
                             {
                                 material.skin = true;
                             }
                             else
                             {
-                                material.material = resources->loadMaterial(materialName);
+                                material.material = resources->loadMaterial(materialHeader->name);
                             }
 
-                            uint32_t vertexCount = *((uint32_t *)rawFileData);
-                            rawFileData += sizeof(uint32_t);
+                            auto vertexStart = data;
+                            data += (sizeof(Vertex) * materialHeader->vertexCount);
+                            auto vertexEnd = data;
 
-                            material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", name, modelIndex), sizeof(Vertex), vertexCount, Video::BufferType::Vertex, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(Vertex) * vertexCount)));
-                            rawFileData += (sizeof(Vertex) * vertexCount);
+                            auto indexStart = data;
+                            data += (sizeof(uint16_t) * materialHeader->indexCount);
+                            auto indexEnd = data;
 
-                            uint32_t indexCount = *((uint32_t *)rawFileData);
-                            rawFileData += sizeof(uint32_t);
-
-                            material.indexCount = indexCount;
-                            material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", name, modelIndex), Video::Format::R16_UINT, indexCount, Video::BufferType::Index, 0, std::vector<uint8_t>(rawFileData, rawFileData + (sizeof(uint16_t) * indexCount)));
-                            rawFileData += (sizeof(uint16_t) * indexCount);
+                            material.indexCount = materialHeader->indexCount;
+                            material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", name, modelIndex), Video::Format::R16_UINT, materialHeader->indexCount, Video::BufferType::Index, 0, std::vector<uint8_t>(indexStart, indexEnd));
+                            material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", name, modelIndex), sizeof(Vertex), materialHeader->vertexCount, Video::BufferType::Vertex, 0, std::vector<uint8_t>(vertexStart, vertexEnd));
                         }
                     };
                 }

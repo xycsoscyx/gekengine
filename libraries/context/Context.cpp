@@ -22,7 +22,7 @@ namespace Gek
         ContextImplementation(const wchar_t *rootPath, std::vector<String> searchPathList)
             : rootPath(rootPath)
         {
-			searchPathList.push_back(FileSystem::getRoot());
+			searchPathList.push_back(rootPath);
             for (auto &searchPath : searchPathList)
             {
                 FileSystem::find(searchPath, false, [&](const wchar_t *fileName) -> bool

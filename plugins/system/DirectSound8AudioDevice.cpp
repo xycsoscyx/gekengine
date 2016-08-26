@@ -266,10 +266,10 @@ namespace Gek
             {
                 GEK_REQUIRE(directSound);
 
-                std::vector<uint8_t> fileData;
-                FileSystem::load(fileName, fileData);
+                std::vector<uint8_t> buffer;
+                FileSystem::load(fileName, buffer);
 
-                audiere::RefPtr<audiere::File> audiereFile(audiere::CreateMemoryFile(fileData.data(), fileData.size()));
+                audiere::RefPtr<audiere::File> audiereFile(audiere::CreateMemoryFile(buffer.data(), buffer.size()));
                 if (!audiereFile)
                 {
                     throw Audio::LoadFileFailed();

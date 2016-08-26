@@ -160,8 +160,8 @@ typedef SH<Math::Float4, 9> SH9Color;
 
 ::DirectX::ScratchImage loadTexture(const wchar_t *fileName)
 {
-    std::vector<uint8_t> fileData;
-    FileSystem::load(fileName, fileData);
+    std::vector<uint8_t> buffer;
+    FileSystem::load(fileName, buffer);
 
 	String extension(FileSystem::getExtension(fileName));
     std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
@@ -193,7 +193,7 @@ typedef SH<Math::Float4, 9> SH9Color;
     }
 
     ::DirectX::ScratchImage image;
-    HRESULT resultValue = load(fileData.data(), fileData.size(), image);
+    HRESULT resultValue = load(buffer.data(), buffer.size(), image);
     if (FAILED(resultValue))
     {
         throw std::exception("Unable to load input file");

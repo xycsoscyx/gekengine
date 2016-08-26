@@ -20,6 +20,34 @@
 
 using namespace Gek;
 
+struct Header
+{
+    uint32_t identifier;
+    uint16_t type;
+    uint16_t version;
+};
+
+struct TreeHeader : public Header
+{
+    uint32_t materialCount;
+    struct Material
+    {
+        wchar_t name[64];
+    };
+};
+
+struct ModelHeader : public Header
+{
+    Shapes::AlignedBox boundingBox;
+    uint32_t materialCount;
+    struct Material
+    {
+        wchar_t name[64];
+        uint32_t vertexCount;
+        uint32_t indexCount;
+    };
+};
+
 struct Vertex
 {
     Math::Float3 position;
@@ -365,31 +393,25 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 throw std::exception("Unable to create output file");
             }
 
-            uint32_t gekMagic = *(uint32_t *)"GEKX";
-            uint16_t gekModelType = 0;
-            uint16_t gekModelVersion = 3;
-            uint32_t modelCount = sortedModelMap.size();
-            fwrite(&gekMagic, sizeof(uint32_t), 1, file);
-            fwrite(&gekModelType, sizeof(uint16_t), 1, file);
-            fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
-            fwrite(&boundingBox, sizeof(Shapes::AlignedBox), 1, file);
-            fwrite(&modelCount, sizeof(uint32_t), 1, file);
+            ModelHeader header;
+            header.identifier = *(uint32_t *)"GEKX";
+            header.type = 0;
+            header.version = 3;
+            header.materialCount = sortedModelMap.size();
+            fwrite(&header, sizeof(ModelHeader), 1, file);
 
-            printf("> Num. Models: %d\r\n", modelCount);
+            printf("> Num. Models: %d\r\n", sortedModelMap.size());
             for (auto &model : sortedModelMap)
             {
-                String materialName(model.first);
-                fwrite(materialName.c_str(), ((materialName.length() + 1) * sizeof(wchar_t)), 1, file);
-
-                uint32_t vertexCount = model.second.vertexList.size();
-                fwrite(&vertexCount, sizeof(uint32_t), 1, file);
+                ModelHeader::Material materialHeader;
+                wcsncpy(materialHeader.name, model.first, 63);
+                materialHeader.vertexCount = model.second.vertexList.size();
+                materialHeader.indexCount = model.second.indexList.size();
+                fwrite(&materialHeader, sizeof(ModelHeader::Material), 1, file);
                 fwrite(model.second.vertexList.data(), sizeof(Vertex), model.second.vertexList.size(), file);
-
-                uint32_t indexCount = model.second.indexList.size();
-                fwrite(&indexCount, sizeof(uint32_t), 1, file);
                 fwrite(model.second.indexList.data(), sizeof(uint16_t), model.second.indexList.size(), file);
 
-                printf("-  %S\r\n", materialName.c_str());
+                printf("-  %S\r\n", model.first.c_str());
                 printf("    %d vertices\r\n", model.second.vertexList.size());
                 printf("    %d indices\r\n", model.second.indexList.size());
             }
@@ -425,12 +447,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 throw std::exception("Unable to create output file");
             }
 
-            uint32_t gekMagic = *(uint32_t *)"GEKX";
-            uint16_t gekModelType = 1;
-            uint16_t gekModelVersion = 0;
-            fwrite(&gekMagic, sizeof(uint32_t), 1, file);
-            fwrite(&gekModelType, sizeof(uint16_t), 1, file);
-            fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
+            Header header;
+            header.identifier = *(uint32_t *)"GEKX";
+            header.type = 1;
+            header.version = 0;
+            fwrite(&header, sizeof(Header), 1, file);
 
             NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
             fclose(file);
@@ -484,17 +505,17 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 throw std::exception("Unable to create output file");
             }
 
-            uint32_t gekMagic = *(uint32_t *)"GEKX";
-            uint16_t gekModelType = 2;
-            uint16_t gekModelVersion = 0;
-            uint32_t materialCount = modelMap.size();
-            fwrite(&gekMagic, sizeof(uint32_t), 1, file);
-            fwrite(&gekModelType, sizeof(uint16_t), 1, file);
-            fwrite(&gekModelVersion, sizeof(uint16_t), 1, file);
-            fwrite(&materialCount, sizeof(uint32_t), 1, file);
-            for (auto &material : modelMap)
+            TreeHeader header;
+            header.identifier = *(uint32_t *)"GEKX";
+            header.type = 2;
+            header.version = 0;
+            header.materialCount = modelMap.size();
+            fwrite(&header, sizeof(TreeHeader), 1, file);
+            for (auto &model : modelMap)
             {
-                fwrite(material.first.c_str(), ((material.first.length() + 1) * sizeof(wchar_t)), 1, file);
+                TreeHeader::Material materialHeader;
+                wcsncpy(materialHeader.name, model.first, 63);
+                fwrite(&materialHeader, sizeof(TreeHeader::Material), 1, file);
             }
 
             NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);

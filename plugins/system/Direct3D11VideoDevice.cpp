@@ -2667,8 +2667,8 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-                std::vector<uint8_t> fileData;
-                FileSystem::load(fileName, fileData);
+                std::vector<uint8_t> buffer;
+                FileSystem::load(fileName, buffer);
 
                 ::DirectX::ScratchImage scratchImage;
                 ::DirectX::TexMetadata textureMetaData;
@@ -2702,7 +2702,7 @@ namespace Gek
                     throw Video::InvalidFileType();
                 }
 
-                HRESULT resultValue = load(fileData.data(), fileData.size(), &textureMetaData, scratchImage);
+                HRESULT resultValue = load(buffer.data(), buffer.size(), &textureMetaData, scratchImage);
                 if (FAILED(resultValue))
                 {
                     throw Video::LoadFileFailed();

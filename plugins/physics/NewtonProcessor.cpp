@@ -43,6 +43,22 @@ namespace Gek
             , public Newton::World
         {
         public:
+            struct Header
+            {
+                uint32_t identifier;
+                uint16_t type;
+                uint16_t version;
+            };
+
+            struct TreeHeader : public Header
+            {
+                uint32_t materialCount;
+                struct Material
+                {
+                    wchar_t name[64];
+                };
+            };
+
             struct Vertex
             {
                 Math::Float3 position;
@@ -504,41 +520,34 @@ namespace Gek
 
 					std::vector<uint8_t> buffer;
 					FileSystem::load(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".bin"), buffer);
-					uint8_t *data = buffer.data();
 
-					uint32_t gekIdentifier = *(uint32_t *)data;
-					data += sizeof(uint32_t);
+                    auto data = buffer.data();
+                    Header *header = (Header *)data;
+                    data += sizeof(Header);
 
-                    if (gekIdentifier != *(uint32_t *)"GEKX")
+                    if (header->identifier != *(uint32_t *)"GEKX")
                     {
-                        throw Newton::InvalidModelIdentifier();
+                        throw InvalidModelIdentifier();
                     }
 
-                    uint16_t gekModelType = *(uint16_t *)data;
-					data += sizeof(uint16_t);
-
-                    uint16_t gekModelVersion = *(uint16_t *)data;
-					data += sizeof(uint16_t);
-
-					if (gekModelVersion != 0)
+					if (header->version != 0)
                     {
                         throw Newton::InvalidModelVersion();
                     }
 
-                    if (gekModelType == 1)
+                    if (header->type == 1)
                     {
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, data);
                     }
-                    else if (gekModelType == 2)
+                    else if (header->type == 2)
                     {
-						uint32_t materialCount = *(uint32_t *)data;
-						data += sizeof(uint32_t);
-						
-                        for (uint32_t materialIndex = 0; materialIndex < materialCount; materialIndex++)
+                        TreeHeader *treeHeader = (TreeHeader *)header;
+                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; materialIndex++)
                         {
-							String materialName = (wchar_t *)data;
-							data += ((materialName.size() + 1) * sizeof(wchar_t));
-                            staticSurfaceMap[materialIndex] = loadSurface(materialName);
+                            TreeHeader::Material *materialHeader = (TreeHeader::Material *)data;
+                            data += sizeof(TreeHeader::Material);
+
+                            staticSurfaceMap[materialIndex] = loadSurface(materialHeader->name);
                         }
 
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, data);
