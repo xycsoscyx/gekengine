@@ -24,15 +24,14 @@
         <entity>
             <transform position="(0, 0, 0)" rotation="(0, 0, 0)" />
             <model>sponza</model>
-            <static_body>sponza</static_body>
+            <physical />
         </entity>
 
         <entity name="player_body">
             <transform position="(0, 30, 0)" rotation="(0, pi/2, 0)" scale="(1.5,3,1.5)" />
             <first_person_camera mode="perspective" field_of_view="70" near_clip=".5" far_clip="200" />
             <filter>antialias, depthoffield, tonemap</filter>
-            <player_body outer_angle="1.5" inner_angle=".5" height="6" stair_step="1.5" />
-            <mass>250</mass>
+            <player mass="250" height="6" outer_raduis="1.5" outer_radius=".5" stair_step="1.5" />
             <spot_light range="30" radius="0.5" inner_angle="45" outer_angle="90" />
             <color>(1,1,1)</color>
         </entity>

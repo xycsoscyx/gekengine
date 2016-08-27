@@ -377,15 +377,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             std::unordered_map<String, Model> condensedMaterialMap;
             for (auto &material : materialMap)
             {
-                Model &sortedModel = condensedMaterialMap[material.first];
-                for (auto &model : material.second)
+                Model &condensedMaterial = condensedMaterialMap[material.first];
+                for (auto &instance : material.second)
                 {
-                    for (auto &index : model.indexList)
+                    for (auto &index : instance.indexList)
                     {
-                        sortedModel.indexList.push_back(uint16_t(index + sortedModel.vertexList.size()));
+                        condensedMaterial.indexList.push_back(uint16_t(index + condensedMaterial.vertexList.size()));
                     }
 
-                    sortedModel.vertexList.insert(sortedModel.vertexList.end(), model.vertexList.begin(), model.vertexList.end());
+                    condensedMaterial.vertexList.insert(condensedMaterial.vertexList.end(), instance.vertexList.begin(), instance.vertexList.end());
                 }
             }
 
@@ -430,11 +430,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             std::vector<Math::Float3> pointCloudList;
             for (auto &material : materialMap)
             {
-                for (auto &model : material.second)
+                for (auto &instance : material.second)
                 {
-                    for (auto &index : model.indexList)
+                    for (auto &index : instance.indexList)
                     {
-                        pointCloudList.push_back(model.vertexList[index].position);
+                        pointCloudList.push_back(instance.vertexList[index].position);
                     }
                 }
             }
@@ -471,19 +471,19 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             std::unordered_map<String, Model> condensedMaterialMap;
             for (auto &material : materialMap)
             {
-                Model &sortedModel = condensedMaterialMap[material.first];
-                for (auto &model : material.second)
+                Model &condensedMaterial = condensedMaterialMap[material.first];
+                for (auto &instance : material.second)
                 {
-                    for (auto &index : model.indexList)
+                    for (auto &index : instance.indexList)
                     {
-                        sortedModel.indexList.push_back(uint16_t(index + sortedModel.vertexList.size()));
+                        condensedMaterial.indexList.push_back(uint16_t(index + condensedMaterial.vertexList.size()));
                     }
 
-                    sortedModel.vertexList.insert(sortedModel.vertexList.end(), model.vertexList.begin(), model.vertexList.end());
+                    condensedMaterial.vertexList.insert(condensedMaterial.vertexList.end(), instance.vertexList.begin(), instance.vertexList.end());
                 }
             }
 
-            printf("> Num. Materials: %d\r\n", materialMap.size());
+            printf("> Num. Materials: %d\r\n", condensedMaterialMap.size());
 
             NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
@@ -500,7 +500,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 printf("    %d vertices\r\n", material.second.vertexList.size());
                 printf("    %d indices\r\n", material.second.indexList.size());
 
-                std::vector<Math::Float3> faceVertexList;
                 auto &indexList = material.second.indexList;
                 auto &vertexList = material.second.vertexList;
                 for(uint32_t index = 0; index < indexList.size(); index += 3)
@@ -531,9 +530,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 2;
             header.version = 1;
-            header.materialCount = materialMap.size();
+            header.materialCount = condensedMaterialMap.size();
             fwrite(&header, sizeof(TreeHeader), 1, file);
-            for (auto &material : materialMap)
+            for (auto &material : condensedMaterialMap)
             {
                 TreeHeader::Material materialHeader;
                 wcsncpy(materialHeader.name, material.first, 63);

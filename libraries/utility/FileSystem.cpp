@@ -6,6 +6,8 @@ namespace Gek
 {
 	namespace FileSystem
 	{
+		static const uint32_t chunkSize = 1024*128;
+
 		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list)
 		{
 			std::experimental::filesystem::path fileName(rootDirectory);
@@ -92,7 +94,6 @@ namespace Gek
 					buffer.resize(static_cast<std::size_t>(size));
 					auto bufferData = buffer.data();
 
-					static const uint32_t chunkSize = 65536;
 					while (size >= chunkSize)
 					{
 						fileBuffer.sgetn(bufferData, chunkSize);
@@ -136,7 +137,6 @@ namespace Gek
 			{
 				auto size = buffer.size();
 				auto bufferData = buffer.data();
-				static const uint32_t chunkSize = 65536;
 				while (size >= chunkSize)
 				{
 					fileBuffer.sputn(bufferData, chunkSize);

@@ -24,9 +24,9 @@
 
 static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
 {
-	uint8_t **data = (uint8_t **)serializeHandle;
-	memcpy(buffer, (*data), size);
-	(*data) += size;
+	auto data = (std::pair<uint32_t, uint8_t *> *)serializeHandle;
+	memcpy(buffer, &data->second[data->first], size);
+	data->first += size;
 }
 
 namespace Gek
@@ -536,8 +536,8 @@ namespace Gek
 
                     if (header->type == 1)
                     {
-                        void *serializedData = (header + sizeof(Header));
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &serializedData);
+						std::pair<uint32_t, uint8_t *> data = std::make_pair(0, (uint8_t *)(header + sizeof(Header)));
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
                     }
                     else if (header->type == 2)
                     {
@@ -548,8 +548,8 @@ namespace Gek
                             staticSurfaceMap[materialIndex] = loadSurface(materialHeader.name);
                         }
 
-                        void *serializedData = &treeHeader[treeHeader->materialCount];
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &serializedData);
+						std::pair<uint32_t, uint8_t *> data = std::make_pair(0, (uint8_t *)&treeHeader[treeHeader->materialCount]);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
                     }
                     else
                     {

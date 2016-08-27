@@ -21,7 +21,8 @@ namespace Gek
 
         struct Player
         {
-            float height;
+			float mass;
+			float height;
             float outerRadius;
             float innerRadius;
             float stairStep;

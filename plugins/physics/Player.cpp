@@ -21,7 +21,8 @@ namespace Gek
 
         void Player::save(Plugin::Population::ComponentDefinition &componentData) const
         {
-            saveParameter(componentData, L"height", height);
+			saveParameter(componentData, L"mass", mass);
+			saveParameter(componentData, L"height", height);
             saveParameter(componentData, L"outer_radius", outerRadius);
             saveParameter(componentData, L"inner_radius", innerRadius);
             saveParameter(componentData, L"stair_step", stairStep);
@@ -29,7 +30,8 @@ namespace Gek
 
         void Player::load(const Plugin::Population::ComponentDefinition &componentData)
         {
-            height = loadParameter(componentData, L"height", 6.0f);
+			mass = loadParameter(componentData, L"mass", 100.0f);
+			height = loadParameter(componentData, L"height", 6.0f);
             outerRadius = loadParameter(componentData, L"outer_radius", 1.5f);
             innerRadius = loadParameter(componentData, L"inner_radius", 0.5f);
             stairStep = loadParameter(componentData, L"stair_step", 1.5f);
