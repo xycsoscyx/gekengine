@@ -529,7 +529,7 @@ namespace Gek
                         throw InvalidModelIdentifier();
                     }
 
-					if (header->version != 0)
+					if (header->version != 1)
                     {
                         throw Newton::InvalidModelVersion();
                     }

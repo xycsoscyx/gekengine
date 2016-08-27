@@ -401,7 +401,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             ModelHeader header;
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 0;
-            header.version = 3;
+            header.version = 4;
             header.materialCount = condensedMaterialMap.size();
             fwrite(&header, sizeof(ModelHeader), 1, file);
             for (auto &material : condensedMaterialMap)
@@ -458,7 +458,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             Header header;
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 1;
-            header.version = 0;
+            header.version = 1;
             fwrite(&header, sizeof(Header), 1, file);
             NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
             fclose(file);
@@ -530,7 +530,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             TreeHeader header;
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 2;
-            header.version = 0;
+            header.version = 1;
             header.materialCount = materialMap.size();
             fwrite(&header, sizeof(TreeHeader), 1, file);
             for (auto &material : materialMap)

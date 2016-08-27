@@ -132,15 +132,18 @@ namespace Gek
             std::shared_future<void> loadData;
             std::function<void(Model &)> load;
 
+			std::atomic<bool> validated;
             Shapes::AlignedBox alignedBox;
             std::vector<Material> materialList;
 
             Model(void)
+				: validated(false)
             {
             }
 
             Model(const Model &model)
-                : loadBox(model.loadBox)
+				: validated(model.validated ? true : false)
+                , loadBox(model.loadBox)
                 , loadData(model.loadData)
                 , load(model.load)
                 , alignedBox(model.alignedBox)
@@ -150,13 +153,18 @@ namespace Gek
 
             bool valid(void)
             {
-                std::lock_guard<std::mutex> lock(mutex);
-                if (!loadData.valid())
-                {
-                    loadData = Gek::asynchronous(load, std::ref(*this)).share();
-                }
+				if (validated)
+				{
+					std::lock_guard<std::mutex> lock(mutex);
+					if (!loadData.valid())
+					{
+						loadData = Gek::asynchronous(load, std::ref(*this)).share();
+					}
 
-                return (loadData.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
+					return (loadData.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
+				}
+
+				return false;
             }
         };
 
@@ -268,7 +276,7 @@ namespace Gek
                 auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
                 if (pair.second)
                 {
-                    pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, alignedBox = &pair.first->second.alignedBox](void) -> void
+                    pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, model = &pair.first->second](void) -> void
                     {
                         std::vector<uint8_t> buffer;
                         FileSystem::load(fileName, buffer, sizeof(Header));
@@ -284,12 +292,13 @@ namespace Gek
                             throw InvalidModelType();
                         }
 
-                        if (header->version != 3)
+                        if (header->version != 4)
                         {
                             throw InvalidModelVersion();
                         }
 
-                        (*alignedBox) = header->boundingBox;
+						model->alignedBox = header->boundingBox;
+						model->validated = true;
                     }).share();
 
                     pair.first->second.load = [this, name = String(modelComponent.name), fileName](Model &model) -> void

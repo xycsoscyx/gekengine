@@ -1,6 +1,6 @@
 #include "GEK\Utility\FileSystem.h"
 #include <experimental\filesystem>
-#include <Windows.h>
+#include <fstream>
 
 namespace Gek
 {
@@ -79,41 +79,36 @@ namespace Gek
             auto size = std::experimental::filesystem::file_size(filePath);
             if (size > 0)
             {
-                HANDLE fileHandle = CreateFile(fileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-                if (fileHandle == INVALID_HANDLE_VALUE)
-                {
-                    throw FileNotFound();
-                }
+				std::basic_filebuf<uint8_t> fileBuffer;
+				fileBuffer.open(fileName, std::ios::in | std::ios::binary);
+				if (fileBuffer.is_open())
+				{
+					size = (limitReadSize > 0 ? std::min(size, limitReadSize) : size);
+					if (size >= std::numeric_limits<std::size_t>::max())
+					{
+						throw FileReadError();
+					}
 
-                size = (limitReadSize > 0 ? std::min(size, limitReadSize) : size);
-                buffer.resize(size);
-                auto bufferData = buffer.data();
+					buffer.resize(static_cast<std::size_t>(size));
+					auto bufferData = buffer.data();
 
-                static const uint32_t chunkSize = 65536;
-                while (size >= chunkSize)
-                {
-                    DWORD bytesRead = 0;
-                    BOOL success = ReadFile(fileHandle, bufferData, chunkSize, &bytesRead, nullptr);
-                    if (!success || bytesRead != chunkSize)
-                    {
-                        throw FileReadError();
-                    }
+					static const uint32_t chunkSize = 65536;
+					while (size >= chunkSize)
+					{
+						fileBuffer.sgetn(bufferData, chunkSize);
+						bufferData += chunkSize;
+						size -= chunkSize;
+					};
 
-                    bufferData += chunkSize;
-                    size -= chunkSize;
-                };
-
-                if (size > 0)
-                {
-                    DWORD bytesRead = 0;
-                    BOOL success = ReadFile(fileHandle, bufferData, chunkSize, &bytesRead, nullptr);
-                    if (!success || bytesRead != chunkSize)
-                    {
-                        throw FileReadError();
-                    }
-                }
-
-                CloseHandle(fileHandle);
+					if (size > 0)
+					{
+						fileBuffer.sgetn(bufferData, size);
+					}
+				}
+				else
+				{
+					throw FileReadError();
+				}
             }
 		}
 
@@ -135,20 +130,29 @@ namespace Gek
 
         void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
         {
-            HANDLE fileHandle = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-            if (fileHandle == INVALID_HANDLE_VALUE)
-            {
-                throw FileNotFound();
-            }
+			std::basic_filebuf<uint8_t> fileBuffer;
+			fileBuffer.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
+			if (fileBuffer.is_open())
+			{
+				auto size = buffer.size();
+				auto bufferData = buffer.data();
+				static const uint32_t chunkSize = 65536;
+				while (size >= chunkSize)
+				{
+					fileBuffer.sputn(bufferData, chunkSize);
+					bufferData += chunkSize;
+					size -= chunkSize;
+				};
 
-            DWORD bytesWritten = 0;
-            BOOL success = WriteFile(fileHandle, buffer.data(), buffer.size(), &bytesWritten, nullptr);
-            if (!success || bytesWritten != buffer.size())
-            {
-                throw FileWriteError();
-            }
-
-            CloseHandle(fileHandle);
+				if (size > 0)
+				{
+					fileBuffer.sputn(bufferData, size);
+				}
+			}
+			else
+			{
+				throw FileWriteError();
+			}
         }
 
         void save(const wchar_t *fileName, const StringUTF8 &string)
