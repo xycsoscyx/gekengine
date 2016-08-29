@@ -55,37 +55,25 @@ namespace Gek
             return (*this);
         }
 
-        Math::Float4x4 &Float4x4::setScaling(float scalar)
+        Math::Float4x4 &Float4x4::setScaling(float scale)
         {
-            _11 *= scalar;
-            _21 *= scalar;
-            _31 *= scalar;
-            _12 *= scalar;
-            _22 *= scalar;
-            _32 *= scalar;
-            _13 *= scalar;
-            _23 *= scalar;
-            _33 *= scalar;
+            _11 *= scale; _21 *= scale; _31 *= scale;
+            _12 *= scale; _22 *= scale; _32 *= scale;
+            _13 *= scale; _23 *= scale; _33 *= scale;
             return (*this);
         }
 
-        Math::Float4x4 &Float4x4::setScaling(const Float3 &vector)
+        Math::Float4x4 &Float4x4::setScaling(const Float3 &scale)
         {
-            _11 *= vector.x;
-            _21 *= vector.x;
-            _31 *= vector.x;
-            _12 *= vector.y;
-            _22 *= vector.y;
-            _32 *= vector.y;
-            _13 *= vector.z;
-            _23 *= vector.z;
-            _33 *= vector.z;
+            _11 *= scale.x; _21 *= scale.x; _31 *= scale.x;
+            _12 *= scale.y; _22 *= scale.y; _32 *= scale.y;
+            _13 *= scale.z; _23 *= scale.z; _33 *= scale.z;
             return (*this);
         }
 
-        Math::Float4x4 &Float4x4::setTranslation(const Float3 &vector)
+        Math::Float4x4 &Float4x4::setTranslation(const Float3 &translation)
         {
-            translation = vector;
+            this->translation = translation;
             return (*this);
         }
 
@@ -238,7 +226,11 @@ namespace Gek
 
         Float3 Float4x4::getScaling(void) const
         {
-            return Float3(_11, _22, _33);
+            return Float3(
+                Float3(_11, _21, _32).getLength(),
+                Float3(_12, _22, _32).getLength(),
+                Float3(_13, _23, _33).getLength()
+            );
         }
 
         float Float4x4::getDeterminant(void) const

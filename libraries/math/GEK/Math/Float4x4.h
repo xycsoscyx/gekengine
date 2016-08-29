@@ -86,9 +86,9 @@ namespace Gek
 
             Math::Float4x4 &setIdentity(void);
             Math::Float4x4 &setRotationIdentity(void);
-            Math::Float4x4 &setScaling(float scalar);
-            Math::Float4x4 &setScaling(const Float3 &vector);
-            Math::Float4x4 &setTranslation(const Float3 &vector);
+            Math::Float4x4 &setScaling(float scale);
+            Math::Float4x4 &setScaling(const Float3 &scale);
+            Math::Float4x4 &setTranslation(const Float3 &translation);
             Math::Float4x4 &setEulerRotation(float pitch, float yaw, float roll);
             Math::Float4x4 &setAngularRotation(const Float3 &axis, float radians);
             Math::Float4x4 &setPitchRotation(float radians);

@@ -31,7 +31,7 @@ namespace Gek
 
             inline Math::Float4x4 getMatrix(void) const
             {
-                return rotation.getMatrix().setScaling(scale).setTranslation(position);
+                return rotation.getMatrix().setTranslation(position);
             }
         };
     }; // namespace Components
