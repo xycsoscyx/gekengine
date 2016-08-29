@@ -22,13 +22,6 @@
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 
-static void deSerializeCollision(void* const serializeHandle, void* const buffer, int size)
-{
-	auto data = (std::pair<uint32_t, uint8_t *> *)serializeHandle;
-	memcpy(buffer, &data->second[data->first], size);
-	data->first += size;
-}
-
 namespace Gek
 {
     namespace Newton
@@ -49,6 +42,11 @@ namespace Gek
                 uint16_t type;
                 uint16_t version;
             };
+
+			struct HullHeader : public Header
+			{
+				uint8_t serializationData[1];
+			};
 
             struct TreeHeader : public Header
             {
@@ -534,10 +532,30 @@ namespace Gek
                         throw Newton::InvalidModelVersion();
                     }
 
+					struct DeSerializationData
+					{
+						std::vector<uint8_t> &buffer;
+						std::size_t offset;
+
+						DeSerializationData(std::vector<uint8_t> &buffer, uint8_t *end)
+							: buffer(buffer)
+							, offset(end - &buffer.at(0))
+						{
+						}
+					};
+
+					auto deSerializeCollision = [](void* const serializeHandle, void* const buffer, int size) -> void
+					{
+						auto data = (DeSerializationData *)serializeHandle;
+						memcpy(buffer, &data->buffer.at(data->offset), size);
+						data->offset += size;
+					};
+
                     if (header->type == 1)
                     {
-						std::pair<uint32_t, uint8_t *> data = std::make_pair(0, (uint8_t *)(header + sizeof(Header)));
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
+						HullHeader *hullHeader = (HullHeader *)header;
+						DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
+						newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
                     }
                     else if (header->type == 2)
                     {
@@ -548,7 +566,7 @@ namespace Gek
                             staticSurfaceMap[materialIndex] = loadSurface(materialHeader.name);
                         }
 
-						std::pair<uint32_t, uint8_t *> data = std::make_pair(0, (uint8_t *)&treeHeader[treeHeader->materialCount]);
+						DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
                     }
                     else

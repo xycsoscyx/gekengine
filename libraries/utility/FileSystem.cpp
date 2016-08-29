@@ -6,7 +6,7 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		static const uint32_t chunkSize = 1024*128;
+		static const uint32_t chunkSize = 1024*512;
 
 		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list)
 		{
