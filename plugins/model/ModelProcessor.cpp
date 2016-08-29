@@ -172,12 +172,10 @@ namespace Gek
         {
             Model &model;
             MaterialHandle skin;
-            const Math::Color &color;
 
-            Data(Model &model, MaterialHandle skin, const Math::Color &color)
+            Data(Model &model, MaterialHandle skin)
                 : model(model)
                 , skin(skin)
-                , color(color)
             {
             }
         };
@@ -186,14 +184,9 @@ namespace Gek
             struct Instance
         {
             Math::Float4x4 matrix;
-            Math::Color color;
-            Math::Float3 scale;
-            float buffer;
 
-            Instance(const Math::Float4x4 &matrix, const Math::Color &color, const Math::Float3 &scale)
+            Instance(const Math::Float4x4 &matrix)
                 : matrix(matrix)
-                , color(color)
-                , scale(scale)
             {
             }
         };
@@ -335,13 +328,7 @@ namespace Gek
                     skinMaterial = resources->loadMaterial(modelComponent.skin);
                 }
 
-                std::reference_wrapper<const Math::Color> color = Math::Color::White;
-                if (entity->hasComponent<Components::Color>())
-                {
-                    color = std::cref(entity->getComponent<Components::Color>().value);
-                }
-
-                Data data(pair.first->second, skinMaterial, color);
+                Data data(pair.first->second, skinMaterial);
                 entityDataMap.insert(std::make_pair(entity, data));
             }
         }
@@ -394,7 +381,9 @@ namespace Gek
                     {
                         auto &materialList = visibleMap[&model];
                         auto &instanceList = materialList[data.skin];
-                        instanceList.push_back(Instance((matrix * viewMatrix), data.color, transformComponent.scale));
+
+                        auto instance(matrix * viewMatrix);
+                        instanceList.push_back(Instance(instance));
                     }
                 }
             });

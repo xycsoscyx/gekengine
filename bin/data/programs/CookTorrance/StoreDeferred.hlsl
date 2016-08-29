@@ -6,7 +6,7 @@
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be in sRGB format and converted to linear automatically
-    float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
+    float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     
     [branch]
     if(albedo.a < 0.5)

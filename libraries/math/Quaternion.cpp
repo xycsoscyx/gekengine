@@ -10,7 +10,7 @@ namespace Gek
     {
         const Quaternion Quaternion::Identity(0.0f, 0.0f, 0.0f, 1.0f);
 
-        void Quaternion::setEulerRotation(float pitch, float yaw, float roll)
+        Quaternion &Quaternion::setEulerRotation(float pitch, float yaw, float roll)
         {
             float sinPitch(std::sin(pitch * 0.5f));
             float sinYaw(std::sin(yaw * 0.5f));
@@ -22,9 +22,10 @@ namespace Gek
             y = ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll));
             z = ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll));
             w = ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll));
+            return (*this);
         }
 
-        void Quaternion::setAngularRotation(const Float3 &axis, float radians)
+        Quaternion &Quaternion::setAngularRotation(const Float3 &axis, float radians)
         {
             float halfRadians = (radians * 0.5f);
             Float3 normal(axis.getNormal());
@@ -33,9 +34,10 @@ namespace Gek
             y = (normal.y * sinAngle);
             z = (normal.z * sinAngle);
             w = std::cos(halfRadians);
+            return (*this);
         }
 
-        Float4x4 Quaternion::getMatrix(const Float3 &translation) const
+        Float4x4 Quaternion::getMatrix(void) const
         {
             float xx(x * x);
             float yy(y * y);
@@ -44,10 +46,7 @@ namespace Gek
             float length(xx + yy + zz + ww);
             if (length == 0.0f)
             {
-                return Float4x4({ 1.0f, 0.0f, 0.0f, 0.0f,
-                                  0.0f, 1.0f, 0.0f, 0.0f,
-                                  0.0f, 0.0f, 1.0f, 0.0f,
-                                  translation.x, translation.y, translation.z, 1.0f });
+                return Float4x4::Identity;
             }
             else
             {
@@ -61,7 +60,7 @@ namespace Gek
                 return Float4x4({ ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
                                    (2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
                                    (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f,
-                                    translation.x, translation.y, translation.z, 1.0f });
+                                    0.0f, 0.0f, 0.0f, 1.0f });
             }
         }
 

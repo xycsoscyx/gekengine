@@ -7,7 +7,6 @@
         <position type="float3" semantic="POSITION" semanticindex="0" />
         <texCoord type="float2" semantic="TEXCOORD" semanticindex="0" />
         <normal type="float3" semantic="NORMAL" semanticindex="0" />
-        <color type="float4" semantic="COLOR" semanticindex="0" />
     </output>
     <programs>
         <vertex entry="mainVertexProgram">particles</vertex>

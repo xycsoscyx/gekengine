@@ -84,18 +84,19 @@ namespace Gek
                 setAngularRotation(axis, radians);
             }
 
-            void setIdentity(void);
-            void setRotationIdentity(void);
-            void setScaling(float scalar);
-            void setScaling(const Float3 &vector);
-            void setEulerRotation(float pitch, float yaw, float roll);
-            void setAngularRotation(const Float3 &axis, float radians);
-            void setPitchRotation(float radians);
-            void setYawRotation(float radians);
-            void setRollRotation(float radians);
-            void setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
-            void setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
-            void setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
+            Math::Float4x4 &setIdentity(void);
+            Math::Float4x4 &setRotationIdentity(void);
+            Math::Float4x4 &setScaling(float scalar);
+            Math::Float4x4 &setScaling(const Float3 &vector);
+            Math::Float4x4 &setTranslation(const Float3 &vector);
+            Math::Float4x4 &setEulerRotation(float pitch, float yaw, float roll);
+            Math::Float4x4 &setAngularRotation(const Float3 &axis, float radians);
+            Math::Float4x4 &setPitchRotation(float radians);
+            Math::Float4x4 &setYawRotation(float radians);
+            Math::Float4x4 &setRollRotation(float radians);
+            Math::Float4x4 &setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
+            Math::Float4x4 &setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
+            Math::Float4x4 &setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
 
             Quaternion getQuaternion(void) const;
 
@@ -105,8 +106,8 @@ namespace Gek
             Float4x4 getInverse(void) const;
             Float4x4 getRotation(void) const;
 
-            void transpose(void);
-            void invert(void);
+            Math::Float4x4 &transpose(void);
+            Math::Float4x4 &invert(void);
 
             Float4 operator [] (int row) const;
             Float4 &operator [] (int row);

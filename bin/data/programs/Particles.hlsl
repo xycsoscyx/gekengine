@@ -57,6 +57,5 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     outputVertex.normal = normalize(float3(normal.xy, -1.0));
     outputVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     outputVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
-    outputVertex.color = (instanceData.age > 0.0 ? Particles::colorMap.SampleLevel(Global::linearClampSampler, age, 0) : 0.0);
     return getProjection(outputVertex);
 }

@@ -17,7 +17,7 @@ static const float k_1 = 0.1;
 // http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float4 albedo = (Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color);
+    float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     float3 premultipliedReflectionAndEmission = albedo.rgb;
     float coverage = albedo.a;
     float3 transmissionCoefficient = 1.0 - albedo.a;

@@ -461,12 +461,10 @@ namespace Gek
         {
             Shape &shape;
             MaterialHandle skin;
-            const Math::Color &color;
 
-            Data(Shape &shape, MaterialHandle skin, const Math::Color &color)
+            Data(Shape &shape, MaterialHandle skin)
                 : shape(shape)
                 , skin(skin)
-                , color(color)
             {
             }
         };
@@ -475,14 +473,9 @@ namespace Gek
             struct Instance
         {
             Math::Float4x4 matrix;
-            Math::Color color;
-            Math::Float3 scale;
-            float buffer;
 
-            Instance(const Math::Float4x4 &matrix, const Math::Color &color, const Math::Float3 &scale)
+            Instance(const Math::Float4x4 &matrix)
                 : matrix(matrix)
-                , color(color)
-                , scale(scale)
             {
             }
         };
@@ -603,13 +596,7 @@ namespace Gek
                     };
                 }
 
-                std::reference_wrapper<const Math::Color> color = Math::Color::White;
-                if (entity->hasComponent<Components::Color>())
-                {
-                    color = entity->getComponent<Components::Color>().value;
-                }
-
-                Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin), color);
+                Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin));
                 entityDataMap.insert(std::make_pair(entity, data));
             }
         }
@@ -661,7 +648,9 @@ namespace Gek
                 {
                     auto &materialMap = visibleMap[&data.shape];
                     auto &instanceList = materialMap[data.skin];
-                    instanceList.push_back(Instance((matrix * viewMatrix), data.color, transformComponent.scale));
+
+                    auto instance(matrix * viewMatrix);
+                    instanceList.push_back(Instance(instance));
                 }
             });
 

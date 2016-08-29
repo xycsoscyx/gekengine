@@ -348,7 +348,7 @@ namespace Gek
 
                 // integrate body angular velocity
                 Math::Quaternion bodyRotation(integrateOmega(matrix.getQuaternion(), omega, frameTime));
-                matrix = bodyRotation.getMatrix(matrix.translation);
+                matrix = bodyRotation.getMatrix().setTranslation(matrix.translation);
 
                 // integrate linear velocity
                 Math::Float3 velocity;
