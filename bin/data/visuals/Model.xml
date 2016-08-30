@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <visual>
     <input>
-		<position type="float3" semantic="POSITION" semanticindex="0" slotclass="vertex" slotindex="0" />
-		<texCoord type="float2" semantic="TEXCOORD" semanticindex="0" slotclass="vertex" slotindex="0" />
+        <position type="float3" semantic="POSITION" semanticindex="0" slotclass="vertex" slotindex="0" />
+		    <texCoord type="float2" semantic="TEXCOORD" semanticindex="0" slotclass="vertex" slotindex="0" />
         <normal type="float3" semantic="NORMAL" semanticindex="0" slotclass="vertex" slotindex="0" />
     </input>
     <output>

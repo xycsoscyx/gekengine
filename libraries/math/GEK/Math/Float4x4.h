@@ -84,19 +84,17 @@ namespace Gek
                 setAngularRotation(axis, radians);
             }
 
-            Math::Float4x4 &setIdentity(void);
-            Math::Float4x4 &setRotationIdentity(void);
-            Math::Float4x4 &setScaling(float scale);
-            Math::Float4x4 &setScaling(const Float3 &scale);
-            Math::Float4x4 &setTranslation(const Float3 &translation);
-            Math::Float4x4 &setEulerRotation(float pitch, float yaw, float roll);
-            Math::Float4x4 &setAngularRotation(const Float3 &axis, float radians);
-            Math::Float4x4 &setPitchRotation(float radians);
-            Math::Float4x4 &setYawRotation(float radians);
-            Math::Float4x4 &setRollRotation(float radians);
-            Math::Float4x4 &setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
-            Math::Float4x4 &setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
-            Math::Float4x4 &setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
+			static Math::Float4x4 setScaling(float scale);
+			static Math::Float4x4 setScaling(const Float3 &scale);
+			static Math::Float4x4 setTranslation(const Float3 &translation);
+			static Math::Float4x4 setEulerRotation(float pitch, float yaw, float roll);
+			static Math::Float4x4 setAngularRotation(const Float3 &axis, float radians);
+			static Math::Float4x4 setPitchRotation(float radians);
+			static Math::Float4x4 setYawRotation(float radians);
+			static Math::Float4x4 setRollRotation(float radians);
+			static Math::Float4x4 setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
+			static Math::Float4x4 setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
+			static Math::Float4x4 setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
 
             Quaternion getQuaternion(void) const;
 
