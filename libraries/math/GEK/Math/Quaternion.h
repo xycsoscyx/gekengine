@@ -54,30 +54,14 @@ namespace Gek
                 normalize();
             }
 
-            Quaternion(float pitch, float yaw, float roll)
-            {
-                setEulerRotation(pitch, yaw, roll);
-            }
-
-            Quaternion(const Float3 &axis, float radians)
-            {
-                setAngularRotation(axis, radians);
-            }
-
             inline Quaternion &set(float x, float y, float z, float w)
             {
                 simd = _mm_setr_ps(x, y, z, w);
                 return (*this);
             }
 
-            inline Quaternion &set(const Quaternion &vector)
-            {
-                simd = vector.simd;
-                return (*this);
-            }
-
-            Quaternion &setEulerRotation(float pitch, float yaw, float roll);
-            Quaternion &setAngularRotation(const Float3 &axis, float radians);
+            static Quaternion createEulerRotation(float pitch, float yaw, float roll);
+            static Quaternion createAngularRotation(const Float3 &axis, float radians);
 
             Float4x4 getMatrix(void) const;
 

@@ -13,7 +13,7 @@ namespace Gek
 
         void Filter::save(Plugin::Population::ComponentDefinition &componentData) const
         {
-            saveParameter(componentData, nullptr, String(list, L','));
+            saveParameter(componentData, nullptr, String::create(list, L','));
         }
 
         void Filter::load(const Plugin::Population::ComponentDefinition &componentData)

@@ -126,9 +126,8 @@ namespace Gek
                 Camera data;
                 if (!cameraComponent.name.empty())
                 {
-                    String name(L"camera:%v", cameraComponent.name);
                     auto backBuffer = renderer->getDevice()->getBackBuffer();
-                    data.target = resources->createTexture(name, Video::Format::R8G8B8A8_UNORM_SRGB, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.name), Video::Format::R8G8B8A8_UNORM_SRGB, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
                 }
 
                 entityDataMap.insert(std::make_pair(entity, data));
@@ -163,8 +162,7 @@ namespace Gek
                     float width = float(backBuffer->getWidth());
                     float height = float(backBuffer->getHeight());
 
-                    Math::Float4x4 projectionMatrix;
-                    projectionMatrix.setPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip);
+                    Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
                     renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
                 });

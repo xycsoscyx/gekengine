@@ -138,7 +138,7 @@ namespace Gek
                     {
                         Math::Float3 euler;
                         shuntingYard.evaluate(expression, euler);
-                        result.setEulerRotation(euler.x, euler.y, euler.z);
+                        result = Math::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
                     }
 
                     break;

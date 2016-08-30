@@ -6,15 +6,11 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list)
+		String getFileName(const wchar_t *rootDirectory, const std::vector<String> &list)
 		{
-			std::experimental::filesystem::path fileName(rootDirectory);
-			for (const auto &name : list)
-			{
-                fileName.append(name.begin(), name.end());
-			}
-
-			return fileName.wstring();
+            String fileName(rootDirectory);
+            fileName.join(list, std::experimental::filesystem::path::preferred_separator);
+            return fileName;
 		}
 
 		String replaceExtension(const wchar_t *fileName, const wchar_t *extension)

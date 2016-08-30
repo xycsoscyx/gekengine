@@ -195,13 +195,16 @@ namespace Gek
                 Math::Float3 point1(halfHeight, player.innerRadius, 0.0f);
                 for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
                 {
-                    Math::Float4x4 rotation;
-                    rotation.setPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps);
+                    Math::Float4x4 rotation(Math::Float4x4::createPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps));
                     convexPoints[0][currentPoint] = (rotation * point0);
                     convexPoints[1][currentPoint] = (rotation * point1);
                 }
 
                 NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
+                if (supportShape == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
 
                 // create the outer thick cylinder
                 Math::Float4x4 outerShapeMatrix(Math::Float4x4::Identity);
@@ -209,10 +212,20 @@ namespace Gek
                 sphereCastOrigin = ((capsuleHeight * 0.5f) + player.stairStep);
                 outerShapeMatrix.translation = (outerShapeMatrix.ny * sphereCastOrigin);
                 NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.25f, 0.5f, 0, outerShapeMatrix.data);
+                if (bodyCapsule == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 NewtonCollisionSetScale(bodyCapsule, capsuleHeight, (player.outerRadius * 4.0f), (player.outerRadius * 4.0f));
 
                 // compound collision player controller
                 NewtonCollision* const playerShape = NewtonCreateCompoundCollision(newtonWorld, 0);
+                if (playerShape == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 NewtonCompoundCollisionBeginAddRemove(playerShape);
                 NewtonCompoundCollisionAddSubCollision(playerShape, supportShape);
                 NewtonCompoundCollisionAddSubCollision(playerShape, bodyCapsule);
@@ -222,6 +235,11 @@ namespace Gek
                 Math::Float4x4 matrix(transform.getMatrix());
                 matrix.translation -= (matrix.ny * player.height);
                 newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, matrix.data);
+                if (newtonBody == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
 
                 // players must have weight, otherwise they are infinitely strong when they collide
@@ -238,15 +256,28 @@ namespace Gek
                 point1.set(castHeight, castRadius, 0.0f);
                 for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
                 {
-                    Math::Float4x4 rotation;
-                    rotation.setPitchRotation(currentPoint * 2.0f * Math::Pi / numberOfSteps);
+                    Math::Float4x4 rotation(Math::Float4x4::createPitchRotation(currentPoint * 2.0f * Math::Pi / numberOfSteps));
                     convexPoints[0][currentPoint] = (rotation * point0);
                     convexPoints[1][currentPoint] = (rotation * point1);
                 }
 
                 newtonCastingShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
+                if (newtonCastingShape == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 newtonSupportShape = NewtonCompoundCollisionGetCollisionFromNode(bodyShape, NewtonCompoundCollisionGetNodeByIndex(bodyShape, 0));
+                if (newtonSupportShape == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 newtonUpperBodyShape = NewtonCompoundCollisionGetCollisionFromNode(bodyShape, NewtonCompoundCollisionGetNodeByIndex(bodyShape, 1));
+                if (newtonUpperBodyShape == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
 
                 NewtonDestroyCollision(bodyCapsule);
                 NewtonDestroyCollision(supportShape);
@@ -348,7 +379,8 @@ namespace Gek
 
                 // integrate body angular velocity
                 Math::Quaternion bodyRotation(integrateOmega(matrix.getQuaternion(), omega, frameTime));
-                matrix = bodyRotation.getMatrix().setTranslation(matrix.translation);
+                matrix = bodyRotation.getMatrix();
+                matrix.translation = matrix.translation;
 
                 // integrate linear velocity
                 Math::Float3 velocity;
@@ -553,8 +585,10 @@ namespace Gek
 
             void setDesiredOmega(const Math::Quaternion &rotation, float frameTime) const
             {
+                static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
+
                 Math::Quaternion quaternion0(rotation);
-                Math::Quaternion quaternion1(Math::Float3(0.0f, 1.0f, 0.0f), headingAngle);
+                Math::Quaternion quaternion1(Math::Quaternion::createAngularRotation(upAxis, headingAngle));
                 if (quaternion0.dot(quaternion1) < 0.0f)
                 {
                     quaternion0 *= -1.0f;

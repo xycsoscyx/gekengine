@@ -7,11 +7,12 @@ namespace Gek
 {
 	namespace Math
 	{
-		const Float4x4 Float4x4::Identity({
-			Float4(1.0f, 0.0f, 0.0f, 0.0f).simd,
-			Float4(0.0f, 1.0f, 0.0f, 0.0f).simd,
-			Float4(0.0f, 0.0f, 1.0f, 0.0f).simd,
-			Float4::Identity.simd,
+		const Float4x4 Float4x4::Identity(
+        {
+			1.0f, 0.0f, 0.0f, 0.0f,
+			0.0f, 1.0f, 0.0f, 0.0f,
+			0.0f, 0.0f, 1.0f, 0.0f,
+			0.0f, 0.0f, 0.0f, 1.0f,
 		});
 
 		Float4x4::Float4x4(const __m128(&data)[4])
@@ -40,37 +41,29 @@ namespace Gek
 		{
 		}
 
-		Math::Float4x4 Float4x4::setScaling(float scale)
+		Math::Float4x4 Float4x4::createScaling(float scale)
 		{
-			return Float4x4({
-				Float4(scale, 0.0f, 0.0f, 0.0f).simd,
-				Float4(0.0f, scale, 0.0f, 0.0f).simd,
-				Float4(0.0f, 0.0f, scale, 0.0f).simd,
-				Float4::Identity.simd,
+			return Float4x4(
+            {
+				scale, 0.0f, 0.0f, 0.0f,
+				0.0f, scale, 0.0f, 0.0f,
+				0.0f, 0.0f, scale, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
 			});
 		}
 
-		Math::Float4x4 Float4x4::setScaling(const Float3 &scale)
+		Math::Float4x4 Float4x4::createScaling(const Float3 &scale)
 		{
-			return Float4x4({
-				Float4(scale.x, 0.0f, 0.0f, 0.0f).simd,
-				Float4(0.0f, scale.y, 0.0f, 0.0f).simd,
-				Float4(0.0f, 0.0f, scale.z, 0.0f).simd,
-				Float4::Identity.simd,
-			});
+			return Float4x4(
+            {
+				scale.x, 0.0f, 0.0f, 0.0f,
+				0.0f, scale.y, 0.0f, 0.0f,
+				0.0f, 0.0f, scale.z, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            });
 		}
 
-		Math::Float4x4 Float4x4::setTranslation(const Float3 &translation)
-		{
-			return Float4x4({
-				Float4(1.0f, 0.0f, 0.0f, 0.0f).simd,
-				Float4(0.0f, 1.0f, 0.0f, 0.0f).simd,
-				Float4(0.0f, 0.0f, 1.0f, 0.0f).simd,
-				translation.w(1.0f).simd,
-			});
-		}
-
-		Math::Float4x4 Float4x4::setEulerRotation(float pitch, float yaw, float roll)
+		Math::Float4x4 Float4x4::createEulerRotation(float pitch, float yaw, float roll)
 		{
 			float cosPitch(std::cos(pitch));
 			float sinPitch(std::sin(pitch));
@@ -81,70 +74,76 @@ namespace Gek
 			float cosPitchSinYaw(cosPitch * sinYaw);
 			float sinPitchSinYaw(sinPitch * sinYaw);
 
-			return Float4x4({
-				Float4((cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw, 0.0f).simd,
-				Float4((sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw), 0.0f).simd,
-				Float4((-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw), 0.0f).simd,
-				Float4::Identity.simd,
-			});
+			return Float4x4(
+            {
+				(cosYaw * cosRoll), (-cosYaw * sinRoll), sinYaw, 0.0f,
+				(sinPitchSinYaw * cosRoll + cosPitch * sinRoll), (-sinPitchSinYaw * sinRoll + cosPitch * cosRoll), (-sinPitch * cosYaw), 0.0f,
+				(-cosPitchSinYaw * cosRoll + sinPitch * sinRoll), (cosPitchSinYaw * sinRoll + sinPitch * cosRoll), (cosPitch * cosYaw), 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            });
 		}
 
-		Math::Float4x4 Float4x4::setAngularRotation(const Float3 &axis, float radians)
+		Math::Float4x4 Float4x4::createAngularRotation(const Float3 &axis, float radians)
 		{
 			float cosAngle(std::cos(radians));
 			float sinAngle(std::sin(radians));
 
-			return Float4x4({
-				Float4((cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)), 0.0f).simd,
-				Float4((-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)), 0.0f).simd,
-				Float4((axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)), 0.0f).simd,
-				Float4::Identity.simd,
-			});
+			return Float4x4(
+            {
+				(cosAngle + axis.x * axis.x * (1.0f - cosAngle)), (axis.z * sinAngle + axis.y * axis.x * (1.0f - cosAngle)), (-axis.y * sinAngle + axis.z * axis.x * (1.0f - cosAngle)), 0.0f,
+				(-axis.z * sinAngle + axis.x * axis.y * (1.0f - cosAngle)), (cosAngle + axis.y * axis.y * (1.0f - cosAngle)), (axis.x * sinAngle + axis.z * axis.y * (1.0f - cosAngle)), 0.0f,
+				(axis.y * sinAngle + axis.x * axis.z * (1.0f - cosAngle)), (-axis.x * sinAngle + axis.y * axis.z * (1.0f - cosAngle)), (cosAngle + axis.z * axis.z * (1.0f - cosAngle)), 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            });
 		}
 
-		Math::Float4x4 Float4x4::setPitchRotation(float radians)
+		Math::Float4x4 Float4x4::createPitchRotation(float radians)
 		{
 			float cosAngle(std::cos(radians));
 			float sinAngle(std::sin(radians));
 
-			return Float4x4({
-				Float4(1.0f, 0.0f, 0.0f, 0.0f).simd,
-				Float4(0.0f, cosAngle, sinAngle, 0.0f).simd,
-				Float4(0.0f, -sinAngle, cosAngle, 0.0f).simd,
-				Float4::Identity.simd,
-			});
+			return Float4x4(
+            {
+				1.0f, 0.0f, 0.0f, 0.0f,
+				0.0f, cosAngle, sinAngle, 0.0f,
+				0.0f, -sinAngle, cosAngle, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            });
 		}
 
-		Math::Float4x4 Float4x4::setYawRotation(float radians)
+		Math::Float4x4 Float4x4::createYawRotation(float radians)
 		{
 			float cosAngle(std::cos(radians));
 			float sinAngle(std::sin(radians));
 
-			return Float4x4({
-				Float4(cosAngle, 0.0f, -sinAngle, 0.0f).simd,
-				Float4(0.0f, 1.0f, 0.0f, 0.0f).simd,
-				Float4(sinAngle, 0.0f, cosAngle, 0.0f).simd,
-				Float4::Identity.simd,
-			});
+			return Float4x4(
+            {
+				cosAngle, 0.0f, -sinAngle, 0.0f,
+				0.0f, 1.0f, 0.0f, 0.0f,
+				sinAngle, 0.0f, cosAngle, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            });
 		}
 
-		Math::Float4x4 Float4x4::setRollRotation(float radians)
+		Math::Float4x4 Float4x4::createRollRotation(float radians)
 		{
 			float cosAngle(std::cos(radians));
 			float sinAngle(std::sin(radians));
 
-			return Float4x4({
-				Float4(cosAngle, sinAngle, 0.0f, 0.0f).simd,
-				Float4(-sinAngle, cosAngle, 0.0f, 0.0f).simd,
-				Float4(0.0f, 0.0f, 0.0f, 1.0f).simd,
-				Float4::Identity.simd,
-			});
+			return Float4x4(
+            {
+				cosAngle, sinAngle, 0.0f, 0.0f,
+				-sinAngle, cosAngle, 0.0f, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
+            });
 		}
 
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/bb205347(v=vs.85).aspx
-		Math::Float4x4 Float4x4::setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
+		Math::Float4x4 Float4x4::createOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
 		{
-			return Float4x4({
+			return Float4x4(
+            {
 				(2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
 				0.0f, (2.0f / (top - bottom)), 0.0f, 0.0f,
 				0.0f, 0.0f, (1.0f / (farClip - nearClip)), 0.0f,
@@ -153,13 +152,14 @@ namespace Gek
 		}
 
 		// https://msdn.microsoft.com/en-us/library/windows/desktop/bb205350(v=vs.85).aspx
-		Math::Float4x4 Float4x4::setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
+		Math::Float4x4 Float4x4::createPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
 		{
 			float yScale(1.0f / std::tan(fieldOfView * 0.5f));
 			float xScale(yScale / aspectRatio);
 			float denominator(farClip - nearClip);
 
-			return Float4x4({
+			return Float4x4(
+            {
 				xScale, 0.0f, 0.0f, 0.0f,
 				0.0f, yScale, 0.0f, 0.0f,
 				0.0f, 0.0f, (farClip / denominator), 1.0f,
@@ -167,16 +167,17 @@ namespace Gek
 			});
 		}
 
-		Math::Float4x4 Float4x4::setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
+		Math::Float4x4 Float4x4::createLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector)
 		{
 			Float3 forward((target - source).getNormal());
 			Float3 left(worldUpVector.cross(forward).getNormal());
 			Float3 up(forward.cross(left));
-			return Float4x4({
-				left.w(0.0f).simd,
-				up.w(0.0f).simd,
-				forward.w(0.0f).simd,
-				Float4::Identity.simd,
+			return Float4x4(
+            {
+                   left.x,    left.y,    left.z, 0.0f,
+                     up.x,      up.y,      up.z, 0.0f,
+                forward.x, forward.y, forward.z, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f,
 			});
 		}
 
@@ -186,7 +187,8 @@ namespace Gek
 			if (trace > Math::Epsilon)
 			{
 				float denominator(0.5f / std::sqrt(trace));
-				return Quaternion({
+				return Quaternion(
+                {
 					((table[1][2] - table[2][1]) * denominator),
 					((table[2][0] - table[0][2]) * denominator),
 					((table[0][1] - table[1][0]) * denominator),
@@ -198,7 +200,8 @@ namespace Gek
 				if ((table[0][0] > table[1][1]) && (table[0][0] > table[2][2]))
 				{
 					float denominator(2.0f * std::sqrt(1.0f + table[0][0] - table[1][1] - table[2][2]));
-					return Quaternion({
+					return Quaternion(
+                    {
 						(0.25f * denominator),
 						((table[1][0] + table[0][1]) / denominator),
 						((table[2][0] + table[0][2]) / denominator),
@@ -208,7 +211,8 @@ namespace Gek
 				else if (table[1][1] > table[2][2])
 				{
 					float denominator(2.0f * (std::sqrt(1.0f + table[1][1] - table[0][0] - table[2][2])));
-					return Quaternion({
+					return Quaternion(
+                    {
 						((table[1][0] + table[0][1]) / denominator),
 						(0.25f * denominator),
 						((table[2][1] + table[1][2]) / denominator),
@@ -218,7 +222,8 @@ namespace Gek
 				else
 				{
 					float denominator(2.0f * (std::sqrt(1.0f + table[2][2] - table[0][0] - table[1][1])));
-					return Quaternion({
+					return Quaternion(
+                    {
 						((table[2][0] + table[0][2]) / denominator),
 						((table[2][1] + table[1][2]) / denominator),
 						(0.25f * denominator),
@@ -235,7 +240,8 @@ namespace Gek
 
 		float Float4x4::getDeterminant(void) const
 		{
-			return ((table[0][0] * table[1][1] - table[1][0] * table[0][1]) *
+			return (
+                (table[0][0] * table[1][1] - table[1][0] * table[0][1]) *
 				(table[2][2] * table[3][3] - table[3][2] * table[2][3]) -
 				(table[0][0] * table[2][1] - table[2][0] * table[0][1]) *
 				(table[1][2] * table[3][3] - table[3][2] * table[1][3]) +
@@ -246,7 +252,8 @@ namespace Gek
 				(table[1][0] * table[3][1] - table[3][0] * table[1][1]) *
 				(table[0][2] * table[2][3] - table[2][2] * table[0][3]) +
 				(table[2][0] * table[3][1] - table[3][0] * table[2][1]) *
-				(table[0][2] * table[1][3] - table[1][2] * table[0][3]));
+				(table[0][2] * table[1][3] - table[1][2] * table[0][3])
+            );
 		}
 
 		Float4x4 Float4x4::getTranspose(void) const
@@ -300,12 +307,12 @@ namespace Gek
 		Float4x4 Float4x4::getRotation(void) const
 		{
 			// Sets row/column 4 to identity
-			return Float4x4(
-			{
-				Float4(rows[0].x, rows[0].y, rows[0].z, 0.0f).simd,
-				Float4(rows[1].x, rows[1].y, rows[1].z, 0.0f).simd,
-				Float4(rows[2].x, rows[2].y, rows[2].z, 0.0f).simd,
-				Float4::Identity.simd,
+            return Float4x4(
+            {
+                _11, _12, _13, 0.0f,
+                _21, _22, _32, 0.0f,
+                _31, _32, _33, 0.0f,
+				0.0f, 0.0f, 0.0f, 1.0f,
 			});
 		}
 
@@ -380,7 +387,8 @@ namespace Gek
 
 		Float4x4 Float4x4::operator * (const Float4x4 &matrix) const
 		{
-			return Float4x4({ 
+			return Float4x4(
+            {
 				_mm_add_ps(_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(0, 0, 0, 0)), matrix.simd[0]),
 									_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(1, 1, 1, 1)), matrix.simd[1])),
 							_mm_add_ps(_mm_mul_ps(_mm_shuffle_ps(simd[0], simd[0], _MM_SHUFFLE(2, 2, 2, 2)), matrix.simd[2]),
@@ -402,7 +410,8 @@ namespace Gek
 
 		Float3 Float4x4::operator * (const Float3 &vector) const
 		{
-			return Float3({
+			return Float3(
+            {
 				((vector.x * _11) + (vector.y * _21) + (vector.z * _31)),
 				((vector.x * _12) + (vector.y * _22) + (vector.z * _32)),
 				((vector.x * _13) + (vector.y * _23) + (vector.z * _33)),
@@ -411,7 +420,8 @@ namespace Gek
 
 		Float4 Float4x4::operator * (const Float4 &vector) const
 		{
-			return Float4({
+			return Float4(
+            {
 				((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
 				((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
 				((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),

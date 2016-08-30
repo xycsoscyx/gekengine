@@ -202,9 +202,9 @@ namespace Gek
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = backBuffer->getWidth();
                 uint32_t displayHeight = backBuffer->getHeight();
-                globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, String(L"%v", displayWidth));
-                globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, String(L"%v", displayHeight));
-                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, String(L"(%v,%v)", displayWidth, displayHeight));
+                globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
+                globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
+                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
                 for (auto &defineNode : shaderNode.getChild(L"defines").children)
                 {
                     BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
@@ -246,7 +246,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float2 vector = Evaluator::get<Math::Float2>(value);
-                            result.append(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
+                            result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
                             break;
                         }
 
@@ -254,7 +254,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float2 vector = Evaluator::get<Math::Float2>(value);
-                            result.append(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
+                            result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
                             break;
                         }
 
@@ -266,7 +266,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float3 vector = Evaluator::get<Math::Float3>(value);
-                            result.append(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
+                            result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
                             break;
                         }
 
@@ -274,7 +274,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float3 vector = Evaluator::get<Math::Float3>(value);
-                            result.append(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
+                            result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
                             break;
                         }
 
@@ -286,7 +286,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float4 vector = Evaluator::get<Math::Float4>(value);
-                            result.append(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
+                            result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
                             break;
                         }
 
@@ -294,7 +294,7 @@ namespace Gek
                         if (true)
                         {
                             Math::Float4 vector = Evaluator::get<Math::Float4>(value);
-                            result.append(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
+                            result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
                             break;
                         }
 
@@ -317,15 +317,15 @@ namespace Gek
                             String format(elementNode.getAttribute(L"format", L"bool"));
                             if (format.compareNoCase(L"int") == 0)
                             {
-                                inputData.append(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else if (format.compareNoCase(L"uint") == 0)
                             {
-                                inputData.append(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else if (format.compareNoCase(L"bool") == 0)
                             {
-                                inputData.append(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else
                             {
@@ -346,11 +346,11 @@ namespace Gek
                             uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
                             if (type.compareNoCase(L"float4x4") == 0)
                             {
-                                inputData.append(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else if (type.compareNoCase(L"float4x3") == 0)
                             {
-                                inputData.append(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else
                             {
@@ -359,7 +359,7 @@ namespace Gek
                                     throw InvalidElementType();
                                 }
 
-                                inputData.append(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
                             }
                         }
                     }
@@ -377,14 +377,14 @@ namespace Gek
                         }
 
                         lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                        lightConstantBuffer->setName(String(L"%v:lightConstantBuffer", shaderName));
+                        lightConstantBuffer->setName(String::create(L"%v:lightConstantBuffer", shaderName));
 
                         lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                        lightDataBuffer->setName(String(L"%v:lightDataBuffer", shaderName));
+                        lightDataBuffer->setName(String::create(L"%v:lightDataBuffer", shaderName));
 
                         globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
 
-                        lightingData.append(
+                        lightingData.format(
                             L"namespace Lighting\r\n" \
                             L"{\r\n" \
                             L"    cbuffer Parameters : register(b3)\r\n" \
@@ -445,8 +445,7 @@ namespace Gek
                     if (textureNode.attributes.count(L"source"))
                     {
                         resources->getShader(textureNode.attributes[L"source"], MaterialHandle());
-                        String resourceName(L"%v:%v:resource", textureNode.type, textureNode.attributes[L"source"]);
-                        resourceMap[textureNode.type] = resources->getResourceHandle(resourceName);
+                        resourceMap[textureNode.type] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureNode.type, textureNode.attributes[L"source"]));
                     }
                     else
                     {
@@ -467,7 +466,7 @@ namespace Gek
 
                         uint32_t flags = getTextureFlags(textureNode.getAttribute(L"flags", L"0"));
                         uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
-                        resourceMap[textureNode.type] = resources->createTexture(String(L"%v:%v:resource", textureNode.type, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
+                        resourceMap[textureNode.type] = resources->createTexture(String::create(L"%v:%v:resource", textureNode.type, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureNode.type, std::make_pair(textureWidth, textureHeight)));
                     }
 
@@ -487,7 +486,7 @@ namespace Gek
                     if (bufferNode.attributes.count(L"stride"))
                     {
                         uint32_t stride = evaluate(globalDefinesMap, bufferNode.getAttribute(L"stride"), BindType::UInt);
-                        resourceMap[bufferNode.type] = resources->createBuffer(String(L"%v:%v:buffer", bufferNode.type, shaderName), stride, size, Video::BufferType::Structured, flags);
+                        resourceMap[bufferNode.type] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferNode.type, shaderName), stride, size, Video::BufferType::Structured, flags);
                         resourceStructuresMap[bufferNode.type] = bufferNode.text;
                     }
                     else
@@ -510,7 +509,7 @@ namespace Gek
                         }
 
                         resourceMappingsMap[bufferNode.type] = std::make_pair(mapType, bindType);
-                        resourceMap[bufferNode.type] = resources->createBuffer(String(L"%v:%v:buffer", bufferNode.type, shaderName), format, size, Video::BufferType::Raw, flags);
+                        resourceMap[bufferNode.type] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferNode.type, shaderName), format, size, Video::BufferType::Raw, flags);
                     }
                 }
 
@@ -574,11 +573,11 @@ namespace Gek
                             case BindType::UInt:
                             case BindType::Half:
                             case BindType::Float:
-                                definesData.append(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
+                                definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
                                 break;
 
                             default:
-                                definesData.append(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                                definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
                                 break;
                             };
                         }
@@ -586,7 +585,7 @@ namespace Gek
                         String engineData;
                         if (!definesData.empty())
                         {
-                            engineData.append(
+                            engineData.format(
                                 L"namespace Defines\r\n" \
                                 L"{\r\n" \
                                 L"%v" \
@@ -611,7 +610,7 @@ namespace Gek
                             if (passNode.attributes.count("forward"))
                             {
                                 pass.mode = Pass::Mode::Forward;
-                                engineData.append(
+                                engineData.format(
                                     L"struct InputPixel\r\n" \
                                     L"{\r\n" \
                                     L"    float4 screen : SV_POSITION;\r\n" \
@@ -675,12 +674,12 @@ namespace Gek
                                     throw UnlistedRenderTarget();
                                 }
 
-                                outputData.append(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
+                                outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                             }
 
                             if (!outputData.empty())
                             {
-                                engineData.append(
+                                engineData.format(
                                     L"struct OutputPixel\r\n" \
                                     L"{\r\n" \
                                     L"%v" \
@@ -818,7 +817,7 @@ namespace Gek
                                     {
                                     case MapSource::File:
                                     case MapSource::Pattern:
-                                        resourceData.append(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
+                                        resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
                                         break;
 
                                     case MapSource::Resource:
@@ -828,7 +827,7 @@ namespace Gek
                                             if (resourceSearch != resourceMappingsMap.end())
                                             {
                                                 auto &resource = resourceSearch->second;
-                                                resourceData.append(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
+                                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
                                             }
                                         }
 
@@ -856,11 +855,11 @@ namespace Gek
                                 auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
-                                    resourceData.append(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                    resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                                 }
                                 else
                                 {
-                                    resourceData.append(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                    resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                                 }
 
                                 continue;
@@ -870,14 +869,14 @@ namespace Gek
                             if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = structureSearch->second;
-                                resourceData.append(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
+                                resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
                         }
 
                         if (!resourceData.empty())
                         {
-                            engineData.append(
+                            engineData.format(
                                 L"namespace Resources\r\n" \
                                 L"{\r\n" \
                                 L"%v" \
@@ -907,11 +906,11 @@ namespace Gek
                                 auto &resource = resourceMapSearch->second;
                                 if (resource.first == MapType::ByteAddressBuffer)
                                 {
-                                    unorderedAccessData.append(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                    unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                                 }
                                 else
                                 {
-                                    unorderedAccessData.append(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                    unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                                 }
 
                                 continue;
@@ -921,14 +920,14 @@ namespace Gek
                             if (structureSearch != resourceStructuresMap.end())
                             {
                                 auto &structure = structureSearch->second;
-                                unorderedAccessData.append(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                                unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
                                 continue;
                             }
                         }
 
                         if (!unorderedAccessData.empty())
                         {
-                            engineData.append(
+                            engineData.format(
                                 L"namespace UnorderedAccess\r\n" \
                                 L"{\r\n" \
                                 L"%v" \
@@ -983,7 +982,7 @@ namespace Gek
                 }
 
 				shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
-				shaderConstantBuffer->setName(String(L"%v:shaderConstantBuffer", shaderName));
+				shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
 
 			}
 

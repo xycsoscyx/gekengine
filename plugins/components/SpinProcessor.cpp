@@ -102,7 +102,7 @@ namespace Gek
 
             if (state == State::Active)
             {
-                Math::Quaternion rotation(0.0f, population->getFrameTime(), 0.0f);
+                Math::Quaternion rotation(Math::Quaternion::createEulerRotation(0.0f, population->getFrameTime(), 0.0f));
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity) -> void
                 {
                     auto &transform = entity->getComponent<Components::Transform>();

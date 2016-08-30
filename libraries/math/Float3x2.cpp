@@ -31,35 +31,33 @@ namespace Gek
         {
         }
 
-        void Float3x2::setIdentity(void)
+        Float3x2 Float3x2::setScaling(float scale)
         {
-            rows[0] = Math::Float2(1.0f, 0.0f);
-            rows[1] = Math::Float2(0.0f, 1.0f);
-            rows[2] = Math::Float2(0.0f, 0.0f);
+            return Float3x2(
+            {
+                scale, 0.0f,
+                0.0f, scale,
+                0.0f, 0.0f,
+            });
         }
 
-        void Float3x2::setRotationIdentity(void)
+        Float3x2 Float3x2::setScaling(const Float2 &scale)
         {
-            rows[0] = Math::Float2(1.0f, 0.0f);
-            rows[1] = Math::Float2(0.0f, 1.0f);
+            return Float3x2(
+            {
+                scale.x, 0.0f,
+                0.0f, scale.y,
+                0.0f, 0.0f,
+            });
         }
 
-        void Float3x2::setScaling(float scalar)
+        Float3x2 Float3x2::setRotation(float radians)
         {
-            _11 = scalar;
-            _22 = scalar;
-        }
-
-        void Float3x2::setScaling(const Float2 &vector)
-        {
-            _11 = vector.x;
-            _22 = vector.y;
-        }
-
-        void Float3x2::setRotation(float radians)
-        {
-            rx.set(std::cos(radians), -std::sin(radians));
-            ry.set(std::sin(radians),  std::cos(radians));
+            return Float3x2(
+            {
+                std::cos(radians), -std::sin(radians),
+                std::sin(radians),  std::cos(radians),
+            });
         }
 
         Float2 Float3x2::getScaling(void) const

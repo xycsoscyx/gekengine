@@ -91,7 +91,7 @@ namespace Gek
         {
         }
 
-        BaseString(ELEMENT character, size_t length)
+        BaseString(std::size_t length, ELEMENT character)
             : basic_string(length, character)
         {
         }
@@ -101,20 +101,6 @@ namespace Gek
             if (string)
             {
                 assign(string);
-            }
-        }
-
-        BaseString(std::vector<BaseString<ELEMENT>> list, ELEMENT delimiter, bool addSpaces = true)
-        {
-            join(list, delimiter, addSpaces);
-        }
-
-        template<typename TYPE, typename... PARAMETERS>
-        BaseString(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
-        {
-            if (formatting)
-            {
-                append(formatting, value, arguments...);
             }
         }
 
@@ -128,7 +114,7 @@ namespace Gek
         }
 
         template<typename CONVERSION>
-        BaseString(const basic_string<CONVERSION> &string)
+        BaseString(const std::basic_string<CONVERSION> &string)
         {
             if (!string.empty())
             {
@@ -172,12 +158,12 @@ namespace Gek
 
         void trimLeft(void)
         {
-            erase(begin(), std::find_if(begin(), end(), [](ELEMENT ch) { return !std::isspace<ELEMENT>(ch, std::locale::classic()); }));
+            erase(begin(), std::find_if(begin(), end(), [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); }));
         }
 
         void trimRight(void)
         {
-            erase(std::find_if(rbegin(), rend(), [](ELEMENT ch) { return !std::isspace<ELEMENT>(ch, std::locale::classic()); }).base(), end());
+            erase(std::find_if(rbegin(), rend(), [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); }).base(), end());
         }
 
         void trim(void)
@@ -228,13 +214,42 @@ namespace Gek
             return tokens;
         }
 
-        void join(std::vector<BaseString> list, ELEMENT delimiter, bool addSpaces = true)
+        BaseString & join(const std::vector<BaseString> &list, ELEMENT delimiter)
         {
-            std::accumulate(list.begin(), list.end(), (*this), 
-                [delimiter](const BaseString<ELEMENT> &a, const BaseString<ELEMENT> &b) -> BaseString<ELEMENT>
+            if (list.empty())
             {
-                return (a.empty() ? b : (a + delimiter + b));
-            });
+                throw std::out_of_range("BaseString<ELEMENT>::join() - empty list passed as parameter");
+            }
+
+            bool initialDelimiter = (!empty() && back() != delimiter);
+            uint32_t size = length() + (initialDelimiter ? 1 : 0); // initial length
+            size += (list.size() - 1); // insert delimiters between list elements
+            for (auto &stringSearch = list.begin(); stringSearch != list.end(); ++stringSearch)
+            {
+                size += (*stringSearch).length();
+            }
+
+            reserve(size);
+            if (initialDelimiter)
+            {
+                append(1U, delimiter);
+            }
+
+            append(list.front());
+            for (auto &stringSearch = (list.begin() + 1); stringSearch != list.end(); ++stringSearch)
+            {
+                append(1U, delimiter);
+                append(*stringSearch);
+            }
+
+            return (*this);
+        }
+
+        static BaseString create(const std::vector<BaseString> &list, ELEMENT delimiter)
+        {
+            BaseString result;
+            result.join(list, delimiter);
+            return result;
         }
 
         int compareNoCase(const BaseString &string) const
@@ -250,13 +265,23 @@ namespace Gek
             }) ? 0 : 1;
         }
 
+        BaseString & append(std::size_t length, ELEMENT character)
+        {
+            return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(length, character));
+        }
+
         BaseString & append(const BaseString &string)
         {
             return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
         }
 
+        BaseString & format(const BaseString &string)
+        {
+            return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
+        }
+
         template<typename TYPE, typename... PARAMETERS>
-        BaseString & append(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
+        BaseString & format(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
         {
             while (formatting && *formatting)
             {
@@ -267,29 +292,37 @@ namespace Gek
                     if (nextCharacter == ELEMENT('%'))
                     {
                         // %%
-                        std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, nextCharacter);
+                        append(1U, nextCharacter);
                     }
                     else if (nextCharacter == ELEMENT('v'))
                     {
                         // %v
+                        // use += operator for automatic type conversion
+                        // will fail at compile time with unknown types
                         (*this) += value;
-                        append(formatting, arguments...);
-                        return (*this);
+                        return format(formatting, arguments...);
                     }
                     else
                     {
                         // %(other)
-                        std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, currentCharacter);
-                        std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, nextCharacter);
+                        append(1U, currentCharacter).append(1U, nextCharacter);
                     }
                 }
                 else
                 {
-                    std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(1U, currentCharacter);
+                    append(1U, currentCharacter);
                 }
             };
 
             return (*this);
+        }
+
+        template<typename TYPE, typename... PARAMETERS>
+        static BaseString create(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
+        {
+            BaseString result;
+            result.format(formatting, value, arguments...);
+            return result;
         }
 
         BaseString &operator = (const ELEMENT &value)

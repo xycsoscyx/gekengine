@@ -10,7 +10,7 @@ namespace Gek
     {
         const Quaternion Quaternion::Identity(0.0f, 0.0f, 0.0f, 1.0f);
 
-        Quaternion &Quaternion::setEulerRotation(float pitch, float yaw, float roll)
+        Quaternion Quaternion::createEulerRotation(float pitch, float yaw, float roll)
         {
             float sinPitch(std::sin(pitch * 0.5f));
             float sinYaw(std::sin(yaw * 0.5f));
@@ -18,23 +18,27 @@ namespace Gek
             float cosPitch(std::cos(pitch * 0.5f));
             float cosYaw(std::cos(yaw * 0.5f));
             float cosRoll(std::cos(roll * 0.5f));
-            x = ((sinPitch * cosYaw * cosRoll) - (cosPitch * sinYaw * sinRoll));
-            y = ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll));
-            z = ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll));
-            w = ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll));
-            return (*this);
+            return Quaternion(
+            {
+                ((sinPitch * cosYaw * cosRoll) - (cosPitch * sinYaw * sinRoll)),
+                ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll)),
+                ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll)),
+                ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)),
+            });
         }
 
-        Quaternion &Quaternion::setAngularRotation(const Float3 &axis, float radians)
+        Quaternion Quaternion::createAngularRotation(const Float3 &axis, float radians)
         {
             float halfRadians = (radians * 0.5f);
             Float3 normal(axis.getNormal());
             float sinAngle(std::sin(halfRadians));
-            x = (normal.x * sinAngle);
-            y = (normal.y * sinAngle);
-            z = (normal.z * sinAngle);
-            w = std::cos(halfRadians);
-            return (*this);
+            return Quaternion(
+            {
+                (normal.x * sinAngle),
+                (normal.y * sinAngle),
+                (normal.z * sinAngle),
+                std::cos(halfRadians),
+            });
         }
 
         Float4x4 Quaternion::getMatrix(void) const

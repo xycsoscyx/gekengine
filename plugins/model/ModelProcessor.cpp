@@ -316,8 +316,8 @@ namespace Gek
                             }
 
                             material.indexCount = materialHeader.indexCount;
-                            material.indexBuffer = resources->createBuffer(String(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
-                            material.vertexBuffer = resources->createBuffer(String(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
+                            material.indexBuffer = resources->createBuffer(String::create(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
+                            material.vertexBuffer = resources->createBuffer(String::create(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
                         }
                     };
                 }

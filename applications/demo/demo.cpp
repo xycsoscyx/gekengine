@@ -68,8 +68,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
                 break;
             };
 
-            String modeString(String(L"%vx%v%v", mode.width, mode.height, aspectRatio));
-            int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)modeString.c_str());
+            int modeIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_ADDSTRING, 0, (WPARAM)String::create(L"%vx%v%v", mode.width, mode.height, aspectRatio).c_str());
             SendDlgItemMessage(dialog, IDC_MODES, CB_SETITEMDATA, modeIndex, (WPARAM)&mode);
             if (mode.width == width && mode.height == height)
             {
@@ -162,11 +161,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     try
     {
         String rootPath;
-        String currentModuleName(L' ', MAX_PATH + 1);
+        String currentModuleName((MAX_PATH + 1), L' ');
         GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
         currentModuleName.trimRight();
 
-        String fullModuleName(L' ', MAX_PATH + 1);
+        String fullModuleName((MAX_PATH + 1), L' ');
         GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
         fullModuleName.trimRight();
 

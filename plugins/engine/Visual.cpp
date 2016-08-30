@@ -63,15 +63,15 @@ namespace Gek
                             String type(elementNode.attributes[L"type"]);
                             if (type.compareNoCase(L"InstanceID") == 0)
                             {
-                                inputVertexData.append(L"    uint %v : SV_InstanceId;\r\n", elementNode.type);
+                                inputVertexData.format(L"    uint %v : SV_InstanceId;\r\n", elementNode.type);
                             }
                             else if (type.compareNoCase(L"VertexID") == 0)
                             {
-                                inputVertexData.append(L"    uint %v : SV_VertexId;\r\n", elementNode.type);
+                                inputVertexData.format(L"    uint %v : SV_VertexId;\r\n", elementNode.type);
                             }
                             else if (type.compareNoCase(L"isFrontFacing") == 0)
                             {
-                                inputVertexData.append(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
                             }
                             else
                             {
@@ -91,7 +91,7 @@ namespace Gek
                                 element.slotIndex = elementNode.attributes[L"slotindex"];
                                 if (type.compareNoCase(L"float4x4") == 0)
                                 {
-                                    inputVertexData.append(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
+                                    inputVertexData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
                                     element.format = Video::Format::R32G32B32A32_FLOAT;
                                     elementList.push_back(element);
                                     element.semanticIndex++;
@@ -103,7 +103,7 @@ namespace Gek
                                 }
                                 else if (type.compareNoCase(L"float4x3") == 0)
                                 {
-                                    inputVertexData.append(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
+                                    inputVertexData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
                                     element.format = Video::Format::R32G32B32A32_FLOAT;
                                     elementList.push_back(element);
                                     element.semanticIndex++;
@@ -119,7 +119,7 @@ namespace Gek
                                         throw InvalidElementType();
                                     }
 
-                                    inputVertexData.append(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, element.semanticIndex);
+                                    inputVertexData.format(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, element.semanticIndex);
                                     elementList.push_back(element);
                                 }
                             }
@@ -134,12 +134,12 @@ namespace Gek
                             String semanticName(elementNode.attributes[L"semantic"]);
                             uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
                             String type(elementNode.attributes[L"type"]);
-                            outputVertexData.append(L"    %v %v: %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+                            outputVertexData.format(L"    %v %v: %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
                         }
                     });
 
                     String engineData;
-                    engineData.append(
+                    engineData.format(
                         L"struct InputVertex\r\n" \
                         L"{\r\n" \
                         L"%v" \

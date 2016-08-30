@@ -14,7 +14,7 @@ namespace Gek
         GEK_ADD_EXCEPTION(FileReadError);
         GEK_ADD_EXCEPTION(FileWriteError);
 
-		String getFileName(const wchar_t *rootDirectory, const std::initializer_list<String> &list);
+		String getFileName(const wchar_t *rootDirectory, const std::vector<String> &list);
 
         template <typename... PARAMETERS>
         String getFileName(const wchar_t *rootDirectory, PARAMETERS... nameList)

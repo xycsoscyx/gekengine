@@ -250,8 +250,8 @@ namespace Gek
 
                 auto &emitter = entityEmitterMap.insert(std::make_pair(entity, Emitter())).first->second;
                 emitter.particles.resize(particlesComponent.density);
-                emitter.material = resources->loadMaterial(String(L"Particles\\%v", particlesComponent.material));
-                emitter.colorMap = resources->loadTexture(String(L"Particles\\%v", particlesComponent.colorMap), 0);
+                emitter.material = resources->loadMaterial(String::create(L"Particles\\%v", particlesComponent.material));
+                emitter.colorMap = resources->loadTexture(String::create(L"Particles\\%v", particlesComponent.colorMap), 0);
                 emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
                 emitter.size = std::uniform_real_distribution<float>(particlesComponent.size.x, particlesComponent.size.y);
                 concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void

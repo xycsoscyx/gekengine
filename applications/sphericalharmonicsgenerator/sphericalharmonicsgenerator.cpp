@@ -462,14 +462,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             image = loadIntoCubeMap(fileNameInput);
         };
 
-        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, String(L"%v\\cubemap.dds", fileNameInput));
+        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, String::create(L"%v\\cubemap.dds", fileNameInput));
 
         SH9Color sphericalHarmonics = ProjectCubeMapToSH(image);
 
         StringUTF8 output;
         for (int i = 0; i < 9; i++)
         {
-            output.append("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
+            output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
         }
 
         FileSystem::save(L"..//data//programs//Standard//radiance.h", output);

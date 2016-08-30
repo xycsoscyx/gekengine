@@ -13,7 +13,6 @@ namespace Gek
         public:
             static const Float4 Zero;
             static const Float4 One;
-			static const Float4 Identity;
 
         public:
             union

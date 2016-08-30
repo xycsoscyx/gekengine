@@ -74,27 +74,17 @@ namespace Gek
             Float4x4(const float(&data)[16]);
             Float4x4(const float *data);
             Float4x4(const Float4x4 &matrix);
-            Float4x4(float pitch, float yaw, float roll)
-            {
-                setEulerRotation(pitch, yaw, roll);
-            }
 
-            Float4x4(const Float3 &axis, float radians)
-            {
-                setAngularRotation(axis, radians);
-            }
-
-			static Math::Float4x4 setScaling(float scale);
-			static Math::Float4x4 setScaling(const Float3 &scale);
-			static Math::Float4x4 setTranslation(const Float3 &translation);
-			static Math::Float4x4 setEulerRotation(float pitch, float yaw, float roll);
-			static Math::Float4x4 setAngularRotation(const Float3 &axis, float radians);
-			static Math::Float4x4 setPitchRotation(float radians);
-			static Math::Float4x4 setYawRotation(float radians);
-			static Math::Float4x4 setRollRotation(float radians);
-			static Math::Float4x4 setOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
-			static Math::Float4x4 setPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
-			static Math::Float4x4 setLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
+			static Math::Float4x4 createScaling(float scale);
+			static Math::Float4x4 createScaling(const Float3 &scale);
+			static Math::Float4x4 createEulerRotation(float pitch, float yaw, float roll);
+			static Math::Float4x4 createAngularRotation(const Float3 &axis, float radians);
+			static Math::Float4x4 createPitchRotation(float radians);
+			static Math::Float4x4 createYawRotation(float radians);
+			static Math::Float4x4 createRollRotation(float radians);
+			static Math::Float4x4 createOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip);
+			static Math::Float4x4 createPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip);
+			static Math::Float4x4 createLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector);
 
             Quaternion getQuaternion(void) const;
 

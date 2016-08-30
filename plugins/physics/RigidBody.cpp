@@ -34,6 +34,11 @@ namespace Gek
 
                 Math::Float4x4 matrix(transform.getMatrix());
                 newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
+                if (newtonBody == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
                 NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
                 NewtonBodySetMassProperties(newtonBody, physical.mass, newtonCollision);
             }

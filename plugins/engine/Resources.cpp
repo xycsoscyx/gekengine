@@ -672,7 +672,7 @@ namespace Gek
                     throw InvalidParameter();
                 }
 
-                texture->setName(String(L"%v:%v", pattern, parameters));
+                texture->setName(String::create(L"%v:%v", pattern, parameters));
                 return texture;
             }
 
@@ -703,7 +703,7 @@ namespace Gek
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
                     auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
-                    program->setName(String(L"%v:%v", fileName, entryFunction));
+                    program->setName(String::create(L"%v:%v", fileName, entryFunction));
                     return program;
                 };
 
@@ -715,7 +715,7 @@ namespace Gek
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
                     auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
-                    program->setName(String(L"%v:%v", fileName, entryFunction));
+                    program->setName(String::create(L"%v:%v", fileName, entryFunction));
                     return program;
                 };
 
