@@ -1,6 +1,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include <experimental\filesystem>
 #include <fstream>
+#include <Windows.h>
 
 namespace Gek
 {
@@ -66,33 +67,23 @@ namespace Gek
 
 		void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
-            std::experimental::filesystem::path filePath(fileName);
-            if (!std::experimental::filesystem::is_regular_file(filePath))
+			HANDLE file = CreateFile(fileName, GENERIC_READ, 0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+			if(file == INVALID_HANDLE_VALUE)
             {
                 throw FileNotFound();
             }
 
-            auto size = std::experimental::filesystem::file_size(filePath);
-            if (size > 0)
-            {
-				std::basic_filebuf<uint8_t> fileBuffer;
-				fileBuffer.open(fileName, std::ios::in | std::ios::binary);
-				if (fileBuffer.is_open())
-				{
-					size = (limitReadSize > 0 ? std::min(size, limitReadSize) : size);
-					if (size >= std::numeric_limits<std::size_t>::max())
-					{
-						throw FileReadError();
-					}
 
-					buffer.resize(static_cast<std::size_t>(size));
-					fileBuffer.sgetn(buffer.data(), size);
-				}
-				else
-				{
-					throw FileReadError();
-				}
-            }
+			buffer.resize(GetFileSize(file, nullptr));
+
+			DWORD bytesRead = 0;
+			ReadFile(file, buffer.data(), buffer.size(), &bytesRead, nullptr);
+			CloseHandle(file);
+
+			if (bytesRead != buffer.size())
+			{
+				throw FileReadError();
+			}
 		}
 
 		void load(const wchar_t *fileName, StringUTF8 &string)
@@ -113,13 +104,17 @@ namespace Gek
 
         void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
         {
-			std::basic_filebuf<uint8_t> fileBuffer;
-			fileBuffer.open(fileName, std::ios::out | std::ios::binary | std::ios::trunc);
-			if (fileBuffer.is_open())
+			HANDLE file = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+			if (file == INVALID_HANDLE_VALUE)
 			{
-				fileBuffer.sputn(buffer.data(), buffer.size());
+				throw FileNotFound();
 			}
-			else
+
+			DWORD bytesWritten = 0;
+			WriteFile(file, buffer.data(), buffer.size(), &bytesWritten, nullptr);
+			CloseHandle(file);
+
+			if (bytesWritten != buffer.size())
 			{
 				throw FileWriteError();
 			}
