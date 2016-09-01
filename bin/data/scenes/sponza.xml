@@ -3,7 +3,7 @@
     <prefabs>
         <basic_spot_light>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)" />
-            <spot_light radius="-1" range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
+            <spot_light range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
             <color>(random(0,2), random(0,2), random(0,2))</color>
             <spin />
         </basic_spot_light>
@@ -22,7 +22,7 @@
 
     <population>
         <entity>
-            <transform position="(0, 0, 0)" rotation="(0, 0, 0)" />
+            <transform />
             <model>sponza</model>
             <physical />
         </entity>
@@ -33,7 +33,7 @@
             <filter>antialias, depthoffield, tonemap</filter>
             <physical mass="250" />
             <player height="6" outer_raduis="1.5" outer_radius=".5" stair_step="1.5" />
-            <spot_light range="30" radius="0.5" inner_angle="45" outer_angle="90" />
+            <spot_light range="30" inner_angle="45" outer_angle="90" />
             <color>(1,1,1)</color>
         </entity>
 

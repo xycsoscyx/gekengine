@@ -23,26 +23,26 @@ namespace Gek
             };
 
         public:
-            Color(void)
+            inline Color(void)
             {
             }
 
-            Color(float value)
+            inline Color(float value)
                 : data{ value, value, value, value }
             {
             }
 
-            Color(const float(&data)[4])
+            inline Color(const float(&data)[4])
                 : data{ data[0], data[1], data[2], data[3] }
             {
             }
 
-            Color(const float *data)
+            inline Color(const float *data)
                 : data{ data[0], data[1], data[2], data[3] }
             {
             }
 
-            Color(const Color &color)
+            inline Color(const Color &color)
                 : r(color.r)
                 , g(color.g)
                 , b(color.b)
@@ -50,16 +50,16 @@ namespace Gek
             {
             }
 
-            Color(const Float3 &vector);
-            Color(const Float4 &vector);
-
-            Color(float r, float g, float b, float a)
+            inline Color(float r, float g, float b, float a)
                 : r(r)
                 , g(g)
                 , b(b)
                 , a(a)
             {
             }
+
+            Color(const Float3 &rgb);
+            Color(const Float4 &rgba);
 
             Float3 getXYZ(void) const;
             Float4 getXYZW(void) const;

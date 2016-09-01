@@ -19,31 +19,31 @@ namespace Gek
             };
 
         public:
-            Float2(void)
+            inline Float2(void)
             {
             }
 
-            Float2(const float(&data)[2])
+            inline Float2(const float(&data)[2])
                 : data{ data[0], data[1] }
             {
             }
 
-            Float2(const float *data)
+            inline Float2(const float *data)
                 : data{ data[0], data[1] }
             {
             }
 
-            Float2(float scalar)
+            inline Float2(float scalar)
                 : data{ scalar, scalar }
             {
             }
 
-            Float2(const Float2 &vector)
+            inline Float2(const Float2 &vector)
                 : data{ vector.data[0], vector.data[1] }
             {
             }
 
-            Float2(float x, float y)
+            inline Float2(float x, float y)
                 : data{ x, y }
             {
             }

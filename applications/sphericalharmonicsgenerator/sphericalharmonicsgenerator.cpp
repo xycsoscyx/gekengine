@@ -240,7 +240,7 @@ typedef SH<Math::Float4, 9> SH9Color;
 
 ::DirectX::ScratchImage loadIntoCubeMap(const wchar_t *directory)
 {
-	static const wchar_t *faceList[] =
+	static const String faceList[] =
 	{
 		L"posx",
 		L"negx",
@@ -250,7 +250,7 @@ typedef SH<Math::Float4, 9> SH9Color;
 		L"negz",
 	};
 	
-	static const wchar_t *formatList[] =
+	static const String formatList[] =
 	{
 		L"",
 		L".dds",

@@ -23,36 +23,36 @@ namespace Gek
             };
 
         public:
-            Float4(void)
+            inline Float4(void)
             {
             }
 
-            Float4(float value)
+            inline Float4(float value)
                 : simd(_mm_set1_ps(value))
             {
             }
 
-            Float4(__m128 simd)
+            inline Float4(__m128 simd)
                 : simd(simd)
             {
             }
 
-            Float4(const float(&data)[4])
+            inline Float4(const float(&data)[4])
                 : simd(_mm_loadu_ps(data))
             {
             }
 
-            Float4(const float *data)
+            inline Float4(const float *data)
                 : simd(_mm_loadu_ps(data))
             {
             }
 
-            Float4(const Float4 &vector)
+            inline Float4(const Float4 &vector)
                 : simd(vector.simd)
             {
             }
 
-            Float4(float x, float y, float z, float w)
+            inline Float4(float x, float y, float z, float w)
                 : simd(_mm_setr_ps(x, y, z, w))
             {
             }

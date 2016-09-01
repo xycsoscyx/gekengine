@@ -35,7 +35,7 @@ namespace Gek
             };
 
         public:
-            Float3x2(void)
+            inline Float3x2(void)
             {
             }
 

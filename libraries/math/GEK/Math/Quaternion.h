@@ -24,34 +24,33 @@ namespace Gek
             };
 
         public:
-            Quaternion(void)
+            inline Quaternion(void)
             {
             }
 
-            Quaternion(__m128 simd)
+            inline Quaternion(__m128 simd)
                 : simd(simd)
             {
             }
 
-            Quaternion(const float(&data)[4])
+            inline Quaternion(const float(&data)[4])
                 : simd(_mm_loadu_ps(data))
             {
             }
 
-            Quaternion(const float *data)
+            inline Quaternion(const float *data)
                 : simd(_mm_loadu_ps(data))
             {
             }
 
-            Quaternion(const Quaternion &vector)
+            inline Quaternion(const Quaternion &vector)
                 : simd(vector.simd)
             {
             }
 
-            Quaternion(float x, float y, float z, float w)
+            inline Quaternion(float x, float y, float z, float w)
                 : data{ x, y, z, w }
             {
-                normalize();
             }
 
             inline Quaternion &set(float x, float y, float z, float w)

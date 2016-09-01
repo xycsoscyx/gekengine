@@ -66,7 +66,7 @@ namespace Gek
             };
 
         public:
-            Float4x4(void)
+            inline Float4x4(void)
             {
             }
 

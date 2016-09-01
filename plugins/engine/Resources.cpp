@@ -532,7 +532,7 @@ namespace Gek
             Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
             {
                 // iterate over formats in case the texture name has no extension
-                static const wchar_t *formatList[] =
+                static const String formatList[] =
                 {
                     L"",
                     L".dds",
@@ -542,9 +542,12 @@ namespace Gek
                     L".bmp",
                 };
 
+                String baseFileName(getContext()->getFileName(L"data\\textures", textureName));
                 for (auto &format : formatList)
                 {
-                    String fileName(getContext()->getFileName(L"data\\textures", textureName).append(format));
+                    String fileName(baseFileName);
+                    fileName.append(format);
+
 					if (FileSystem::isFile(fileName))
                     {
                         auto texture = device->loadTexture(fileName, flags);
