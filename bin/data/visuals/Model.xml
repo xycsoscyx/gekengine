@@ -11,6 +11,6 @@
         <normal type="float3" semantic="NORMAL" semanticindex="0" />
     </output>
     <programs>
-        <vertex entry="mainVertexProgram">model</vertex>
+        <vertex entry="mainVertexProgram">Basic</vertex>
     </programs>
 </visual>
