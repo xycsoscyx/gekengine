@@ -6,12 +6,10 @@ namespace Particles
 {
     struct Instance
     {
-        float3 origin;
-        float2 offset;
-        float age, death;
-        float angle, spin;
-        float size;
-        float buffer[2];
+        float3 position;
+        float3 velocity;
+		float age;
+        float angle;
     };
 
     StructuredBuffer<Instance> list : register(t0);
@@ -42,18 +40,10 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     normal.x = edge.x = ((cornerIndex % 2) ? 1.0 : -1.0);
     normal.y = edge.y = ((cornerIndex & 2) ? -1.0 : 1.0);
     edge.z = 0.0f;
-    edge = (mul(angle, edge) * instanceData.size);
-
-    float age = (instanceData.age > 0.0 ? (instanceData.age / instanceData.death) : 0.0);
-    float wave = sin(age * Math::Pi);
-
-    float3 position;
-    position.x = (instanceData.origin.x + (instanceData.offset.x * wave));
-    position.y = (instanceData.origin.y + instanceData.age);
-    position.z = (instanceData.origin.z + (instanceData.offset.y * wave));
+	edge = mul(angle, edge);
 
     OutputVertex outputVertex;
-    outputVertex.position = (edge + mul(Camera::viewMatrix, float4(position, 1.0)).xyz);
+    outputVertex.position = (edge + mul(Camera::viewMatrix, float4(instanceData.position, 1.0)).xyz);
     outputVertex.normal = normalize(float3(normal.xy, -1.0));
     outputVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     outputVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);

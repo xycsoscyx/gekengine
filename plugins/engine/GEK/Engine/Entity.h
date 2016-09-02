@@ -25,11 +25,8 @@ namespace Gek
             template<typename... PARAMETERS>
             bool hasComponents(void)
             {
-                std::vector<bool> hasComponents({ hasComponent<PARAMETERS>()... });
-                return std::find_if(hasComponents.begin(), hasComponents.end(), [&](bool hasComponent) -> bool
-                {
-                    return !hasComponent;
-                }) == hasComponents.end();
+				std::vector<bool> hasComponentList({ hasComponent<PARAMETERS>()... });
+				return (std::accumulate(hasComponentList.begin(), hasComponentList.end(), 0U) == hasComponentList.size());
             }
 
             template <typename CLASS>

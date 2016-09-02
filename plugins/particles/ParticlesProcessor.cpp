@@ -5,7 +5,6 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
-#include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Engine\Core.h"
@@ -27,9 +26,7 @@
 
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());
-static std::uniform_real_distribution<float> zeroToOne(0.0f, 1.0f);
-static std::uniform_real_distribution<float> halfToOne(0.5f, 1.0f);
-static std::uniform_real_distribution<float> negativeOneToOne(-1.0f, 1.0f);
+static std::uniform_real_distribution<float> fullCircle(0.0f, Gek::Math::Pi * 2.0f);
 
 namespace Gek
 {
@@ -37,10 +34,11 @@ namespace Gek
     {
         struct Particles
         {
-            String material;
-            String colorMap;
-            Math::Float2 lifeExpectancy;
-            Math::Float2 size;
+			String visual;
+			String material;
+			String emitter;
+			std::vector<String> shapeList;
+            float lifeExpectancy;
             uint32_t density;
 
             Particles(void)
@@ -49,20 +47,22 @@ namespace Gek
 
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
-                saveParameter(componentData, nullptr, material);
-                saveParameter(componentData, L"density", density);
-                saveParameter(componentData, L"color_map", colorMap);
-                saveParameter(componentData, L"life_expectancy", lifeExpectancy);
-                saveParameter(componentData, L"size", size);
+				saveParameter(componentData, nullptr, material);
+				saveParameter(componentData, L"visual", visual);
+				saveParameter(componentData, L"density", density);
+				saveParameter(componentData, L"emitter", emitter);
+				saveParameter(componentData, L"shape", String::create(shapeList, L','));
+				saveParameter(componentData, L"life_expectancy", lifeExpectancy);
             }
 
             void load(const Plugin::Population::ComponentDefinition &componentData)
             {
-                material = loadParameter(componentData, nullptr, String());
-                density = loadParameter(componentData, L"density", 100);
-                colorMap = loadParameter(componentData, L"color_map", String());
-                lifeExpectancy = loadParameter(componentData, L"life_expectancy", Math::Float2(1.0f, 1.0f));
-                size = loadParameter(componentData, L"size", Math::Float2(1.0f, 1.0f));
+				material = loadParameter(componentData, nullptr, String());
+				visual = loadParameter(componentData, L"visual", String(L"sprite"));
+				emitter = loadParameter(componentData, L"emitter", String(L"explosion"));
+				shapeList = loadParameter(componentData, L"shape", String("gravity")).split(L',');
+				density = loadParameter(componentData, L"density", 100);
+				lifeExpectancy = loadParameter(componentData, L"life_expectancy", 5.0f);
             }
         };
     }; // namespace Components
@@ -93,20 +93,10 @@ namespace Gek
         __declspec(align(16))
         struct Particle
         {
-            Math::Float3 origin;
-            Math::Float2 offset;
-            float age, death;
-            float angle, spin;
-            float size;
-
-            Particle(void)
-                : age(0.0f)
-                , death(0.0f)
-                , angle(0.0f)
-                , spin(0.0f)
-                , size(1.0f)
-            {
-            }
+			Math::Float3 position;
+			Math::Float3 velocity;
+			float age;
+			float angle;
         };
 
         static const uint32_t ParticleBufferCount = 1000000;
@@ -114,13 +104,14 @@ namespace Gek
         struct Emitter
             : public Shapes::AlignedBox
         {
-            MaterialHandle material;
-            ResourceHandle colorMap;
-            std::uniform_real_distribution<float> lifeExpectancy;
-            std::uniform_real_distribution<float> size;
-            std::vector<Particle> particles;
+			VisualHandle visual;
+			MaterialHandle material;
+
+			float lifeExpectancy;
+			std::vector<Particle> particles;
 
             Emitter(void)
+				: lifeExpectancy(0.0f)
             {
             }
         };
@@ -129,13 +120,13 @@ namespace Gek
         {
             union
             {
-                uint64_t value;
+                uint32_t value;
                 struct
                 {
-                    uint16_t buffer;
-                    ResourceHandle colorMap;
+                    uint8_t buffer;
                     MaterialHandle material;
-                };
+					VisualHandle visual;
+				};
             };
 
             Properties(void)
@@ -143,9 +134,9 @@ namespace Gek
             {
             }
 
-            Properties(MaterialHandle material, ResourceHandle colorMap)
-                : material(material)
-                , colorMap(colorMap)
+            Properties(VisualHandle visual, MaterialHandle material)
+				: visual(visual)
+                , material(material)
                 , buffer(0)
             {
             }
@@ -166,10 +157,8 @@ namespace Gek
         Plugin::Resources *resources;
         Plugin::Renderer *renderer;
 
-        VisualHandle visual;
         Video::BufferPtr particleBuffer;
 
-        ShuntingYard shuntingYard;
         using EntityEmitterMap = std::unordered_map<Plugin::Entity *, Emitter>;
         EntityEmitterMap entityEmitterMap;
 
@@ -190,8 +179,6 @@ namespace Gek
             population->addListener(this);
             population->addStep(this, 60);
             renderer->addListener(this);
-
-            visual = resources->loadVisual(L"particles");
 
             particleBuffer = renderer->getDevice()->createBuffer(sizeof(Particle), ParticleBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
         }
@@ -249,22 +236,14 @@ namespace Gek
                 auto &transformComponent = entity->getComponent<Components::Transform>();
 
                 auto &emitter = entityEmitterMap.insert(std::make_pair(entity, Emitter())).first->second;
-                emitter.particles.resize(particlesComponent.density);
-                emitter.material = resources->loadMaterial(String::create(L"Particles\\%v", particlesComponent.material));
-                emitter.colorMap = resources->loadTexture(String::create(L"Particles\\%v", particlesComponent.colorMap), 0);
-                emitter.lifeExpectancy = std::uniform_real_distribution<float>(particlesComponent.lifeExpectancy.x, particlesComponent.lifeExpectancy.y);
-                emitter.size = std::uniform_real_distribution<float>(particlesComponent.size.x, particlesComponent.size.y);
-                concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
+				emitter.visual = resources->loadVisual(particlesComponent.visual);
+				emitter.material = resources->loadMaterial(String::create(L"Particles\\%v", particlesComponent.material));
+			
+				emitter.lifeExpectancy = particlesComponent.lifeExpectancy;
+				emitter.particles.resize(particlesComponent.density);
+				concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                 {
-                    particle.age = emitter.lifeExpectancy(mersineTwister);
-                    particle.death = emitter.lifeExpectancy(mersineTwister);
-                    particle.spin = (negativeOneToOne(mersineTwister) * Math::Pi);
-                    particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2.0f);
-                    particle.origin = transformComponent.position;
-                    particle.offset.x = std::cos(particle.angle);
-                    particle.offset.y = -std::sin(particle.angle);
-                    particle.offset *= halfToOne(mersineTwister);
-                    particle.size = emitter.size(mersineTwister);
+					particle.age = emitter.lifeExpectancy;
                 });
             }
         }
@@ -285,39 +264,47 @@ namespace Gek
         {
             if (state == State::Active)
             {
-                float frameTime = population->getFrameTime();
+				float frameTime = population->getFrameTime();
                 concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
                 {
                     Plugin::Entity *entity = entityEmitterPair.first;
                     Emitter &emitter = entityEmitterPair.second;
                     auto &transformComponent = entity->getComponent<Components::Transform>();
 
-                    combinable<std::min<float>> minimum[3] = { (Math::Infinity), (Math::Infinity), (Math::Infinity) };
-                    combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
-                    concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
-                    {
-                        particle.age += frameTime;
-                        if (particle.age >= particle.death)
-                        {
-                            particle.age = 0.0f;
-                            particle.death = emitter.lifeExpectancy(mersineTwister);
-                            particle.spin = (negativeOneToOne(mersineTwister) * Math::Pi);
-                            particle.angle = (zeroToOne(mersineTwister) * Math::Pi * 2);
-                            particle.origin = transformComponent.position;
-                            particle.offset.x = std::cos(particle.angle);
-                            particle.offset.y = -std::sin(particle.angle);
-                            particle.offset *= halfToOne(mersineTwister);
-                            particle.size = emitter.size(mersineTwister);
-                        }
+					auto emitParticle = [transformComponent, frameTime](Particle &particle) -> void
+					{
+						particle.position = transformComponent.position;
+						particle.velocity = Math::Float4x4::createEulerRotation(fullCircle(mersineTwister), fullCircle(mersineTwister), fullCircle(mersineTwister)).nz;
+					};
 
-                        particle.angle += (particle.spin * frameTime);
-                        minimum[0].set(particle.origin.x - 1.0f);
-                        minimum[1].set(particle.origin.y);
-                        minimum[2].set(particle.origin.z - 1.0f);
-                        maximum[0].set(particle.origin.x + 1.0f);
-                        maximum[1].set(particle.origin.y + emitter.lifeExpectancy.max());
-                        maximum[2].set(particle.origin.z + 1.0f);
-                    });
+					auto updateParticle = [transformComponent, frameTime](Particle &particle) -> void
+					{
+						static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
+						particle.velocity += (gravity * frameTime);
+
+						particle.position += (particle.velocity * frameTime);
+					};
+
+                    combinable<std::min<float>> minimum[3] = { (+Math::Infinity), (+Math::Infinity), (+Math::Infinity) };
+                    combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
+					concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
+					{
+						particle.age += frameTime;
+						if (particle.age >= emitter.lifeExpectancy)
+						{
+							particle.age = 0.0f;
+							emitParticle(particle);
+						}
+
+						updateParticle(particle);
+
+						minimum[0].set(particle.position.x - 1.0f);
+						minimum[1].set(particle.position.y - 1.0f);
+						minimum[2].set(particle.position.z - 1.0f);
+						maximum[0].set(particle.position.x + 1.0f);
+						maximum[1].set(particle.position.y + 1.0f);
+						maximum[2].set(particle.position.z + 1.0f);
+					});
 
                     for (auto index : { 0, 1, 2 })
                     {
@@ -329,13 +316,12 @@ namespace Gek
         }
 
         // Plugin::RendererListener
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, ResourceHandle colorMap, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, Video::Buffer *particleBuffer)
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, Video::Buffer *particleBuffer)
         {
             GEK_REQUIRE(deviceContext);
             GEK_REQUIRE(resources);
 
             deviceContext->vertexPipeline()->setResource(particleBuffer, 0);
-            resources->setResource(deviceContext->vertexPipeline(), colorMap, 1);
 
             uint32_t bufferCopied = 0;
             Particle *bufferData = nullptr;
@@ -385,14 +371,14 @@ namespace Gek
                 const Emitter &emitter = entityEmitterPair.second;
                 if (viewFrustum.isVisible(emitter))
                 {
-                    visibleMap.insert(std::make_pair(Properties(emitter.material, emitter.colorMap), &entityEmitterPair));
+                    visibleMap.insert(std::make_pair(Properties(emitter.visual, emitter.material), &entityEmitterPair));
                 }
             });
 
             for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )
             {
                 auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
-                renderer->queueDrawCall(visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, propertiesSearch->first.colorMap, emittersRange.first, emittersRange.second, particleBuffer.get()));
+                renderer->queueDrawCall(propertiesSearch->first.visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, emittersRange.first, emittersRange.second, particleBuffer.get()));
                 propertiesSearch = emittersRange.second;
             }
         }

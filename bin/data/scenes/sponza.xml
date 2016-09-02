@@ -16,11 +16,11 @@
 
         <basic_particles>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles life_expectancy="(2, 5)" color_map="Flames.Color" transmission_map="Flames.Transmission" size="(0.1, 0.5)" density="500">Flames</particles>
+            <particles visual="sprite" density="500" emitter="explosion" shape="gravity" life_expectancy="5">flames</particles>
         </basic_particles>
     </prefabs>
 
-    <population>
+  <population>
         <entity>
             <transform />
             <model>sponza</model>

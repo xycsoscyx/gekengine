@@ -51,7 +51,7 @@ namespace Gek
                     {
                         String programFileName(geometryNode.text);
                         String programEntryPoint(geometryNode.attributes[L"entry"]);
-                        geometryProgram = device->loadGeometryProgram(getContext()->getFileName(L"data\\programs", programFileName).append(L".hlsl"), programEntryPoint);
+                        geometryProgram = device->loadGeometryProgram(getContext()->getFileName(L"data\\programs", visualName, programFileName).append(L".hlsl"), programEntryPoint);
                     });
 
                     String inputVertexData;
@@ -161,7 +161,7 @@ namespace Gek
                     {
                         String programEntryPoint(vertexNode.getAttribute(L"entry"));
 						String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
-						String programFileName(FileSystem::getFileName(rootProgramsDirectory, vertexNode.text).append(L".hlsl"));
+						String programFileName(FileSystem::getFileName(rootProgramsDirectory, visualName, vertexNode.text).append(L".hlsl"));
 						String programDirectory(FileSystem::getDirectory(programFileName));
                         auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
                         {
