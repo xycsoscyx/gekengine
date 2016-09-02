@@ -962,77 +962,46 @@ namespace Gek
                 dynamic_cast<Resource *>(destination);
             }
 
-            Video::ObjectPtr compileComputeProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return std::make_shared<ComputeProgram>();
-            }
 
-            Video::ObjectPtr compileVertexProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return std::make_shared<VertexProgram>();
-            }
+			Video::ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize)
+			{
+				return std::make_shared<ComputeProgram>();
+			}
 
-            Video::ObjectPtr compileGeometryProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return std::make_shared<GeometryProgram>();
-            }
+			Video::ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize, const std::vector<Video::InputElementInformation> &elementLayout = std::vector<Video::InputElementInformation>())
+			{
+				return std::make_shared<VertexProgram>();
+			}
 
-            Video::ObjectPtr compilePixelProgram(const wchar_t *name, const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return std::make_shared<PixelProgram>();
-            }
+			Video::ObjectPtr createGeometryProgram(const void *compiledData, uint32_t compiledSize)
+			{
+				return std::make_shared<GeometryProgram>();
+			}
 
-            Video::ObjectPtr compileComputeProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return compileComputeProgram(nullptr, programScript, entryFunction, onInclude, definesMap);
-            }
+			Video::ObjectPtr createPixelProgram(const void *compiledData, uint32_t compiledSize)
+			{
+				return std::make_shared<PixelProgram>();
+			}
+			
+			std::vector<uint8_t> compileComputeProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			{
+				return std::vector<uint8_t>();
+			}
 
-            Video::ObjectPtr compileVertexProgram(const wchar_t *programScript, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, onInclude, definesMap);
-            }
+			std::vector<uint8_t> compileVertexProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			{
+				return std::vector<uint8_t>();
+			}
 
-            Video::ObjectPtr compileGeometryProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return compileGeometryProgram(nullptr, programScript, entryFunction, onInclude, definesMap);
-            }
+			std::vector<uint8_t> compileGeometryProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			{
+				return std::vector<uint8_t>();
+			}
 
-            Video::ObjectPtr compilePixelProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                return compilePixelProgram(nullptr, programScript, entryFunction, onInclude, definesMap);
-            }
-
-            Video::ObjectPtr loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                return compileComputeProgram(fileName, progamScript, entryFunction, onInclude, definesMap);
-            }
-
-            Video::ObjectPtr loadVertexProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, onInclude, definesMap);
-            }
-
-            Video::ObjectPtr loadGeometryProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                return compileGeometryProgram(fileName, progamScript, entryFunction, onInclude, definesMap);
-            }
-
-            Video::ObjectPtr loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                return compilePixelProgram(fileName, progamScript, entryFunction, onInclude, definesMap);
-            }
+			std::vector<uint8_t> compilePixelProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			{
+				return std::vector<uint8_t>();
+			}
 
             Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
             {

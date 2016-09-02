@@ -976,11 +976,11 @@ namespace Gek
             : public ID3DInclude
         {
         public:
-            std::function<bool(const wchar_t *, String &)> onInclude;
+            const std::function<bool(const char *, StringUTF8 &)> &onInclude;
             std::unordered_map<StringUTF8, StringUTF8> includeMap;
 
         public:
-            Include(std::function<bool(const wchar_t *, String &)> onInclude)
+            Include(const std::function<bool(const char *, StringUTF8 &)> &onInclude)
                 : onInclude(onInclude)
             {
             }
@@ -988,12 +988,12 @@ namespace Gek
             // ID3DInclude
             STDMETHODIMP Open(D3D_INCLUDE_TYPE includeType, const char *fileName, LPCVOID parentData, LPCVOID *data, UINT *dataSize)
             {
-                String includeData;
-                if (onInclude(String(fileName), includeData))
+                StringUTF8 buffer;
+                if (onInclude(fileName, buffer))
                 {
-                    auto &includeBuffer = includeMap[fileName] = includeData;
-                    (*data) = includeBuffer.data();
-                    (*dataSize) = includeBuffer.size();
+                    auto &cache = includeMap[fileName] = buffer;
+                    (*data) = cache.data();
+                    (*dataSize) = cache.size();
                     return S_OK;
                 }
 
@@ -2182,7 +2182,103 @@ namespace Gek
                 d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
             }
 
-            Video::ObjectPtr compileComputeProgram(const StringUTF8 &fileName, const StringUTF8 &programScript, const StringUTF8 &entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &definesMap, ID3DInclude *includes)
+			Video::ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize)
+			{
+				CComPtr<ID3D11ComputeShader> d3dShader;
+				HRESULT resultValue = d3dDevice->CreateComputeShader(compiledData, compiledSize, nullptr, &d3dShader);
+				if (FAILED(resultValue) || !d3dShader)
+				{
+					throw Video::CreateObjectFailed();
+				}
+
+				return std::make_shared<ComputeProgram>(d3dShader);
+			}
+
+			Video::ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize, const std::vector<Video::InputElementInformation> &elementLayout = std::vector<Video::InputElementInformation>())
+			{
+				CComPtr<ID3D11VertexShader> d3dShader;
+				HRESULT resultValue = d3dDevice->CreateVertexShader(compiledData, compiledSize, nullptr, &d3dShader);
+				if (FAILED(resultValue) || !d3dShader)
+				{
+					throw Video::CreateObjectFailed();
+				}
+
+				CComPtr<ID3D11InputLayout> d3dInputLayout;
+				if (!elementLayout.empty())
+				{
+					Video::ElementType lastElementType = Video::ElementType::Vertex;
+					std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
+					std::list<StringUTF8> convertedNameList;
+					for (auto &element : elementLayout)
+					{
+						D3D11_INPUT_ELEMENT_DESC elementDesc;
+						if (lastElementType != element.slotClass)
+						{
+							elementDesc.AlignedByteOffset = 0;
+						}
+						else
+						{
+							elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
+						}
+
+						lastElementType = element.slotClass;
+						convertedNameList.push_back(element.semanticName);
+						elementDesc.SemanticName = convertedNameList.back();
+						elementDesc.SemanticIndex = element.semanticIndex;
+						elementDesc.InputSlot = element.slotIndex;
+						switch (element.slotClass)
+						{
+						case Video::ElementType::Instance:
+							elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
+							elementDesc.InstanceDataStepRate = 1;
+							break;
+
+						case Video::ElementType::Vertex:
+						default:
+							elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
+							elementDesc.InstanceDataStepRate = 0;
+							break;
+						};
+
+						elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
+						inputElementList.push_back(elementDesc);
+					}
+
+					resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), compiledData, compiledSize, &d3dInputLayout);
+					if (FAILED(resultValue) || !d3dInputLayout)
+					{
+						throw Video::CreateObjectFailed();
+					}
+				}
+
+				return std::make_shared<VertexProgram>(d3dShader, d3dInputLayout);
+			}
+
+			Video::ObjectPtr createGeometryProgram(const void *compiledData, uint32_t compiledSize)
+			{
+				CComPtr<ID3D11GeometryShader> d3dShader;
+				HRESULT resultValue = d3dDevice->CreateGeometryShader(compiledData, compiledSize, nullptr, &d3dShader);
+				if (FAILED(resultValue) || !d3dShader)
+				{
+					throw Video::CreateObjectFailed();
+				}
+
+				return std::make_shared<GeometryProgram>(d3dShader);
+			}
+
+			Video::ObjectPtr createPixelProgram(const void *compiledData, uint32_t compiledSize)
+			{
+				CComPtr<ID3D11PixelShader> d3dShader;
+				HRESULT resultValue = d3dDevice->CreatePixelShader(compiledData, compiledSize, nullptr, &d3dShader);
+				if (FAILED(resultValue) || !d3dShader)
+				{
+					throw Video::CreateObjectFailed();
+				}
+
+				return std::make_shared<PixelProgram>(d3dShader);
+			}
+
+			std::vector<uint8_t> compileComputeProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap) 
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2201,26 +2297,21 @@ namespace Gek
                 macroList.push_back({ "_COMPUTE_PROGRAM", "1" });
                 macroList.push_back({ nullptr, nullptr });
 
+				Include include(onInclude);
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(programScript, (programScript.length() + 1), fileName, macroList.data(), includes, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), name, macroList.data(), &include, entryFunction, "cs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     String errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 
-                CComPtr<ID3D11ComputeShader> d3dShader;
-                resultValue = d3dDevice->CreateComputeShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (FAILED(resultValue) || !d3dShader)
-                {
-                    throw Video::CreateObjectFailed();
-                }
-
-                return std::make_shared<ComputeProgram>(d3dShader);
+				uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+				return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            Video::ObjectPtr compileVertexProgram(const StringUTF8 &fileName, const StringUTF8 &programScript, const StringUTF8 &entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, const std::unordered_map<StringUTF8, StringUTF8> &definesMap, ID3DInclude *includes)
+			std::vector<uint8_t> compileVertexProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2239,74 +2330,21 @@ namespace Gek
                 macroList.push_back({ "_VERTEX_PROGRAM", "1" });
                 macroList.push_back({ nullptr, nullptr });
 
-                CComPtr<ID3DBlob> d3dShaderBlob;
-                CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(programScript, (programScript.length() + 1), fileName, macroList.data(), includes, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
-                if (FAILED(resultValue) || !d3dShaderBlob)
-                {
-                    String errors = (const char *)d3dCompilerErrors->GetBufferPointer();
-                    throw Video::ProgramCompilationFailed();
-                }
+				Include include(onInclude);
+				CComPtr<ID3DBlob> d3dShaderBlob;
+				CComPtr<ID3DBlob> d3dCompilerErrors;
+				HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), name, macroList.data(), &include, entryFunction, "vs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+				if (FAILED(resultValue) || !d3dShaderBlob)
+				{
+					String errors = (const char *)d3dCompilerErrors->GetBufferPointer();
+					throw Video::ProgramCompilationFailed();
+				}
 
-                CComPtr<ID3D11VertexShader> d3dShader;
-                resultValue = d3dDevice->CreateVertexShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (FAILED(resultValue) || !d3dShader)
-                {
-                    throw Video::CreateObjectFailed();
-                }
+				uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+				return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
+			}
 
-                CComPtr<ID3D11InputLayout> d3dInputLayout;
-                if (!elementLayout.empty())
-                {
-                    Video::ElementType lastElementType = Video::ElementType::Vertex;
-                    std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
-                    std::list<StringUTF8> convertedNameList;
-                    for (auto &element : elementLayout)
-                    {
-                        D3D11_INPUT_ELEMENT_DESC elementDesc;
-                        if (lastElementType != element.slotClass)
-                        {
-                            elementDesc.AlignedByteOffset = 0;
-                        }
-                        else
-                        {
-                            elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-                        }
-
-                        lastElementType = element.slotClass;
-                        convertedNameList.push_back(element.semanticName);
-                        elementDesc.SemanticName = convertedNameList.back();
-                        elementDesc.SemanticIndex = element.semanticIndex;
-                        elementDesc.InputSlot = element.slotIndex;
-                        switch (element.slotClass)
-                        {
-                        case Video::ElementType::Instance:
-                            elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
-                            elementDesc.InstanceDataStepRate = 1;
-                            break;
-
-                        case Video::ElementType::Vertex:
-                        default:
-                            elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
-                            elementDesc.InstanceDataStepRate = 0;
-                            break;
-                        };
-
-                        elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
-                        inputElementList.push_back(elementDesc);
-                    }
-
-                    resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), &d3dInputLayout);
-                    if (FAILED(resultValue) || !d3dInputLayout)
-                    {
-                        throw Video::CreateObjectFailed();
-                    }
-                }
-
-                return std::make_shared<VertexProgram>(d3dShader, d3dInputLayout);
-            }
-
-            Video::ObjectPtr compileGeometryProgram(const StringUTF8 &fileName, const StringUTF8 &programScript, const StringUTF8 &entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &definesMap, ID3DInclude *includes)
+			std::vector<uint8_t> compileGeometryProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2325,26 +2363,21 @@ namespace Gek
                 macroList.push_back({ "_GEOMETRY_PROGRAM", "1" });
                 macroList.push_back({ nullptr, nullptr });
 
-                CComPtr<ID3DBlob> d3dShaderBlob;
+				Include include(onInclude);
+				CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(programScript, (programScript.length() + 1), fileName, macroList.data(), includes, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), name, macroList.data(), &include, entryFunction, "gs_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     String errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 
-                CComPtr<ID3D11GeometryShader> d3dShader;
-                resultValue = d3dDevice->CreateGeometryShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (FAILED(resultValue) || !d3dShader)
-                {
-                    throw Video::CreateObjectFailed();
-                }
+				uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+				return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
+			}
 
-                return std::make_shared<GeometryProgram>(d3dShader);
-            }
-
-            Video::ObjectPtr compilePixelProgram(const StringUTF8 &fileName, const StringUTF8 &programScript, const StringUTF8 &entryFunction, const std::unordered_map<StringUTF8, StringUTF8> &definesMap, ID3DInclude *includes)
+			std::vector<uint8_t> compilePixelProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2363,95 +2396,19 @@ namespace Gek
                 macroList.push_back({ "_PIXEL_PROGRAM", "1" });
                 macroList.push_back({ nullptr, nullptr });
 
-                CComPtr<ID3DBlob> d3dShaderBlob;
+				Include include(onInclude);
+				CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(programScript, (programScript.length() + 1), fileName, macroList.data(), includes, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(programScript, (strlen(programScript) + 1), name, macroList.data(), &include, entryFunction, "ps_5_0", flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     String errors = (const char *)d3dCompilerErrors->GetBufferPointer();
                     throw Video::ProgramCompilationFailed();
                 }
 
-                CComPtr<ID3D11PixelShader> d3dShader;
-                resultValue = d3dDevice->CreatePixelShader(d3dShaderBlob->GetBufferPointer(), d3dShaderBlob->GetBufferSize(), nullptr, &d3dShader);
-                if (FAILED(resultValue) || !d3dShader)
-                {
-                    throw Video::CreateObjectFailed();
-                }
-
-                return std::make_shared<PixelProgram>(d3dShader);
-            }
-
-            std::unordered_map<StringUTF8, StringUTF8> convertDefinesMap(const std::unordered_map<String, String> &definesMap)
-            {
-                std::unordered_map<StringUTF8, StringUTF8> convertedDefinesMap;
-                for (auto &define : definesMap)
-                {
-                    convertedDefinesMap[define.first] = define.second;
-                }
-
-                return convertedDefinesMap;
-            }
-
-            Video::ObjectPtr compileComputeProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                Include includeHandler(onInclude);
-                return compileComputeProgram(nullptr, programScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr compileVertexProgram(const wchar_t *programScript, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                Include includeHandler(onInclude);
-                return compileVertexProgram(nullptr, programScript, entryFunction, elementLayout, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr compileGeometryProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                Include includeHandler(onInclude);
-                return compileGeometryProgram(nullptr, programScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr compilePixelProgram(const wchar_t *programScript, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                Include includeHandler(onInclude);
-                return compilePixelProgram(nullptr, programScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                Include includeHandler(onInclude);
-                return compileComputeProgram(fileName, progamScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr loadVertexProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::vector<Video::InputElementInformation> &elementLayout, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                Include includeHandler(onInclude);
-                return compileVertexProgram(fileName, progamScript, entryFunction, elementLayout, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr loadGeometryProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                Include includeHandler(onInclude);
-                return compileGeometryProgram(fileName, progamScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
-            }
-
-            Video::ObjectPtr loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
-            {
-                String progamScript;
-                FileSystem::load(fileName, progamScript);
-
-                Include includeHandler(onInclude);
-                return compilePixelProgram(fileName, progamScript, entryFunction, convertDefinesMap(definesMap), &includeHandler);
-            }
+				uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
+				return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
+			}
 
             Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
             {

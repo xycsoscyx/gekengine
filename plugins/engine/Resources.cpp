@@ -701,11 +701,14 @@ namespace Gek
                 return resourceManager.getHandle(hash, std::move(load));
             }
 
-            ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
-                    auto program = device->loadComputeProgram(fileName, entryFunction, onInclude, definesMap);
+					StringUTF8 script;
+					FileSystem::load(fileName, v);
+					auto compiled = device->compileComputeProgram(fileName, script, entryFunction, onInclude, definesMap);
+					auto program = device->createComputeProgram(compiled.data(), compiled.size());
                     program->setName(String::create(L"%v:%v", fileName, entryFunction));
                     return program;
                 };
@@ -713,13 +716,16 @@ namespace Gek
                 return programManager.getUniqueHandle(std::move(load));
             }
 
-            ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, std::function<bool(const wchar_t *, String &)> onInclude, const std::unordered_map<String, String> &definesMap)
+            ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude, const std::unordered_map<String, String> &definesMap)
             {
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = move(onInclude), definesMap](ProgramHandle) -> Video::ObjectPtr
                 {
-                    auto program = device->loadPixelProgram(fileName, entryFunction, onInclude, definesMap);
-                    program->setName(String::create(L"%v:%v", fileName, entryFunction));
-                    return program;
+					StringUTF8 script;
+					FileSystem::load(fileName, script);
+					auto compiled = device->compilePixelProgram(fileName, script, entryFunction, onInclude, definesMap);
+					auto program = device->createPixelProgram(compiled.data(), compiled.size());
+					program->setName(String::create(L"%v:%v", fileName, entryFunction));
+					return program;
                 };
 
                 return programManager.getUniqueHandle(std::move(load));
