@@ -117,8 +117,6 @@ namespace Gek
 							}
 						}
 					}
-
-					inputLayout = device->createInputLayout(elementList);
 				});
 
 				String outputVertexData;
@@ -192,6 +190,10 @@ namespace Gek
 					String entryFunction(vertexNode.getAttribute(L"entry"));
 					auto compiledProgram = device->compileVertexProgram(vertexNode.text, uncompiledProgram, entryFunction, onInclude);
 					vertexProgram = device->createVertexProgram(compiledProgram.data(), compiledProgram.size());
+					if (!elementList.empty())
+					{
+						inputLayout = device->createInputLayout(elementList, compiledProgram.data(), compiledProgram.size());
+					}
 				}))
 				{
 					throw MissingParameters();

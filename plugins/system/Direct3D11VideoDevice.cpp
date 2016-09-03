@@ -2219,7 +2219,7 @@ namespace Gek
                 d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
             }
 
-			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout)
+			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize)
 			{
 				Video::ElementType lastElementType = Video::ElementType::Vertex;
 				std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
@@ -2260,7 +2260,7 @@ namespace Gek
 				}
 
 				CComPtr<ID3D11InputLayout> d3dInputLayout;
-				HRESULT resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), nullptr, 0, &d3dInputLayout);
+				HRESULT resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), compiledData, compiledSize, &d3dInputLayout);
 				if (FAILED(resultValue) || !d3dInputLayout)
 				{
 					throw Video::CreateObjectFailed();

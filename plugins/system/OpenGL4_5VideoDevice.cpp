@@ -997,7 +997,7 @@ namespace Gek
             }
 
 
-			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout)
+			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize)
 			{
 				return std::make_shared<InputLayout>();
 			}

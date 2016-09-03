@@ -582,7 +582,7 @@ namespace Gek
             virtual void updateResource(Object *buffer, const void *data) = 0;
             virtual void copyResource(Object *destination, Object *source) = 0;
 
-			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout) = 0;
+			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize) = 0;
 
 			virtual ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize) = 0;
 			virtual ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize) = 0;

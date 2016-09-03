@@ -114,8 +114,8 @@ namespace Gek
             virtual Filter * const getFilter(const wchar_t *filterName) = 0;
             virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
 
-			virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude = [](const wchar_t *, String &) -> bool { return false; }, const std::unordered_map<String, String> &definesMap = std::unordered_map<String, String>()) = 0;
-            virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude = [](const wchar_t *, String &) -> bool { return false; }, const std::unordered_map<String, String> &definesMap = std::unordered_map<String, String>()) = 0;
+			virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
+            virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
 
             virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;
