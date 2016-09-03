@@ -8,7 +8,5 @@
         <texCoord type="float2" semantic="TEXCOORD" semanticindex="0" />
         <normal type="float3" semantic="NORMAL" semanticindex="0" />
     </output>
-    <programs>
-        <vertex entry="mainVertexProgram">Basic</vertex>
-    </programs>
+    <vertex entry="mainVertexProgram">Basic</vertex>
 </visual>

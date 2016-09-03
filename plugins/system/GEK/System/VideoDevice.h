@@ -495,7 +495,9 @@ namespace Gek
             {
                 GEK_INTERFACE(Pipeline)
                 {
-                    virtual void setProgram(Object *program) = 0;
+					virtual void setInputLayout(Object *inputLayout) = 0;
+						
+					virtual void setProgram(Object *program) = 0;
                     virtual void setSamplerState(Object *samplerState, uint32_t stage) = 0;
                     virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
 
@@ -580,15 +582,17 @@ namespace Gek
             virtual void updateResource(Object *buffer, const void *data) = 0;
             virtual void copyResource(Object *destination, Object *source) = 0;
 
+			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout) = 0;
+
 			virtual ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize) = 0;
-			virtual ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize, const std::vector<Video::InputElementInformation> &elementLayout = std::vector<Video::InputElementInformation>()) = 0;
+			virtual ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize) = 0;
 			virtual ObjectPtr createGeometryProgram(const void *compiledData, uint32_t compiledSize) = 0;
 			virtual ObjectPtr createPixelProgram(const void *compiledData, uint32_t compiledSize) = 0;
 
-			virtual std::vector<uint8_t> compileComputeProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude = [](const char *, StringUTF8 &) -> bool { return false; }, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-            virtual std::vector<uint8_t> compileVertexProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude = [](const char *, StringUTF8 &) -> bool { return false; }, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-            virtual std::vector<uint8_t> compileGeometryProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude = [](const char *, StringUTF8 &) -> bool { return false; }, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
-            virtual std::vector<uint8_t> compilePixelProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude = [](const char *, StringUTF8 &) -> bool { return false; }, const std::unordered_map<StringUTF8, StringUTF8> &definesMap = std::unordered_map<StringUTF8, StringUTF8>()) = 0;
+			virtual std::vector<uint8_t> compileComputeProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
+            virtual std::vector<uint8_t> compileVertexProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
+            virtual std::vector<uint8_t> compileGeometryProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
+            virtual std::vector<uint8_t> compilePixelProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;
 

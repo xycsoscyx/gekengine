@@ -101,22 +101,37 @@ namespace Gek
             }
         };
 
-        class ComputeProgram
-            : public Video::Object
-        {
-        public:
+		class InputLayout
+			: public Video::Object
+		{
+		public:
 
-        public:
-            ComputeProgram(void)
-            {
-            }
+		public:
+			InputLayout(void)
+			{
+			}
 
-            void setName(const wchar_t *name)
-            {
-            }
-        };
+			void setName(const wchar_t *name)
+			{
+			}
+		};
 
-        class VertexProgram
+		class ComputeProgram
+			: public Video::Object
+		{
+		public:
+
+		public:
+			ComputeProgram(void)
+			{
+			}
+
+			void setName(const wchar_t *name)
+			{
+			}
+		};
+
+		class VertexProgram
             : public Video::Object
         {
         public:
@@ -447,7 +462,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setProgram(Video::Object *program)
+					void setInputLayout(Video::Object *inputLayout)
+					{
+						throw Video::UnsupportedOperation();
+					}
+
+					void setProgram(Video::Object *program)
                     {
                         dynamic_cast<ComputeProgram *>(program);
                     }
@@ -500,7 +520,11 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setProgram(Video::Object *program)
+					void setInputLayout(Video::Object *inputLayout)
+					{
+					}
+
+					void setProgram(Video::Object *program)
                     {
                         dynamic_cast<VertexProgram *>(program);
                     }
@@ -550,7 +574,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setProgram(Video::Object *program)
+					void setInputLayout(Video::Object *inputLayout)
+					{
+						throw Video::UnsupportedOperation();
+					}
+
+					void setProgram(Video::Object *program)
                     {
                         dynamic_cast<GeometryProgram *>(program);
                     }
@@ -600,7 +629,12 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setProgram(Video::Object *program)
+					void setInputLayout(Video::Object *inputLayout)
+					{
+						throw Video::UnsupportedOperation();
+					}
+
+					void setProgram(Video::Object *program)
                     {
                         dynamic_cast<PixelProgram *>(program);
                     }
@@ -963,12 +997,17 @@ namespace Gek
             }
 
 
+			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout)
+			{
+				return std::make_shared<InputLayout>();
+			}
+
 			Video::ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize)
 			{
 				return std::make_shared<ComputeProgram>();
 			}
 
-			Video::ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize, const std::vector<Video::InputElementInformation> &elementLayout = std::vector<Video::InputElementInformation>())
+			Video::ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize)
 			{
 				return std::make_shared<VertexProgram>();
 			}
@@ -983,22 +1022,22 @@ namespace Gek
 				return std::make_shared<PixelProgram>();
 			}
 			
-			std::vector<uint8_t> compileComputeProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			std::vector<uint8_t> compileComputeProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
 			{
 				return std::vector<uint8_t>();
 			}
 
-			std::vector<uint8_t> compileVertexProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			std::vector<uint8_t> compileVertexProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
 			{
 				return std::vector<uint8_t>();
 			}
 
-			std::vector<uint8_t> compileGeometryProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			std::vector<uint8_t> compileGeometryProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
 			{
 				return std::vector<uint8_t>();
 			}
 
-			std::vector<uint8_t> compilePixelProgram(const char *name, const char *programScript, const char *entryFunction, const std::function<bool(const char *, StringUTF8 &)> &onInclude, const std::unordered_map<StringUTF8, StringUTF8> &definesMap)
+			std::vector<uint8_t> compilePixelProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
 			{
 				return std::vector<uint8_t>();
 			}

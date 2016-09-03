@@ -362,10 +362,12 @@ namespace Gek
                     L"}                                                                                  \r\n" \
                     L"                                                                                   \r\n";
 
-                deferredVertexProgram = device->compileVertexProgram(program, L"mainVertexProgram");
+				auto compiledVertexProgram = device->compileVertexProgram(L"deferredVertexProgram", program, L"mainVertexProgram", nullptr);
+				deferredVertexProgram = device->createVertexProgram(compiledVertexProgram.data(), compiledVertexProgram.size());
                 deferredVertexProgram->setName(L"deferredVertexProgram");
 
-                deferredPixelProgram = device->compilePixelProgram(program, L"mainPixelProgram");
+				auto compiledPixelProgram = device->compilePixelProgram(L"deferredPixelProgram", program, L"mainPixelProgram", nullptr);
+				deferredPixelProgram = device->createPixelProgram(compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"deferredPixelProgram");
             }
 
