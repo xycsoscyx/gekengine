@@ -705,9 +705,21 @@ namespace Gek
             {
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = onInclude](ProgramHandle) -> Video::ObjectPtr
                 {
-					String uncompiledProgram;
-					FileSystem::load(fileName, uncompiledProgram);
-					auto compiled = device->compileComputeProgram(fileName, uncompiledProgram, entryFunction, onInclude);
+					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+
+					std::vector<uint8_t> compiled;
+					if (FileSystem::isFile(compiledFileName))
+					{
+						FileSystem::load(compiledFileName, compiled);
+					}
+					else
+					{
+						String uncompiledProgram;
+						FileSystem::load(fileName, uncompiledProgram);
+						compiled = device->compileComputeProgram(fileName, uncompiledProgram, entryFunction, onInclude);
+						FileSystem::save(compiledFileName, compiled);
+					}
+
 					auto program = device->createComputeProgram(compiled.data(), compiled.size());
                     program->setName(String::create(L"%v:%v", fileName, entryFunction));
                     return program;
@@ -719,10 +731,22 @@ namespace Gek
             ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
             {
                 auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = onInclude](ProgramHandle) -> Video::ObjectPtr
-                {
-					String uncompiledProgram;
-					FileSystem::load(fileName, uncompiledProgram);
-					auto compiled = device->compilePixelProgram(fileName, uncompiledProgram, entryFunction, onInclude);
+				{
+					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+
+					std::vector<uint8_t> compiled;
+					if (FileSystem::isFile(compiledFileName))
+					{
+						FileSystem::load(compiledFileName, compiled);
+					}
+					else
+					{
+						String uncompiledProgram;
+						FileSystem::load(fileName, uncompiledProgram);
+						compiled = device->compilePixelProgram(fileName, uncompiledProgram, entryFunction, onInclude);
+						FileSystem::save(compiledFileName, compiled);
+					}
+
 					auto program = device->createPixelProgram(compiled.data(), compiled.size());
 					program->setName(String::create(L"%v:%v", fileName, entryFunction));
 					return program;

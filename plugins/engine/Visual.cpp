@@ -134,61 +134,74 @@ namespace Gek
 				String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
 				if (!visualNode.findChild(L"vertex", [&](auto &vertexNode) -> void
 				{
-					String engineData;
-					engineData.format(
-						L"struct InputVertex\r\n" \
-						L"{\r\n" \
-						L"%v" \
-						L"};\r\n" \
-						L"\r\n" \
-						L"struct OutputVertex\r\n" \
-						L"{\r\n" \
-						L"    float4 projected : SV_POSITION;\r\n" \
-						L"%v" \
-						L"};\r\n" \
-						L"\r\n" \
-						L"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
-						L"{\r\n" \
-						L"    outputVertex.projected = mul(Camera::projectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
-						L"    return outputVertex;\r\n" \
-						L"}\r\n", inputVertexData, outputVertexData);
-
 					String fileName(FileSystem::getFileName(rootProgramsDirectory, visualName, vertexNode.text).append(L".hlsl"));
-					auto onInclude = [engineData = move(engineData), directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
+					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+
+					std::vector<uint8_t> compiledProgram;
+					if (FileSystem::isFile(compiledFileName))
 					{
-						if (wcscmp(includeName, L"GEKVisual") == 0)
+						FileSystem::load(compiledFileName, compiledProgram);
+					}
+					else
+					{
+						String engineData;
+						engineData.format(
+							L"struct InputVertex\r\n" \
+							L"{\r\n" \
+							L"%v" \
+							L"};\r\n" \
+							L"\r\n" \
+							L"struct OutputVertex\r\n" \
+							L"{\r\n" \
+							L"    float4 projected : SV_POSITION;\r\n" \
+							L"%v" \
+							L"};\r\n" \
+							L"\r\n" \
+							L"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
+							L"{\r\n" \
+							L"    outputVertex.projected = mul(Camera::projectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
+							L"    return outputVertex;\r\n" \
+							L"}\r\n", inputVertexData, outputVertexData);
+
+						auto onInclude = [engineData = move(engineData), directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 						{
-							data = engineData;
-							return true;
-						}
+							if (wcscmp(includeName, L"GEKVisual") == 0)
+							{
+								data = engineData;
+								return true;
+							}
 
-						if (FileSystem::isFile(includeName))
-						{
-							FileSystem::load(includeName, data);
-							return true;
-						}
+							if (FileSystem::isFile(includeName))
+							{
+								FileSystem::load(includeName, data);
+								return true;
+							}
 
-						String localFileName(FileSystem::getFileName(directory, includeName));
-						if (FileSystem::isFile(localFileName))
-						{
-							FileSystem::load(localFileName, data);
-							return true;
-						}
+							String localFileName(FileSystem::getFileName(directory, includeName));
+							if (FileSystem::isFile(localFileName))
+							{
+								FileSystem::load(localFileName, data);
+								return true;
+							}
 
-						String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
-						if (FileSystem::isFile(rootFileName))
-						{
-							FileSystem::load(rootFileName, data);
-							return true;
-						}
+							String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
+							if (FileSystem::isFile(rootFileName))
+							{
+								FileSystem::load(rootFileName, data);
+								return true;
+							}
 
-						return false;
-					};
+							return false;
+						};
 
-					String uncompiledProgram;
-					FileSystem::load(fileName, uncompiledProgram);
-					String entryFunction(vertexNode.getAttribute(L"entry"));
-					auto compiledProgram = device->compileVertexProgram(vertexNode.text, uncompiledProgram, entryFunction, onInclude);
+
+						String uncompiledProgram;
+						FileSystem::load(fileName, uncompiledProgram);
+						String entryFunction(vertexNode.getAttribute(L"entry"));
+						compiledProgram = device->compileVertexProgram(vertexNode.text, uncompiledProgram, entryFunction, onInclude);
+						FileSystem::save(compiledFileName, compiledProgram);
+					}
+
 					vertexProgram = device->createVertexProgram(compiledProgram.data(), compiledProgram.size());
 					if (!elementList.empty())
 					{
@@ -202,37 +215,48 @@ namespace Gek
 				visualNode.findChild(L"geometry", [&](auto &geometryNode) -> void
 				{
 					String fileName(FileSystem::getFileName(rootProgramsDirectory, visualName, geometryNode.text).append(L".hlsl"));
-					auto onInclude = [directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
+					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+
+					std::vector<uint8_t> compiledProgram;
+					if (FileSystem::isFile(compiledFileName))
 					{
-						if (FileSystem::isFile(includeName))
+						FileSystem::load(compiledFileName, compiledProgram);
+					}
+					else
+					{
+						auto onInclude = [directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 						{
-							FileSystem::load(includeName, data);
-							return true;
-						}
+							if (FileSystem::isFile(includeName))
+							{
+								FileSystem::load(includeName, data);
+								return true;
+							}
 
-						String localFileName(FileSystem::getFileName(directory, includeName));
-						if (FileSystem::isFile(localFileName))
-						{
-							FileSystem::load(localFileName, data);
-							return true;
-						}
+							String localFileName(FileSystem::getFileName(directory, includeName));
+							if (FileSystem::isFile(localFileName))
+							{
+								FileSystem::load(localFileName, data);
+								return true;
+							}
 
-						String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
-						if (FileSystem::isFile(rootFileName))
-						{
-							FileSystem::load(rootFileName, data);
-							return true;
-						}
+							String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
+							if (FileSystem::isFile(rootFileName))
+							{
+								FileSystem::load(rootFileName, data);
+								return true;
+							}
 
-						return false;
-					};
+							return false;
+						};
 
-					String uncompiledProgram;
-					FileSystem::load(fileName, uncompiledProgram);
-					String entryFunction(geometryNode.getAttribute(L"entry"));
-					auto compiledProgram = device->compileGeometryProgram(geometryNode.text, uncompiledProgram, entryFunction, onInclude);
+						String uncompiledProgram;
+						FileSystem::load(fileName, uncompiledProgram);
+						String entryFunction(geometryNode.getAttribute(L"entry"));
+						compiledProgram = device->compileGeometryProgram(geometryNode.text, uncompiledProgram, entryFunction, onInclude);
+						FileSystem::save(compiledFileName, compiledProgram);
+					}
+
 					geometryProgram = device->createGeometryProgram(compiledProgram.data(), compiledProgram.size());
-
 				});
 			}
 
