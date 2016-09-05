@@ -5,7 +5,7 @@
             <albedo pattern="color" parameters="(1,0,0,0.5)" />
             <normal file="schulz/old_tiles/old_tiles_n" />
             <roughness pattern="color" parameters="0.000000" />
-            <metalness pattern="color" parameters="0.000000" />
+            <metallic pattern="color" parameters="0.000000" />
         </transparent>
     </shader>
 </material>

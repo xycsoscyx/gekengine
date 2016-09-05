@@ -5,6 +5,6 @@
         <albedo flags="sRGB" file="schulz/old_tiles/old_tiles_a" />
         <normal file="schulz/old_tiles/old_tiles_n" />
         <roughness pattern="color" parameters="0.555556" />
-        <metalness pattern="color" parameters="0.777778" />
+        <metallic pattern="color" parameters="0.777778" />
     </solid></shader>
 </material>
