@@ -1,0 +1,3 @@
+.\debug\materialcreator.exe
+
+pause

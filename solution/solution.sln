@@ -120,6 +120,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dNewton", "..\external\Newt
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dScene", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dScene.vcxproj", "{B5EEC82D-938F-44C9-89BB-4A058581750B}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "materialcreator", "..\applications\materialcreator\materialcreator.vcxproj", "{979EACA7-0A54-4967-87F1-A1C8FCF7B680}"
+EndProject
 Global
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true
@@ -421,6 +423,15 @@ Global
 		{B5EEC82D-938F-44C9-89BB-4A058581750B}.Release|Win32.Build.0 = release|Win32
 		{B5EEC82D-938F-44C9-89BB-4A058581750B}.Release|x64.ActiveCfg = release|x64
 		{B5EEC82D-938F-44C9-89BB-4A058581750B}.Release|x64.Build.0 = release|x64
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Debug|Win32.ActiveCfg = Debug|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Debug|Win32.Build.0 = Debug|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Debug|x64.ActiveCfg = Debug|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Optimized|Win32.ActiveCfg = Optimized|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Optimized|Win32.Build.0 = Optimized|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Optimized|x64.ActiveCfg = Optimized|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Release|Win32.ActiveCfg = Release|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Release|Win32.Build.0 = Release|Win32
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -456,5 +467,6 @@ Global
 		{CBE9E751-E58B-46C1-B6B0-873670D0F981} = {A96A9D54-0A4B-41CA-9332-BFE90FD3A007}
 		{8A04A234-B1CA-464D-A2DD-34CEB583BA6A} = {A96A9D54-0A4B-41CA-9332-BFE90FD3A007}
 		{B5EEC82D-938F-44C9-89BB-4A058581750B} = {A96A9D54-0A4B-41CA-9332-BFE90FD3A007}
+		{979EACA7-0A54-4967-87F1-A1C8FCF7B680} = {0804103F-967E-4D50-A657-99A350E0937C}
 	EndGlobalSection
 EndGlobal

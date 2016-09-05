@@ -30,7 +30,7 @@ namespace Gek
         bool isFile(const wchar_t *fileName);
         bool isDirectory(const wchar_t *fileName);
 
-        void find(const wchar_t *rootDirectory, bool searchRecursively, std::function<bool(const wchar_t *fileName)> onFileFound);
+        void find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *fileName)> onFileFound);
 
         void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);
         void load(const wchar_t *fileName, StringUTF8 &string);

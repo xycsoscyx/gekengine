@@ -57,7 +57,11 @@ namespace Gek
             {
                 if (node.type.compare(type) == 0)
                 {
-                    onChildFound(node);
+					if (onChildFound)
+					{
+						onChildFound(node);
+					}
+
                     return true;
                 }
 
@@ -196,7 +200,7 @@ namespace Gek
             
             setNodeData(rootNode, rootData);
 
-			xmlSaveFormatFileEnc(StringUTF8(fileName), document, "UTF-8", 1);
+			xmlSaveFormatFileEnc(StringUTF8(fileName), document, "UTF-8", 4);
         }
     };
 }; // namespace Gek

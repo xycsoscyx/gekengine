@@ -49,19 +49,11 @@ namespace Gek
             return std::experimental::filesystem::is_directory(fileName);
         }
 
-		void find(const wchar_t *rootDirectory, bool searchRecursively, std::function<bool(const wchar_t *)> onFileFound)
+		void find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *)> onFileFound)
 		{
 			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
-				String fileName(fileSearch.path().wstring());
-				if (isFile(fileName))
-				{
-					onFileFound(fileName);
-				}
-				else if (searchRecursively && isDirectory(fileName))
-				{
-					find(fileName, searchRecursively, onFileFound);
-				}
+				onFileFound(fileSearch.path().wstring().c_str());
 			}
 		}
 

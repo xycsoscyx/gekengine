@@ -43,9 +43,6 @@ namespace Gek
                         throw MissingParameters();
                     }
 
-					String directory(FileSystem::getDirectory(materialName));
-					String fileName(FileSystem::getFileName(materialName));
-
                     PassMap passMap;
                     for (auto &passNode : shaderNode.children)
                     {
@@ -56,9 +53,6 @@ namespace Gek
                             if (resourceNode.attributes.count(L"file"))
                             {
                                 String resourceFileName(resourceNode.attributes[L"file"]);
-                                resourceFileName.replace(L"$directory", directory);
-                                resourceFileName.replace(L"$filename", fileName);
-                                resourceFileName.replace(L"$material", materialName);
                                 uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
                                 resource = this->resources->loadTexture(resourceFileName, flags);
                             }

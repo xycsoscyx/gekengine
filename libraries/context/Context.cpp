@@ -25,9 +25,9 @@ namespace Gek
 			searchPathList.push_back(rootPath);
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::find(searchPath, false, [&](const wchar_t *fileName) -> bool
+                FileSystem::find(searchPath, [&](const wchar_t *fileName) -> bool
                 {
-					if (FileSystem::getExtension(fileName).compareNoCase(L".dll") == 0)
+					if (FileSystem::isFile(fileName) && FileSystem::getExtension(fileName).compareNoCase(L".dll") == 0)
 					{
 						HMODULE module = LoadLibrary(fileName);
 						if (module)

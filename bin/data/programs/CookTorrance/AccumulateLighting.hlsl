@@ -110,7 +110,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 materialAlbedo = Resources::albedoBuffer[inputPixel.screen.xy];
     float2 materialInfo = Resources::materialBuffer[inputPixel.screen.xy];
     float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
-    float materialMetalness = materialInfo.y;
+    float materialMetallic = materialInfo.y;
 
     float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
@@ -137,9 +137,9 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         Light::Properties lightProperties = Light::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
         float NdotL = dot(surfaceNormal, lightProperties.direction);
-        float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetalness);
+        float3 diffuseAlbedo = lerp(materialAlbedo, 0.0, materialMetallic);
         float3 diffuseLighting = (diffuseAlbedo * Math::ReciprocalPi);
-        float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetalness, surfaceNormal, lightProperties.direction, viewDirection, NdotL);
+        float3 specularLighting = getSpecularBRDF(materialAlbedo, materialRoughness, materialMetallic, surfaceNormal, lightProperties.direction, viewDirection, NdotL);
         surfaceLight += (saturate(NdotL) * (diffuseLighting + specularLighting) * lightProperties.falloff * light.color);
     }
 

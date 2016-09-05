@@ -5,6 +5,9 @@
 #include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\XML.h"
+#include <Windows.h>
+#include <experimental\filesystem>
 #include <unordered_map>
 #include <algorithm>
 #include <vector>
@@ -64,7 +67,7 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std::unordered_map<StringUTF8, std::list<Model>> &materialMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -159,7 +162,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std:
 
                 if (!material.empty())
                 {
-                    materialMap[material].push_back(model);
+                    albedoMap[material].push_back(model);
                 }
             }
         }
@@ -174,7 +177,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std:
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(scene, node->mChildren[childIndex], fixMaxCoords, materialMap, boundingBox);
+            getMeshes(scene, node->mChildren[childIndex], fixMaxCoords, albedoMap, boundingBox);
         }
     }
 }
@@ -328,69 +331,117 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         aiApplyPostProcessing(scene, postProcessFlags);
 
         Shapes::AlignedBox boundingBox;
-        std::unordered_map<StringUTF8, std::list<Model>> modelMapUTF8;
-        getMeshes(scene, scene->mRootNode, fixMaxCoords, modelMapUTF8, boundingBox);
+        std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
+        getMeshes(scene, scene->mRootNode, fixMaxCoords, albedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        std::unordered_map<String, std::list<Model>> materialMap;
-        for (auto &material : modelMapUTF8)
+		String rootPath;
+		String currentModuleName((MAX_PATH + 1), L' ');
+		GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+		currentModuleName.trimRight();
+
+		String fullModuleName((MAX_PATH + 1), L' ');
+		GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
+		fullModuleName.trimRight();
+
+		std::experimental::filesystem::path fullModulePath(fullModuleName);
+		fullModulePath.remove_filename();
+		fullModulePath.remove_filename();
+		rootPath = fullModulePath.append(L"Data").wstring();
+
+		String texturesPath(FileSystem::getFileName(rootPath, L"Textures").getLower());
+		String materialsPath(FileSystem::getFileName(rootPath, L"Materials").getLower());
+
+		printf("Textures: %S\r\n", texturesPath.c_str());
+		printf("Materials: %S\r\n", materialsPath.c_str());
+
+		std::map<String, String> materialAlbedoMap;
+
+		std::function<bool(const wchar_t *)> findMaterials;
+		findMaterials = [&](const wchar_t *fileName) -> bool
+		{
+			if (FileSystem::isDirectory(fileName))
+			{
+				FileSystem::find(fileName, findMaterials);
+			}
+			else if (FileSystem::isFile(fileName))
+			{
+				try
+				{
+					printf("Material: %S\r\n", fileName);
+					Xml::Node materialNode = Xml::load(fileName, L"material");
+					materialNode.findChild(L"shader", [&](auto &shaderNode) -> void
+					{
+						for (auto &shaderPassNode : shaderNode.children)
+						{
+							shaderPassNode.findChild(L"albedo", [&](auto &albedoNode) -> void
+							{
+								if (albedoNode.attributes.count(L"file"))
+								{
+									String materialName(FileSystem::replaceExtension(fileName, L"").getLower());
+									materialName.replace((materialsPath + L"\\"), L"");
+									materialAlbedoMap[albedoNode.attributes[L"file"]] = materialName;
+									printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
+								}
+							});
+						}
+					});
+				}
+				catch (...)
+				{
+				};
+			}
+
+			return true;
+		};
+
+		FileSystem::find(materialsPath, findMaterials);
+        std::unordered_map<String, std::list<Model>> materialMultiMap;
+        for (auto &albedo : albedoMap)
         {
-            String materialName(material.first.getLower());
-            materialName.replace(L"/", L"\\");
-			materialName = FileSystem::replaceExtension(materialName, nullptr);
-            int texturesPathIndex = materialName.find(L"\\textures\\");
-            if (texturesPathIndex != std::string::npos)
-            {
-                materialName = materialName.subString(texturesPathIndex + 10);
-            }
+            String albedoName(albedo.first.getLower());
+            albedoName.replace(L"/", L"\\");
+			albedoName = FileSystem::replaceExtension(albedoName, L"");
+			albedoName.replace((texturesPath + L"\\"), L"");
 
-            if (materialName.subString(materialName.length() - 9).compareNoCase(L".colormap") == 0)
-            {
-                materialName = materialName.subString(0, materialName.length() - 9);
-            }
-            else if (materialName.subString(materialName.length() - 7).compareNoCase(L".albedo") == 0)
-            {
-                materialName = materialName.subString(0, materialName.length() - 7);
-            }
-            else if (materialName.subString(materialName.length() - 2).compareNoCase(L"_a") == 0)
-            {
-                materialName = materialName.subString(0, materialName.length() - 2);
-            }
+			printf("FileName: %s\r\n", albedo.first.c_str());
+			printf("Albedo: %S\r\n", albedoName.c_str());
 
-			auto fileSpecifier = FileSystem::getFileName(materialName);
-			auto folderPath = FileSystem::getDirectory(materialName);
-			auto folderName = FileSystem::getFileName(folderPath);
-            if (fileSpecifier == folderName)
-            {
-                materialName = folderPath;
-            }
-
-            materialMap[materialName] = material.second;
+			auto materialAlebedoSearch = materialAlbedoMap.find(albedoName);
+			if (materialAlebedoSearch != materialAlbedoMap.end())
+			{
+				materialMultiMap[materialAlebedoSearch->second] = albedo.second;
+				printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
+			}
         }
 
+		std::unordered_map<String, Model> materialMap;
+		for (auto &multiMaterial : materialMultiMap)
+		{
+			Model &material = materialMap[multiMaterial.first];
+			for (auto &instance : multiMaterial.second)
+			{
+				for (auto &index : instance.indexList)
+				{
+					material.indexList.push_back(uint16_t(index + material.vertexList.size()));
+				}
+
+				material.vertexList.insert(material.vertexList.end(), instance.vertexList.begin(), instance.vertexList.end());
+			}
+		}
+
+		if (materialMap.empty())
+		{
+			throw std::exception("No valid material models found");
+		}
+
+		printf("> Num. Models: %d\r\n", materialMap.size());
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
         if (mode.compareNoCase(L"model") == 0)
         {
-            std::unordered_map<String, Model> condensedMaterialMap;
-            for (auto &material : materialMap)
-            {
-                Model &condensedMaterial = condensedMaterialMap[material.first];
-                for (auto &instance : material.second)
-                {
-                    for (auto &index : instance.indexList)
-                    {
-                        condensedMaterial.indexList.push_back(uint16_t(index + condensedMaterial.vertexList.size()));
-                    }
-
-                    condensedMaterial.vertexList.insert(condensedMaterial.vertexList.end(), instance.vertexList.begin(), instance.vertexList.end());
-                }
-            }
-
-            printf("> Num. Models: %d\r\n", condensedMaterialMap.size());
-
             FILE *file = nullptr;
             _wfopen_s(&file, fileNameOutput, L"wb");
             if (file == nullptr)
@@ -402,9 +453,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 0;
             header.version = 4;
-            header.materialCount = condensedMaterialMap.size();
+            header.materialCount = materialMap.size();
             fwrite(&header, sizeof(ModelHeader), 1, file);
-            for (auto &material : condensedMaterialMap)
+            for (auto &material : materialMap)
             {
                 printf("-  %S\r\n", material.first.c_str());
                 printf("    %d vertices\r\n", material.second.vertexList.size());
@@ -417,7 +468,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 fwrite(&materialHeader, sizeof(ModelHeader::Material), 1, file);
             }
 
-            for (auto &material : condensedMaterialMap)
+            for (auto &material : materialMap)
             {
                 fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
                 fwrite(material.second.vertexList.data(), sizeof(Vertex), material.second.vertexList.size(), file);
@@ -430,12 +481,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             std::vector<Math::Float3> pointCloudList;
             for (auto &material : materialMap)
             {
-                for (auto &instance : material.second)
+                for (auto &index : material.second.indexList)
                 {
-                    for (auto &index : instance.indexList)
-                    {
-                        pointCloudList.push_back(instance.vertexList[index].position);
-                    }
+                    pointCloudList.push_back(material.second.vertexList[index].position);
                 }
             }
 
@@ -468,23 +516,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
         else  if (mode.compareNoCase(L"tree") == 0)
         {
-            std::unordered_map<String, Model> condensedMaterialMap;
-            for (auto &material : materialMap)
-            {
-                Model &condensedMaterial = condensedMaterialMap[material.first];
-                for (auto &instance : material.second)
-                {
-                    for (auto &index : instance.indexList)
-                    {
-                        condensedMaterial.indexList.push_back(uint16_t(index + condensedMaterial.vertexList.size()));
-                    }
-
-                    condensedMaterial.vertexList.insert(condensedMaterial.vertexList.end(), instance.vertexList.begin(), instance.vertexList.end());
-                }
-            }
-
-            printf("> Num. Materials: %d\r\n", condensedMaterialMap.size());
-
             NewtonWorld *newtonWorld = NewtonCreate();
             NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
             if (newtonCollision == nullptr)
@@ -494,7 +525,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
             int materialIdentifier = 0;
             NewtonTreeCollisionBeginBuild(newtonCollision);
-            for (auto &material : condensedMaterialMap)
+            for (auto &material : materialMap)
             {
                 printf("-  %S\r\n", material.first.c_str());
                 printf("    %d vertices\r\n", material.second.vertexList.size());
@@ -530,9 +561,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 2;
             header.version = 1;
-            header.materialCount = condensedMaterialMap.size();
+            header.materialCount = materialMap.size();
             fwrite(&header, sizeof(TreeHeader), 1, file);
-            for (auto &material : condensedMaterialMap)
+            for (auto &material : materialMap)
             {
                 TreeHeader::Material materialHeader;
                 wcsncpy(materialHeader.name, material.first, 63);

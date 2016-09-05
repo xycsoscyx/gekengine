@@ -46,7 +46,7 @@ float smithG_GGX(float angle, float alpha)
     return 1 / (angle + sqrt(alphaSquared + angleSquared - alphaSquared * angleSquared));
 }
 
-float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetalness, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
+float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMetallic, float3 surfaceNormal, float3 lightDirection, float3 viewDirection, float NdotL)
 {
     float NdotV = dot(surfaceNormal, viewDirection);
 
@@ -59,7 +59,7 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     float Cdlum = dot(Cdlin, luminance);
 
     float3 Ctint = Cdlum > 0 ? Cdlin / Cdlum : 1; // normalize lum. to isolate hue + sat
-    float3 Cspec0 = lerp(specular * .08 * lerp(1, Ctint, specularTint), Cdlin, materialMetalness);
+    float3 Cspec0 = lerp(specular * .08 * lerp(1, Ctint, specularTint), Cdlin, materialMetallic);
     float3 Csheen = lerp(1, Ctint, sheenTint);
 
     // Diffuse fresnel - go from 1 at normal incidence to .5 at grazing
@@ -103,7 +103,7 @@ float3 getBRDF(float3 materialAlbedo, float materialRoughness, float materialMet
     float Fr = lerp(.04, 1, FH);
     float Gr = smithG_GGX(NdotL, .25) * smithG_GGX(NdotV, .25);
 
-    return (Math::ReciprocalPi * lerp(Fd, ss, subsurface) * Cdlin +  Fsheen) * (1 - materialMetalness)
+    return (Math::ReciprocalPi * lerp(Fd, ss, subsurface) * Cdlin +  Fsheen) * (1 - materialMetallic)
         + Gs * Fs * Ds
         + .25 * clearcoat * Gr * Fr * Dr;
 }

@@ -44,6 +44,13 @@ namespace Gek
             , public Engine::Shader
         {
         public:
+			struct Resource
+			{
+				String name;
+				String pattern;
+				String parameters;
+			};
+
             struct PassData
             {
                 Pass::Mode mode;
@@ -57,7 +64,7 @@ namespace Gek
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
                 float width, height;
-                std::vector<String> materialList;
+                std::vector<Resource> materialList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
@@ -811,8 +818,18 @@ namespace Gek
                                 {
                                     auto &resourceName = resourcePair.first;
                                     auto &map = resourcePair.second;
-                                    pass.materialList.push_back(resourceName);
-                                    uint32_t currentStage = nextResourceStage++;
+									if (map.source != MapSource::Pattern)
+									{
+										throw MissingParameters();
+									}
+
+									Resource resource;
+									resource.name = resourceName;
+									resource.pattern = map.pattern;
+									resource.parameters = map.parameters;
+									pass.materialList.push_back(resource);
+
+									uint32_t currentStage = nextResourceStage++;
                                     switch (map.source)
                                     {
                                     case MapSource::File:
@@ -1011,9 +1028,13 @@ namespace Gek
                         auto &resourceMap = passPair.second;
                         for (auto &resource : pass->materialList)
                         {
-                            auto &resourceSearch = resourceMap.find(resource);
-                            if (resourceSearch != resourceMap.end())
-                            {
+                            auto &resourceSearch = resourceMap.find(resource.name);
+                            if (resourceSearch == resourceMap.end())
+							{
+								data->passMap[pass].push_back(resources->createTexture(resource.pattern, resource.parameters));
+							}
+							else
+							{
                                 data->passMap[pass].push_back(resourceSearch->second);
                             }
                         }
