@@ -1,3 +1,3 @@
-.\debug\materialcreator.exe
+.\release\materialcreator.exe
 
 pause
