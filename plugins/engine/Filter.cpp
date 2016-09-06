@@ -33,7 +33,6 @@ namespace Gek
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
                 float width, height;
-                std::vector<String> materialList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;

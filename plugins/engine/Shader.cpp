@@ -64,7 +64,7 @@ namespace Gek
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
                 float width, height;
-                std::vector<Resource> materialList;
+                std::vector<Resource> materialResourceList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
@@ -813,7 +813,7 @@ namespace Gek
                                     }
                                 }
 
-                                pass.materialList.reserve(materialMap.size());
+                                pass.materialResourceList.reserve(materialMap.size());
                                 for (auto &resourcePair : materialMap)
                                 {
                                     auto &resourceName = resourcePair.first;
@@ -827,7 +827,7 @@ namespace Gek
 									resource.name = resourceName;
 									resource.pattern = map.pattern;
 									resource.parameters = map.parameters;
-									pass.materialList.push_back(resource);
+									pass.materialResourceList.push_back(resource);
 
 									uint32_t currentStage = nextResourceStage++;
                                     switch (map.source)
@@ -1026,7 +1026,7 @@ namespace Gek
                     {
                         PassData *pass = passSearch->second;
                         auto &resourceMap = passPair.second;
-                        for (auto &resource : pass->materialList)
+                        for (auto &resource : pass->materialResourceList)
                         {
                             auto &resourceSearch = resourceMap.find(resource.name);
                             if (resourceSearch == resourceMap.end())
@@ -1094,7 +1094,7 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        firstResourceStage += pass.materialList.size();
+                        firstResourceStage += pass.materialResourceList.size();
                     }
 
                     resources->setResourceList(deviceContextPipeline, pass.resourceList.data(), pass.resourceList.size(), firstResourceStage);
@@ -1165,7 +1165,7 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        firstResourceStage += pass.materialList.size();
+                        firstResourceStage += pass.materialResourceList.size();
                     }
 
                     resources->setResourceList(deviceContextPipeline, nullptr, pass.resourceList.size(), firstResourceStage);
