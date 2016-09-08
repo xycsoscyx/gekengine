@@ -22,6 +22,7 @@ namespace Gek
             };
 
             virtual Data * const getData(void) const = 0;
-        };
+			virtual RenderStateHandle getRenderState(void) const = 0;
+		};
     }; // namespace Engine
 }; // namespace Gek

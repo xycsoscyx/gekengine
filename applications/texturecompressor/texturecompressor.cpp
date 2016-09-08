@@ -32,43 +32,6 @@ void compressTexture(const wchar_t *fileName)
 	printf("Compressing: -> %S\r\n", fileName);
 	printf("             <- %S\r\n", fileNameDDS.c_str());
 
-	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
-	// flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
-	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	if (wcsstr(fileName, L"basecolor") != nullptr ||
-		wcsstr(fileName, L"base_color") != nullptr ||
-		wcsstr(fileName, L"diffuse") != nullptr ||
-		wcsstr(fileName, L"albedo") != nullptr ||
-		wcsstr(fileName, L"_d") != nullptr)
-	{
-		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
-		outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
-		printf("Compressing Albedo: BC7 sRGB\r\n");
-	}
-	else if (wcsstr(fileName, L"normal") != nullptr ||
-		wcsstr(fileName, L"_n") != nullptr)
-	{
-		outputFormat = DXGI_FORMAT_BC5_UNORM;
-		printf("Compressing Normal: BC5\r\n");
-	}
-	else if (wcsstr(fileName, L"roughness") != nullptr ||
-		wcsstr(fileName, L"_r") != nullptr)
-	{
-		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		printf("Compressing Roughness: BC4\r\n");
-	}
-	else if (wcsstr(fileName, L"metalness") != nullptr ||
-		wcsstr(fileName, L"metallic") != nullptr ||
-		wcsstr(fileName, L"_m") != nullptr)
-	{
-		outputFormat = DXGI_FORMAT_BC4_UNORM;
-		printf("Compressing Metallic: BC4\r\n");
-	}
-	else
-	{
-		throw std::exception("Unknown material encountered");
-	}
-
 	std::vector<uint8_t> buffer;
 	FileSystem::load(fileName, buffer);
 
@@ -107,6 +70,51 @@ void compressTexture(const wchar_t *fileName)
 	if (FAILED(resultValue))
 	{
 		throw std::exception("Unable to load input file");
+	}
+
+	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
+	// flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
+	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
+	if (wcsstr(fileName, L"basecolor") != nullptr ||
+		wcsstr(fileName, L"base_color") != nullptr ||
+		wcsstr(fileName, L"diffuse") != nullptr ||
+		wcsstr(fileName, L"albedo") != nullptr ||
+		wcsstr(fileName, L"_d") != nullptr)
+	{
+		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
+		if (DirectX::HasAlpha(image.GetMetadata().format))
+		{
+			outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
+			printf("Compressing Albedo: BC7 sRGB\r\n");
+		}
+		else
+		{
+			outputFormat = DXGI_FORMAT_BC1_UNORM_SRGB;
+			printf("Compressing Albedo: BC7 sRGB\r\n");
+		}
+	}
+	else if (wcsstr(fileName, L"normal") != nullptr ||
+		wcsstr(fileName, L"_n") != nullptr)
+	{
+		outputFormat = DXGI_FORMAT_BC5_UNORM;
+		printf("Compressing Normal: BC5\r\n");
+	}
+	else if (wcsstr(fileName, L"roughness") != nullptr ||
+		wcsstr(fileName, L"_r") != nullptr)
+	{
+		outputFormat = DXGI_FORMAT_BC4_UNORM;
+		printf("Compressing Roughness: BC4\r\n");
+	}
+	else if (wcsstr(fileName, L"metalness") != nullptr ||
+		wcsstr(fileName, L"metallic") != nullptr ||
+		wcsstr(fileName, L"_m") != nullptr)
+	{
+		outputFormat = DXGI_FORMAT_BC4_UNORM;
+		printf("Compressing Metallic: BC4\r\n");
+	}
+	else
+	{
+		throw std::exception("Unknown material encountered");
 	}
 
 	printf(".loaded.");

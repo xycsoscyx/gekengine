@@ -1065,6 +1065,8 @@ namespace Gek
                     }
                 }
 
+				auto renderState = material->getRenderState();
+				resources->setRenderState(deviceContext, (renderState ? renderState : pass.renderState));
                 return false;
             }
 

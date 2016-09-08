@@ -21,6 +21,7 @@ namespace Gek
         private:
             Engine::Resources *resources;
             DataPtr data;
+			RenderStateHandle renderState;
 
         public:
             Material(Context *context, Engine::Resources *resources, String materialName, MaterialHandle materialHandle)
@@ -68,7 +69,11 @@ namespace Gek
                     }
 
                     this->data = shader->loadMaterialData(passMap);
-                }))
+					materialNode.findChild(L"renderstates", [&](auto &renderstatesNode) -> void
+					{
+						renderState = loadRenderState(resources, renderstatesNode);
+					});
+				}))
                 {
                     throw MissingParameters();
                 }
@@ -79,6 +84,11 @@ namespace Gek
             {
                 return data.get();
             }
+
+			RenderStateHandle getRenderState(void) const
+			{
+				return renderState;
+			}
         };
 
         GEK_REGISTER_CONTEXT_USER(Material);
