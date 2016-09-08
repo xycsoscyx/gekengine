@@ -46,7 +46,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "model", "..\plugins\model\m
 		{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B} = {4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\external\DirectXTex\DirectXTex_Desktop_2013.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectXTex", "..\external\DirectXTex\DirectXTex\DirectXTex_Desktop_2015.vcxproj", "{371B9FA9-4C90-4AC6-A123-ACED756D6C77}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "physics", "..\plugins\physics\physics.vcxproj", "{3985C661-11F4-4E1B-B35D-C9C6C791F3D1}"
 	ProjectSection(ProjectDependencies) = postProject

@@ -2562,46 +2562,44 @@ namespace Gek
                 std::vector<uint8_t> buffer;
                 FileSystem::load(fileName, buffer);
 
-                ::DirectX::ScratchImage scratchImage;
-                ::DirectX::TexMetadata textureMetaData;
-
 				String extension(FileSystem::getExtension(fileName));
-                std::function<HRESULT(uint8_t*, size_t, ::DirectX::TexMetadata *, ::DirectX::ScratchImage &)> load;
-                if (extension.compareNoCase(L".dds") == 0)
-                {
-                    load = std::bind(::DirectX::LoadFromDDSMemory, std::placeholders::_1, std::placeholders::_2, 0, std::placeholders::_3, std::placeholders::_4);
-                }
-                else if (extension.compareNoCase(L".tga") == 0)
-                {
-                    load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4);
-                }
-                else if (extension.compareNoCase(L".png") == 0)
-                {
-                    load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, std::placeholders::_3, std::placeholders::_4);
-                }
-                else if (extension.compareNoCase(L".bmp") == 0)
-                {
-                    load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, std::placeholders::_3, std::placeholders::_4);
-                }
-                else if (extension.compareNoCase(L".jpg") == 0 ||
-                    extension.compareNoCase(L".jpeg") == 0)
-                {
-                    load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, std::placeholders::_3, std::placeholders::_4);
-                }
+				std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
+				if (extension.compareNoCase(L".dds") == 0)
+				{
+					load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
+				}
+				else if (extension.compareNoCase(L".tga") == 0)
+				{
+					load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
+				}
+				else if (extension.compareNoCase(L".png") == 0)
+				{
+					load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
+				}
+				else if (extension.compareNoCase(L".bmp") == 0)
+				{
+					load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
+				}
+				else if (extension.compareNoCase(L".jpg") == 0 ||
+					extension.compareNoCase(L".jpeg") == 0)
+				{
+					load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
+				}
 
                 if (!load)
                 {
                     throw Video::InvalidFileType();
                 }
 
-                HRESULT resultValue = load(buffer.data(), buffer.size(), &textureMetaData, scratchImage);
+				::DirectX::ScratchImage image;
+				HRESULT resultValue = load(buffer, image);
                 if (FAILED(resultValue))
                 {
                     throw Video::LoadFileFailed();
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, scratchImage.GetImages(), scratchImage.GetImageCount(), scratchImage.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
                     throw Video::CreateObjectFailed();
@@ -2614,7 +2612,7 @@ namespace Gek
                     throw Video::CreateObjectFailed();
                 }
 
-                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, scratchImage.GetMetadata().width, scratchImage.GetMetadata().height, scratchImage.GetMetadata().depth);
+                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, image.GetMetadata().width, image.GetMetadata().height, image.GetMetadata().depth);
             }
 
             void executeCommandList(Video::Object *commandList)

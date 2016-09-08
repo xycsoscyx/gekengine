@@ -16,43 +16,43 @@
 
 using namespace Gek;
 
-void compressTexture(const wchar_t *fileName)
+void compressTexture(const String &inputFileName)
 {
-	if (!FileSystem::isFile(fileName))
+	if (!FileSystem::isFile(inputFileName))
 	{
 		throw std::exception("Input file not found");
 	}
 
-	String fileNameDDS(FileSystem::replaceExtension(fileName, L".dds"));
-	if (FileSystem::isFile(fileNameDDS))
+	String outputFileName(FileSystem::replaceExtension(inputFileName, L".dds"));
+	if (FileSystem::isFile(outputFileName))
 	{
 		throw std::exception("Output already exists (must specify overwrite)");
 	}
 
-	printf("Compressing: -> %S\r\n", fileName);
-	printf("             <- %S\r\n", fileNameDDS.c_str());
+	printf("Compressing: -> %S\r\n", inputFileName.c_str());
+	printf("             <- %S\r\n", outputFileName.c_str());
 
 	std::vector<uint8_t> buffer;
-	FileSystem::load(fileName, buffer);
+	FileSystem::load(inputFileName, buffer);
 
-	String extension(FileSystem::getExtension(fileName));
-	std::function<HRESULT(uint8_t*, size_t, ::DirectX::ScratchImage &)> load;
+	String extension(FileSystem::getExtension(inputFileName));
+	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
 	if (extension.compareNoCase(L".tga") == 0)
 	{
-		load = std::bind(::DirectX::LoadFromTGAMemory, std::placeholders::_1, std::placeholders::_2, nullptr, std::placeholders::_3);
+		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
 	}
 	else if (extension.compareNoCase(L".png") == 0)
 	{
-		load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_PNG, nullptr, std::placeholders::_3);
+		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
 	}
 	else if (extension.compareNoCase(L".bmp") == 0)
 	{
-		load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_BMP, nullptr, std::placeholders::_3);
+		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
 	}
 	else if (extension.compareNoCase(L".jpg") == 0 ||
 		extension.compareNoCase(L".jpeg") == 0)
 	{
-		load = std::bind(::DirectX::LoadFromWICMemory, std::placeholders::_1, std::placeholders::_2, ::DirectX::WIC_CODEC_JPEG, nullptr, std::placeholders::_3);
+		load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
 	}
 /*
 	else if (extension.compareNoCase(L".dds") == 0)
@@ -66,7 +66,7 @@ void compressTexture(const wchar_t *fileName)
 	}
 
 	::DirectX::ScratchImage image;
-	HRESULT resultValue = load(buffer.data(), buffer.size(), image);
+	HRESULT resultValue = load(buffer, image);
 	if (FAILED(resultValue))
 	{
 		throw std::exception("Unable to load input file");
@@ -75,11 +75,11 @@ void compressTexture(const wchar_t *fileName)
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	// flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	if (wcsstr(fileName, L"basecolor") != nullptr ||
-		wcsstr(fileName, L"base_color") != nullptr ||
-		wcsstr(fileName, L"diffuse") != nullptr ||
-		wcsstr(fileName, L"albedo") != nullptr ||
-		wcsstr(fileName, L"_d") != nullptr)
+	if (inputFileName.find(L"basecolor") != String::npos ||
+		inputFileName.find(L"base_color") != String::npos ||
+		inputFileName.find(L"diffuse") != String::npos ||
+		inputFileName.find(L"albedo") != String::npos ||
+		inputFileName.subString(inputFileName.length() - 2) == L"_d")
 	{
 		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
 		if (DirectX::HasAlpha(image.GetMetadata().format))
@@ -93,21 +93,21 @@ void compressTexture(const wchar_t *fileName)
 			printf("Compressing Albedo: BC7 sRGB\r\n");
 		}
 	}
-	else if (wcsstr(fileName, L"normal") != nullptr ||
-		wcsstr(fileName, L"_n") != nullptr)
+	else if (inputFileName.find(L"normal") != String::npos ||
+		inputFileName.subString(inputFileName.length() - 2) == L"_n")
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
 		printf("Compressing Normal: BC5\r\n");
 	}
-	else if (wcsstr(fileName, L"roughness") != nullptr ||
-		wcsstr(fileName, L"_r") != nullptr)
+	else if (inputFileName.find(L"roughness") != String::npos ||
+		inputFileName.subString(inputFileName.length() - 2) == L"_r")
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		printf("Compressing Roughness: BC4\r\n");
 	}
-	else if (wcsstr(fileName, L"metalness") != nullptr ||
-		wcsstr(fileName, L"metallic") != nullptr ||
-		wcsstr(fileName, L"_m") != nullptr)
+	else if (inputFileName.find(L"metalness") != String::npos ||
+		inputFileName.find(L"metallic") != String::npos ||
+		inputFileName.subString(inputFileName.length() - 2) == L"_m")
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		printf("Compressing Metallic: BC4\r\n");
@@ -138,7 +138,7 @@ void compressTexture(const wchar_t *fileName)
 
 	printf(".compressed.");
 
-	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, fileNameDDS);
+	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFileName);
 	if (FAILED(resultValue))
 	{
 		throw std::exception("Unable to save image");
