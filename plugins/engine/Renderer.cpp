@@ -395,15 +395,15 @@ namespace Gek
                 }
             }
 
-            void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
+            void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(cameraEntity);
 
-                auto &cameraTransform = cameraEntity->getComponent<Components::Transform>();
-                Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
-                Math::Float4x4 viewMatrix(cameraMatrix.getInverse());
+                const auto &cameraTransform = cameraEntity->getComponent<Components::Transform>();
+                const Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
+                const Math::Float4x4 viewMatrix(cameraMatrix.getInverse());
 
                 const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
 
@@ -560,7 +560,7 @@ namespace Gek
                     deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                     if (cameraEntity->hasComponent<Components::Filter>())
                     {
-                        auto &filterList = cameraEntity->getComponent<Components::Filter>().list;
+                        const auto &filterList = cameraEntity->getComponent<Components::Filter>().list;
                         for (auto &filterName : filterList)
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);

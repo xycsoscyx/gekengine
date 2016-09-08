@@ -28,7 +28,7 @@ namespace Gek
         GEK_INTERFACE(RendererListener)
         {
             virtual void onRenderBackground(void) { };
-            virtual void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) { };
+            virtual void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) { };
             virtual void onRenderForeground(void) { };
         };
 
@@ -39,7 +39,7 @@ namespace Gek
 
         virtual Video::Device * getDevice(void) const = 0;
 
-        virtual void render(Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
+        virtual void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
         virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
         };
     }; // namespace Engine

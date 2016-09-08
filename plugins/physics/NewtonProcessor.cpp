@@ -343,8 +343,8 @@ namespace Gek
 
                 if (entity->hasComponents<Components::Transform, Components::Physical>())
                 {
-                    auto &transformComponent = entity->getComponent<Components::Transform>();
-                    auto &physicalComponent = entity->getComponent<Components::Physical>();
+                    const auto &transformComponent = entity->getComponent<Components::Transform>();
+                    const auto &physicalComponent = entity->getComponent<Components::Physical>();
                     if (entity->hasComponent<Components::Player>())
                     {
                         Newton::EntityPtr playerBody(createPlayerBody(core, newtonWorld, entity));
@@ -359,12 +359,12 @@ namespace Gek
                         NewtonCollision *newtonCollision = nullptr;
                         if (entity->hasComponents<Components::Model>())
                         {
-                            auto &modelComponent = entity->getComponent<Components::Model>();
+                            const auto &modelComponent = entity->getComponent<Components::Model>();
                             newtonCollision = loadCollision(modelComponent);
                         }
                         else if (entity->hasComponents<Components::Shape>())
                         {
-                            auto &shapeComponent = entity->getComponent<Components::Shape>();
+							const auto &shapeComponent = entity->getComponent<Components::Shape>();
                             newtonCollision = createCollision(shapeComponent);
                         }
 

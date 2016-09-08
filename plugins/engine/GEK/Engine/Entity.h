@@ -13,27 +13,35 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(ComponentNotFound);
 
-            virtual bool hasComponent(const std::type_index &type) = 0;
-            virtual void *getComponent(const std::type_index &type) = 0;
+            virtual bool hasComponent(const std::type_index &type) const = 0;
+
+			virtual void *getComponent(const std::type_index &type) = 0;
+			virtual const void *getComponent(const std::type_index &type) const = 0;
 
             template <typename CLASS>
-            bool hasComponent(void)
+            bool hasComponent(void) const
             {
                 return hasComponent(typeid(CLASS));
             }
 
             template<typename... PARAMETERS>
-            bool hasComponents(void)
+            bool hasComponents(void) const
             {
 				std::vector<bool> hasComponentList({ hasComponent<PARAMETERS>()... });
 				return (std::accumulate(hasComponentList.begin(), hasComponentList.end(), 0U) == hasComponentList.size());
             }
 
-            template <typename CLASS>
-            CLASS &getComponent(void)
-            {
-                return *static_cast<CLASS *>(getComponent(typeid(CLASS)));
-            }
-        };
+			template <typename CLASS>
+			CLASS &getComponent(void)
+			{
+				return *static_cast<CLASS *>(getComponent(typeid(CLASS)));
+			}
+
+			template <typename CLASS>
+			const CLASS &getComponent(void) const
+			{
+				return *static_cast<const CLASS *>(getComponent(typeid(CLASS)));
+			}
+		};
     }; // namespace Plugin
 }; // namespace Gek

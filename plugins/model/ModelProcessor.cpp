@@ -264,7 +264,7 @@ namespace Gek
 
             if (entity->hasComponents<Components::Model, Components::Transform>())
             {
-                auto &modelComponent = entity->getComponent<Components::Model>();
+                const auto &modelComponent = entity->getComponent<Components::Model>();
                 String fileName(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".gek"));
                 auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
                 if (pair.second)
@@ -358,7 +358,7 @@ namespace Gek
             deviceContext->drawIndexedPrimitive(material.indexCount, 0, 0);
         }
 
-        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+        void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
@@ -366,9 +366,10 @@ namespace Gek
             visibleMap.clear();
             concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
             {
-                Plugin::Entity *entity = entityDataPair.first;
-                Data &data = entityDataPair.second;
+                const Plugin::Entity *entity = entityDataPair.first;
+                const Data &data = entityDataPair.second;
                 Model &model = data.model;
+
                 if (model.loadBox.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
                 {
                     const auto &transformComponent = entity->getComponent<Components::Transform>();
@@ -381,23 +382,21 @@ namespace Gek
                     {
                         auto &materialList = visibleMap[&model];
                         auto &instanceList = materialList[data.skin];
-
-                        auto instance(matrix * viewMatrix);
-                        instanceList.push_back(Instance(instance));
+                        instanceList.push_back(Instance(matrix * viewMatrix));
                     }
                 }
             });
 
             concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
-                Model &model = *visibleMap.first;
-                if (model.valid() && !model.materialList.empty())
+                auto model = visibleMap.first;
+                if (model->valid() && !model->materialList.empty())
                 {
                     concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                     {
                         concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
                         {
-                            concurrency::parallel_for_each(model.materialList.begin(), model.materialList.end(), [&](const Material &material) -> void
+                            concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
                             {
                                 renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
                             });

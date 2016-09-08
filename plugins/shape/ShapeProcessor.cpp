@@ -544,7 +544,7 @@ namespace Gek
 
             if (entity->hasComponents<Components::Shape, Components::Transform>())
             {
-                auto &shapeComponent = entity->getComponent<Components::Shape>();
+                const auto &shapeComponent = entity->getComponent<Components::Shape>();
 				auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
@@ -626,7 +626,7 @@ namespace Gek
             deviceContext->drawIndexedPrimitive(shape->indexCount, 0, 0);
         }
 
-        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+        void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
@@ -634,8 +634,8 @@ namespace Gek
             visibleMap.clear();
             concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
             {
-                Plugin::Entity *entity = entityDataPair.first;
-                Data &data = entityDataPair.second;
+                const Plugin::Entity *entity = entityDataPair.first;
+                const Data &data = entityDataPair.second;
 
                 const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
@@ -656,14 +656,14 @@ namespace Gek
 
             concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
-                Shape &shape = *visibleMap.first;
-                if (shape.valid() && shape.indexCount > 0)
+                auto shape = visibleMap.first;
+                if (shape->valid() && shape->indexCount > 0)
                 {
                     concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                     {
                         concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
                         {
-                            renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, &shape, &instanceList, constantBuffer.get()));
+                            renderer->queueDrawCall(visual, materialMap.first, std::bind(drawCall, std::placeholders::_1, resources, shape, &instanceList, constantBuffer.get()));
                         });
                     });
                 }

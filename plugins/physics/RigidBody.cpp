@@ -29,8 +29,8 @@ namespace Gek
                 GEK_REQUIRE(world);
                 GEK_REQUIRE(entity);
 
-                auto &physical = entity->getComponent<Components::Physical>();
-                auto &transform = entity->getComponent<Components::Transform>();
+				const auto &physical = entity->getComponent<Components::Physical>();
+				const auto &transform = entity->getComponent<Components::Transform>();
 
                 Math::Float4x4 matrix(transform.getMatrix());
                 newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
@@ -66,8 +66,8 @@ namespace Gek
 
             void onPreUpdate(int threadHandle)
             {
-                auto &physical = entity->getComponent<Components::Physical>();
-                auto &transform = entity->getComponent<Components::Transform>();
+				const auto &physical = entity->getComponent<Components::Physical>();
+				const auto &transform = entity->getComponent<Components::Transform>();
 
                 NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transform.scale.x, transform.scale.y, transform.scale.z);
 
@@ -77,10 +77,9 @@ namespace Gek
 
             void onSetTransform(const float* const matrixData, int threadHandle)
             {
-                auto &transform = entity->getComponent<Components::Transform>();
-
                 Math::Float4x4 matrix(matrixData);
-                transform.position = matrix.translation;
+				auto &transform = entity->getComponent<Components::Transform>();
+				transform.position = matrix.translation;
                 transform.rotation = matrix.getQuaternion();
             }
         };

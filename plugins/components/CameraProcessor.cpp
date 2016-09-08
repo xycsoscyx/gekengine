@@ -121,7 +121,7 @@ namespace Gek
 
             if (entity->hasComponents<Components::FirstPersonCamera, Components::Transform>())
             {
-                auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
+				const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
 
                 Camera data;
                 if (!cameraComponent.name.empty())
@@ -154,13 +154,13 @@ namespace Gek
             {
                 std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
                 {
-                    Plugin::Entity *entity = entityDataPair.first;
-                    auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
-                    auto &camera = entityDataPair.second;
+					const Plugin::Entity *entity = entityDataPair.first;
+					const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
+					const auto &camera = entityDataPair.second;
 
-                    auto backBuffer = renderer->getDevice()->getBackBuffer();
-                    float width = float(backBuffer->getWidth());
-                    float height = float(backBuffer->getHeight());
+					const auto backBuffer = renderer->getDevice()->getBackBuffer();
+					const float width = float(backBuffer->getWidth());
+					const float height = float(backBuffer->getHeight());
 
                     Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 

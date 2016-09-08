@@ -235,8 +235,8 @@ namespace Gek
 
             if (entity->hasComponents<Components::Particles, Components::Transform>())
             {
-                auto &particlesComponent = entity->getComponent<Components::Particles>();
-                auto &transformComponent = entity->getComponent<Components::Transform>();
+				const auto &particlesComponent = entity->getComponent<Components::Particles>();
+				const auto &transformComponent = entity->getComponent<Components::Transform>();
 
                 auto &emitter = entityEmitterMap.insert(std::make_pair(entity, Emitter())).first->second;
 				emitter.visual = resources->loadVisual(particlesComponent.visual);
@@ -274,21 +274,21 @@ namespace Gek
         {
             if (state == State::Active)
             {
-				float frameTime = population->getFrameTime();
+				const float frameTime = population->getFrameTime();
                 concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
                 {
-                    Plugin::Entity *entity = entityEmitterPair.first;
-                    Emitter &emitter = entityEmitterPair.second;
-                    auto &transformComponent = entity->getComponent<Components::Transform>();
+					const Plugin::Entity *entity = entityEmitterPair.first;
+					const auto &transformComponent = entity->getComponent<Components::Transform>();
+					Emitter &emitter = entityEmitterPair.second;
 
-					auto emitParticle = [emitter, transformComponent, frameTime](Particle &particle) -> void
+					const auto emitParticle = [emitter = static_cast<const Emitter &>(emitter), transformComponent, frameTime](Particle &particle) -> void
 					{
 						particle.position = transformComponent.position;
 						particle.velocity = Math::Float4x4::createEulerRotation(fullCircle(mersineTwister), fullCircle(mersineTwister), fullCircle(mersineTwister)).nz * emitterForce(mersineTwister);
 						particle.lifeRemaining = (emitterSpawnAge(mersineTwister) * emitter.lifeExpectancy);
 					};
 
-					auto updateParticle = [emitter, transformComponent, frameTime](Particle &particle) -> void
+					const auto updateParticle = [emitter = static_cast<const Emitter &>(emitter), transformComponent, frameTime](Particle &particle) -> void
 					{
 						static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
 						particle.velocity += (gravity * frameTime);
@@ -324,7 +324,7 @@ namespace Gek
         }
 
         // Plugin::RendererListener
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, VisibleMap::iterator visibleBegin, VisibleMap::iterator visibleEnd, Video::Buffer *particleBuffer)
+        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const VisibleMap::iterator visibleBegin, const VisibleMap::iterator visibleEnd, Video::Buffer *particleBuffer)
         {
             GEK_REQUIRE(deviceContext);
             GEK_REQUIRE(resources);
@@ -367,7 +367,7 @@ namespace Gek
             }
         }
 
-        void onRenderScene(Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+        void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
         {
             GEK_REQUIRE(renderer);
             GEK_REQUIRE(cameraEntity);
@@ -375,7 +375,6 @@ namespace Gek
             visibleMap.clear();
             concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
             {
-                Plugin::Entity *entity = entityEmitterPair.first;
                 const Emitter &emitter = entityEmitterPair.second;
                 if (viewFrustum.isVisible(emitter))
                 {
@@ -385,7 +384,7 @@ namespace Gek
 
             for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )
             {
-                auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
+                const auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
                 renderer->queueDrawCall(propertiesSearch->first.visual, propertiesSearch->first.material, std::bind(drawCall, std::placeholders::_1, resources, emittersRange.first, emittersRange.second, particleBuffer.get()));
                 propertiesSearch = emittersRange.second;
             }

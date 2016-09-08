@@ -177,9 +177,9 @@ namespace Gek
 				, touchingSurface(false)
 				, falling(true)
 			{
-				auto &physical = entity->getComponent<Components::Physical>();
-				auto &transform = entity->getComponent<Components::Transform>();
-				auto &player = entity->getComponent<Components::Player>();
+				const auto &physical = entity->getComponent<Components::Physical>();
+				const auto &transform = entity->getComponent<Components::Transform>();
+				const auto &player = entity->getComponent<Components::Player>();
 
 				halfHeight = player.height * 0.5f;
 
@@ -333,7 +333,7 @@ namespace Gek
 
 			void onPostUpdate(float frameTime, int threadHandle)
 			{
-				auto &player = entity->getComponent<Components::Player>();
+				const auto &player = entity->getComponent<Components::Player>();
 
 				// get the body motion state 
 				Math::Float4x4 initialMatrix;

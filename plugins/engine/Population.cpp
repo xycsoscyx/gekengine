@@ -46,22 +46,33 @@ namespace Gek
             }
 
             // Plugin::Entity
-            bool hasComponent(const std::type_index &type)
+            bool hasComponent(const std::type_index &type) const
             {
                 return (componentsMap.count(type) > 0);
             }
 
-            void *getComponent(const std::type_index &type)
-            {
-                auto componentSearch = componentsMap.find(type);
-                if (componentSearch == componentsMap.end())
-                {
-                    throw ComponentNotFound();
-                }
+			void *getComponent(const std::type_index &type)
+			{
+				auto componentSearch = componentsMap.find(type);
+				if (componentSearch == componentsMap.end())
+				{
+					throw ComponentNotFound();
+				}
 
-                return componentSearch->second.second;
-            }
-        };
+				return componentSearch->second.second;
+			}
+
+			const void *getComponent(const std::type_index &type) const
+			{
+				auto componentSearch = componentsMap.find(type);
+				if (componentSearch == componentsMap.end())
+				{
+					throw ComponentNotFound();
+				}
+
+				return componentSearch->second.second;
+			}
+		};
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
             , public Plugin::Population
