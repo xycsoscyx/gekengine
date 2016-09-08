@@ -63,24 +63,24 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 								textureName.find(L"base_color") != String::npos ||
 								textureName.find(L"diffuse") != String::npos ||
 								textureName.find(L"albedo") != String::npos ||
-								textureName.find(L"_d") != String::npos)
+								textureName.subString(textureName.length() - 2) == L"_d")
 							{
 								node = &solidNode.getChild(L"albedo");
 								node->attributes[L"flags"] = L"sRGB";
 							}
 							else if (textureName.find(L"normal") != String::npos ||
-								textureName.find(L"_n") != String::npos)
+								textureName.subString(textureName.length() - 2) == L"_n")
 							{
 								node = &solidNode.getChild(L"normal");
 							}
 							else if (textureName.find(L"roughness") != String::npos ||
-								textureName.find(L"_r") != String::npos)
+								textureName.subString(textureName.length() - 2) == L"_r")
 							{
 								node = &solidNode.getChild(L"roughness");
 							}
 							else if (textureName.find(L"metalness") != String::npos ||
 								textureName.find(L"metallic") != String::npos ||
-								textureName.find(L"_m") != String::npos)
+								textureName.subString(textureName.length() - 2) == L"_m")
 							{
 								node = &solidNode.getChild(L"metallic");
 							}

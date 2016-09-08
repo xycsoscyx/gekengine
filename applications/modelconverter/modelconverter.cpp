@@ -67,7 +67,7 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(float unitsInFoot, bool fixMaxCoords, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -140,6 +140,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std:
                         mesh->mVertices[vertexIndex].x * (fixMaxCoords ? -1.0f : 1.0f),
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
+					vertex.position *= (1.0f / unitsInFoot);
                     boundingBox.extend(vertex.position);
 
                     if (mesh->mTextureCoords[0])
@@ -177,7 +178,7 @@ void getMeshes(const aiScene *scene, const aiNode *node, bool fixMaxCoords, std:
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(scene, node->mChildren[childIndex], fixMaxCoords, albedoMap, boundingBox);
+            getMeshes(unitsInFoot, fixMaxCoords, scene, node->mChildren[childIndex], albedoMap, boundingBox);
         }
     }
 }
@@ -204,6 +205,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         bool generateNormals = false;
         bool smoothNormals = false;
         float smoothingAngle = 80.0f;
+		bool validate = false;
+		float unitsInFoot = 1.0f;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
             String argument(argumentList[argumentIndex]);
@@ -252,11 +255,33 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 smoothNormals = true;
                 smoothingAngle = arguments[1];
             }
-            else if (arguments[0].compareNoCase(L"-fixMaxCoords") == 0)
-            {
-                fixMaxCoords = true;
-            }
-        }
+			else if (arguments[0].compareNoCase(L"-fixMaxCoords") == 0)
+			{
+				fixMaxCoords = true;
+			}
+			else if (arguments[0].compareNoCase(L"-validate") == 0)
+			{
+				validate = true;
+			}
+			else if (arguments[0].compareNoCase(L"-unitsInFoot") == 0)
+			{
+				if (arguments.size() != 2)
+				{
+					throw std::exception("Missing parameters for unitsInFoot");
+				}
+
+				unitsInFoot = arguments[1];
+			}
+		}
+
+		aiLogStream logStream;
+		logStream.callback = [](const char *message, char *user) -> void
+		{
+			printf("Assimp: %s\r\n", message);
+		};
+
+		logStream.user = nullptr;
+		aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
             aiComponent_TANGENTS_AND_BITANGENTS |
@@ -278,15 +303,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             aiProcess_RemoveRedundantMaterials | // remove redundant materials
             aiProcess_FindDegenerates | // remove degenerated polygons from the import
             aiProcess_FindInstances | // search for instanced meshes and remove them by references to one master
-            aiProcess_OptimizeMeshes | // join small meshes, if possible;
+            aiProcess_OptimizeMeshes | // join small meshes, if possible
             0;
 
         unsigned int postProcessFlags =
             aiProcess_PreTransformVertices | // pretransform the vertices by the a local node matrices
             aiProcess_JoinIdenticalVertices | // join identical vertices / optimize indexing
-            aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
+            (validate ? aiProcess_ValidateDataStructure : 0) | // perform a full validation of the loader’s output
             aiProcess_FindInvalidData | // detect invalid model data, such as invalid normal vectors
-            0;
+			0;
 
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
@@ -322,17 +347,21 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        const aiScene* scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
-        if (scene == nullptr)
+        auto originalScene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
+        if (originalScene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
         }
 
-        aiApplyPostProcessing(scene, postProcessFlags);
+        auto scene = aiApplyPostProcessing(originalScene, postProcessFlags);
+		if (scene == nullptr)
+		{
+			throw std::exception("Unable to apply post processing with Assimp");
+		}
 
         Shapes::AlignedBox boundingBox;
         std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
-        getMeshes(scene, scene->mRootNode, fixMaxCoords, albedoMap, boundingBox);
+        getMeshes(unitsInFoot, fixMaxCoords, scene, scene->mRootNode, albedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
@@ -354,8 +383,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		String texturesPath(FileSystem::getFileName(rootPath, L"Textures").getLower());
 		String materialsPath(FileSystem::getFileName(rootPath, L"Materials").getLower());
 
-		printf("Textures: %S\r\n", texturesPath.c_str());
-		printf("Materials: %S\r\n", materialsPath.c_str());
+		//printf("Textures: %S\r\n", texturesPath.c_str());
+		//printf("Materials: %S\r\n", materialsPath.c_str());
 
 		std::map<String, String> materialAlbedoMap;
 
@@ -370,7 +399,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			{
 				try
 				{
-					printf("Material: %S\r\n", fileName);
+					//printf("Material: %S\r\n", fileName);
 					Xml::Node materialNode = Xml::load(fileName, L"material");
 					materialNode.findChild(L"shader", [&](auto &shaderNode) -> void
 					{
@@ -383,7 +412,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 									String materialName(FileSystem::replaceExtension(fileName, L"").getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
 									materialAlbedoMap[albedoNode.attributes[L"file"]] = materialName;
-									printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
+									//printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
 								}
 							});
 						}
@@ -405,15 +434,23 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             albedoName.replace(L"/", L"\\");
 			albedoName = FileSystem::replaceExtension(albedoName, L"");
 			albedoName.replace((texturesPath + L"\\"), L"");
+			if (albedoName.find(L"textures\\") == 0)
+			{
+				albedoName = albedoName.subString(9);
+			}
 
-			printf("FileName: %s\r\n", albedo.first.c_str());
-			printf("Albedo: %S\r\n", albedoName.c_str());
+			//printf("FileName: %s\r\n", albedo.first.c_str());
+			//printf("Albedo: %S\r\n", albedoName.c_str());
 
 			auto materialAlebedoSearch = materialAlbedoMap.find(albedoName);
-			if (materialAlebedoSearch != materialAlbedoMap.end())
+			if (materialAlebedoSearch == materialAlbedoMap.end())
+			{
+				printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
+			}
+			else
 			{
 				materialMultiMap[materialAlebedoSearch->second] = albedo.second;
-				printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
+				//printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
 			}
         }
 
