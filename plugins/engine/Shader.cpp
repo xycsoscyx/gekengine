@@ -1055,8 +1055,10 @@ namespace Gek
                     {
                         try
                         {
-                            resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
-                            return true;
+							auto renderState = material->getRenderState();
+							resources->setRenderState(deviceContext, (renderState ? renderState : pass.renderState));
+							resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
+							return true;
                         }
                         catch (const Plugin::Resources::ResourceNotLoaded &)
                         {
@@ -1065,8 +1067,6 @@ namespace Gek
                     }
                 }
 
-				auto renderState = material->getRenderState();
-				resources->setRenderState(deviceContext, (renderState ? renderState : pass.renderState));
                 return false;
             }
 
@@ -1132,7 +1132,7 @@ namespace Gek
 
                 default:
                     resources->setDepthState(deviceContext, pass.depthState, 0x0);
-                    resources->setRenderState(deviceContext, pass.renderState);
+                    //resources->setRenderState(deviceContext, pass.renderState);
                     resources->setBlendState(deviceContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
 
                     if (pass.clearDepthFlags > 0)
