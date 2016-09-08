@@ -26,7 +26,7 @@
 
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());
-static std::uniform_real_distribution<float> emitterCreateAge(0.0f, 0.25f);
+static std::uniform_real_distribution<float> emitterCreateAge(0.0f, 1.0f);
 static std::uniform_real_distribution<float> emitterSpawnAge(0.75f, 1.25f);
 static std::uniform_real_distribution<float> emitterForce(1.0f, 5.0f);
 static std::uniform_real_distribution<float> fullCircle(0.0f, (Gek::Math::Pi * 2.0f));
@@ -241,16 +241,18 @@ namespace Gek
                 auto &emitter = entityEmitterMap.insert(std::make_pair(entity, Emitter())).first->second;
 				emitter.visual = resources->loadVisual(particlesComponent.visual);
 				emitter.material = resources->loadMaterial(String::create(L"Particles\\%v", particlesComponent.material));
-			
-				auto emitParticle = [emitter, transformComponent](Particle &particle) -> void
+				emitter.lifeExpectancy = particlesComponent.lifeExpectancy;
+				emitter.particles.resize(particlesComponent.density);
+
+				std::atomic<float> index = 0.0f;
+				const float density = float(particlesComponent.density);
+				auto emitParticle = [emitter, transformComponent, &index, density](Particle &particle) -> void
 				{
 					particle.position = transformComponent.position;
 					particle.velocity = Math::Float4x4::createEulerRotation(fullCircle(mersineTwister), fullCircle(mersineTwister), fullCircle(mersineTwister)).nz * emitterForce(mersineTwister);
-					particle.lifeRemaining = (emitterCreateAge(mersineTwister) * emitter.lifeExpectancy);
+					particle.lifeRemaining = (emitterCreateAge(mersineTwister) * emitter.lifeExpectancy * (index.exchange(index + 1.0f) / density));
 				};
 
-				emitter.lifeExpectancy = particlesComponent.lifeExpectancy;
-				emitter.particles.resize(particlesComponent.density);
 				concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                 {
 					emitParticle(particle);
