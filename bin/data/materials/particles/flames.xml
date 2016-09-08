@@ -2,8 +2,8 @@
 <material>
     <shader name="$transparent">
         <transparent>
-            <albedo flags="sRGB" file="$material.Albedo" />
-            <normal file="$material.Normal" />
+            <albedo flags="sRGB" file="Particles\\Flames.Albedo" />
+            <normal file="Particles\\Flames.Normal" />
             <roughness pattern="color" parameters="0.000000" />
             <metallic pattern="color" parameters="0.000000" />
         </transparent>

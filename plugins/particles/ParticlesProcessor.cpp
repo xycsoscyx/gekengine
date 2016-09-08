@@ -26,9 +26,10 @@
 
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());
-static std::uniform_real_distribution<float> emitterAge(0.0f, 0.25f);
+static std::uniform_real_distribution<float> emitterCreateAge(0.0f, 0.25f);
+static std::uniform_real_distribution<float> emitterSpawnAge(0.75f, 1.25f);
 static std::uniform_real_distribution<float> emitterForce(1.0f, 5.0f);
-static std::uniform_real_distribution<float> fullCircle(0.0f, Gek::Math::Pi * 2.0f);
+static std::uniform_real_distribution<float> fullCircle(0.0f, (Gek::Math::Pi * 2.0f));
 
 namespace Gek
 {
@@ -97,7 +98,7 @@ namespace Gek
         {
 			Math::Float3 position;
 			Math::Float3 velocity;
-			float age;
+			float lifeRemaining;
 			float angle;
         };
 
@@ -245,14 +246,14 @@ namespace Gek
 				{
 					particle.position = transformComponent.position;
 					particle.velocity = Math::Float4x4::createEulerRotation(fullCircle(mersineTwister), fullCircle(mersineTwister), fullCircle(mersineTwister)).nz * emitterForce(mersineTwister);
-					particle.age = emitterAge(mersineTwister) * emitter.lifeExpectancy;
+					particle.lifeRemaining = (emitterCreateAge(mersineTwister) * emitter.lifeExpectancy);
 				};
 
 				emitter.lifeExpectancy = particlesComponent.lifeExpectancy;
 				emitter.particles.resize(particlesComponent.density);
 				concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
                 {
-					particle.age = emitter.lifeExpectancy;
+					emitParticle(particle);
                 });
             }
         }
@@ -284,14 +285,13 @@ namespace Gek
 					{
 						particle.position = transformComponent.position;
 						particle.velocity = Math::Float4x4::createEulerRotation(fullCircle(mersineTwister), fullCircle(mersineTwister), fullCircle(mersineTwister)).nz * emitterForce(mersineTwister);
-						particle.age = emitterAge(mersineTwister) * emitter.lifeExpectancy;
+						particle.lifeRemaining = (emitterSpawnAge(mersineTwister) * emitter.lifeExpectancy);
 					};
 
 					auto updateParticle = [emitter, transformComponent, frameTime](Particle &particle) -> void
 					{
 						static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
 						particle.velocity += (gravity * frameTime);
-
 						particle.position += (particle.velocity * frameTime);
 					};
 
@@ -299,15 +299,13 @@ namespace Gek
                     combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
 					concurrency::parallel_for_each(emitter.particles.begin(), emitter.particles.end(), [&](auto &particle) -> void
 					{
-						particle.age += frameTime;
-						if (particle.age >= emitter.lifeExpectancy)
+						particle.lifeRemaining -= frameTime;
+						if (particle.lifeRemaining <= 0.0f)
 						{
-							particle.age = 0.0f;
 							emitParticle(particle);
 						}
 
 						updateParticle(particle);
-
 						minimum[0].set(particle.position.x - 1.0f);
 						minimum[1].set(particle.position.y - 1.0f);
 						minimum[2].set(particle.position.z - 1.0f);

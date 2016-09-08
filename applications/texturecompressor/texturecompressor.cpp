@@ -73,7 +73,6 @@ void compressTexture(const String &inputFileName)
 	}
 
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
-	// flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
 	if (inputFileName.find(L"basecolor") != String::npos ||
 		inputFileName.find(L"base_color") != String::npos ||
@@ -81,6 +80,7 @@ void compressTexture(const String &inputFileName)
 		inputFileName.find(L"albedo") != String::npos ||
 		inputFileName.subString(inputFileName.length() - 2) == L"_d")
 	{
+		flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
 		if (DirectX::HasAlpha(image.GetMetadata().format))
 		{
