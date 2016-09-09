@@ -177,7 +177,7 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::getFormat(textureNode.text);
+                        Video::Format format = Utility::getFormat(textureNode.text);
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -220,7 +220,7 @@ namespace Gek
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Video::getFormat(bufferNode.text);
+                        Video::Format format = Utility::getFormat(bufferNode.text);
                         if (bufferNode.attributes.count(L"bind"))
                         {
                             bindType = getBindType(bufferNode.getAttribute(L"bind"));

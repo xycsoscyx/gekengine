@@ -316,7 +316,8 @@ namespace Gek
                 String inputData;
                 shaderNode.findChild(L"input", [&](auto &inputNode) -> void
                 {
-                    for (auto &elementNode : inputNode.children)
+					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+					for (auto &elementNode : inputNode.children)
                     {
 						if (elementNode.attributes.count(L"system"))
 						{
@@ -344,29 +345,16 @@ namespace Gek
 						}
                         else
                         {
-                            String semanticName(elementNode.attributes[L"semantic"]);
-                            if (semanticName.compareNoCase(L"POSITION") != 0 &&
-                                semanticName.compareNoCase(L"TEXCOORD") != 0 &&
-                                semanticName.compareNoCase(L"NORMAL") != 0 &&
-                                semanticName.compareNoCase(L"COLOR") != 0)
-                            {
-                                throw InvalidElementType();
-                            }
+							String bindType(elementNode.attributes[L"bind"]);
+							auto bindFormat = getBindFormat(getBindType(bindType));
+							if (bindFormat == Video::Format::Unknown)
+							{
+								throw InvalidElementType();
+							}
 
-							String format(elementNode.attributes[L"format"]);
-							uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
-                            if (format.compareNoCase(L"float4x4") == 0)
-                            {
-                                inputData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
-                            }
-                            else if (format.compareNoCase(L"float4x3") == 0)
-                            {
-                                inputData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
-                            }
-                            else
-                            {
-                                inputData.format(L"    %v %v : %v%v;\r\n", format, elementNode.type, semanticName, semanticIndex);
-                            }
+							auto semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
+							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
+							inputData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
                         }
                     }
                 });
@@ -455,7 +443,7 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::getFormat(textureNode.text);
+                        Video::Format format = Utility::getFormat(textureNode.text);
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -498,7 +486,7 @@ namespace Gek
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Video::getFormat(bufferNode.text);
+                        Video::Format format = Utility::getFormat(bufferNode.text);
                         if (bufferNode.attributes.count(L"bind"))
                         {
                             bindType = getBindType(bufferNode.getAttribute(L"bind"));
@@ -717,8 +705,8 @@ namespace Gek
                                     pass.clearDepthValue = clearNode.text;
                                 });
 
-                                depthState.comparisonFunction = Video::getComparisonFunction(depthNode.getChild(L"comparison").text);
-                                depthState.writeMask = Video::getDepthWriteMask(depthNode.getChild(L"writemask").text);
+                                depthState.comparisonFunction = Utility::getComparisonFunction(depthNode.getChild(L"comparison").text);
+                                depthState.writeMask = Utility::getDepthWriteMask(depthNode.getChild(L"writemask").text);
 
                                 depthNode.findChild(L"stencil", [&](auto &stencilNode) -> void
                                 {

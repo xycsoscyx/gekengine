@@ -887,7 +887,12 @@ namespace Gek
             {
             }
 
-            void * const getSwapChain(void)
+			const char * const getSemanticMoniker(Video::InputElement::Semantic semantic)
+			{
+				return nullptr;
+			}
+
+			void * const getSwapChain(void)
             {
                 return nullptr;
             }
@@ -997,7 +1002,7 @@ namespace Gek
             }
 
 
-			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize)
+			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
 			{
 				return std::make_shared<InputLayout>();
 			}

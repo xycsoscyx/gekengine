@@ -1,16 +1,16 @@
 <?xml version="1.0"?>
 <visual>
     <input>
-        <position format="float3" semantic="POSITION" semanticindex="0" slotclass="vertex" slotindex="0" />
-        <texCoord format="float2" semantic="TEXCOORD" semanticindex="0" slotclass="vertex" slotindex="0" />
-        <tangent format="float3" semantic="TEXCOORD" semanticindex="1" slotclass="vertex" slotindex="0" />
-        <biTangent format="float3" semantic="TEXCOORD" semanticindex="2" slotclass="vertex" slotindex="0" />
-        <normal format="float3" semantic="NORMAL" semanticindex="0" slotclass="vertex" slotindex="0" />
+        <position bind="float3" semantic="POSITION" source="vertex" sourceindex="0" />
+        <texCoord bind="float2" semantic="TEXCOORD" source="vertex" sourceindex="0" />
+        <tangent bind="float3" semantic="TEXCOORD" source="vertex" sourceindex="0" />
+        <biTangent bind="float3" semantic="TEXCOORD" source="vertex" sourceindex="0" />
+        <normal bind="float3" semantic="NORMAL" source="vertex" sourceindex="0" />
     </input>
     <output>
-        <position format="float3" semantic="POSITION" semanticindex="0" />
-        <texCoord format="float2" semantic="TEXCOORD" semanticindex="0" />
-        <normal format="float3" semantic="NORMAL" semanticindex="0" />
+        <position bind="float3" semantic="POSITION" />
+        <texCoord bind="float2" semantic="TEXCOORD" />
+        <normal bind="float3" semantic="NORMAL" />
     </output>
     <vertex entry="mainVertexProgram">Basic</vertex>
 </visual>

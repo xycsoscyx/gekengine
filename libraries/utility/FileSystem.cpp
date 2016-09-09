@@ -49,6 +49,13 @@ namespace Gek
             return std::experimental::filesystem::is_directory(fileName);
         }
 
+		int compareLastWrite(const wchar_t *newFile, const wchar_t *oldFile)
+		{
+			auto newFileTime = std::experimental::filesystem::last_write_time(newFile);
+			auto oldFileTime = std::experimental::filesystem::last_write_time(oldFile);
+			return (newFileTime > oldFileTime ? 1 : newFileTime < oldFileTime ? -1 : 0);
+		}
+
 		void find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *)> onFileFound)
 		{
 			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))

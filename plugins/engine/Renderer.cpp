@@ -19,161 +19,168 @@
 #include <ppl.h>
 #include <concurrent_vector.h>
 
-// Function Traits
-// http://stackoverflow.com/questions/2562320/specializing-a-template-on-a-lambda-in-c0x
-
 namespace Gek
 {
-    namespace Video
-    {
-        ElementSource getElementSource(const wchar_t *elementSourceString)
-        {
-            if (wcscmp(elementSourceString, L"instance") == 0) return ElementSource::Instance;
-            /*else if (wcscmp(elementSourceString, L"vertex") == 0) */ return ElementSource::Vertex;
-        }
+	namespace Utility
+	{
+		Video::Format getFormat(const wchar_t *formatString)
+		{
+			if (wcscmp(formatString, L"Unknown") == 0) return Video::Format::Unknown;
+			else if (wcscmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Video::Format::R32G32B32A32_FLOAT;
+			else if (wcscmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Video::Format::R16G16B16A16_FLOAT;
+			else if (wcscmp(formatString, L"R32G32B32_FLOAT") == 0) return Video::Format::R32G32B32_FLOAT;
+			else if (wcscmp(formatString, L"R11G11B10_FLOAT") == 0) return Video::Format::R11G11B10_FLOAT;
+			else if (wcscmp(formatString, L"R32G32_FLOAT") == 0) return Video::Format::R32G32_FLOAT;
+			else if (wcscmp(formatString, L"R16G16_FLOAT") == 0) return Video::Format::R16G16_FLOAT;
+			else if (wcscmp(formatString, L"R32_FLOAT") == 0) return Video::Format::R32_FLOAT;
+			else if (wcscmp(formatString, L"R16_FLOAT") == 0) return Video::Format::R16_FLOAT;
 
-        Format getFormat(const wchar_t *formatString)
-        {
-            if (wcscmp(formatString, L"Unknown") == 0) return Format::Unknown;
-            else if (wcscmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
-            else if (wcscmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
-            else if (wcscmp(formatString, L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
-            else if (wcscmp(formatString, L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
-            else if (wcscmp(formatString, L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
-            else if (wcscmp(formatString, L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
-            else if (wcscmp(formatString, L"R32_FLOAT") == 0) return Format::R32_FLOAT;
-            else if (wcscmp(formatString, L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+			else if (wcscmp(formatString, L"R32G32B32A32_UINT") == 0) return Video::Format::R32G32B32A32_UINT;
+			else if (wcscmp(formatString, L"R16G16B16A16_UINT") == 0) return Video::Format::R16G16B16A16_UINT;
+			else if (wcscmp(formatString, L"R10G10B10A2_UINT") == 0) return Video::Format::R10G10B10A2_UINT;
+			else if (wcscmp(formatString, L"R8G8B8A8_UINT") == 0) return Video::Format::R8G8B8A8_UINT;
+			else if (wcscmp(formatString, L"R32G32B32_UINT") == 0) return Video::Format::R32G32B32_UINT;
+			else if (wcscmp(formatString, L"R32G32_UINT") == 0) return Video::Format::R32G32_UINT;
+			else if (wcscmp(formatString, L"R16G16_UINT") == 0) return Video::Format::R16G16_UINT;
+			else if (wcscmp(formatString, L"R8G8_UINT") == 0) return Video::Format::R8G8_UINT;
+			else if (wcscmp(formatString, L"R32_UINT") == 0) return Video::Format::R32_UINT;
+			else if (wcscmp(formatString, L"R16_UINT") == 0) return Video::Format::R16_UINT;
+			else if (wcscmp(formatString, L"R8_UINT") == 0) return Video::Format::R8_UINT;
 
-            else if (wcscmp(formatString, L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
-            else if (wcscmp(formatString, L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
-            else if (wcscmp(formatString, L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
-            else if (wcscmp(formatString, L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
-            else if (wcscmp(formatString, L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
-            else if (wcscmp(formatString, L"R32G32_UINT") == 0) return Format::R32G32_UINT;
-            else if (wcscmp(formatString, L"R16G16_UINT") == 0) return Format::R16G16_UINT;
-            else if (wcscmp(formatString, L"R8G8_UINT") == 0) return Format::R8G8_UINT;
-            else if (wcscmp(formatString, L"R32_UINT") == 0) return Format::R32_UINT;
-            else if (wcscmp(formatString, L"R16_UINT") == 0) return Format::R16_UINT;
-            else if (wcscmp(formatString, L"R8_UINT") == 0) return Format::R8_UINT;
+			else if (wcscmp(formatString, L"R32G32B32A32_INT") == 0) return Video::Format::R32G32B32A32_INT;
+			else if (wcscmp(formatString, L"R16G16B16A16_INT") == 0) return Video::Format::R16G16B16A16_INT;
+			else if (wcscmp(formatString, L"R8G8B8A8_INT") == 0) return Video::Format::R8G8B8A8_INT;
+			else if (wcscmp(formatString, L"R32G32B32_INT") == 0) return Video::Format::R32G32B32_INT;
+			else if (wcscmp(formatString, L"R32G32_INT") == 0) return Video::Format::R32G32_INT;
+			else if (wcscmp(formatString, L"R16G16_INT") == 0) return Video::Format::R16G16_INT;
+			else if (wcscmp(formatString, L"R8G8_INT") == 0) return Video::Format::R8G8_INT;
+			else if (wcscmp(formatString, L"R32_INT") == 0) return Video::Format::R32_INT;
+			else if (wcscmp(formatString, L"R16_INT") == 0) return Video::Format::R16_INT;
+			else if (wcscmp(formatString, L"R8_INT") == 0) return Video::Format::R8_INT;
 
-            else if (wcscmp(formatString, L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
-            else if (wcscmp(formatString, L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
-            else if (wcscmp(formatString, L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
-            else if (wcscmp(formatString, L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
-            else if (wcscmp(formatString, L"R32G32_INT") == 0) return Format::R32G32_INT;
-            else if (wcscmp(formatString, L"R16G16_INT") == 0) return Format::R16G16_INT;
-            else if (wcscmp(formatString, L"R8G8_INT") == 0) return Format::R8G8_INT;
-            else if (wcscmp(formatString, L"R32_INT") == 0) return Format::R32_INT;
-            else if (wcscmp(formatString, L"R16_INT") == 0) return Format::R16_INT;
-            else if (wcscmp(formatString, L"R8_INT") == 0) return Format::R8_INT;
+			else if (wcscmp(formatString, L"R16G16B16A16_UNORM") == 0) return Video::Format::R16G16B16A16_UNORM;
+			else if (wcscmp(formatString, L"R10G10B10A2_UNORM") == 0) return Video::Format::R10G10B10A2_UNORM;
+			else if (wcscmp(formatString, L"R8G8B8A8_UNORM") == 0) return Video::Format::R8G8B8A8_UNORM;
+			else if (wcscmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Video::Format::R8G8B8A8_UNORM_SRGB;
+			else if (wcscmp(formatString, L"R16G16_UNORM") == 0) return Video::Format::R16G16_UNORM;
+			else if (wcscmp(formatString, L"R8G8_UNORM") == 0) return Video::Format::R8G8_UNORM;
+			else if (wcscmp(formatString, L"R16_UNORM") == 0) return Video::Format::R16_UNORM;
+			else if (wcscmp(formatString, L"R8_UNORM") == 0) return Video::Format::R8_UNORM;
 
-            else if (wcscmp(formatString, L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
-            else if (wcscmp(formatString, L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
-            else if (wcscmp(formatString, L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
-            else if (wcscmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
-            else if (wcscmp(formatString, L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
-            else if (wcscmp(formatString, L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
-            else if (wcscmp(formatString, L"R16_UNORM") == 0) return Format::R16_UNORM;
-            else if (wcscmp(formatString, L"R8_UNORM") == 0) return Format::R8_UNORM;
+			else if (wcscmp(formatString, L"R16G16B16A16_NORM") == 0) return Video::Format::R16G16B16A16_NORM;
+			else if (wcscmp(formatString, L"R8G8B8A8_NORM") == 0) return Video::Format::R8G8B8A8_NORM;
+			else if (wcscmp(formatString, L"R16G16_NORM") == 0) return Video::Format::R16G16_NORM;
+			else if (wcscmp(formatString, L"R8G8_NORM") == 0) return Video::Format::R8G8_NORM;
+			else if (wcscmp(formatString, L"R16_NORM") == 0) return Video::Format::R16_NORM;
+			else if (wcscmp(formatString, L"R8_NORM") == 0) return Video::Format::R8_NORM;
 
-            else if (wcscmp(formatString, L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
-            else if (wcscmp(formatString, L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
-            else if (wcscmp(formatString, L"R16G16_NORM") == 0) return Format::R16G16_NORM;
-            else if (wcscmp(formatString, L"R8G8_NORM") == 0) return Format::R8G8_NORM;
-            else if (wcscmp(formatString, L"R16_NORM") == 0) return Format::R16_NORM;
-            else if (wcscmp(formatString, L"R8_NORM") == 0) return Format::R8_NORM;
+			else if (wcscmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Video::Format::D32_FLOAT_S8X24_UINT;
+			else if (wcscmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Video::Format::D24_UNORM_S8_UINT;
 
-            else if (wcscmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
-            else if (wcscmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+			else if (wcscmp(formatString, L"D32_FLOAT") == 0) return Video::Format::D32_FLOAT;
+			else if (wcscmp(formatString, L"D16_UNORM") == 0) return Video::Format::D16_UNORM;
 
-            else if (wcscmp(formatString, L"D32_FLOAT") == 0) return Format::D32_FLOAT;
-            else if (wcscmp(formatString, L"D16_UNORM") == 0) return Format::D16_UNORM;
+			return Video::Format::Unknown;
+		}
 
-            return Format::Unknown;
-        }
+		Video::DepthStateInformation::Write getDepthWriteMask(const wchar_t *depthWrite)
+		{
+			if (wcscmp(depthWrite, L"zero") == 0) return Video::DepthStateInformation::Write::Zero;
+			else if (wcscmp(depthWrite, L"all") == 0) return Video::DepthStateInformation::Write::All;
+			else return Video::DepthStateInformation::Write::Zero;
+		}
 
-        DepthWrite getDepthWriteMask(const wchar_t *depthWrite)
-        {
-            if (wcscmp(depthWrite, L"zero") == 0) return DepthWrite::Zero;
-            else if (wcscmp(depthWrite, L"all") == 0) return DepthWrite::All;
-            else return DepthWrite::Zero;
-        }
+		Video::ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
+		{
+			if (wcscmp(comparisonFunction, L"always") == 0) return Video::ComparisonFunction::Always;
+			else if (wcscmp(comparisonFunction, L"never") == 0) return Video::ComparisonFunction::Never;
+			else if (wcscmp(comparisonFunction, L"equal") == 0) return Video::ComparisonFunction::Equal;
+			else if (wcscmp(comparisonFunction, L"not_equal") == 0) return Video::ComparisonFunction::NotEqual;
+			else if (wcscmp(comparisonFunction, L"less") == 0) return Video::ComparisonFunction::Less;
+			else if (wcscmp(comparisonFunction, L"less_equal") == 0) return Video::ComparisonFunction::LessEqual;
+			else if (wcscmp(comparisonFunction, L"greater") == 0) return Video::ComparisonFunction::Greater;
+			else if (wcscmp(comparisonFunction, L"greater_equal") == 0) return Video::ComparisonFunction::GreaterEqual;
+			else return Video::ComparisonFunction::Always;
+		}
 
-        ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
-        {
-            if (wcscmp(comparisonFunction, L"always") == 0) return ComparisonFunction::Always;
-            else if (wcscmp(comparisonFunction, L"never") == 0) return ComparisonFunction::Never;
-            else if (wcscmp(comparisonFunction, L"equal") == 0) return ComparisonFunction::Equal;
-            else if (wcscmp(comparisonFunction, L"not_equal") == 0) return ComparisonFunction::NotEqual;
-            else if (wcscmp(comparisonFunction, L"less") == 0) return ComparisonFunction::Less;
-            else if (wcscmp(comparisonFunction, L"less_equal") == 0) return ComparisonFunction::LessEqual;
-            else if (wcscmp(comparisonFunction, L"greater") == 0) return ComparisonFunction::Greater;
-            else if (wcscmp(comparisonFunction, L"greater_equal") == 0) return ComparisonFunction::GreaterEqual;
-            else return ComparisonFunction::Always;
-        }
+		Video::DepthStateInformation::StencilStateInformation::Operation getStencilOperation(const wchar_t *stencilOperation)
+		{
+			if (wcscmp(stencilOperation, L"zero") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Zero;
+			else if (wcscmp(stencilOperation, L"keep") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Keep;
+			else if (wcscmp(stencilOperation, L"replace") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Replace;
+			else if (wcscmp(stencilOperation, L"invert") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Invert;
+			else if (wcscmp(stencilOperation, L"increase") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Increase;
+			else if (wcscmp(stencilOperation, L"increase_saturated") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::IncreaseSaturated;
+			else if (wcscmp(stencilOperation, L"decrease") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Decrease;
+			else if (wcscmp(stencilOperation, L"decrease_saturated") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::DecreaseSaturated;
+			else return Video::DepthStateInformation::StencilStateInformation::Operation::Keep;
+		}
 
-        StencilOperation getStencilOperation(const wchar_t *stencilOperation)
-        {
-            if (wcscmp(stencilOperation, L"zero") == 0) return StencilOperation::Zero;
-            else if (wcscmp(stencilOperation, L"keep") == 0) return StencilOperation::Keep;
-            else if (wcscmp(stencilOperation, L"replace") == 0) return StencilOperation::Replace;
-            else if (wcscmp(stencilOperation, L"invert") == 0) return StencilOperation::Invert;
-            else if (wcscmp(stencilOperation, L"increase") == 0) return StencilOperation::Increase;
-            else if (wcscmp(stencilOperation, L"increase_saturated") == 0) return StencilOperation::IncreaseSaturated;
-            else if (wcscmp(stencilOperation, L"decrease") == 0) return StencilOperation::Decrease;
-            else if (wcscmp(stencilOperation, L"decrease_saturated") == 0) return StencilOperation::DecreaseSaturated;
-            else return StencilOperation::Keep;
-        }
+		Video::RenderStateInformation::FillMode getFillMode(const wchar_t *fillMode)
+		{
+			if (wcscmp(fillMode, L"solid") == 0) return Video::RenderStateInformation::FillMode::Solid;
+			else if (wcscmp(fillMode, L"wire") == 0) return Video::RenderStateInformation::FillMode::WireFrame;
+			else return Video::RenderStateInformation::FillMode::Solid;
+		}
 
-        FillMode getFillMode(const wchar_t *fillMode)
-        {
-            if (wcscmp(fillMode, L"solid") == 0) return FillMode::Solid;
-            else if (wcscmp(fillMode, L"wire") == 0) return FillMode::WireFrame;
-            else return FillMode::Solid;
-        }
+		Video::RenderStateInformation::CullMode getCullMode(const wchar_t *cullMode)
+		{
+			if (wcscmp(cullMode, L"none") == 0) return Video::RenderStateInformation::CullMode::None;
+			else if (wcscmp(cullMode, L"front") == 0) return Video::RenderStateInformation::CullMode::Front;
+			else if (wcscmp(cullMode, L"back") == 0) return Video::RenderStateInformation::CullMode::Back;
+			else return Video::RenderStateInformation::CullMode::None;
+		}
 
-        CullMode getCullMode(const wchar_t *cullMode)
-        {
-            if (wcscmp(cullMode, L"none") == 0) return CullMode::None;
-            else if (wcscmp(cullMode, L"front") == 0) return CullMode::Front;
-            else if (wcscmp(cullMode, L"back") == 0) return CullMode::Back;
-            else return CullMode::None;
-        }
+		Video::BlendStateInformation::Source getBlendSource(const wchar_t *blendSource)
+		{
+			if (wcscmp(blendSource, L"zero") == 0) return Video::BlendStateInformation::Source::Zero;
+			else if (wcscmp(blendSource, L"one") == 0) return Video::BlendStateInformation::Source::One;
+			else if (wcscmp(blendSource, L"blend_factor") == 0) return Video::BlendStateInformation::Source::BlendFactor;
+			else if (wcscmp(blendSource, L"inverse_blend_factor") == 0) return Video::BlendStateInformation::Source::InverseBlendFactor;
+			else if (wcscmp(blendSource, L"source_color") == 0) return Video::BlendStateInformation::Source::SourceColor;
+			else if (wcscmp(blendSource, L"inverse_source_color") == 0) return Video::BlendStateInformation::Source::InverseSourceColor;
+			else if (wcscmp(blendSource, L"source_alpha") == 0) return Video::BlendStateInformation::Source::SourceAlpha;
+			else if (wcscmp(blendSource, L"inverse_source_alpha") == 0) return Video::BlendStateInformation::Source::InverseSourceAlpha;
+			else if (wcscmp(blendSource, L"source_alpha_saturate") == 0) return Video::BlendStateInformation::Source::SourceAlphaSaturated;
+			else if (wcscmp(blendSource, L"destination_color") == 0) return Video::BlendStateInformation::Source::DestinationColor;
+			else if (wcscmp(blendSource, L"inverse_destination_color") == 0) return Video::BlendStateInformation::Source::InverseDestinationColor;
+			else if (wcscmp(blendSource, L"destination_alpha") == 0) return Video::BlendStateInformation::Source::DestinationAlpha;
+			else if (wcscmp(blendSource, L"inverse_destination_alpha") == 0) return Video::BlendStateInformation::Source::InverseDestinationAlpha;
+			else if (wcscmp(blendSource, L"secondary_source_color") == 0) return Video::BlendStateInformation::Source::SecondarySourceColor;
+			else if (wcscmp(blendSource, L"inverse_secondary_source_color") == 0) return Video::BlendStateInformation::Source::InverseSecondarySourceColor;
+			else if (wcscmp(blendSource, L"secondary_source_alpha") == 0) return Video::BlendStateInformation::Source::SecondarySourceAlpha;
+			else if (wcscmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video::BlendStateInformation::Source::InverseSecondarySourceAlpha;
+			else return Video::BlendStateInformation::Source::One;
+		}
 
-        BlendSource getBlendSource(const wchar_t *blendSource)
-        {
-            if (wcscmp(blendSource, L"zero") == 0) return BlendSource::Zero;
-            else if (wcscmp(blendSource, L"one") == 0) return BlendSource::One;
-            else if (wcscmp(blendSource, L"blend_factor") == 0) return BlendSource::BlendFactor;
-            else if (wcscmp(blendSource, L"inverse_blend_factor") == 0) return BlendSource::InverseBlendFactor;
-            else if (wcscmp(blendSource, L"source_color") == 0) return BlendSource::SourceColor;
-            else if (wcscmp(blendSource, L"inverse_source_color") == 0) return BlendSource::InverseSourceColor;
-            else if (wcscmp(blendSource, L"source_alpha") == 0) return BlendSource::SourceAlpha;
-            else if (wcscmp(blendSource, L"inverse_source_alpha") == 0) return BlendSource::InverseSourceAlpha;
-            else if (wcscmp(blendSource, L"source_alpha_saturate") == 0) return BlendSource::SourceAlphaSaturated;
-            else if (wcscmp(blendSource, L"destination_color") == 0) return BlendSource::DestinationColor;
-            else if (wcscmp(blendSource, L"inverse_destination_color") == 0) return BlendSource::InverseDestinationColor;
-            else if (wcscmp(blendSource, L"destination_alpha") == 0) return BlendSource::DestinationAlpha;
-            else if (wcscmp(blendSource, L"inverse_destination_alpha") == 0) return BlendSource::InverseDestinationAlpha;
-            else if (wcscmp(blendSource, L"secondary_source_color") == 0) return BlendSource::SecondarySourceColor;
-            else if (wcscmp(blendSource, L"inverse_secondary_source_color") == 0) return BlendSource::InverseSecondarySourceColor;
-            else if (wcscmp(blendSource, L"secondary_source_alpha") == 0) return BlendSource::SecondarySourceAlpha;
-            else if (wcscmp(blendSource, L"inverse_secondary_source_alpha") == 0) return BlendSource::InverseSecondarySourceAlpha;
-            else return BlendSource::One;
-        }
+		Video::BlendStateInformation::Operation getBlendOperation(const wchar_t *blendOperation)
+		{
+			if (wcscmp(blendOperation, L"add") == 0) return Video::BlendStateInformation::Operation::Add;
+			else if (wcscmp(blendOperation, L"subtract") == 0) return Video::BlendStateInformation::Operation::Subtract;
+			else if (wcscmp(blendOperation, L"reverse_subtract") == 0) return Video::BlendStateInformation::Operation::ReverseSubtract;
+			else if (wcscmp(blendOperation, L"minimum") == 0) return Video::BlendStateInformation::Operation::Minimum;
+			else if (wcscmp(blendOperation, L"maximum") == 0) return Video::BlendStateInformation::Operation::Maximum;
+			else return Video::BlendStateInformation::Operation::Add;
+		}
 
-        BlendOperation getBlendOperation(const wchar_t *blendOperation)
-        {
-            if (wcscmp(blendOperation, L"add") == 0) return BlendOperation::Add;
-            else if (wcscmp(blendOperation, L"subtract") == 0) return BlendOperation::Subtract;
-            else if (wcscmp(blendOperation, L"reverse_subtract") == 0) return BlendOperation::ReverseSubtract;
-            else if (wcscmp(blendOperation, L"minimum") == 0) return BlendOperation::Minimum;
-            else if (wcscmp(blendOperation, L"maximum") == 0) return BlendOperation::Maximum;
-            else return BlendOperation::Add;
-        }
-    }; // namespace Video
+		Video::InputElement::Source getElementSource(const wchar_t *elementSourceString)
+		{
+			if (wcscmp(elementSourceString, L"instance") == 0) return Video::InputElement::Source::Instance;
+			/*else if (wcscmp(elementSourceString, L"vertex") == 0) */ return Video::InputElement::Source::Vertex;
+		}
 
-    namespace Implementation
+		Video::InputElement::Semantic getElementSemantic(const wchar_t *semanticString)
+		{
+			if (wcscmp(semanticString, L"Position") == 0) return Video::InputElement::Semantic::Position;
+			else if (wcscmp(semanticString, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
+			else if (wcscmp(semanticString, L"BiTangnet") == 0) return Video::InputElement::Semantic::BiTangnet;
+			else if (wcscmp(semanticString, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
+			else if (wcscmp(semanticString, L"Color") == 0) return Video::InputElement::Semantic::Color;
+			else return Video::InputElement::Semantic::TexCoord;
+		}
+	}; // namespace Utility
+	
+	namespace Implementation
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::PopulationListener
@@ -314,23 +321,23 @@ namespace Gek
                 population->addStep(this, 10, 100);
 
                 Video::SamplerStateInformation pointSamplerStateData;
-                pointSamplerStateData.filterMode = Video::FilterMode::AllPoint;
-                pointSamplerStateData.addressModeU = Video::AddressMode::Clamp;
-                pointSamplerStateData.addressModeV = Video::AddressMode::Clamp;
+                pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::AllPoint;
+                pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
+                pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerState = device->createSamplerState(pointSamplerStateData);
 
                 Video::SamplerStateInformation linearClampSamplerStateData;
                 linearClampSamplerStateData.maximumAnisotropy = 8;
-                linearClampSamplerStateData.filterMode = Video::FilterMode::Anisotropic;
-                linearClampSamplerStateData.addressModeU = Video::AddressMode::Clamp;
-                linearClampSamplerStateData.addressModeV = Video::AddressMode::Clamp;
+                linearClampSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
+                linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
+                linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerState = device->createSamplerState(linearClampSamplerStateData);
 
                 Video::SamplerStateInformation linearWrapSamplerStateData;
                 linearWrapSamplerStateData.maximumAnisotropy = 8;
-                linearWrapSamplerStateData.filterMode = Video::FilterMode::Anisotropic;
-                linearWrapSamplerStateData.addressModeU = Video::AddressMode::Wrap;
-                linearWrapSamplerStateData.addressModeV = Video::AddressMode::Wrap;
+                linearWrapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
+                linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
+                linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerState = device->createSamplerState(linearWrapSamplerStateData);
 
                 engineConstantBuffer = device->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);

@@ -5,6 +5,7 @@
 #include "GEK\System\VideoDevice.h"
 #include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Visual.h"
+#include "ShaderFilter.h"
 #include <ppl.h>
 #include <set>
 
@@ -48,7 +49,7 @@ namespace Gek
                 Xml::Node visualNode = Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual");
 
 				String inputVertexData;
-				std::vector<Video::InputElementInformation> elementList;
+				std::vector<Video::InputElement> elementList;
 				visualNode.findChild(L"input", [&](auto &inputNode) -> void
 				{
 					for (auto &elementNode : inputNode.children)
@@ -83,54 +84,20 @@ namespace Gek
 						}
 						else
 						{
-							String format(elementNode.attributes[L"format"]);
-							String semanticName(elementNode.attributes[L"semantic"]);
-							if (semanticName.compareNoCase(L"POSITION") != 0 &&
-								semanticName.compareNoCase(L"TEXCOORD") != 0 &&
-								semanticName.compareNoCase(L"NORMAL") != 0 &&
-								semanticName.compareNoCase(L"COLOR") != 0)
+							Video::InputElement element;
+							String bindType(elementNode.attributes[L"bind"]);
+							element.format = getBindFormat(getBindType(bindType));
+							if (element.format == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							Video::InputElementInformation element;
-							element.semanticName = semanticName;
-							element.semanticIndex = elementNode.attributes[L"semanticindex"];
-							element.slotClass = Video::getElementSource(elementNode.attributes[L"slotclass"]);
-							element.slotIndex = elementNode.attributes[L"slotindex"];
-							if (format.compareNoCase(L"float4x4") == 0)
-							{
-								inputVertexData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
-								element.format = Video::Format::R32G32B32A32_FLOAT;
-								elementList.push_back(element);
-								element.semanticIndex++;
-								elementList.push_back(element);
-								element.semanticIndex++;
-								elementList.push_back(element);
-								element.semanticIndex++;
-								elementList.push_back(element);
-							}
-							else if (format.compareNoCase(L"float4x3") == 0)
-							{
-								inputVertexData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
-								element.format = Video::Format::R32G32B32A32_FLOAT;
-								elementList.push_back(element);
-								element.semanticIndex++;
-								elementList.push_back(element);
-								element.semanticIndex++;
-								elementList.push_back(element);
-							}
-							else
-							{
-								element.format = getElementSource(format);
-								if (element.format == Video::Format::Unknown)
-								{
-									throw InvalidElementType();
-								}
+							element.semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
+							element.source = Utility::getElementSource(elementNode.attributes[L"source"]);
+							element.sourceIndex = elementNode.attributes[L"sourceIndex"];
 
-								inputVertexData.format(L"    %v %v : %v%v;\r\n", format, elementNode.type, semanticName, element.semanticIndex);
-								elementList.push_back(element);
-							}
+							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(element.semantic), element.sourceIndex);
+							elementList.push_back(element);
 						}
 					}
 				});
@@ -138,12 +105,20 @@ namespace Gek
 				String outputVertexData;
 				visualNode.findChild(L"output", [&](auto &outputNode) -> void
 				{
+					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : outputNode.children)
 					{
-						String format(elementNode.attributes[L"format"]);
-						String semanticName(elementNode.attributes[L"semantic"]);
-						uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
-						outputVertexData.format(L"    %v %v: %v%v;\r\n", format, elementNode.type, semanticName, semanticIndex);
+						String bindType(elementNode.attributes[L"bind"]);
+						auto bindFormat = getBindFormat(getBindType(bindType));
+						if (bindFormat == Video::Format::Unknown)
+						{
+							throw InvalidElementType();
+						}
+
+						auto semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
+						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
+						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
+
 					}
 				});
 
@@ -154,7 +129,7 @@ namespace Gek
 					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
 
 					std::vector<uint8_t> compiledProgram;
-					if (FileSystem::isFile(compiledFileName))
+					if (FileSystem::isFile(compiledFileName) && FileSystem::compareLastWrite(compiledFileName, fileName) >= 0)
 					{
 						FileSystem::load(compiledFileName, compiledProgram);
 					}
@@ -210,7 +185,6 @@ namespace Gek
 							return false;
 						};
 
-
 						String uncompiledProgram;
 						FileSystem::load(fileName, uncompiledProgram);
 						String entryFunction(vertexNode.getAttribute(L"entry"));
@@ -234,7 +208,7 @@ namespace Gek
 					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
 
 					std::vector<uint8_t> compiledProgram;
-					if (FileSystem::isFile(compiledFileName))
+					if (FileSystem::isFile(compiledFileName) && FileSystem::compareLastWrite(compiledFileName, fileName) >= 0)
 					{
 						FileSystem::load(compiledFileName, compiledProgram);
 					}

@@ -19,7 +19,10 @@
 
 namespace Gek
 {
-    template <typename CLASS>
+	// Function Traits
+	// http://stackoverflow.com/questions/2562320/specializing-a-template-on-a-lambda-in-c0x
+
+	template <typename CLASS>
     struct FunctionCache
     {
         using ReturnType = typename FunctionCache<decltype(&CLASS::operator())>::ReturnType;
@@ -44,7 +47,7 @@ namespace Gek
         }
     };
 
-    namespace DirectX
+	namespace DirectX
     {
         // All these lists must match, since the same GEK Format can be used for either textures or buffers
         // The size list must also match
@@ -107,7 +110,7 @@ namespace Gek
             DXGI_FORMAT_R16_TYPELESS,
         };
 
-        static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all TextureFormatList.");
+        static_assert(ARRAYSIZE(TextureFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all TextureFormatList.");
 
         static const DXGI_FORMAT DepthFormatList[] =
         {
@@ -168,7 +171,7 @@ namespace Gek
             DXGI_FORMAT_D16_UNORM,
         };
 
-        static_assert(ARRAYSIZE(DepthFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all DepthFormatList.");
+        static_assert(ARRAYSIZE(DepthFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all DepthFormatList.");
 
         static const DXGI_FORMAT ViewFormatList[] =
         {
@@ -229,7 +232,7 @@ namespace Gek
             DXGI_FORMAT_R16_UNORM,
         };
 
-        static_assert(ARRAYSIZE(ViewFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all ViewFormatList.");
+        static_assert(ARRAYSIZE(ViewFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all ViewFormatList.");
 
         static const DXGI_FORMAT BufferFormatList[] =
         {
@@ -290,7 +293,7 @@ namespace Gek
             DXGI_FORMAT_UNKNOWN,
         };
 
-        static_assert(ARRAYSIZE(BufferFormatList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all BufferFormatList.");
+        static_assert(ARRAYSIZE(BufferFormatList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all BufferFormatList.");
 
         static const uint32_t FormatStrideList[] =
         {
@@ -351,7 +354,7 @@ namespace Gek
             (sizeof(uint16_t) * 1), // DXGI_FORMAT_R16_UNORM,
         };
 
-        static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Video::Format::NumFormats), "New format added without adding to all FormatStrideList.");
+        static_assert(ARRAYSIZE(FormatStrideList) == static_cast<uint8_t>(Video::Format::Count), "New format added without adding to all FormatStrideList.");
 
         static const D3D11_DEPTH_WRITE_MASK DepthWriteMaskList[] =
         {
@@ -466,10 +469,10 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
     }; // namespace DirectX
-
-    namespace Direct3D11
+	
+	namespace Direct3D11
     {
-        template <typename CLASS>
+		template <typename CLASS>
         void setDebugName(CComPtr<CLASS> &object, const wchar_t *name)
         {
             if (object)
@@ -1602,12 +1605,12 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, bool fullScreen, Video::Format backBufferFormat, String device)
-                : ContextRegistration(context)
-                , window(window)
-                , isChildWindow(GetParent(window) != nullptr)
-                , fullScreen(fullScreen)
-                , backBufferFormat(backBufferFormat)
+			Device(Gek::Context *context, HWND window, bool fullScreen, Video::Format backBufferFormat, String device)
+				: ContextRegistration(context)
+				, window(window)
+				, isChildWindow(GetParent(window) != nullptr)
+				, fullScreen(fullScreen)
+				, backBufferFormat(backBufferFormat)
             {
                 GEK_REQUIRE(window);
 
@@ -1758,6 +1761,20 @@ namespace Gek
                     throw Video::OperationFailed();
                 }
             }
+
+			const char * const getSemanticMoniker(Video::InputElement::Semantic semantic)
+			{
+				switch (semantic)
+				{
+				case Video::InputElement::Semantic::Position: return "POSITION";
+				case Video::InputElement::Semantic::TexCoord: return "TEXCOORD";
+				case Video::InputElement::Semantic::Tangent: return "TANGENT";
+				case Video::InputElement::Semantic::BiTangnet: return "BINORMAL";
+				case Video::InputElement::Semantic::Normal: return "NORMAL";
+				case Video::InputElement::Semantic::Color: return "COLOR";
+				default: return "TEXCOORD";
+				};
+			}
 
             void * const getSwapChain(void)
             {
@@ -1927,22 +1944,22 @@ namespace Gek
                 blendDescription.RenderTarget[0].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.alphaDestination)];
                 blendDescription.RenderTarget[0].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.alphaOperation)];
                 blendDescription.RenderTarget[0].RenderTargetWriteMask = 0;
-                if (blendState.writeMask & Video::ColorMask::R)
+                if (blendState.writeMask & Video::BlendStateInformation::Mask::R)
                 {
                     blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
                 }
 
-                if (blendState.writeMask & Video::ColorMask::G)
+                if (blendState.writeMask & Video::BlendStateInformation::Mask::G)
                 {
                     blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
                 }
 
-                if (blendState.writeMask & Video::ColorMask::B)
+                if (blendState.writeMask & Video::BlendStateInformation::Mask::B)
                 {
                     blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
                 }
 
-                if (blendState.writeMask & Video::ColorMask::A)
+                if (blendState.writeMask & Video::BlendStateInformation::Mask::A)
                 {
                     blendDescription.RenderTarget[0].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                 }
@@ -1974,22 +1991,22 @@ namespace Gek
                     blendDescription.RenderTarget[renderTarget].DestBlendAlpha = DirectX::BlendSourceList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaDestination)];
                     blendDescription.RenderTarget[renderTarget].BlendOpAlpha = DirectX::BlendOperationList[static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaOperation)];
                     blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask = 0;
-                    if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::R)
+                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::R)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_RED;
                     }
 
-                    if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::G)
+                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::G)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_GREEN;
                     }
 
-                    if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::B)
+                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::B)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_BLUE;
                     }
 
-                    if (blendState.targetStates[renderTarget].writeMask & Video::ColorMask::A)
+                    if (blendState.targetStates[renderTarget].writeMask & Video::BlendStateInformation::Mask::A)
                     {
                         blendDescription.RenderTarget[renderTarget].RenderTargetWriteMask |= D3D10_COLOR_WRITE_ENABLE_ALPHA;
                     }
@@ -2219,15 +2236,25 @@ namespace Gek
                 d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
             }
 
-			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize)
+			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
 			{
-				Video::ElementSource lastElementSource = Video::ElementSource::Vertex;
-				std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
-				std::list<StringUTF8> convertedNameList;
-				for (auto &element : elementLayout)
+				static const char *SemanticNameList[] =
+				{
+					"Position",
+					"TexCoord",
+					"Tangent",
+					"BiTangnet",
+					"Normal",
+					"Color",
+				};
+
+				std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
+				Video::InputElement::Source lastSource = Video::InputElement::Source::Vertex;
+				uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+				for (auto &element : elementList)
 				{
 					D3D11_INPUT_ELEMENT_DESC elementDesc;
-					if (lastElementSource != element.slotClass)
+					if (lastSource != element.source)
 					{
 						elementDesc.AlignedByteOffset = 0;
 					}
@@ -2236,31 +2263,30 @@ namespace Gek
 						elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 					}
 
-					lastElementSource = element.slotClass;
-					convertedNameList.push_back(element.semanticName);
-					elementDesc.SemanticName = convertedNameList.back();
-					elementDesc.SemanticIndex = element.semanticIndex;
-					elementDesc.InputSlot = element.slotIndex;
-					switch (element.slotClass)
+					lastSource = element.source;
+					elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
+					elementDesc.SemanticName = SemanticNameList[static_cast<uint8_t>(element.semantic)];
+					elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
+					elementDesc.InputSlot = element.sourceIndex;
+					switch (element.source)
 					{
-					case Video::ElementSource::Instance:
+					case Video::InputElement::Source::Instance:
 						elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 						elementDesc.InstanceDataStepRate = 1;
 						break;
 
-					case Video::ElementSource::Vertex:
+					case Video::InputElement::Source::Vertex:
 					default:
 						elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 						elementDesc.InstanceDataStepRate = 0;
 						break;
 					};
 
-					elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
-					inputElementList.push_back(elementDesc);
+					d3dElementList.push_back(elementDesc);
 				}
 
 				CComPtr<ID3D11InputLayout> d3dInputLayout;
-				HRESULT resultValue = d3dDevice->CreateInputLayout(inputElementList.data(), inputElementList.size(), compiledData, compiledSize, &d3dInputLayout);
+				HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), d3dElementList.size(), compiledData, compiledSize, &d3dInputLayout);
 				if (FAILED(resultValue) || !d3dInputLayout)
 				{
 					throw Video::CreateObjectFailed();

@@ -30,6 +30,8 @@ namespace Gek
         bool isFile(const wchar_t *fileName);
         bool isDirectory(const wchar_t *fileName);
 
+		int compareLastWrite(const wchar_t *newFile, const wchar_t *oldFile);
+
         void find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *fileName)> onFileFound);
 
         void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);

@@ -8,20 +8,22 @@
 
 namespace Gek
 {
-    namespace Video
-    {
-        ElementSource getElementSource(const wchar_t *elementClassString);
-        Format getFormat(const wchar_t *formatString);
-        DepthWrite getDepthWriteMask(const wchar_t *depthWrite);
-        ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction);
-        StencilOperation getStencilOperation(const wchar_t *stencilOperation);
-        FillMode getFillMode(const wchar_t *fillMode);
-        CullMode getCullMode(const wchar_t *cullMode);
-        BlendSource getBlendSource(const wchar_t *blendSource);
-        BlendOperation getBlendOperation(const wchar_t *blendOperation);
-    };
-
-    namespace Plugin
+	namespace Utility
+	{
+		Video::Format getFormat(const wchar_t *formatString);
+		Video::DepthStateInformation::Write getDepthWriteMask(const wchar_t *depthWrite);
+		Video::ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction);
+		Video::DepthStateInformation::StencilStateInformation::Operation getStencilOperation(const wchar_t *stencilOperation);
+		Video::RenderStateInformation::FillMode getFillMode(const wchar_t *fillMode);
+		Video::RenderStateInformation::CullMode getCullMode(const wchar_t *cullMode);
+		Video::BlendStateInformation::Source getBlendSource(const wchar_t *blendSource);
+		Video::BlendStateInformation::Operation getBlendOperation(const wchar_t *blendOperation);
+		Video::InputElement::Source getElementSource(const wchar_t *elementClassString);
+		Video::InputElement::Semantic getElementSemantic(const wchar_t *semantic);
+		//virtual String getElementSemantic(InputElement::Semantic semantic) = 0;
+	}; // namespace Utility
+	
+	namespace Plugin
     {
         GEK_PREDECLARE(Entity);
 

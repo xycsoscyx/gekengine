@@ -86,32 +86,7 @@ namespace Gek
             D32_FLOAT,
             D16_UNORM,
 
-            NumFormats,
-        };
-
-        enum class ElementSource : uint8_t
-        {
-            Vertex = 0,
-            Instance,
-        };
-
-        enum class FillMode : uint8_t
-        {
-            WireFrame = 0,
-            Solid,
-        };
-
-        enum class CullMode : uint8_t
-        {
-            None = 0,
-            Front,
-            Back,
-        };
-
-        enum class DepthWrite : uint8_t
-        {
-            Zero = 0,
-            All,
+            Count,
         };
 
         enum class ComparisonFunction : uint8_t
@@ -126,61 +101,6 @@ namespace Gek
             GreaterEqual,
         };
 
-        enum class StencilOperation : uint8_t
-        {
-            Zero = 0,
-            Keep,
-            Replace,
-            Invert,
-            Increase,
-            IncreaseSaturated,
-            Decrease,
-            DecreaseSaturated,
-        };
-
-        enum class BlendSource : uint8_t
-        {
-            Zero = 0,
-            One,
-            BlendFactor,
-            InverseBlendFactor,
-            SourceColor,
-            InverseSourceColor,
-            SourceAlpha,
-            InverseSourceAlpha,
-            SourceAlphaSaturated,
-            DestinationColor,
-            InverseDestinationColor,
-            DestinationAlpha,
-            InverseDestinationAlpha,
-            SecondarySourceColor,
-            InverseSecondarySourceColor,
-            SecondarySourceAlpha,
-            InverseSecondarySourceAlpha,
-        };
-
-        enum class BlendOperation : uint8_t
-        {
-            Add = 0,
-            Subtract,
-            ReverseSubtract,
-            Minimum,
-            Maximum,
-        };
-
-        namespace ColorMask
-        {
-            enum
-            {
-                R = 1 << 0,
-                G = 1 << 1,
-                B = 1 << 2,
-                A = 1 << 3,
-                RGB = (R | G | B),
-                RGBA = (R | G | B | A),
-            };
-        }; // namespace ColorMask
-
         enum class PrimitiveType : uint8_t
         {
             PointList = 0,
@@ -188,28 +108,6 @@ namespace Gek
             LineStrip,
             TriangleList,
             TriangleStrip,
-        };
-
-        enum class FilterMode : uint8_t
-        {
-            AllPoint = 0,
-            MinMagPointMipLinear,
-            MinPointMAgLinearMipPoint,
-            MinPointMagMipLinear,
-            MinLinearMagMipPoint,
-            MinLinearMagPointMipLinear,
-            MinMagLinearMipPoint,
-            AllLinear,
-            Anisotropic,
-        };
-
-        enum class AddressMode : uint8_t
-        {
-            Clamp = 0,
-            Wrap,
-            Mirror,
-            MirrorOnce,
-            Border,
         };
 
         enum class Map : uint8_t
@@ -292,7 +190,20 @@ namespace Gek
 
         struct RenderStateInformation
         {
-            FillMode fillMode;
+			enum class FillMode : uint8_t
+			{
+				WireFrame = 0,
+				Solid,
+			};
+
+			enum class CullMode : uint8_t
+			{
+				None = 0,
+				Front,
+				Back,
+			};
+
+			FillMode fillMode;
             CullMode cullMode;
             bool frontCounterClockwise;
             uint32_t depthBias;
@@ -320,24 +231,42 @@ namespace Gek
 
         struct DepthStateInformation
         {
-            struct StencilStateInformation
+			enum class Write : uint8_t
+			{
+				Zero = 0,
+				All,
+			};
+
+			struct StencilStateInformation
             {
-                StencilOperation failOperation;
-                StencilOperation depthFailOperation;
-                StencilOperation passOperation;
+				enum class Operation : uint8_t
+				{
+					Zero = 0,
+					Keep,
+					Replace,
+					Invert,
+					Increase,
+					IncreaseSaturated,
+					Decrease,
+					DecreaseSaturated,
+				};
+
+				Operation failOperation;
+                Operation depthFailOperation;
+                Operation passOperation;
                 ComparisonFunction comparisonFunction;
 
                 StencilStateInformation(void)
-                    : failOperation(StencilOperation::Keep)
-                    , depthFailOperation(StencilOperation::Keep)
-                    , passOperation(StencilOperation::Keep)
+                    : failOperation(Operation::Keep)
+                    , depthFailOperation(Operation::Keep)
+                    , passOperation(Operation::Keep)
                     , comparisonFunction(ComparisonFunction::Always)
                 {
                 }
             };
 
             bool enable;
-            DepthWrite writeMask;
+            Write writeMask;
             ComparisonFunction comparisonFunction;
             bool stencilEnable;
             uint8_t stencilReadMask;
@@ -347,7 +276,7 @@ namespace Gek
 
             DepthStateInformation(void)
                 : enable(false)
-                , writeMask(DepthWrite::All)
+                , writeMask(Write::All)
                 , comparisonFunction(ComparisonFunction::Always)
                 , stencilEnable(false)
                 , stencilReadMask(0xFF)
@@ -358,28 +287,71 @@ namespace Gek
 
         struct BlendStateInformation
         {
-            friend struct UnifiedBlendStateInformation;
-            friend struct IndependentBlendStateInformation;
+			friend struct UnifiedBlendStateInformation;
+			friend struct IndependentBlendStateInformation;
 
-            bool enable;
-            BlendSource colorSource;
-            BlendSource colorDestination;
-            BlendOperation colorOperation;
-            BlendSource alphaSource;
-            BlendSource alphaDestination;
-            BlendOperation alphaOperation;
+			enum class Source : uint8_t
+			{
+				Zero = 0,
+				One,
+				BlendFactor,
+				InverseBlendFactor,
+				SourceColor,
+				InverseSourceColor,
+				SourceAlpha,
+				InverseSourceAlpha,
+				SourceAlphaSaturated,
+				DestinationColor,
+				InverseDestinationColor,
+				DestinationAlpha,
+				InverseDestinationAlpha,
+				SecondarySourceColor,
+				InverseSecondarySourceColor,
+				SecondarySourceAlpha,
+				InverseSecondarySourceAlpha,
+			};
+
+			enum class Operation : uint8_t
+			{
+				Add = 0,
+				Subtract,
+				ReverseSubtract,
+				Minimum,
+				Maximum,
+			};
+
+			struct Mask
+			{
+				enum
+				{
+					R = 1 << 0,
+					G = 1 << 1,
+					B = 1 << 2,
+					A = 1 << 3,
+					RGB = (R | G | B),
+					RGBA = (R | G | B | A),
+				};
+			}; // struct Mask
+
+			bool enable;
+            Source colorSource;
+            Source colorDestination;
+            Operation colorOperation;
+            Source alphaSource;
+            Source alphaDestination;
+            Operation alphaOperation;
             uint8_t writeMask;
 
         private:
             BlendStateInformation(void)
                 : enable(false)
-                , colorSource(BlendSource::One)
-                , colorDestination(BlendSource::One)
-                , colorOperation(BlendOperation::Add)
-                , alphaSource(BlendSource::One)
-                , alphaDestination(BlendSource::One)
-                , alphaOperation(BlendOperation::Add)
-                , writeMask(ColorMask::RGBA)
+                , colorSource(Source::One)
+                , colorDestination(Source::One)
+                , colorOperation(Operation::Add)
+                , alphaSource(Source::One)
+                , alphaDestination(Source::One)
+                , alphaOperation(Operation::Add)
+                , writeMask(Mask::RGBA)
             {
             }
         };
@@ -408,7 +380,29 @@ namespace Gek
 
         struct SamplerStateInformation
         {
-            FilterMode filterMode;
+			enum class FilterMode : uint8_t
+			{
+				AllPoint = 0,
+				MinMagPointMipLinear,
+				MinPointMAgLinearMipPoint,
+				MinPointMagMipLinear,
+				MinLinearMagMipPoint,
+				MinLinearMagPointMipLinear,
+				MinMagLinearMipPoint,
+				AllLinear,
+				Anisotropic,
+			};
+
+			enum class AddressMode : uint8_t
+			{
+				Clamp = 0,
+				Wrap,
+				Mirror,
+				MirrorOnce,
+				Border,
+			};
+
+			FilterMode filterMode;
             AddressMode addressModeU;
             AddressMode addressModeV;
             AddressMode addressModeW;
@@ -434,29 +428,43 @@ namespace Gek
             }
         };
 
-        struct InputElementInformation
+        struct InputElement
         {
-            Video::Format format;
-            String semanticName;
-            uint32_t semanticIndex;
-            ElementSource slotClass;
-            uint32_t slotIndex;
+			enum class Source : uint8_t
+			{
+				Vertex = 0,
+				Instance,
+			};
 
-            InputElementInformation(void)
+			enum class Semantic : uint8_t
+			{
+				Position = 0,
+				TexCoord,
+				Tangent,
+				BiTangnet,
+				Normal,
+				Color,
+				Count,
+			};
+
+			Video::Format format;
+			Semantic semantic;
+			Source source;
+            uint32_t sourceIndex;
+
+			InputElement(void)
                 : format(Format::Unknown)
-                , semanticName(nullptr)
-                , semanticIndex(0)
-                , slotClass(ElementSource::Vertex)
-                , slotIndex(0)
+                , semantic(Semantic::TexCoord)
+                , source(Source::Vertex)
+                , sourceIndex(0)
             {
             }
 
-            InputElementInformation(Video::Format format, const wchar_t *semanticName, uint32_t semanticIndex, ElementSource slotClass = ElementSource::Vertex, uint32_t slotIndex = 0)
+			InputElement(Video::Format format, Semantic semantic, Source source = Source::Vertex, uint32_t sourceIndex = 0)
                 : format(format)
-                , semanticName(semanticName)
-                , semanticIndex(semanticIndex)
-                , slotClass(slotClass)
-                , slotIndex(slotIndex)
+                , semantic(semantic)
+                , source(source)
+                , sourceIndex(sourceIndex)
             {
             }
         };
@@ -491,7 +499,7 @@ namespace Gek
 
         GEK_INTERFACE(Device)
         {
-            GEK_INTERFACE(Context)
+			GEK_INTERFACE(Context)
             {
                 GEK_INTERFACE(Pipeline)
                 {
@@ -553,7 +561,9 @@ namespace Gek
             virtual void setSize(uint32_t width, uint32_t height, Video::Format format) = 0;
             virtual void resize(void) = 0;
 
-            virtual void * const getSwapChain(void) = 0;
+			virtual const char * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
+
+			virtual void * const getSwapChain(void) = 0;
             virtual Target * const getBackBuffer(void) = 0;
             virtual Context * const getDefaultContext(void) = 0;
 
@@ -582,7 +592,7 @@ namespace Gek
             virtual void updateResource(Object *buffer, const void *data) = 0;
             virtual void copyResource(Object *destination, Object *source) = 0;
 
-			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize) = 0;
+			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
 
 			virtual ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize) = 0;
 			virtual ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize) = 0;

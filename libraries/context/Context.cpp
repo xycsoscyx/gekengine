@@ -59,6 +59,7 @@ namespace Gek
 						}
 						else
 						{
+							auto lastError = GetLastError();
 							throw InvalidPlugin();
 						}
 					}

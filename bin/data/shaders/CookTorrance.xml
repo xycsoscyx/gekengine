@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <shader priority="1">
     <input>
-        <position format="float3" semantic="POSITION" semanticindex="0" />
-        <texCoord format="float2" semantic="TEXCOORD" semanticindex="0" />
-        <normal format="float3" semantic="NORMAL" semanticindex="0" />
+        <position bind="float3" semantic="POSITION" />
+        <texCoord bind="float2" semantic="TEXCOORD" />
+        <normal bind="float3" semantic="NORMAL" />
         <isFrontFacing system="isFrontFacing" />
     </input>
 
