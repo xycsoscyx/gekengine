@@ -23,7 +23,7 @@
   <population>
         <entity>
             <transform />
-            <model>sponza</model>
+            <model>demo</model>
             <physical />
         </entity>
 

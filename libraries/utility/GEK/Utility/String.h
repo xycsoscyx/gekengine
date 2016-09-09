@@ -252,7 +252,13 @@ namespace Gek
             return result;
         }
 
-        int compareNoCase(const BaseString &string) const
+		bool endsWith(const BaseString &string) const
+		{
+			if (string.length() > length()) return false;
+			return std::equal(string.rbegin(), string.rend(), rbegin());
+		}
+
+		int compareNoCase(const BaseString &string) const
         {
             if (size() != string.size())
             {

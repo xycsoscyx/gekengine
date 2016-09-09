@@ -59,28 +59,31 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							textureName.toLower();
 
 							Xml::Node *node = nullptr;
-							if (textureName.find(L"basecolor") != String::npos ||
-								textureName.find(L"base_color") != String::npos ||
-								textureName.find(L"diffuse") != String::npos ||
-								textureName.find(L"albedo") != String::npos ||
-								textureName.subString(textureName.length() - 2) == L"_d")
+							if (textureName.endsWith(L"basecolor") ||
+								textureName.endsWith(L"base_color") ||
+								textureName.endsWith(L"diffuse") ||
+								textureName.endsWith(L"albedo") ||
+								textureName.endsWith(L"alb") ||
+								textureName.endsWith(L"_d"))
 							{
 								node = &solidNode.getChild(L"albedo");
 								node->attributes[L"flags"] = L"sRGB";
 							}
-							else if (textureName.find(L"normal") != String::npos ||
-								textureName.subString(textureName.length() - 2) == L"_n")
+							else if (textureName.endsWith(L"normal") ||
+								textureName.endsWith(L"_n"))
 							{
 								node = &solidNode.getChild(L"normal");
 							}
-							else if (textureName.find(L"roughness") != String::npos ||
-								textureName.subString(textureName.length() - 2) == L"_r")
+							else if (textureName.endsWith(L"roughness") ||
+								textureName.endsWith(L"rough") ||
+								textureName.endsWith(L"_r"))
 							{
 								node = &solidNode.getChild(L"roughness");
 							}
-							else if (textureName.find(L"metalness") != String::npos ||
-								textureName.find(L"metallic") != String::npos ||
-								textureName.subString(textureName.length() - 2) == L"_m")
+							else if (textureName.endsWith(L"metalness") ||
+								textureName.endsWith(L"metallic") ||
+								textureName.endsWith(L"metal") ||
+								textureName.endsWith(L"_m"))
 							{
 								node = &solidNode.getChild(L"metallic");
 							}
