@@ -441,7 +441,7 @@ namespace Gek
 				Position = 0,
 				TexCoord,
 				Tangent,
-				BiTangnet,
+				BiTangent,
 				Normal,
 				Color,
 				Count,

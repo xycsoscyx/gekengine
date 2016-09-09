@@ -528,7 +528,7 @@ namespace Gek
 					String programDirectory(FileSystem::getDirectory(programFileName));
 					auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 					{
-                        if (wcscmp(includeName, L"GEKFilter") == 0)
+                        if (wcsicmp(includeName, L"GEKFilter") == 0)
                         {
                             data = engineData;
                             return true;

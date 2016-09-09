@@ -308,7 +308,7 @@ namespace Gek
                         {
                             Header::Material &materialHeader = header->materialList[materialIndex];
                             Material &material = model.materialList[materialIndex];
-                            if (wcscmp(materialHeader.name, L"skin") == 0)
+                            if (wcsicmp(materialHeader.name, L"skin") == 0)
                             {
                                 material.skin = true;
                             }

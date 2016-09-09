@@ -15,18 +15,18 @@ namespace Gek
     {
         static Video::Format getElementSource(const wchar_t *type)
         {
-            if (wcscmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
-            else if (wcscmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
-            else if (wcscmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-            else if (wcscmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-            else if (wcscmp(type, L"int") == 0) return Video::Format::R32_INT;
-            else if (wcscmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
-            else if (wcscmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
-            else if (wcscmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-            else if (wcscmp(type, L"uint") == 0) return Video::Format::R32_UINT;
-            else if (wcscmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
-            else if (wcscmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-            else if (wcscmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
+            if (wcsicmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
+            else if (wcsicmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
+            else if (wcsicmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
+            else if (wcsicmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
+            else if (wcsicmp(type, L"int") == 0) return Video::Format::R32_INT;
+            else if (wcsicmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
+            else if (wcsicmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
+            else if (wcsicmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
+            else if (wcsicmp(type, L"uint") == 0) return Video::Format::R32_UINT;
+            else if (wcsicmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
+            else if (wcsicmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
+            else if (wcsicmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
             return Video::Format::Unknown;
         }
 
@@ -52,6 +52,7 @@ namespace Gek
 				std::vector<Video::InputElement> elementList;
 				visualNode.findChild(L"input", [&](auto &inputNode) -> void
 				{
+					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.children)
 					{
 						if (elementNode.attributes.count(L"system"))
@@ -96,7 +97,8 @@ namespace Gek
 							element.source = Utility::getElementSource(elementNode.attributes[L"source"]);
 							element.sourceIndex = elementNode.attributes[L"sourceIndex"];
 
-							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(element.semantic), element.sourceIndex);
+							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
+							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(element.semantic), semanticIndex);
 							elementList.push_back(element);
 						}
 					}
@@ -118,7 +120,6 @@ namespace Gek
 						auto semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
 						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
-
 					}
 				});
 
@@ -156,7 +157,7 @@ namespace Gek
 
 						auto onInclude = [engineData = move(engineData), directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 						{
-							if (wcscmp(includeName, L"GEKVisual") == 0)
+							if (wcsicmp(includeName, L"GEKVisual") == 0)
 							{
 								data = engineData;
 								return true;

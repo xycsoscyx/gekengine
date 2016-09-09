@@ -25,18 +25,18 @@ namespace Gek
     {
         static Video::Format getElementSource(const wchar_t *type)
         {
-            if (wcscmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
-            else if (wcscmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
-            else if (wcscmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-            else if (wcscmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-            else if (wcscmp(type, L"int") == 0) return Video::Format::R32_INT;
-            else if (wcscmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
-            else if (wcscmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
-            else if (wcscmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-            else if (wcscmp(type, L"uint") == 0) return Video::Format::R32_UINT;
-            else if (wcscmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
-            else if (wcscmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-            else if (wcscmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
+            if (wcsicmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
+            else if (wcsicmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
+            else if (wcsicmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
+            else if (wcsicmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
+            else if (wcsicmp(type, L"int") == 0) return Video::Format::R32_INT;
+            else if (wcsicmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
+            else if (wcsicmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
+            else if (wcsicmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
+            else if (wcsicmp(type, L"uint") == 0) return Video::Format::R32_UINT;
+            else if (wcsicmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
+            else if (wcsicmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
+            else if (wcsicmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
             return Video::Format::Unknown;
         }
 
@@ -945,7 +945,7 @@ namespace Gek
 						String programDirectory(FileSystem::getDirectory(programFileName));
 						auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
 						{
-                            if (wcscmp(includeName, L"GEKShader") == 0)
+                            if (wcsicmp(includeName, L"GEKShader") == 0)
                             {
                                 data = engineData;
                                 return true;

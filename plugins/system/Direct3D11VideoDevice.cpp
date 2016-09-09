@@ -468,7 +468,19 @@ namespace Gek
             D3D11_MAP_WRITE_DISCARD,
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
-    }; // namespace DirectX
+
+		static const char *SemanticNameList[] =
+		{
+			"POSITION",
+			"TEXCOORD",
+			"TANGENT",
+			"BINORMAL",
+			"NORMAL",
+			"COLOR",
+		};
+
+		static_assert(ARRAYSIZE(SemanticNameList) == static_cast<uint8_t>(Video::InputElement::Semantic::Count), "New input element semantic added without adding to all SemanticNameList.");
+	}; // namespace DirectX
 	
 	namespace Direct3D11
     {
@@ -1764,16 +1776,7 @@ namespace Gek
 
 			const char * const getSemanticMoniker(Video::InputElement::Semantic semantic)
 			{
-				switch (semantic)
-				{
-				case Video::InputElement::Semantic::Position: return "POSITION";
-				case Video::InputElement::Semantic::TexCoord: return "TEXCOORD";
-				case Video::InputElement::Semantic::Tangent: return "TANGENT";
-				case Video::InputElement::Semantic::BiTangnet: return "BINORMAL";
-				case Video::InputElement::Semantic::Normal: return "NORMAL";
-				case Video::InputElement::Semantic::Color: return "COLOR";
-				default: return "TEXCOORD";
-				};
+				return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
 			}
 
             void * const getSwapChain(void)
@@ -2238,16 +2241,6 @@ namespace Gek
 
 			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
 			{
-				static const char *SemanticNameList[] =
-				{
-					"Position",
-					"TexCoord",
-					"Tangent",
-					"BiTangnet",
-					"Normal",
-					"Color",
-				};
-
 				std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
 				Video::InputElement::Source lastSource = Video::InputElement::Source::Vertex;
 				uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
@@ -2265,7 +2258,7 @@ namespace Gek
 
 					lastSource = element.source;
 					elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
-					elementDesc.SemanticName = SemanticNameList[static_cast<uint8_t>(element.semantic)];
+					elementDesc.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(element.semantic)];
 					elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
 					elementDesc.InputSlot = element.sourceIndex;
 					switch (element.source)
@@ -2343,7 +2336,7 @@ namespace Gek
 				HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, &include, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
 				if (FAILED(resultValue) || !d3dShaderBlob)
 				{
-					String errors = (const char *)d3dCompilerErrors->GetBufferPointer();
+					OutputDebugStringW(String::create(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (const char *)d3dCompilerErrors->GetBufferPointer()));
 					throw Video::ProgramCompilationFailed();
 				}
 
