@@ -12,7 +12,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getElementType(const wchar_t *type)
+        static Video::Format getElementSource(const wchar_t *type)
         {
             if (wcscmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
             else if (wcscmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
@@ -53,21 +53,37 @@ namespace Gek
 				{
 					for (auto &elementNode : inputNode.children)
 					{
-						String type(elementNode.attributes[L"type"]);
-						if (type.compareNoCase(L"InstanceID") == 0)
+						if (elementNode.attributes.count(L"system"))
 						{
-							inputVertexData.format(L"    uint %v : SV_InstanceId;\r\n", elementNode.type);
-						}
-						else if (type.compareNoCase(L"VertexID") == 0)
-						{
-							inputVertexData.format(L"    uint %v : SV_VertexId;\r\n", elementNode.type);
-						}
-						else if (type.compareNoCase(L"isFrontFacing") == 0)
-						{
-							inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+							String system(elementNode.attributes[L"system"]);
+							if (system.compareNoCase(L"InstanceID") == 0)
+							{
+								inputVertexData.format(L"    uint %v : SV_InstanceId;\r\n", elementNode.type);
+							}
+							else if (system.compareNoCase(L"VertexID") == 0)
+							{
+								inputVertexData.format(L"    uint %v : SV_VertexId;\r\n", elementNode.type);
+							}
+							else if (system.compareNoCase(L"isFrontFacing") == 0)
+							{
+								String format(elementNode.getAttribute(L"format", L"bool"));
+								if (format.compareNoCase(L"int") == 0)
+								{
+									inputVertexData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+								}
+								else if (format.compareNoCase(L"uint") == 0)
+								{
+									inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+								}
+								else
+								{
+									inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+								}
+							}
 						}
 						else
 						{
+							String format(elementNode.attributes[L"format"]);
 							String semanticName(elementNode.attributes[L"semantic"]);
 							if (semanticName.compareNoCase(L"POSITION") != 0 &&
 								semanticName.compareNoCase(L"TEXCOORD") != 0 &&
@@ -80,9 +96,9 @@ namespace Gek
 							Video::InputElementInformation element;
 							element.semanticName = semanticName;
 							element.semanticIndex = elementNode.attributes[L"semanticindex"];
-							element.slotClass = Video::getElementType(elementNode.attributes[L"slotclass"]);
+							element.slotClass = Video::getElementSource(elementNode.attributes[L"slotclass"]);
 							element.slotIndex = elementNode.attributes[L"slotindex"];
-							if (type.compareNoCase(L"float4x4") == 0)
+							if (format.compareNoCase(L"float4x4") == 0)
 							{
 								inputVertexData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
 								element.format = Video::Format::R32G32B32A32_FLOAT;
@@ -94,7 +110,7 @@ namespace Gek
 								element.semanticIndex++;
 								elementList.push_back(element);
 							}
-							else if (type.compareNoCase(L"float4x3") == 0)
+							else if (format.compareNoCase(L"float4x3") == 0)
 							{
 								inputVertexData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, element.semanticIndex);
 								element.format = Video::Format::R32G32B32A32_FLOAT;
@@ -106,13 +122,13 @@ namespace Gek
 							}
 							else
 							{
-								element.format = getElementType(type);
+								element.format = getElementSource(format);
 								if (element.format == Video::Format::Unknown)
 								{
 									throw InvalidElementType();
 								}
 
-								inputVertexData.format(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, element.semanticIndex);
+								inputVertexData.format(L"    %v %v : %v%v;\r\n", format, elementNode.type, semanticName, element.semanticIndex);
 								elementList.push_back(element);
 							}
 						}
@@ -124,10 +140,10 @@ namespace Gek
 				{
 					for (auto &elementNode : outputNode.children)
 					{
+						String format(elementNode.attributes[L"format"]);
 						String semanticName(elementNode.attributes[L"semantic"]);
 						uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
-						String type(elementNode.attributes[L"type"]);
-						outputVertexData.format(L"    %v %v: %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+						outputVertexData.format(L"    %v %v: %v%v;\r\n", format, elementNode.type, semanticName, semanticIndex);
 					}
 				});
 

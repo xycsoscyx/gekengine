@@ -2221,13 +2221,13 @@ namespace Gek
 
 			Video::ObjectPtr createInputLayout(const std::vector<Video::InputElementInformation> &elementLayout, const void *compiledData, uint32_t compiledSize)
 			{
-				Video::ElementType lastElementType = Video::ElementType::Vertex;
+				Video::ElementSource lastElementSource = Video::ElementSource::Vertex;
 				std::vector<D3D11_INPUT_ELEMENT_DESC> inputElementList;
 				std::list<StringUTF8> convertedNameList;
 				for (auto &element : elementLayout)
 				{
 					D3D11_INPUT_ELEMENT_DESC elementDesc;
-					if (lastElementType != element.slotClass)
+					if (lastElementSource != element.slotClass)
 					{
 						elementDesc.AlignedByteOffset = 0;
 					}
@@ -2236,19 +2236,19 @@ namespace Gek
 						elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
 					}
 
-					lastElementType = element.slotClass;
+					lastElementSource = element.slotClass;
 					convertedNameList.push_back(element.semanticName);
 					elementDesc.SemanticName = convertedNameList.back();
 					elementDesc.SemanticIndex = element.semanticIndex;
 					elementDesc.InputSlot = element.slotIndex;
 					switch (element.slotClass)
 					{
-					case Video::ElementType::Instance:
+					case Video::ElementSource::Instance:
 						elementDesc.InputSlotClass = D3D11_INPUT_PER_INSTANCE_DATA;
 						elementDesc.InstanceDataStepRate = 1;
 						break;
 
-					case Video::ElementType::Vertex:
+					case Video::ElementSource::Vertex:
 					default:
 						elementDesc.InputSlotClass = D3D11_INPUT_PER_VERTEX_DATA;
 						elementDesc.InstanceDataStepRate = 0;

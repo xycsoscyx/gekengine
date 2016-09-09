@@ -58,7 +58,9 @@ struct Vertex
 {
     Math::Float3 position;
     Math::Float2 texCoord;
-    Math::Float3 normal;
+	Math::Float3 tangent;
+	Math::Float3 biTangent;
+	Math::Float3 normal;
 };
 
 struct Model
@@ -67,7 +69,14 @@ struct Model
     std::vector<Vertex> vertexList;
 };
 
-void getMeshes(float unitsInFoot, bool fixMaxCoords, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
+struct Parameters
+{
+	float unitsInFoot;
+	bool fullModel;
+	bool fixMaxCoords;
+};
+
+void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -97,10 +106,33 @@ void getMeshes(float unitsInFoot, bool fixMaxCoords, const aiScene *scene, const
                     throw std::exception("Invalid mesh face list");
                 }
 
-                if (mesh->mVertices == nullptr)
-                {
-                    throw std::exception("Invalid mesh vertex list");
-                }
+				if (mesh->mVertices == nullptr)
+				{
+					throw std::exception("Invalid mesh vertex list");
+				}
+
+				if (parameters.fullModel)
+				{
+					if (mesh->mTextureCoords[0] == nullptr)
+					{
+						throw std::exception("Invalid mesh texture coordinate list");
+					}
+
+					if (mesh->mTangents == nullptr)
+					{
+						throw std::exception("Invalid mesh tangent list");
+					}
+
+					if (mesh->mBitangents == nullptr)
+					{
+						throw std::exception("Invalid mesh bitangent list");
+					}
+
+					if (mesh->mNormals == nullptr)
+					{
+						throw std::exception("Invalid mesh normal list");
+					}
+				}
 
                 StringUTF8 material;
                 if (scene->mMaterials != nullptr)
@@ -123,9 +155,9 @@ void getMeshes(float unitsInFoot, bool fixMaxCoords, const aiScene *scene, const
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices == 3)
                     {
-                        model.indexList.push_back(face.mIndices[fixMaxCoords ? 2 : 0]);
+                        model.indexList.push_back(face.mIndices[parameters.fixMaxCoords ? 2 : 0]);
                         model.indexList.push_back(face.mIndices[1]);
-                        model.indexList.push_back(face.mIndices[fixMaxCoords ? 0 : 2]);
+                        model.indexList.push_back(face.mIndices[parameters.fixMaxCoords ? 0 : 2]);
                     }
                     else
                     {
@@ -137,26 +169,33 @@ void getMeshes(float unitsInFoot, bool fixMaxCoords, const aiScene *scene, const
                 {
                     Vertex vertex;
                     vertex.position.set(
-                        mesh->mVertices[vertexIndex].x * (fixMaxCoords ? -1.0f : 1.0f),
+                        mesh->mVertices[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
-					vertex.position *= (1.0f / unitsInFoot);
+					vertex.position *= (1.0f / parameters.unitsInFoot);
                     boundingBox.extend(vertex.position);
 
-                    if (mesh->mTextureCoords[0])
-                    {
-                        vertex.texCoord.set(
-                            mesh->mTextureCoords[0][vertexIndex].x,
-                            mesh->mTextureCoords[0][vertexIndex].y);
-                    }
+					if (parameters.fullModel)
+					{
+						vertex.texCoord.set(
+							mesh->mTextureCoords[0][vertexIndex].x,
+							mesh->mTextureCoords[0][vertexIndex].y);
 
-                    if (mesh->mNormals)
-                    {
-                        vertex.normal.set(
-                            mesh->mNormals[vertexIndex].x * (fixMaxCoords ? -1.0f : 1.0f),
-                            mesh->mNormals[vertexIndex].y,
-                            mesh->mNormals[vertexIndex].z);
-                    }
+						vertex.tangent.set(
+							mesh->mTangents[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+							mesh->mTangents[vertexIndex].y,
+							mesh->mTangents[vertexIndex].z);
+
+						vertex.biTangent.set(
+							mesh->mBitangents[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+							mesh->mBitangents[vertexIndex].y,
+							mesh->mBitangents[vertexIndex].z);
+
+						vertex.normal.set(
+							mesh->mNormals[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+							mesh->mNormals[vertexIndex].y,
+							mesh->mNormals[vertexIndex].z);
+					}
 
                     model.vertexList.push_back(vertex);
                 }
@@ -178,7 +217,7 @@ void getMeshes(float unitsInFoot, bool fixMaxCoords, const aiScene *scene, const
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(unitsInFoot, fixMaxCoords, scene, node->mChildren[childIndex], albedoMap, boundingBox);
+            getMeshes(parameters, scene, node->mChildren[childIndex], albedoMap, boundingBox);
         }
     }
 }
@@ -199,14 +238,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         String fileNameOutput;
         String mode(L"model");
 
-        bool fixMaxCoords = false;
+		Parameters parameters;
+		parameters.unitsInFoot = 1.0f;
+		parameters.fullModel = false;
+		parameters.fixMaxCoords = false;
         bool flipCoords = false;
         bool flipWinding = false;
-        bool generateNormals = false;
-        bool smoothNormals = false;
         float smoothingAngle = 80.0f;
 		bool validate = false;
-		float unitsInFoot = 1.0f;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
             String argument(argumentList[argumentIndex]);
@@ -232,7 +271,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 }
 
                 mode = arguments[1];
-            }
+				parameters.fullModel = (mode.compareNoCase(L"model") == 0);
+			}
             else if (arguments[0].compareNoCase(L"-flipCoords") == 0)
             {
                 flipCoords = true;
@@ -241,23 +281,18 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             {
                 flipWinding = true;
             }
-            else if (arguments[0].compareNoCase(L"-generateNormals") == 0)
-            {
-                generateNormals = true;
-            }
-            else if (arguments[0].compareNoCase(L"-smoothNormals") == 0)
+            else if (arguments[0].compareNoCase(L"-smoothAngle") == 0)
             {
                 if (arguments.size() != 2)
                 {
-                    throw std::exception("Missing parameters for smoothNormals");
+                    throw std::exception("Missing parameters for smoothAngle");
                 }
 
-                smoothNormals = true;
                 smoothingAngle = arguments[1];
             }
 			else if (arguments[0].compareNoCase(L"-fixMaxCoords") == 0)
 			{
-				fixMaxCoords = true;
+				parameters.fixMaxCoords = true;
 			}
 			else if (arguments[0].compareNoCase(L"-validate") == 0)
 			{
@@ -270,22 +305,23 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 					throw std::exception("Missing parameters for unitsInFoot");
 				}
 
-				unitsInFoot = arguments[1];
+				parameters.unitsInFoot = arguments[1];
 			}
 		}
 
 		aiLogStream logStream;
 		logStream.callback = [](const char *message, char *user) -> void
 		{
-			printf("Assimp: %s\r\n", message);
+			printf("Assimp: %s", message);
 		};
 
 		logStream.user = nullptr;
 		aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
-            aiComponent_TANGENTS_AND_BITANGENTS |
-            aiComponent_COLORS |
+			aiComponent_NORMALS |
+			aiComponent_TANGENTS_AND_BITANGENTS |
+			aiComponent_COLORS |
             aiComponent_BONEWEIGHTS |
             aiComponent_ANIMATIONS |
             aiComponent_LIGHTS |
@@ -316,25 +352,16 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        if (mode.compareNoCase(L"model") == 0)
+        if (parameters.fullModel)
         {
-            importFlags |= aiProcess_GenUVCoords; // convert spherical, cylindrical, box and planar mapping to proper UVs
+			importFlags |= aiProcess_GenUVCoords; // convert spherical, cylindrical, box and planar mapping to proper UVs
             importFlags |= aiProcess_TransformUVCoords; // preprocess UV transformations (scaling, translation …)
-            if (generateNormals)
-            {
-                notRequiredComponents |= aiComponent_NORMALS; // remove normals component since we are generating them
-                if (smoothNormals)
-                {
-                    aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
-                    postProcessFlags |= aiProcess_GenSmoothNormals; // generate smoothed normal vectors
-                }
-                else
-                {
-                    postProcessFlags |= aiProcess_GenNormals; // generate normal vectors
-                }
-            }
+            
+			postProcessFlags |= aiProcess_GenSmoothNormals; // generate smoothed normal vectors
+			postProcessFlags |= aiProcess_CalcTangentSpace; // generate tangent vectors
 
-            aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
+			aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+			aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
             if (flipCoords)
             {
                 importFlags |= aiProcess_FlipUVs;
@@ -344,7 +371,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         {
             notRequiredComponents |= aiComponent_TEXCOORDS; // we don't need texture coordinates for collision information
             notRequiredComponents |= aiComponent_NORMALS; // we don't need normals for collision information
-        }
+			notRequiredComponents |= aiComponent_TANGENTS_AND_BITANGENTS; // we don't need tangents and bitangents for collision information
+		}
 
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
         auto originalScene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
@@ -359,9 +387,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			throw std::exception("Unable to apply post processing with Assimp");
 		}
 
-        Shapes::AlignedBox boundingBox;
+		Shapes::AlignedBox boundingBox;
         std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
-        getMeshes(unitsInFoot, fixMaxCoords, scene, scene->mRootNode, albedoMap, boundingBox);
+
+        getMeshes(parameters, scene, scene->mRootNode, albedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
@@ -426,6 +455,13 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			return true;
 		};
 
+		auto engineIndex = texturesPath.find(L"gek engine");
+		if (engineIndex != String::npos)
+		{
+			// skip hard drive location, jump to known engine structure
+			texturesPath = texturesPath.subString(engineIndex);
+		}
+
 		FileSystem::find(materialsPath, findMaterials);
         std::unordered_map<String, std::list<Model>> materialMultiMap;
         for (auto &albedo : albedoMap)
@@ -433,10 +469,17 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             String albedoName(albedo.first.getLower());
             albedoName.replace(L"/", L"\\");
 			albedoName = FileSystem::replaceExtension(albedoName, L"");
-			albedoName.replace((texturesPath + L"\\"), L"");
 			if (albedoName.find(L"textures\\") == 0)
 			{
 				albedoName = albedoName.subString(9);
+			}
+			else
+			{
+				auto texturesIndex = albedoName.find(texturesPath);
+				if (texturesIndex != String::npos)
+				{
+					albedoName = albedoName.subString(texturesIndex + texturesPath.length() + 1);
+				}
 			}
 
 			//printf("FileName: %s\r\n", albedo.first.c_str());
@@ -489,7 +532,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             ModelHeader header;
             header.identifier = *(uint32_t *)"GEKX";
             header.type = 0;
-            header.version = 4;
+            header.version = 5;
             header.materialCount = materialMap.size();
             fwrite(&header, sizeof(ModelHeader), 1, file);
             for (auto &material : materialMap)

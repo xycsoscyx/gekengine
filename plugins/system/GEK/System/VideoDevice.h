@@ -89,7 +89,7 @@ namespace Gek
             NumFormats,
         };
 
-        enum class ElementType : uint8_t
+        enum class ElementSource : uint8_t
         {
             Vertex = 0,
             Instance,
@@ -439,19 +439,19 @@ namespace Gek
             Video::Format format;
             String semanticName;
             uint32_t semanticIndex;
-            ElementType slotClass;
+            ElementSource slotClass;
             uint32_t slotIndex;
 
             InputElementInformation(void)
                 : format(Format::Unknown)
                 , semanticName(nullptr)
                 , semanticIndex(0)
-                , slotClass(ElementType::Vertex)
+                , slotClass(ElementSource::Vertex)
                 , slotIndex(0)
             {
             }
 
-            InputElementInformation(Video::Format format, const wchar_t *semanticName, uint32_t semanticIndex, ElementType slotClass = ElementType::Vertex, uint32_t slotIndex = 0)
+            InputElementInformation(Video::Format format, const wchar_t *semanticName, uint32_t semanticIndex, ElementSource slotClass = ElementSource::Vertex, uint32_t slotIndex = 0)
                 : format(format)
                 , semanticName(semanticName)
                 , semanticIndex(semanticIndex)

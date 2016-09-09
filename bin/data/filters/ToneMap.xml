@@ -35,8 +35,8 @@
 
         <ToneMap entry="mainPixelProgram">
             <defines>
-                <techniqueMode type="int">6</techniqueMode>
-                <autoExposureMode type="int">2</autoExposureMode>
+                <techniqueMode bind="int">6</techniqueMode>
+                <autoExposureMode bind="int">2</autoExposureMode>
 
                 <luminanceSaturation>1.0</luminanceSaturation>
                 <keyValue>0.18</keyValue>

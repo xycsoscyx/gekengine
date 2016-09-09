@@ -98,7 +98,9 @@ namespace Gek
         {
             Math::Float3 position;
             Math::Float2 texCoord;
-            Math::Float3 normal;
+			Math::Float3 tangent;
+			Math::Float3 biTangent;
+			Math::Float3 normal;
         };
 
         struct Material
@@ -285,7 +287,7 @@ namespace Gek
                             throw InvalidModelType();
                         }
 
-                        if (header->version != 4)
+                        if (header->version != 5)
                         {
                             throw InvalidModelVersion();
                         }

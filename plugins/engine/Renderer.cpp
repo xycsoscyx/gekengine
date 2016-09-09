@@ -26,10 +26,10 @@ namespace Gek
 {
     namespace Video
     {
-        ElementType getElementType(const wchar_t *elementClassString)
+        ElementSource getElementSource(const wchar_t *elementSourceString)
         {
-            if (wcscmp(elementClassString, L"instance") == 0) return ElementType::Instance;
-            /*else if (wcscmp(elementClassString, L"vertex") == 0) */ return ElementType::Vertex;
+            if (wcscmp(elementSourceString, L"instance") == 0) return ElementSource::Instance;
+            /*else if (wcscmp(elementSourceString, L"vertex") == 0) */ return ElementSource::Vertex;
         }
 
         Format getFormat(const wchar_t *formatString)

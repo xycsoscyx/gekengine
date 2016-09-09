@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getElementType(const wchar_t *type)
+        static Video::Format getElementSource(const wchar_t *type)
         {
             if (wcscmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
             else if (wcscmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
@@ -214,7 +214,7 @@ namespace Gek
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
                 for (auto &defineNode : shaderNode.getChild(L"defines").children)
                 {
-                    BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
+                    BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
                     globalDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
                 }
 
@@ -318,27 +318,30 @@ namespace Gek
                 {
                     for (auto &elementNode : inputNode.children)
                     {
-                        String type(elementNode.attributes[L"type"]);
-                        if (type.compareNoCase(L"isFrontFacing") == 0)
-                        {
-                            String format(elementNode.getAttribute(L"format", L"bool"));
-                            if (format.compareNoCase(L"int") == 0)
-                            {
-                                inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
-                            }
-                            else if (format.compareNoCase(L"uint") == 0)
-                            {
-                                inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
-                            }
-                            else if (format.compareNoCase(L"bool") == 0)
-                            {
-                                inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
-                            }
-                            else
-                            {
-                                throw InvalidParameters();
-                            }
-                        }
+						if (elementNode.attributes.count(L"system"))
+						{
+							String system(elementNode.attributes[L"system"]);
+							if (system.compareNoCase(L"isFrontFacing") == 0)
+							{
+								String format(elementNode.getAttribute(L"format", L"bool"));
+								if (format.compareNoCase(L"int") == 0)
+								{
+									inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+								}
+								else if (format.compareNoCase(L"uint") == 0)
+								{
+									inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+								}
+								else if (format.compareNoCase(L"bool") == 0)
+								{
+									inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+								}
+								else
+								{
+									throw InvalidParameters();
+								}
+							}
+						}
                         else
                         {
                             String semanticName(elementNode.attributes[L"semantic"]);
@@ -350,23 +353,19 @@ namespace Gek
                                 throw InvalidElementType();
                             }
 
-                            uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
-                            if (type.compareNoCase(L"float4x4") == 0)
+							String format(elementNode.attributes[L"format"]);
+							uint32_t semanticIndex = elementNode.attributes[L"semanticindex"];
+                            if (format.compareNoCase(L"float4x4") == 0)
                             {
                                 inputData.format(L"    float4x4 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
-                            else if (type.compareNoCase(L"float4x3") == 0)
+                            else if (format.compareNoCase(L"float4x3") == 0)
                             {
                                 inputData.format(L"    float4x3 %v : %v%v;\r\n", elementNode.type, semanticName, semanticIndex);
                             }
                             else
                             {
-                                if (getElementType(type) == Video::Format::Unknown)
-                                {
-                                    throw InvalidElementType();
-                                }
-
-                                inputData.format(L"    %v %v : %v%v;\r\n", type, elementNode.type, semanticName, semanticIndex);
+                                inputData.format(L"    %v %v : %v%v;\r\n", format, elementNode.type, semanticName, semanticIndex);
                             }
                         }
                     }
@@ -564,7 +563,7 @@ namespace Gek
                         std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
                         for (auto &defineNode : passNode.getChild(L"defines").children)
                         {
-                            BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
+                            BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
                             localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
                         }
 

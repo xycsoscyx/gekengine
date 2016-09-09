@@ -99,7 +99,7 @@ namespace Gek
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
                 for (auto &defineNode : filterNode.getChild(L"defines").children)
                 {
-                    BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
+                    BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
                     globalDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
                 }
 
@@ -249,7 +249,7 @@ namespace Gek
                     std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
                     for (auto &defineNode : passNode.getChild(L"defines").children)
                     {
-                        BindType bindType = getBindType(defineNode.getAttribute(L"type", L"float"));
+                        BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
                         localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
                     }
 

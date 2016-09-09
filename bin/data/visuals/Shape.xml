@@ -1,7 +1,9 @@
 <?xml version="1.0"?>
 <visual>
     <input>
-        <vertexIndex system="vertexid" />
+        <position format="float3" semantic="POSITION" semanticindex="0" slotclass="vertex" slotindex="0" />
+		    <texCoord format="float2" semantic="TEXCOORD" semanticindex="0" slotclass="vertex" slotindex="0" />
+        <normal format="float3" semantic="NORMAL" semanticindex="0" slotclass="vertex" slotindex="0" />
     </input>
     <output>
         <position format="float3" semantic="POSITION" semanticindex="0" />

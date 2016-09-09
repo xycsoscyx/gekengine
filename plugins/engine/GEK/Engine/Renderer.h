@@ -10,7 +10,7 @@ namespace Gek
 {
     namespace Video
     {
-        ElementType getElementType(const wchar_t *elementClassString);
+        ElementSource getElementSource(const wchar_t *elementClassString);
         Format getFormat(const wchar_t *formatString);
         DepthWrite getDepthWriteMask(const wchar_t *depthWrite);
         ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction);

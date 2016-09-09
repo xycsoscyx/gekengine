@@ -511,7 +511,7 @@ namespace Gek
             population->addListener(this);
             renderer->addListener(this);
 
-            visual = resources->loadVisual(L"model");
+            visual = resources->loadVisual(L"shape");
 
             constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
         }

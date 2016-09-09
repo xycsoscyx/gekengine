@@ -13,32 +13,32 @@
     <defines>
         <focalRange>20.0</focalRange>
 
-        <sampleCount type="int">4</sampleCount>
-        <ringCount type="int">7</ringCount>
+        <sampleCount bind="int">4</sampleCount>
+        <ringCount bind="int">7</ringCount>
 
         <highlightThreshold>0.5</highlightThreshold>
         <highlightGain>10.0</highlightGain>
 
         <bokehEdgeBias>0.4</bokehEdgeBias>
 
-        <enableChromaticAberation type="bool">true</enableChromaticAberation>
+        <enableChromaticAberation bind="bool">true</enableChromaticAberation>
         <bokehChromaticAberation>0.75</bokehChromaticAberation>
 
-        <enableDithering type="bool">true</enableDithering>
+        <enableDithering bind="bool">true</enableDithering>
 
         <noiseStrength>0.0001</noiseStrength>
 
-        <enableDepthBlur type="bool">false</enableDepthBlur>
+        <enableDepthBlur bind="bool">false</enableDepthBlur>
         <depthBlurSize>2.0</depthBlurSize>
 
         <!-- next part is experimental
                     not looking good with small sample and ring count
                     looks okay starting from sampleCount = 4, ringCount = 4
                     -->
-        <enablePentagon type="bool">false</enablePentagon>
+        <enablePentagon bind="bool">false</enablePentagon>
         <pentagonFeathering>0.4</pentagonFeathering>
 
-        <gaussianRadius type="int">7</gaussianRadius>
+        <gaussianRadius bind="int">7</gaussianRadius>
         <gaussianSigma>1</gaussianSigma>
 
     </defines>

@@ -74,11 +74,12 @@ void compressTexture(const String &inputFileName)
 
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	if (inputFileName.find(L"basecolor") != String::npos ||
-		inputFileName.find(L"base_color") != String::npos ||
-		inputFileName.find(L"diffuse") != String::npos ||
-		inputFileName.find(L"albedo") != String::npos ||
-		inputFileName.subString(inputFileName.length() - 2) == L"_d")
+	if (inputFileName.endsWith(L"basecolor") ||
+		inputFileName.endsWith(L"base_color") ||
+		inputFileName.endsWith(L"diffuse") ||
+		inputFileName.endsWith(L"albedo") ||
+		inputFileName.endsWith(L"alb") ||
+		inputFileName.endsWith(L"_d"))
 	{
 		flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
@@ -93,21 +94,23 @@ void compressTexture(const String &inputFileName)
 			printf("Compressing Albedo: BC7 sRGB\r\n");
 		}
 	}
-	else if (inputFileName.find(L"normal") != String::npos ||
-		inputFileName.subString(inputFileName.length() - 2) == L"_n")
+	else if (inputFileName.endsWith(L"normal") ||
+		inputFileName.endsWith(L"_n"))
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
 		printf("Compressing Normal: BC5\r\n");
 	}
-	else if (inputFileName.find(L"roughness") != String::npos ||
-		inputFileName.subString(inputFileName.length() - 2) == L"_r")
+	else if (inputFileName.endsWith(L"roughness") ||
+		inputFileName.endsWith(L"rough") ||
+		inputFileName.endsWith(L"_r"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		printf("Compressing Roughness: BC4\r\n");
 	}
-	else if (inputFileName.find(L"metalness") != String::npos ||
-		inputFileName.find(L"metallic") != String::npos ||
-		inputFileName.subString(inputFileName.length() - 2) == L"_m")
+	else if (inputFileName.endsWith(L"metalness") ||
+		inputFileName.endsWith(L"metallic") ||
+		inputFileName.endsWith(L"metal") ||
+		inputFileName.endsWith(L"_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		printf("Compressing Metallic: BC4\r\n");

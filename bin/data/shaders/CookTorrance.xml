@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <shader priority="1">
     <input>
-        <position type="float3" semantic="POSITION" semanticindex="0" />
-        <texCoord type="float2" semantic="TEXCOORD" semanticindex="0" />
-        <normal type="float3" semantic="NORMAL" semanticindex="0" />
-        <isFrontFacing type="isFrontFacing" />
+        <position format="float3" semantic="POSITION" semanticindex="0" />
+        <texCoord format="float2" semantic="TEXCOORD" semanticindex="0" />
+        <normal format="float3" semantic="NORMAL" semanticindex="0" />
+        <isFrontFacing system="isFrontFacing" />
     </input>
 
     <lighting>
@@ -24,7 +24,7 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
         <dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <gaussianRadius type="int">3</gaussianRadius>
+        <gaussianRadius bind="int">3</gaussianRadius>
         <gaussianSigma>2.3</gaussianSigma>
         <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
     </defines>
@@ -83,7 +83,7 @@
 
                 <AmbientBlur entry="mainPixelProgram">
                     <defines>
-                        <blurAxis type="int2">(1,0)</blurAxis>
+                        <blurAxis bind="int2">(1,0)</blurAxis>
                     </defines>
 
                     <resources>
@@ -98,7 +98,7 @@
 
                 <AmbientBlur entry="mainPixelProgram">
                     <defines>
-                        <blurAxis type="int2">(1,0)</blurAxis>
+                        <blurAxis bind="int2">(1,0)</blurAxis>
                     </defines>
 
                     <resources>
@@ -113,7 +113,7 @@
 
                 <AmbientBlur entry="mainPixelProgram">
                     <defines>
-                        <blurAxis type="int2">(0,1)</blurAxis>
+                        <blurAxis bind="int2">(0,1)</blurAxis>
                     </defines>
 
                     <resources>
@@ -128,7 +128,7 @@
 
                 <AmbientBlur entry="mainPixelProgram">
                     <defines>
-                        <blurAxis type="int2">(0,1)</blurAxis>
+                        <blurAxis bind="int2">(0,1)</blurAxis>
                     </defines>
 
                     <resources>
