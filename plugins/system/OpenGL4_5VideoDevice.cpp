@@ -704,7 +704,12 @@ namespace Gek
                     return device;
                 }
 
-                Pipeline * const computePipeline(void)
+				void * const getDeviceContext(void)
+				{
+					return nullptr;
+				}
+
+				Pipeline * const computePipeline(void)
                 {
                     GEK_REQUIRE(computeSystemHandler);
 
@@ -888,6 +893,11 @@ namespace Gek
             }
 
 			const char * const getSemanticMoniker(Video::InputElement::Semantic semantic)
+			{
+				return nullptr;
+			}
+
+			void * const getDevice(void)
 			{
 				return nullptr;
 			}

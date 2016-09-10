@@ -54,7 +54,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 						FileSystem::find(setTexturePath, [&](const wchar_t *textureFileName) -> bool
 						{
-							String textureName(FileSystem::replaceExtension(textureFileName, L"").getLower());
+							String textureName(FileSystem::replaceExtension(textureFileName).getLower());
 							textureName.replace((texturesPath + L"\\"), L"");
 							textureName.toLower();
 

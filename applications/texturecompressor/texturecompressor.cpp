@@ -6,6 +6,9 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
+#include "GEK\Context\Context.h"
+#include "GEK\Context\ContextUser.h"
+#include "GEK\System\VideoDevice.h"
 #include <Shlwapi.h>
 #include <DirectXTex.h>
 #include <experimental\filesystem>
@@ -16,7 +19,7 @@
 
 using namespace Gek;
 
-void compressTexture(const String &inputFileName)
+void compressTexture(Video::Device *device, const String &inputFileName)
 {
 	if (!FileSystem::isFile(inputFileName))
 	{
@@ -24,9 +27,9 @@ void compressTexture(const String &inputFileName)
 	}
 
 	String outputFileName(FileSystem::replaceExtension(inputFileName, L".dds"));
-	if (FileSystem::isFile(outputFileName))
+	if (FileSystem::isFile(outputFileName) && FileSystem::isFileNewer(outputFileName, inputFileName))
 	{
-		throw std::exception("Output already exists (must specify overwrite)");
+		throw std::exception("Input file hasn't changed since last compression");
 	}
 
 	printf("Compressing: -> %S\r\n", inputFileName.c_str());
@@ -72,15 +75,18 @@ void compressTexture(const String &inputFileName)
 		throw std::exception("Unable to load input file");
 	}
 
+	bool useDevice = false;
+	String inputName(FileSystem::replaceExtension(inputFileName));
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
-	if (inputFileName.endsWith(L"basecolor") ||
-		inputFileName.endsWith(L"base_color") ||
-		inputFileName.endsWith(L"diffuse") ||
-		inputFileName.endsWith(L"albedo") ||
-		inputFileName.endsWith(L"alb") ||
-		inputFileName.endsWith(L"_d"))
+	if (inputName.endsWith(L"basecolor") ||
+		inputName.endsWith(L"base_color") ||
+		inputName.endsWith(L"diffuse") ||
+		inputName.endsWith(L"albedo") ||
+		inputName.endsWith(L"alb") ||
+		inputName.endsWith(L"_d"))
 	{
+		useDevice = true;
 		flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
 		if (DirectX::HasAlpha(image.GetMetadata().format))
@@ -94,23 +100,23 @@ void compressTexture(const String &inputFileName)
 			printf("Compressing Albedo: BC7 sRGB\r\n");
 		}
 	}
-	else if (inputFileName.endsWith(L"normal") ||
-		inputFileName.endsWith(L"_n"))
+	else if (inputName.endsWith(L"normal") ||
+		inputName.endsWith(L"_n"))
 	{
 		outputFormat = DXGI_FORMAT_BC5_UNORM;
 		printf("Compressing Normal: BC5\r\n");
 	}
-	else if (inputFileName.endsWith(L"roughness") ||
-		inputFileName.endsWith(L"rough") ||
-		inputFileName.endsWith(L"_r"))
+	else if (inputName.endsWith(L"roughness") ||
+		inputName.endsWith(L"rough") ||
+		inputName.endsWith(L"_r"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		printf("Compressing Roughness: BC4\r\n");
 	}
-	else if (inputFileName.endsWith(L"metalness") ||
-		inputFileName.endsWith(L"metallic") ||
-		inputFileName.endsWith(L"metal") ||
-		inputFileName.endsWith(L"_m"))
+	else if (inputName.endsWith(L"metalness") ||
+		inputName.endsWith(L"metallic") ||
+		inputName.endsWith(L"metal") ||
+		inputName.endsWith(L"_m"))
 	{
 		outputFormat = DXGI_FORMAT_BC4_UNORM;
 		printf("Compressing Metallic: BC4\r\n");
@@ -133,7 +139,16 @@ void compressTexture(const String &inputFileName)
 	printf(".mipmapped.");
 
 	::DirectX::ScratchImage output;
-	resultValue = ::DirectX::Compress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
+	if(useDevice)
+	{
+		// Hardware accelerated compression only works with BC7 format
+		resultValue = ::DirectX::Compress((ID3D11Device *)device->getDevice(), image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
+	}
+	else
+	{
+		resultValue = ::DirectX::Compress(image.GetImages(), image.GetImageCount(), image.GetMetadata(), outputFormat, flags, 0.5f, output);
+	}
+
 	if (FAILED(resultValue))
 	{
 		throw std::exception("Unable to compress image");
@@ -168,9 +183,56 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		std::experimental::filesystem::path fullModulePath(fullModuleName);
 		fullModulePath.remove_filename();
 		fullModulePath.remove_filename();
-		rootPath = fullModulePath.append(L"Data").wstring();
 
-		String texturesPath(FileSystem::getFileName(rootPath, L"Textures").getLower());
+		rootPath = fullModulePath.wstring();
+
+		std::vector<String> searchPathList;
+
+#ifdef _DEBUG
+		SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Debug"));
+		searchPathList.push_back(FileSystem::getFileName(rootPath, L"Debug\\Plugins"));
+#else
+		SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Release"));
+		searchPathList.push_back(FileSystem::getFileName(rootPath, L"Release\\Plugins"));
+#endif
+
+		String texturesPath(FileSystem::getFileName(rootPath, L"Data\\Textures").getLower());
+
+		WNDCLASS windowClass;
+		windowClass.style = 0;
+		windowClass.lpfnWndProc = DefWindowProc;
+		windowClass.cbClsExtra = 0;
+		windowClass.cbWndExtra = 0;
+		windowClass.hInstance = GetModuleHandle(nullptr);
+		windowClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
+		windowClass.hCursor = nullptr;
+		windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
+		windowClass.lpszMenuName = nullptr;
+		windowClass.lpszClassName = L"GEKvX_Engine_Texture_Compressor";
+		ATOM classAtom = RegisterClass(&windowClass);
+		if (!classAtom)
+		{
+			throw std::exception("Unable to register window class");
+		}
+
+		RECT clientRect;
+		clientRect.left = 0;
+		clientRect.top = 0;
+		clientRect.right = 1;
+		clientRect.bottom = 1;
+		AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
+		int windowWidth = (clientRect.right - clientRect.left);
+		int windowHeight = (clientRect.bottom - clientRect.top);
+		int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
+		int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
+		HWND window = CreateWindow(L"GEKvX_Engine_Texture_Compressor", L"GEKvX Application - Texture Compressor", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
+		if (window == nullptr)
+		{
+			throw std::exception("Unable to create window");
+		}
+
+		ContextPtr context(Context::create(rootPath, searchPathList));
+		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
 
 		std::function<bool(const wchar_t *)> searchDirectory;
 		searchDirectory = [&](const wchar_t *fileName) -> bool
@@ -179,11 +241,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			{
 				FileSystem::find(fileName, searchDirectory);
 			}
-			else if (FileSystem::isFile(fileName))
+			else if (FileSystem::isFile(fileName) && FileSystem::getExtension(fileName).compareNoCase(L".dds") != 0)
 			{
 				try
 				{
-					compressTexture(String(fileName).getLower());
+					compressTexture(device.get(), String(fileName).getLower());
 				}
 				catch (...)
 				{
@@ -194,8 +256,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			return true;
 		};
 
+		CoInitialize(nullptr);
 		FileSystem::find(texturesPath, searchDirectory);
-    }
+		CoUninitialize();
+	
+		DestroyWindow(window);
+	}
     catch (const std::exception &exception)
     {
         printf("[error] Exception occurred: %s", exception.what());

@@ -71,9 +71,8 @@ struct Model
 
 struct Parameters
 {
-	float unitsInFoot;
+	float feetPerUnit;
 	bool fullModel;
-	bool fixMaxCoords;
 };
 
 void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
@@ -155,9 +154,9 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                     const aiFace &face = mesh->mFaces[faceIndex];
                     if (face.mNumIndices == 3)
                     {
-                        model.indexList.push_back(face.mIndices[parameters.fixMaxCoords ? 2 : 0]);
+						model.indexList.push_back(face.mIndices[0]);
                         model.indexList.push_back(face.mIndices[1]);
-                        model.indexList.push_back(face.mIndices[parameters.fixMaxCoords ? 0 : 2]);
+						model.indexList.push_back(face.mIndices[2]);
                     }
                     else
                     {
@@ -169,10 +168,10 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                 {
                     Vertex vertex;
                     vertex.position.set(
-                        mesh->mVertices[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+                        mesh->mVertices[vertexIndex].x,
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
-					vertex.position *= (1.0f / parameters.unitsInFoot);
+					vertex.position *= parameters.feetPerUnit;
                     boundingBox.extend(vertex.position);
 
 					if (parameters.fullModel)
@@ -182,17 +181,17 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 							mesh->mTextureCoords[0][vertexIndex].y);
 
 						vertex.tangent.set(
-							mesh->mTangents[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+							mesh->mTangents[vertexIndex].x,
 							mesh->mTangents[vertexIndex].y,
 							mesh->mTangents[vertexIndex].z);
 
 						vertex.biTangent.set(
-							mesh->mBitangents[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+							mesh->mBitangents[vertexIndex].x,
 							mesh->mBitangents[vertexIndex].y,
 							mesh->mBitangents[vertexIndex].z);
 
 						vertex.normal.set(
-							mesh->mNormals[vertexIndex].x * (parameters.fixMaxCoords ? -1.0f : 1.0f),
+							mesh->mNormals[vertexIndex].x,
 							mesh->mNormals[vertexIndex].y,
 							mesh->mNormals[vertexIndex].z);
 					}
@@ -239,9 +238,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         String mode(L"model");
 
 		Parameters parameters;
-		parameters.unitsInFoot = 1.0f;
+		parameters.feetPerUnit = 1.0f;
 		parameters.fullModel = false;
-		parameters.fixMaxCoords = false;
         bool flipCoords = false;
         bool flipWinding = false;
         float smoothingAngle = 80.0f;
@@ -290,10 +288,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
                 smoothingAngle = arguments[1];
             }
-			else if (arguments[0].compareNoCase(L"-fixMaxCoords") == 0)
-			{
-				parameters.fixMaxCoords = true;
-			}
 			else if (arguments[0].compareNoCase(L"-validate") == 0)
 			{
 				validate = true;
@@ -305,7 +299,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 					throw std::exception("Missing parameters for unitsInFoot");
 				}
 
-				parameters.unitsInFoot = arguments[1];
+				parameters.feetPerUnit = (1.0f / (float)arguments[1]);
 			}
 		}
 
@@ -438,7 +432,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							{
 								if (albedoNode.attributes.count(L"file"))
 								{
-									String materialName(FileSystem::replaceExtension(fileName, L"").getLower());
+									String materialName(FileSystem::replaceExtension(fileName).getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
 									materialAlbedoMap[albedoNode.attributes[L"file"]] = materialName;
 									//printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
@@ -468,7 +462,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         {
             String albedoName(albedo.first.getLower());
             albedoName.replace(L"/", L"\\");
-			albedoName = FileSystem::replaceExtension(albedoName, L"");
+			albedoName = FileSystem::replaceExtension(albedoName);
 			if (albedoName.find(L"textures\\") == 0)
 			{
 				albedoName = albedoName.subString(9);

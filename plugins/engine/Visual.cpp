@@ -130,7 +130,7 @@ namespace Gek
 					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
 
 					std::vector<uint8_t> compiledProgram;
-					if (FileSystem::isFile(compiledFileName) && FileSystem::compareLastWrite(compiledFileName, fileName) >= 0)
+					if (FileSystem::isFile(compiledFileName) && FileSystem::isFileNewer(compiledFileName, fileName))
 					{
 						FileSystem::load(compiledFileName, compiledProgram);
 					}
@@ -209,7 +209,7 @@ namespace Gek
 					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
 
 					std::vector<uint8_t> compiledProgram;
-					if (FileSystem::isFile(compiledFileName) && FileSystem::compareLastWrite(compiledFileName, fileName) >= 0)
+					if (FileSystem::isFile(compiledFileName) && FileSystem::isFileNewer(compiledFileName, fileName))
 					{
 						FileSystem::load(compiledFileName, compiledProgram);
 					}

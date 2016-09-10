@@ -14,12 +14,15 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
         discard;
     }
 
-    float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
+
+	float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
+	//float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
     normal.xy = Resources::normal.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     normal.xy = ((normal.xy * 2.0) - 1.0);
+	normal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
     normal = mul(normal, viewBasis);
     normal = normalize(inputPixel.isFrontFacing ? normal : -normal);

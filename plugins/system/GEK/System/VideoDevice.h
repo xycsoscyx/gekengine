@@ -517,6 +517,7 @@ namespace Gek
                 };
 
                 virtual Device * const getDevice(void) = 0;
+				virtual void * const getDeviceContext(void) = 0;
 
                 virtual Pipeline * const computePipeline(void) = 0;
                 virtual Pipeline * const vertexPipeline(void) = 0;
@@ -563,6 +564,7 @@ namespace Gek
 
 			virtual const char * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 
+			virtual void * const getDevice(void) = 0;
 			virtual void * const getSwapChain(void) = 0;
             virtual Target * const getBackBuffer(void) = 0;
             virtual Context * const getDefaultContext(void) = 0;

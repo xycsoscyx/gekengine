@@ -3,6 +3,8 @@
     <input>
         <position bind="float3" semantic="POSITION" />
         <texCoord bind="float2" semantic="TEXCOORD" />
+        <tangent bind="float3" semantic="TANGENT" />
+        <biTangent bind="float3" semantic="BITANGENT" />
         <normal bind="float3" semantic="NORMAL" />
         <isFrontFacing system="isFrontFacing" />
     </input>

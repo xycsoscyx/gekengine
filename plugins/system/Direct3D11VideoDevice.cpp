@@ -1382,6 +1382,11 @@ namespace Gek
                     return device;
                 }
 
+				void * const getDeviceContext(void)
+				{
+					return d3dDeviceContext.p;
+				}
+
                 Pipeline * const computePipeline(void)
                 {
                     GEK_REQUIRE(computeSystemHandler);
@@ -1779,7 +1784,12 @@ namespace Gek
 				return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
 			}
 
-            void * const getSwapChain(void)
+			void * const getDevice(void)
+			{
+				return d3dDevice.p;
+			}
+			
+			void * const getSwapChain(void)
             {
                 return static_cast<void *>(dxSwapChain.p);
             }

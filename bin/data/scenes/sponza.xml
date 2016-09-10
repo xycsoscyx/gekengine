@@ -30,7 +30,7 @@
         <entity name="player_body">
             <transform position="(0, 5, 0)" rotation="(0, pi/2, 0)" />
             <first_person_camera mode="perspective" field_of_view="70" near_clip=".5" far_clip="200" />
-            <filter>antialias, depthoffield, tonemap</filter>
+            <filter>antialias</filter>
             <physical mass="250" />
             <player height="6" outer_raduis="1.5" outer_radius=".5" stair_step="1.5" />
             <spot_light range="30" inner_angle="45" outer_angle="90" />
