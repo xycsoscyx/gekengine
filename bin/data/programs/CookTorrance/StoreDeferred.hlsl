@@ -14,7 +14,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
         discard;
     }
 
-
 	float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
 	//float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
 

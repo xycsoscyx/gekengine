@@ -46,8 +46,8 @@ float3 getExposedColor(float3 color, float averageLuminance, float threshold, ou
 float3 getToneMapLogarithmic(float3 color)
 {
     float pixelLuminance = getLuminance(color);
-    float toneMappedLuminance = log10(1 + pixelLuminance) / log10(1 + Defines::whiteLevel);
-    return toneMappedLuminance * pow(color / pixelLuminance, Defines::luminanceSaturation);
+    float toneMappedLuminance = (log10(1.0 + pixelLuminance) / log10(1.0 + Defines::whiteLevel));
+    return toneMappedLuminance * pow((color / pixelLuminance), Defines::luminanceSaturation);
 }
 
 // Drago's Logarithmic mapping
@@ -56,8 +56,10 @@ float3 getToneMapDragoLogarithmic(float3 color)
     float pixelLuminance = getLuminance(color);
     float toneMappedLuminance = log10(1.0 + pixelLuminance);
     toneMappedLuminance /= log10(1.0 + Defines::whiteLevel);
-    toneMappedLuminance /= log10(2.0 + 8.0 * ((pixelLuminance / Defines::whiteLevel) * log10(Defines::bias) / log10(0.5)));
-    return toneMappedLuminance * pow(color / pixelLuminance, Defines::luminanceSaturation);
+    //toneMappedLuminance /= log10(2.0 + 8.0 * ((pixelLuminance / Defines::whiteLevel) * log10(Defines::bias) / log10(0.5)));
+	toneMappedLuminance /= log10(2.0 + 8.0 * (pow((pixelLuminance / Defines::whiteLevel), log10(Defines::bias) / log10(0.5f))));
+	
+	return toneMappedLuminance * pow(color / pixelLuminance, Defines::luminanceSaturation);
 }
 
 // Exponential mapping
@@ -87,7 +89,7 @@ float3 getToneMapReinhardModified(float3 color)
 // Applies the filmic curve from John Hable's presentation
 float3 getToneMapFilmicALU(float3 color)
 {
-    color = max(0.0, color - 0.004);
+    color = max(0.0, (color - 0.004));
     color = (color * (6.2 * color + 0.5)) / (color * (6.2 * color + 1.7) + 0.06);
     return pow(color, 2.2f); // result has 1/2.2 baked in
 }
@@ -95,21 +97,21 @@ float3 getToneMapFilmicALU(float3 color)
 // Function used by the Uncharte2D tone mapping curve
 float3 getUncharted2Curve(float3 x)
 {
-    float A = Defines::shoulderStrength;
-    float B = Defines::linearStrength;
-    float C = Defines::linearAngle;
-    float D = Defines::toeStrength;
-    float E = Defines::toeNumerator;
-    float F = Defines::toeDenominator;
-    return ((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E / F;
+    static const float A = Defines::shoulderStrength;
+	static const float B = Defines::linearStrength;
+	static const float C = Defines::linearAngle;
+	static const float D = Defines::toeStrength;
+	static const float E = Defines::toeNumerator;
+	static const float F = Defines::toeDenominator;
+    return (((x*(A*x + C*B) + D*E) / (x*(A*x + B) + D*F)) - E / F);
 }
 
 // Applies the Uncharted 2 filmic tone mapping curve
 float3 getToneMapFilmicU2(float3 color)
 {
     float3 numerator = getUncharted2Curve(color);
-    float3 denominator = getUncharted2Curve(Defines::linearWhite);
-    return numerator / denominator;
+	static const float3 denominator = getUncharted2Curve(Defines::linearWhite);
+    return (numerator / denominator);
 }
 
 float3 getToneMappedColor(float3 color, float averageLuminance, float threshold, out float exposure)

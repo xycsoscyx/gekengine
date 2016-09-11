@@ -18,7 +18,7 @@
             <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
             <normal bind="float2" pattern="system" parameters="flat">Texture2D</normal>
             <roughness bind="float" pattern="color" parameters=".5">Texture2D</roughness>
-            <metallic bind="float" pattern="color" parameters=".5">Texture2D</metallic>
+            <metallic bind="float" pattern="color" parameters="0">Texture2D</metallic>
         </solid>
     </material>
 
@@ -70,7 +70,7 @@
                         <ambientRadius>2</ambientRadius>
                         <ambientTapCount type="uint">24</ambientTapCount>
                         <ambientSpiralCount>13</ambientSpiralCount>
-                        <ambientStrength>0.3</ambientStrength>
+                        <ambientStrength>1</ambientStrength>
                     </defines>
 
                     <resources>

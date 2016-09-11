@@ -35,7 +35,7 @@
 
         <ToneMap entry="mainPixelProgram">
             <defines>
-                <techniqueMode bind="int">6</techniqueMode>
+                <techniqueMode bind="int">7</techniqueMode>
                 <autoExposureMode bind="int">2</autoExposureMode>
 
                 <luminanceSaturation>1.0</luminanceSaturation>
@@ -45,13 +45,14 @@
                 <bias>0.5</bias>
 
                 <!-- Uncharted 2 Filmic ALU Defines -->
-                <shoulderStrength>0.22</shoulderStrength>
-                <linearStrength>0.3</linearStrength>
-                <linearAngle>0.1</linearAngle>
-                <toeStrength>0.2</toeStrength>
-                <toeNumerator>0.01</toeNumerator>
-                <toeDenominator>0.3</toeDenominator>
+                <shoulderStrength>0.2</shoulderStrength>
+                <linearStrength>0.5</linearStrength>
+                <linearAngle>0.42</linearAngle>
+                <toeStrength>0.64</toeStrength>
+                <toeNumerator>0.19</toeNumerator>
+                <toeDenominator>0.9</toeDenominator>
                 <linearWhite>11.2</linearWhite>
+
             </defines>
 
             <resources>
