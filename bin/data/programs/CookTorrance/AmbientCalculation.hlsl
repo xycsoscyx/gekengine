@@ -17,7 +17,7 @@ float2 getTapLocation(float tap, float randomAngle)
 
 // Scalable Ambient Obscurance
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
-float getShadowFactor(InputPixel inputPixel)
+float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
@@ -46,9 +46,4 @@ float getShadowFactor(InputPixel inputPixel)
     totalOcclusion *= (Math::Tau * Defines::ambientRadius * Defines::ambientStrength / Defines::ambientTapCount);
     totalOcclusion = saturate(1.0 - totalOcclusion);
     return totalOcclusion;
-}
-
-float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
-{
-    return getShadowFactor(inputPixel);
 }

@@ -98,27 +98,27 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Newton", "Newton", "{7012EC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dNewton", "dNewton", "{A96A9D54-0A4B-41CA-9332-BFE90FD3A007}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ampPhysics", "..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\ampPhysics.vcxproj", "{4798DA95-FE1B-4160-B752-24C4B1FABA49}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ampPhysics", "..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\ampPhysics.vcxproj", "{4798DA95-FE1B-4160-B752-24C4B1FABA49}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\core.vcxproj", "{57AC4F2D-B115-4931-8F6E-AF8AD616B6AA}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "core", "..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\core.vcxproj", "{57AC4F2D-B115-4931-8F6E-AF8AD616B6AA}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "newton", "..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\newton.vcxproj", "{68D9962C-0EC7-445A-B0FD-F87B16D43901}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "newton", "..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\newton.vcxproj", "{68D9962C-0EC7-445A-B0FD-F87B16D43901}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "physics", "..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\physics.vcxproj", "{39737A8F-6151-4259-8E39-25530345D4B4}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "physics", "..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\physics.vcxproj", "{39737A8F-6151-4259-8E39-25530345D4B4}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthread", "..\external\Newton\newton-dynamics\coreLibrary_300\source\pthreads.2\VS_2015_static_md\pthread.vcxproj", "{03BCA23C-02A5-415B-A37B-26600BC2CE96}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "pthread", "..\external\newton-dynamics\coreLibrary_300\source\pthreads.2\VS_2015_static_md\pthread.vcxproj", "{03BCA23C-02A5-415B-A37B-26600BC2CE96}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dAnimation", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dAnimation.vcxproj", "{E3C14351-BAD1-4ADD-AB9A-31054D6E7CDB}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dAnimation", "..\external\newton-dynamics\packages\projects\visualStudio_2015_static_md\dAnimation.vcxproj", "{E3C14351-BAD1-4ADD-AB9A-31054D6E7CDB}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dContainers", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dContainers.vcxproj", "{F67C4593-A914-4DDF-8CB5-C59A3EF3ECE0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dContainers", "..\external\newton-dynamics\packages\projects\visualStudio_2015_static_md\dContainers.vcxproj", "{F67C4593-A914-4DDF-8CB5-C59A3EF3ECE0}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dJointLibrary", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dJointLibrary.vcxproj", "{721C99CE-4716-4146-9817-59BC2671B844}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dJointLibrary", "..\external\newton-dynamics\packages\projects\visualStudio_2015_static_md\dJointLibrary.vcxproj", "{721C99CE-4716-4146-9817-59BC2671B844}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dMath", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dMath.vcxproj", "{CBE9E751-E58B-46C1-B6B0-873670D0F981}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dMath", "..\external\newton-dynamics\packages\projects\visualStudio_2015_static_md\dMath.vcxproj", "{CBE9E751-E58B-46C1-B6B0-873670D0F981}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dNewton", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dNewton.vcxproj", "{8A04A234-B1CA-464D-A2DD-34CEB583BA6A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dNewton", "..\external\newton-dynamics\packages\projects\visualStudio_2015_static_md\dNewton.vcxproj", "{8A04A234-B1CA-464D-A2DD-34CEB583BA6A}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dScene", "..\external\Newton\newton-dynamics\packages\projects\visualStudio_2015_static_md\dScene.vcxproj", "{B5EEC82D-938F-44C9-89BB-4A058581750B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dScene", "..\external\newton-dynamics\packages\projects\visualStudio_2015_static_md\dScene.vcxproj", "{B5EEC82D-938F-44C9-89BB-4A058581750B}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "materialcreator", "..\applications\materialcreator\materialcreator.vcxproj", "{979EACA7-0A54-4967-87F1-A1C8FCF7B680}"
 EndProject

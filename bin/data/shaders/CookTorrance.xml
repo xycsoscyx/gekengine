@@ -70,7 +70,7 @@
                         <ambientRadius>2</ambientRadius>
                         <ambientTapCount type="uint">24</ambientTapCount>
                         <ambientSpiralCount>13</ambientSpiralCount>
-                        <ambientStrength>1</ambientStrength>
+                        <ambientStrength>10</ambientStrength>
                     </defines>
 
                     <resources>
@@ -170,6 +170,10 @@
                 </TiledLightCulling>
 
                 <AccumulateLighting entry="mainPixelProgram">
+                    <defines>
+                        <useHalfLambert bind="bool">true</useHalfLambert>
+                    </defines>
+
                     <blendstates unified="true">
                         <color source="one" destination="one" operation="add" />
                     </blendstates>

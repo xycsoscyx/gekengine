@@ -154,19 +154,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\ampPhysics.vcxproj">
+    <ProjectReference Include="..\..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\ampPhysics.vcxproj">
       <Project>{4798da95-fe1b-4160-b752-24c4b1faba49}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\core.vcxproj">
+    <ProjectReference Include="..\..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\core.vcxproj">
       <Project>{57ac4f2d-b115-4931-8f6e-af8ad616b6aa}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\newton.vcxproj">
+    <ProjectReference Include="..\..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\newton.vcxproj">
       <Project>{68d9962c-0ec7-445a-b0fd-f87b16d43901}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\external\Newton\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\physics.vcxproj">
+    <ProjectReference Include="..\..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\physics.vcxproj">
       <Project>{39737a8f-6151-4259-8e39-25530345d4b4}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\external\Newton\newton-dynamics\coreLibrary_300\source\pthreads.2\VS_2015_static_md\pthread.vcxproj">
+    <ProjectReference Include="..\..\external\newton-dynamics\coreLibrary_300\source\pthreads.2\VS_2015_static_md\pthread.vcxproj">
       <Project>{03bca23c-02a5-415b-a37b-26600bc2ce96}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libraries\context\context.vcxproj">
