@@ -60,27 +60,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\Sciter\version 3.3.2.0\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\external\Sciter\version 3.3.2.0\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\Sciter\version 3.3.2.0\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\external\Sciter\version 3.3.2.0\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\Sciter\version 3.3.2.0\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\external\Sciter\version 3.3.2.0\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

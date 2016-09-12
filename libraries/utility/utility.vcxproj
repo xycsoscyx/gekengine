@@ -38,6 +38,11 @@
     <ClInclude Include="GEK\Utility\Timer.h" />
     <ClInclude Include="GEK\Utility\XML.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\external\libxml2\win32\VC10\libxml2.vcxproj">
+      <Project>{1d6039f6-5078-416f-a3af-a36efc7e6a1c}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BE4F1E7F-E045-4D30-AED6-02A60C83BD97}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
@@ -83,20 +88,23 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <OutDir>$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <LibraryPath>$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(IncludePath)</IncludePath>
     <OutDir>$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <LibraryPath>$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(IncludePath)</IncludePath>
     <OutDir>$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
+    <LibraryPath>$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>

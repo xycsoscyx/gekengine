@@ -59,7 +59,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\newton-dynamics\coreLibrary_300\source\newton;$(SolutionDir)..\external\assimp\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -67,7 +67,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\newton-dynamics\coreLibrary_300\source\newton;$(SolutionDir)..\external\assimp\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -75,7 +75,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\newton-dynamics\coreLibrary_300\source\newton;$(SolutionDir)..\external\assimp\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -155,6 +155,12 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\external\assimp\build\code\assimp.vcxproj">
+      <Project>{13f38043-9c22-3839-9e8d-265933f2c50b}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\external\assimp\build\contrib\zlib\zlibstatic.vcxproj">
+      <Project>{d51f44d4-3161-3960-a3de-e09ce6210988}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\external\newton-dynamics\coreLibrary_300\projects\windows\project_vs2015_static_md\ampPhysics.vcxproj">
       <Project>{4798da95-fe1b-4160-b752-24c4b1faba49}</Project>
     </ProjectReference>

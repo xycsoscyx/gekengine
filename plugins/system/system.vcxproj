@@ -60,27 +60,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(SolutionDir)..\external\Audiere2\version 1.9.4\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\external\Audiere2\version 1.9.4\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(SolutionDir)..\external\Audiere2\version 1.9.4\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\external\Audiere2\version 1.9.4\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(SolutionDir)..\external\Audiere2\version 1.9.4\include;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(SolutionDir)..\external\Audiere2\version 1.9.4\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
