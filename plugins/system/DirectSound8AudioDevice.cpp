@@ -2,15 +2,6 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\AudioDevice.h"
-#include <atlbase.h>
-#include <mmsystem.h>
-#define DIRECTSOUND_VERSION 0x0800
-#include <dsound.h>
-#include "audiere.h"
-
-#pragma comment(lib, "dsound.lib")
-#pragma comment(lib, "dxguid.lib")
-#pragma comment(lib, "audiere.lib")
 
 namespace Gek
 {

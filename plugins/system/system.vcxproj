@@ -153,7 +153,6 @@
   <ItemGroup>
     <ClCompile Include="Direct3D11VideoDevice.cpp" />
     <ClCompile Include="DirectInput8InputSystem.cpp" />
-    <ClCompile Include="DirectSound8AudioDevice.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="OpenGL4_5VideoDevice.cpp" />
   </ItemGroup>

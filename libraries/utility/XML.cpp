@@ -3,8 +3,6 @@
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 
-#pragma comment(lib, "libxml2.lib")
-
 namespace Gek
 {
     namespace Xml
