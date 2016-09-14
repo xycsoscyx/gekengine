@@ -8,7 +8,13 @@
     <ClCompile Include="DirectInput8InputSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenGL4_5VideoDevice.cpp">
+    <ClCompile Include="DirectSound8AudioDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGL45VideoDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenALSoftAudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

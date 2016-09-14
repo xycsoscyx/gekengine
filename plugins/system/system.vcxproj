@@ -60,27 +60,27 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(SolutionDir)..\external\Audiere2\version 1.9.4\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\openal-soft\include;$(SolutionDir)..\external\alure\include;$(SolutionDir)..\external\DirectXTex\DirectXTex;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(SolutionDir)..\external\Audiere2\version 1.9.4\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(SolutionDir)..\external\Audiere2\version 1.9.4\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\openal-soft\include;$(SolutionDir)..\external\alure\include;$(SolutionDir)..\external\DirectXTex\DirectXTex;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(SolutionDir)..\external\Audiere2\version 1.9.4\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\external\DirectXTex\DirectXTex;$(SolutionDir)..\external\Audiere2\version 1.9.4\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\openal-soft\include;$(SolutionDir)..\external\alure\include;$(SolutionDir)..\external\DirectXTex\DirectXTex;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
-    <LibraryPath>$(SolutionDir)..\external\Audiere2\version 1.9.4\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath>$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -88,7 +88,7 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AL_LIBTYPE_STATIC;;WIN32;_DEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <EnablePREfast>false</EnablePREfast>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
@@ -111,7 +111,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AL_LIBTYPE_STATIC;;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <EnablePREfast>false</EnablePREfast>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -135,7 +135,7 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>AL_LIBTYPE_STATIC;;WIN32;NDEBUG;_WINDOWS;_USRDLL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
       <EnablePREfast>false</EnablePREfast>
       <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
@@ -153,12 +153,20 @@
   <ItemGroup>
     <ClCompile Include="Direct3D11VideoDevice.cpp" />
     <ClCompile Include="DirectInput8InputSystem.cpp" />
+    <ClCompile Include="DirectSound8AudioDevice.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="OpenGL4_5VideoDevice.cpp" />
+    <ClCompile Include="OpenALSoftAudioSystem.cpp" />
+    <ClCompile Include="OpenGL45VideoDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex\DirectXTex_Desktop_2015.vcxproj">
       <Project>{371b9fa9-4c90-4ac6-a123-aced756d6c77}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\external\openal-soft\build\common.vcxproj">
+      <Project>{b2023fd2-8999-3a6e-8f0f-ed46fe69b4d4}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\..\external\openal-soft\build\OpenAL32.vcxproj">
+      <Project>{0d171bb6-0d7e-3d28-9586-b60d5d39e395}</Project>
     </ProjectReference>
     <ProjectReference Include="..\..\libraries\context\context.vcxproj">
       <Project>{e4015f2b-c176-414f-8733-1c2d88ef3fb5}</Project>
