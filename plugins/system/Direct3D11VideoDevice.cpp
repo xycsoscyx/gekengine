@@ -1037,7 +1037,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, bool, Video::Format, String)
+        GEK_CONTEXT_USER(Device, HWND, Video::Format, String)
             , public Video::Device
         {
             class Context
@@ -1622,29 +1622,32 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-			Device(Gek::Context *context, HWND window, bool fullScreen, Video::Format backBufferFormat, String device)
+			Device(Gek::Context *context, HWND window, Video::Format backBufferFormat, String device)
 				: ContextRegistration(context)
 				, window(window)
 				, isChildWindow(GetParent(window) != nullptr)
-				, fullScreen(fullScreen)
 				, backBufferFormat(backBufferFormat)
+				, fullScreen(false)
             {
                 GEK_REQUIRE(window);
 
+				RECT clientRectangle;
+				GetClientRect(window, &clientRectangle);
+
                 DXGI_SWAP_CHAIN_DESC swapChainDescription;
-                swapChainDescription.BufferDesc.Width = 0;
-                swapChainDescription.BufferDesc.Height = 0;
+				swapChainDescription.BufferDesc.Width = (clientRectangle.right - clientRectangle.left);
+				swapChainDescription.BufferDesc.Height = (clientRectangle.bottom - clientRectangle.top);
                 swapChainDescription.BufferDesc.Format = DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)];
                 swapChainDescription.BufferDesc.RefreshRate.Numerator = 60;
                 swapChainDescription.BufferDesc.RefreshRate.Denominator = 1;
                 swapChainDescription.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-                swapChainDescription.BufferDesc.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+                swapChainDescription.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
                 swapChainDescription.SampleDesc.Count = 1;
                 swapChainDescription.SampleDesc.Quality = 0;
                 swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-                swapChainDescription.BufferCount = 1;
+                swapChainDescription.BufferCount = 2;
                 swapChainDescription.OutputWindow = window;
-                swapChainDescription.Windowed = !fullScreen;
+                swapChainDescription.Windowed = true;
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
                 swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
 
@@ -1700,15 +1703,6 @@ namespace Gek
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
-                if (fullScreen && !isChildWindow)
-                {
-                    resultValue = dxSwapChain->SetFullscreenState(true, nullptr);
-                    if (FAILED(resultValue))
-                    {
-                        throw Video::OperationFailed();
-                    }
-                }
-
                 defaultContext = std::make_shared<Context>(this, d3dDeviceContext);
             }
 
@@ -1742,7 +1736,8 @@ namespace Gek
             {
                 GEK_REQUIRE(dxSwapChain);
 
-                DXGI_SWAP_CHAIN_DESC chainDescription;
+				backBuffer = nullptr;
+				DXGI_SWAP_CHAIN_DESC chainDescription;
                 DXGI_MODE_DESC &modeDescription = chainDescription.BufferDesc;
                 dxSwapChain->GetDesc(&chainDescription);
                 if (width != modeDescription.Width ||
@@ -1758,7 +1753,7 @@ namespace Gek
                     description.RefreshRate.Numerator = 60;
                     description.RefreshRate.Denominator = 1;
                     description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-                    description.Scaling = DXGI_MODE_SCALING_UNSPECIFIED;
+                    description.Scaling = DXGI_MODE_SCALING_CENTERED;
                     HRESULT resultValue = dxSwapChain->ResizeTarget(&description);
                     if (FAILED(resultValue))
                     {

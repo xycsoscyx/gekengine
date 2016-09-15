@@ -445,7 +445,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, bool, Video::Format, String)
+        GEK_CONTEXT_USER(Device, HWND, Video::Format, String)
             , public Video::Device
         {
             class Context
@@ -852,7 +852,7 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, bool fullScreen, Video::Format format, String device)
+            Device(Gek::Context *context, HWND window, Video::Format format, String device)
                 : ContextRegistration(context)
                 , window(window)
                 , fullScreen(fullScreen)

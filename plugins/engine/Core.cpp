@@ -109,16 +109,33 @@ namespace Gek
                     result = sciter::value(true);
                 };
 
-                consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
-                {
-                    if (parameters.size() == 1)
-                    {
-                        consoleOpen = parameters[0];
-                        timer.pause(!windowActive || consoleOpen);
-                    }
+				consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+				{
+					if (parameters.size() == 1)
+					{
+						consoleOpen = parameters[0];
+						timer.pause(!windowActive || consoleOpen);
+					}
 
-                    result = sciter::value(true);
-                };
+					result = sciter::value(true);
+				};
+
+				consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+				{
+					device->setFullScreen(!device->isFullScreen());
+					result = sciter::value(true);
+				};
+
+				consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+				{
+					if (parameters.size() == 2)
+					{
+						device->setSize((uint32_t)parameters[0], (uint32_t)parameters[1], Video::Format::R8G8B8A8_UNORM_SRGB);
+						device->getBackBuffer();
+					}
+
+					result = sciter::value(true);
+				};
 
                 try
                 {
@@ -135,7 +152,7 @@ namespace Gek
                     throw InitializationFailed();
                 }
 
-                device = getContext()->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
+                device = getContext()->createClass<Video::Device>(L"Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
@@ -148,7 +165,6 @@ namespace Gek
                 renderer->addListener(this);
 
                 IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
-
                 BOOL success = SciterCreateOnDirectXWindow(window, dxSwapChain);
                 if (!success)
                 {
@@ -159,8 +175,6 @@ namespace Gek
                 SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
                 SciterSetCallback(window, sciterHostCallback, this);
                 SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
-				SciterEval(window, L"", 0, nullptr);
-
 				success = SciterLoadFile(window, getContext()->getFileName(L"data\\pages\\system.html"));
 				if (!success)
                 {
