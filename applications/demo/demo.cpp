@@ -14,7 +14,7 @@
 
 using namespace Gek;
 
-auto displayModes = getDisplayModes();
+std::vector<DisplayMode> modesList;
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -46,12 +46,8 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
 
         uint32_t selectIndex = 0;
         SendDlgItemMessage(dialog, IDC_MODES, CB_RESETCONTENT, 0, 0);
-
-        auto modesRange = displayModes.equal_range(32);
-        for (auto &modeSearch = modesRange.first; modeSearch != modesRange.second; ++modeSearch)
-        {
-            auto &mode = modeSearch->second;
-
+		for(auto &mode : modesList)
+		{
             String aspectRatio(L"");
             switch (mode.aspectRatio)
             {
@@ -160,6 +156,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
+		modesList = DisplayModes().getBitDepth(32);
+
         String rootPath;
         String currentModuleName((MAX_PATH + 1), L' ');
         GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);

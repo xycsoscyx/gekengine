@@ -7,7 +7,7 @@ namespace Gek
 {
     enum class AspectRatio : uint8_t
     {
-        None = 0,
+		Unknown = 0,
         _4x3,
         _16x9,
         _16x10,
@@ -24,6 +24,11 @@ namespace Gek
         bool operator == (const DisplayMode &displayMode) const;
     };
 
-    using DisplayModeMap = std::multimap<uint32_t, DisplayMode>;
-    DisplayModeMap getDisplayModes(void);
+	struct DisplayModes
+	{
+		std::multimap<uint32_t, DisplayMode> allModesMap;
+
+		DisplayModes(void);
+		std::vector<DisplayMode> getBitDepth(uint32_t bitDepth);
+	};
 }; // namespace Gek
