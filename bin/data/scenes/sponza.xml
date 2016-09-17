@@ -33,682 +33,94 @@
             <filter>antialias, tonemap</filter>
             <physical mass="250" />
             <player height="6" outer_raduis="1.5" outer_radius=".5" stair_step="1.5" />
-            <spot_light range="30" inner_angle="45" outer_angle="90" />
+            <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2" />
             <color>(1,1,1)</color>
         </entity>
 
-        <entity prefab="basic_particles">
-            <transform position="(0,5,0)" />
-        </entity>
+      <entity name="Spot001">
+          <transform position="(-25.172413, 17.241379, -4.827586)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot002">
+          <transform position="(-12.758620, 17.241379, -4.827586)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot003">
+          <transform position="(0.000000, 17.241379, -4.827586)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot004">
+          <transform position="(12.758620, 17.241379, -4.827586)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot005">
+          <transform position="(24.827585, 17.241379, -4.827586)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot006">
+          <transform position="(-25.172413, 17.241379, 4.827587)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot007">
+          <transform position="(-12.758620, 17.241379, 4.827587)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot008">
+          <transform position="(-0.000000, 17.241379, 4.827587)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot009">
+          <transform position="(12.758620, 17.241379, 4.827587)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot010">
+          <transform position="(24.827585, 17.241379, 4.827587)" rotation="(1.000000, 0.000000, 0.000000, -0.000000)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot011">
+          <transform position="(-33.793102, 13.793103, 0.000001)" rotation="(-0.649665, 0.279168, 0.649665, 0.279168)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
+      <entity name="Spot012">
+          <transform position="(33.448277, 13.793103, 0.000001)" rotation="(-0.649665, -0.279168, -0.649665, 0.279168)" />
+          <spot_light range="100" inner_angle="45" outer_angle="90" falloff="2.0" />
+          <color>(1.000000, 1.000000, 1.000000)</color>
+          <model>axis</model>
+          <spin />
+      </entity>
 
-        <entity>
-            <transform position="(2.0,6.0,2.0)" scale="2" />
-            <shape skin="debug//alpha_r" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.0,6.0,2.0)" />
-            <shape skin="debug//alpha_g" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.0,6.0,-2.0)" scale="2" />
-            <shape skin="debug//alpha_g" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.0,6.0,-2.0)" />
-            <shape skin="debug//alpha_b" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,6.0,2.0)" scale="2" />
-            <shape skin="debug//alpha_b" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,6.0,2.0)" />
-            <shape skin="debug//alpha_w" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,6.0,-2.0)" scale="2" />
-            <shape skin="debug//alpha_w" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,6.0,-2.0)" />
-            <shape skin="debug//alpha_r" parameters="3">sphere</shape>
-        </entity>
-
-        <entity>
-            <transform position="(2.0,4.0,2.0)" scale="2" />
-            <shape skin="debug//alpha_r" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.0,4.0,2.0)" />
-            <shape skin="debug//alpha_g" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.0,4.0,-2.0)" scale="2" />
-            <shape skin="debug//alpha_g" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.0,4.0,-2.0)" />
-            <shape skin="debug//alpha_b" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,4.0,2.0)" scale="2" />
-            <shape skin="debug//alpha_b" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,4.0,2.0)" />
-            <shape skin="debug//alpha_w" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,4.0,-2.0)" scale="2" />
-            <shape skin="debug//alpha_w" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.0,4.0,-2.0)" />
-            <shape skin="debug//alpha_r" parameters="3">sphere</shape>
-        </entity>
-
-        <entity>
-            <transform position="(-4.50000,2.0,-4.50000)" />
-            <shape skin="debug//r0_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,-3.50000)" />
-            <shape skin="debug//r0_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,-2.50000)" />
-            <shape skin="debug//r0_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,-1.50000)" />
-            <shape skin="debug//r0_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,-0.500000)" />
-            <shape skin="debug//r0_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,0.500000)" />
-            <shape skin="debug//r0_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,1.50000)" />
-            <shape skin="debug//r0_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,2.50000)" />
-            <shape skin="debug//r0_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,3.50000)" />
-            <shape skin="debug//r0_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-4.50000,2.0,4.50000)" />
-            <shape skin="debug//r0_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,-4.50000)" />
-            <shape skin="debug//r1_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,-3.50000)" />
-            <shape skin="debug//r1_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,-2.50000)" />
-            <shape skin="debug//r1_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,-1.50000)" />
-            <shape skin="debug//r1_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,-0.500000)" />
-            <shape skin="debug//r1_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,0.500000)" />
-            <shape skin="debug//r1_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,1.50000)" />
-            <shape skin="debug//r1_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,2.50000)" />
-            <shape skin="debug//r1_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,3.50000)" />
-            <shape skin="debug//r1_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-3.50000,2.0,4.50000)" />
-            <shape skin="debug//r1_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,-4.50000)" />
-            <shape skin="debug//r2_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,-3.50000)" />
-            <shape skin="debug//r2_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,-2.50000)" />
-            <shape skin="debug//r2_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,-1.50000)" />
-            <shape skin="debug//r2_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,-0.500000)" />
-            <shape skin="debug//r2_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,0.500000)" />
-            <shape skin="debug//r2_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,1.50000)" />
-            <shape skin="debug//r2_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,2.50000)" />
-            <shape skin="debug//r2_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,3.50000)" />
-            <shape skin="debug//r2_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-2.50000,2.0,4.50000)" />
-            <shape skin="debug//r2_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,-4.50000)" />
-            <shape skin="debug//r3_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,-3.50000)" />
-            <shape skin="debug//r3_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,-2.50000)" />
-            <shape skin="debug//r3_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,-1.50000)" />
-            <shape skin="debug//r3_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,-0.500000)" />
-            <shape skin="debug//r3_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,0.500000)" />
-            <shape skin="debug//r3_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,1.50000)" />
-            <shape skin="debug//r3_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,2.50000)" />
-            <shape skin="debug//r3_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,3.50000)" />
-            <shape skin="debug//r3_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-1.50000,2.0,4.50000)" />
-            <shape skin="debug//r3_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,-4.50000)" />
-            <shape skin="debug//r4_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,-3.50000)" />
-            <shape skin="debug//r4_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,-2.50000)" />
-            <shape skin="debug//r4_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,-1.50000)" />
-            <shape skin="debug//r4_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,-0.500000)" />
-            <shape skin="debug//r4_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,0.500000)" />
-            <shape skin="debug//r4_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,1.50000)" />
-            <shape skin="debug//r4_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,2.50000)" />
-            <shape skin="debug//r4_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,3.50000)" />
-            <shape skin="debug//r4_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(-0.500000,2.0,4.50000)" />
-            <shape skin="debug//r4_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,-4.50000)" />
-            <shape skin="debug//r5_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,-3.50000)" />
-            <shape skin="debug//r5_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,-2.50000)" />
-            <shape skin="debug//r5_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,-1.50000)" />
-            <shape skin="debug//r5_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,-0.500000)" />
-            <shape skin="debug//r5_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,0.500000)" />
-            <shape skin="debug//r5_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,1.50000)" />
-            <shape skin="debug//r5_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,2.50000)" />
-            <shape skin="debug//r5_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,3.50000)" />
-            <shape skin="debug//r5_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(0.500000,2.0,4.50000)" />
-            <shape skin="debug//r5_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,-4.50000)" />
-            <shape skin="debug//r6_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,-3.50000)" />
-            <shape skin="debug//r6_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,-2.50000)" />
-            <shape skin="debug//r6_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,-1.50000)" />
-            <shape skin="debug//r6_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,-0.500000)" />
-            <shape skin="debug//r6_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,0.500000)" />
-            <shape skin="debug//r6_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,1.50000)" />
-            <shape skin="debug//r6_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,2.50000)" />
-            <shape skin="debug//r6_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,3.50000)" />
-            <shape skin="debug//r6_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(1.50000,2.0,4.50000)" />
-            <shape skin="debug//r6_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,-4.50000)" />
-            <shape skin="debug//r7_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,-3.50000)" />
-            <shape skin="debug//r7_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,-2.50000)" />
-            <shape skin="debug//r7_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,-1.50000)" />
-            <shape skin="debug//r7_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,-0.500000)" />
-            <shape skin="debug//r7_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,0.500000)" />
-            <shape skin="debug//r7_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,1.50000)" />
-            <shape skin="debug//r7_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,2.50000)" />
-            <shape skin="debug//r7_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,3.50000)" />
-            <shape skin="debug//r7_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(2.50000,2.0,4.50000)" />
-            <shape skin="debug//r7_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,-4.50000)" />
-            <shape skin="debug//r8_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,-3.50000)" />
-            <shape skin="debug//r8_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,-2.50000)" />
-            <shape skin="debug//r8_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,-1.50000)" />
-            <shape skin="debug//r8_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,-0.500000)" />
-            <shape skin="debug//r8_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,0.500000)" />
-            <shape skin="debug//r8_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,1.50000)" />
-            <shape skin="debug//r8_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,2.50000)" />
-            <shape skin="debug//r8_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,3.50000)" />
-            <shape skin="debug//r8_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(3.50000,2.0,4.50000)" />
-            <shape skin="debug//r8_m9" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,-4.50000)" />
-            <shape skin="debug//r9_m0" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,-3.50000)" />
-            <shape skin="debug//r9_m1" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,-2.50000)" />
-            <shape skin="debug//r9_m2" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,-1.50000)" />
-            <shape skin="debug//r9_m3" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,-0.500000)" />
-            <shape skin="debug//r9_m4" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,0.500000)" />
-            <shape skin="debug//r9_m5" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,1.50000)" />
-            <shape skin="debug//r9_m6" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,2.50000)" />
-            <shape skin="debug//r9_m7" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,3.50000)" />
-            <shape skin="debug//r9_m8" parameters="3">sphere</shape>
-        </entity>
-        <entity>
-            <transform position="(4.50000,2.0,4.50000)" />
-            <shape skin="debug//r9_m9" parameters="3">sphere</shape>
-        </entity>
-
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-        <entity prefab="basic_spot_light" />
-
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-        <entity prefab="basic_point_light" />
-
-    </population>
+  </population>
 </world>

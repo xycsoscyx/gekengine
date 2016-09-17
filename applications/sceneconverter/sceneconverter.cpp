@@ -1,3 +1,4 @@
+#include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include "GEK\Utility\Exceptions.h"
 #include "GEK\Utility\String.h"
@@ -37,10 +38,7 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
             position.x, position.y, position.z,
             rotation.x, rotation.y, rotation.z, rotation.w);
 
-        Math::Float3 color(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b);
-        float range = color.getLength() * parameters.feetPerUnit;
-        color.normalize();
-
+        float range = 10.0f;
         switch (light->mType)
         {
         case aiLightSource_DIRECTIONAL:
@@ -52,7 +50,7 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
             break;
 
         case aiLightSource_SPOT:
-            printf("    <spot_light range=\"%f\" inner_angle=\"%f\" outer_angle=\"%f\" />\r\n", range, light->mAngleInnerCone, light->mAngleOuterCone);
+            printf("    <spot_light range=\"%f\" inner_angle=\"%f\" outer_angle=\"%f\" falloff=\"2.0\" />\r\n", range, Math::convertRadiansToDegrees(light->mAngleInnerCone), Math::convertRadiansToDegrees(light->mAngleOuterCone));
             break;
 
         case aiLightSource_AMBIENT:
@@ -65,6 +63,7 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
             break;
         };
 
+        Math::Float3 color(Math::Float3(light->mColorDiffuse.r, light->mColorDiffuse.g, light->mColorDiffuse.b) * 0.01f);
         printf("    <color>(%f, %f, %f)</color>\r\n", color.x, color.y, color.z);
         printf("</entity>\r\n");
     }
