@@ -1,3 +1,3 @@
-.\release\sceneconverter -input data\scenes\sponza.xml -output data\scenes\sponza.gek
+.\release\sceneconverter -input data\models\sponza.fbx -output data\scenes\sponza.xml -unitsInFoot:29
 
 pause

@@ -20,8 +20,8 @@ namespace Gek
 
         void PointLight::load(const Plugin::Population::ComponentDefinition &componentData)
         {
-            range = loadParameter(componentData, L"range", 10.0f);
-            radius = loadParameter(componentData, L"radius", 0.1f);
+            range = loadParameter(componentData, L"range", 0.0f);
+            radius = loadParameter(componentData, L"radius", 0.0f);
         }
 
         SpotLight::SpotLight(void)
@@ -39,11 +39,11 @@ namespace Gek
 
         void SpotLight::load(const Plugin::Population::ComponentDefinition &componentData)
         {
-            range = loadParameter(componentData, L"range", 10.0f);
-            radius = loadParameter(componentData, L"radius", 0.1f);
-            innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 45.0f) * 0.5f));
-            outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 90.0f) * 0.5f));
-            falloff = loadParameter(componentData, L"falloff", 2.0f);
+            range = loadParameter(componentData, L"range", 0.0f);
+            radius = loadParameter(componentData, L"radius", 0.0f);
+            innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 0.0f) * 0.5f));
+            outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 0.0f) * 0.5f));
+            falloff = loadParameter(componentData, L"falloff", 0.0f);
         }
 
         DirectionalLight::DirectionalLight(void)

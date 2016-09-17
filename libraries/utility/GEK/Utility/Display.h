@@ -5,30 +5,36 @@
 
 namespace Gek
 {
-    enum class AspectRatio : uint8_t
-    {
-		Unknown = 0,
-        _4x3,
-        _16x9,
-        _16x10,
-    };
-
-    struct DisplayMode
-    {
-        uint32_t width;
-        uint32_t height;
-        AspectRatio aspectRatio;
-
-        DisplayMode(uint32_t width, uint32_t height);
-
-        bool operator == (const DisplayMode &displayMode) const;
-    };
-
-	struct DisplayModes
+	class Display
 	{
-		std::multimap<uint32_t, DisplayMode> allModesMap;
+	public:
+		enum class AspectRatio : uint8_t
+		{
+			Unknown = 0,
+			_4x3,
+			_16x9,
+			_16x10,
+		};
 
-		DisplayModes(void);
-		std::vector<DisplayMode> getBitDepth(uint32_t bitDepth);
+		struct Mode
+		{
+			uint32_t width;
+			uint32_t height;
+			AspectRatio aspectRatio;
+
+			Mode(uint32_t width, uint32_t height);
+
+			bool operator == (const Mode &mode) const;
+		};
+
+		using ModesList = std::vector<Mode>;
+
+	private:
+		std::multimap<uint32_t, Mode> modesMap;
+
+	public:
+		Display(void);
+
+		ModesList getModes(uint32_t bitsPerPixel);
 	};
 }; // namespace Gek

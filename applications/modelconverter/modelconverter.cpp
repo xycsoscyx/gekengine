@@ -74,13 +74,15 @@ struct Parameters
 	bool fullModel;
 };
 
-void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, const Math::Float4x4 &accumulatedTransform, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
         throw std::exception("Invalid model node");
     }
 
+    Math::Float4x4 localTransform(&node->mTransformation.a1);
+    Math::Float4x4 nodeTransform(localTransform.getTranspose() * accumulatedTransform);
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
@@ -170,7 +172,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                         mesh->mVertices[vertexIndex].x,
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
-					vertex.position *= parameters.feetPerUnit;
+                    vertex.position = (nodeTransform * vertex.position.w(1.0)).xyz * parameters.feetPerUnit;
                     boundingBox.extend(vertex.position);
 
 					if (parameters.fullModel)
@@ -179,20 +181,26 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 							mesh->mTextureCoords[0][vertexIndex].x,
 							mesh->mTextureCoords[0][vertexIndex].y);
 
-						vertex.tangent.set(
+                        Math::Float4x4 basis;
+                        basis.nx.set(
 							mesh->mTangents[vertexIndex].x,
 							mesh->mTangents[vertexIndex].y,
 							mesh->mTangents[vertexIndex].z);
 
-						vertex.biTangent.set(
-							mesh->mBitangents[vertexIndex].x,
+                        basis.ny.set(
+                            mesh->mBitangents[vertexIndex].x,
 							mesh->mBitangents[vertexIndex].y,
 							mesh->mBitangents[vertexIndex].z);
 
-						vertex.normal.set(
-							mesh->mNormals[vertexIndex].x,
+                        basis.nz.set(
+                            mesh->mNormals[vertexIndex].x,
 							mesh->mNormals[vertexIndex].y,
 							mesh->mNormals[vertexIndex].z);
+
+                        basis = basis * nodeTransform;
+                        vertex.tangent = basis.nx;
+                        vertex.biTangent = basis.ny;
+                        vertex.normal = basis.nz;
 					}
 
                     model.vertexList.push_back(vertex);
@@ -215,7 +223,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(parameters, scene, node->mChildren[childIndex], albedoMap, boundingBox);
+            getMeshes(parameters, scene, node->mChildren[childIndex], nodeTransform, albedoMap, boundingBox);
         }
     }
 }
@@ -235,14 +243,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         String fileNameInput;
         String fileNameOutput;
         String mode(L"model");
-
 		Parameters parameters;
 		parameters.feetPerUnit = 1.0f;
 		parameters.fullModel = false;
         bool flipCoords = false;
         bool flipWinding = false;
         float smoothingAngle = 80.0f;
-		bool validate = false;
         for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
         {
             String argument(argumentList[argumentIndex]);
@@ -287,10 +293,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
                 smoothingAngle = arguments[1];
             }
-			else if (arguments[0].compareNoCase(L"-validate") == 0)
-			{
-				validate = true;
-			}
 			else if (arguments[0].compareNoCase(L"-unitsInFoot") == 0)
 			{
 				if (arguments.size() != 2)
@@ -327,7 +329,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             aiProcess_SplitLargeMeshes | // split large, unrenderable meshes into submeshes
             aiProcess_Triangulate | // triangulate polygons with more than 3 edges
             aiProcess_SortByPType | // make ‘clean’ meshes which consist of a single typ of primitives
-            aiProcess_ValidateDataStructure | // perform a full validation of the loader’s output
             aiProcess_ImproveCacheLocality | // improve the cache locality of the output vertices
             aiProcess_RemoveRedundantMaterials | // remove redundant materials
             aiProcess_FindDegenerates | // remove degenerated polygons from the import
@@ -336,9 +337,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             0;
 
         unsigned int postProcessFlags =
-            aiProcess_PreTransformVertices | // pretransform the vertices by the a local node matrices
             aiProcess_JoinIdenticalVertices | // join identical vertices / optimize indexing
-            (validate ? aiProcess_ValidateDataStructure : 0) | // perform a full validation of the loader’s output
             aiProcess_FindInvalidData | // detect invalid model data, such as invalid normal vectors
 			0;
 
@@ -375,15 +374,24 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         auto scene = aiApplyPostProcessing(originalScene, postProcessFlags);
-		if (scene == nullptr)
+        if (scene == nullptr)
 		{
 			throw std::exception("Unable to apply post processing with Assimp");
 		}
 
+        if (!scene->HasMeshes())
+        {
+            throw std::exception("Scene has no meshes");
+        }
+
+        if (parameters.fullModel && !scene->HasMaterials())
+        {
+            throw std::exception("Scene has no materials");
+        }
+
 		Shapes::AlignedBox boundingBox;
         std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
-
-        getMeshes(parameters, scene, scene->mRootNode, albedoMap, boundingBox);
+        getMeshes(parameters, scene, scene->mRootNode, Math::Float4x4::Identity, albedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
@@ -462,11 +470,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             String albedoName(albedo.first.getLower());
             albedoName.replace(L"/", L"\\");
 			albedoName = FileSystem::replaceExtension(albedoName);
-			if (albedoName.find(L"textures\\") == 0)
-			{
-				albedoName = albedoName.subString(9);
-			}
-			else
+            if (albedoName.find(L"textures\\") == 0)
+            {
+                albedoName = albedoName.subString(9);
+            }
+            else if (albedoName.find(L"..\\textures\\") == 0)
+            {
+                albedoName = albedoName.subString(12);
+            }
+            else
 			{
 				auto texturesIndex = albedoName.find(texturesPath);
 				if (texturesIndex != String::npos)

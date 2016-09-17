@@ -14,7 +14,7 @@
 
 using namespace Gek;
 
-std::vector<DisplayMode> modesList;
+Display::ModesList modesList;
 
 INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lParam)
 {
@@ -51,15 +51,15 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             String aspectRatio(L"");
             switch (mode.aspectRatio)
             {
-            case AspectRatio::_4x3:
+			case Display::AspectRatio::_4x3:
                 aspectRatio = L", (4x3)";
                 break;
 
-            case AspectRatio::_16x9:
+            case Display::AspectRatio::_16x9:
                 aspectRatio = L", (16x9)";
                 break;
 
-            case AspectRatio::_16x10:
+            case Display::AspectRatio::_16x10:
                 aspectRatio = L", (16x10)";
                 break;
             };
@@ -86,7 +86,7 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
         case IDOK:
         {
             uint32_t selectIndex = SendDlgItemMessage(dialog, IDC_MODES, CB_GETCURSEL, 0, 0);
-            auto &mode = *(DisplayMode *)SendDlgItemMessage(dialog, IDC_MODES, CB_GETITEMDATA, selectIndex, 0);
+            auto &mode = *(Display::Mode *)SendDlgItemMessage(dialog, IDC_MODES, CB_GETITEMDATA, selectIndex, 0);
 
             Xml::Node configRoot(nullptr);
             try
@@ -156,7 +156,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
-		modesList = DisplayModes().getBitDepth(32);
+		modesList = Display().getModes(32);
 
         String rootPath;
         String currentModuleName((MAX_PATH + 1), L' ');

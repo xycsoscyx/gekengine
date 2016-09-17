@@ -87,8 +87,8 @@ void compressTexture(Video::Device *device, const String &inputFileName)
 		inputName.endsWith(L"_d"))
 	{
 		useDevice = true;
-		flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
-		flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
+		//flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
+		//flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
 		if (DirectX::HasAlpha(image.GetMetadata().format))
 		{
 			outputFormat = DXGI_FORMAT_BC7_UNORM_SRGB;
@@ -232,7 +232,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		}
 
 		ContextPtr context(Context::create(rootPath, searchPathList));
-		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video", window, false, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
+		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
 
 		std::function<bool(const wchar_t *)> searchDirectory;
 		searchDirectory = [&](const wchar_t *fileName) -> bool

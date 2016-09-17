@@ -12,25 +12,34 @@ float calculateGaussianWeight(float offset)
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
+    float surfaceDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    float totalOcclusion = Resources::inputBuffer[inputPixel.screen.xy];
 
-    float finalValue = 0.0;
-    float totalWeight = 0.0;
+    float totalWeight = calculateGaussianWeight(0);
+    totalOcclusion *= totalWeight;
 
     [unroll]
-    for (int offset = -Defines::gaussianRadius; offset <= Defines::gaussianRadius; offset++)
+    for (int tapIndex = -Defines::gaussianRadius; tapIndex <= Defines::gaussianRadius; ++tapIndex)
     {
-        int2 sampleOffset = (offset * Defines::blurAxis);
-        int2 sampleCoord = (inputPixel.screen.xy + sampleOffset);
-        float sampleDepth = Resources::depthBuffer[sampleCoord];
-        float depthDelta = abs(surfaceDepth - sampleDepth);
+        // We already handled the zero case above.  This loop should be unrolled and the branch discarded
+        [branch]
+        if (tapIndex != 0)
+        {
+            float2 tapCoord = inputPixel.screen.xy + Defines::blurAxis * tapIndex;
+            float tapDepth = getLinearDepthFromSample(Resources::depthBuffer[tapCoord]);
+            float tapOcclusion = Resources::inputBuffer[tapCoord];
 
-        float sampleWeight = calculateGaussianWeight(offset) * rcp(Math::Epsilon + Defines::bilateralEdgeSharpness * depthDelta);
+            // spatial domain: offset gaussian tap
+            float tapWeight = 0.3 + calculateGaussianWeight(abs(tapIndex));
 
-        float sampleValue = Resources::inputBuffer[sampleCoord];
-        finalValue += (sampleValue * sampleWeight);
-        totalWeight += sampleWeight;
+            // range domain (the "bilateral" tapWeight). As depth difference increases, decrease tapWeight.
+            tapWeight *= rcp(Math::Epsilon + Defines::edgeSharpness * abs(tapDepth - surfaceDepth));
+            //tapWeight *= max(0.0, 1.0 - (800.0 * Defines::edgeSharpness) * abs(tapDepth - surfaceDepth));
+
+            totalOcclusion += tapOcclusion * tapWeight;
+            totalWeight += tapWeight;
+        }
     }
 
-    return (finalValue * rcp(totalWeight + Math::Epsilon));
+    return totalOcclusion / (totalWeight + Math::Epsilon);
 }

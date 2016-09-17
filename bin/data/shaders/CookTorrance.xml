@@ -26,10 +26,10 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
         <dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <gaussianRadius bind="int">3</gaussianRadius>
+        <gaussianRadius bind="int">2</gaussianRadius>
         <gaussianSigma>2.3</gaussianSigma>
-        <bilateralEdgeSharpness>0.1</bilateralEdgeSharpness>
-    </defines>
+        <edgeSharpness>0.1</edgeSharpness>
+</defines>
 
     <textures>
         <depthBuffer bind="float" flags="depth">D32_FLOAT</depthBuffer>
@@ -67,10 +67,14 @@
 
                 <AmbientCalculation entry="mainPixelProgram">
                     <defines>
-                        <ambientRadius>2</ambientRadius>
-                        <ambientTapCount type="uint">24</ambientTapCount>
-                        <ambientSpiralCount>13</ambientSpiralCount>
-                        <ambientStrength>10</ambientStrength>
+                        <radius>2</radius>
+                        <tapCount bind="uint">24</tapCount>
+                        <spiralTurns>13</spiralTurns>
+                        <intensity>10</intensity>
+                        <bias>0.08</bias>
+                        <falloffFunction bind="uint">0</falloffFunction>
+                        <epsilon>0.001</epsilon>
+                        <boxFilter bind="bool">false</boxFilter>
                     </defines>
 
                     <resources>
@@ -95,7 +99,7 @@
 
                     <targets>
                         <gaussianBuffer />
-                    </targets>                
+                    </targets>
                 </AmbientBlur>
 
                 <AmbientBlur entry="mainPixelProgram">

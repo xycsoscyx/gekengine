@@ -6,7 +6,7 @@
 
 namespace Gek
 {
-    AspectRatio getAspectRatio(uint32_t width, uint32_t height)
+    Display::AspectRatio getAspectRatio(uint32_t width, uint32_t height)
     {
 		const float AspectRatio4x3 = (4.0f / 3.0f);
 		const float AspectRatio16x9 = (16.0f / 9.0f);
@@ -14,66 +14,66 @@ namespace Gek
 		float aspectRatio = (float(width) / float(height));
         if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
         {
-            return AspectRatio::_4x3;
+            return Display::AspectRatio::_4x3;
         }
         else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
         {
-            return AspectRatio::_16x9;
+            return Display::AspectRatio::_16x9;
         }
 		else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
         {
-            return AspectRatio::_16x10;
+            return Display::AspectRatio::_16x10;
         }
         else
         {
-            return AspectRatio::Unknown;
+            return Display::AspectRatio::Unknown;
         }
     }
 
-    DisplayMode::DisplayMode(uint32_t width, uint32_t height)
+	Display::Mode::Mode(uint32_t width, uint32_t height)
         : width(width)
         , height(height)
         , aspectRatio(getAspectRatio(width, height))
     {
     }
 
-    bool DisplayMode::operator == (const DisplayMode &displayMode) const
+    bool Display::Mode::operator == (const Display::Mode &mode) const
     {
-        return (width == displayMode.width && height == displayMode.height);
+        return (width == mode.width && height == mode.height);
     }
 
-	std::vector<DisplayMode> DisplayModes::getBitDepth(uint32_t bitDepth)
+	Display::Display(void)
+    {
+        uint32_t displayMode = 0;
+        DEVMODE deviceMode = { 0 };
+        while (EnumDisplaySettings(0, displayMode++, &deviceMode))
+        {
+			Mode mode(deviceMode.dmPelsWidth, deviceMode.dmPelsHeight);
+            if (std::find_if(modesMap.begin(), modesMap.end(), [&deviceMode, &mode](auto &modeSearch) -> bool
+            {
+                return (modeSearch.first == deviceMode.dmBitsPerPel && modeSearch.second == mode);
+            }) == modesMap.end())
+            {
+				modesMap.emplace(deviceMode.dmBitsPerPel, mode);
+            }
+        };
+    }
+
+	Display::ModesList Display::getModes(uint32_t bitsPerPixel)
 	{
-		std::vector<DisplayMode> modesList;
-		auto modesRange = allModesMap.equal_range(bitDepth);
+		ModesList modesList;
+		auto modesRange = modesMap.equal_range(bitsPerPixel);
 		for (auto &modeSearch = modesRange.first; modeSearch != modesRange.second; ++modeSearch)
 		{
 			auto &mode = modeSearch->second;
 			modesList.push_back(mode);
 		}
 
-		std::sort(modesList.begin(), modesList.end(), [&](const DisplayMode &left, const DisplayMode &right) -> bool
+		std::sort(modesList.begin(), modesList.end(), [&](const Mode &left, const Mode &right) -> bool
 		{
 			return ((left.width * left.height) < (right.width * right.height));
 		});
 
 		return modesList;
 	}
-
-	DisplayModes::DisplayModes(void)
-    {
-        uint32_t displayMode = 0;
-        DEVMODE displayModeData = { 0 };
-        while (EnumDisplaySettings(0, displayMode++, &displayModeData))
-        {
-            DisplayMode displayMode(displayModeData.dmPelsWidth, displayModeData.dmPelsHeight);
-            if (std::find_if(allModesMap.begin(), allModesMap.end(), [&displayModeData, &displayMode](auto &modePair) -> bool
-            {
-                return (modePair.first == displayModeData.dmBitsPerPel && modePair.second == displayMode);
-            }) == allModesMap.end())
-            {
-				allModesMap.emplace(displayModeData.dmBitsPerPel, displayMode);
-            }
-        };
-    }
 }; // namespace Gek
