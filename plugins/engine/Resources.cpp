@@ -66,6 +66,12 @@ namespace Gek
                 {
                 }
 
+                void clear(void)
+                {
+                    state = State::Empty;
+                    this->data = nullptr;
+                }
+
                 void set(TypePtr data)
                 {
                     if (state == State::Empty)
@@ -107,7 +113,7 @@ namespace Gek
                 resourceMap.clear();
             }
 
-            TYPE * const getResource(HANDLE handle) const
+            virtual TYPE * const getResource(HANDLE handle) const
             {
                 auto resourceSearch = resourceMap.find(handle);
                 if (resourceSearch != resourceMap.end())
@@ -120,14 +126,14 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class HashResourceManager
+        class GeneralResourceManager
             : public ResourceManager<HANDLE, TYPE>
         {
         private:
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
-            HashResourceManager(ResourceRequester *resources)
+            GeneralResourceManager(ResourceRequester *resources)
                 : ResourceManager(resources)
             {
             }
@@ -180,11 +186,11 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class UniqueResourceManager
+        class ProgramResourceManager
             : public ResourceManager<HANDLE, TYPE>
         {
         public:
-            UniqueResourceManager(ResourceRequester *resources)
+            ProgramResourceManager(ResourceRequester *resources)
                 : ResourceManager(resources)
             {
             }
@@ -204,28 +210,52 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class ImmediateResourceManager
+        class ShaderResourceManager
             : public ResourceManager<HANDLE, TYPE>
         {
+        private:
+            concurrency::concurrent_unordered_map<HANDLE, std::function<TypePtr(HANDLE)>> resourceLoadMap;
+            concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
+
         public:
-            ImmediateResourceManager(ResourceRequester *resources)
+            ShaderResourceManager(ResourceRequester *resources)
                 : ResourceManager(resources)
             {
+            }
+
+            void reload(void)
+            {
+                for (auto &resource : resourceMap)
+                {
+                    resource.second.clear();
+                }
+            }
+
+            void clear(void)
+            {
+                resourceLoadMap.clear();
+                requestedLoadSet.clear();
+                ResourceManager::clear();
             }
 
             HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
-                auto resourceSearch = resourceHandleMap.find(hash);
-                if (resourceSearch != resourceHandleMap.end())
+                if (requestedLoadSet.count(hash) > 0)
                 {
-                    handle = resourceSearch->second;
+                    auto resourceSearch = resourceHandleMap.find(hash);
+                    if (resourceSearch != resourceHandleMap.end())
+                    {
+                        handle = resourceSearch->second;
+                    }
                 }
                 else
                 {
+                    requestedLoadSet.insert(hash);
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
 
+                    resourceLoadMap[handle] = load;
                     auto &resource = resourceMap[handle];
                     resource.set(load(handle));
                 }
@@ -235,13 +265,45 @@ namespace Gek
 
             HANDLE getHandle(std::size_t hash) const
             {
-                auto resourceSearch = resourceHandleMap.find(hash);
-                if (resourceSearch != resourceHandleMap.end())
+                if (requestedLoadSet.count(hash) > 0)
                 {
-                    return resourceSearch->second;
+                    auto resourceSearch = resourceHandleMap.find(hash);
+                    if (resourceSearch != resourceHandleMap.end())
+                    {
+                        return resourceSearch->second;
+                    }
                 }
 
                 return HANDLE();
+            }
+
+            template <class T>
+            struct RemoveConst
+            {
+                typedef T type;
+            };
+
+            template <class T>
+            struct RemoveConst<const T>
+            {
+                typedef T type;
+            };
+
+            TYPE * const getResource(HANDLE handle) const
+            {
+                auto resource = ResourceManager::getResource(handle);
+                if (!resource)
+                {
+                    auto &load = resourceLoadMap.find(handle);
+                    auto resourceSearch = const_cast<concurrency::concurrent_unordered_map<HANDLE, AtomicResource> &>(resourceMap).find(handle);
+                    if (load != resourceLoadMap.end() && resourceSearch != resourceMap.end())
+                    {
+                        resourceSearch->second.set(load->second(handle));
+                        resource = resourceSearch->second.get();
+                    }
+                }
+
+                return resource;
             }
         };
 
@@ -258,15 +320,15 @@ namespace Gek
             std::future<void> loadThread;
             concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
 
-            UniqueResourceManager<ProgramHandle, Video::Object> programManager;
-            HashResourceManager<VisualHandle, Plugin::Visual> visualManager;
-            HashResourceManager<MaterialHandle, Engine::Material> materialManager;
-            ImmediateResourceManager<ShaderHandle, Engine::Shader> shaderManager;
-            HashResourceManager<ResourceHandle, Engine::Filter> filterManager;
-            HashResourceManager<ResourceHandle, Video::Object> resourceManager;
-            HashResourceManager<RenderStateHandle, Video::Object> renderStateManager;
-            HashResourceManager<DepthStateHandle, Video::Object> depthStateManager;
-            HashResourceManager<BlendStateHandle, Video::Object> blendStateManager;
+            ProgramResourceManager<ProgramHandle, Video::Object> programManager;
+            GeneralResourceManager<VisualHandle, Plugin::Visual> visualManager;
+            GeneralResourceManager<MaterialHandle, Engine::Material> materialManager;
+            ShaderResourceManager<ShaderHandle, Engine::Shader> shaderManager;
+            GeneralResourceManager<ResourceHandle, Engine::Filter> filterManager;
+            GeneralResourceManager<ResourceHandle, Video::Object> resourceManager;
+            GeneralResourceManager<RenderStateHandle, Video::Object> renderStateManager;
+            GeneralResourceManager<DepthStateHandle, Video::Object> depthStateManager;
+            GeneralResourceManager<BlendStateHandle, Video::Object> blendStateManager;
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
@@ -302,6 +364,7 @@ namespace Gek
             // Plugin::CoreListener
             void onResize(void)
             {
+                shaderManager.reload();
                 filterManager.clear();
             }
 

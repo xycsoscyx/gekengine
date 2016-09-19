@@ -10,6 +10,7 @@
 #include "GEK\Engine\Renderer.h"
 #include "GEK\Context\ContextUser.h"
 #include <concurrent_unordered_map.h>
+#include <concurrent_queue.h>
 #include <ppl.h>
 #include <set>
 
@@ -81,6 +82,14 @@ namespace Gek
             , public Plugin::RendererListener
             , public CoreConfiguration
         {
+        public:
+            struct Command
+            {
+                String function;
+                std::vector<String> parameterList;
+            };
+
+        private:
             HWND window;
             bool windowActive;
             bool engineRunning;
@@ -103,12 +112,14 @@ namespace Gek
             bool consoleOpen;
             String currentCommand;
             std::list<String> commandLog;
-            std::unordered_map<String, std::function<void(const std::vector<String> &, SCITER_VALUE &result)>> consoleCommandsMap;
+            std::unordered_map<String, std::function<void(const std::vector<String> &)>> consoleCommandsMap;
+            concurrency::concurrent_queue<Command> consoleCommandQueue;
 
             sciter::dom::element root;
             sciter::dom::element background;
             sciter::dom::element foreground;
 
+        public:
             Core(Context *context, HWND window)
                 : ContextRegistration(context)
                 , window(window)
@@ -124,34 +135,29 @@ namespace Gek
             {
                 GEK_REQUIRE(window);
 
-                consoleCommandsMap[L"quit"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"quit"] = [this](const std::vector<String> &parameters) -> void
                 {
                     engineRunning = false;
-                    result = sciter::value(true);
                 };
 
-                consoleCommandsMap[L"loadlevel"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+                consoleCommandsMap[L"loadlevel"] = [this](const std::vector<String> &parameters) -> void
                 {
                     if (parameters.size() == 1)
                     {
                         population->load(parameters[0]);
                     }
-
-                    result = sciter::value(true);
                 };
 
-				consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+				consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters) -> void
 				{
 					if (parameters.size() == 1)
 					{
 						consoleOpen = parameters[0];
 						timer.pause(!windowActive || consoleOpen);
 					}
-
-					result = sciter::value(true);
 				};
 
-				consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+				consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters) -> void
 				{
                     bool fullscreen = !device->isFullScreen();
 
@@ -160,11 +166,9 @@ namespace Gek
                     auto &displayNode = configuration.getChild(L"display");
                     displayNode.attributes[L"fullscreen"] = fullscreen;
                     sendShout(&Plugin::CoreListener::onConfigurationChanged);
-
-                    result = sciter::value(true);
                 };
 
-				consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
+				consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters) -> void
 				{
 					if (parameters.size() == 2)
 					{
@@ -179,8 +183,6 @@ namespace Gek
                         displayNode.attributes[L"height"] = height;
                         sendShout(&Plugin::CoreListener::onConfigurationChanged);
                     }
-
-					result = sciter::value(true);
 				};
 
                 try
@@ -376,6 +378,27 @@ namespace Gek
 
             bool update(void)
             {
+                Command command;
+                while (consoleCommandQueue.try_pop(command))
+                {
+                    bool isTimerPaused = timer.isPaused();
+                    if (!isTimerPaused)
+                    {
+                        timer.pause(true);
+                    }
+
+                    auto commandSearch = consoleCommandsMap.find(command.function);
+                    if (commandSearch != consoleCommandsMap.end())
+                    {
+                        commandSearch->second(command.parameterList);
+                    }
+
+                    if (!isTimerPaused)
+                    {
+                        timer.pause(false);
+                    }
+                };
+
                 timer.update();
                 float frameTime = float(timer.getUpdateTime());
                 population->update((!windowActive || consoleOpen), frameTime);
@@ -585,18 +608,19 @@ namespace Gek
 
             BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
             {
-                String command(parameters->name);
+                Command command;
+                command.function = parameters->name;
+                command.function.toLower();
 
-                std::vector<String> parameterList;
                 for (uint32_t parameter = 0; parameter < parameters->argc; parameter++)
                 {
-                    parameterList.push_back(parameters->argv[parameter].to_string());
+                    command.parameterList.push_back(parameters->argv[parameter].to_string());
                 }
 
-                auto commandSearch = consoleCommandsMap.find(command.getLower());
-                if (commandSearch != consoleCommandsMap.end())
+                if (consoleCommandsMap.count(command.function) > 0)
                 {
-                    commandSearch->second(parameterList, parameters->result);
+                    consoleCommandQueue.push(command);
+                    parameters->result = sciter::value(true);
                 }
                 else
                 {

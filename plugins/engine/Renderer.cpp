@@ -461,7 +461,7 @@ namespace Gek
                     });
 
                     ShaderHandle currentShader;
-                    std::list<DrawCallSet> drawCallSetList;
+                    std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
                     for (auto &drawCall = drawCallList.begin(); drawCall != drawCallList.end(); )
                     {
                         currentShader = drawCall->shader;
@@ -479,88 +479,87 @@ namespace Gek
                             continue;
                         }
 
-                        drawCallSetList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
+                        auto &shaderList = drawCallSetMap[shader->getPriority()];
+                        shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
                     }
 
-                    drawCallSetList.sort([](const DrawCallSet &leftValue, const DrawCallSet &rightValue) -> bool
+                    for (auto &shaderDrawCallList : drawCallSetMap)
                     {
-                        return (leftValue.shader->getPriority() < rightValue.shader->getPriority());
-                    });
-
-                    for (auto &drawCallSet : drawCallSetList)
-                    {
-                        bool visualEnabled = false;
-                        bool materialEnabled = false;
-                        auto &shader = drawCallSet.shader;
-                        for (auto block = shader->begin(deviceContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
+                        for(auto &shaderDrawCall : shaderDrawCallList.second)
                         {
-                            while (block->prepare())
+                            bool visualEnabled = false;
+                            bool materialEnabled = false;
+                            auto &shader = shaderDrawCall.shader;
+                            for (auto block = shader->begin(deviceContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                             {
-                                for (auto pass = block->begin(); pass; pass = pass->next())
+                                while (block->prepare())
                                 {
-                                    switch (pass->prepare())
+                                    for (auto pass = block->begin(); pass; pass = pass->next())
                                     {
-                                    case Engine::Shader::Pass::Mode::Forward:
-                                        if(true)
+                                        switch (pass->prepare())
                                         {
-                                            VisualHandle currentVisual;
-                                            MaterialHandle currentMaterial;
-                                            for (auto shaderDrawCall = drawCallSet.begin; shaderDrawCall != drawCallSet.end; ++shaderDrawCall)
+                                        case Engine::Shader::Pass::Mode::Forward:
+                                            if (true)
                                             {
-                                                if (currentVisual != shaderDrawCall->plugin)
+                                                VisualHandle currentVisual;
+                                                MaterialHandle currentMaterial;
+                                                for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                                 {
-                                                    visualEnabled = false;
-                                                    currentVisual = shaderDrawCall->plugin;
-                                                    Plugin::Visual *visual = resources->getVisual(currentVisual);
-                                                    if (!visual)
+                                                    if (currentVisual != drawCall->plugin)
                                                     {
-                                                        continue;
+                                                        visualEnabled = false;
+                                                        currentVisual = drawCall->plugin;
+                                                        Plugin::Visual *visual = resources->getVisual(currentVisual);
+                                                        if (!visual)
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        visualEnabled = true;
+                                                        visual->enable(deviceContext);
                                                     }
 
-                                                    visualEnabled = true;
-                                                    visual->enable(deviceContext);
-                                                }
-
-                                                if (currentMaterial != shaderDrawCall->material)
-                                                {
-                                                    materialEnabled = false;
-                                                    currentMaterial = shaderDrawCall->material;
-                                                    Engine::Material *material = resources->getMaterial(currentMaterial);
-                                                    if (!material)
+                                                    if (currentMaterial != drawCall->material)
                                                     {
-                                                        continue;
+                                                        materialEnabled = false;
+                                                        currentMaterial = drawCall->material;
+                                                        Engine::Material *material = resources->getMaterial(currentMaterial);
+                                                        if (!material)
+                                                        {
+                                                            continue;
+                                                        }
+
+                                                        materialEnabled = pass->enableMaterial(material);
                                                     }
 
-                                                    materialEnabled = pass->enableMaterial(material);
-                                                }
-
-                                                if (visualEnabled && materialEnabled)
-                                                {
-                                                    try
+                                                    if (visualEnabled && materialEnabled)
                                                     {
-                                                        shaderDrawCall->onDraw(deviceContext);
+                                                        try
+                                                        {
+                                                            drawCall->onDraw(deviceContext);
+                                                        }
+                                                        catch (const Plugin::Resources::ResourceNotLoaded &)
+                                                        {
+                                                        };
                                                     }
-                                                    catch (const Plugin::Resources::ResourceNotLoaded &)
-                                                    {
-                                                    };
                                                 }
                                             }
-                                        }
 
-                                        break;
+                                            break;
 
-                                    case Engine::Shader::Pass::Mode::Deferred:
-                                        deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                                        deviceContext->drawPrimitive(3, 0);
-                                        break;
+                                        case Engine::Shader::Pass::Mode::Deferred:
+                                            deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                                            deviceContext->drawPrimitive(3, 0);
+                                            break;
 
-                                    case Engine::Shader::Pass::Mode::Compute:
-                                        break;
-                                    };
+                                        case Engine::Shader::Pass::Mode::Compute:
+                                            break;
+                                        };
 
-                                    pass->clear();
-                                }
-                            };
+                                        pass->clear();
+                                    }
+                                };
+                            }
                         }
                     }
 
