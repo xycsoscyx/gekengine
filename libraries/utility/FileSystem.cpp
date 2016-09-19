@@ -66,7 +66,7 @@ namespace Gek
 
 		void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
-			HANDLE file = CreateFile(fileName, GENERIC_READ, 0, nullptr, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+			HANDLE file = CreateFile(fileName, GENERIC_READ, 0, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if(file == INVALID_HANDLE_VALUE)
             {
                 throw FileNotFound();
