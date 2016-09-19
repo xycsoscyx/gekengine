@@ -33,12 +33,15 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
         Math::Float3 position((nodeTransform * Math::Float3(light->mPosition.x, light->mPosition.y, light->mPosition.z).w(1.0f)).xyz * parameters.feetPerUnit);
         Math::Quaternion rotation(nodeTransform.getQuaternion());
 
+        printf("--- constant: %f, linear: %f, quadradic: %f\r\n", light->mAttenuationConstant, light->mAttenuationLinear, light->mAttenuationQuadratic);
+
         printf("<entity name=\"%s\">\r\n", light->mName.C_Str());
         printf("    <transform position=\"(%f, %f, %f)\" rotation=\"(%f, %f, %f, %f)\" />\r\n",
             position.x, position.y, position.z,
             rotation.x, rotation.y, rotation.z, rotation.w);
 
         float range = 10.0f;
+
         switch (light->mType)
         {
         case aiLightSource_DIRECTIONAL:
@@ -50,7 +53,9 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
             break;
 
         case aiLightSource_SPOT:
-            printf("    <spot_light range=\"%f\" inner_angle=\"%f\" outer_angle=\"%f\" falloff=\"2.0\" />\r\n", range, Math::convertRadiansToDegrees(light->mAngleInnerCone), Math::convertRadiansToDegrees(light->mAngleOuterCone));
+            printf("    <spot_light range=\"%f\" inner_angle=\"%f\" outer_angle=\"%f\" falloff=\"5\" />\r\n", range, 
+                Math::convertRadiansToDegrees(light->mAngleInnerCone), 
+                Math::convertRadiansToDegrees(light->mAngleOuterCone));
             break;
 
         case aiLightSource_AMBIENT:
