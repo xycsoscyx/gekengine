@@ -12,6 +12,11 @@ namespace Gek
         GEK_PREDECLARE(Resources);
         GEK_PREDECLARE(Renderer);
 
+        GEK_INTERFACE(Configuration)
+        {
+            virtual operator Xml::Node &() = 0;
+        };
+
         struct ActionParameter
         {
             union
@@ -33,7 +38,9 @@ namespace Gek
 
         GEK_INTERFACE(CoreListener)
         {
-            virtual void onChanged(void) { };
+            virtual void onResize(void) { };
+
+            virtual void onConfigurationChanged(void) { };
 
             virtual void onAction(const wchar_t *actionName, const ActionParameter &parameter) { };
         };
@@ -44,7 +51,7 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InitializationFailed);
 
-            virtual Xml::Node &getConfiguration(void) = 0;
+            virtual ConfigurationPtr changeConfiguration(void) = 0;
             virtual Xml::Node const &getConfiguration(void) const = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;

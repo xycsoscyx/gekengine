@@ -8,16 +8,24 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
-#include <map>
 #include <unordered_map>
+#include <map>
+#include <random>
 
 namespace Gek
 {
     namespace Components
     {
+        static std::random_device randomDevice;
+        static std::mt19937 mersineTwister(randomDevice());
+        static std::uniform_real_distribution<float> random(-1.0f, 1.0f);
+
         struct Spin
         {
+            Math::Float3 torque;
+
             Spin(void)
+                : torque(random(mersineTwister), random(mersineTwister), random(mersineTwister))
             {
             }
 
@@ -102,10 +110,13 @@ namespace Gek
 
             if (state == State::Active)
             {
-                Math::Quaternion rotation(Math::Quaternion::createEulerRotation(0.0f, population->getFrameTime(), 0.0f));
                 population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity) -> void
                 {
                     auto &transform = entity->getComponent<Components::Transform>();
+                    auto &spin = entity->getComponent<Components::Spin>();
+                    Math::Quaternion rotation(Math::Quaternion::createEulerRotation((population->getFrameTime() * spin.torque.x),
+                                                                                    (population->getFrameTime() * spin.torque.y),
+                                                                                    (population->getFrameTime() * spin.torque.z)));
                     transform.rotation *= rotation;
                 });
             }

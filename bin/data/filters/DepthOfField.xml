@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <filter>
     <textures>
-        <depthBuffer bind="float" source="$standard" />
+        <depthBuffer bind="float" source="CookTorrance" />
         <!--foregroundBuffer bind="float3" flags="target">R11G11B10_FLOAT</foregroundBuffer-->
         <circleOfConfusion bind="float" flags="target">R16_FLOAT</circleOfConfusion>
     </textures>

@@ -13,6 +13,15 @@ namespace Gek
         {
         }
 
+        Node::Node(const Node &node)
+            : source(node.source)
+            , type(node.type)
+            , text(node.text)
+            , attributes(node.attributes)
+            , children(node.children)
+        {
+        }
+
         Node::Node(Node &&node)
             : source(node.source)
             , type(std::move(node.type))

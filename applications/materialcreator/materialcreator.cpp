@@ -49,7 +49,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 						Xml::Node materialNode = Xml::Node(L"material");
 						Xml::Node &shaderNode = materialNode.getChild(L"shader");
-						shaderNode.attributes[L"name"] = L"$standard";
+						shaderNode.attributes[L"name"] = L"CookTorrance";
 						Xml::Node &solidNode = shaderNode.getChild(L"solid");
 
 						FileSystem::find(setTexturePath, [&](const wchar_t *textureFileName) -> bool

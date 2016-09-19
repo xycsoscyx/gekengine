@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <material>
-    <shader name="$transparent">
+    <shader name="WeightBlendedOIT">
         <transparent>
             <albedo flags="sRGB" file="Particles\\Flames.Albedo" />
             <normal file="Particles\\Flames.Normal" />

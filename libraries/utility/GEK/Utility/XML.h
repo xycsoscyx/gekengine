@@ -31,6 +31,7 @@ namespace Gek
             std::list<Node> children;
 
             Node(const wchar_t *type, Source source = Source::Code);
+            Node(const Node &node);
             Node(Node &&node);
 
             void operator = (Node &&node);

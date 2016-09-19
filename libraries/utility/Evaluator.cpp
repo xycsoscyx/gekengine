@@ -2,10 +2,6 @@
 #include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Math\Common.h"
-#include <unordered_map>
-#include <functional>
-#include <random>
-#include <stack>
 
 namespace Gek
 {

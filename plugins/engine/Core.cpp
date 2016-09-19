@@ -43,12 +43,43 @@ namespace Gek
             }
         };
 
+        GEK_INTERFACE(CoreConfiguration)
+        {
+            virtual void changeConfiguration(Xml::Node &&configuration) = 0;
+        };
+
+        class Configuration
+            : public Plugin::Configuration
+        {
+        private:
+            CoreConfiguration *core;
+            Xml::Node configuration;
+
+        public:
+            Configuration(CoreConfiguration *core, const Xml::Node &configuration)
+                : core(core)
+                , configuration(configuration)
+            {
+            }
+
+            ~Configuration(void)
+            {
+                core->changeConfiguration(std::move(configuration));
+            }
+
+            operator Xml::Node &()
+            {
+                return configuration;
+            }
+        };
+
         GEK_CONTEXT_USER(Core, HWND)
             , public Application
             , public Plugin::Core
             , public Plugin::PopulationListener
             , public Plugin::PopulationStep
             , public Plugin::RendererListener
+            , public CoreConfiguration
         {
             HWND window;
             bool windowActive;
@@ -122,17 +153,32 @@ namespace Gek
 
 				consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
 				{
-					device->setFullScreen(!device->isFullScreen());
-					result = sciter::value(true);
-				};
+                    bool fullscreen = !device->isFullScreen();
+
+                    device->setFullScreen(fullscreen);
+
+                    auto &displayNode = configuration.getChild(L"display");
+                    displayNode.attributes[L"fullscreen"] = fullscreen;
+                    sendShout(&Plugin::CoreListener::onConfigurationChanged);
+
+                    result = sciter::value(true);
+                };
 
 				consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters, SCITER_VALUE &result) -> void
 				{
 					if (parameters.size() == 2)
 					{
-						device->setSize((uint32_t)parameters[0], (uint32_t)parameters[1], Video::Format::R8G8B8A8_UNORM_SRGB);
-						device->getBackBuffer();
-					}
+                        uint32_t width = parameters[0];
+                        uint32_t height = parameters[1];
+
+                        sendShout(&Plugin::CoreListener::onResize);
+                        device->setSize(width, height, Video::Format::R8G8B8A8_UNORM_SRGB);
+
+                        auto &displayNode = configuration.getChild(L"display");
+                        displayNode.attributes[L"width"] = width;
+                        displayNode.attributes[L"height"] = height;
+                        sendShout(&Plugin::CoreListener::onConfigurationChanged);
+                    }
 
 					result = sciter::value(true);
 				};
@@ -208,10 +254,17 @@ namespace Gek
                 CoUninitialize();
             }
 
-            // Plugin::Core
-            Xml::Node &getConfiguration(void)
+            // CoreConfiguration
+            void changeConfiguration(Xml::Node &&configuration)
             {
-                return configuration;
+                this->configuration = std::move(configuration);
+                sendShout(&Plugin::CoreListener::onConfigurationChanged);
+            }
+
+            // Plugin::Core
+            Plugin::ConfigurationPtr changeConfiguration(void)
+            {
+                return std::make_shared<Configuration>(this, configuration);
             }
 
             Xml::Node const &getConfiguration(void) const
