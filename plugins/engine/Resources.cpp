@@ -223,11 +223,23 @@ namespace Gek
             {
             }
 
-            void reload(void)
+            void wipe(void)
             {
                 for (auto &resource : resourceMap)
                 {
                     resource.second.clear();
+                }
+            }
+
+            void reload(void)
+            {
+                for (auto &resource : resourceMap)
+                {
+                    auto loadSearch = resourceLoadMap.find(resource.first);
+                    if (loadSearch != resourceLoadMap.end())
+                    {
+                        resource.second.set(loadSearch->second(resource.first));
+                    }
                 }
             }
 
@@ -275,35 +287,6 @@ namespace Gek
                 }
 
                 return HANDLE();
-            }
-
-            template <class T>
-            struct RemoveConst
-            {
-                typedef T type;
-            };
-
-            template <class T>
-            struct RemoveConst<const T>
-            {
-                typedef T type;
-            };
-
-            TYPE * const getResource(HANDLE handle) const
-            {
-                auto resource = ResourceManager::getResource(handle);
-                if (!resource)
-                {
-                    auto &load = resourceLoadMap.find(handle);
-                    auto resourceSearch = const_cast<concurrency::concurrent_unordered_map<HANDLE, AtomicResource> &>(resourceMap).find(handle);
-                    if (load != resourceLoadMap.end() && resourceSearch != resourceMap.end())
-                    {
-                        resourceSearch->second.set(load->second(handle));
-                        resource = resourceSearch->second.get();
-                    }
-                }
-
-                return resource;
             }
         };
 
@@ -362,14 +345,15 @@ namespace Gek
             }
 
             // Plugin::CoreListener
-            void onResize(void)
+            void onBeforeResize(void)
             {
-                shaderManager.reload();
                 filterManager.clear();
+                shaderManager.wipe();
             }
 
-            virtual void onConfigurationChanged(void)
+            virtual void onAfterResize(void)
             {
+                shaderManager.reload();
             }
 
             // ResourceRequester
