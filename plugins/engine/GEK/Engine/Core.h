@@ -38,8 +38,7 @@ namespace Gek
 
         GEK_INTERFACE(CoreListener)
         {
-            virtual void onBeforeResize(void) { };
-            virtual void onAfterResize(void) { };
+            virtual void onResize(void) { };
 
             virtual void onConfigurationChanged(void) { };
 

@@ -172,8 +172,6 @@ namespace Gek
 				{
 					if (parameters.size() == 2)
 					{
-                        sendShout(&Plugin::CoreListener::onBeforeResize);
-
                         uint32_t width = parameters[0];
                         uint32_t height = parameters[1];
                         device->setSize(width, height, Video::Format::R8G8B8A8_UNORM_SRGB);
@@ -183,7 +181,7 @@ namespace Gek
                         displayNode.attributes[L"height"] = height;
                         sendShout(&Plugin::CoreListener::onConfigurationChanged);
 
-                        sendShout(&Plugin::CoreListener::onAfterResize);
+                        sendShout(&Plugin::CoreListener::onResize);
                     }
 				};
 
