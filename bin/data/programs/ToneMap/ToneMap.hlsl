@@ -1,7 +1,7 @@
-#include "GEKFilter"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 // https://mynameismjp.wordpress.com/2010/04/30/a-closer-look-at-tone-mapping/
 #define TechniqueNone               0

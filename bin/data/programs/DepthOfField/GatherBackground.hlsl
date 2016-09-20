@@ -1,7 +1,7 @@
-#include "GEKFilter"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 float2 getNoise(float2 coord)
 {

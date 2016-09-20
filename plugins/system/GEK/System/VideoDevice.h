@@ -89,6 +89,14 @@ namespace Gek
             Count,
         };
 
+        enum class ProgramType : uint8_t
+        {
+            Compute = 0,
+            Vertex,
+            Geometry,
+            Pixel,
+        };
+
         enum class ComparisonFunction : uint8_t
         {
             Always = 0,
@@ -596,15 +604,8 @@ namespace Gek
 
 			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
 
-			virtual ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize) = 0;
-			virtual ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize) = 0;
-			virtual ObjectPtr createGeometryProgram(const void *compiledData, uint32_t compiledSize) = 0;
-			virtual ObjectPtr createPixelProgram(const void *compiledData, uint32_t compiledSize) = 0;
-
-			virtual std::vector<uint8_t> compileComputeProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
-            virtual std::vector<uint8_t> compileVertexProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
-            virtual std::vector<uint8_t> compileGeometryProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
-            virtual std::vector<uint8_t> compilePixelProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
+            virtual std::vector<uint8_t> compileProgram(ProgramType programType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction) = 0;
+            virtual ObjectPtr createProgram(ProgramType programType, const void *compiledData, uint32_t compiledSize) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;
 

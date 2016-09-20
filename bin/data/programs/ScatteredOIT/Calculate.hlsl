@@ -1,7 +1,7 @@
-#include "GEKShader"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 float2 computeRefractionOffset(float linearDepth, float3 normal, float3 position, float eta)
 {

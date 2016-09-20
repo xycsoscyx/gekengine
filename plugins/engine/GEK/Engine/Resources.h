@@ -63,8 +63,10 @@ namespace Gek
         GEK_INTERFACE(Resources)
         {
             GEK_START_EXCEPTIONS();
-            GEK_ADD_EXCEPTION(InvalidParameter);
             GEK_ADD_EXCEPTION(ResourceNotLoaded);
+            GEK_ADD_EXCEPTION(InvalidParameter);
+            GEK_ADD_EXCEPTION(InvalidIncludeType);
+            GEK_ADD_EXCEPTION(InvalidIncludeName);
 
             virtual VisualHandle loadVisual(const wchar_t *pluginName) = 0;
             virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
@@ -114,8 +116,8 @@ namespace Gek
             virtual Filter * const getFilter(const wchar_t *filterName) = 0;
             virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
 
-			virtual ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
-            virtual ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude) = 0;
+            virtual std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
+            virtual ProgramHandle loadProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
 
             virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;

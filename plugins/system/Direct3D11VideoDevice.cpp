@@ -1003,40 +1003,6 @@ namespace Gek
             }
         };
 
-        class Include
-            : public ID3DInclude
-        {
-        public:
-            const std::function<bool(const wchar_t *, String &)> &onInclude;
-            std::unordered_map<StringUTF8, StringUTF8> includeMap;
-
-        public:
-            Include(const std::function<bool(const wchar_t *, String &)> &onInclude)
-                : onInclude(onInclude)
-            {
-            }
-
-            // ID3DInclude
-            STDMETHODIMP Open(D3D_INCLUDE_TYPE includeType, const char *fileName, LPCVOID parentData, LPCVOID *data, UINT *dataSize)
-            {
-                String buffer;
-                if (onInclude(String(fileName), buffer))
-                {
-                    auto &cache = includeMap[fileName] = buffer;
-                    (*data) = cache.data();
-                    (*dataSize) = cache.size();
-                    return S_OK;
-                }
-
-                return E_FAIL;
-            }
-
-            STDMETHODIMP Close(LPCVOID data)
-            {
-                return S_OK;
-            }
-        };
-
         GEK_CONTEXT_USER(Device, HWND, Video::Format, String)
             , public Video::Device
         {
@@ -2306,27 +2272,27 @@ namespace Gek
                 return std::make_shared<PROGRAM>(d3dShader);
             }
 
-            Video::ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize)
+            Video::ObjectPtr createProgram(Video::ProgramType programType, const void *compiledData, uint32_t compiledSize)
             {
-                return createProgram<ID3D11ComputeShader, ComputeProgram>(compiledData, compiledSize, &ID3D11Device::CreateComputeShader);
+                switch (programType)
+                {
+                case Video::ProgramType::Compute:
+                    return createProgram<ID3D11ComputeShader, ComputeProgram>(compiledData, compiledSize, &ID3D11Device::CreateComputeShader);
+
+                case Video::ProgramType::Vertex:
+                    return createProgram<ID3D11VertexShader, VertexProgram>(compiledData, compiledSize, &ID3D11Device::CreateVertexShader);
+
+                case Video::ProgramType::Geometry:
+                    return createProgram<ID3D11GeometryShader, GeometryProgram>(compiledData, compiledSize, &ID3D11Device::CreateGeometryShader);
+
+                case Video::ProgramType::Pixel:
+                    return createProgram<ID3D11PixelShader, PixelProgram>(compiledData, compiledSize, &ID3D11Device::CreatePixelShader);
+                };
+
+                throw Video::CreateObjectFailed();
             }
 
-            Video::ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize)
-            {
-                return createProgram<ID3D11VertexShader, VertexProgram>(compiledData, compiledSize, &ID3D11Device::CreateVertexShader);
-            }
-
-            Video::ObjectPtr createGeometryProgram(const void *compiledData, uint32_t compiledSize)
-            {
-                return createProgram<ID3D11GeometryShader, GeometryProgram>(compiledData, compiledSize, &ID3D11Device::CreateGeometryShader);
-            }
-
-            Video::ObjectPtr createPixelProgram(const void *compiledData, uint32_t compiledSize)
-            {
-                return createProgram<ID3D11PixelShader, PixelProgram>(compiledData, compiledSize, &ID3D11Device::CreatePixelShader);
-            }
-
-            std::vector<uint8_t> compileProgram(const StringUTF8 &name, const StringUTF8 &type, const StringUTF8 &uncompiledProgram, const StringUTF8 &entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
+            std::vector<uint8_t> compileProgram(const StringUTF8 &name, const StringUTF8 &type, const StringUTF8 &uncompiledProgram, const StringUTF8 &entryFunction)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2335,10 +2301,9 @@ namespace Gek
                 flags |= D3DCOMPILE_DEBUG;
 #endif
 
-                Include include(onInclude);
                 CComPtr<ID3DBlob> d3dShaderBlob;
                 CComPtr<ID3DBlob> d3dCompilerErrors;
-                HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, &include, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
+                HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     OutputDebugStringW(String::create(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (const char *)d3dCompilerErrors->GetBufferPointer()));
@@ -2349,24 +2314,24 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileComputeProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
+            std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
             {
-                return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction, onInclude);
-            }
+                switch (programType)
+                {
+                case Video::ProgramType::Compute:
+                    return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
 
-            std::vector<uint8_t> compileVertexProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-            {
-                return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction, onInclude);
-            }
+                case Video::ProgramType::Vertex:
+                    return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction);
 
-            std::vector<uint8_t> compileGeometryProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-            {
-                return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction, onInclude);
-            }
+                case Video::ProgramType::Geometry:
+                    return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction);
 
-            std::vector<uint8_t> compilePixelProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-            {
-                return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction, onInclude);
+                case Video::ProgramType::Pixel:
+                    return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
+                };
+
+                throw Video::ProgramCompilationFailed();
             }
 
             Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
