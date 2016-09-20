@@ -119,7 +119,7 @@ namespace Gek
             {
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    loadThread.get();
+                    loadThread.wait();
                 }
 
                 namedEntityMap.clear();
@@ -198,7 +198,7 @@ namespace Gek
             {
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    loadThread.get();
+                    loadThread.wait();
                 }
 
                 std::lock_guard<std::mutex> lock(loadMutex);

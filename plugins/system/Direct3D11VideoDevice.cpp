@@ -2198,7 +2198,13 @@ namespace Gek
                 GEK_REQUIRE(object);
                 GEK_REQUIRE(data);
 
-                d3dDeviceContext->UpdateSubresource(dynamic_cast<Resource *>(object)->d3dResource, 0, nullptr, data, 0, 0);
+                try
+                {
+                    d3dDeviceContext->UpdateSubresource(dynamic_cast<Resource *>(object)->d3dResource, 0, nullptr, data, 0, 0);
+                }
+                catch (...)
+                {
+                };
             }
 
             void copyResource(Video::Object *destination, Video::Object *source)
@@ -2207,7 +2213,13 @@ namespace Gek
                 GEK_REQUIRE(destination);
                 GEK_REQUIRE(source);
 
-                d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
+                try
+                {
+                    d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
+                }
+                catch (...)
+                {
+                };
             }
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)

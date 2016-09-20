@@ -43,57 +43,12 @@ namespace Gek
         public:
             using TypePtr = std::shared_ptr<TYPE>;
 
-            struct AtomicResource
-            {
-                enum class State : uint8_t
-                {
-                    Empty = 0,
-                    Loading,
-                    Loaded,
-                };
-
-                std::atomic<State> state;
-                TypePtr data;
-
-                AtomicResource(void)
-                    : state(State::Empty)
-                {
-                }
-
-                AtomicResource(const AtomicResource &resource)
-                    : state(resource.state == State::Empty ? State::Empty : resource.state == State::Loading ? State::Loading : State::Loaded)
-                    , data(resource.data)
-                {
-                }
-
-                void clear(void)
-                {
-                    state = State::Empty;
-                    this->data = nullptr;
-                }
-
-                void set(TypePtr data)
-                {
-                    if (state == State::Empty)
-                    {
-                        state = State::Loading;
-                        this->data = data;
-                        state = State::Loaded;
-                    }
-                }
-
-                TYPE * const get(void) const
-                {
-                    return (state == State::Loaded ? data.get() : nullptr);
-                }
-            };
-
         protected:
             ResourceRequester *resources;
 
             uint64_t nextIdentifier;
             concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
-            concurrency::concurrent_unordered_map<HANDLE, AtomicResource> resourceMap;
+            concurrency::concurrent_unordered_map<HANDLE, TypePtr> resourceMap;
 
         public:
             ResourceCache(ResourceRequester *resources)
@@ -164,7 +119,7 @@ namespace Gek
                                 {
                                     resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
                                     {
-                                        resource.set(load(handle));
+                                        resource = load(handle);
                                     });
                                 }
                             }
@@ -179,7 +134,7 @@ namespace Gek
                     loadParameters[handle] = parameters;
                     resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
                     {
-                        resource.set(load(handle));
+                        resource = load(handle);
                     });
                 }
 
@@ -215,10 +170,9 @@ namespace Gek
             {
                 HANDLE handle;
                 handle.assign(InterlockedIncrement(&nextIdentifier));
-                resources->addRequest([this, handle, load = move(load)](void) -> void
+                resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
                 {
-                    auto &resource = resourceMap[handle];
-                    resource.set(load(handle));
+                    resource = load(handle);
                 });
 
                 return handle;
@@ -273,7 +227,7 @@ namespace Gek
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
                     auto &resource = resourceMap[handle];
-                    resource.set(load(handle));
+                    resource = load(handle);
                 }
 
                 return handle;
@@ -344,7 +298,7 @@ namespace Gek
                 loadQueue.clear();
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    loadThread.get();
+                    loadThread.wait();
                 }
             }
 
@@ -389,7 +343,7 @@ namespace Gek
                 loadQueue.clear();
                 if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    loadThread.get();
+                    loadThread.wait();
                 }
 
                 materialShaderMap.clear();
