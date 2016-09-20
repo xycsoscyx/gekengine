@@ -54,6 +54,7 @@ namespace Gek
 
             struct PassData
             {
+                uint8_t index;
                 Pass::Mode mode;
                 bool enableDepth;
                 ResourceHandle depthBuffer;
@@ -77,8 +78,9 @@ namespace Gek
                 std::vector<ResourceHandle> generateMipMapsList;
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
 
-                PassData(void)
-                    : mode(Pass::Mode::Forward)
+                PassData(uint8_t index)
+                    : index(index)
+                    , mode(Pass::Mode::Forward)
                     , enableDepth(false)
                     , clearDepthFlags(0)
                     , clearDepthValue(1.0f)
@@ -220,6 +222,7 @@ namespace Gek
 
             void reload(void)
             {
+                uint8_t passIndex = 0;
                 blockList.clear();
                 forwardPassMap.clear();
                 
@@ -234,7 +237,7 @@ namespace Gek
                 uint32_t displayHeight = backBuffer->getHeight();
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
-                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
+                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(float(displayWidth), float(displayHeight)));
                 for (auto &defineNode : shaderNode.getChild(L"defines").children)
                 {
                     BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
@@ -562,7 +565,7 @@ namespace Gek
 
                     for (auto &passNode : blockNode.getChild(L"passes").children)
                     {
-                        block.passList.push_back(PassData());
+                        block.passList.push_back(PassData(passIndex++));
                         PassData &pass = block.passList.back();
 
                         std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
@@ -972,7 +975,7 @@ namespace Gek
             GEK_INTERFACE(Data)
                 : public Engine::Material::Data
             {
-                std::unordered_map<PassData *, std::vector<ResourceHandle>> passMap;
+                std::unordered_map<uint8_t, std::vector<ResourceHandle>> passMap;
             };
 
             Engine::Material::DataPtr loadMaterialData(const Engine::Material::PassMap &passMap)
@@ -984,18 +987,18 @@ namespace Gek
                     auto passSearch = forwardPassMap.find(passName);
                     if (passSearch != forwardPassMap.end())
                     {
-                        PassData *pass = passSearch->second;
+                        PassData &pass = (*passSearch->second);
                         auto &resourceMap = passPair.second;
-                        for (auto &resource : pass->materialResourceList)
+                        for (auto &resource : pass.materialResourceList)
                         {
                             auto &resourceSearch = resourceMap.find(resource.name);
                             if (resourceSearch == resourceMap.end())
 							{
-								data->passMap[pass].push_back(resources->createTexture(resource.pattern, resource.parameters));
+								data->passMap[pass.index].push_back(resources->createTexture(resource.pattern, resource.parameters));
 							}
 							else
 							{
-                                data->passMap[pass].push_back(resourceSearch->second);
+                                data->passMap[pass.index].push_back(resourceSearch->second);
                             }
                         }
                     }
@@ -1010,7 +1013,7 @@ namespace Gek
                 Data *data = dynamic_cast<Data *>(material->getData());
                 if (data)
                 {
-                    auto &passSearch = data->passMap.find(&pass);
+                    auto &passSearch = data->passMap.find(pass.index);
                     if (passSearch != data->passMap.end())
                     {
                         try

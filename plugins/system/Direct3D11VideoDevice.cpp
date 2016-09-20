@@ -812,8 +812,7 @@ namespace Gek
             }
         };
 
-        class Texture
-            : virtual public Video::Texture
+        class BaseTexture
         {
         public:
             Video::Format format;
@@ -822,11 +821,22 @@ namespace Gek
             uint32_t depth;
 
         public:
-            Texture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
+            BaseTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
                 : format(format)
                 , width(width)
                 , height(height)
                 , depth(depth)
+            {
+            }
+        };
+
+        class Texture
+            : virtual public Video::Texture
+            , public BaseTexture
+        {
+        public:
+            Texture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
+                : BaseTexture(format, width, height, depth)
             {
             }
 
@@ -879,20 +889,14 @@ namespace Gek
 
         class Target
             : virtual public Video::Target
+            , public BaseTexture
         {
         public:
-            Video::Format format;
-            uint32_t width;
-            uint32_t height;
-            uint32_t depth;
             Video::ViewPort viewPort;
 
         public:
             Target(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : format(format)
-                , width(width)
-                , height(height)
-                , depth(depth)
+                : BaseTexture(format, width, height, depth)
                 , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
             {
             }
@@ -2198,13 +2202,7 @@ namespace Gek
                 GEK_REQUIRE(object);
                 GEK_REQUIRE(data);
 
-                try
-                {
-                    d3dDeviceContext->UpdateSubresource(dynamic_cast<Resource *>(object)->d3dResource, 0, nullptr, data, 0, 0);
-                }
-                catch (...)
-                {
-                };
+                d3dDeviceContext->UpdateSubresource(dynamic_cast<Resource *>(object)->d3dResource, 0, nullptr, data, 0, 0);
             }
 
             void copyResource(Video::Object *destination, Video::Object *source)
@@ -2213,13 +2211,19 @@ namespace Gek
                 GEK_REQUIRE(destination);
                 GEK_REQUIRE(source);
 
-                try
+                auto destinationTexture = dynamic_cast<BaseTexture *>(destination);
+                auto sourceTexture = dynamic_cast<BaseTexture *>(source);
+                if (destinationTexture && sourceTexture)
                 {
-                    d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
+                    if (destinationTexture->width != sourceTexture->width ||
+                        destinationTexture->height != sourceTexture->height ||
+                        destinationTexture->depth != sourceTexture->depth)
+                    {
+                        return;
+                    }
                 }
-                catch (...)
-                {
-                };
+
+                d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dResource, dynamic_cast<Resource *>(source)->d3dResource);
             }
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
