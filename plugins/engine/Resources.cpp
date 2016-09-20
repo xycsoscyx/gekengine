@@ -130,6 +130,7 @@ namespace Gek
             : public ResourceCache<HANDLE, TYPE>
         {
         private:
+            mutable std::mutex generalMutex;
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
             concurrency::concurrent_unordered_map<std::size_t, std::size_t> requestedLoadParameters;
 
@@ -145,9 +146,38 @@ namespace Gek
                 ResourceCache::clear();
             }
 
+            HANDLE getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load)
+            {
+                HANDLE handle;
+                std::lock_guard<std::mutex> lock(generalMutex);
+                if (requestedLoadSet.count(hash) > 0 && requestedLoadParameters[hash] == parameters)
+                {
+                    auto resourceSearch = resourceHandleMap.find(hash);
+                    if (resourceSearch != resourceHandleMap.end())
+                    {
+                        handle = resourceSearch->second;
+                    }
+                }
+                else
+                {
+                    requestedLoadSet.insert(hash);
+                    requestedLoadParameters[hash] = parameters;
+                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    resourceHandleMap[hash] = handle;
+                    resources->addRequest([this, handle, load = move(load)](void) -> void
+                    {
+                        auto &resource = resourceMap[handle];
+                        resource.set(load(handle));
+                    });
+                }
+
+                return handle;
+            }
+
             HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
+                std::lock_guard<std::mutex> lock(generalMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -173,6 +203,7 @@ namespace Gek
 
             HANDLE getHandle(std::size_t hash) const
             {
+                std::lock_guard<std::mutex> lock(generalMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -215,6 +246,7 @@ namespace Gek
             : public ResourceCache<HANDLE, TYPE>
         {
         private:
+            mutable std::mutex reloadMutex;
             concurrency::concurrent_unordered_map<HANDLE, std::function<TypePtr(HANDLE)>> resourceLoadMap;
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
@@ -226,6 +258,7 @@ namespace Gek
 
             void reload(void)
             {
+                std::lock_guard<std::mutex> lock(reloadMutex);
                 for (auto &resource : resourceMap)
                 {
                     auto loadSearch = resourceLoadMap.find(resource.first);
@@ -246,6 +279,7 @@ namespace Gek
             HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
+                std::lock_guard<std::mutex> lock(reloadMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -270,6 +304,7 @@ namespace Gek
 
             HANDLE getHandle(std::size_t hash) const
             {
+                std::lock_guard<std::mutex> lock(reloadMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -577,7 +612,7 @@ namespace Gek
 
                 auto hash = getHash(textureName);
                 auto parameters = getHash(format, width, height, depth, mipmaps, flags);
-                return resourceCache.getHandle(hash, std::move(load));
+                return resourceCache.getHandle(hash, parameters, std::move(load));
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -590,8 +625,15 @@ namespace Gek
                 };
 
                 auto hash = getHash(bufferName);
-                auto parameters = (staticData.empty() ? 0 : getHash(stride, count, type, flags));
-                return resourceCache.getHandle(hash, std::move(load));
+                if (staticData.empty())
+                {
+                    return resourceCache.getHandle(hash, std::move(load));
+                }
+                else
+                {
+                    auto parameters = getHash(stride, count, type, flags);
+                    return resourceCache.getHandle(hash, parameters, std::move(load));
+                }
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -604,8 +646,15 @@ namespace Gek
                 };
 
                 auto hash = getHash(bufferName);
-                auto parameters = (staticData.empty() ? 0 : getHash(format, count, type, flags));
-                return resourceCache.getHandle(hash, std::move(load));
+                if (staticData.empty())
+                {
+                    return resourceCache.getHandle(hash, std::move(load));
+                }
+                else
+                {
+                    auto parameters = getHash(format, count, type, flags);
+                    return resourceCache.getHandle(hash, parameters, std::move(load));
+                }
             }
 
             Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
