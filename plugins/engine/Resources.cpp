@@ -38,7 +38,7 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class ResourceManager
+        class ResourceCache
         {
         public:
             using TypePtr = std::shared_ptr<TYPE>;
@@ -96,14 +96,14 @@ namespace Gek
             concurrency::concurrent_unordered_map<HANDLE, AtomicResource> resourceMap;
 
         public:
-            ResourceManager(ResourceRequester *resources)
+            ResourceCache(ResourceRequester *resources)
                 : resources(resources)
                 , nextIdentifier(0)
             {
                 GEK_REQUIRE(resources);
             }
 
-            virtual ~ResourceManager(void)
+            virtual ~ResourceCache(void)
             {
             }
 
@@ -126,22 +126,23 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class GeneralResourceManager
-            : public ResourceManager<HANDLE, TYPE>
+        class GeneralResourceCache
+            : public ResourceCache<HANDLE, TYPE>
         {
         private:
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
+            concurrency::concurrent_unordered_map<std::size_t, std::size_t> requestedLoadParameters;
 
         public:
-            GeneralResourceManager(ResourceRequester *resources)
-                : ResourceManager(resources)
+            GeneralResourceCache(ResourceRequester *resources)
+                : ResourceCache(resources)
             {
             }
 
             void clear(void)
             {
                 requestedLoadSet.clear();
-                ResourceManager::clear();
+                ResourceCache::clear();
             }
 
             HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
@@ -186,12 +187,12 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class ProgramResourceManager
-            : public ResourceManager<HANDLE, TYPE>
+        class ProgramResourceCache
+            : public ResourceCache<HANDLE, TYPE>
         {
         public:
-            ProgramResourceManager(ResourceRequester *resources)
-                : ResourceManager(resources)
+            ProgramResourceCache(ResourceRequester *resources)
+                : ResourceCache(resources)
             {
             }
 
@@ -210,25 +211,17 @@ namespace Gek
         };
 
         template <class HANDLE, typename TYPE>
-        class ShaderResourceManager
-            : public ResourceManager<HANDLE, TYPE>
+        class ReloadResourceCache
+            : public ResourceCache<HANDLE, TYPE>
         {
         private:
             concurrency::concurrent_unordered_map<HANDLE, std::function<TypePtr(HANDLE)>> resourceLoadMap;
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
-            ShaderResourceManager(ResourceRequester *resources)
-                : ResourceManager(resources)
+            ReloadResourceCache(ResourceRequester *resources)
+                : ResourceCache(resources)
             {
-            }
-
-            void wipe(void)
-            {
-                for (auto &resource : resourceMap)
-                {
-                    resource.second.clear();
-                }
             }
 
             void reload(void)
@@ -247,7 +240,7 @@ namespace Gek
             {
                 resourceLoadMap.clear();
                 requestedLoadSet.clear();
-                ResourceManager::clear();
+                ResourceCache::clear();
             }
 
             HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
@@ -303,15 +296,15 @@ namespace Gek
             std::future<void> loadThread;
             concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
 
-            ProgramResourceManager<ProgramHandle, Video::Object> programManager;
-            GeneralResourceManager<VisualHandle, Plugin::Visual> visualManager;
-            GeneralResourceManager<MaterialHandle, Engine::Material> materialManager;
-            ShaderResourceManager<ShaderHandle, Engine::Shader> shaderManager;
-            GeneralResourceManager<ResourceHandle, Engine::Filter> filterManager;
-            GeneralResourceManager<ResourceHandle, Video::Object> resourceManager;
-            GeneralResourceManager<RenderStateHandle, Video::Object> renderStateManager;
-            GeneralResourceManager<DepthStateHandle, Video::Object> depthStateManager;
-            GeneralResourceManager<BlendStateHandle, Video::Object> blendStateManager;
+            ProgramResourceCache<ProgramHandle, Video::Object> programCache;
+            GeneralResourceCache<VisualHandle, Plugin::Visual> visualCache;
+            GeneralResourceCache<MaterialHandle, Engine::Material> materialCache;
+            ReloadResourceCache<ShaderHandle, Engine::Shader> shaderCache;
+            ReloadResourceCache<ResourceHandle, Engine::Filter> filterCache;
+            GeneralResourceCache<ResourceHandle, Video::Object> resourceCache;
+            GeneralResourceCache<RenderStateHandle, Video::Object> renderStateCache;
+            GeneralResourceCache<DepthStateHandle, Video::Object> depthStateCache;
+            GeneralResourceCache<BlendStateHandle, Video::Object> blendStateCache;
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
@@ -320,15 +313,15 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
                 , device(device)
-                , programManager(this)
-                , visualManager(this)
-                , materialManager(this)
-                , shaderManager(this)
-                , filterManager(this)
-                , resourceManager(this)
-                , renderStateManager(this)
-                , depthStateManager(this)
-                , blendStateManager(this)
+                , programCache(this)
+                , visualCache(this)
+                , materialCache(this)
+                , shaderCache(this)
+                , filterCache(this)
+                , resourceCache(this)
+                , renderStateCache(this)
+                , depthStateCache(this)
+                , blendStateCache(this)
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
@@ -345,15 +338,10 @@ namespace Gek
             }
 
             // Plugin::CoreListener
-            void onBeforeResize(void)
+            void onResize(void)
             {
-                filterManager.clear();
-                shaderManager.wipe();
-            }
-
-            virtual void onAfterResize(void)
-            {
-                shaderManager.reload();
+                filterCache.reload();
+                shaderCache.reload();
             }
 
             // ResourceRequester
@@ -393,14 +381,14 @@ namespace Gek
                 }
 
                 materialShaderMap.clear();
-                programManager.clear();
-                materialManager.clear();
-                shaderManager.clear();
-                filterManager.clear();
-                resourceManager.clear();
-                renderStateManager.clear();
-                depthStateManager.clear();
-                blendStateManager.clear();
+                programCache.clear();
+                materialCache.clear();
+                shaderCache.clear();
+                filterCache.clear();
+                resourceCache.clear();
+                renderStateCache.clear();
+                depthStateCache.clear();
+                blendStateCache.clear();
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -416,27 +404,27 @@ namespace Gek
 
             ResourceHandle getResourceHandle(const wchar_t *resourceName) const
             {
-				return resourceManager.getHandle(getHash(resourceName));
+				return resourceCache.getHandle(getHash(resourceName));
             }
 
             Engine::Shader * const getShader(ShaderHandle handle) const
             {
-                return shaderManager.getResource(handle);
+                return shaderCache.getResource(handle);
             }
 
             Plugin::Visual * const getVisual(VisualHandle handle) const
             {
-                return visualManager.getResource(handle);
+                return visualCache.getResource(handle);
             }
 
             Engine::Material * const getMaterial(MaterialHandle handle) const
             {
-                return materialManager.getResource(handle);
+                return materialCache.getResource(handle);
             }
 
             Video::Texture * const getTexture(ResourceHandle handle) const
             {
-                return dynamic_cast<Video::Texture *>(resourceManager.getResource(handle));
+                return dynamic_cast<Video::Texture *>(resourceCache.getResource(handle));
             }
 
             VisualHandle loadVisual(const wchar_t *visualName)
@@ -447,7 +435,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(visualName);
-                return visualManager.getHandle(hash, std::move(load));
+                return visualCache.getHandle(hash, std::move(load));
             }
 
             MaterialHandle loadMaterial(const wchar_t *materialName)
@@ -458,7 +446,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(materialName);
-                return materialManager.getHandle(hash, std::move(load));
+                return materialCache.getHandle(hash, std::move(load));
             }
 
             Engine::Filter * const getFilter(const wchar_t *filterName)
@@ -469,8 +457,8 @@ namespace Gek
                 };
 
                 auto hash = getHash(filterName);
-                ResourceHandle filter = filterManager.getHandle(hash, std::move(load));
-                return filterManager.getResource(filter);
+                ResourceHandle filter = filterCache.getHandle(hash, std::move(load));
+                return filterCache.getResource(filter);
             }
 
             Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
@@ -481,13 +469,13 @@ namespace Gek
                 };
 
                 auto hash = getHash(shaderName);
-                ShaderHandle shader = shaderManager.getHandle(hash, std::move(load));
+                ShaderHandle shader = shaderCache.getHandle(hash, std::move(load));
                 if (material)
                 {
                     materialShaderMap[material] = shader;
                 }
 
-                return shaderManager.getResource(shader);
+                return shaderCache.getResource(shader);
             }
 
             RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)
@@ -507,7 +495,7 @@ namespace Gek
                     renderState.scissorEnable,
                     renderState.multisampleEnable,
                     renderState.antialiasedLineEnable);
-                return renderStateManager.getHandle(hash, std::move(load));
+                return renderStateCache.getHandle(hash, std::move(load));
             }
 
             DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
@@ -531,7 +519,7 @@ namespace Gek
                     static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation),
                     static_cast<uint8_t>(depthState.stencilBackState.passOperation),
                     static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction));
-                return depthStateManager.getHandle(hash, std::move(load));
+                return depthStateCache.getHandle(hash, std::move(load));
             }
 
             BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
@@ -549,7 +537,7 @@ namespace Gek
                     static_cast<uint8_t>(blendState.alphaDestination),
                     static_cast<uint8_t>(blendState.alphaOperation),
                     blendState.writeMask);
-                return blendStateManager.getHandle(hash, std::move(load));
+                return blendStateCache.getHandle(hash, std::move(load));
             }
 
             BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
@@ -575,7 +563,7 @@ namespace Gek
                     }
                 }
 
-                return blendStateManager.getHandle(hash, std::move(load));
+                return blendStateCache.getHandle(hash, std::move(load));
             }
 
             ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
@@ -588,7 +576,8 @@ namespace Gek
                 };
 
                 auto hash = getHash(textureName);
-                return resourceManager.getHandle(hash, std::move(load));
+                auto parameters = getHash(format, width, height, depth, mipmaps, flags);
+                return resourceCache.getHandle(hash, std::move(load));
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -601,7 +590,8 @@ namespace Gek
                 };
 
                 auto hash = getHash(bufferName);
-                return resourceManager.getHandle(hash, std::move(load));
+                auto parameters = (staticData.empty() ? 0 : getHash(stride, count, type, flags));
+                return resourceCache.getHandle(hash, std::move(load));
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -614,7 +604,8 @@ namespace Gek
                 };
 
                 auto hash = getHash(bufferName);
-                return resourceManager.getHandle(hash, std::move(load));
+                auto parameters = (staticData.empty() ? 0 : getHash(format, count, type, flags));
+                return resourceCache.getHandle(hash, std::move(load));
             }
 
             Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
@@ -775,7 +766,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(textureName);
-                return resourceManager.getHandle(hash, std::move(load));
+                return resourceCache.getHandle(hash, std::move(load));
             }
 
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
@@ -786,7 +777,7 @@ namespace Gek
                 };
 
 				auto hash = getHash(pattern, parameters);
-                return resourceManager.getHandle(hash, std::move(load));
+                return resourceCache.getHandle(hash, std::move(load));
             }
 
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
@@ -813,7 +804,7 @@ namespace Gek
                     return program;
                 };
 
-                return programManager.getHandle(std::move(load));
+                return programCache.getHandle(std::move(load));
             }
 
             ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
@@ -840,14 +831,14 @@ namespace Gek
 					return program;
                 };
 
-                return programManager.getHandle(std::move(load));
+                return programCache.getHandle(std::move(load));
             }
 
             void mapBuffer(ResourceHandle bufferHandle, void **data)
             {
                 GEK_REQUIRE(data);
 
-                auto buffer = resourceManager.getResource(bufferHandle);
+                auto buffer = resourceCache.getResource(bufferHandle);
                 if (buffer == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -858,7 +849,7 @@ namespace Gek
 
             void unmapBuffer(ResourceHandle bufferHandle)
             {
-                auto buffer = resourceManager.getResource(bufferHandle);
+                auto buffer = resourceCache.getResource(bufferHandle);
                 if (buffer == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -871,7 +862,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto resource = resourceManager.getResource(resourceHandle);
+                auto resource = resourceCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -882,8 +873,8 @@ namespace Gek
 
             void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
-                auto source = resourceManager.getResource(sourceHandle);
-                auto destination = resourceManager.getResource(destinationHandle);
+                auto source = resourceCache.getResource(sourceHandle);
+                auto destination = resourceCache.getResource(destinationHandle);
                 if (source == nullptr || destination == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -896,7 +887,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto renderState = renderStateManager.getResource(renderStateHandle);
+                auto renderState = renderStateCache.getResource(renderStateHandle);
                 if (renderState == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -909,7 +900,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto depthState = depthStateManager.getResource(depthStateHandle);
+                auto depthState = depthStateCache.getResource(depthStateHandle);
                 if (depthState == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -922,7 +913,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto blendState = blendStateManager.getResource(blendStateHandle);
+                auto blendState = blendStateCache.getResource(blendStateHandle);
                 if (blendState == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -941,46 +932,46 @@ namespace Gek
                 setUnorderedAccessList(deviceContextPipeline, &resourceHandle, 1, stage);
             }
 
-            std::vector<Video::Object *> resourceCache;
+            std::vector<Video::Object *> setResourceCache;
             void setResourceList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
             {
                 GEK_REQUIRE(deviceContextPipeline);
 
-                resourceCache.resize(std::max(resourceCount, resourceCache.size()));
+                setResourceCache.resize(std::max(resourceCount, setResourceCache.size()));
                 for (uint32_t resource = 0; resource < resourceCount; resource++)
                 {
-                    resourceCache[resource] = (resourceHandleList ? resourceManager.getResource(resourceHandleList[resource]) : nullptr);
+                    setResourceCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
                 }
 
-                deviceContextPipeline->setResourceList(resourceCache.data(), resourceCount, firstStage);
+                deviceContextPipeline->setResourceList(setResourceCache.data(), resourceCount, firstStage);
             }
 
-            std::vector<Video::Object *> unorderedAccessCache;
+            std::vector<Video::Object *> setUnorderedAccessCache;
             void setUnorderedAccessList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
             {
                 GEK_REQUIRE(deviceContextPipeline);
 
-                unorderedAccessCache.resize(std::max(resourceCount, unorderedAccessCache.size()));
+                setUnorderedAccessCache.resize(std::max(resourceCount, setUnorderedAccessCache.size()));
                 for (uint32_t resource = 0; resource < resourceCount; resource++)
                 {
-                    unorderedAccessCache[resource] = (resourceHandleList ? resourceManager.getResource(resourceHandleList[resource]) : nullptr);
+                    setUnorderedAccessCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
                 }
 
-                deviceContextPipeline->setUnorderedAccessList(unorderedAccessCache.data(), resourceCount, firstStage);
+                deviceContextPipeline->setUnorderedAccessList(setUnorderedAccessCache.data(), resourceCount, firstStage);
             }
 
             void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage)
             {
                 GEK_REQUIRE(deviceContextPipeline);
 
-                deviceContextPipeline->setConstantBuffer((resourceHandle ? dynamic_cast<Video::Buffer *>(resourceManager.getResource(resourceHandle)) : nullptr), stage);
+                deviceContextPipeline->setConstantBuffer((resourceHandle ? dynamic_cast<Video::Buffer *>(resourceCache.getResource(resourceHandle)) : nullptr), stage);
             }
 
             void setProgram(Video::Device::Context::Pipeline *deviceContextPipeline, ProgramHandle programHandle)
             {
                 GEK_REQUIRE(deviceContextPipeline);
 
-                auto program = programManager.getResource(programHandle);
+                auto program = programCache.getResource(programHandle);
                 if (program == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -993,7 +984,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto resource = resourceManager.getResource(resourceHandle);
+                auto resource = resourceCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1006,7 +997,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto resource = resourceManager.getResource(resourceHandle);
+                auto resource = resourceCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1019,7 +1010,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto resource = resourceManager.getResource(resourceHandle);
+                auto resource = resourceCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1032,7 +1023,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto resource = resourceManager.getResource(resourceHandle);
+                auto resource = resourceCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1045,7 +1036,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto resource = resourceManager.getResource(resourceHandle);
+                auto resource = resourceCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1058,7 +1049,7 @@ namespace Gek
             {
                 GEK_REQUIRE(deviceContext);
 
-                auto depthBuffer = resourceManager.getResource(depthBufferHandle);
+                auto depthBuffer = resourceCache.getResource(depthBufferHandle);
                 if (depthBuffer == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1077,14 +1068,14 @@ namespace Gek
                 renderTargetCache.resize(std::max(renderTargetHandleCount, renderTargetCache.size()));
                 for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
                 {
-                    renderTargetCache[renderTarget] = (renderTargetHandleList ? dynamic_cast<Video::Target *>(resourceManager.getResource(renderTargetHandleList[renderTarget])) : nullptr);
+                    renderTargetCache[renderTarget] = (renderTargetHandleList ? dynamic_cast<Video::Target *>(resourceCache.getResource(renderTargetHandleList[renderTarget])) : nullptr);
                     if (renderTargetCache[renderTarget])
                     {
                         viewPortCache[renderTarget] = renderTargetCache[renderTarget]->getViewPort();
                     }
                 }
 
-                deviceContext->setRenderTargets(renderTargetCache.data(), renderTargetHandleCount, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
+                deviceContext->setRenderTargets(renderTargetCache.data(), renderTargetHandleCount, (depthBuffer ? resourceCache.getResource(*depthBuffer) : nullptr));
                 if (renderTargetHandleList)
                 {
                     deviceContext->setViewports(viewPortCache.data(), renderTargetHandleCount);
@@ -1101,7 +1092,7 @@ namespace Gek
                 auto backBuffer = device->getBackBuffer();
 
                 renderTargetCache[0] = backBuffer;
-                deviceContext->setRenderTargets(renderTargetCache.data(), 1, (depthBuffer ? resourceManager.getResource(*depthBuffer) : nullptr));
+                deviceContext->setRenderTargets(renderTargetCache.data(), 1, (depthBuffer ? resourceCache.getResource(*depthBuffer) : nullptr));
 
                 viewPortCache[0] = renderTargetCache[0]->getViewPort();
                 deviceContext->setViewports(viewPortCache.data(), 1);
