@@ -68,9 +68,9 @@ namespace Gek
             Video::Device *device;
             Engine::Resources *resources;
 
-            Video::BufferPtr filterConstantBuffer;
-
             String filterName;
+
+            Video::BufferPtr filterConstantBuffer;
 
             DepthStateHandle depthState;
             RenderStateHandle renderState;

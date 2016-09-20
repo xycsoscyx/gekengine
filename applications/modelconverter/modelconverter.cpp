@@ -1,3 +1,4 @@
+#define _CRT_NONSTDC_NO_DEPRECATE
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float3.h"
 #include "GEK\Math\Float4x4.h"

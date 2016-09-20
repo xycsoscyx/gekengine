@@ -309,6 +309,12 @@ namespace Gek
                 programCache.clear();
                 shaderCache.reload();
                 filterCache.reload();
+
+                auto backBuffer = device->getBackBuffer();
+                uint32_t width = backBuffer->getWidth();
+                uint32_t height = backBuffer->getHeight();
+                createTexture(L"screen", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
             }
 
             // ResourceRequester
@@ -356,6 +362,12 @@ namespace Gek
                 renderStateCache.clear();
                 depthStateCache.clear();
                 blendStateCache.clear();
+
+                auto backBuffer = device->getBackBuffer();
+                uint32_t width = backBuffer->getWidth();
+                uint32_t height = backBuffer->getHeight();
+                createTexture(L"screen", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
