@@ -1,3 +1,4 @@
+#define _CRT_NONSTDC_NO_DEPRECATE
 #include "GEK\Engine\Shader.h"
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\Evaluator.h"
@@ -206,6 +207,15 @@ namespace Gek
 
                 shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
                 shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
+
+                if (lightsPerPass > 0)
+                {
+                    lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                    lightConstantBuffer->setName(String::create(L"%v:lightConstantBuffer", shaderName));
+
+                    lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                    lightDataBuffer->setName(String::create(L"%v:lightDataBuffer", shaderName));
+                }
             }
 
             void reload(void)
@@ -383,12 +393,6 @@ namespace Gek
                             throw InvalidParameters();
                         }
 
-                        lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                        lightConstantBuffer->setName(String::create(L"%v:lightConstantBuffer", shaderName));
-
-                        lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                        lightDataBuffer->setName(String::create(L"%v:lightDataBuffer", shaderName));
-
                         globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
 
                         lightingData.format(
@@ -438,7 +442,7 @@ namespace Gek
                 resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
-                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(backBuffer->getWidth(), backBuffer->getHeight());
+                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(displayWidth, displayHeight);
 
                 std::unordered_map<String, String> resourceStructuresMap;
 
@@ -462,8 +466,8 @@ namespace Gek
                             throw InvalidParameters();
                         }
 
-                        uint32_t textureWidth = backBuffer->getWidth();
-                        uint32_t textureHeight = backBuffer->getHeight();
+                        uint32_t textureWidth = displayWidth;
+                        uint32_t textureHeight = displayHeight;
                         if (textureNode.attributes.count(L"size"))
                         {
                             Math::Float2 size = evaluate(globalDefinesMap, textureNode.attributes[L"size"], BindType::UInt2);
@@ -604,8 +608,8 @@ namespace Gek
                         {
                             pass.mode = Pass::Mode::Compute;
 
-                            pass.width = float(backBuffer->getWidth());
-                            pass.height = float(backBuffer->getHeight());
+                            pass.width = float(displayWidth);
+                            pass.height = float(displayHeight);
 
                             Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
                             pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);

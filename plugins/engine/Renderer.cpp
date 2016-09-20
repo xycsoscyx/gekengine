@@ -1,4 +1,5 @@
-﻿#include "GEK\Utility\String.h"
+﻿#define _CRT_NONSTDC_NO_DEPRECATE
+#include "GEK\Utility\String.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
@@ -515,8 +516,8 @@ namespace Gek
                                                             continue;
                                                         }
 
-                                                        visualEnabled = true;
                                                         visual->enable(deviceContext);
+                                                        visualEnabled = true;
                                                     }
 
                                                     if (currentMaterial != drawCall->material)
@@ -621,12 +622,7 @@ namespace Gek
             void onLoadBegin(void)
             {
                 GEK_REQUIRE(resources);
-
                 resources->clearLocal();
-				
-				auto backBuffer = device->getBackBuffer();
-                resources->createTexture(L"screen", Video::Format::R11G11B10_FLOAT, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
-                resources->createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, backBuffer->getWidth(), backBuffer->getHeight(), 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
             }
 
             void onLoadSucceeded(void)
