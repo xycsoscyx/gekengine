@@ -36,6 +36,8 @@ namespace Gek
                 virtual void clear(void) = 0;
             };
 
+            virtual void reload(void) = 0;
+
             virtual Pass::Iterator begin(Video::Device::Context *deviceContext) = 0;
         };
     }; // namespace Engine

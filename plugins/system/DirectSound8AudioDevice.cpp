@@ -133,6 +133,8 @@ namespace Gek
 			Device(Context *context, HWND window, String device)
 				: ContextRegistration(context)
 			{
+                throw Exception("TODO: Finish DirectSound8 Audio Device");
+
 				GEK_REQUIRE(window);
 
 				GUID deviceGUID = DSDEVID_DefaultPlayback;
@@ -254,10 +256,15 @@ namespace Gek
 				directSoundListener->SetRolloffFactor(factor, DS3D_DEFERRED);
 			}
 
-			CComPtr<IDirectSoundBuffer> loadFromFile(const wchar_t *fileName, uint32_t flags, GUID soundAlgorithm)
-			{
-				return nullptr;
-			}
+            Audio::BufferPtr loadBuffer(const wchar_t *fileName)
+            {
+                return nullptr;
+            }
+
+            Audio::SoundPtr createSound(void)
+            {
+                return nullptr;
+            }
 /*
 			Audio::EffectPtr loadEffect(const wchar_t *fileName)
 			{
@@ -345,6 +352,6 @@ namespace Gek
 */
 		};
 
-		//GEK_REGISTER_CONTEXT_USER(Device);
+		GEK_REGISTER_CONTEXT_USER(Device);
 	}; // namespace DirectSound8
 }; // namespace Gek

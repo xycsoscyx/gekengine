@@ -9,7 +9,7 @@
 
 namespace Gek
 {
-    namespace OpenGL4_5
+    namespace Vulkan
     {
         class CommandList
             : public Video::Object
@@ -858,6 +858,8 @@ namespace Gek
                 , fullScreen(fullScreen)
                 , format(format)
             {
+                throw Exception("TODO: Finish Vulkan Video Device");
+
                 GEK_REQUIRE(window);
 
                 RECT clientRectangle;
@@ -1089,5 +1091,5 @@ namespace Gek
         };
 
         GEK_REGISTER_CONTEXT_USER(Device);
-    }; // OpenGL4_5
+    }; // Vulkan
 }; // namespace Gek

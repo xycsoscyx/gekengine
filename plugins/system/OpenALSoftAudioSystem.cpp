@@ -51,6 +51,8 @@ namespace Gek
 				, openALDevice(nullptr)
 				, openALContext(nullptr)
             {
+                throw Exception("TODO: Finish OpenALSoft Audio Device");
+
                 GEK_REQUIRE(window);
 
 				openALDevice = alcOpenDevice(NULL);

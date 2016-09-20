@@ -54,6 +54,8 @@ namespace Gek
                 virtual bool prepare(void) = 0;
             };
 
+            virtual void reload(void) = 0;
+
             virtual uint32_t getPriority(void) = 0;
 
             virtual Material::DataPtr loadMaterialData(const Material::PassMap &passMap) = 0;

@@ -130,9 +130,8 @@ namespace Gek
             : public ResourceCache<HANDLE, TYPE>
         {
         private:
-            mutable std::mutex generalMutex;
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
-            concurrency::concurrent_unordered_map<std::size_t, std::size_t> requestedLoadParameters;
+            concurrency::concurrent_unordered_map<HANDLE, std::size_t> loadParameters;
 
         public:
             GeneralResourceCache(ResourceRequester *resources)
@@ -142,6 +141,7 @@ namespace Gek
 
             void clear(void)
             {
+                loadParameters.clear();
                 requestedLoadSet.clear();
                 ResourceCache::clear();
             }
@@ -149,41 +149,26 @@ namespace Gek
             HANDLE getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
-                std::lock_guard<std::mutex> lock(generalMutex);
-                if (requestedLoadSet.count(hash) > 0 && requestedLoadParameters[hash] == parameters)
-                {
-                    auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != resourceHandleMap.end())
-                    {
-                        handle = resourceSearch->second;
-                    }
-                }
-                else
-                {
-                    requestedLoadSet.insert(hash);
-                    requestedLoadParameters[hash] = parameters;
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
-                    resourceHandleMap[hash] = handle;
-                    resources->addRequest([this, handle, load = move(load)](void) -> void
-                    {
-                        auto &resource = resourceMap[handle];
-                        resource.set(load(handle));
-                    });
-                }
-
-                return handle;
-            }
-
-            HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
-            {
-                HANDLE handle;
-                std::lock_guard<std::mutex> lock(generalMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
                     if (resourceSearch != resourceHandleMap.end())
                     {
                         handle = resourceSearch->second;
+                        if (parameters > 0)
+                        {
+                            auto loadParametersSearch = loadParameters.find(handle);
+                            if (loadParametersSearch != loadParameters.end())
+                            {
+                                if (loadParametersSearch->second != parameters)
+                                {
+                                    resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
+                                    {
+                                        resource.set(load(handle));
+                                    });
+                                }
+                            }
+                        }
                     }
                 }
                 else
@@ -191,9 +176,9 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
-                    resources->addRequest([this, handle, load = move(load)](void) -> void
+                    loadParameters[handle] = parameters;
+                    resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
                     {
-                        auto &resource = resourceMap[handle];
                         resource.set(load(handle));
                     });
                 }
@@ -203,7 +188,6 @@ namespace Gek
 
             HANDLE getHandle(std::size_t hash) const
             {
-                std::lock_guard<std::mutex> lock(generalMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -246,8 +230,6 @@ namespace Gek
             : public ResourceCache<HANDLE, TYPE>
         {
         private:
-            mutable std::mutex reloadMutex;
-            concurrency::concurrent_unordered_map<HANDLE, std::function<TypePtr(HANDLE)>> resourceLoadMap;
             concurrency::concurrent_unordered_set<std::size_t> requestedLoadSet;
 
         public:
@@ -258,20 +240,18 @@ namespace Gek
 
             void reload(void)
             {
-                std::lock_guard<std::mutex> lock(reloadMutex);
-                for (auto &resource : resourceMap)
+                for (auto &resourceSearch : resourceMap)
                 {
-                    auto loadSearch = resourceLoadMap.find(resource.first);
-                    if (loadSearch != resourceLoadMap.end())
+                    auto resource = resourceSearch.second.get();
+                    if (resource)
                     {
-                        resource.second.set(loadSearch->second(resource.first));
+                        resource->reload();
                     }
                 }
             }
 
             void clear(void)
             {
-                resourceLoadMap.clear();
                 requestedLoadSet.clear();
                 ResourceCache::clear();
             }
@@ -279,7 +259,6 @@ namespace Gek
             HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
-                std::lock_guard<std::mutex> lock(reloadMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -293,8 +272,6 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
-
-                    resourceLoadMap[handle] = load;
                     auto &resource = resourceMap[handle];
                     resource.set(load(handle));
                 }
@@ -304,7 +281,6 @@ namespace Gek
 
             HANDLE getHandle(std::size_t hash) const
             {
-                std::lock_guard<std::mutex> lock(reloadMutex);
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
@@ -375,6 +351,7 @@ namespace Gek
             // Plugin::CoreListener
             void onResize(void)
             {
+                programCache.clear();
                 filterCache.reload();
                 shaderCache.reload();
             }
@@ -470,7 +447,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(visualName);
-                return visualCache.getHandle(hash, std::move(load));
+                return visualCache.getHandle(hash, 0, std::move(load));
             }
 
             MaterialHandle loadMaterial(const wchar_t *materialName)
@@ -481,7 +458,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(materialName);
-                return materialCache.getHandle(hash, std::move(load));
+                return materialCache.getHandle(hash, 0, std::move(load));
             }
 
             Engine::Filter * const getFilter(const wchar_t *filterName)
@@ -530,7 +507,7 @@ namespace Gek
                     renderState.scissorEnable,
                     renderState.multisampleEnable,
                     renderState.antialiasedLineEnable);
-                return renderStateCache.getHandle(hash, std::move(load));
+                return renderStateCache.getHandle(hash, 0, std::move(load));
             }
 
             DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
@@ -554,7 +531,7 @@ namespace Gek
                     static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation),
                     static_cast<uint8_t>(depthState.stencilBackState.passOperation),
                     static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction));
-                return depthStateCache.getHandle(hash, std::move(load));
+                return depthStateCache.getHandle(hash, 0, std::move(load));
             }
 
             BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
@@ -572,7 +549,7 @@ namespace Gek
                     static_cast<uint8_t>(blendState.alphaDestination),
                     static_cast<uint8_t>(blendState.alphaOperation),
                     blendState.writeMask);
-                return blendStateCache.getHandle(hash, std::move(load));
+                return blendStateCache.getHandle(hash, 0, std::move(load));
             }
 
             BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
@@ -598,7 +575,7 @@ namespace Gek
                     }
                 }
 
-                return blendStateCache.getHandle(hash, std::move(load));
+                return blendStateCache.getHandle(hash, 0, std::move(load));
             }
 
             ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
@@ -627,7 +604,7 @@ namespace Gek
                 auto hash = getHash(bufferName);
                 if (staticData.empty())
                 {
-                    return resourceCache.getHandle(hash, std::move(load));
+                    return resourceCache.getHandle(hash, 0, std::move(load));
                 }
                 else
                 {
@@ -648,7 +625,7 @@ namespace Gek
                 auto hash = getHash(bufferName);
                 if (staticData.empty())
                 {
-                    return resourceCache.getHandle(hash, std::move(load));
+                    return resourceCache.getHandle(hash, 0, std::move(load));
                 }
                 else
                 {
@@ -815,7 +792,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(textureName);
-                return resourceCache.getHandle(hash, std::move(load));
+                return resourceCache.getHandle(hash, 0, std::move(load));
             }
 
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
@@ -826,7 +803,7 @@ namespace Gek
                 };
 
 				auto hash = getHash(pattern, parameters);
-                return resourceCache.getHandle(hash, std::move(load));
+                return resourceCache.getHandle(hash, 0, std::move(load));
             }
 
             ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
