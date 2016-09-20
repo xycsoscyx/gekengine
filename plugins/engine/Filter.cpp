@@ -70,6 +70,8 @@ namespace Gek
 
             Video::BufferPtr filterConstantBuffer;
 
+            String filterName;
+
             DepthStateHandle depthState;
             RenderStateHandle renderState;
             std::list<PassData> passList;
@@ -79,10 +81,15 @@ namespace Gek
                 : ContextRegistration(context)
                 , device(device)
                 , resources(resources)
+                , filterName(filterName)
             {
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
+                reload();
+            }
 
+            void reload(void)
+            {
                 filterConstantBuffer = device->createBuffer(sizeof(FilterConstantData), 1, Video::BufferType::Constant, 0);
                 filterConstantBuffer->setName(String::create(L"%v:filterConstantBuffer", filterName));
 

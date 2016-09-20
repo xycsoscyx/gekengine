@@ -152,11 +152,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Direct3D11VideoDevice.cpp" />
+    <ClCompile Include="Direct3D12VideoDevice.cpp" />
     <ClCompile Include="DirectInput8InputSystem.cpp" />
     <ClCompile Include="DirectSound8AudioDevice.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="OpenALSoftAudioSystem.cpp" />
-    <ClCompile Include="OpenGL45VideoDevice.cpp" />
+    <ClCompile Include="OpenGLVideoDevice.cpp" />
+    <ClCompile Include="VulkanVideoDevice.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\DirectXTex\DirectXTex\DirectXTex_Desktop_2015.vcxproj">

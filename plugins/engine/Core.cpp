@@ -200,7 +200,7 @@ namespace Gek
                     throw InitializationFailed();
                 }
 
-                device = getContext()->createClass<Video::Device>(L"Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
+                device = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
@@ -378,8 +378,7 @@ namespace Gek
 
             bool update(void)
             {
-                Command command;
-                while (consoleCommandQueue.try_pop(command))
+                if (!consoleCommandQueue.empty())
                 {
                     bool isTimerPaused = timer.isPaused();
                     if (!isTimerPaused)
@@ -387,17 +386,21 @@ namespace Gek
                         timer.pause(true);
                     }
 
-                    auto commandSearch = consoleCommandsMap.find(command.function);
-                    if (commandSearch != consoleCommandsMap.end())
+                    Command command;
+                    while (consoleCommandQueue.try_pop(command))
                     {
-                        commandSearch->second(command.parameterList);
-                    }
+                        auto commandSearch = consoleCommandsMap.find(command.function);
+                        if (commandSearch != consoleCommandsMap.end())
+                        {
+                            commandSearch->second(command.parameterList);
+                        }
+                    };
 
                     if (!isTimerPaused)
                     {
                         timer.pause(false);
                     }
-                };
+                }
 
                 timer.update();
                 float frameTime = float(timer.getUpdateTime());

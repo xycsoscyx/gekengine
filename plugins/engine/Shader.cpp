@@ -175,6 +175,7 @@ namespace Gek
             Engine::Resources *resources;
             Plugin::Population *population;
 
+            String shaderName;
             uint32_t priority;
 
             Video::BufferPtr shaderConstantBuffer;
@@ -193,13 +194,18 @@ namespace Gek
                 , device(device)
                 , resources(resources)
                 , population(population)
+                , shaderName(shaderName)
                 , priority(0)
                 , lightsPerPass(0)
             {
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(population);
+                reload();
+            }
 
+            void reload(void)
+            {
 				auto backBuffer = device->getBackBuffer();
 
                 Xml::Node shaderNode = Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader");

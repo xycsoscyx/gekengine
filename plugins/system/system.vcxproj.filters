@@ -11,10 +11,16 @@
     <ClCompile Include="DirectSound8AudioDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenGL45VideoDevice.cpp">
+    <ClCompile Include="OpenALSoftAudioSystem.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="OpenALSoftAudioSystem.cpp">
+    <ClCompile Include="Direct3D12VideoDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanVideoDevice.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="OpenGLVideoDevice.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
