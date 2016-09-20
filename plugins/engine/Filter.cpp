@@ -85,13 +85,16 @@ namespace Gek
             {
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
+
                 reload();
+
+                filterConstantBuffer = device->createBuffer(sizeof(FilterConstantData), 1, Video::BufferType::Constant, 0);
+                filterConstantBuffer->setName(String::create(L"%v:filterConstantBuffer", filterName));
             }
 
             void reload(void)
             {
-                filterConstantBuffer = device->createBuffer(sizeof(FilterConstantData), 1, Video::BufferType::Constant, 0);
-                filterConstantBuffer->setName(String::create(L"%v:filterConstantBuffer", filterName));
+                passList.clear();
 
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());

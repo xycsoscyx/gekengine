@@ -117,6 +117,7 @@ namespace Gek
                             {
                                 if (loadParametersSearch->second != parameters)
                                 {
+                                    loadParametersSearch->second = parameters;
                                     resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
                                     {
                                         resource = load(handle);
@@ -306,8 +307,8 @@ namespace Gek
             void onResize(void)
             {
                 programCache.clear();
-                filterCache.reload();
                 shaderCache.reload();
+                filterCache.reload();
             }
 
             // ResourceRequester
