@@ -156,20 +156,20 @@ namespace Gek
             return replaced;
         }
 
-        void trimLeft(void)
+        void trimLeft(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
         {
-            erase(begin(), std::find_if(begin(), end(), [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); }));
+            erase(begin(), std::find_if(begin(), end(), checkElement));
         }
 
-        void trimRight(void)
+        void trimRight(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
         {
-            erase(std::find_if(rbegin(), rend(), [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); }).base(), end());
+            erase(std::find_if(rbegin(), rend(), checkElement).base(), end());
         }
 
-        void trim(void)
+        void trim(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
         {
-            trimLeft();
-            trimRight();
+            trimLeft(checkElement);
+            trimRight(checkElement);
         }
 
         void toLower(void)

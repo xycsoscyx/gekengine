@@ -101,9 +101,20 @@ namespace Gek
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
+        void createDirectory(const wchar_t *fileName)
+        {
+            auto directory = getDirectory(fileName);
+            if (!directory.empty())
+            {
+                createDirectory(directory);
+                CreateDirectory(directory, nullptr);
+            }
+        }
+
         void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
         {
-			HANDLE file = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+            createDirectory(fileName);
+            HANDLE file = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if (file == INVALID_HANDLE_VALUE)
 			{
 				throw FileNotFound();

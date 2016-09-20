@@ -1,6 +1,6 @@
-#include "GEKFilter"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
+#include <GEKGlobal.hlsl>
 
 [numthreads(1, 1, 1)]
 void mainComputeProgram(void)

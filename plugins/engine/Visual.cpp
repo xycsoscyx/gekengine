@@ -30,7 +30,7 @@ namespace Gek
             return Video::Format::Unknown;
         }
 
-        GEK_CONTEXT_USER(Visual, Video::Device *, String)
+        GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, String)
             , public Plugin::Visual
         {
         private:
@@ -40,11 +40,12 @@ namespace Gek
 			Video::ObjectPtr geometryProgram;
 
         public:
-            Visual(Context *context, Video::Device *device, String visualName)
+            Visual(Context *context, Video::Device *device, Engine::Resources *resources, String visualName)
                 : ContextRegistration(context)
                 , device(device)
             {
                 GEK_REQUIRE(device);
+                GEK_REQUIRE(resources);
 
                 Xml::Node visualNode = Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual");
 
@@ -123,77 +124,31 @@ namespace Gek
 					}
 				});
 
-				String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
 				if (!visualNode.findChild(L"vertex", [&](auto &vertexNode) -> void
 				{
-					String fileName(FileSystem::getFileName(rootProgramsDirectory, visualName, vertexNode.text).append(L".hlsl"));
-					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+					String engineData;
+					engineData.format(
+						L"struct InputVertex\r\n" \
+						L"{\r\n" \
+						L"%v" \
+						L"};\r\n" \
+						L"\r\n" \
+						L"struct OutputVertex\r\n" \
+						L"{\r\n" \
+						L"    float4 projected : SV_POSITION;\r\n" \
+						L"%v" \
+						L"};\r\n" \
+						L"\r\n" \
+						L"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
+						L"{\r\n" \
+						L"    outputVertex.projected = mul(Camera::projectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
+						L"    return outputVertex;\r\n" \
+						L"}\r\n", inputVertexData, outputVertexData);
 
-					std::vector<uint8_t> compiledProgram;
-					if (FileSystem::isFile(compiledFileName) && FileSystem::isFileNewer(compiledFileName, fileName))
-					{
-						FileSystem::load(compiledFileName, compiledProgram);
-					}
-					else
-					{
-						String engineData;
-						engineData.format(
-							L"struct InputVertex\r\n" \
-							L"{\r\n" \
-							L"%v" \
-							L"};\r\n" \
-							L"\r\n" \
-							L"struct OutputVertex\r\n" \
-							L"{\r\n" \
-							L"    float4 projected : SV_POSITION;\r\n" \
-							L"%v" \
-							L"};\r\n" \
-							L"\r\n" \
-							L"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
-							L"{\r\n" \
-							L"    outputVertex.projected = mul(Camera::projectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
-							L"    return outputVertex;\r\n" \
-							L"}\r\n", inputVertexData, outputVertexData);
-
-						auto onInclude = [engineData = move(engineData), directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
-						{
-							if (wcsicmp(includeName, L"GEKVisual") == 0)
-							{
-								data = engineData;
-								return true;
-							}
-
-							if (FileSystem::isFile(includeName))
-							{
-								FileSystem::load(includeName, data);
-								return true;
-							}
-
-							String localFileName(FileSystem::getFileName(directory, includeName));
-							if (FileSystem::isFile(localFileName))
-							{
-								FileSystem::load(localFileName, data);
-								return true;
-							}
-
-							String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
-							if (FileSystem::isFile(rootFileName))
-							{
-								FileSystem::load(rootFileName, data);
-								return true;
-							}
-
-							return false;
-						};
-
-						String uncompiledProgram;
-						FileSystem::load(fileName, uncompiledProgram);
-						String entryFunction(vertexNode.getAttribute(L"entry"));
-						compiledProgram = device->compileVertexProgram(vertexNode.text, uncompiledProgram, entryFunction, onInclude);
-						FileSystem::save(compiledFileName, compiledProgram);
-					}
-
-					vertexProgram = device->createVertexProgram(compiledProgram.data(), compiledProgram.size());
+                    String entryFunction(vertexNode.getAttribute(L"entry"));
+                    String name(FileSystem::getFileName(visualName, vertexNode.text).append(L".hlsl"));
+                    auto compiledProgram = resources->compileProgram(Video::ProgramType::Vertex, name, entryFunction, engineData);
+					vertexProgram = device->createProgram(Video::ProgramType::Vertex, compiledProgram.data(), compiledProgram.size());
 					if (!elementList.empty())
 					{
 						inputLayout = device->createInputLayout(elementList, compiledProgram.data(), compiledProgram.size());
@@ -205,49 +160,10 @@ namespace Gek
 
 				visualNode.findChild(L"geometry", [&](auto &geometryNode) -> void
 				{
-					String fileName(FileSystem::getFileName(rootProgramsDirectory, visualName, geometryNode.text).append(L".hlsl"));
-					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
-
-					std::vector<uint8_t> compiledProgram;
-					if (FileSystem::isFile(compiledFileName) && FileSystem::isFileNewer(compiledFileName, fileName))
-					{
-						FileSystem::load(compiledFileName, compiledProgram);
-					}
-					else
-					{
-						auto onInclude = [directory = FileSystem::getDirectory(fileName), rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
-						{
-							if (FileSystem::isFile(includeName))
-							{
-								FileSystem::load(includeName, data);
-								return true;
-							}
-
-							String localFileName(FileSystem::getFileName(directory, includeName));
-							if (FileSystem::isFile(localFileName))
-							{
-								FileSystem::load(localFileName, data);
-								return true;
-							}
-
-							String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
-							if (FileSystem::isFile(rootFileName))
-							{
-								FileSystem::load(rootFileName, data);
-								return true;
-							}
-
-							return false;
-						};
-
-						String uncompiledProgram;
-						FileSystem::load(fileName, uncompiledProgram);
-						String entryFunction(geometryNode.getAttribute(L"entry"));
-						compiledProgram = device->compileGeometryProgram(geometryNode.text, uncompiledProgram, entryFunction, onInclude);
-						FileSystem::save(compiledFileName, compiledProgram);
-					}
-
-					geometryProgram = device->createGeometryProgram(compiledProgram.data(), compiledProgram.size());
+                    String entryFunction(geometryNode.getAttribute(L"entry"));
+                    String name(FileSystem::getFileName(visualName, geometryNode.text).append(L".hlsl"));
+                    auto compiledProgram = resources->compileProgram(Video::ProgramType::Geometry, name, entryFunction);
+                    geometryProgram = device->createProgram(Video::ProgramType::Geometry, compiledProgram.data(), compiledProgram.size());
 				});
 			}
 

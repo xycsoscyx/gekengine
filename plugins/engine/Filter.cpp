@@ -529,49 +529,9 @@ namespace Gek
                             L"\r\n", unorderedAccessData);
                     }
 
-                    String programEntryPoint(passNode.getAttribute(L"entry"));
-					String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
-					String programFileName(FileSystem::getFileName(rootProgramsDirectory, filterName, passNode.type).append(L".hlsl"));
-					String programDirectory(FileSystem::getDirectory(programFileName));
-					auto onInclude = [engineData = move(engineData), programDirectory, rootProgramsDirectory](const wchar_t *includeName, String &data) -> bool
-					{
-                        if (wcsicmp(includeName, L"GEKFilter") == 0)
-                        {
-                            data = engineData;
-                            return true;
-                        }
-
-						if (FileSystem::isFile(includeName))
-						{
-							FileSystem::load(includeName, data);
-							return true;
-						}
-
-						String localFileName(FileSystem::getFileName(programDirectory, includeName));
-						if (FileSystem::isFile(localFileName))
-						{
-							FileSystem::load(localFileName, data);
-							return true;
-						}
-
-						String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
-						if (FileSystem::isFile(rootFileName))
-						{
-							FileSystem::load(rootFileName, data);
-							return true;
-						}
-
-						return false;
-					};
-
-                    if (pass.mode == Pass::Mode::Compute)
-                    {
-                        pass.program = resources->loadComputeProgram(programFileName, programEntryPoint, std::move(onInclude));
-                    }
-                    else
-                    {
-                        pass.program = resources->loadPixelProgram(programFileName, programEntryPoint, std::move(onInclude));
-                    }
+                    String entryPoint(passNode.getAttribute(L"entry"));
+                    String name(FileSystem::getFileName(filterName, passNode.type).append(L".hlsl"));
+                    pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::ProgramType::Compute : Video::ProgramType::Pixel), name, entryPoint, engineData);
                 }
             }
 

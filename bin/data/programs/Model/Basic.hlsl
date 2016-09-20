@@ -1,6 +1,6 @@
-#include "GEKGlobal.hlsl"
+#include <GEKGlobal.hlsl>
 
-#include "GEKVisual"
+#include GEKEngine
 
 namespace Model
 {

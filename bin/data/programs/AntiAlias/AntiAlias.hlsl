@@ -1,7 +1,7 @@
-#include "GEKFilter"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 // https://github.com/mattdesl/glsl-fxaa
 //optimized version for mobile, where dependent 

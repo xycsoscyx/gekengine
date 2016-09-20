@@ -1,4 +1,4 @@
-#include "GEKGlobal.hlsl"
+#include <GEKGlobal.hlsl>
 #include "GEKtypes.h"
 #include "GEKutility.h"
 

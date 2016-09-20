@@ -1,7 +1,7 @@
-#include "GEKShader"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 static const int maxDiffusionPixels = 16;
 static const int diffusionStridePixels = 2;

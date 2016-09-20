@@ -443,7 +443,7 @@ namespace Gek
             {
                 auto load = [this, visualName = String(visualName)](VisualHandle) -> Plugin::VisualPtr
                 {
-                    return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, visualName);
+                    return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", device, (Engine::Resources *)this, visualName);
                 };
 
                 auto hash = getHash(visualName);
@@ -806,55 +806,119 @@ namespace Gek
                 return resourceCache.getHandle(hash, 0, std::move(load));
             }
 
-            ProgramHandle loadComputeProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
+            String getFullProgram(const wchar_t *name, const wchar_t *engineData)
             {
-                auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = onInclude](ProgramHandle) -> Video::ObjectPtr
+                String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
+                String fileName(FileSystem::getFileName(rootProgramsDirectory, name));
+                if (FileSystem::isFile(fileName))
                 {
-					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+                    String programDirectory(FileSystem::getDirectory(fileName));
 
-					std::vector<uint8_t> compiled;
-					if (false)//FileSystem::isFile(compiledFileName) && FileSystem::isFileNewer(compiledFileName, fileName))
-					{
-						FileSystem::load(compiledFileName, compiled);
-					}
-					else
-					{
-						String uncompiledProgram;
-						FileSystem::load(fileName, uncompiledProgram);
-						compiled = device->compileComputeProgram(fileName, uncompiledProgram, entryFunction, onInclude);
-						FileSystem::save(compiledFileName, compiled);
-					}
+                    String baseProgram;
+                    FileSystem::load(fileName, baseProgram);
+                    baseProgram.replace(L"\r\n", L"\r");
+                    baseProgram.replace(L"\n\r", L"\r");
+                    baseProgram.replace(L"\n", L"\r");
+                    auto programLines = baseProgram.split(L'\r');
 
-					auto program = device->createComputeProgram(compiled.data(), compiled.size());
-                    program->setName(String::create(L"%v:%v", fileName, entryFunction));
-                    return program;
-                };
+                    String uncompiledProgram;
+                    for (auto &line : programLines)
+                    {
+                        if (line.empty())
+                        {
+                            continue;
+                        }
+                        else if (line.find(L"#include") == 0)
+                        {
+                            String includeName(line.subString(8));
+                            includeName.trim();
 
-                return programCache.getHandle(std::move(load));
+                            if (includeName.empty())
+                            {
+                                throw InvalidIncludeName();
+                            }
+                            else
+                            {
+                                String includeData;
+                                if (includeName.compareNoCase(L"GEKEngine") == 0)
+                                {
+                                    includeData = engineData;
+                                }
+                                else
+                                {
+                                    auto includeType = includeName.at(0);
+                                    includeName = includeName.subString(1, includeName.length() - 2);
+                                    if (includeType == L'\"')
+                                    {
+                                        String localFileName(FileSystem::getFileName(programDirectory, includeName));
+                                        if (FileSystem::isFile(localFileName))
+                                        {
+                                            FileSystem::load(localFileName, includeData);
+                                        }
+                                    }
+                                    else if (includeType == L'<')
+                                    {
+                                        String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
+                                        if (FileSystem::isFile(rootFileName))
+                                        {
+                                            FileSystem::load(rootFileName, includeData);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        throw InvalidIncludeType();
+                                    }
+                                }
+
+                                uncompiledProgram.append(includeData);
+                                uncompiledProgram.append(L"\r\n");
+                            }
+                        }
+                        else
+                        {
+                            uncompiledProgram.append(line);
+                            uncompiledProgram.append(L"\r\n");
+                        }
+                    }
+
+                    return uncompiledProgram;
+                }
+                else
+                {
+                    return engineData;
+                }
             }
 
-            ProgramHandle loadPixelProgram(const wchar_t *fileName, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
+            std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
             {
-                auto load = [this, fileName = String(fileName), entryFunction = String(entryFunction), onInclude = onInclude](ProgramHandle) -> Video::ObjectPtr
-				{
-					String compiledFileName(FileSystem::replaceExtension(fileName, L".bin"));
+                auto uncompiledProgram = getFullProgram(name, engineData);
 
-					std::vector<uint8_t> compiled;
-					if (false)// FileSystem::isFile(compiledFileName) && FileSystem::isFileNewer(compiledFileName, fileName))
-					{
-						FileSystem::load(compiledFileName, compiled);
-					}
-					else
-					{
-						String uncompiledProgram;
-						FileSystem::load(fileName, uncompiledProgram);
-						compiled = device->compilePixelProgram(fileName, uncompiledProgram, entryFunction, onInclude);
-						FileSystem::save(compiledFileName, compiled);
-					}
+                auto hash = getHash(uncompiledProgram);
+                auto cache = String::create(L".%v.bin", hash);
+                String cacheFileName(FileSystem::replaceExtension(getContext()->getFileName(L"data\\cache", name), cache));
 
-					auto program = device->createPixelProgram(compiled.data(), compiled.size());
-					program->setName(String::create(L"%v:%v", fileName, entryFunction));
-					return program;
+                std::vector<uint8_t> compiledProgram;
+                if (FileSystem::isFile(cacheFileName))
+                {
+                    FileSystem::load(cacheFileName, compiledProgram);
+                }
+                else
+                {
+                    compiledProgram = device->compileProgram(programType, name, uncompiledProgram, entryFunction);
+                    FileSystem::save(cacheFileName, compiledProgram);
+                }
+
+                return compiledProgram;
+            }
+
+            ProgramHandle loadProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
+            {
+                auto load = [this, programType, name = String(name), entryFunction = String(entryFunction), engineData = String(engineData)](ProgramHandle) -> Video::ObjectPtr
+                {
+                    auto compiledProgram = compileProgram(programType, name, entryFunction, engineData);
+                    auto program = device->createProgram(programType, compiledProgram.data(), compiledProgram.size());
+                    program->setName(String::create(L"%v:%v", name, entryFunction));
+                    return program;
                 };
 
                 return programCache.getHandle(std::move(load));

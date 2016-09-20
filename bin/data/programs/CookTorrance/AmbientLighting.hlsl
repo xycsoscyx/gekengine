@@ -1,7 +1,7 @@
-#include "GEKShader"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {

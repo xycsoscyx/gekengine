@@ -1,7 +1,7 @@
-#include "GEKShader"
+#include GEKEngine
 
-#include "GEKGlobal.hlsl"
-#include "GEKUtility.hlsl"
+#include <GEKGlobal.hlsl>
+#include <GEKUtility.hlsl>
 
 // https://raw.githubusercontent.com/PeterTh/gedosato/master/pack/assets/dx9/SAO.fx
 #define HighQuality                 0

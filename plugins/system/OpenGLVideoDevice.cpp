@@ -1019,45 +1019,15 @@ namespace Gek
 				return std::make_shared<InputLayout>();
 			}
 
-			Video::ObjectPtr createComputeProgram(const void *compiledData, uint32_t compiledSize)
-			{
-				return std::make_shared<ComputeProgram>();
-			}
+            Video::ObjectPtr createProgram(Video::ProgramType programType, const void *compiledData, uint32_t compiledSize)
+            {
+                return std::make_shared<ComputeProgram>();
+            }
 
-			Video::ObjectPtr createVertexProgram(const void *compiledData, uint32_t compiledSize)
-			{
-				return std::make_shared<VertexProgram>();
-			}
-
-			Video::ObjectPtr createGeometryProgram(const void *compiledData, uint32_t compiledSize)
-			{
-				return std::make_shared<GeometryProgram>();
-			}
-
-			Video::ObjectPtr createPixelProgram(const void *compiledData, uint32_t compiledSize)
-			{
-				return std::make_shared<PixelProgram>();
-			}
-			
-			std::vector<uint8_t> compileComputeProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-			{
-				return std::vector<uint8_t>();
-			}
-
-			std::vector<uint8_t> compileVertexProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-			{
-				return std::vector<uint8_t>();
-			}
-
-			std::vector<uint8_t> compileGeometryProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-			{
-				return std::vector<uint8_t>();
-			}
-
-			std::vector<uint8_t> compilePixelProgram(const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction, const std::function<bool(const wchar_t *, String &)> &onInclude)
-			{
-				return std::vector<uint8_t>();
-			}
+            std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
+            {
+                return std::vector<uint8_t>();
+            }
 
             Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
             {
