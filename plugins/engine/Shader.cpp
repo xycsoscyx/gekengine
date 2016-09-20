@@ -201,12 +201,19 @@ namespace Gek
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(population);
+
                 reload();
+
+                shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+                shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
             }
 
             void reload(void)
             {
-				auto backBuffer = device->getBackBuffer();
+                blockList.clear();
+                forwardPassMap.clear();
+                
+                auto backBuffer = device->getBackBuffer();
 
                 Xml::Node shaderNode = Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader");
 
@@ -950,10 +957,6 @@ namespace Gek
                         pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::ProgramType::Compute : Video::ProgramType::Pixel), name, entryPoint, engineData);
                     }
                 }
-
-				shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
-				shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
-
 			}
 
             // Shader

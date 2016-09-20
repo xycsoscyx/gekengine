@@ -1666,7 +1666,7 @@ namespace Gek
                 CComQIPtr<ID3D11InfoQueue> d3dInfoQueue(d3dDebug);
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_CORRUPTION, true);
                 d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_ERROR, true);
-                d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
+                //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
                 defaultContext = std::make_shared<Context>(this, d3dDeviceContext);
