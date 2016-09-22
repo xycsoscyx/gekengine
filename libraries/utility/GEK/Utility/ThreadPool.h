@@ -6,123 +6,90 @@
 namespace Gek
 {
     // https://github.com/progschj/ThreadPool
-    class ThreadPool
+    class ThreadPool final
     {
+        using Lock = std::unique_lock<std::mutex>;
+
     private:
-        // need to keep track of threads so we can join them
+        // Keep track of threads, so they can be joined
         std::vector<std::thread> workerList;
 
-        // the task queue
-        std::queue<std::function<void(void)>> taskQueue;
+        // Task queue
+        std::queue<std::function<void()>> taskQueue;
 
-        // synchronization
-        std::mutex queue_mutex;
+        // Synchronization
+        std::mutex queueMutex;
         std::condition_variable condition;
         bool stop;
 
     public:
-        // the constructor just launches some amount of workerList
-        inline ThreadPool(size_t threadCount)
-            : stop(false)
-        {
-            for (size_t thread = 0; thread < threadCount; ++thread)
-            {
-                workerList.emplace_back([this]
-                {
-                    for (;;)
-                    {
-                        std::function<void()> task;
-                        if (true)
-                        {
-                            std::unique_lock<std::mutex> lock(this->queue_mutex);
-                            this->condition.wait(lock, [this]
-                            {
-                                return this->stop || !this->taskQueue.empty();
-                            });
+        // Launches specified number of worker threads
+        ThreadPool(size_t threadCount = 1);
+        ~ThreadPool(void);
 
-                            if (this->stop && this->taskQueue.empty())
-                            {
-                                return;
-                            }
+        // Not copyable
+        ThreadPool(const ThreadPool &) = delete;
+        ThreadPool& operator= (const ThreadPool &) = delete;
 
-                            task = std::move(this->taskQueue.front());
-                            this->taskQueue.pop();
-                        }
+        // Not moveable
+        ThreadPool(ThreadPool &&) = delete;
+        ThreadPool& operator= (const ThreadPool &&) = delete;
 
-                        task();
-                    }
-                });
-            }
-        }
+        // Clear pending taskQueue
+        void clear(void);
 
-        // the destructor joins all threads
-        inline ~ThreadPool(void)
-        {
-            if (true)
-            {
-                std::unique_lock<std::mutex> lock(queue_mutex);
-                stop = true;
-            }
-
-            condition.notify_all();
-            for (std::thread &worker : workerList)
-            {
-                worker.join();
-            }
-        }
-
-        void clear(void)
-        {
-            std::unique_lock<std::mutex> lock(queue_mutex);
-            while (!taskQueue.empty())
-            {
-                taskQueue.pop();
-            };
-        }
-
-        // add new work item to the pool
-        template<class FUNCTION, class... PARAMETERS>
+        // Enqueue task and return std::future<>
+        template<typename FUNCTION, typename... PARAMETERS>
         auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>
         {
-            using return_type = typename std::result_of<FUNCTION(PARAMETERS...)>::type;
-            auto task = std::make_shared<std::packaged_task<return_type()>>(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...));
-            std::future<return_type> future = task->get_future();
+            using ReturnType = typename std::result_of<FUNCTION(PARAMETERS...)>::type;
+            using PackagedTask = std::packaged_task<ReturnType()>;
+
+            auto task = std::make_shared<PackagedTask>(std::bind(std::forward<FUNCTION>(function), std::forward<Args>(arguments)...));
+            std::future<ReturnType> result = task->get_future();
+
             if(true)
             {
-                std::unique_lock<std::mutex> lock(queue_mutex);
+                Lock lock(queueMutex);
 
-                // don't allow enqueueing after stopping the pool
+                // Don't allow an enqueue after stopping
                 if (stop)
                 {
                     throw std::runtime_error("enqueue on stopped ThreadPool");
                 }
 
-                taskQueue.emplace([task](void)
+                // Push work back on the queue
+                taskQueue.emplace([task]()
                 {
                     (*task)();
                 });
             }
 
+              // Notify a thread that there is new work to perform
             condition.notify_one();
-            return future;
+            return result;
         }
 
-        // add new work item to the pool
-        void enqueue(std::function<void(void)> &&task)
+        // Enqueue task without requiring capture of std::future<>
+        // Note: Best not to let exceptions escape the function
+        template<typename FUNCTION, typename... PARAMETERS>
+        auto enqueueAndDetach(FUNCTION&& function, PARAMETERS&&... arguments) -> void
         {
             if(true)
             {
-                std::unique_lock<std::mutex> lock(queue_mutex);
+                Lock lock(queueMutex);
 
-                // don't allow enqueueing after stopping the pool
+                // Don't allow an enqueue after stopping
                 if (stop)
                 {
                     throw std::runtime_error("enqueue on stopped ThreadPool");
                 }
 
-                taskQueue.emplace(std::move(task));
+                // Push work back on the queue
+                taskQueue.emplace(std::bind(std::forward<FUNCTION>(function), std::forward<PARAMETERS>(arguments)...));
             }
 
+              // Notify a thread that there is new work to perform
             condition.notify_one();
         }
     };

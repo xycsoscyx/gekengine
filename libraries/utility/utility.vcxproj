@@ -23,6 +23,7 @@
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="ShuntingYard.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="XML.cpp" />
   </ItemGroup>

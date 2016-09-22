@@ -296,6 +296,7 @@ namespace Gek
 
             ~Resources(void)
             {
+                core->removeListener(this);
             }
 
             // Plugin::CoreListener
