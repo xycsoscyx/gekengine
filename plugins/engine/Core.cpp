@@ -704,19 +704,19 @@ namespace Gek
             {
             }
 
-            static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, LPVOID userData)
+            static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, void *userData)
             {
                 Core *core = reinterpret_cast<Core *>(userData);
                 return core->sciterHostCallback(notification);
             }
 
-            static BOOL CALLBACK sciterElementEventProc(LPVOID userData, HELEMENT element, UINT eventIdentifier, LPVOID parameters)
+            static BOOL CALLBACK sciterElementEventProc(void *userData, HELEMENT element, UINT eventIdentifier, void *parameters)
             {
                 Core *core = reinterpret_cast<Core *>(userData);
                 return core->sciterElementEventProc(element, eventIdentifier, parameters);
             }
 
-            static void CALLBACK sciterDebugOutput(LPVOID userData, UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
+            static void CALLBACK sciterDebugOutput(void *userData, UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
             {
                 Core *core = reinterpret_cast<Core *>(userData);
                 core->sciterDebugOutput(subsystem, severity, text, textSize);

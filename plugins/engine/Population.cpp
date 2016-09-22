@@ -22,10 +22,6 @@ namespace Gek
             std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> componentsMap;
 
         public:
-            ~Entity(void)
-            {
-            }
-
             void addComponent(Plugin::Component *component, std::unique_ptr<Plugin::Component::Data> &&data)
             {
                 componentsMap[component->getIdentifier()] = std::move(data);
@@ -210,9 +206,11 @@ namespace Gek
                             EntityDefinition &entityDefinition = prefabsMap[prefabNode.type];
                             for(auto &componentNode : prefabNode.children)
                             {
-                                auto &componentData = entityDefinition[componentNode.type];
-                                componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
+                                ComponentDefinition componentData;
+                                componentData.name = componentNode.type;
                                 componentData.value = componentNode.text;
+                                componentData.insert(componentNode.attributes.begin(), componentNode.attributes.end());
+                                entityDefinition.push_back(componentData);
                             }
                         }
 
@@ -228,16 +226,19 @@ namespace Gek
                             
                             for (auto &componentNode : entityNode.children)
                             {
-                                auto &componentData = entityDefinition[componentNode.type];
+                                ComponentDefinition componentData;
+                                componentData.name = componentNode.type;
+                                if (!componentNode.text.empty())
+                                {
+                                    componentData.value = componentNode.text;
+                                }
+
                                 for (auto &attribute : componentNode.attributes)
                                 {
                                     componentData[attribute.first] = attribute.second;
                                 }
 
-                                if (!componentNode.text.empty())
-                                {
-                                    componentData.value = componentNode.text;
-                                }
+                                entityDefinition.push_back(componentData);
                             }
 
                             createEntity(entityDefinition);
@@ -260,43 +261,42 @@ namespace Gek
             {
             }
 
-            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const String &entityName)
+            void addComponent(Plugin::Entity *baseEntity, const ComponentDefinition &componentData)
             {
-                entityList.push_back(entity);
-                sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get());
-                if (!entityName.empty())
+                auto componentNameSearch = componentNamesMap.find(componentData.name);
+                if (componentNameSearch != componentNamesMap.end())
                 {
-                    namedEntityMap[entityName] = entity.get();
+                    std::type_index componentIdentifier(componentNameSearch->second);
+                    auto componentSearch = componentsMap.find(componentIdentifier);
+                    if (componentSearch != componentsMap.end())
+                    {
+                        Plugin::Component *componentManager = componentSearch->second.get();
+                        auto component(componentManager->create(componentData));
+                        if (component)
+                        {
+                            auto entity = static_cast<Entity *>(baseEntity);
+                            entity->addComponent(componentManager, std::move(component));
+                        }
+                    }
                 }
-
-                return entity.get();
             }
 
             Plugin::Entity * createEntity(const EntityDefinition &entityDefinition)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
-                for (auto &componentInfo : entityDefinition)
+                for (auto &componentData : entityDefinition)
                 {
-                    auto &componentName = componentInfo.first;
-                    auto &componentData = componentInfo.second;
-                    auto componentNameSearch = componentNamesMap.find(componentName);
-                    if (componentNameSearch != componentNamesMap.end())
-                    {
-                        std::type_index componentIdentifier(componentNameSearch->second);
-                        auto componentSearch = componentsMap.find(componentIdentifier);
-                        if (componentSearch != componentsMap.end())
-                        {
-                            Plugin::Component *componentManager = componentSearch->second.get();
-                            auto component(componentManager->create(componentData));
-                            if (component)
-                            {
-                                entity->addComponent(componentManager, std::move(component));
-                            }
-                        }
-                    }
+                    addComponent(entity.get(), componentData);
                 }
 
-                return addEntity(entity, entityDefinition.name);
+                entityList.push_back(entity);
+                if (!entityDefinition.name.empty())
+                {
+                    namedEntityMap[entityDefinition.name] = entity.get();
+                }
+
+                sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get());
+                return entity.get();
             }
 
             void killEntity(Plugin::Entity *entity)

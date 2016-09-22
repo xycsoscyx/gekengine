@@ -11,12 +11,12 @@ namespace Gek
     {
         GEK_COMPONENT(Transform)
         {
-            LPVOID operator new(size_t size)
+            void *operator new(size_t size)
             {
                 return _mm_malloc(size * sizeof(Transform), 16);
             }
 
-            void operator delete(LPVOID data)
+            void operator delete(void *data)
             {
                 _mm_free(data);
             }

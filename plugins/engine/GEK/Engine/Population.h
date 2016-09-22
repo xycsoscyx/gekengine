@@ -4,11 +4,9 @@
 #include "GEK\Context\Context.h"
 #include "GEK\Context\Broadcaster.h"
 #include "GEK\Engine\Processor.h"
-#include <atlbase.h>
-#include <atlstr.h>
 #include <functional>
-#include <typeindex>
 #include <unordered_map>
+#include <typeindex>
 #include <vector>
 
 namespace Gek
@@ -49,11 +47,12 @@ namespace Gek
             struct ComponentDefinition
                 : public std::unordered_map<String, String>
             {
+                String name;
                 String value;
             };
 
             struct EntityDefinition
-                : public std::unordered_map<String, ComponentDefinition>
+                : public std::list<ComponentDefinition>
             {
                 String name;
             };

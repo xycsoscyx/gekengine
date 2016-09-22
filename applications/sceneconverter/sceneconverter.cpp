@@ -4,6 +4,7 @@
 #include "GEK\Utility\String.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Engine\Population.h"
+#include <Windows.h>
 
 #include <assimp/config.h>
 #include <assimp/cimport.h>

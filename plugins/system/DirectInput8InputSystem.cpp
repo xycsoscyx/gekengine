@@ -428,7 +428,7 @@ namespace Gek
 
                 this->window = window;
 
-                HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (LPVOID FAR *)&directInput, nullptr);
+                HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (void **)&directInput, nullptr);
                 if (FAILED(resultValue))
                 {
                     throw Input::CreationFailed();
@@ -436,7 +436,7 @@ namespace Gek
 
                 keyboardDevice = std::make_shared<Keyboard>(directInput, window);
                 mouseDevice = std::make_shared<Mouse>(directInput, window);
-                directInput->EnumDevices(DI8DEVCLASS_GAMECTRL, joystickEnumeration, LPVOID(this), DIEDFL_ATTACHEDONLY);
+                directInput->EnumDevices(DI8DEVCLASS_GAMECTRL, joystickEnumeration, (void *)this, DIEDFL_ATTACHEDONLY);
             }
 
             ~System(void)
