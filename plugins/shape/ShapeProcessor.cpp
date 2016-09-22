@@ -499,6 +499,7 @@ namespace Gek
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
+            loadPool.clear();
             shapeMap.clear();
             entityDataMap.clear();
         }

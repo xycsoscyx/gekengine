@@ -321,6 +321,7 @@ namespace Gek
             // Plugin::Resources
             void clearLocal(void)
             {
+                loadPool.clear();
                 materialShaderMap.clear();
                 programCache.clear();
                 materialCache.clear();
