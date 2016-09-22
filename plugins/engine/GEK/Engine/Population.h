@@ -55,6 +55,7 @@ namespace Gek
             struct EntityDefinition
                 : public std::unordered_map<String, ComponentDefinition>
             {
+                String name;
             };
 
             virtual float getWorldTime(void) const = 0;
@@ -65,7 +66,7 @@ namespace Gek
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName = nullptr) = 0;
+            virtual Plugin::Entity *createEntity(const EntityDefinition &entityDefinition) = 0;
             virtual void killEntity(Plugin::Entity *entity) = 0;
             virtual Plugin::Entity *getNamedEntity(const wchar_t *entityName) const = 0;
 

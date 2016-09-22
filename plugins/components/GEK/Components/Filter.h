@@ -1,12 +1,12 @@
 #pragma once
 
-#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Component.h"
 
 namespace Gek
 {
     namespace Components
     {
-        struct Filter
+        GEK_COMPONENT(Filter)
         {
             std::vector<String> list;
 

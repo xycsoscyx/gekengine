@@ -1,13 +1,13 @@
 #pragma once
 
 #include "GEK\Math\Color.h"
-#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Component.h"
 
 namespace Gek
 {
     namespace Components
     {
-        struct Color
+        GEK_COMPONENT(Color)
         {
             Math::Color value;
 

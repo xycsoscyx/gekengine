@@ -8,9 +8,8 @@
 #include "GEK\Engine\Processor.h"
 #include "GEK\Engine\Entity.h"
 #include "GEK\Engine\Component.h"
-#include <future>
-#include <map>
 #include <ppl.h>
+#include <map>
 
 namespace Gek
 {
@@ -20,20 +19,16 @@ namespace Gek
             : public Plugin::Entity
         {
         private:
-            std::unordered_map<std::type_index, std::pair<Plugin::Component *, void *>> componentsMap;
+            std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> componentsMap;
 
         public:
             ~Entity(void)
             {
-                for (auto &componentInfo : componentsMap)
-                {
-                    componentInfo.second.first->destroy(componentInfo.second.second);
-                }
             }
 
-            void addComponent(Plugin::Component *component, void *data)
+            void addComponent(Plugin::Component *component, std::unique_ptr<Plugin::Component::Data> &&data)
             {
-                componentsMap[component->getIdentifier()] = std::make_pair(component, data);
+                componentsMap[component->getIdentifier()] = std::move(data);
             }
 
             void removeComponent(const std::type_index &type)
@@ -41,7 +36,6 @@ namespace Gek
                 auto componentSearch = componentsMap.find(type);
                 if (componentSearch != componentsMap.end())
                 {
-                    componentSearch->second.first->destroy(componentSearch->second.second);
                     componentsMap.erase(componentSearch);
                 }
             }
@@ -52,7 +46,7 @@ namespace Gek
                 return (componentsMap.count(type) > 0);
             }
 
-			void *getComponent(const std::type_index &type)
+			Plugin::Component::Data *getComponent(const std::type_index &type)
 			{
 				auto componentSearch = componentsMap.find(type);
 				if (componentSearch == componentsMap.end())
@@ -60,10 +54,10 @@ namespace Gek
 					throw ComponentNotFound();
 				}
 
-				return componentSearch->second.second;
+				return componentSearch->second.get();
 			}
 
-			const void *getComponent(const std::type_index &type) const
+			const Plugin::Component::Data *getComponent(const std::type_index &type) const
 			{
 				auto componentSearch = componentsMap.find(type);
 				if (componentSearch == componentsMap.end())
@@ -71,7 +65,7 @@ namespace Gek
 					throw ComponentNotFound();
 				}
 
-				return componentSearch->second.second;
+				return componentSearch->second.get();
 			}
 		};
 
@@ -225,6 +219,7 @@ namespace Gek
                         for(auto &entityNode : worldNode.getChild(L"population").children)
                         {
                             EntityDefinition entityDefinition;
+                            entityDefinition.name = entityNode.getAttribute(L"name");
                             auto prefabSearch = prefabsMap.find(entityNode.getAttribute(L"prefab"));
                             if (prefabSearch != prefabsMap.end())
                             {
@@ -245,14 +240,7 @@ namespace Gek
                                 }
                             }
 
-                            if (entityNode.attributes.count(L"name"))
-                            {
-                                createEntity(entityDefinition, entityNode.getAttribute(L"name"));
-                            }
-                            else
-                            {
-                                createEntity(entityDefinition, nullptr);
-                            }
+                            createEntity(entityDefinition);
                         }
 
                         frameTime = 0.0f;
@@ -272,11 +260,11 @@ namespace Gek
             {
             }
 
-            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const wchar_t *entityName)
+            Plugin::Entity * addEntity(Plugin::EntityPtr entity, const String &entityName)
             {
                 entityList.push_back(entity);
                 sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get());
-                if (entityName)
+                if (!entityName.empty())
                 {
                     namedEntityMap[entityName] = entity.get();
                 }
@@ -284,7 +272,7 @@ namespace Gek
                 return entity.get();
             }
 
-            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition, const wchar_t *entityName)
+            Plugin::Entity * createEntity(const EntityDefinition &entityDefinition)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentInfo : entityDefinition)
@@ -299,16 +287,16 @@ namespace Gek
                         if (componentSearch != componentsMap.end())
                         {
                             Plugin::Component *componentManager = componentSearch->second.get();
-                            LPVOID component = componentManager->create(componentData);
+                            auto component(componentManager->create(componentData));
                             if (component)
                             {
-                                entity->addComponent(componentManager, component);
+                                entity->addComponent(componentManager, std::move(component));
                             }
                         }
                     }
                 }
 
-                return addEntity(entity, entityName);
+                return addEntity(entity, entityDefinition.name);
             }
 
             void killEntity(Plugin::Entity *entity)

@@ -18,7 +18,7 @@ namespace Gek
         static std::mt19937 mersineTwister(randomDevice());
         static std::uniform_real_distribution<float> random(-1.0f, 1.0f);
 
-        struct Spin
+        GEK_COMPONENT(Spin)
         {
             Math::Float3 torque;
 

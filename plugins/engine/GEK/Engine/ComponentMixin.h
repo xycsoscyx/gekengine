@@ -60,17 +60,11 @@ namespace Gek
                 return typeid(DATA);
             }
 
-            void *create(const Plugin::Population::ComponentDefinition &componentData)
+            std::unique_ptr<Data> create(const Plugin::Population::ComponentDefinition &componentData)
             {
-                DATA *data = new DATA();
+                auto data = std::make_unique<DATA>();
                 data->load(componentData);
                 return data;
-            }
-
-            void destroy(void *data)
-            {
-                GEK_REQUIRE(data);
-                delete static_cast<DATA *>(data);
             }
         };
     }; // namespace Plugin

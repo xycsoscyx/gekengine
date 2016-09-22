@@ -1,13 +1,13 @@
 #pragma once
 
-#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Component.h"
 #include "GEK\Shapes\Frustum.h"
 
 namespace Gek
 {
     namespace Components
     {
-        struct PointLight
+        GEK_COMPONENT(PointLight)
         {
             float range;
             float radius;
@@ -17,7 +17,7 @@ namespace Gek
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
 
-        struct SpotLight
+        GEK_COMPONENT(SpotLight)
         {
             float range;
             float radius;
@@ -30,7 +30,7 @@ namespace Gek
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
 
-        struct DirectionalLight
+        GEK_COMPONENT(DirectionalLight)
         {
             DirectionalLight(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;

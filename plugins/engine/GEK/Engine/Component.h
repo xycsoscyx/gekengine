@@ -6,17 +6,23 @@
 
 #pragma warning(disable:4503)
 
+#define GEK_COMPONENT(TYPE)         struct TYPE : public Plugin::Component::Data
+
 namespace Gek
 {
     namespace Plugin
     {
         GEK_INTERFACE(Component)
         {
+            struct Data
+            {
+                virtual ~Data(void) = default;
+            };
+
             virtual const wchar_t * const getName(void) const = 0;
             virtual std::type_index getIdentifier(void) const = 0;
 
-            virtual void *create(const Plugin::Population::ComponentDefinition &componentData) = 0;
-            virtual void destroy(void *data) = 0;
+            virtual std::unique_ptr<Data> create(const Plugin::Population::ComponentDefinition &componentData) = 0;
         };
     }; // namespace Plugin
 }; // namespace Gek

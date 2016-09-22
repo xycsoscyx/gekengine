@@ -1,13 +1,13 @@
 ﻿#pragma once
 
 #include "GEK\Math\Float3.h"
-#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Component.h"
 
 namespace Gek
 {
     namespace Components
     {
-        struct Model
+        GEK_COMPONENT(Model)
         {
             String name;
             String skin;
