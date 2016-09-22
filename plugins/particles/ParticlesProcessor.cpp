@@ -16,13 +16,10 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Color.h"
-#include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
-#include <concurrent_vector.h>
-#include <ppl.h>
 #include <functional>
 #include <random>
-#include <map>
+#include <ppl.h>
 
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());

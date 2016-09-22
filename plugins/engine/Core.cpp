@@ -9,10 +9,8 @@
 #include "GEK\Engine\Resources.h"
 #include "GEK\Engine\Renderer.h"
 #include "GEK\Context\ContextUser.h"
-#include <concurrent_unordered_map.h>
 #include <concurrent_queue.h>
 #include <ppl.h>
-#include <set>
 
 #include <sciter-x.h>
 #pragma comment(lib, "sciter32.lib")

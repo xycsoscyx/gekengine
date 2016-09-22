@@ -1,4 +1,5 @@
 ﻿#include "GEK\Utility\String.h"
+#include "GEK\Utility\ThreadPool.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Context\ContextUser.h"
@@ -86,8 +87,8 @@ namespace Gek
             std::unordered_map<String, std::type_index> componentNamesMap;
             std::unordered_map<std::type_index, Plugin::ComponentPtr> componentsMap;
 
-            std::mutex loadMutex;
-            std::future<void> loadThread;
+            ThreadPool loadPool;
+            std::future<bool> loaded;
 
             std::vector<Plugin::EntityPtr> entityList;
             std::unordered_map<String, Plugin::Entity *> namedEntityMap;
@@ -97,6 +98,7 @@ namespace Gek
             Population(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
+                , loadPool(1)
             {
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
@@ -117,11 +119,6 @@ namespace Gek
 
             ~Population(void)
             {
-                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-                {
-                    loadThread.wait();
-                }
-
                 namedEntityMap.clear();
                 killEntityList.clear();
                 entityList.clear();
@@ -143,7 +140,7 @@ namespace Gek
             void update(bool isBackgroundProcess, float frameTime)
             {
                 Plugin::PopulationStep::State state = Plugin::PopulationStep::State::Unknown;
-                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                if (loaded.valid() && loaded.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
                     state = Plugin::PopulationStep::State::Loading;
                 }
@@ -196,13 +193,12 @@ namespace Gek
 
             void load(const wchar_t *populationName)
             {
-                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                if (loaded.valid())
                 {
-                    loadThread.wait();
+                    loaded.get();
                 }
 
-                std::lock_guard<std::mutex> lock(loadMutex);
-                loadThread = std::async(std::launch::async, [this, populationName = String(populationName)](void) -> void
+                loaded = loadPool.enqueue([this, populationName = String(populationName)](void) -> bool
                 {
                     try
                     {
@@ -267,6 +263,8 @@ namespace Gek
                     {
                         sendShout(&Plugin::PopulationListener::onLoadFailed);
                     };
+
+                    return true;
                 });
             }
 

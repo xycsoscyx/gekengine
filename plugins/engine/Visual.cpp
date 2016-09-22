@@ -8,7 +8,6 @@
 #include "GEK\Engine\Visual.h"
 #include "ShaderFilter.h"
 #include <ppl.h>
-#include <set>
 
 namespace Gek
 {

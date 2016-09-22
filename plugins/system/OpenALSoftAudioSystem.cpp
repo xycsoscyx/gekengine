@@ -3,9 +3,9 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\AudioDevice.h"
 #include <Windows.h>
+
 #include <AL\al.h>
 #include <AL\alc.h>
-
 #pragma comment(lib, "Winmm.lib")
 
 namespace Gek
