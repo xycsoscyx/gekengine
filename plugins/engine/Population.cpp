@@ -90,6 +90,8 @@ namespace Gek
                 , core(core)
                 , loadPool(1)
             {
+                GEK_REQUIRE(core);
+
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className));
@@ -183,6 +185,8 @@ namespace Gek
 
             void load(const wchar_t *populationName)
             {
+                GEK_REQUIRE(populationName);
+
                 if (loaded.valid())
                 {
                     loaded.get();
@@ -259,10 +263,13 @@ namespace Gek
 
             void save(const wchar_t *populationName)
             {
+                GEK_REQUIRE(populationName);
             }
 
             void addComponent(Plugin::Entity *baseEntity, const ComponentDefinition &componentData)
             {
+                GEK_REQUIRE(baseEntity);
+
                 auto componentNameSearch = componentNamesMap.find(componentData.name);
                 if (componentNameSearch != componentNamesMap.end())
                 {
@@ -279,6 +286,14 @@ namespace Gek
                         }
                     }
                 }
+            }
+
+            void removeComponent(Plugin::Entity *baseEntity, const std::type_index &type)
+            {
+                GEK_REQUIRE(baseEntity);
+
+                auto entity = static_cast<Entity *>(baseEntity);
+                entity->removeComponent(type);
             }
 
             Plugin::Entity * createEntity(const EntityDefinition &entityDefinition)
@@ -301,12 +316,16 @@ namespace Gek
 
             void killEntity(Plugin::Entity *entity)
             {
+                GEK_REQUIRE(entity);
+
                 sendShout(&Plugin::PopulationListener::onEntityDestroyed, entity);
                 killEntityList.push_back(entity);
             }
 
             Plugin::Entity * getNamedEntity(const wchar_t *entityName) const
             {
+                GEK_REQUIRE(entityName);
+
                 auto namedSearch = namedEntityMap.find(entityName);
                 if (namedSearch != namedEntityMap.end())
                 {
