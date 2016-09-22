@@ -32,7 +32,7 @@ namespace Gek
 {
     namespace Components
     {
-        struct Particles
+        GEK_COMPONENT(Particles)
         {
 			String visual;
 			String material;

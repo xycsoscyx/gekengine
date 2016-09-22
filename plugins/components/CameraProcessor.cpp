@@ -15,7 +15,7 @@ namespace Gek
 {
     namespace Components
     {
-        struct FirstPersonCamera
+        GEK_COMPONENT(FirstPersonCamera)
         {
             float fieldOfView;
             float nearClip;

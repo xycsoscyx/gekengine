@@ -3,13 +3,13 @@
 #include "GEK\Math\Float3.h"
 #include "GEK\Math\Quaternion.h"
 #include "GEK\Math\Float4x4.h"
-#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Component.h"
 
 namespace Gek
 {
     namespace Components
     {
-        struct Transform
+        GEK_COMPONENT(Transform)
         {
             LPVOID operator new(size_t size)
             {

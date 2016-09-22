@@ -1,6 +1,7 @@
 #pragma once
 
 #include "GEK\Context\Context.h"
+#include "GEK\Engine\Component.h"
 #include <typeindex>
 #include <algorithm>
 
@@ -15,8 +16,8 @@ namespace Gek
 
             virtual bool hasComponent(const std::type_index &type) const = 0;
 
-			virtual void *getComponent(const std::type_index &type) = 0;
-			virtual const void *getComponent(const std::type_index &type) const = 0;
+			virtual Plugin::Component::Data *getComponent(const std::type_index &type) = 0;
+			virtual const Plugin::Component::Data *getComponent(const std::type_index &type) const = 0;
 
             template <typename CLASS>
             bool hasComponent(void) const

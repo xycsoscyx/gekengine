@@ -2,7 +2,7 @@
 
 #include "GEK\Math\Float3.h"
 #include "GEK\Context\Broadcaster.h"
-#include "GEK\Engine\Population.h"
+#include "GEK\Engine\Component.h"
 #include "GEK\Engine\Entity.h"
 #include <Newton.h>
 
@@ -10,7 +10,7 @@ namespace Gek
 {
     namespace Components
     {
-        struct Physical
+        GEK_COMPONENT(Physical)
         {
             float mass;
 
@@ -19,7 +19,7 @@ namespace Gek
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
 
-        struct Player
+        GEK_COMPONENT(Player)
         {
 			float height;
             float outerRadius;
