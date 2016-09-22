@@ -10,7 +10,6 @@ namespace Gek
         {
             std::vector<String> list;
 
-            Filter(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };

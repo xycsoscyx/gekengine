@@ -7,10 +7,6 @@ namespace Gek
 {
     namespace Components
     {
-        Color::Color(void)
-        {
-        }
-
         void Color::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, nullptr, value);

@@ -7,10 +7,6 @@ namespace Gek
 {
     namespace Components
     {
-        Filter::Filter(void)
-        {
-        }
-
         void Filter::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, nullptr, String::create(list, L','));

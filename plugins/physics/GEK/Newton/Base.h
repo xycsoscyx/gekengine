@@ -14,7 +14,6 @@ namespace Gek
         {
             float mass;
 
-            Physical(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
@@ -26,7 +25,6 @@ namespace Gek
             float innerRadius;
             float stairStep;
 
-            Player(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };

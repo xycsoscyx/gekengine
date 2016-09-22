@@ -33,10 +33,6 @@ namespace Gek
 {
     namespace Components
     {
-        Model::Model(void)
-        {
-        }
-
         void Model::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, nullptr, name);

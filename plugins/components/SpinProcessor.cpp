@@ -22,17 +22,15 @@ namespace Gek
         {
             Math::Float3 torque;
 
-            Spin(void)
-                : torque(random(mersineTwister), random(mersineTwister), random(mersineTwister))
-            {
-            }
-
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
             }
 
             void load(const Plugin::Population::ComponentDefinition &componentData)
             {
+                torque.x = random(mersineTwister);
+                torque.y = random(mersineTwister);
+                torque.z = random(mersineTwister);
             }
         };
     }; // namespace Components

@@ -381,10 +381,6 @@ namespace Gek
 
     namespace Components
     {
-        Shape::Shape(void)
-        {
-        }
-
         void Shape::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, nullptr, type);

@@ -8,10 +8,6 @@ namespace Gek
 {
     namespace Components
     {
-        PointLight::PointLight(void)
-        {
-        }
-
         void PointLight::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, L"range", range);
@@ -22,10 +18,6 @@ namespace Gek
         {
             range = loadParameter(componentData, L"range", 0.0f);
             radius = loadParameter(componentData, L"radius", 0.0f);
-        }
-
-        SpotLight::SpotLight(void)
-        {
         }
 
         void SpotLight::save(Plugin::Population::ComponentDefinition &componentData) const
@@ -44,10 +36,6 @@ namespace Gek
             innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 0.0f) * 0.5f));
             outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 0.0f) * 0.5f));
             falloff = loadParameter(componentData, L"falloff", 0.0f);
-        }
-
-        DirectionalLight::DirectionalLight(void)
-        {
         }
 
         void DirectionalLight::save(Plugin::Population::ComponentDefinition &componentData) const
