@@ -5,7 +5,7 @@
 [numthreads(1, 1, 1)]
 void mainComputeProgram(void)
 {
-    float width, height, mipMapCount;
+    uint width, height, mipMapCount;
     Resources::luminanceBuffer.GetDimensions(0, width, height, mipMapCount);
 
     float averageLuminance = UnorderedAccess::averageLuminanceBuffer[0];

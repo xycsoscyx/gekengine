@@ -1,8 +1,9 @@
 ﻿#include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Shapes\OrientedBox.h"
-#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\ThreadPool.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Context\ContextUser.h"
@@ -423,38 +424,9 @@ namespace Gek
     public:
         struct Shape
         {
-            std::mutex mutex;
-            std::function<void(Shape &)> load;
-            std::shared_future<void> future;
-
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
             uint32_t indexCount;
-
-            Shape(void)
-                : indexCount(0)
-            {
-            }
-
-            Shape(const Shape &shape)
-                : load(shape.load)
-                , future(shape.future)
-                , vertexBuffer(shape.vertexBuffer)
-                , indexBuffer(shape.indexBuffer)
-                , indexCount(shape.indexCount)
-            {
-            }
-
-            bool valid(void)
-            {
-                std::lock_guard<std::mutex> lock(mutex);
-                if (!future.valid())
-                {
-                    future = Gek::asynchronous(load, std::ref(*this)).share();
-                }
-
-                return (future.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-            }
         };
 
         struct Data
@@ -487,6 +459,7 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
+        ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Shape> shapeMap;
         using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
@@ -503,6 +476,7 @@ namespace Gek
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
+            , loadPool(1)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(resources);
@@ -549,7 +523,7 @@ namespace Gek
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {
-                    pair.first->second.load = [this, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](Shape &shape) -> void
+                    loadPool.enqueue([this, &shape = pair.first->second, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](void) -> void
                     {
                         if (type.compareNoCase(L"sphere") == 0)
                         {
@@ -593,7 +567,7 @@ namespace Gek
                             shape.indexBuffer = resources->createBuffer(String::create(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
                             shape.indexCount = 36;
                         }
-                    };
+                    });
                 }
 
                 Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin));
@@ -657,7 +631,7 @@ namespace Gek
             concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
                 auto shape = visibleMap.first;
-                if (shape->valid() && shape->indexCount > 0)
+                if (shape->indexCount > 0)
                 {
                     concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                     {

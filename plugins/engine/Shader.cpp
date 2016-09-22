@@ -18,7 +18,6 @@
 #include "ShaderFilter.h"
 #include <concurrent_vector.h>
 #include <ppl.h>
-#include <set>
 
 namespace Gek
 {

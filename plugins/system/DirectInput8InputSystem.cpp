@@ -2,6 +2,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\InputSystem.h"
 #include <atlbase.h>
+
 #define DIRECTINPUT_VERSION 0x0800
 #include <dinput.h>
 #include <algorithm>

@@ -1,4 +1,5 @@
 ﻿#include "GEK\Utility\String.h"
+#include "GEK\Utility\ThreadPool.h"
 #include "GEK\Utility\ShuntingYard.h"
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
@@ -258,9 +259,7 @@ namespace Gek
             Plugin::Core *core;
             Video::Device *device;
 
-            std::mutex loadMutex;
-            std::future<void> loadThread;
-            concurrency::concurrent_queue<std::function<void(void)>> loadQueue;
+            ThreadPool loadPool;
 
             ProgramResourceCache<ProgramHandle, Video::Object> programCache;
             GeneralResourceCache<VisualHandle, Plugin::Visual> visualCache;
@@ -288,6 +287,7 @@ namespace Gek
                 , renderStateCache(this)
                 , depthStateCache(this)
                 , blendStateCache(this)
+                , loadPool(1)
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
@@ -296,11 +296,6 @@ namespace Gek
 
             ~Resources(void)
             {
-                loadQueue.clear();
-                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-                {
-                    loadThread.wait();
-                }
             }
 
             // Plugin::CoreListener
@@ -320,39 +315,12 @@ namespace Gek
             // ResourceRequester
             void addRequest(std::function<void(void)> &&load)
             {
-				loadQueue.push(std::move(load));
-                std::lock_guard<std::mutex> lock(loadMutex);
-                if (!loadThread.valid() || loadThread.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
-                {
-                    loadThread = Gek::asynchronous([this](void) -> void
-                    {
-                        CoInitialize(nullptr);
-                        std::function<void(void)> load;
-                        while (loadQueue.try_pop(load))
-                        {
-                            try
-                            {
-                                load();
-                            }
-                            catch (...)
-                            {
-                            };
-                        };
-
-                        CoUninitialize();
-                    });
-                }
+                loadPool.enqueue(load);
             }
 
             // Plugin::Resources
             void clearLocal(void)
             {
-                loadQueue.clear();
-                if (loadThread.valid() && loadThread.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
-                {
-                    loadThread.wait();
-                }
-
                 materialShaderMap.clear();
                 programCache.clear();
                 materialCache.clear();

@@ -1,8 +1,10 @@
-﻿#include "GEK\Math\Float4x4.h"
+﻿#define _CRT_NONSTDC_NO_DEPRECATE
+#include "GEK\Math\Float4x4.h"
 #include "GEK\Shapes\AlignedBox.h"
 #include "GEK\Shapes\OrientedBox.h"
-#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\String.h"
+#include "GEK\Utility\ThreadPool.h"
+#include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Allocator.h"
 #include "GEK\Context\ContextUser.h"
@@ -129,45 +131,8 @@ namespace Gek
 
         struct Model
         {
-            std::mutex mutex;
-            std::shared_future<void> loadBox;
-            std::shared_future<void> loadData;
-            std::function<void(Model &)> load;
-
-			std::atomic<bool> validated;
             Shapes::AlignedBox alignedBox;
             std::vector<Material> materialList;
-
-            Model(void)
-				: validated(false)
-            {
-            }
-
-            Model(const Model &model)
-				: validated(model.validated ? true : false)
-                , loadBox(model.loadBox)
-                , loadData(model.loadData)
-                , load(model.load)
-                , alignedBox(model.alignedBox)
-                , materialList(model.materialList)
-            {
-            }
-
-            bool valid(void)
-            {
-				if (validated)
-				{
-					std::lock_guard<std::mutex> lock(mutex);
-					if (!loadData.valid())
-					{
-						loadData = Gek::asynchronous(load, std::ref(*this)).share();
-					}
-
-					return (loadData.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready);
-				}
-
-				return false;
-            }
         };
 
         struct Data
@@ -200,6 +165,7 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
+        ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
         using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
@@ -216,6 +182,7 @@ namespace Gek
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
+            , loadPool(1)
         {
             GEK_REQUIRE(population);
             GEK_REQUIRE(resources);
@@ -271,7 +238,7 @@ namespace Gek
                 auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
                 if (pair.second)
                 {
-                    pair.first->second.loadBox = Gek::asynchronous([this, name = String(modelComponent.name), fileName, model = &pair.first->second](void) -> void
+                    loadPool.enqueue([this, name = String(modelComponent.name), fileName, &model = pair.first->second](void) -> void
                     {
                         std::vector<uint8_t> buffer;
                         FileSystem::load(fileName, buffer, sizeof(Header));
@@ -292,36 +259,34 @@ namespace Gek
                             throw InvalidModelVersion();
                         }
 
-						model->alignedBox = header->boundingBox;
-						model->validated = true;
-                    }).share();
-
-                    pair.first->second.load = [this, name = String(modelComponent.name), fileName](Model &model) -> void
-                    {
-                        std::vector<uint8_t> buffer;
-                        FileSystem::load(fileName, buffer);
-
-                        Header *header = (Header *)buffer.data();
-                        model.materialList.resize(header->materialCount);
-                        uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
-                        for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+						model.alignedBox = header->boundingBox;
+                        loadPool.enqueue([this, &model, name, fileName](void) -> void
                         {
-                            Header::Material &materialHeader = header->materialList[materialIndex];
-                            Material &material = model.materialList[materialIndex];
-                            if (wcsicmp(materialHeader.name, L"skin") == 0)
-                            {
-                                material.skin = true;
-                            }
-                            else
-                            {
-                                material.material = resources->loadMaterial(materialHeader.name);
-                            }
+                            std::vector<uint8_t> buffer;
+                            FileSystem::load(fileName, buffer);
 
-                            material.indexCount = materialHeader.indexCount;
-                            material.indexBuffer = resources->createBuffer(String::create(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
-                            material.vertexBuffer = resources->createBuffer(String::create(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
-                        }
-                    };
+                            Header *header = (Header *)buffer.data();
+                            model.materialList.resize(header->materialCount);
+                            uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
+                            for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                            {
+                                Header::Material &materialHeader = header->materialList[materialIndex];
+                                Material &material = model.materialList[materialIndex];
+                                if (wcsicmp(materialHeader.name, L"skin") == 0)
+                                {
+                                    material.skin = true;
+                                }
+                                else
+                                {
+                                    material.material = resources->loadMaterial(materialHeader.name);
+                                }
+
+                                material.indexCount = materialHeader.indexCount;
+                                material.indexBuffer = resources->createBuffer(String::create(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
+                                material.vertexBuffer = resources->createBuffer(String::create(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
+                            }
+                        });
+                    });
                 }
 
                 MaterialHandle skinMaterial;
@@ -372,27 +337,24 @@ namespace Gek
                 const Data &data = entityDataPair.second;
                 Model &model = data.model;
 
-                if (model.loadBox.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+                const auto &transformComponent = entity->getComponent<Components::Transform>();
+                Math::Float4x4 matrix(transformComponent.getMatrix());
+
+                Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
+                orientedBox.halfsize *= transformComponent.scale;
+
+                if (viewFrustum.isVisible(orientedBox))
                 {
-                    const auto &transformComponent = entity->getComponent<Components::Transform>();
-                    Math::Float4x4 matrix(transformComponent.getMatrix());
-
-                    Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
-                    orientedBox.halfsize *= transformComponent.scale;
-
-                    if (viewFrustum.isVisible(orientedBox))
-                    {
-                        auto &materialList = visibleMap[&model];
-                        auto &instanceList = materialList[data.skin];
-                        instanceList.push_back(Instance(matrix * viewMatrix));
-                    }
+                    auto &materialList = visibleMap[&model];
+                    auto &instanceList = materialList[data.skin];
+                    instanceList.push_back(Instance(matrix * viewMatrix));
                 }
             });
 
             concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
             {
                 auto model = visibleMap.first;
-                if (model->valid() && !model->materialList.empty())
+                if (!model->materialList.empty())
                 {
                     concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
                     {

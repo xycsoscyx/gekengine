@@ -16,9 +16,8 @@
 #include "GEK\Components\Transform.h"
 #include "GEK\Components\Filter.h"
 #include "GEK\Shapes\Sphere.h"
-#include <set>
-#include <ppl.h>
 #include <concurrent_vector.h>
+#include <ppl.h>
 
 namespace Gek
 {

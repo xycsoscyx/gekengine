@@ -8,7 +8,6 @@
 #include "GEK\Engine\Renderer.h"
 #include "GEK\Engine\Material.h"
 #include "ShaderFilter.h"
-#include <set>
 #include <ppl.h>
 
 namespace Gek

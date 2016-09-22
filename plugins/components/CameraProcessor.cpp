@@ -9,7 +9,6 @@
 #include "GEK\Math\Common.h"
 #include "GEK\Math\Float4x4.h"
 #include <unordered_map>
-#include <map>
 #include <ppl.h>
 
 namespace Gek

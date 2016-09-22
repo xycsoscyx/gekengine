@@ -6,10 +6,10 @@
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Components\Transform.h"
 #include "GEK\Newton\Base.h"
-#include <Newton.h>
 #include <algorithm>
 #include <memory>
-#include <stack>
+
+#include <Newton.h>
 
 namespace Gek
 {

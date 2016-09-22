@@ -15,12 +15,10 @@
 #include "GEK\Newton\Base.h"
 #include "GEK\Model\Base.h"
 #include "GEK\Shape\Base.h"
-#include <Newton.h>
-#include <memory>
-#include <map>
-#include <set>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
+
+#include <Newton.h>
 
 namespace Gek
 {
@@ -322,18 +320,20 @@ namespace Gek
 
             void onLoadSucceeded(void)
             {
-                GEK_REQUIRE(newtonStaticScene);
-
-                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
+                if (newtonStaticScene)
+                {
+                    NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                    newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+                    NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
+                }
             }
 
             void onLoadFailed(void)
             {
-                GEK_REQUIRE(newtonStaticScene);
-
-                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                if (newtonStaticScene)
+                {
+                    NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                }
             }
 
             void onEntityCreated(Plugin::Entity *entity)

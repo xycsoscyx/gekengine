@@ -3,6 +3,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\AudioDevice.h"
 #include <atlbase.h>
+
 #include <mmsystem.h>
 #define DIRECTSOUND_VERSION 0x0800
 #include <dsound.h>
