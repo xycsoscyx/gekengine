@@ -260,6 +260,7 @@ namespace Gek
             Video::Device *device;
 
             ThreadPool loadPool;
+            std::mutex shaderMutex;
 
             ProgramResourceCache<ProgramHandle, Video::Object> programCache;
             GeneralResourceCache<VisualHandle, Plugin::Visual> visualCache;
@@ -287,7 +288,7 @@ namespace Gek
                 , renderStateCache(this)
                 , depthStateCache(this)
                 , blendStateCache(this)
-                , loadPool(1)
+                , loadPool(2)
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
@@ -412,6 +413,7 @@ namespace Gek
 
             Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
+                std::unique_lock<std::mutex> lock(shaderMutex);
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName);
