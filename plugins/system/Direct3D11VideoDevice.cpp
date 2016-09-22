@@ -1843,7 +1843,7 @@ namespace Gek
                 GEK_REQUIRE(event);
 
                 uint32_t isEventSet = 0;
-                if (FAILED(d3dDeviceContext->GetData(dynamic_cast<Event *>(event)->d3dQuery, (LPVOID)&isEventSet, sizeof(uint32_t), TRUE)))
+                if (FAILED(d3dDeviceContext->GetData(dynamic_cast<Event *>(event)->d3dQuery, (void *)&isEventSet, sizeof(uint32_t), TRUE)))
                 {
                     isEventSet = 0;
                 }

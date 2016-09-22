@@ -146,7 +146,7 @@ namespace Gek
 						String device;
 						GUID *deviceGUID;
 					} enumerationData = { device, &deviceGUID };
-					DirectSoundEnumerateW([](LPGUID deviceGUID, LPCWSTR description, LPCWSTR module, LPVOID context) -> BOOL
+					DirectSoundEnumerateW([](LPGUID deviceGUID, LPCWSTR description, LPCWSTR module, void *context) -> BOOL
 					{
 						EnumData *enumerationData = static_cast<EnumData *>(context);
 						if (enumerationData->device.compareNoCase(description) == 0)
