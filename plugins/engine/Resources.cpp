@@ -24,8 +24,6 @@
 #include <concurrent_queue.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
-#include <future>
-#include <set>
 
 namespace Gek
 {
@@ -260,7 +258,7 @@ namespace Gek
             Video::Device *device;
 
             ThreadPool loadPool;
-            std::mutex shaderMutex;
+            std::recursive_mutex shaderMutex;
 
             ProgramResourceCache<ProgramHandle, Video::Object> programCache;
             GeneralResourceCache<VisualHandle, Plugin::Visual> visualCache;
@@ -413,7 +411,7 @@ namespace Gek
 
             Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
-                std::unique_lock<std::mutex> lock(shaderMutex);
+                std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", device, (Engine::Resources *)this, core->getPopulation(), shaderName);
