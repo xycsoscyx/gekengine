@@ -15,10 +15,6 @@ namespace Gek
 {
     namespace Components
     {
-        Player::Player(void)
-        {
-        }
-
         void Player::save(Plugin::Population::ComponentDefinition &componentData) const
         {
 			saveParameter(componentData, L"height", height);

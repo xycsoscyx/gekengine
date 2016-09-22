@@ -41,10 +41,6 @@ namespace Gek
             float lifeExpectancy;
             uint32_t density;
 
-            Particles(void)
-            {
-            }
-
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
 				saveParameter(componentData, nullptr, material);

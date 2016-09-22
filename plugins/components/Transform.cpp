@@ -7,10 +7,6 @@ namespace Gek
 {
     namespace Components
     {
-        Transform::Transform(void)
-        {
-        }
-
         void Transform::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, L"position", position);

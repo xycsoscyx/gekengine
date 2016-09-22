@@ -8,10 +8,6 @@ namespace Gek
 {
     namespace Components
     {
-        Physical::Physical(void)
-        {
-        }
-
         void Physical::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, L"mass", mass);

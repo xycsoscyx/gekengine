@@ -22,10 +22,6 @@ namespace Gek
             float farClip;
             String name;
 
-            FirstPersonCamera(void)
-            {
-            }
-
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
                 saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));

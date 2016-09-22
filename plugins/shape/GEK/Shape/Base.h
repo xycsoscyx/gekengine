@@ -13,7 +13,6 @@ namespace Gek
             String parameters;
             String skin;
 
-            Shape(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };

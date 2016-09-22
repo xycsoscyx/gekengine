@@ -25,7 +25,6 @@ namespace Gek
             Math::Quaternion rotation;
             Math::Float3 scale;
 
-            Transform(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
 

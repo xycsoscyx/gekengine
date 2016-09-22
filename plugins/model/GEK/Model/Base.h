@@ -12,7 +12,6 @@ namespace Gek
             String name;
             String skin;
 
-            Model(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };

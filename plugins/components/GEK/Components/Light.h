@@ -12,7 +12,6 @@ namespace Gek
             float range;
             float radius;
 
-            PointLight(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
@@ -25,14 +24,12 @@ namespace Gek
             float outerAngle;
             float falloff;
 
-            SpotLight(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
 
         GEK_COMPONENT(DirectionalLight)
         {
-            DirectionalLight(void);
             void save(Plugin::Population::ComponentDefinition &componentData) const;
             void load(const Plugin::Population::ComponentDefinition &componentData);
         };
