@@ -144,6 +144,7 @@ namespace Gek
                     if (resourceSearch != resourceHandleMap.end())
                     {
                         handle = resourceSearch->second;
+                        loadParameters[handle] = 0;
                     }
                 }
                 else
@@ -151,13 +152,13 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle.assign(InterlockedIncrement(&nextIdentifier));
                     resourceHandleMap[hash] = handle;
+                    loadParameters[handle] = 0;
                     resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
                     {
                         resource = load(handle);
                     });
                 }
 
-                loadParameters.unsafe_erase(handle);
                 return handle;
             }
 
@@ -566,7 +567,7 @@ namespace Gek
                 }
                 else
                 {
-                    return resourceCache.getHandle(hash, std::move(load));
+                    return resourceCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
                 }
             }
 
@@ -587,7 +588,7 @@ namespace Gek
                 }
                 else
                 {
-                    return resourceCache.getHandle(hash, std::move(load));
+                    return resourceCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
                 }
             }
 
