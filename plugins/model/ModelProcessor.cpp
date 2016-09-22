@@ -205,6 +205,7 @@ namespace Gek
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
+            loadPool.clear();
             modelMap.clear();
             entityDataMap.clear();
         }

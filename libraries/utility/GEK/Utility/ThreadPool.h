@@ -71,6 +71,15 @@ namespace Gek
             }
         }
 
+        void clear(void)
+        {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            while (!taskQueue.empty())
+            {
+                taskQueue.pop();
+            };
+        }
+
         // add new work item to the pool
         template<class FUNCTION, class... PARAMETERS>
         auto enqueue(FUNCTION&& function, PARAMETERS&&... arguments) -> std::future<typename std::result_of<FUNCTION(PARAMETERS...)>::type>
