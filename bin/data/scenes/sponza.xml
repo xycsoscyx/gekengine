@@ -14,10 +14,10 @@
             <color>(random(0,1), random(0,1), random(0,1))</color>
         </basic_point_light>
 
-        <basic_particles>
+        <basic_explosion>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <particles visual="sprite" density="500" emitter="explosion" shape="gravity" life_expectancy="2">flames</particles>
-        </basic_particles>
+            <sprites_emitter density="500">explosion</sprites_emitter>
+        </basic_explosion>
     </prefabs>
 
   <population>
@@ -35,7 +35,7 @@
             <physical mass="250" />
         </entity>
 
-        <entity prefab="basic_particles">
+        <entity prefab="basic_explosion">
             <transform position="(0,5,0)" />
         </entity>
 

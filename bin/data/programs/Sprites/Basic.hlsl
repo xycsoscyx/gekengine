@@ -8,8 +8,11 @@ namespace Particles
     {
         float3 position;
         float3 velocity;
-		float age;
         float angle;
+        float torque;
+        float size;
+        float age;
+        float4 color;
     };
 
     StructuredBuffer<Instance> list : register(t0);
@@ -47,5 +50,6 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     outputVertex.normal = normalize(float3(normal.xy, -1.0));
     outputVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     outputVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
+    outputVertex.color = instanceData.color;
     return getProjection(outputVertex);
 }

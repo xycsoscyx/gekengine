@@ -356,7 +356,7 @@ namespace Gek
 			return data;
 		}
 
-		Float4x4 Float4x4::operator = (const Float4x4 &matrix)
+		Float4x4 &Float4x4::operator = (const Float4x4 &matrix)
 		{
 			rows[0] = matrix.rows[0];
 			rows[1] = matrix.rows[1];

@@ -55,7 +55,7 @@ namespace Gek
             operator const float *() const;
             operator float *();
 
-            Float3x2 operator = (const Float3x2 &matrix);
+            Float3x2 &operator = (const Float3x2 &matrix);
 
             void operator *= (const Float3x2 &matrix);
             Float3x2 operator * (const Float3x2 &matrix) const;

@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<material>
+    <shader name="WeightBlendedOIT">
+        <transparent>
+            <albedo flags="sRGB" file="Particles\\Explosion.Albedo" />
+        </transparent>
+    </shader>
+</material>
