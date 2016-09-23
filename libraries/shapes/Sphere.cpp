@@ -22,7 +22,7 @@ namespace Gek
         {
         }
 
-        Sphere Sphere::operator = (const Sphere &sphere)
+        Sphere &Sphere::operator = (const Sphere &sphere)
         {
             position = sphere.position;
             radius = sphere.radius;

@@ -156,7 +156,7 @@ namespace Gek
             (*this) = ((*this) * rotation);
         }
 
-        Quaternion Quaternion::operator = (const Quaternion &rotation)
+        Quaternion &Quaternion::operator = (const Quaternion &rotation)
         {
             simd = rotation.simd;
             return (*this);

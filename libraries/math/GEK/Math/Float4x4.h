@@ -103,7 +103,7 @@ namespace Gek
             operator const float *() const;
             operator float *();
 
-            Float4x4 operator = (const Float4x4 &matrix);
+            Float4x4 &operator = (const Float4x4 &matrix);
 
             void operator *= (const Float4x4 &matrix);
             Float4x4 operator * (const Float4x4 &matrix) const;

@@ -31,7 +31,7 @@ namespace Gek
         {
         }
 
-        AlignedBox AlignedBox::operator = (const AlignedBox &box)
+        AlignedBox &AlignedBox::operator = (const AlignedBox &box)
         {
             minimum = box.minimum;
             maximum = box.maximum;

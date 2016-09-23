@@ -30,7 +30,7 @@ namespace Gek
             this->matrix.translation += box.getCenter();
         }
 
-        OrientedBox OrientedBox::operator = (const OrientedBox &box)
+        OrientedBox &OrientedBox::operator = (const OrientedBox &box)
         {
             matrix = box.matrix;
             return (*this);

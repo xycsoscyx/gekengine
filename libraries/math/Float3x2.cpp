@@ -100,7 +100,7 @@ namespace Gek
                 _31 * matrix._12 + _32 * matrix._22 + matrix._32 });
         }
 
-        Float3x2 Float3x2::operator = (const Float3x2 &matrix)
+        Float3x2 &Float3x2::operator = (const Float3x2 &matrix)
         {
             rows[0] = matrix.rows[0];
             rows[1] = matrix.rows[1];

@@ -90,7 +90,7 @@ namespace Gek
             Float3 operator * (const Float3 &vector) const;
             Quaternion operator * (const Quaternion &rotation) const;
             void operator *= (const Quaternion &rotation);
-            Quaternion operator = (const Quaternion &rotation);
+            Quaternion &operator = (const Quaternion &rotation);
 
             inline void operator /= (float scalar)
             {

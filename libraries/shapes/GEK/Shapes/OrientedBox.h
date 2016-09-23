@@ -23,7 +23,7 @@ namespace Gek
             OrientedBox(const AlignedBox &box, const Math::Quaternion &rotation, const Math::Float3 &translation);
             OrientedBox(const AlignedBox &box, const Math::Float4x4 &matrix);
 
-            OrientedBox operator = (const OrientedBox &box);
+            OrientedBox &operator = (const OrientedBox &box);
 
             int getPosition(const Plane &plane) const;
         };

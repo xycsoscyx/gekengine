@@ -20,7 +20,7 @@ namespace Gek
             AlignedBox(float size);
             AlignedBox(const Math::Float3 &minimum, const Math::Float3 &maximum);
 
-            AlignedBox operator = (const AlignedBox &box);
+            AlignedBox &operator = (const AlignedBox &box);
 
             void extend(Math::Float3 &point);
 

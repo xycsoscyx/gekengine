@@ -23,7 +23,7 @@ namespace Gek
         {
         }
 
-        Ray Ray::operator = (const Ray &ray)
+        Ray &Ray::operator = (const Ray &ray)
         {
             origin = ray.origin;
             normal = ray.normal;

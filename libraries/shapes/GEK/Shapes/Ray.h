@@ -19,7 +19,7 @@ namespace Gek
             Ray(const Math::Float3 &origin, const Math::Float3 &normal);
             Ray(const Ray &ray);
 
-            Ray operator = (const Ray &ray);
+            Ray &operator = (const Ray &ray);
 
             float getDistance(const OrientedBox &orientedBox) const;
         };

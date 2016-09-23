@@ -149,7 +149,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="ParticlesProcessor.cpp" />
+    <ClCompile Include="SpritesProcessor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
