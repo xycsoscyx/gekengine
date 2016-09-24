@@ -13,6 +13,7 @@ namespace Particles
         float size;
         float age;
         float4 color;
+        float buffer[2];
     };
 
     StructuredBuffer<Instance> list : register(t0);
