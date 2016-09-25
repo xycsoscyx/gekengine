@@ -23,41 +23,41 @@
 
 static std::random_device randomDevice;
 static std::mt19937 mersineTwister(randomDevice());
-static std::uniform_real_distribution<float> emitterCreateAge(0.0f, 1.0f);
-static std::uniform_real_distribution<float> emitterSpawnAge(0.75f, 1.25f);
-static std::uniform_real_distribution<float> emitterForce(1.0f, 5.0f);
-static std::uniform_real_distribution<float> fullCircle(0.0f, (Gek::Math::Pi * 2.0f));
+
+static std::uniform_real_distribution<float> explosionSpawnDirection(-1.0f, 1.0f);
+static std::uniform_real_distribution<float> explosionSpawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
+static std::uniform_real_distribution<float> explosionSpawnTorque(-Gek::Math::Pi, Gek::Math::Pi);
 
 namespace Gek
 {
     namespace Components
     {
-        GEK_COMPONENT(Emitter)
+        GEK_COMPONENT(Explosion)
         {
-            String type;
             uint32_t density;
+            float strength;
 
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
-                saveParameter(componentData, nullptr, type);
                 saveParameter(componentData, L"density", density);
+                saveParameter(componentData, L"strength", strength);
             }
 
             void load(const Plugin::Population::ComponentDefinition &componentData)
             {
-                type = loadParameter(componentData, nullptr, String(L"explosion"));
-				density = loadParameter(componentData, L"density", 100);
+                density = loadParameter(componentData, L"density", 100);
+                strength = loadParameter(componentData, L"strength", 10.0f);
             }
         };
     }; // namespace Components
 
     namespace Sprites
     {
-        GEK_CONTEXT_USER(Emitter)
-            , public Plugin::ComponentMixin<Components::Emitter>
+        GEK_CONTEXT_USER(Explosion)
+            , public Plugin::ComponentMixin<Components::Explosion>
         {
         public:
-            Emitter(Context *context)
+            Explosion(Context *context)
                 : ContextRegistration(context)
             {
             }
@@ -65,7 +65,7 @@ namespace Gek
             // Plugin::Component
             const wchar_t * const getName(void) const
             {
-                return L"sprites_emitter";
+                return L"explosion";
             }
         };
 
@@ -85,7 +85,7 @@ namespace Gek
                 Math::Float3 velocity;
                 float angle;
                 float torque;
-                float size;
+                float halfSize;
                 float age;
                 Math::Color color;
                 float buffer[2];
@@ -178,41 +178,48 @@ namespace Gek
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(entity);
 
-                if (entity->hasComponents<Components::Emitter, Components::Transform>())
+                if (entity->hasComponent<Components::Transform>())
                 {
-                    const auto &emitterComponent = entity->getComponent<Components::Emitter>();
-                    const auto &transformComponent = entity->getComponent<Components::Transform>();
-                    auto &emitter = entityEmitterMap.insert(std::make_pair(entity, EmitterData())).first->second;
-                    emitter.spritesList.resize(emitterComponent.density);
-                    if (emitterComponent.type.compareNoCase(L"explosion") == 0)
+                    if (entity->hasComponent<Components::Explosion>())
                     {
+                        const auto &explosionComponent = entity->getComponent<Components::Explosion>();
+                        const auto &transformComponent = entity->getComponent<Components::Transform>();
+                        auto &emitter = entityEmitterMap.insert(std::make_pair(entity, EmitterData())).first->second;
+                        emitter.spritesList.resize(explosionComponent.density);
                         emitter.material = resources->loadMaterial(L"Particles\\Explosion");
                         concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
                         {
                             sprite.position = transformComponent.position;
-                            sprite.velocity.set(0.0f, 0.0f, 0.0f);
-                            sprite.angle = 0.0f;
-                            sprite.torque = 0.0f;
-                            sprite.size = 1.0f;
+                            sprite.velocity.x = explosionSpawnDirection(mersineTwister);
+                            sprite.velocity.y = explosionSpawnDirection(mersineTwister);
+                            sprite.velocity.z = explosionSpawnDirection(mersineTwister);
+                            sprite.velocity.normalize();
+                            sprite.velocity = 0.0f;
+                            sprite.angle = explosionSpawnAngle(mersineTwister);
+                            sprite.torque = explosionSpawnTorque(mersineTwister);
+                            sprite.halfSize = 0.5f;
                             sprite.age = 0.0f;
                             sprite.color.set(1.0f, 1.0f, 1.0f, 1.0f);
                         });
 
                         emitter.update = [](const Plugin::Entity *entity, std::vector<Sprite> &spritesList, float frameTime) -> Shapes::AlignedBox
                         {
+                            const auto &transformComponent = entity->getComponent<Components::Transform>();
                             combinable<std::min<float>> minimum[3] = { (+Math::Infinity), (+Math::Infinity), (+Math::Infinity) };
                             combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
-                            concurrency::parallel_for_each(spritesList.begin(), spritesList.end(), [&](Sprite &sprite) -> void
+                            concurrency::parallel_for_each(spritesList.begin(), spritesList.end(), [transformComponent, frameTime, &minimum, &maximum](Sprite &sprite) -> void
                             {
-                                const auto &transformComponent = entity->getComponent<Components::Transform>();
+                                static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
+
                                 sprite.position += (sprite.velocity * frameTime);
+                                sprite.velocity += (gravity * frameTime);
                                 sprite.angle += (sprite.torque * frameTime);
                                 sprite.age += frameTime;
 
                                 for (uint32_t axis = 0; axis < 3; axis++)
                                 {
-                                    minimum[axis].set(sprite.position[axis] - 1.0f);
-                                    maximum[axis].set(sprite.position[axis] + 1.0f);
+                                    minimum[axis].set(sprite.position[axis] - sprite.halfSize);
+                                    maximum[axis].set(sprite.position[axis] + sprite.halfSize);
                                 }
                             });
 
@@ -315,9 +322,9 @@ namespace Gek
                     propertiesSearch = emittersRange.second;
                 }
             }
-        }; // namespace Sprites
+        };
 
-        GEK_REGISTER_CONTEXT_USER(Emitter)
+        GEK_REGISTER_CONTEXT_USER(Explosion)
         GEK_REGISTER_CONTEXT_USER(EmitterProcessor)
-    };
+    }; // namespace Sprites
 }; // namespace Gek
