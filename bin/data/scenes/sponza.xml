@@ -16,7 +16,7 @@
 
         <basic_explosion>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" />
-            <sprites_emitter density="500">explosion</sprites_emitter>
+            <explosion density="500" strength="5.0" />
         </basic_explosion>
     </prefabs>
 

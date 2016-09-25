@@ -2,7 +2,7 @@
 
 #include GEKEngine
 
-namespace Particles
+namespace Sprites
 {
     struct Instance
     {
@@ -10,7 +10,7 @@ namespace Particles
         float3 velocity;
         float angle;
         float torque;
-        float size;
+        float halfSize;
         float age;
         float4 color;
         float buffer[2];
@@ -28,13 +28,12 @@ static const uint indexBuffer[6] =
 
 OutputVertex mainVertexProgram(InputVertex inputVertex)
 {
-    uint particleIndex = (inputVertex.vertexIndex / 6);
+    uint spriteIndex = (inputVertex.vertexIndex / 6);
     uint cornerIndex = indexBuffer[inputVertex.vertexIndex % 6];
-
-    Particles::Instance instanceData = Particles::list[particleIndex];
+    Sprites::Instance spriteData = Sprites::list[spriteIndex];
 
     float sinAngle, cosAngle;
-    sincos(instanceData.angle, sinAngle, cosAngle);
+    sincos(spriteData.angle, sinAngle, cosAngle);
     float3x3 angle = float3x3(cosAngle, sinAngle, 0.0,
                              -sinAngle, cosAngle, 0.0,
                               0.0, 0.0, 1.0);
@@ -44,13 +43,13 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     normal.x = edge.x = ((cornerIndex % 2) ? 1.0 : -1.0);
     normal.y = edge.y = ((cornerIndex & 2) ? -1.0 : 1.0);
     edge.z = 0.0f;
-	edge = mul(angle, edge);
+	edge = mul(angle, (edge * spriteData.halfSize));
 
     OutputVertex outputVertex;
-    outputVertex.position = (edge + mul(Camera::viewMatrix, float4(instanceData.position, 1.0)).xyz);
+    outputVertex.position = (edge + mul(Camera::viewMatrix, float4(spriteData.position, 1.0)).xyz);
     outputVertex.normal = normalize(float3(normal.xy, -1.0));
     outputVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     outputVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
-    outputVertex.color = instanceData.color;
+    outputVertex.color = spriteData.color;
     return getProjection(outputVertex);
 }
