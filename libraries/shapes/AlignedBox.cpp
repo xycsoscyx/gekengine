@@ -9,7 +9,7 @@ namespace Gek
     {
         AlignedBox::AlignedBox(void)
             : minimum(Math::Infinity)
-            , maximum(-Math::Infinity)
+            , maximum(Math::NegativeInfinity)
         {
         }
 

@@ -95,7 +95,7 @@ namespace Gek
             {
                 MaterialHandle material;
                 std::vector<Sprite> spritesList;
-                std::function<Shapes::AlignedBox(const Plugin::Entity *, std::vector<Sprite> &, float)> update;
+                std::function<void(const Plugin::Entity *, EmitterData &, float)> update;
             };
 
         private:
@@ -152,24 +152,57 @@ namespace Gek
             {
             }
 
-            template <float const &(*OPERATION)(float const &, float const &)>
-            struct combinable
-                : public concurrency::combinable<float>
+            struct combineMinimum
             {
-                combinable(float defaultValue)
-                    : concurrency::combinable<float>([&] {return defaultValue; })
+                concurrency::combinable<float> combinable;
+
+                combineMinimum(void)
+                    : combinable([&]
+                    {
+                        return Math::Infinity;
+                    })
                 {
                 }
 
                 void set(float value)
                 {
-                    auto &localValue = local();
-                    localValue = OPERATION(value, localValue);
+                    auto &localValue = combinable.local();
+                    localValue = std::min<float>(value, localValue);
                 }
 
                 float get(void)
                 {
-                    return combine([](float left, float right) { return OPERATION(left, right); });
+                    return combinable.combine([](float left, float right)
+                    {
+                        return std::min<float>(left, right);
+                    });
+                }
+            };
+
+            struct combineMaximum
+            {
+                concurrency::combinable<float> combinable;
+
+                combineMaximum(void)
+                    : combinable([&]
+                    {
+                        return Math::NegativeInfinity;
+                    })
+                {
+                }
+
+                void set(float value)
+                {
+                    auto &localValue = combinable.local();
+                    localValue = std::max<float>(value, localValue);
+                }
+
+                float get(void)
+                {
+                    return combinable.combine([](float left, float right)
+                    {
+                        return std::max<float>(left, right);
+                    });
                 }
             };
 
@@ -182,11 +215,41 @@ namespace Gek
                 {
                     if (entity->hasComponent<Components::Explosion>())
                     {
+                        static const auto explosionUpdate = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
+                        {
+                            combineMinimum minimum[3];
+                            combineMaximum maximum[3];
+                            const auto &transformComponent = entity->getComponent<Components::Transform>();
+                            concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, transformComponent, frameTime, &minimum, &maximum](Sprite &sprite) -> void
+                            {
+                                static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
+
+                                sprite.position += (sprite.velocity * frameTime);
+                                //sprite.velocity += (gravity * frameTime);
+                                sprite.angle += (sprite.torque * frameTime);
+                                sprite.age += frameTime;
+
+                                for (uint32_t axis = 0; axis < 3; axis++)
+                                {
+                                    minimum[axis].set(sprite.position[axis] - sprite.halfSize);
+                                    maximum[axis].set(sprite.position[axis] + sprite.halfSize);
+                                }
+                            });
+
+                            emitter.minimum.x = minimum[0].get();
+                            emitter.minimum.y = minimum[1].get();
+                            emitter.minimum.z = minimum[2].get();
+                            emitter.maximum.x = maximum[0].get();
+                            emitter.maximum.y = maximum[1].get();
+                            emitter.maximum.z = maximum[2].get();
+                        };
+
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
                         auto &emitter = entityEmitterMap.insert(std::make_pair(entity, EmitterData())).first->second;
-                        emitter.spritesList.resize(explosionComponent.density);
                         emitter.material = resources->loadMaterial(L"Particles\\Explosion");
+                        emitter.update = explosionUpdate;
+                        emitter.spritesList.resize(explosionComponent.density);
                         concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
                         {
                             sprite.position = transformComponent.position;
@@ -201,31 +264,6 @@ namespace Gek
                             sprite.age = 0.0f;
                             sprite.color.set(1.0f, 1.0f, 1.0f, 1.0f);
                         });
-
-                        emitter.update = [](const Plugin::Entity *entity, std::vector<Sprite> &spritesList, float frameTime) -> Shapes::AlignedBox
-                        {
-                            const auto &transformComponent = entity->getComponent<Components::Transform>();
-                            combinable<std::min<float>> minimum[3] = { (+Math::Infinity), (+Math::Infinity), (+Math::Infinity) };
-                            combinable<std::max<float>> maximum[3] = { (-Math::Infinity), (-Math::Infinity), (-Math::Infinity) };
-                            concurrency::parallel_for_each(spritesList.begin(), spritesList.end(), [transformComponent, frameTime, &minimum, &maximum](Sprite &sprite) -> void
-                            {
-                                static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
-
-                                sprite.position += (sprite.velocity * frameTime);
-                                sprite.velocity += (gravity * frameTime);
-                                sprite.angle += (sprite.torque * frameTime);
-                                sprite.age += frameTime;
-
-                                for (uint32_t axis = 0; axis < 3; axis++)
-                                {
-                                    minimum[axis].set(sprite.position[axis] - sprite.halfSize);
-                                    maximum[axis].set(sprite.position[axis] + sprite.halfSize);
-                                }
-                            });
-
-                            return Shapes::AlignedBox(Math::Float3(minimum[0].get(), minimum[1].get(), minimum[2].get()),
-                                                      Math::Float3(maximum[0].get(), maximum[1].get(), maximum[2].get()));
-                        };
                     }
                 }
             }
@@ -251,7 +289,7 @@ namespace Gek
                     {
                         const Plugin::Entity *entity = entityEmitterPair.first;
                         EmitterData &emitter = entityEmitterPair.second;
-                        (Shapes::AlignedBox &)emitter = emitter.update(entity, emitter.spritesList, frameTime);
+                        emitter.update(entity, emitter, frameTime);
                     });
                 }
             }

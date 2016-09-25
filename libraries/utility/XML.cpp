@@ -207,7 +207,7 @@ namespace Gek
             
             setNodeData(rootNode, rootData);
 
-			xmlSaveFormatFileEnc(StringUTF8(fileName), document, "UTF-8", 4);
+			xmlSaveFormatFileEnc(StringUTF8(fileName), document, "UTF-8", 2);
         }
     };
 }; // namespace Gek
