@@ -2,7 +2,7 @@
 <material>
     <shader name="WeightBlendedOIT">
         <transparent>
-            <albedo flags="sRGB" file="Particles\\Explosion.Albedo" />
+            <albedo flags="sRGB" file="Sprites\\Explosion.Albedo" />
         </transparent>
     </shader>
 </material>
