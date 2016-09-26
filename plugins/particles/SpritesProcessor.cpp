@@ -21,13 +21,6 @@
 #include <random>
 #include <ppl.h>
 
-static std::random_device randomDevice;
-static std::mt19937 mersineTwister(randomDevice());
-
-static std::uniform_real_distribution<float> explosionSpawnDirection(-1.0f, 1.0f);
-static std::uniform_real_distribution<float> explosionSpawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
-static std::uniform_real_distribution<float> explosionSpawnTorque(-Gek::Math::Pi, Gek::Math::Pi);
-
 namespace Gek
 {
     namespace Components
@@ -77,6 +70,8 @@ namespace Gek
         {
         public:
             static const uint32_t SpritesBufferCount = 1000000;
+            static std::random_device randomDevice;
+            static std::mt19937 mersineTwister;
 
             __declspec(align(16))
             struct Sprite
@@ -88,7 +83,7 @@ namespace Gek
                 float halfSize;
                 float age;
                 Math::Color color;
-                float buffer[2];
+                Math::Float2 texScale;
             };
 
             struct EmitterData : public Shapes::AlignedBox
@@ -225,7 +220,7 @@ namespace Gek
                                 static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
 
                                 sprite.position += (sprite.velocity * frameTime);
-                                //sprite.velocity += (gravity * frameTime);
+                                sprite.velocity += (gravity * frameTime) * 0.001f;
                                 sprite.angle += (sprite.torque * frameTime);
                                 sprite.age += frameTime;
 
@@ -247,22 +242,29 @@ namespace Gek
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
                         auto &emitter = entityEmitterMap.insert(std::make_pair(entity, EmitterData())).first->second;
-                        emitter.material = resources->loadMaterial(L"Particles\\Explosion");
+                        emitter.material = resources->loadMaterial(L"Sprites\\Explosion");
                         emitter.update = explosionUpdate;
                         emitter.spritesList.resize(explosionComponent.density);
                         concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
                         {
+                            static const std::uniform_real_distribution<float> explosionSpawnDirection(-1.0f, 1.0f);
+                            static const std::uniform_real_distribution<float> explosionSpawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
+                            static const std::uniform_real_distribution<float> explosionSpawnTorque(-Gek::Math::Pi, Gek::Math::Pi);
+                            static const std::uniform_real_distribution<float> explosionSpawnStrength(0.5f, 1.1f);
+
                             sprite.position = transformComponent.position;
                             sprite.velocity.x = explosionSpawnDirection(mersineTwister);
                             sprite.velocity.y = explosionSpawnDirection(mersineTwister);
                             sprite.velocity.z = explosionSpawnDirection(mersineTwister);
-                            sprite.velocity.normalize();
-                            sprite.velocity = 0.0f;
+                            float strength = explosionSpawnStrength(mersineTwister);
+                            sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * strength * explosionComponent.strength);
                             sprite.angle = explosionSpawnAngle(mersineTwister);
                             sprite.torque = explosionSpawnTorque(mersineTwister);
-                            sprite.halfSize = 0.5f;
+                            sprite.halfSize = strength;
                             sprite.age = 0.0f;
                             sprite.color.set(1.0f, 1.0f, 1.0f, 1.0f);
+                            sprite.texScale.x = (explosionSpawnDirection(mersineTwister) < 0.0f ? -1.0f : 1.0f);
+                            sprite.texScale.y = (explosionSpawnDirection(mersineTwister) < 0.0f ? -1.0f : 1.0f);
                         });
                     }
                 }
@@ -361,6 +363,9 @@ namespace Gek
                 }
             }
         };
+
+        std::random_device EmitterProcessor::randomDevice;
+        std::mt19937 EmitterProcessor::mersineTwister(randomDevice());
 
         GEK_REGISTER_CONTEXT_USER(Explosion)
         GEK_REGISTER_CONTEXT_USER(EmitterProcessor)
