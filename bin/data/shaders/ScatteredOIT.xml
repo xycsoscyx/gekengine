@@ -4,7 +4,6 @@
         <position bind="float3" semantic="POSITION" />
         <texCoord bind="float2" semantic="TEXCOORD" />
         <normal bind="float3" semantic="NORMAL" />
-        <color bind="float4" semantic="COLOR" />
     </input>
 
     <material>
