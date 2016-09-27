@@ -80,12 +80,20 @@ namespace Gek
                 float halfSize;
                 float age;
                 float buffer[2];
+
+                Sprite(void)
+                    : halfSize(0.0f)
+                {
+                }
             };
 
-            struct EmitterData : public Shapes::AlignedBox
+            struct EmitterData
             {
+                Shapes::AlignedBox box;
                 MaterialHandle material;
                 std::vector<Sprite> spritesList;
+
+                uint32_t tail;
                 std::function<void(const Plugin::Entity *, EmitterData &, float)> update;
             };
 
@@ -204,22 +212,28 @@ namespace Gek
 
                 if (entity->hasComponent<Components::Transform>())
                 {
-                    static const auto explosion = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
+                    static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
+                    static const auto smoke = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
                     {
-                        static const auto update = [this](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
+                        static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
+                            auto &sprite = emitter.spritesList.front();
+                            emitter.spritesList[emitter.tail++] = sprite;
+                            if (emitter.tail >= emitter.spritesList.size())
+                            {
+                                emitter.tail = 1;
+                            }
+
+                            sprite.position += (sprite.velocity * frameTime);
+
                             combineMinimum minimum[3];
                             combineMaximum maximum[3];
-                            const auto &transformComponent = entity->getComponent<Components::Transform>();
-                            concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, transformComponent, frameTime, &minimum, &maximum](Sprite &sprite) -> void
+                            concurrency::parallel_for_each((emitter.spritesList.begin() + 1), emitter.spritesList.end(), [&emitter, frameTime, &minimum, &maximum](Sprite &sprite) -> void
                             {
-                                static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
-
-                                sprite.position += (sprite.velocity * frameTime);
-                                sprite.velocity += (gravity * frameTime);
-                                sprite.angle += (sprite.torque * frameTime);
                                 sprite.age += frameTime;
-
+                                sprite.halfSize += frameTime;
+                                sprite.angle += (sprite.torque * frameTime);
+                                //sprite.position -= (gravity * frameTime);
                                 for (uint32_t axis = 0; axis < 3; axis++)
                                 {
                                     minimum[axis].set(sprite.position[axis] - sprite.halfSize);
@@ -227,56 +241,59 @@ namespace Gek
                                 }
                             });
 
-                            emitter.minimum.x = minimum[0].get();
-                            emitter.minimum.y = minimum[1].get();
-                            emitter.minimum.z = minimum[2].get();
-                            emitter.maximum.x = maximum[0].get();
-                            emitter.maximum.y = maximum[1].get();
-                            emitter.maximum.z = maximum[2].get();
+                            emitter.box.minimum.x = minimum[0].get();
+                            emitter.box.minimum.y = minimum[1].get();
+                            emitter.box.minimum.z = minimum[2].get();
+                            emitter.box.maximum.x = maximum[0].get();
+                            emitter.box.maximum.y = maximum[1].get();
+                            emitter.box.maximum.z = maximum[2].get();
                         };
 
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
-                        emitter.material = resources->loadMaterial(L"Sprites\\Explosion");
-                        emitter.update = update;
-                        emitter.spritesList.resize(100);
-                        concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
-                        {
-                            static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
-                            static const std::uniform_real_distribution<float> spawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
-                            static const std::uniform_real_distribution<float> spawnTorque(-Gek::Math::Pi - 0.25f, Gek::Math::Pi * 0.25f);
-                            static const std::uniform_real_distribution<float> spawnStrength(0.8f, 1.1f);
+                        static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
+                        static const std::uniform_real_distribution<float> spawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
+                        static const std::uniform_real_distribution<float> spawnTorque(-Gek::Math::Pi + 0.25f, Gek::Math::Pi * 0.25f);
+                        static const std::uniform_real_distribution<float> spawnStrength(0.5f, 1.0f);
 
-                            sprite.position = transformComponent.position;
-                            sprite.velocity.x = spawnDirection(mersineTwister);
-                            sprite.velocity.y = spawnDirection(mersineTwister);
-                            sprite.velocity.z = spawnDirection(mersineTwister);
-                            float strength = spawnStrength(mersineTwister);
-                            sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * strength * explosionComponent.strength);
-                            sprite.angle = spawnAngle(mersineTwister);
-                            sprite.torque = spawnTorque(mersineTwister);
-                            sprite.halfSize = strength;
-                            sprite.age = 0.0f;
-                        });
+                        emitter.tail = 1;
+                        emitter.update = update;
+                        emitter.material = resources->loadMaterial(L"Sprites\\Smoke");
+
+                        emitter.spritesList.resize(1000);
+                        auto &sprite = emitter.spritesList.front();
+                        sprite.position = transformComponent.position;
+                        sprite.velocity.x = spawnDirection(mersineTwister);
+                        sprite.velocity.y = spawnDirection(mersineTwister);
+                        sprite.velocity.z = spawnDirection(mersineTwister);
+                        sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * spawnStrength(mersineTwister) * explosionComponent.strength);
+                        sprite.angle = spawnAngle(mersineTwister);
+                        sprite.torque = spawnTorque(mersineTwister);
+                        sprite.halfSize = 0.0f;
+                        sprite.age = 0.0f;
                     };
 
                     static const auto spark = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
                     {
-                        static const auto update = [this](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
+                        static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
+                            auto &sprite = emitter.spritesList.front();
+                            emitter.spritesList[emitter.tail++] = sprite;
+                            if (emitter.tail >= emitter.spritesList.size())
+                            {
+                                emitter.tail = 1;
+                            }
+
+                            sprite.position += (sprite.velocity * frameTime);
+                            sprite.velocity += (gravity * frameTime);
+
                             combineMinimum minimum[3];
                             combineMaximum maximum[3];
-                            const auto &transformComponent = entity->getComponent<Components::Transform>();
-                            concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, transformComponent, frameTime, &minimum, &maximum](Sprite &sprite) -> void
+                            concurrency::parallel_for_each((emitter.spritesList.begin() + 1), emitter.spritesList.end(), [&emitter, frameTime, &minimum, &maximum](Sprite &sprite) -> void
                             {
-                                static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
-
-                                sprite.position += (sprite.velocity * frameTime);
-                                sprite.velocity += (gravity * frameTime);
-                                sprite.angle += (sprite.torque * frameTime);
                                 sprite.age += frameTime;
-
+                                sprite.angle += (sprite.torque * frameTime);
                                 for (uint32_t axis = 0; axis < 3; axis++)
                                 {
                                     minimum[axis].set(sprite.position[axis] - sprite.halfSize);
@@ -284,46 +301,53 @@ namespace Gek
                                 }
                             });
 
-                            emitter.minimum.x = minimum[0].get();
-                            emitter.minimum.y = minimum[1].get();
-                            emitter.minimum.z = minimum[2].get();
-                            emitter.maximum.x = maximum[0].get();
-                            emitter.maximum.y = maximum[1].get();
-                            emitter.maximum.z = maximum[2].get();
+                            emitter.box.minimum.x = minimum[0].get();
+                            emitter.box.minimum.y = minimum[1].get();
+                            emitter.box.minimum.z = minimum[2].get();
+                            emitter.box.maximum.x = maximum[0].get();
+                            emitter.box.maximum.y = maximum[1].get();
+                            emitter.box.maximum.z = maximum[2].get();
                         };
 
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
-                        emitter.material = resources->loadMaterial(L"Sprites\\Sparks");
-                        emitter.update = update;
-                        emitter.spritesList.resize(25);
-                        concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
-                        {
-                            static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
-                            static const std::uniform_real_distribution<float> spawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
-                            static const std::uniform_real_distribution<float> spawnTorque(-Gek::Math::Pi, Gek::Math::Pi);
-                            static const std::uniform_real_distribution<float> spawnStrength(2.0f, 4.0f);
+                        static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
+                        static const std::uniform_real_distribution<float> spawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
+                        static const std::uniform_real_distribution<float> spawnTorque(-Gek::Math::Pi, Gek::Math::Pi);
+                        static const std::uniform_real_distribution<float> spawnStrength(1.0f, 2.0f);
 
-                            sprite.position = transformComponent.position;
-                            sprite.velocity.x = spawnDirection(mersineTwister);
-                            sprite.velocity.y = spawnDirection(mersineTwister);
-                            sprite.velocity.z = spawnDirection(mersineTwister);
-                            float strength = spawnStrength(mersineTwister);
-                            sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * strength * explosionComponent.strength);
-                            sprite.angle = spawnAngle(mersineTwister);
-                            sprite.torque = spawnTorque(mersineTwister);
-                            sprite.halfSize = 0.1f;
-                            sprite.age = 0.0f;
-                        });
+                        emitter.tail = 1;
+                        emitter.update = update;
+                        emitter.material = resources->loadMaterial(L"Sprites\\Spark");
+
+                        emitter.spritesList.resize(1000);
+                        auto &sprite = emitter.spritesList.front();
+                        sprite.position = transformComponent.position;
+                        sprite.velocity.x = spawnDirection(mersineTwister);
+                        sprite.velocity.y = spawnDirection(mersineTwister);
+                        sprite.velocity.z = spawnDirection(mersineTwister);
+                        sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * spawnStrength(mersineTwister) * explosionComponent.strength);
+                        sprite.angle = spawnAngle(mersineTwister);
+                        sprite.torque = spawnTorque(mersineTwister);
+                        sprite.halfSize = 0.1f;
+                        sprite.age = 0.0f;
                     };
 
                     if (entity->hasComponent<Components::Explosion>())
                     {
                         auto &entityEmitterList = entityEmitterMap[entity];
-                        entityEmitterList.resize(2);
-                        explosion(entity, entityEmitterList[0]);
-                        spark(entity, entityEmitterList[1]);
+
+                        entityEmitterList.resize(30);
+                        for (uint32_t index = 0; index < 20; index++)
+                        {
+                            smoke(entity, entityEmitterList[index]);
+                        }
+
+                        for (uint32_t index = 20; index < 30; index++)
+                        {
+                            spark(entity, entityEmitterList[index]);
+                        }
                     }
                 }
             }
@@ -410,7 +434,7 @@ namespace Gek
                 {
                     concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
                     {
-                        if (viewFrustum.isVisible(emitter))
+                        if (viewFrustum.isVisible(emitter.box))
                         {
                             visibleMap.insert(std::make_pair(emitter.material, &emitter));
                         }
