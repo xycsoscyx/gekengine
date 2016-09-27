@@ -12,8 +12,7 @@ namespace Sprite
         float torque;
         float halfSize;
         float age;
-        float4 color;
-        float2 texScale;
+        float buffer[2];
     };
 
     StructuredBuffer<Data> list : register(t0);
@@ -50,7 +49,5 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     outputVertex.normal = normalize(float3(normal.xy, -1.0));
     outputVertex.texCoord.x = ((cornerIndex % 2) ? 1.0 : 0.0);
     outputVertex.texCoord.y = ((cornerIndex & 2) ? 1.0 : 0.0);
-    outputVertex.texCoord *= spriteData.texScale;
-    outputVertex.color = spriteData.color;
     return getProjection(outputVertex);
 }

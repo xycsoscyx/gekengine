@@ -27,18 +27,15 @@ namespace Gek
     {
         GEK_COMPONENT(Explosion)
         {
-            uint32_t density;
             float strength;
 
             void save(Plugin::Population::ComponentDefinition &componentData) const
             {
-                saveParameter(componentData, L"density", density);
                 saveParameter(componentData, L"strength", strength);
             }
 
             void load(const Plugin::Population::ComponentDefinition &componentData)
             {
-                density = loadParameter(componentData, L"density", 100);
                 strength = loadParameter(componentData, L"strength", 10.0f);
             }
         };
@@ -82,8 +79,7 @@ namespace Gek
                 float torque;
                 float halfSize;
                 float age;
-                Math::Color color;
-                Math::Float2 texScale;
+                float buffer[2];
             };
 
             struct EmitterData : public Shapes::AlignedBox
@@ -244,7 +240,7 @@ namespace Gek
 
                         emitter.material = resources->loadMaterial(L"Sprites\\Explosion");
                         emitter.update = update;
-                        emitter.spritesList.resize(explosionComponent.density);
+                        emitter.spritesList.resize(100);
                         concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
                         {
                             static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
@@ -262,9 +258,6 @@ namespace Gek
                             sprite.torque = spawnTorque(mersineTwister);
                             sprite.halfSize = strength;
                             sprite.age = 0.0f;
-                            sprite.color.set(0.5f, 0.5f, 0.5f, 0.5f);
-                            sprite.texScale.x = (spawnDirection(mersineTwister) < 0.0f ? -1.0f : 1.0f);
-                            sprite.texScale.y = (spawnDirection(mersineTwister) < 0.0f ? -1.0f : 1.0f);
                         });
                     };
 
@@ -302,9 +295,9 @@ namespace Gek
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
-                        emitter.material = resources->loadMaterial(L"Sprites\\Spark");
+                        emitter.material = resources->loadMaterial(L"Sprites\\Sparks");
                         emitter.update = update;
-                        emitter.spritesList.resize(explosionComponent.density / 4);
+                        emitter.spritesList.resize(25);
                         concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&](Sprite &sprite) -> void
                         {
                             static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
@@ -322,9 +315,6 @@ namespace Gek
                             sprite.torque = spawnTorque(mersineTwister);
                             sprite.halfSize = 0.1f;
                             sprite.age = 0.0f;
-                            sprite.color.set(1.0f, 0.5f, 0.5f, 1.0f);
-                            sprite.texScale.x = (spawnDirection(mersineTwister) < 0.0f ? -1.0f : 1.0f);
-                            sprite.texScale.y = (spawnDirection(mersineTwister) < 0.0f ? -1.0f : 1.0f);
                         });
                     };
 
@@ -358,10 +348,10 @@ namespace Gek
                     concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
                     {
                         const Plugin::Entity *entity = entityEmitterPair.first;
-                        for (auto &emitter : entityEmitterPair.second)
+                        concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
                         {
                             emitter.update(entity, emitter, frameTime);
-                        }
+                        });
                     });
                 }
             }
@@ -418,13 +408,13 @@ namespace Gek
                 visibleMap.clear();
                 concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
                 {
-                    for (const auto &emitter : entityEmitterPair.second)
+                    concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
                     {
                         if (viewFrustum.isVisible(emitter))
                         {
                             visibleMap.insert(std::make_pair(emitter.material, &emitter));
                         }
-                    }
+                    });
                 });
 
                 for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )

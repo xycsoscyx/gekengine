@@ -12,7 +12,7 @@ namespace Settings
 // http://jcgt.org/published/0002/02/09/paper.pdf
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
-    float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord) * inputPixel.color;
+    float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     float reveal = albedo.a;
     float weight = albedo.a;
 
