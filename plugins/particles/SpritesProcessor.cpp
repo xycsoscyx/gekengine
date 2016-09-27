@@ -253,24 +253,28 @@ namespace Gek
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
                         static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
-                        static const std::uniform_real_distribution<float> spawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
-                        static const std::uniform_real_distribution<float> spawnTorque(-Gek::Math::Pi + 0.25f, Gek::Math::Pi * 0.25f);
+                        static const std::uniform_real_distribution<float> spawnAzimuthal(0.0f, (Gek::Math::Pi * 2.0f));
+                        static const std::uniform_real_distribution<float> spawnZenith(0.0f, 1.0f);
+                        static const std::uniform_real_distribution<float> spawnCircle(-Gek::Math::Pi, Gek::Math::Pi);
                         static const std::uniform_real_distribution<float> spawnStrength(0.5f, 1.0f);
 
                         emitter.tail = 1;
                         emitter.update = update;
                         emitter.material = resources->loadMaterial(L"Sprites\\Smoke");
-
                         emitter.spritesList.resize(1000);
+
+                        float theta = spawnAzimuthal(mersineTwister);
+                        float phi = acos(spawnDirection(mersineTwister));
+
                         auto &sprite = emitter.spritesList.front();
                         sprite.position = transformComponent.position;
-                        sprite.velocity.x = spawnDirection(mersineTwister);
-                        sprite.velocity.y = spawnDirection(mersineTwister);
-                        sprite.velocity.z = spawnDirection(mersineTwister);
-                        sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * spawnStrength(mersineTwister) * explosionComponent.strength);
-                        sprite.angle = spawnAngle(mersineTwister);
-                        sprite.torque = spawnTorque(mersineTwister);
-                        sprite.halfSize = 0.0f;
+                        sprite.velocity.x = std::sin(phi) * std::sin(theta);
+                        sprite.velocity.y = -std::sin(phi) * std::cos(theta);
+                        sprite.velocity.z = std::cos(phi);
+                        sprite.velocity *= (spawnStrength(mersineTwister) * explosionComponent.strength);
+                        sprite.angle = spawnCircle(mersineTwister);
+                        sprite.torque = spawnCircle(mersineTwister);
+                        sprite.halfSize = 0.1f;
                         sprite.age = 0.0f;
                     };
 
@@ -313,23 +317,27 @@ namespace Gek
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
                         static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
-                        static const std::uniform_real_distribution<float> spawnAngle(0.0f, (Gek::Math::Pi * 2.0f));
-                        static const std::uniform_real_distribution<float> spawnTorque(-Gek::Math::Pi, Gek::Math::Pi);
+                        static const std::uniform_real_distribution<float> spawnAzimuthal(0.0f, (Gek::Math::Pi * 2.0f));
+                        static const std::uniform_real_distribution<float> spawnZenith(0.0f, 1.0f);
+                        static const std::uniform_real_distribution<float> spawnCircle(-Gek::Math::Pi, Gek::Math::Pi);
                         static const std::uniform_real_distribution<float> spawnStrength(1.0f, 2.0f);
 
                         emitter.tail = 1;
                         emitter.update = update;
                         emitter.material = resources->loadMaterial(L"Sprites\\Spark");
-
                         emitter.spritesList.resize(1000);
+
+                        float theta = spawnAzimuthal(mersineTwister);
+                        float phi = acos(spawnDirection(mersineTwister));
+
                         auto &sprite = emitter.spritesList.front();
                         sprite.position = transformComponent.position;
-                        sprite.velocity.x = spawnDirection(mersineTwister);
-                        sprite.velocity.y = spawnDirection(mersineTwister);
-                        sprite.velocity.z = spawnDirection(mersineTwister);
-                        sprite.velocity *= ((1.0f / sprite.velocity.getLength()) * spawnStrength(mersineTwister) * explosionComponent.strength);
-                        sprite.angle = spawnAngle(mersineTwister);
-                        sprite.torque = spawnTorque(mersineTwister);
+                        sprite.velocity.x = std::sin(phi) * std::sin(theta);
+                        sprite.velocity.y = -std::sin(phi) * std::cos(theta);
+                        sprite.velocity.z = std::cos(phi);
+                        sprite.velocity *= (spawnStrength(mersineTwister) * explosionComponent.strength);
+                        sprite.angle = spawnCircle(mersineTwister);
+                        sprite.torque = spawnCircle(mersineTwister);
                         sprite.halfSize = 0.1f;
                         sprite.age = 0.0f;
                     };
