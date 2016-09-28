@@ -324,7 +324,6 @@ namespace Gek
                 {
                     NewtonSceneCollisionEndAddRemove(newtonStaticScene);
                     newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                    NewtonBodySetMassProperties(newtonStaticBody, 0.0f, newtonStaticScene);
                 }
             }
 

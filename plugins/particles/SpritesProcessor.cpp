@@ -79,11 +79,27 @@ namespace Gek
                 float torque;
                 float halfSize;
                 float age;
-                float buffer[2];
+                float life;
+                uint32_t frames;
 
                 Sprite(void)
                     : halfSize(0.0f)
+                    , age(0.0f)
+                    , life(0.0f)
+                    , frames(0)
                 {
+                }
+
+                void operator = (const Sprite &sprite)
+                {
+                    position = sprite.position;
+                    velocity = sprite.velocity;
+                    angle = sprite.angle;
+                    torque = sprite.torque;
+                    halfSize = sprite.halfSize;
+                    age = sprite.age;
+                    life = sprite.life;
+                    frames = sprite.frames;
                 }
             };
 
@@ -213,31 +229,41 @@ namespace Gek
                 if (entity->hasComponent<Components::Transform>())
                 {
                     static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
+                    static const std::uniform_real_distribution<float> spawnZeroTwoPi(0.0f, (Gek::Math::Pi * 2.0f));
+                    static const std::uniform_real_distribution<float> spawnMinMax(-1.0f, 1.0f);
                     static const auto smoke = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
                     {
                         static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
-                            auto &sprite = emitter.spritesList.front();
-                            emitter.spritesList[emitter.tail++] = sprite;
-                            if (emitter.tail >= emitter.spritesList.size())
+                            static const std::uniform_real_distribution<float> spawnExtra(0.0f, 10.0f);
+
+                            auto &head = emitter.spritesList.front();
+                            if (spawnExtra(mersineTwister) <= 1.0f)
                             {
-                                emitter.tail = 1;
+                                if (emitter.tail < emitter.spritesList.size())
+                                {
+                                    emitter.spritesList[emitter.tail++] = head;
+                                }
                             }
 
-                            sprite.position += (sprite.velocity * frameTime);
+                            head.position += (head.velocity * frameTime);
 
                             combineMinimum minimum[3];
                             combineMaximum maximum[3];
-                            concurrency::parallel_for_each((emitter.spritesList.begin() + 1), emitter.spritesList.end(), [&emitter, frameTime, &minimum, &maximum](Sprite &sprite) -> void
+                            concurrency::parallel_for_each(++emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, frameTime, &minimum, &maximum](Sprite &sprite) -> void
                             {
                                 sprite.age += frameTime;
-                                sprite.halfSize += frameTime;
-                                sprite.angle += (sprite.torque * frameTime);
-                                //sprite.position -= (gravity * frameTime);
-                                for (uint32_t axis = 0; axis < 3; axis++)
+                                if (sprite.age <= sprite.life)
                                 {
-                                    minimum[axis].set(sprite.position[axis] - sprite.halfSize);
-                                    maximum[axis].set(sprite.position[axis] + sprite.halfSize);
+                                    sprite.halfSize = ((sprite.age / sprite.life) * 1.0f);
+                                    sprite.angle += (sprite.torque * frameTime);
+                                    sprite.position += (sprite.velocity * frameTime * 0.01f);
+                                    sprite.position -= (gravity * frameTime * 0.01f);
+                                    for (uint32_t axis = 0; axis < 3; axis++)
+                                    {
+                                        minimum[axis].set(sprite.position[axis] - sprite.halfSize);
+                                        maximum[axis].set(sprite.position[axis] + sprite.halfSize);
+                                    }
                                 }
                             });
 
@@ -252,52 +278,53 @@ namespace Gek
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
-                        static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
-                        static const std::uniform_real_distribution<float> spawnAzimuthal(0.0f, (Gek::Math::Pi * 2.0f));
-                        static const std::uniform_real_distribution<float> spawnZenith(0.0f, 1.0f);
-                        static const std::uniform_real_distribution<float> spawnCircle(-Gek::Math::Pi, Gek::Math::Pi);
-                        static const std::uniform_real_distribution<float> spawnStrength(0.5f, 1.0f);
+                        static const std::uniform_real_distribution<float> spawnStrength(0.1f, 0.5f);
+                        static const std::uniform_real_distribution<float> spawnLife(1.0f, 2.0f);
 
                         emitter.tail = 1;
                         emitter.update = update;
                         emitter.material = resources->loadMaterial(L"Sprites\\Smoke");
                         emitter.spritesList.resize(1000);
-
-                        float theta = spawnAzimuthal(mersineTwister);
-                        float phi = acos(spawnDirection(mersineTwister));
+                        concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [transformComponent](Sprite &sprite) -> void
+                        {
+                            float theta = spawnZeroTwoPi(mersineTwister);
+                            float phi = acos(spawnMinMax(mersineTwister));
+                            sprite.velocity.x = std::sin(phi) * std::sin(theta);
+                            sprite.velocity.y = -std::sin(phi) * std::cos(theta);
+                            sprite.velocity.z = std::cos(phi);
+                        });
 
                         auto &sprite = emitter.spritesList.front();
                         sprite.position = transformComponent.position;
-                        sprite.velocity.x = std::sin(phi) * std::sin(theta);
-                        sprite.velocity.y = -std::sin(phi) * std::cos(theta);
-                        sprite.velocity.z = std::cos(phi);
                         sprite.velocity *= (spawnStrength(mersineTwister) * explosionComponent.strength);
-                        sprite.angle = spawnCircle(mersineTwister);
-                        sprite.torque = spawnCircle(mersineTwister);
+                        sprite.angle = spawnZeroTwoPi(mersineTwister);
+                        sprite.torque = spawnZeroTwoPi(mersineTwister);
                         sprite.halfSize = 0.1f;
                         sprite.age = 0.0f;
+                        sprite.life = spawnLife(mersineTwister);
+                        sprite.frames = 6;
                     };
 
                     static const auto spark = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
                     {
                         static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
-                            auto &sprite = emitter.spritesList.front();
-                            emitter.spritesList[emitter.tail++] = sprite;
-                            if (emitter.tail >= emitter.spritesList.size())
+                            auto &head = emitter.spritesList.front();
+                            emitter.spritesList[emitter.tail] = head;
+                            head.position += (head.velocity * frameTime);
+                            head.velocity += (gravity * frameTime);
+                            if (++emitter.tail >= emitter.spritesList.size())
                             {
                                 emitter.tail = 1;
                             }
 
-                            sprite.position += (sprite.velocity * frameTime);
-                            sprite.velocity += (gravity * frameTime);
-
                             combineMinimum minimum[3];
                             combineMaximum maximum[3];
-                            concurrency::parallel_for_each((emitter.spritesList.begin() + 1), emitter.spritesList.end(), [&emitter, frameTime, &minimum, &maximum](Sprite &sprite) -> void
+                            concurrency::parallel_for_each(++emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, frameTime, &minimum, &maximum](Sprite &sprite) -> void
                             {
                                 sprite.age += frameTime;
                                 sprite.angle += (sprite.torque * frameTime);
+                                sprite.position += (sprite.velocity * frameTime * 0.01f);
                                 for (uint32_t axis = 0; axis < 3; axis++)
                                 {
                                     minimum[axis].set(sprite.position[axis] - sprite.halfSize);
@@ -316,30 +343,31 @@ namespace Gek
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
                         const auto &transformComponent = entity->getComponent<Components::Transform>();
 
-                        static const std::uniform_real_distribution<float> spawnDirection(-1.0f, 1.0f);
-                        static const std::uniform_real_distribution<float> spawnAzimuthal(0.0f, (Gek::Math::Pi * 2.0f));
-                        static const std::uniform_real_distribution<float> spawnZenith(0.0f, 1.0f);
-                        static const std::uniform_real_distribution<float> spawnCircle(-Gek::Math::Pi, Gek::Math::Pi);
-                        static const std::uniform_real_distribution<float> spawnStrength(1.0f, 2.0f);
+                        static const std::uniform_real_distribution<float> spawnStrength(0.5f, 1.0f);
+                        static const std::uniform_real_distribution<float> spawnLife(2.0f, 4.0f);
 
                         emitter.tail = 1;
                         emitter.update = update;
                         emitter.material = resources->loadMaterial(L"Sprites\\Spark");
-                        emitter.spritesList.resize(1000);
-
-                        float theta = spawnAzimuthal(mersineTwister);
-                        float phi = acos(spawnDirection(mersineTwister));
+                        emitter.spritesList.resize(100);
+                        concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [transformComponent](Sprite &sprite) -> void
+                        {
+                            float theta = spawnZeroTwoPi(mersineTwister);
+                            float phi = acos(spawnMinMax(mersineTwister));
+                            sprite.velocity.x = std::sin(phi) * std::sin(theta);
+                            sprite.velocity.y = -std::sin(phi) * std::cos(theta);
+                            sprite.velocity.z = std::cos(phi);
+                        });
 
                         auto &sprite = emitter.spritesList.front();
                         sprite.position = transformComponent.position;
-                        sprite.velocity.x = std::sin(phi) * std::sin(theta);
-                        sprite.velocity.y = -std::sin(phi) * std::cos(theta);
-                        sprite.velocity.z = std::cos(phi);
                         sprite.velocity *= (spawnStrength(mersineTwister) * explosionComponent.strength);
-                        sprite.angle = spawnCircle(mersineTwister);
-                        sprite.torque = spawnCircle(mersineTwister);
+                        sprite.angle = spawnZeroTwoPi(mersineTwister);
+                        sprite.torque = spawnZeroTwoPi(mersineTwister);
                         sprite.halfSize = 0.1f;
                         sprite.age = 0.0f;
+                        sprite.life = spawnLife(mersineTwister);
+                        sprite.frames = 5;
                     };
 
                     if (entity->hasComponent<Components::Explosion>())
