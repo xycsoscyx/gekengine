@@ -19,6 +19,8 @@
 #include <concurrent_vector.h>
 #include <ppl.h>
 
+#include <ImGuizmo.h>
+
 namespace Gek
 {
 	namespace Utility
@@ -422,6 +424,11 @@ namespace Gek
                 cameraConstantData.farClip = farClip;
                 cameraConstantData.viewMatrix = viewMatrix;
                 cameraConstantData.projectionMatrix = projectionMatrix;
+
+                static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
+                static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
+                static Math::Float4x4 matrix(Math::Float4x4::Identity);
+                ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, mCurrentGizmoOperation, mCurrentGizmoMode, matrix.data, NULL, false);
 
                 drawCallList.clear();
                 sendShout(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
