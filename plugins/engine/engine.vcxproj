@@ -60,7 +60,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\imgui;$(SolutionDir)..\external\ImGuizmo;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -68,7 +68,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\imgui;$(SolutionDir)..\external\ImGuizmo;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -76,7 +76,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\imgui;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\plugins\system;$(SolutionDir)..\plugins\components;$(SolutionDir)..\external\imgui;$(SolutionDir)..\external\ImGuizmo;$(IncludePath)</IncludePath>
     <OutDir>$(SolutionDir)..\bin\$(Configuration)\Plugins\</OutDir>
     <TargetName>$(ProjectName)</TargetName>
     <RunCodeAnalysis>false</RunCodeAnalysis>
@@ -174,6 +174,7 @@
     <ClInclude Include="ShaderFilter.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\external\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="..\..\external\imgui\imgui.cpp" />
     <ClCompile Include="..\..\external\imgui\imgui_draw.cpp" />
     <ClCompile Include="Core.cpp" />
