@@ -1027,11 +1027,6 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setInputLayout(Video::Object *inputLayout)
-                    {
-                        throw Video::UnsupportedOperation();
-                    }
-
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -1108,13 +1103,6 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setInputLayout(Video::Object *inputLayout)
-                    {
-                        GEK_REQUIRE(d3dDeviceContext);
-
-                        d3dDeviceContext->IASetInputLayout(inputLayout ? dynamic_cast<InputLayout *>(inputLayout)->d3dInputLayout.p : nullptr);
-                    }
-
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -1182,11 +1170,6 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setInputLayout(Video::Object *inputLayout)
-                    {
-                        throw Video::UnsupportedOperation();
-                    }
-
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -1254,11 +1237,6 @@ namespace Gek
                     }
 
                     // Video::Pipeline
-                    void setInputLayout(Video::Object *inputLayout)
-                    {
-                        throw Video::UnsupportedOperation();
-                    }
-
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -1501,6 +1479,13 @@ namespace Gek
                     GEK_REQUIRE(blendState);
 
                     d3dDeviceContext->OMSetBlendState(dynamic_cast<BlendState *>(blendState)->d3dBlendState, blendFactor.data, mask);
+                }
+
+                void setInputLayout(Video::Object *inputLayout)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+
+                    d3dDeviceContext->IASetInputLayout(inputLayout ? dynamic_cast<InputLayout *>(inputLayout)->d3dInputLayout.p : nullptr);
                 }
 
                 void setVertexBuffer(uint32_t slot, Video::Buffer *vertexBuffer, uint32_t offset)

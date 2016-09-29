@@ -26,6 +26,12 @@
     <ClCompile Include="Visual.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\external\imgui\imgui.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\imgui\imgui_draw.cpp">
+      <Filter>ImGui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
@@ -82,6 +88,9 @@
     </Filter>
     <Filter Include="Header Files">
       <UniqueIdentifier>{66ba92d7-0828-4fe9-9d81-e6f572757744}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui">
+      <UniqueIdentifier>{e49a4fcf-bffa-4a91-8f27-99313c4a5097}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

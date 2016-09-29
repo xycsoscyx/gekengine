@@ -29,9 +29,8 @@ namespace Gek
 
         GEK_INTERFACE(RendererListener)
         {
-            virtual void onRenderBackground(void) { };
             virtual void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) { };
-            virtual void onRenderForeground(void) { };
+            virtual void onRenderDisplay(void) { };
         };
 
         GEK_INTERFACE(Renderer)

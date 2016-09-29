@@ -178,22 +178,30 @@ namespace Gek
                     {
                         static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
+                            static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
+                            {
+                                concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, frameTime](Sprite &sprite) -> void
+                                {
+                                    sprite.age += frameTime;
+                                    sprite.halfSize = (Math::saturate(sprite.age / sprite.life) * 1.0f);
+                                    sprite.angle += (sprite.torque * frameTime);
+                                    sprite.position += (sprite.velocity * frameTime);
+                                    sprite.position -= (gravity * 0.1f * frameTime);
+                                });
+                            };
+
                             emitter.position += (emitter.velocity * frameTime);
                             if (emitter.tail < emitter.spritesList.size())
                             {
                                 auto &sprite = emitter.spritesList[emitter.tail++];
                                 sprite.position = emitter.position;
                                 sprite.age = 0.0f;
+                                update(entity, emitter, frameTime);
                             }
-
-                            concurrency::parallel_for_each(emitter.spritesList.begin(), emitter.spritesList.end(), [&emitter, frameTime](Sprite &sprite) -> void
+                            else
                             {
-                                sprite.age += frameTime;
-                                sprite.halfSize = (Math::saturate(sprite.age / sprite.life) * 1.0f);
-                                sprite.angle += (sprite.torque * frameTime);
-                                sprite.position += (sprite.velocity * frameTime);
-                                sprite.position -= (gravity * frameTime * 0.01f);
-                            });
+                                emitter.update = update;
+                            }
                         };
 
                         const auto &explosionComponent = entity->getComponent<Components::Explosion>();
@@ -203,7 +211,7 @@ namespace Gek
 
                         emitter.update = update;
                         emitter.material = resources->loadMaterial(L"Sprites\\Smoke");
-                        emitter.spritesList.resize(1000);
+                        emitter.spritesList.resize(100);
                         emitter.position = transformComponent.position;
                         float theta = spawnTheta(mersineTwister);
                         float phi = acos(spawnPhi(mersineTwister));
@@ -220,7 +228,7 @@ namespace Gek
                             sprite.velocity.x = std::sin(phi) * std::sin(theta);
                             sprite.velocity.y = -std::sin(phi) * std::cos(theta);
                             sprite.velocity.z = std::cos(phi);
-                            sprite.velocity *= 0.01f;
+                            sprite.velocity *= 0.1f;
                             sprite.angle = spawnTheta(mersineTwister);
                             sprite.torque = spawnTorque(mersineTwister);
                             sprite.life = spawnLife(mersineTwister);
@@ -258,7 +266,7 @@ namespace Gek
 
                         emitter.update = update;
                         emitter.material = resources->loadMaterial(L"Sprites\\Spark");
-                        emitter.spritesList.resize(100);
+                        emitter.spritesList.resize(10);
                         emitter.position = transformComponent.position;
                         float theta = spawnTheta(mersineTwister);
                         float phi = acos(spawnPhi(mersineTwister));
@@ -275,7 +283,7 @@ namespace Gek
                             sprite.velocity.x = std::sin(phi) * std::sin(theta);
                             sprite.velocity.y = -std::sin(phi) * std::cos(theta);
                             sprite.velocity.z = std::cos(phi);
-                            sprite.velocity *= 0.01f;
+                            sprite.velocity *= 0.1f;
                             sprite.angle = spawnTheta(mersineTwister);
                             sprite.torque = spawnTorque(mersineTwister);
                             sprite.life = spawnLife(mersineTwister);

@@ -5,7 +5,7 @@
 
 namespace Settings
 {
-    static const uint Equation = 9;
+    static const uint Equation = 10;
 };
 
 // Weight Based OIT
