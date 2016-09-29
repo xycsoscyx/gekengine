@@ -106,12 +106,6 @@ namespace Gek
 
             ActionQueue actionQueue;
 
-            bool consoleOpen;
-            String currentCommand;
-            std::list<String> commandLog;
-            std::unordered_map<String, std::function<void(const std::vector<String> &)>> consoleCommandsMap;
-            concurrency::concurrent_queue<Command> consoleCommandQueue;
-
             Video::ObjectPtr vertexProgram;
             Video::ObjectPtr inputLayout;
             Video::BufferPtr constantBuffer;
@@ -132,33 +126,10 @@ namespace Gek
                 , engineRunning(true)
                 , configuration(nullptr)
                 , updateAccumulator(0.0)
-                , consoleOpen(false)
                 , mouseSensitivity(0.5f)
             {
                 GEK_REQUIRE(window);
-
-                consoleCommandsMap[L"quit"] = [this](const std::vector<String> &parameters) -> void
-                {
-                    engineRunning = false;
-                };
-
-                consoleCommandsMap[L"loadlevel"] = [this](const std::vector<String> &parameters) -> void
-                {
-                    if (parameters.size() == 1)
-                    {
-                        population->load(parameters[0]);
-                    }
-                };
-
-                consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters) -> void
-                {
-                    if (parameters.size() == 1)
-                    {
-                        consoleOpen = parameters[0];
-                        timer.pause(!windowActive || consoleOpen);
-                    }
-                };
-
+/*
                 consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters) -> void
                 {
                     bool fullscreen = !device->isFullScreen();
@@ -186,7 +157,7 @@ namespace Gek
                         sendShout(&Plugin::CoreListener::onResize);
                     }
                 };
-
+*/
                 try
                 {
                     configuration = Xml::load(getContext()->getFileName(L"config.xml"), L"config");
@@ -437,7 +408,7 @@ namespace Gek
                         };
                     }
 
-                    timer.pause(!windowActive || consoleOpen);
+                    timer.pause(!windowActive);
                     return 1;
 
                 case WM_SYSCOMMAND:
@@ -519,33 +490,9 @@ namespace Gek
 
             bool update(void)
             {
-                if (!consoleCommandQueue.empty())
-                {
-                    bool isTimerPaused = timer.isPaused();
-                    if (!isTimerPaused)
-                    {
-                        timer.pause(true);
-                    }
-
-                    Command command;
-                    while (consoleCommandQueue.try_pop(command))
-                    {
-                        auto commandSearch = consoleCommandsMap.find(command.function);
-                        if (commandSearch != consoleCommandsMap.end())
-                        {
-                            commandSearch->second(command.parameterList);
-                        }
-                    };
-
-                    if (!isTimerPaused)
-                    {
-                        timer.pause(false);
-                    }
-                }
-
                 timer.update();
                 float frameTime = float(timer.getUpdateTime());
-                population->update((!windowActive || consoleOpen), frameTime);
+                population->update(!windowActive, frameTime);
                 return engineRunning;
             }
 
@@ -607,9 +554,7 @@ namespace Gek
                     {
                         actionQueue.clear();
                     }
-                }
-                else if (order == 100)
-                {
+
                     ImGuiIO &io = ImGui::GetIO();
 
                     auto backBuffer = device->getBackBuffer();
@@ -641,9 +586,21 @@ namespace Gek
                     ImGui::SliderFloat("float", &slider, 0.0f, 1.0f);
                     ImGui::ColorEdit3("clear color", clearColor.data);
                     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                    if (ImGui::Button("Load"))
+                    {
+                        population->load(L"sponza");
+                    }
 
+                    if (ImGui::Button("Quit"))
+                    {
+                        engineRunning = false;
+                    }
+
+                    device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), clearColor);
+                }
+                else if (order == 100)
+                {
                     ImGui::Render();
-
                     device->present(false);
                 }
             }
