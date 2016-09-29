@@ -1427,8 +1427,8 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(renderTarget);
 
-                    auto targetViewTexture = dynamic_cast<TargetViewTexture *>(renderTarget);
-                    d3dDeviceContext->ClearRenderTargetView(targetViewTexture->d3dRenderTargetView.p, clearColor.data);
+                    auto targetTexture = dynamic_cast<TargetTexture *>(renderTarget);
+                    d3dDeviceContext->ClearRenderTargetView(targetTexture->d3dRenderTargetView.p, clearColor.data);
                 }
 
                 void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
