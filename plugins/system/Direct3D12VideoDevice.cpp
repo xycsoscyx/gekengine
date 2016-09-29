@@ -462,11 +462,6 @@ namespace Gek
                 }
 
                 // Video::Pipeline
-                void setInputLayout(Video::Object *inputLayout)
-                {
-                    throw Video::UnsupportedOperation();
-                }
-
                 void setProgram(Video::Object *program)
                 {
                     dynamic_cast<ComputeProgram *>(program);
@@ -520,10 +515,6 @@ namespace Gek
                 }
 
                 // Video::Pipeline
-                void setInputLayout(Video::Object *inputLayout)
-                {
-                }
-
                 void setProgram(Video::Object *program)
                 {
                     dynamic_cast<VertexProgram *>(program);
@@ -574,11 +565,6 @@ namespace Gek
                 }
 
                 // Video::Pipeline
-                void setInputLayout(Video::Object *inputLayout)
-                {
-                    throw Video::UnsupportedOperation();
-                }
-
                 void setProgram(Video::Object *program)
                 {
                     dynamic_cast<GeometryProgram *>(program);
@@ -629,11 +615,6 @@ namespace Gek
                 }
 
                 // Video::Pipeline
-                void setInputLayout(Video::Object *inputLayout)
-                {
-                    throw Video::UnsupportedOperation();
-                }
-
                 void setProgram(Video::Object *program)
                 {
                     dynamic_cast<PixelProgram *>(program);
@@ -799,6 +780,10 @@ namespace Gek
             void setBlendState(Video::Object *blendState, const Math::Color &blendFactor, uint32_t mask)
             {
                 dynamic_cast<BlendState *>(blendState);
+            }
+
+            void setInputLayout(Video::Object *inputLayout)
+            {
             }
 
             void setVertexBuffer(uint32_t slot, Video::Buffer *vertexBuffer, uint32_t offset)

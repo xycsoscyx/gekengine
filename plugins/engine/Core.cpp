@@ -12,8 +12,7 @@
 #include <concurrent_queue.h>
 #include <ppl.h>
 
-#include <sciter-x.h>
-#pragma comment(lib, "sciter32.lib")
+#include <imgui.h>
 
 namespace Gek
 {
@@ -113,9 +112,17 @@ namespace Gek
             std::unordered_map<String, std::function<void(const std::vector<String> &)>> consoleCommandsMap;
             concurrency::concurrent_queue<Command> consoleCommandQueue;
 
-            sciter::dom::element root;
-            sciter::dom::element background;
-            sciter::dom::element foreground;
+            Video::ObjectPtr vertexProgram;
+            Video::ObjectPtr inputLayout;
+            Video::BufferPtr constantBuffer;
+            Video::ObjectPtr pixelProgram;
+            Video::ObjectPtr blendState;
+            Video::ObjectPtr renderState;
+            Video::ObjectPtr depthState;
+            Video::TexturePtr font;
+            Video::ObjectPtr samplerState;
+            Video::BufferPtr vertexBuffer;
+            Video::BufferPtr indexBuffer;
 
         public:
             Core(Context *context, HWND window)
@@ -127,9 +134,6 @@ namespace Gek
                 , updateAccumulator(0.0)
                 , consoleOpen(false)
                 , mouseSensitivity(0.5f)
-                , root(nullptr)
-                , background(nullptr)
-                , foreground(nullptr)
             {
                 GEK_REQUIRE(window);
 
@@ -146,17 +150,17 @@ namespace Gek
                     }
                 };
 
-				consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters) -> void
-				{
-					if (parameters.size() == 1)
-					{
-						consoleOpen = parameters[0];
-						timer.pause(!windowActive || consoleOpen);
-					}
-				};
+                consoleCommandsMap[L"console"] = [this](const std::vector<String> &parameters) -> void
+                {
+                    if (parameters.size() == 1)
+                    {
+                        consoleOpen = parameters[0];
+                        timer.pause(!windowActive || consoleOpen);
+                    }
+                };
 
-				consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters) -> void
-				{
+                consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters) -> void
+                {
                     bool fullscreen = !device->isFullScreen();
 
                     device->setFullScreen(fullscreen);
@@ -166,10 +170,10 @@ namespace Gek
                     sendShout(&Plugin::CoreListener::onConfigurationChanged);
                 };
 
-				consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters) -> void
-				{
-					if (parameters.size() == 2)
-					{
+                consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters) -> void
+                {
+                    if (parameters.size() == 2)
+                    {
                         uint32_t width = parameters[0];
                         uint32_t height = parameters[1];
                         device->setSize(width, height, Video::Format::R8G8B8A8_UNORM_SRGB);
@@ -181,7 +185,7 @@ namespace Gek
 
                         sendShout(&Plugin::CoreListener::onResize);
                     }
-				};
+                };
 
                 try
                 {
@@ -207,35 +211,152 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
-                population->addStep(this, 0);
+                population->addStep(this, 0, 100);
                 renderer->addListener(this);
 
-                IDXGISwapChain *dxSwapChain = static_cast<IDXGISwapChain *>(device->getSwapChain());
-                BOOL success = SciterCreateOnDirectXWindow(window, dxSwapChain);
-                if (!success)
-                {
-                    throw InitializationFailed();
-                }
+                ImGuiIO &io = ImGui::GetIO();
+                io.KeyMap[ImGuiKey_Tab] = VK_TAB;
+                io.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
+                io.KeyMap[ImGuiKey_RightArrow] = VK_RIGHT;
+                io.KeyMap[ImGuiKey_UpArrow] = VK_UP;
+                io.KeyMap[ImGuiKey_DownArrow] = VK_DOWN;
+                io.KeyMap[ImGuiKey_PageUp] = VK_PRIOR;
+                io.KeyMap[ImGuiKey_PageDown] = VK_NEXT;
+                io.KeyMap[ImGuiKey_Home] = VK_HOME;
+                io.KeyMap[ImGuiKey_End] = VK_END;
+                io.KeyMap[ImGuiKey_Delete] = VK_DELETE;
+                io.KeyMap[ImGuiKey_Backspace] = VK_BACK;
+                io.KeyMap[ImGuiKey_Enter] = VK_RETURN;
+                io.KeyMap[ImGuiKey_Escape] = VK_ESCAPE;
+                io.KeyMap[ImGuiKey_A] = 'A';
+                io.KeyMap[ImGuiKey_C] = 'C';
+                io.KeyMap[ImGuiKey_V] = 'V';
+                io.KeyMap[ImGuiKey_X] = 'X';
+                io.KeyMap[ImGuiKey_Y] = 'Y';
+                io.KeyMap[ImGuiKey_Z] = 'Z';
+                io.ImeWindowHandle = window;
 
-                SciterSetupDebugOutput(window, this, sciterDebugOutput);
-                SciterSetOption(window, SCITER_SET_DEBUG_MODE, TRUE);
-                SciterSetCallback(window, sciterHostCallback, this);
-                SciterWindowAttachEventHandler(window, sciterElementEventProc, this, HANDLE_ALL);
-				success = SciterLoadFile(window, getContext()->getFileName(L"data\\pages\\system.html"));
-				if (!success)
-                {
-                    throw InitializationFailed();
-                }
+                static const wchar_t *vertexShader =
+                    L"cbuffer vertexBuffer : register(b0)                                   \
+                    {                                                                       \
+                        float4x4 ProjectionMatrix;                                          \
+                    };                                                                      \
+                                                                                            \
+                    struct VS_INPUT                                                         \
+                    {                                                                       \
+                        float2 pos : POSITION;                                              \
+                        float4 col : COLOR0;                                                \
+                        float2 uv  : TEXCOORD0;                                             \
+                    };                                                                      \
+                                                                                            \
+                    struct PS_INPUT                                                         \
+                    {                                                                       \
+                        float4 pos : SV_POSITION;                                           \
+                        float4 col : COLOR0;                                                \
+                        float2 uv  : TEXCOORD0;                                             \
+                    };                                                                      \
+                                                                                            \
+                    PS_INPUT main(VS_INPUT input)                                           \
+                    {                                                                       \
+                        PS_INPUT output;                                                    \
+                        output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));\
+                        output.col = input.col;                                             \
+                        output.uv  = input.uv;                                              \
+                        return output;                                                      \
+                    }";
 
-                root = sciter::dom::element::root_element(window);
-                background = root.find_first("section#back-layer");
-                foreground = root.find_first("section#fore-layer");
+                auto &compiled = resources->compileProgram(Video::ProgramType::Vertex, L"uiVertexProgram", L"main", vertexShader);
+                vertexProgram = device->createProgram(Video::ProgramType::Vertex, compiled.data(), compiled.size());
+
+                std::vector<Video::InputElement> elementList;
+                elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::Position));
+                elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::TexCoord));
+                elementList.push_back(Video::InputElement(Video::Format::R8G8B8A8_UNORM, Video::InputElement::Semantic::Color));
+                inputLayout = device->createInputLayout(elementList, compiled.data(), compiled.size());
+
+                constantBuffer = device->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
+
+                static const wchar_t *pixelShader =
+                    L"struct PS_INPUT                                                       \
+                    {                                                                       \
+                        float4 pos : SV_POSITION;                                           \
+                        float4 col : COLOR0;                                                \
+                        float2 uv  : TEXCOORD0;                                             \
+                    };                                                                      \
+                                                                                            \
+                    sampler sampler0;                                                       \
+                    Texture2D texture0;                                                     \
+                                                                                            \
+                    float4 main(PS_INPUT input) : SV_Target                                 \
+                    {                                                                       \
+                        float4 out_col = input.col * texture0.Sample(sampler0, input.uv);   \
+                        return out_col;                                                     \
+                    }";
+
+                compiled = resources->compileProgram(Video::ProgramType::Pixel, L"uiPixelProgram", L"main", pixelShader);
+                pixelProgram = device->createProgram(Video::ProgramType::Pixel, compiled.data(), compiled.size());
+
+                Video::UnifiedBlendStateInformation blendStateInformation;
+                blendStateInformation.enable = true;
+                blendStateInformation.colorSource = Video::BlendStateInformation::Source::SourceAlpha;
+                blendStateInformation.colorDestination = Video::BlendStateInformation::Source::InverseSourceAlpha;
+                blendStateInformation.colorOperation = Video::BlendStateInformation::Operation::Add;
+                blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
+                blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
+                blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
+                blendState = device->createBlendState(blendStateInformation);
+
+                Video::RenderStateInformation renderStateInformation;
+                renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
+                renderStateInformation.cullMode = Video::RenderStateInformation::CullMode::None;
+                renderStateInformation.scissorEnable = true;
+                renderStateInformation.depthClipEnable = true;
+                renderState = device->createRenderState(renderStateInformation);
+
+                Video::DepthStateInformation depthStateInformation;
+                depthState = device->createDepthState(depthStateInformation);
+
+                uint8_t *pixels = nullptr;
+                int32_t width = 0, height = 0;
+                io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
+                font = device->createTexture(Video::Format::R8G8B8A8_UNORM, width, height, 1, 1, Video::TextureFlags::Resource, pixels);
+                io.Fonts->TexID = (Video::Object *)font.get();
+
+                Video::SamplerStateInformation samplerStateInformation;
+                samplerStateInformation.filterMode = Video::SamplerStateInformation::FilterMode::AllLinear;
+                samplerStateInformation.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
+                samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
+                samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
+                samplerState = device->createSamplerState(samplerStateInformation);
+
+                io.UserData = this;
+                io.RenderDrawListsFn = [](ImDrawData *drawData)
+                {
+                    ImGuiIO &io = ImGui::GetIO();
+                    Core *core = static_cast<Core *>(io.UserData);
+                    core->renderDrawData(drawData);
+                };
 
                 windowActive = true;
             }
 
             ~Core(void)
             {
+                ImGui::GetIO().Fonts->TexID = 0;
+                ImGui::Shutdown();
+
+                vertexProgram = nullptr;
+                inputLayout = nullptr;
+                constantBuffer = nullptr;
+                pixelProgram = nullptr;
+                blendState = nullptr;
+                renderState = nullptr;
+                depthState = nullptr;
+                font = nullptr;
+                samplerState = nullptr;
+                vertexBuffer = nullptr;
+                indexBuffer = nullptr;
+
                 if (population)
                 {
                     population->removeStep(this);
@@ -290,13 +411,7 @@ namespace Gek
             // Application
             LRESULT windowEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
             {
-                BOOL handled = false;
-                LRESULT lResult = SciterProcND(window, message, wParam, lParam, &handled);
-                if (handled)
-                {
-                    return lResult;
-                }
-
+                ImGuiIO &io = ImGui::GetIO();
                 switch (message)
                 {
                 case WM_SETCURSOR:
@@ -325,38 +440,6 @@ namespace Gek
                     timer.pause(!windowActive || consoleOpen);
                     return 1;
 
-                case WM_KEYDOWN:
-                    if (true)
-                    {
-                        actionQueue.addAction(wParam, true);
-                        return 1;
-                    }
-
-                case WM_KEYUP:
-                    if (true)
-                    {
-                        actionQueue.addAction(wParam, false);
-                        return 1;
-                    }
-
-                case WM_LBUTTONDOWN:
-                case WM_RBUTTONDOWN:
-                case WM_MBUTTONDOWN:
-                    return 1;
-
-                case WM_LBUTTONUP:
-                case WM_RBUTTONUP:
-                case WM_MBUTTONUP:
-                    return 1;
-
-                case WM_MOUSEWHEEL:
-                    if (true)
-                    {
-                        int32_t mouseWheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
-                    }
-
-                    return 1;
-
                 case WM_SYSCOMMAND:
                     if (SC_KEYMENU == (wParam & 0xFFF0))
                     {
@@ -369,6 +452,66 @@ namespace Gek
                 case WM_SIZE:
                     device->resize();
                     return 1;
+
+                case WM_LBUTTONDOWN:
+                    io.MouseDown[0] = true;
+                    return true;
+
+                case WM_LBUTTONUP:
+                    io.MouseDown[0] = false;
+                    return true;
+
+                case WM_RBUTTONDOWN:
+                    io.MouseDown[1] = true;
+                    return true;
+
+                case WM_RBUTTONUP:
+                    io.MouseDown[1] = false;
+                    return true;
+
+                case WM_MBUTTONDOWN:
+                    io.MouseDown[2] = true;
+                    return true;
+
+                case WM_MBUTTONUP:
+                    io.MouseDown[2] = false;
+                    return true;
+
+                case WM_MOUSEWHEEL:
+                    io.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
+                    return true;
+
+                case WM_MOUSEMOVE:
+                    io.MousePos.x = (int16_t)(lParam);
+                    io.MousePos.y = (int16_t)(lParam >> 16);
+                    return true;
+
+                case WM_KEYDOWN:
+                    actionQueue.addAction(wParam, true);
+                    if (wParam < 256)
+                    {
+                        io.KeysDown[wParam] = 1;
+                    }
+
+                    return true;
+
+                case WM_KEYUP:
+                    if (wParam < 256)
+                    {
+                        actionQueue.addAction(wParam, false);
+                        io.KeysDown[wParam] = 0;
+                    }
+
+                    return true;
+
+                case WM_CHAR:
+                    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
+                    if (wParam > 0 && wParam < 0x10000)
+                    {
+                        io.AddInputCharacter((uint16_t)wParam);
+                    }
+
+                    return true;
                 };
 
                 return 0;
@@ -409,317 +552,199 @@ namespace Gek
             // Plugin::PopulationStep
             void onUpdate(uint32_t order, State state)
             {
-                POINT currentCursorPosition;
-                GetCursorPos(&currentCursorPosition);
-                float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
-                float cursorMovementY = (float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
-                lastCursorPosition = currentCursorPosition;
-                if (state == State::Active)
+                if (order == 0)
                 {
-                    if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
+                    POINT currentCursorPosition;
+                    GetCursorPos(&currentCursorPosition);
+                    float cursorMovementX = (float(currentCursorPosition.x - lastCursorPosition.x) * mouseSensitivity);
+                    float cursorMovementY = (float(currentCursorPosition.y - lastCursorPosition.y) * mouseSensitivity);
+                    lastCursorPosition = currentCursorPosition;
+                    if (state == State::Active)
                     {
-                        sendShout(&Plugin::CoreListener::onAction, L"turn", Plugin::ActionParameter(cursorMovementX));
-                        sendShout(&Plugin::CoreListener::onAction, L"tilt", Plugin::ActionParameter(cursorMovementY));
-                    }
-
-                    std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
-                    for (auto &action : actionCopy)
-                    {
-                        Plugin::ActionParameter parameter(action.second);
-                        switch (action.first)
+                        if (std::abs(cursorMovementX) > Math::Epsilon || std::abs(cursorMovementY) > Math::Epsilon)
                         {
-                        case 'W':
-                        case VK_UP:
-                            sendShout(&Plugin::CoreListener::onAction, L"move_forward", parameter);
-                            break;
+                            sendShout(&Plugin::CoreListener::onAction, L"turn", Plugin::ActionParameter(cursorMovementX));
+                            sendShout(&Plugin::CoreListener::onAction, L"tilt", Plugin::ActionParameter(cursorMovementY));
+                        }
 
-                        case 'S':
-                        case VK_DOWN:
-                            sendShout(&Plugin::CoreListener::onAction, L"move_backward", parameter);
-                            break;
+                        std::list<std::pair<wchar_t, bool>> actionCopy(actionQueue.getQueue());
+                        for (auto &action : actionCopy)
+                        {
+                            Plugin::ActionParameter parameter(action.second);
+                            switch (action.first)
+                            {
+                            case 'W':
+                            case VK_UP:
+                                sendShout(&Plugin::CoreListener::onAction, L"move_forward", parameter);
+                                break;
 
-                        case 'A':
-                        case VK_LEFT:
-                            sendShout(&Plugin::CoreListener::onAction, L"strafe_left", parameter);
-                            break;
+                            case 'S':
+                            case VK_DOWN:
+                                sendShout(&Plugin::CoreListener::onAction, L"move_backward", parameter);
+                                break;
 
-                        case 'D':
-                        case VK_RIGHT:
-                            sendShout(&Plugin::CoreListener::onAction, L"strafe_right", parameter);
-                            break;
+                            case 'A':
+                            case VK_LEFT:
+                                sendShout(&Plugin::CoreListener::onAction, L"strafe_left", parameter);
+                                break;
 
-                        case VK_SPACE:
-                            sendShout(&Plugin::CoreListener::onAction, L"jump", parameter);
-                            break;
+                            case 'D':
+                            case VK_RIGHT:
+                                sendShout(&Plugin::CoreListener::onAction, L"strafe_right", parameter);
+                                break;
 
-                        case VK_LCONTROL:
-                            sendShout(&Plugin::CoreListener::onAction, L"crouch", parameter);
-                            break;
-                        };
+                            case VK_SPACE:
+                                sendShout(&Plugin::CoreListener::onAction, L"jump", parameter);
+                                break;
+
+                            case VK_LCONTROL:
+                                sendShout(&Plugin::CoreListener::onAction, L"crouch", parameter);
+                                break;
+                            };
+                        }
+                    }
+                    else
+                    {
+                        actionQueue.clear();
                     }
                 }
-                else
+                else if (order == 100)
                 {
-                    actionQueue.clear();
+                    ImGuiIO &io = ImGui::GetIO();
+
+                    auto backBuffer = device->getBackBuffer();
+                    uint32_t width = backBuffer->getWidth();
+                    uint32_t height = backBuffer->getHeight();
+                    io.DisplaySize = ImVec2(float(width), float(height));
+
+                    io.DeltaTime = float(timer.getUpdateTime());
+
+                    // Read keyboard modifiers inputs
+                    io.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                    io.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+                    io.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                    io.KeySuper = false;
+                    // io.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                    // io.MousePos : filled by WM_MOUSEMOVE events
+                    // io.MouseDown : filled by WM_*BUTTON* events
+                    // io.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                    // Hide OS mouse cursor if ImGui is drawing it
+                    SetCursor(io.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+
+                    // Start the frame
+                    ImGui::NewFrame();
+
+                    static Math::Color clearColor;
+                    static float slider = 0.0f;
+                    ImGui::Text("Hello, world!");
+                    ImGui::SliderFloat("float", &slider, 0.0f, 1.0f);
+                    ImGui::ColorEdit3("clear color", clearColor.data);
+                    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+                    ImGui::Render();
+
+                    device->present(false);
                 }
             }
 
-            // Plugin::RendererListener
-            void onRenderBackground(void)
+            // ImGui
+            void renderDrawData(ImDrawData *drawData)
             {
-                if (background)
+                if (!vertexBuffer || vertexBuffer->getCount() < drawData->TotalVtxCount)
                 {
-                    SciterRenderOnDirectXWindow(window, background, FALSE);
-                }
-            }
-
-            void onRenderForeground(void)
-            {
-                if (foreground)
-                {
-                    SciterRenderOnDirectXWindow(window, foreground, TRUE);
-                }
-            }
-
-            // SciterListener
-            UINT onSciterLoadData(LPSCN_LOAD_DATA notification)
-            {
-                return 0;
-            }
-
-            UINT onSciterDataLoaded(LPSCN_DATA_LOADED notification)
-            {
-                return 0;
-            }
-
-            UINT onSciterAttachBehavior(LPSCN_ATTACH_BEHAVIOR notification)
-            {
-                return 0;
-            }
-
-            UINT onSciterEngineDestroyed(void)
-            {
-                return 0;
-            }
-
-            UINT onSciterPostedNotification(LPSCN_POSTED_NOTIFICATION notification)
-            {
-                return 0;
-            }
-
-            UINT onSciterGraphicsCriticalFailure(void)
-            {
-                return 0;
-            }
-
-            UINT sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification)
-            {
-                switch (notification->code)
-                {
-                case SC_LOAD_DATA:
-                    return onSciterLoadData((LPSCN_LOAD_DATA)notification);
-
-                case SC_DATA_LOADED:
-                    return onSciterDataLoaded((LPSCN_DATA_LOADED)notification);
-
-                case SC_ATTACH_BEHAVIOR:
-                    return onSciterAttachBehavior((LPSCN_ATTACH_BEHAVIOR)notification);
-
-                case SC_ENGINE_DESTROYED:
-                    return onSciterEngineDestroyed();
-
-                case SC_POSTED_NOTIFICATION:
-                    return onSciterPostedNotification((LPSCN_POSTED_NOTIFICATION)notification);
-
-                case SC_GRAPHICS_CRITICAL_FAILURE:
-                    return onSciterGraphicsCriticalFailure();
-                };
-
-                return 0;
-            }
-
-            BOOL sciterSubscriptionsRequest(UINT *p)
-            {
-                return false;
-            }
-
-            BOOL sciterOnInitialization(INITIALIZATION_PARAMS *parameters)
-            {
-                if (parameters->cmd == BEHAVIOR_DETACH)
-                {
-                    //pThis->detached(he);
-                }
-                else if (parameters->cmd == BEHAVIOR_ATTACH)
-                {
-                    //pThis->attached(he);
+                    vertexBuffer = device->createBuffer(sizeof(ImDrawVert), drawData->TotalVtxCount, Video::BufferType::Vertex, Video::BufferFlags::Mappable);
                 }
 
-                return true;
-            }
-
-            BOOL sciterOnMouse(MOUSE_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnKey(KEY_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL scoterOnFocus(FOCUS_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnDraw(DRAW_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnTimer(TIMER_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnBehaviorEvent(BEHAVIOR_EVENT_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnMethodCall(METHOD_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnDataArrived(DATA_ARRIVED_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnScroll(SCROLL_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterOnSize()
-            {
-                return false;
-            }
-
-            BOOL sciterOnScriptingMethodCall(SCRIPTING_METHOD_PARAMS *parameters)
-            {
-                Command command;
-                command.function = parameters->name;
-                command.function.toLower();
-
-                for (uint32_t parameter = 0; parameter < parameters->argc; parameter++)
+                if (!indexBuffer || indexBuffer->getCount() < drawData->TotalIdxCount)
                 {
-                    command.parameterList.push_back(parameters->argv[parameter].to_string());
+                    switch (sizeof(ImDrawIdx))
+                    {
+                    case 2:
+                        indexBuffer = device->createBuffer(Video::Format::R16_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
+                        break;
+
+                    case 4:
+                        indexBuffer = device->createBuffer(Video::Format::R32_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
+                        break;
+
+                    default:
+                        throw std::exception();
+                    };
                 }
 
-                if (consoleCommandsMap.count(command.function) > 0)
+                ImDrawVert* vertexData = nullptr;
+                ImDrawIdx* indexData = nullptr;
+                device->mapBuffer(vertexBuffer.get(), (void **)&vertexData);
+                device->mapBuffer(indexBuffer.get(), (void **)&indexData);
+                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; commandListIndex++)
                 {
-                    consoleCommandQueue.push(command);
-                    parameters->result = sciter::value(true);
+                    const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+                    memcpy(vertexData, commandList->VtxBuffer.Data, commandList->VtxBuffer.Size * sizeof(ImDrawVert));
+                    memcpy(indexData, commandList->IdxBuffer.Data, commandList->IdxBuffer.Size * sizeof(ImDrawIdx));
+                    vertexData += commandList->VtxBuffer.Size;
+                    indexData += commandList->IdxBuffer.Size;
                 }
-                else
+                
+                device->unmapBuffer(indexBuffer.get());
+                device->unmapBuffer(vertexBuffer.get());
+
+                auto backBuffer = device->getBackBuffer();
+                uint32_t width = backBuffer->getWidth();
+                uint32_t height = backBuffer->getHeight();
+                auto orthographic = Math::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                device->updateResource(constantBuffer.get(), &orthographic);
+
+                auto context = device->getDefaultContext();
+                context->setRenderTargets(&backBuffer, 1, nullptr);
+                context->setViewports(&backBuffer->getViewPort(), 1);
+
+                context->setInputLayout(inputLayout.get());
+                context->setVertexBuffer(0, vertexBuffer.get(), 0);
+                context->setIndexBuffer(indexBuffer.get(), 0);
+                context->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                context->vertexPipeline()->setProgram(vertexProgram.get());
+                context->vertexPipeline()->setConstantBuffer(constantBuffer.get(), 0);
+                context->pixelPipeline()->setProgram(pixelProgram.get());
+                context->pixelPipeline()->setSamplerState(samplerState.get(), 0);
+
+                context->setBlendState(blendState.get(), Math::Color::Black, 0xFFFFFFFF);
+                context->setDepthState(depthState.get(), 0);
+                context->setRenderState(renderState.get());
+
+                // Render command lists
+                uint32_t vertexOffset = 0;
+                uint32_t indexOffset = 0;
+                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; commandListIndex++)
                 {
-                    parameters->result = sciter::value(false);
+                    const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+                    for (uint32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; commandIndex++)
+                    {
+                        const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
+                        if (command->UserCallback)
+                        {
+                            command->UserCallback(commandList, command);
+                        }
+                        else
+                        {
+                            const Shapes::Rectangle<uint32_t> scissor =
+                            { 
+                                uint32_t(command->ClipRect.x),
+                                uint32_t(command->ClipRect.y),
+                                uint32_t(command->ClipRect.z),
+                                uint32_t(command->ClipRect.w),
+                            };
+
+                            context->setScissorRect(&scissor, 1);
+                            context->pixelPipeline()->setResource((Video::Object *)command->TextureId, 0);
+                            context->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
+                        }
+
+                        indexOffset += command->ElemCount;
+                    }
+
+                    vertexOffset += commandList->VtxBuffer.Size;
                 }
-
-                return true;
-            }
-
-            BOOL sciterOnTiScriptMethodCall(TISCRIPT_METHOD_PARAMS *parameters)
-            {
-                tiscript::args arguments(parameters->vm);
-                return false;
-            }
-
-            BOOL sciterOnGesture(GESTURE_PARAMS *parameters)
-            {
-                return false;
-            }
-
-            BOOL sciterElementEventProc(HELEMENT element, UINT eventIdentifier, LPVOID parameters)
-            {
-                switch (eventIdentifier)
-                {
-                case SUBSCRIPTIONS_REQUEST:
-                    return sciterSubscriptionsRequest((UINT *)parameters);
-
-                case HANDLE_INITIALIZATION:
-                    return sciterOnInitialization((INITIALIZATION_PARAMS *)parameters);
-
-                case HANDLE_MOUSE:
-                    return sciterOnMouse((MOUSE_PARAMS *)parameters);
-
-                case HANDLE_KEY:
-                    return sciterOnKey((KEY_PARAMS *)parameters);
-
-                case HANDLE_FOCUS:
-                    return scoterOnFocus((FOCUS_PARAMS *)parameters);
-
-                case HANDLE_DRAW:
-                    return sciterOnDraw((DRAW_PARAMS *)parameters);
-
-                case HANDLE_TIMER:
-                    return sciterOnTimer((TIMER_PARAMS *)parameters);
-
-                case HANDLE_BEHAVIOR_EVENT:
-                    return sciterOnBehaviorEvent((BEHAVIOR_EVENT_PARAMS *)parameters);
-
-                case HANDLE_METHOD_CALL:
-                    return sciterOnMethodCall((METHOD_PARAMS *)parameters);
-
-                case HANDLE_DATA_ARRIVED:
-                    return sciterOnDataArrived((DATA_ARRIVED_PARAMS *)parameters);
-
-                case HANDLE_SCROLL:
-                    return sciterOnScroll((SCROLL_PARAMS *)parameters);
-
-                case HANDLE_SIZE:
-                    return sciterOnSize();
-
-                    // call using sciter::value's (from CSSS!)
-                case HANDLE_SCRIPTING_METHOD_CALL:
-                    return sciterOnScriptingMethodCall((SCRIPTING_METHOD_PARAMS *)parameters);
-
-                    // call using tiscript::value's (from the script)
-                case HANDLE_TISCRIPT_METHOD_CALL:
-                    return sciterOnTiScriptMethodCall((TISCRIPT_METHOD_PARAMS *)parameters);
-
-                case HANDLE_GESTURE:
-                    return sciterOnGesture((GESTURE_PARAMS *)parameters);
-
-                default:
-                    assert(false);
-                };
-
-                return FALSE;
-            }
-
-            void sciterDebugOutput(UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
-            {
-            }
-
-            static UINT CALLBACK sciterHostCallback(LPSCITER_CALLBACK_NOTIFICATION notification, void *userData)
-            {
-                Core *core = reinterpret_cast<Core *>(userData);
-                return core->sciterHostCallback(notification);
-            }
-
-            static BOOL CALLBACK sciterElementEventProc(void *userData, HELEMENT element, UINT eventIdentifier, void *parameters)
-            {
-                Core *core = reinterpret_cast<Core *>(userData);
-                return core->sciterElementEventProc(element, eventIdentifier, parameters);
-            }
-
-            static void CALLBACK sciterDebugOutput(void *userData, UINT subsystem, UINT severity, const wchar_t *text, UINT textSize)
-            {
-                Core *core = reinterpret_cast<Core *>(userData);
-                core->sciterDebugOutput(subsystem, severity, text, textSize);
             }
         };
 

@@ -172,7 +172,7 @@ namespace Gek
             // Plugin
             void enable(Video::Device::Context *deviceContext)
             {
-				deviceContext->vertexPipeline()->setInputLayout(inputLayout.get());
+				deviceContext->setInputLayout(inputLayout.get());
 				deviceContext->vertexPipeline()->setProgram(vertexProgram.get());
 				deviceContext->geometryPipeline()->setProgram(geometryProgram.get());
 			}

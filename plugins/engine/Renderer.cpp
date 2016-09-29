@@ -184,7 +184,6 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::PopulationListener
-            , public Plugin::PopulationStep
             , public Plugin::Renderer
         {
         public:
@@ -318,7 +317,6 @@ namespace Gek
                 , resources(resources)
             {
                 population->addListener(this);
-                population->addStep(this, 10, 100);
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::AllPoint;
@@ -380,7 +378,6 @@ namespace Gek
 
             ~Renderer(void)
             {
-                population->removeStep(this);
                 population->removeListener(this);
             }
 
@@ -630,22 +627,6 @@ namespace Gek
 
             void onLoadFailed(void)
             {
-            }
-
-            // Plugin::PopulationStep
-            void onUpdate(uint32_t order, State state)
-            {
-                GEK_REQUIRE(device);
-
-                if (order == 10)
-                {
-                    sendShout(&Plugin::RendererListener::onRenderBackground);
-                }
-                else if (order == 100)
-                {
-                    sendShout(&Plugin::RendererListener::onRenderForeground);
-                    device->present(false);
-                }
             }
         };
 

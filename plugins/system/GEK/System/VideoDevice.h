@@ -511,8 +511,6 @@ namespace Gek
             {
                 GEK_INTERFACE(Pipeline)
                 {
-					virtual void setInputLayout(Object *inputLayout) = 0;
-						
 					virtual void setProgram(Object *program) = 0;
                     virtual void setSamplerState(Object *samplerState, uint32_t stage) = 0;
                     virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
@@ -551,6 +549,7 @@ namespace Gek
                 virtual void setDepthState(Object *depthState, uint32_t stencilReference) = 0;
                 virtual void setBlendState(Object *blendState, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
 
+                virtual void setInputLayout(Object *inputLayout) = 0;
                 virtual void setVertexBuffer(uint32_t slot, Buffer *vertexBuffer, uint32_t offset) = 0;
                 virtual void setIndexBuffer(Buffer *indexBuffer, uint32_t offset) = 0;
                 virtual void setPrimitiveType(Video::PrimitiveType type) = 0;

@@ -189,7 +189,7 @@ namespace Gek
 
             visual = resources->loadVisual(L"model");
 
-            constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable, false);
+            constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
         }
 
         ~ModelProcessor(void)
