@@ -43,9 +43,15 @@ namespace Gek
         }
 
         template<typename DATA>
-        DATA saturate(DATA value, DATA min, DATA max)
+        DATA clamp(DATA value, DATA min, DATA max)
         {
             return std::min(std::max(value, min), max);
+        }
+
+        template<typename DATA>
+        DATA saturate(DATA value)
+        {
+            return clamp(value, DATA(0.0), DATA(1.0));
         }
     }; // namespace Math
 }; // namespace Gek

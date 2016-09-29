@@ -107,7 +107,7 @@ namespace Gek
 
         Quaternion Quaternion::slerp(const Quaternion &rotation, float factor) const
         {
-            float omega = std::acos(saturate(dot(rotation), -1.0f, 1.0f));
+            float omega = std::acos(clamp(dot(rotation), -1.0f, 1.0f));
             if (std::abs(omega) < 1e-10f)
             {
                 omega = 1e-10f;
