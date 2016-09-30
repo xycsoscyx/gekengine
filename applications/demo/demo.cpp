@@ -52,15 +52,15 @@ INT_PTR CALLBACK DialogProc(HWND dialog, UINT message, WPARAM wParam, LPARAM lPa
             switch (mode.aspectRatio)
             {
 			case Display::AspectRatio::_4x3:
-                aspectRatio = L", (4x3)";
+                aspectRatio = L" (4x3)";
                 break;
 
             case Display::AspectRatio::_16x9:
-                aspectRatio = L", (16x9)";
+                aspectRatio = L" (16x9)";
                 break;
 
             case Display::AspectRatio::_16x10:
-                aspectRatio = L", (16x10)";
+                aspectRatio = L" (16x10)";
                 break;
             };
 

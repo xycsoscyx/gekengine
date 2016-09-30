@@ -268,7 +268,7 @@ namespace Gek
                     }
                 };
 
-                SetupImGuiStyle(false, 1.0f);
+                SetupImGuiStyle(true, 1.0f);
 
                 static const wchar_t *vertexShader =
                     L"cbuffer vertexBuffer : register(b0)                                   \
@@ -642,6 +642,7 @@ namespace Gek
 
                     // Start the frame
                     ImGui::NewFrame();
+
                     ImGuizmo::BeginFrame();
 
                     static Math::Color clearColor;
@@ -680,20 +681,19 @@ namespace Gek
 
                             for (auto &mode : modesList)
                             {
-
                                 String aspectRatio(L"");
                                 switch (mode.aspectRatio)
                                 {
                                 case Display::AspectRatio::_4x3:
-                                    aspectRatio = L", (4x3)";
+                                    aspectRatio = L" (4x3)";
                                     break;
 
                                 case Display::AspectRatio::_16x9:
-                                    aspectRatio = L", (16x9)";
+                                    aspectRatio = L" (16x9)";
                                     break;
 
                                 case Display::AspectRatio::_16x10:
-                                    aspectRatio = L", (16x10)";
+                                    aspectRatio = L" (16x10)";
                                     break;
                                 };
 
