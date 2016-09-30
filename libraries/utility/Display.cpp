@@ -3,6 +3,7 @@
 #include "GEK\Utility\Exceptions.h"
 #include <algorithm>
 #include <Windows.h>
+#include <ppl.h>
 
 namespace Gek
 {
@@ -69,9 +70,9 @@ namespace Gek
 			modesList.push_back(mode);
 		}
 
-		std::sort(modesList.begin(), modesList.end(), [&](const Mode &left, const Mode &right) -> bool
+        concurrency::parallel_sort(modesList.begin(), modesList.end(), [](const Mode &left, const Mode &right) -> bool
 		{
-			return ((left.width * left.height) < (right.width * right.height));
+            return (left.width < right.width ? true : (left.width == right.width ? (left.height < right.height) : false));
 		});
 
 		return modesList;
