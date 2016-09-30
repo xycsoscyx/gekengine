@@ -3,6 +3,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Utility\XML.h"
 #include "GEK\Utility\Timer.h"
+#include "GEK\Utility\Display.h"
 #include "GEK\Engine\Application.h"
 #include "GEK\Engine\Core.h"
 #include "GEK\Engine\Population.h"
@@ -130,35 +131,7 @@ namespace Gek
                 , mouseSensitivity(0.5f)
             {
                 GEK_REQUIRE(window);
-/*
-                consoleCommandsMap[L"fullscreen"] = [this](const std::vector<String> &parameters) -> void
-                {
-                    bool fullscreen = !device->isFullScreen();
 
-                    device->setFullScreen(fullscreen);
-
-                    auto &displayNode = configuration.getChild(L"display");
-                    displayNode.attributes[L"fullscreen"] = fullscreen;
-                    sendShout(&Plugin::CoreListener::onConfigurationChanged);
-                };
-
-                consoleCommandsMap[L"setsize"] = [this](const std::vector<String> &parameters) -> void
-                {
-                    if (parameters.size() == 2)
-                    {
-                        uint32_t width = parameters[0];
-                        uint32_t height = parameters[1];
-                        device->setSize(width, height, Video::Format::R8G8B8A8_UNORM_SRGB);
-
-                        auto &displayNode = configuration.getChild(L"display");
-                        displayNode.attributes[L"width"] = width;
-                        displayNode.attributes[L"height"] = height;
-                        sendShout(&Plugin::CoreListener::onConfigurationChanged);
-
-                        sendShout(&Plugin::CoreListener::onResize);
-                    }
-                };
-*/
                 try
                 {
                     configuration = Xml::load(getContext()->getFileName(L"config.xml"), L"config");
@@ -686,7 +659,75 @@ namespace Gek
                             population->load(L"sponza");
                         }
 
-                        //ImGui::ListBox("Resolution", )
+                        static int currentItem = 0;
+                        static const auto modesList = Display().getModes(32);
+                        static std::vector<StringUTF8> modeStringsList;
+                        static std::vector<const char *> rawModeStringsList;
+                        if (modeStringsList.empty())
+                        {
+                            auto backBuffer = device->getBackBuffer();
+                            uint32_t width = backBuffer->getWidth();
+                            uint32_t height = backBuffer->getHeight();
+                            for (auto &mode : modesList)
+                            {
+                                if (mode.width == width && mode.height == height)
+                                {
+                                    break;
+                                }
+
+                                currentItem++;
+                            }
+
+                            for (auto &mode : modesList)
+                            {
+
+                                String aspectRatio(L"");
+                                switch (mode.aspectRatio)
+                                {
+                                case Display::AspectRatio::_4x3:
+                                    aspectRatio = L", (4x3)";
+                                    break;
+
+                                case Display::AspectRatio::_16x9:
+                                    aspectRatio = L", (16x9)";
+                                    break;
+
+                                case Display::AspectRatio::_16x10:
+                                    aspectRatio = L", (16x10)";
+                                    break;
+                                };
+
+                                modeStringsList.push_back(StringUTF8::create("%vx%v%v", mode.width, mode.height, aspectRatio));
+                            }
+
+                            for (auto &modeString : modeStringsList)
+                            {
+                                rawModeStringsList.push_back(modeString.c_str());
+                            }
+                        }
+
+                        if (ImGui::ListBox("Resolution", &currentItem, rawModeStringsList.data(), rawModeStringsList.size()))
+                        {
+                            auto &mode = modesList[currentItem];
+                            device->setSize(mode.width, mode.height, Video::Format::R8G8B8A8_UNORM_SRGB);
+
+                            auto &displayNode = configuration.getChild(L"display");
+                            displayNode.attributes[L"width"] = mode.width;
+                            displayNode.attributes[L"height"] = mode.height;
+                            sendShout(&Plugin::CoreListener::onConfigurationChanged);
+
+                            sendShout(&Plugin::CoreListener::onResize);
+                        }
+
+                        static bool fullScreen = device->isFullScreen();
+                        if (ImGui::Checkbox("FullScreen", &fullScreen))
+                        {
+                            device->setFullScreen(fullScreen);
+                            auto &displayNode = configuration.getChild(L"display");
+                            displayNode.attributes[L"fullscreen"] = fullScreen;
+                            sendShout(&Plugin::CoreListener::onConfigurationChanged);
+                        }
+
                         if (ImGui::Button("Quit"))
                         {
                             engineRunning = false;
