@@ -64,7 +64,11 @@
                         <normalBuffer />
                     </targets>
                 </StoreDeferred>
+            </passes>
+        </DeferredPass>
 
+        <AmbientPass enable="false">
+            <passes>
                 <AmbientCalculation entry="mainPixelProgram">
                     <defines>
                         <radius>2</radius>
@@ -159,9 +163,13 @@
                     </targets>
                 </AmbientLighting>
             </passes>
-        </DeferredPass>
+        </AmbientPass>
 
         <LightingPass lighting="true">
+            <clear>
+                <screen type="target">(0, 0, 0, 0)</screen>
+            </clear>
+
             <passes>
                 <TiledLightCulling compute="(dispatchWidth, dispatchHeight, 1)" entry="mainComputeProgram">
                     <resources>
