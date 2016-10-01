@@ -96,12 +96,14 @@ namespace Gek
 
             struct BlockData
             {
+                bool enabled;
                 bool lighting;
                 std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::list<PassData> passList;
 
                 BlockData(void)
-                    : lighting(false)
+                    : enabled(true)
+                    , lighting(false)
                 {
                 }
             };
@@ -532,7 +534,8 @@ namespace Gek
                     blockList.push_back(BlockData());
                     BlockData &block = blockList.back();
 
-                    block.lighting = blockNode.getAttribute(L"lighting");
+                    block.enabled = blockNode.getAttribute(L"enable", L"true");
+                    block.lighting = blockNode.getAttribute(L"lighting", L"false");
                     if(block.lighting && lightsPerPass == 0)
                     {
                         throw InvalidParameters();
@@ -1159,6 +1162,11 @@ namespace Gek
 
             bool prepareBlock(uint32_t &base, Video::Device::Context *deviceContext, BlockData &block)
             {
+                if (!block.enabled)
+                {
+                    return false;
+                }
+
                 if (base == 0)
                 {
                     for (auto &clearTarget : block.clearResourceMap)
