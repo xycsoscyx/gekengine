@@ -4,7 +4,6 @@
 namespace Gek
 {
     ThreadPool::ThreadPool(size_t threadCount)
-        : stop(false)
     {
         workerList.reserve(threadCount);
         for (size_t count = 0; count < threadCount; ++count)

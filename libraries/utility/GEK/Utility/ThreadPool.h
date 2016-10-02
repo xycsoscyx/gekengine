@@ -20,7 +20,7 @@ namespace Gek
         // Synchronization
         std::mutex queueMutex;
         std::condition_variable condition;
-        bool stop;
+        bool stop = false;
 
     public:
         // Launches specified number of worker threads

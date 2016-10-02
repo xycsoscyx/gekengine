@@ -180,11 +180,11 @@ namespace Gek
             Plugin::Population *population;
 
             String shaderName;
-            uint32_t priority;
+            uint32_t priority = 0;
 
             Video::BufferPtr shaderConstantBuffer;
 
-            uint32_t lightsPerPass;
+            uint32_t lightsPerPass = 0;
             Video::BufferPtr lightConstantBuffer;
             Video::BufferPtr lightDataBuffer;
             std::vector<LightData> lightList;
@@ -199,8 +199,6 @@ namespace Gek
                 , resources(resources)
                 , population(population)
                 , shaderName(shaderName)
-                , priority(0)
-                , lightsPerPass(0)
             {
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);

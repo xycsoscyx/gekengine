@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>C:\Program Files (x86)\Windows Kits\8.1\Include\um;$(SolutionDir)..\external\JSON;$(SolutionDir)..\libraries\math;$(SolutionDir)..\libraries\shapes;$(SolutionDir)..\libraries\utility;$(SolutionDir)..\libraries\context;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files (x86)\Windows Kits\8.1\Include\um;$(SolutionDir)..\external\imgui;$(SolutionDir)..\external\imguizmo;$(SolutionDir)..\libraries\math;$(SolutionDir)..\libraries\shapes;$(SolutionDir)..\libraries\utility;$(SolutionDir)..\libraries\context;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files (x86)\Windows Kits\8.1\Lib\winv6.3\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>

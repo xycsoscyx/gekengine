@@ -12,7 +12,7 @@ namespace Gek
         std::chrono::high_resolution_clock::time_point previousTime;
         std::chrono::high_resolution_clock::time_point currentTime;
         std::chrono::high_resolution_clock::time_point pausedTime;
-        bool pausedState;
+        bool pausedState = false;
 
     public:
         Timer(void);

@@ -840,7 +840,6 @@ namespace Gek
             Device(Gek::Context *context, HWND window, Video::Format format, String device)
                 : ContextRegistration(context)
                 , window(window)
-                , fullScreen(fullScreen)
                 , format(format)
             {
                 throw Exception("TODO: Finish Direct3D12 Video Device");

@@ -13,9 +13,6 @@
 #include <concurrent_queue.h>
 #include <ppl.h>
 
-#include <imgui.h>
-#include <ImGuizmo.h>
-
 namespace Gek
 {
     namespace Implementation
@@ -90,15 +87,14 @@ namespace Gek
 
         private:
             HWND window;
-            bool windowActive;
-            bool engineRunning;
+            bool windowActive = false;
+            bool engineRunning = false;
 
-            Xml::Node configuration;
+            Xml::Node configuration = Xml::Node(nullptr);
 
             Timer timer;
-            double updateAccumulator;
             POINT lastCursorPosition;
-            float mouseSensitivity;
+            float mouseSensitivity = 0.5f;
 
             Video::DevicePtr device;
             Plugin::RendererPtr renderer;
@@ -120,15 +116,17 @@ namespace Gek
             Video::BufferPtr vertexBuffer;
             Video::BufferPtr indexBuffer;
 
+            bool showMainMenu = true;
+            int currentResolution = 0;
+            const std::vector<Display::Mode> modesList = Display().getModes(32);
+            std::vector<StringUTF8> modesTextList;
+            bool fullScreen = false;
+            char loadLevel[256] = "sponza";
+
         public:
             Core(Context *context, HWND window)
                 : ContextRegistration(context)
                 , window(window)
-                , windowActive(false)
-                , engineRunning(true)
-                , configuration(nullptr)
-                , updateAccumulator(0.0)
-                , mouseSensitivity(0.5f)
             {
                 GEK_REQUIRE(window);
 
@@ -140,6 +138,30 @@ namespace Gek
                 {
                     configuration = Xml::Node(L"config");
                 };
+
+                for (auto &mode : modesList)
+                {
+                    StringUTF8 text(StringUTF8::create("%vx%v", mode.width, mode.height));
+                    switch (mode.aspectRatio)
+                    {
+                    case Display::AspectRatio::_4x3:
+                        text.append(" (4x3)");
+                        break;
+
+                    case Display::AspectRatio::_16x9:
+                        text.append(" (16x9)");
+                        break;
+
+                    case Display::AspectRatio::_16x10:
+                        text.append(" (16x10)");
+                        break;
+                    };
+
+                    modesTextList.push_back(text);
+                }
+
+                auto &displayNode = configuration.getChild(L"display");
+                fullScreen = displayNode.getAttribute(L"fullscreen", L"false");
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -351,9 +373,9 @@ namespace Gek
                 depthState = device->createDepthState(depthStateInformation);
 
                 uint8_t *pixels = nullptr;
-                int32_t width = 0, height = 0;
-                io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
-                font = device->createTexture(Video::Format::R8G8B8A8_UNORM, width, height, 1, 1, Video::TextureFlags::Resource, pixels);
+                int32_t fontWidth = 0, fontHeight = 0;
+                io.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
+                font = device->createTexture(Video::Format::R8G8B8A8_UNORM, fontWidth, fontHeight, 1, 1, Video::TextureFlags::Resource, pixels);
                 io.Fonts->TexID = (Video::Object *)font.get();
 
                 Video::SamplerStateInformation samplerStateInformation;
@@ -371,7 +393,26 @@ namespace Gek
                     core->renderDrawData(drawData);
                 };
 
+                auto backBuffer = device->getBackBuffer();
+                uint32_t width = backBuffer->getWidth();
+                uint32_t height = backBuffer->getHeight();
+                for (auto &mode : modesList)
+                {
+                    if (mode.width == width && mode.height == height)
+                    {
+                        break;
+                    }
+
+                    currentResolution++;
+                }
+
+                if (fullScreen)
+                {
+                    device->setFullScreen(true);
+                }
+
                 windowActive = true;
+                engineRunning = true;
             }
 
             ~Core(void)
@@ -473,15 +514,6 @@ namespace Gek
 
                     timer.pause(!windowActive);
                     return 1;
-
-                case WM_SYSCOMMAND:
-                    if (SC_KEYMENU == (wParam & 0xFFF0))
-                    {
-                        device->setFullScreen(!device->isFullScreen());
-                        return 1;
-                    }
-
-                    break;
 
                 case WM_SIZE:
                     device->resize();
@@ -645,70 +677,29 @@ namespace Gek
 
                     ImGuizmo::BeginFrame();
 
-                    static Math::Color clearColor;
-                    static bool showWindow = true;
-                    if (showWindow)
+                    if (showMainMenu)
                     {
-                        ImGui::Begin("Main Menu", &showWindow);
+                        ImGui::Begin("Debug Menu", &showMainMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
 
-                        static float slider = 0.0f;
-                        ImGui::Text("Hello, world!");
-                        ImGui::ColorEdit3("clear color", clearColor.data);
                         ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+                        ImGui::InputText("##Load Level", loadLevel, 256);
+
+                        ImGui::SameLine();
                         if (ImGui::Button("Load"))
                         {
-                            population->load(L"sponza");
+                            population->load(String(loadLevel));
                         }
 
-                        static int currentItem = 0;
-                        static const auto modesList = Display().getModes(32);
-                        static std::vector<StringUTF8> modeStringsList;
-                        static std::vector<const char *> rawModeStringsList;
-                        if (modeStringsList.empty())
+                        if (ImGui::ListBox("##Resolution", &currentResolution, [](void *data, int index, const char **text) -> bool
                         {
-                            auto backBuffer = device->getBackBuffer();
-                            uint32_t width = backBuffer->getWidth();
-                            uint32_t height = backBuffer->getHeight();
-                            for (auto &mode : modesList)
-                            {
-                                if (mode.width == width && mode.height == height)
-                                {
-                                    break;
-                                }
-
-                                currentItem++;
-                            }
-
-                            for (auto &mode : modesList)
-                            {
-                                String aspectRatio(L"");
-                                switch (mode.aspectRatio)
-                                {
-                                case Display::AspectRatio::_4x3:
-                                    aspectRatio = L" (4x3)";
-                                    break;
-
-                                case Display::AspectRatio::_16x9:
-                                    aspectRatio = L" (16x9)";
-                                    break;
-
-                                case Display::AspectRatio::_16x10:
-                                    aspectRatio = L" (16x10)";
-                                    break;
-                                };
-
-                                modeStringsList.push_back(StringUTF8::create("%vx%v%v", mode.width, mode.height, aspectRatio));
-                            }
-
-                            for (auto &modeString : modeStringsList)
-                            {
-                                rawModeStringsList.push_back(modeString.c_str());
-                            }
-                        }
-
-                        if (ImGui::ListBox("Resolution", &currentItem, rawModeStringsList.data(), rawModeStringsList.size()))
+                            Core *core = static_cast<Core *>(data);
+                            auto &mode = core->modesTextList[index];
+                            (*text) = mode.c_str();
+                            return true;
+                        }, this, modesList.size(), 5))
                         {
-                            auto &mode = modesList[currentItem];
+                            auto &mode = modesList[currentResolution];
                             device->setSize(mode.width, mode.height, Video::Format::R8G8B8A8_UNORM_SRGB);
 
                             auto &displayNode = configuration.getChild(L"display");
@@ -719,7 +710,7 @@ namespace Gek
                             sendShout(&Plugin::CoreListener::onResize);
                         }
 
-                        static bool fullScreen = device->isFullScreen();
+                        ImGui::SameLine();
                         if (ImGui::Checkbox("FullScreen", &fullScreen))
                         {
                             device->setFullScreen(fullScreen);
@@ -735,14 +726,17 @@ namespace Gek
 
                         ImGui::End();
                     }
-
-                    device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), clearColor);
                 }
                 else if (order == 100)
                 {
                     ImGui::Render();
                     device->present(false);
                 }
+            }
+
+            ImGuiContext *getDefaultUIContext(void) const
+            {
+                return ImGui::GetCurrentContext();
             }
 
             // ImGui
