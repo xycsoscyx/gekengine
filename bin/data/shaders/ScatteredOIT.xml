@@ -16,7 +16,7 @@
         <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
         <modulationDiffusionBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</modulationDiffusionBuffer>
         <refractionBuffer bind="float2" flags="target">R8G8_NORM</refractionBuffer>
-        <depthBuffer bind="float" source="CookTorrance" />
+        <depthBuffer bind="float" source="Solid" />
         <depthCopy bind="float">R32_FLOAT</depthCopy>
     </textures>
 
