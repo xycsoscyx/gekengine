@@ -3,7 +3,6 @@
 namespace Gek
 {
     Timer::Timer(void)
-        : pausedState(false)
     {
         reset();
     }

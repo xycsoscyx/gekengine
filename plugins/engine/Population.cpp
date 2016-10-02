@@ -19,9 +19,15 @@ namespace Gek
             : public Plugin::Entity
         {
         private:
+            String name;
             std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> componentsMap;
 
         public:
+            Entity(const wchar_t *name)
+                : name(name)
+            {
+            }
+
             void addComponent(Plugin::Component *component, std::unique_ptr<Plugin::Component::Data> &&data)
             {
                 componentsMap[component->getIdentifier()] = std::move(data);
@@ -37,6 +43,11 @@ namespace Gek
             }
 
             // Plugin::Entity
+            const wchar_t * getName(void) const
+            {
+                return name;
+            }
+
             bool hasComponent(const std::type_index &type) const
             {
                 return (componentsMap.count(type) > 0);
@@ -66,7 +77,7 @@ namespace Gek
 		};
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
-            , public Plugin::Population
+            , public Debug::Population
         {
         private:
             Plugin::Core *core;
@@ -116,6 +127,12 @@ namespace Gek
                 entityList.clear();
                 componentNamesMap.clear();
                 componentsMap.clear();
+            }
+
+            // Debug::Population
+            std::vector<Plugin::EntityPtr> &getEntityList(void)
+            {
+                return entityList;
             }
 
             // Plugin::Population
@@ -296,9 +313,16 @@ namespace Gek
                 entity->removeComponent(type);
             }
 
+            uint32_t uniqueEntityIdentifier = 0;
             Plugin::Entity * createEntity(const EntityDefinition &entityDefinition)
             {
-                std::shared_ptr<Entity> entity(std::make_shared<Entity>());
+                String name(entityDefinition.name);
+                if (name.empty())
+                {
+                    name.format(L"unnamed_%v", ++uniqueEntityIdentifier);
+                }
+
+                std::shared_ptr<Entity> entity(std::make_shared<Entity>(name));
                 for (auto &componentData : entityDefinition)
                 {
                     addComponent(entity.get(), componentData);

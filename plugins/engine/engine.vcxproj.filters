@@ -80,6 +80,12 @@
     <ClInclude Include="ShaderFilter.h">
       <Filter>Source Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\external\imgui\imgui.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\imgui\imgui_internal.h">
+      <Filter>ImGui</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

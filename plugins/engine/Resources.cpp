@@ -45,14 +45,13 @@ namespace Gek
         protected:
             ResourceRequester *resources;
 
-            uint64_t nextIdentifier;
+            uint64_t nextIdentifier = 0;
             concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
             concurrency::concurrent_unordered_map<HANDLE, TypePtr> resourceMap;
 
         public:
             ResourceCache(ResourceRequester *resources)
                 : resources(resources)
-                , nextIdentifier(0)
             {
                 GEK_REQUIRE(resources);
             }

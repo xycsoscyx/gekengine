@@ -425,10 +425,90 @@ namespace Gek
                 cameraConstantData.viewMatrix = viewMatrix;
                 cameraConstantData.projectionMatrix = projectionMatrix;
 
-                static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
-                static ImGuizmo::MODE mCurrentGizmoMode(ImGuizmo::WORLD);
-                static Math::Float4x4 matrix(Math::Float4x4::Identity);
-                ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, mCurrentGizmoOperation, mCurrentGizmoMode, matrix.data, NULL, false);
+                static bool showSelectionMenu = true;
+                if (showSelectionMenu)
+                {
+                    ImGui::Begin("Selection Menu", &showSelectionMenu);
+
+                    Debug::Population *debugPopulation = dynamic_cast<Debug::Population *>(population);
+                    auto entityList = debugPopulation->getEntityList();
+                    auto entityCount = entityList.size();
+                    static uint32_t selectedEntity = 0;
+
+                    if (ImGui::ListBoxHeader("##Entities", entityCount, 10))
+                    {
+                        ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
+                        while (clipper.Step())
+                        {
+                            for (int displayIndex = clipper.DisplayStart; displayIndex < clipper.DisplayEnd; displayIndex++)
+                            {
+                                ImGui::PushID(displayIndex);
+                                if (ImGui::Selectable(StringUTF8(entityList[displayIndex]->getName()), (displayIndex == selectedEntity)))
+                                {
+                                    selectedEntity = displayIndex;
+                                }
+
+                                ImGui::PopID();
+                            }
+                        };
+
+                        ImGui::ListBoxFooter();
+                    }
+
+                    static ImGuizmo::OPERATION mCurrentGizmoOperation(ImGuizmo::ROTATE);
+                    if (ImGui::RadioButton("Translate", mCurrentGizmoOperation == ImGuizmo::TRANSLATE))
+                    {
+                        mCurrentGizmoOperation = ImGuizmo::TRANSLATE;
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton("Rotate", mCurrentGizmoOperation == ImGuizmo::ROTATE))
+                    {
+                        mCurrentGizmoOperation = ImGuizmo::ROTATE;
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::RadioButton("Scale", mCurrentGizmoOperation == ImGuizmo::SCALE))
+                    {
+                        mCurrentGizmoOperation = ImGuizmo::SCALE;
+                    }
+
+                    auto &transformComponent = entityList[selectedEntity]->getComponent<Components::Transform>();
+                    ImGui::InputFloat3("Position", transformComponent.position.data, 3);
+                    ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 3);
+                    ImGui::InputFloat3("Scale", transformComponent.scale.data, 3);
+
+                    static bool useSnap(true);
+                    ImGui::Checkbox("##Snap", &useSnap);
+                    ImGui::SameLine();
+
+                    Math::Float3 snap;
+                    switch (mCurrentGizmoOperation)
+                    {
+                    case ImGuizmo::TRANSLATE:
+                        snap = Math::Float3(1.0f / 12.0f);
+                        ImGui::InputFloat3("Units", snap.data);
+                        break;
+
+                    case ImGuizmo::ROTATE:
+                        snap = Math::Float3(10.0f);
+                        ImGui::InputFloat("Degrees", snap.data);
+                        break;
+
+                    case ImGuizmo::SCALE:
+                        snap = Math::Float3(1.0f / 10.0f);
+                        ImGui::InputFloat("Size", snap.data);
+                        break;
+                    };
+
+                    auto matrix(transformComponent.getMatrix());
+                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, mCurrentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap.data);
+                    transformComponent.rotation = matrix.getQuaternion();
+                    transformComponent.position = matrix.translation;
+                    transformComponent.scale = matrix.getScaling();
+
+                    ImGui::End();
+                }
 
                 drawCallList.clear();
                 sendShout(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);

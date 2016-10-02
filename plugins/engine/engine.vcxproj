@@ -157,6 +157,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\external\imgui\imgui.h" />
+    <ClInclude Include="..\..\external\imgui\imgui_internal.h" />
     <ClInclude Include="GEK\Engine\Application.h" />
     <ClInclude Include="GEK\Engine\Component.h" />
     <ClInclude Include="GEK\Engine\ComponentMixin.h" />

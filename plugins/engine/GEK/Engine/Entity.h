@@ -14,6 +14,8 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(ComponentNotFound);
 
+            virtual const wchar_t * getName(void) const = 0;
+
             virtual bool hasComponent(const std::type_index &type) const = 0;
 
 			virtual Plugin::Component::Data *getComponent(const std::type_index &type) = 0;
