@@ -347,27 +347,25 @@ namespace Gek
                 cameraConstantBuffer->setName(L"cameraConstantBuffer");
 
                 static const wchar_t program[] =
-                    L"struct Pixel                                                                       \r\n" \
-                    L"{                                                                                  \r\n" \
-                    L"    float4 screen : SV_POSITION;                                                   \r\n" \
-                    L"    float2 texCoord : TEXCOORD0;                                                   \r\n" \
-                    L"};                                                                                 \r\n" \
-                    L"                                                                                   \r\n" \
-                    L"Pixel mainVertexProgram(in uint vertexID : SV_VertexID)                            \r\n" \
-                    L"{                                                                                  \r\n" \
-                    L"    Pixel pixel;                                                                   \r\n" \
-                    L"    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);                    \r\n" \
-                    L"    pixel.screen = float4(pixel.texCoord * float2(2.0f, -2.0f)                     \r\n" \
-                    L"                                           + float2(-1.0f, 1.0f), 0.0f, 1.0f);     \r\n" \
-                    L"    return pixel;                                                                  \r\n" \
-                    L"}                                                                                  \r\n" \
-                    L"                                                                                   \r\n" \
-                    L"Texture2D<float3> screenBuffer : register(t0);                                     \r\n" \
-                    L"float4 mainPixelProgram(Pixel inputPixel) : SV_TARGET0                             \r\n" \
-                    L"{                                                                                  \r\n" \
-                    L"    return float4(screenBuffer[inputPixel.screen.xy], 1.0);                        \r\n" \
-                    L"}                                                                                  \r\n" \
-                    L"                                                                                   \r\n";
+                    L"struct Pixel" \
+                    L"{" \
+                    L"    float4 screen : SV_POSITION;" \
+                    L"    float2 texCoord : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"Pixel mainVertexProgram(in uint vertexID : SV_VertexID)" \
+                    L"{" \
+                    L"    Pixel pixel;" \
+                    L"    pixel.texCoord = float2((vertexID << 1) & 2, vertexID & 2);" \
+                    L"    pixel.screen = float4(pixel.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);" \
+                    L"    return pixel;" \
+                    L"}" \
+                    L"" \
+                    L"Texture2D<float3> screenBuffer : register(t0);" \
+                    L"float4 mainPixelProgram(Pixel inputPixel) : SV_TARGET0" \
+                    L"{" \
+                    L"    return float4(screenBuffer[inputPixel.screen.xy], 1.0);" \
+                    L"}";
 
 				auto compiledVertexProgram = resources->compileProgram(Video::ProgramType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
 				deferredVertexProgram = device->createProgram(Video::ProgramType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());

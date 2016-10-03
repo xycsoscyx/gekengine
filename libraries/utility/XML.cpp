@@ -7,6 +7,8 @@ namespace Gek
 {
     namespace Xml
     {
+        const Node Node::Empty(nullptr, Source::Code);
+
         Node::Node(const wchar_t *type, Source source)
             : source(source)
             , type(type)

@@ -84,13 +84,11 @@ namespace Gek
             bool windowActive = false;
             bool engineRunning = false;
 
-            std::queue<std::function<void(void)>> updateQueue;
-
             int currentDisplayMode = 0;
             std::vector<StringUTF8> displayModeStringList;
             bool fullScreen = false;
 
-            Xml::Node configuration = Xml::Node(nullptr);
+            Xml::Node configuration = Xml::Node::Empty;
 
             Timer timer;
             float mouseSensitivity = 0.5f;
@@ -304,33 +302,33 @@ namespace Gek
                 SetupImGuiStyle(true, 1.0f);
 
                 static const wchar_t *vertexShader =
-                    L"cbuffer vertexBuffer : register(b0)                                   \
-                    {                                                                       \
-                        float4x4 ProjectionMatrix;                                          \
-                    };                                                                      \
-                                                                                            \
-                    struct VS_INPUT                                                         \
-                    {                                                                       \
-                        float2 pos : POSITION;                                              \
-                        float4 col : COLOR0;                                                \
-                        float2 uv  : TEXCOORD0;                                             \
-                    };                                                                      \
-                                                                                            \
-                    struct PS_INPUT                                                         \
-                    {                                                                       \
-                        float4 pos : SV_POSITION;                                           \
-                        float4 col : COLOR0;                                                \
-                        float2 uv  : TEXCOORD0;                                             \
-                    };                                                                      \
-                                                                                            \
-                    PS_INPUT main(VS_INPUT input)                                           \
-                    {                                                                       \
-                        PS_INPUT output;                                                    \
-                        output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));\
-                        output.col = input.col;                                             \
-                        output.uv  = input.uv;                                              \
-                        return output;                                                      \
-                    }";
+                    L"cbuffer vertexBuffer : register(b0)" \
+                    L"{" \
+                    L"    float4x4 ProjectionMatrix;" \
+                    L"};" \
+                    L"" \
+                    L"struct VS_INPUT" \
+                    L"{" \
+                    L"    float2 pos : POSITION;" \
+                    L"    float4 col : COLOR0;" \
+                    L"    float2 uv  : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"struct PS_INPUT" \
+                    L"{" \
+                    L"    float4 pos : SV_POSITION;" \
+                    L"    float4 col : COLOR0;" \
+                    L"    float2 uv  : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"PS_INPUT main(VS_INPUT input)" \
+                    L"{" \
+                    L"    PS_INPUT output;" \
+                    L"    output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));" \
+                    L"    output.col = input.col;" \
+                    L"    output.uv  = input.uv;" \
+                    L"    return output;" \
+                    L"}";
 
                 auto &compiled = resources->compileProgram(Video::ProgramType::Vertex, L"uiVertexProgram", L"main", vertexShader);
                 vertexProgram = device->createProgram(Video::ProgramType::Vertex, compiled.data(), compiled.size());
@@ -344,21 +342,21 @@ namespace Gek
                 constantBuffer = device->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
 
                 static const wchar_t *pixelShader =
-                    L"struct PS_INPUT                                                       \
-                    {                                                                       \
-                        float4 pos : SV_POSITION;                                           \
-                        float4 col : COLOR0;                                                \
-                        float2 uv  : TEXCOORD0;                                             \
-                    };                                                                      \
-                                                                                            \
-                    sampler sampler0;                                                       \
-                    Texture2D texture0;                                                     \
-                                                                                            \
-                    float4 main(PS_INPUT input) : SV_Target                                 \
-                    {                                                                       \
-                        float4 out_col = input.col * texture0.Sample(sampler0, input.uv);   \
-                        return out_col;                                                     \
-                    }";
+                    L"struct PS_INPUT" \
+                    L"{" \
+                    L"    float4 pos : SV_POSITION;" \
+                    L"    float4 col : COLOR0;" \
+                    L"    float2 uv  : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"sampler sampler0;" \
+                    L"Texture2D texture0;" \
+                    L"" \
+                    L"float4 main(PS_INPUT input) : SV_Target" \
+                    L"{" \
+                    L"    float4 out_col = input.col * texture0.Sample(sampler0, input.uv);" \
+                    L"    return out_col;" \
+                    L"}";
 
                 compiled = resources->compileProgram(Video::ProgramType::Pixel, L"uiPixelProgram", L"main", pixelShader);
                 pixelProgram = device->createProgram(Video::ProgramType::Pixel, compiled.data(), compiled.size());
@@ -381,6 +379,9 @@ namespace Gek
                 renderState = device->createRenderState(renderStateInformation);
 
                 Video::DepthStateInformation depthStateInformation;
+                depthStateInformation.enable = true;
+                depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
+                depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
                 depthState = device->createDepthState(depthStateInformation);
 
                 uint8_t *pixels = nullptr;
@@ -647,12 +648,79 @@ namespace Gek
 
             bool update(void)
             {
-                while (!updateQueue.empty())
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+
+                auto backBuffer = device->getBackBuffer();
+                uint32_t width = backBuffer->getWidth();
+                uint32_t height = backBuffer->getHeight();
+                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+
+                imGuiIo.DeltaTime = float(timer.getUpdateTime());
+
+                // Read keyboard modifiers inputs
+                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                imGuiIo.KeySuper = false;
+                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                // Hide OS mouse cursor if ImGui is drawing it
+                SetCursor(imGuiIo.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
+
+                // Start the frame
+                ImGui::NewFrame();
+
+                ImGuizmo::BeginFrame();
+
+                if (showMainMenu)
                 {
-                    auto function = updateQueue.front();
-                    function();
-                    updateQueue.pop();
-                };
+                    ImGui::Begin("Debug Menu", &showMainMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+
+                    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+                    ImGui::InputText("##Load Level", loadLevelName, 256);
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("Load"))
+                    {
+                        population->load(String(loadLevelName));
+                    }
+
+                    if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
+                    {
+                        Core *core = static_cast<Core *>(data);
+                        auto &mode = core->displayModeStringList[index];
+                        (*text) = mode.c_str();
+                        return true;
+                    }, this, displayModeStringList.size(), 5))
+                    {
+                        device->setDisplayMode(currentDisplayMode);
+                        auto &displayNode = configuration.getChild(L"display");
+                        displayNode.attributes[L"mode"] = currentDisplayMode;
+                        sendShout(&Plugin::CoreListener::onConfigurationChanged);
+                        sendShout(&Plugin::CoreListener::onResize);
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Checkbox("FullScreen", &fullScreen))
+                    {
+                        device->setFullScreen(fullScreen);
+                        auto &displayNode = configuration.getChild(L"display");
+                        displayNode.attributes[L"fullscreen"] = fullScreen;
+                        sendShout(&Plugin::CoreListener::onConfigurationChanged);
+                        sendShout(&Plugin::CoreListener::onResize);
+                    }
+
+                    if (ImGui::Button("Quit"))
+                    {
+                        engineRunning = false;
+                    }
+
+                    ImGui::End();
+                }
 
                 timer.update();
                 float frameTime = float(timer.getUpdateTime());
@@ -676,89 +744,6 @@ namespace Gek
                     else
                     {
                         actionQueue.clear();
-                    }
-
-                    ImGuiIO &imGuiIo = ImGui::GetIO();
-
-                    auto backBuffer = device->getBackBuffer();
-                    uint32_t width = backBuffer->getWidth();
-                    uint32_t height = backBuffer->getHeight();
-                    imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-
-                    imGuiIo.DeltaTime = float(timer.getUpdateTime());
-
-                    // Read keyboard modifiers inputs
-                    imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                    imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                    imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-                    imGuiIo.KeySuper = false;
-                    // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-                    // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-                    // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-                    // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-                    // Hide OS mouse cursor if ImGui is drawing it
-                    SetCursor(imGuiIo.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
-
-                    // Start the frame
-                    ImGui::NewFrame();
-
-                    ImGuizmo::BeginFrame();
-
-                    if (showMainMenu)
-                    {
-                        ImGui::Begin("Debug Menu", &showMainMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
-
-                        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-
-                        ImGui::InputText("##Load Level", loadLevelName, 256);
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("Load"))
-                        {
-                            updateQueue.push([&](void) -> void
-                            {
-                                population->load(String(loadLevelName));
-                            });
-                        }
-
-                        if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
-                        {
-                            Core *core = static_cast<Core *>(data);
-                            auto &mode = core->displayModeStringList[index];
-                            (*text) = mode.c_str();
-                            return true;
-                        }, this, displayModeStringList.size(), 5))
-                        {
-                            updateQueue.push([&](void) -> void
-                            {
-                                device->setDisplayMode(currentDisplayMode);
-                                auto &displayNode = configuration.getChild(L"display");
-                                displayNode.attributes[L"mode"] = currentDisplayMode;
-                                sendShout(&Plugin::CoreListener::onConfigurationChanged);
-                                sendShout(&Plugin::CoreListener::onResize);
-                            });
-                        }
-
-                        ImGui::SameLine();
-                        if (ImGui::Checkbox("FullScreen", &fullScreen))
-                        {
-                            updateQueue.push([&](void) -> void
-                            {
-                                device->setFullScreen(fullScreen);
-                                auto &displayNode = configuration.getChild(L"display");
-                                displayNode.attributes[L"fullscreen"] = fullScreen;
-                                sendShout(&Plugin::CoreListener::onConfigurationChanged);
-                                sendShout(&Plugin::CoreListener::onResize);
-                            });
-                        }
-
-                        if (ImGui::Button("Quit"))
-                        {
-                            engineRunning = false;
-                        }
-
-                        ImGui::End();
                     }
                 }
                 else if (order == 100)
