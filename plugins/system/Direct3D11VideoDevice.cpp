@@ -1008,7 +1008,7 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Device, HWND, Video::Format, String)
-            , public Video::Device
+            , public Video::Debug::Device
         {
             class Context
                 : public Video::Device::Context
@@ -1566,12 +1566,12 @@ namespace Gek
         public:
             HWND window;
             bool isChildWindow;
-            bool fullScreen;
-            Video::Format backBufferFormat;
+
+            std::vector<Video::DisplayMode> displayModeList;
 
             CComPtr<ID3D11Device> d3dDevice;
             CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-            CComPtr<IDXGISwapChain> dxSwapChain;
+            CComPtr<IDXGISwapChain> dxgiSwapChain;
 
             Video::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
@@ -1581,21 +1581,16 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent(window) != nullptr)
-                , backBufferFormat(backBufferFormat)
-                , fullScreen(false)
             {
                 GEK_REQUIRE(window);
 
-                RECT clientRectangle;
-                GetClientRect(window, &clientRectangle);
-
                 DXGI_SWAP_CHAIN_DESC swapChainDescription;
-                swapChainDescription.BufferDesc.Width = (clientRectangle.right - clientRectangle.left);
-                swapChainDescription.BufferDesc.Height = (clientRectangle.bottom - clientRectangle.top);
+                swapChainDescription.BufferDesc.Width = 0;
+                swapChainDescription.BufferDesc.Height = 0;
                 swapChainDescription.BufferDesc.Format = DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)];
-                swapChainDescription.BufferDesc.RefreshRate.Numerator = 60;
-                swapChainDescription.BufferDesc.RefreshRate.Denominator = 1;
-                swapChainDescription.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
+                swapChainDescription.BufferDesc.RefreshRate.Numerator = 0;
+                swapChainDescription.BufferDesc.RefreshRate.Denominator = 0;
+                swapChainDescription.BufferDesc.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
                 swapChainDescription.BufferDesc.Scaling = DXGI_MODE_SCALING_CENTERED;
                 swapChainDescription.SampleDesc.Count = 1;
                 swapChainDescription.SampleDesc.Quality = 0;
@@ -1617,13 +1612,13 @@ namespace Gek
                 };
 
                 D3D_FEATURE_LEVEL featureLevel;
-                HRESULT resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext);
+                HRESULT resultValue = D3D11CreateDeviceAndSwapChain(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, _ARRAYSIZE(featureLevelList), D3D11_SDK_VERSION, &swapChainDescription, &dxgiSwapChain, &d3dDevice, &featureLevel, &d3dDeviceContext);
                 if (featureLevel != featureLevelList[0])
                 {
                     throw Video::FeatureLevelNotSupported();
                 }
 
-                if (FAILED(resultValue) || !dxSwapChain || !d3dDevice || !d3dDeviceContext)
+                if (FAILED(resultValue) || !dxgiSwapChain || !d3dDevice || !d3dDeviceContext)
                 {
                     throw Video::InitializationFailed();
                 }
@@ -1648,7 +1643,7 @@ namespace Gek
                     throw Video::InitializationFailed();
                 }
 
-                dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER);
+                dxgiFactory->MakeWindowAssociation(window, DXGI_MWA_NO_ALT_ENTER | DXGI_MWA_NO_WINDOW_CHANGES);
 
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
@@ -1659,6 +1654,88 @@ namespace Gek
 #endif
 
                 defaultContext = std::make_shared<Context>(this, d3dDeviceContext);
+                getDisplayModes();
+            }
+
+            void getDisplayModes(void)
+            {
+                CComPtr<IDXGIOutput> dxgiOutput;
+                dxgiSwapChain->GetContainingOutput(&dxgiOutput);
+                if (dxgiOutput)
+                {
+                    DXGI_SWAP_CHAIN_DESC chainDescription;
+                    dxgiSwapChain->GetDesc(&chainDescription);
+
+                    uint32_t modeCount = 0;
+                    dxgiOutput->GetDisplayModeList(chainDescription.BufferDesc.Format, 0, &modeCount, nullptr);
+
+                    std::vector<DXGI_MODE_DESC> dxgiDisplayModeList(modeCount);
+                    dxgiOutput->GetDisplayModeList(chainDescription.BufferDesc.Format, 0, &modeCount, dxgiDisplayModeList.data());
+
+                    displayModeList.clear();
+                    for (auto &dxgiDisplayMode : dxgiDisplayModeList)
+                    {
+                        if (dxgiDisplayMode.ScanlineOrdering == DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE && dxgiDisplayMode.Scaling == DXGI_MODE_SCALING_CENTERED)
+                        {
+                            auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
+                            {
+                                const float AspectRatio4x3 = (4.0f / 3.0f);
+                                const float AspectRatio16x9 = (16.0f / 9.0f);
+                                const float AspectRatio16x10 = (16.0f / 10.0f);
+                                float aspectRatio = (float(width) / float(height));
+                                if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
+                                {
+                                    return Video::DisplayMode::AspectRatio::_4x3;
+                                }
+                                else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
+                                {
+                                    return Video::DisplayMode::AspectRatio::_16x9;
+                                }
+                                else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
+                                {
+                                    return Video::DisplayMode::AspectRatio::_16x10;
+                                }
+                                else
+                                {
+                                    return Video::DisplayMode::AspectRatio::Unknown;
+                                }
+                            };
+
+                            Video::DisplayMode displayMode;
+                            displayMode.width = dxgiDisplayMode.Width;
+                            displayMode.height = dxgiDisplayMode.Height;
+                            displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
+                            displayMode.refreshRate.numerator = dxgiDisplayMode.RefreshRate.Numerator;
+                            displayMode.refreshRate.denominator = dxgiDisplayMode.RefreshRate.Denominator;
+                            displayModeList.push_back(displayMode);
+                        }
+                    }
+
+                    concurrency::parallel_sort(displayModeList.begin(), displayModeList.end(), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool
+                    {
+                        if (left.width < right.width)
+                        {
+                            return true;
+                        }
+
+                        if (left.width == right.width)
+                        {
+                            if (left.height < right.height)
+                            {
+                                return true;
+                            }
+
+                            if (left.height == right.height)
+                            {
+                                return ((left.refreshRate.numerator / left.refreshRate.denominator) < (right.refreshRate.numerator / right.refreshRate.denominator));
+                            }
+
+                            return false;
+                        }
+
+                        return false;
+                    });
+                }
             }
 
             ~Device(void)
@@ -1668,61 +1745,67 @@ namespace Gek
                 backBuffer = nullptr;
                 defaultContext = nullptr;
 
-                dxSwapChain.Release();
+                dxgiSwapChain.Release();
                 d3dDeviceContext.Release();
                 d3dDevice.Release();
             }
 
-            // System
+            // Video::Debug::Device
+            void * getDevice(void)
+            {
+                return d3dDevice.p;
+            }
+
+            // Video::Device
             void setFullScreen(bool fullScreen)
             {
-                if (!isChildWindow && this->fullScreen != fullScreen)
+                backBuffer = nullptr;
+
+                HRESULT resultValue = dxgiSwapChain->SetFullscreenState(fullScreen, nullptr);
+                if (FAILED(resultValue))
                 {
-                    this->fullScreen = fullScreen;
-                    HRESULT resultValue = dxSwapChain->SetFullscreenState(fullScreen, nullptr);
-                    if (FAILED(resultValue))
-                    {
-                        throw Video::OperationFailed();
-                    }
+                    throw Video::OperationFailed();
                 }
             }
 
-            void setSize(uint32_t width, uint32_t height, Video::Format backBufferFormat)
+            const Video::DisplayModeList &getDisplayModeList(void) const
             {
-                GEK_REQUIRE(dxSwapChain);
+                return displayModeList;
+            }
+
+            void setDisplayMode(uint32_t displayMode)
+            {
+                GEK_REQUIRE(dxgiSwapChain);
 
                 backBuffer = nullptr;
-                DXGI_SWAP_CHAIN_DESC chainDescription;
-                DXGI_MODE_DESC &modeDescription = chainDescription.BufferDesc;
-                dxSwapChain->GetDesc(&chainDescription);
-                if (width != modeDescription.Width ||
-                    height != modeDescription.Height ||
-                    DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)] != modeDescription.Format)
-                {
-                    this->backBufferFormat = backBufferFormat;
 
-                    DXGI_MODE_DESC description;
-                    description.Width = width;
-                    description.Height = height;
-                    description.Format = DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)];
-                    description.RefreshRate.Numerator = 60;
-                    description.RefreshRate.Denominator = 1;
-                    description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_UNSPECIFIED;
-                    description.Scaling = DXGI_MODE_SCALING_CENTERED;
-                    HRESULT resultValue = dxSwapChain->ResizeTarget(&description);
-                    if (FAILED(resultValue))
-                    {
-                        throw Video::OperationFailed();
-                    }
+                DXGI_SWAP_CHAIN_DESC chainDescription;
+                dxgiSwapChain->GetDesc(&chainDescription);
+
+                DXGI_MODE_DESC description;
+                description.Width = displayModeList[displayMode].width;
+                description.Height = displayModeList[displayMode].height;
+                description.Format = chainDescription.BufferDesc.Format;
+                description.RefreshRate.Numerator = displayModeList[displayMode].refreshRate.numerator;
+                description.RefreshRate.Denominator = displayModeList[displayMode].refreshRate.denominator;
+                description.ScanlineOrdering = DXGI_MODE_SCANLINE_ORDER_PROGRESSIVE;
+                description.Scaling = DXGI_MODE_SCALING_CENTERED;
+                HRESULT resultValue = dxgiSwapChain->ResizeTarget(&description);
+                if (FAILED(resultValue))
+                {
+                    throw Video::OperationFailed();
                 }
+
+                getDisplayModes();
             }
 
             void resize(void)
             {
-                GEK_REQUIRE(dxSwapChain);
+                GEK_REQUIRE(dxgiSwapChain);
 
                 backBuffer = nullptr;
-                HRESULT resultValue = dxSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
+
+                HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, 0);
                 if (FAILED(resultValue))
                 {
                     throw Video::OperationFailed();
@@ -1734,22 +1817,12 @@ namespace Gek
                 return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
             }
 
-            void * const getDevice(void)
-            {
-                return d3dDevice.p;
-            }
-
-            void * const getSwapChain(void)
-            {
-                return static_cast<void *>(dxSwapChain.p);
-            }
-
             Video::Target * const getBackBuffer(void)
             {
                 if (!backBuffer)
                 {
                     CComPtr<ID3D11Texture2D> d3dRenderTarget;
-                    HRESULT resultValue = dxSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
+                    HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
                     if (FAILED(resultValue) || !d3dRenderTarget)
                     {
                         throw Video::OperationFailed();
@@ -1764,7 +1837,60 @@ namespace Gek
 
                     D3D11_TEXTURE2D_DESC description;
                     d3dRenderTarget->GetDesc(&description);
-                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, backBufferFormat, description.Width, description.Height, 1);
+
+                    Video::Format format = Video::Format::Unknown;
+                    switch (description.Format)
+                    {
+                    case DXGI_FORMAT_R32G32B32A32_FLOAT: format = Video::Format::R32G32B32A32_FLOAT; break;
+                    case DXGI_FORMAT_R16G16B16A16_FLOAT: format = Video::Format::R16G16B16A16_FLOAT; break;
+                    case DXGI_FORMAT_R32G32B32_FLOAT: format = Video::Format::R32G32B32_FLOAT; break;
+                    case DXGI_FORMAT_R11G11B10_FLOAT: format = Video::Format::R11G11B10_FLOAT; break;
+                    case DXGI_FORMAT_R32G32_FLOAT: format = Video::Format::R32G32_FLOAT; break;
+                    case DXGI_FORMAT_R16G16_FLOAT: format = Video::Format::R16G16_FLOAT; break;
+                    case DXGI_FORMAT_R32_FLOAT: format = Video::Format::R32_FLOAT; break;
+                    case DXGI_FORMAT_R16_FLOAT: format = Video::Format::R16_FLOAT; break;
+
+                    case DXGI_FORMAT_R32G32B32A32_UINT: format = Video::Format::R32G32B32A32_UINT; break;
+                    case DXGI_FORMAT_R16G16B16A16_UINT: format = Video::Format::R16G16B16A16_UINT; break;
+                    case DXGI_FORMAT_R10G10B10A2_UINT: format = Video::Format::R10G10B10A2_UINT; break;
+                    case DXGI_FORMAT_R8G8B8A8_UINT: format = Video::Format::R8G8B8A8_UINT; break;
+                    case DXGI_FORMAT_R32G32B32_UINT: format = Video::Format::R32G32B32_UINT; break;
+                    case DXGI_FORMAT_R32G32_UINT: format = Video::Format::R32G32_UINT; break;
+                    case DXGI_FORMAT_R16G16_UINT: format = Video::Format::R16G16_UINT; break;
+                    case DXGI_FORMAT_R8G8_UINT: format = Video::Format::R8G8_UINT; break;
+                    case DXGI_FORMAT_R32_UINT: format = Video::Format::R32_UINT; break;
+                    case DXGI_FORMAT_R16_UINT: format = Video::Format::R16_UINT; break;
+                    case DXGI_FORMAT_R8_UINT: format = Video::Format::R8_UINT; break;
+
+                    case DXGI_FORMAT_R32G32B32A32_SINT: format = Video::Format::R32G32B32A32_INT; break;
+                    case DXGI_FORMAT_R16G16B16A16_SINT: format = Video::Format::R16G16B16A16_INT; break;
+                    case DXGI_FORMAT_R8G8B8A8_SINT: format = Video::Format::R8G8B8A8_INT; break;
+                    case DXGI_FORMAT_R32G32B32_SINT: format = Video::Format::R32G32B32_INT; break;
+                    case DXGI_FORMAT_R32G32_SINT: format = Video::Format::R32G32_INT; break;
+                    case DXGI_FORMAT_R16G16_SINT: format = Video::Format::R16G16_INT; break;
+                    case DXGI_FORMAT_R8G8_SINT: format = Video::Format::R8G8_INT; break;
+                    case DXGI_FORMAT_R32_SINT: format = Video::Format::R32_INT; break;
+                    case DXGI_FORMAT_R16_SINT: format = Video::Format::R16_INT; break;
+                    case DXGI_FORMAT_R8_SINT: format = Video::Format::R8_INT; break;
+
+                    case DXGI_FORMAT_R16G16B16A16_UNORM: format = Video::Format::R16G16B16A16_UNORM; break;
+                    case DXGI_FORMAT_R10G10B10A2_UNORM: format = Video::Format::R10G10B10A2_UNORM; break;
+                    case DXGI_FORMAT_R8G8B8A8_UNORM: format = Video::Format::R8G8B8A8_UNORM; break;
+                    case DXGI_FORMAT_R8G8B8A8_UNORM_SRGB: format = Video::Format::R8G8B8A8_UNORM_SRGB; break;
+                    case DXGI_FORMAT_R16G16_UNORM: format = Video::Format::R16G16_UNORM; break;
+                    case DXGI_FORMAT_R8G8_UNORM: format = Video::Format::R8G8_UNORM; break;
+                    case DXGI_FORMAT_R16_UNORM: format = Video::Format::R16_UNORM; break;
+                    case DXGI_FORMAT_R8_UNORM: format = Video::Format::R8_UNORM; break;
+
+                    case DXGI_FORMAT_R16G16B16A16_SNORM: format = Video::Format::R16G16B16A16_NORM; break;
+                    case DXGI_FORMAT_R8G8B8A8_SNORM: format = Video::Format::R8G8B8A8_NORM; break;
+                    case DXGI_FORMAT_R16G16_SNORM: format = Video::Format::R16G16_NORM; break;
+                    case DXGI_FORMAT_R8G8_SNORM: format = Video::Format::R8G8_NORM; break;
+                    case DXGI_FORMAT_R16_SNORM: format = Video::Format::R16_NORM; break;
+                    case DXGI_FORMAT_R8_SNORM: format = Video::Format::R8_NORM; break;
+                    };
+
+                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1);
                 }
 
                 return backBuffer.get();
@@ -1775,11 +1901,6 @@ namespace Gek
                 GEK_REQUIRE(defaultContext);
 
                 return defaultContext.get();
-            }
-
-            bool isFullScreen(void)
-            {
-                return fullScreen;
             }
 
             Video::Device::ContextPtr createDeferredContext(void)
@@ -2616,9 +2737,9 @@ namespace Gek
 
             void present(bool waitForVerticalSync)
             {
-                GEK_REQUIRE(dxSwapChain);
+                GEK_REQUIRE(dxgiSwapChain);
 
-                dxSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
+                dxgiSwapChain->Present(waitForVerticalSync ? 1 : 0, 0);
             }
         };
 

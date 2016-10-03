@@ -15,11 +15,6 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Display.cpp">
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">false</PreprocessToFile>
-      <PreprocessToFile Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">false</PreprocessToFile>
-    </ClCompile>
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="ShuntingYard.cpp" />
@@ -29,7 +24,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Utility\Allocator.h" />
-    <ClInclude Include="GEK\Utility\Display.h" />
     <ClInclude Include="GEK\Utility\Evaluator.h" />
     <ClInclude Include="GEK\Utility\Exceptions.h" />
     <ClInclude Include="GEK\Utility\FileSystem.h" />

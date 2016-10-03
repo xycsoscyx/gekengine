@@ -19,7 +19,7 @@
 
 using namespace Gek;
 
-void compressTexture(Video::Device *device, const String &inputFileName)
+void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 {
 	if (!FileSystem::isFile(inputFileName))
 	{
@@ -232,7 +232,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		}
 
 		ContextPtr context(Context::create(rootPath, searchPathList));
-		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
+		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
 
 		std::function<bool(const wchar_t *)> searchDirectory;
 		searchDirectory = [&](const wchar_t *fileName) -> bool
@@ -245,7 +245,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			{
 				try
 				{
-					compressTexture(device.get(), String(fileName).getLower());
+					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String(fileName).getLower());
 				}
 				catch (...)
 				{

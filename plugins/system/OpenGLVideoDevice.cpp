@@ -828,10 +828,8 @@ namespace Gek
 
         public:
             HWND window;
-            bool fullScreen;
-            Video::Format format;
-            uint32_t width;
-            uint32_t height;
+
+            Video::DisplayModeList displayModeList;
 
             Video::Device::ContextPtr defaultContext;
             Video::TargetPtr backBuffer;
@@ -840,17 +838,10 @@ namespace Gek
             Device(Gek::Context *context, HWND window, Video::Format format, String device)
                 : ContextRegistration(context)
                 , window(window)
-                , fullScreen(fullScreen)
-                , format(format)
             {
                 throw Exception("TODO: Finish OpenGL Video Device");
 
                 GEK_REQUIRE(window);
-
-                RECT clientRectangle;
-                GetClientRect(window, &clientRectangle);
-                width = (clientRectangle.right - clientRectangle.left);
-                height = (clientRectangle.bottom - clientRectangle.top);
 
                 defaultContext = std::make_shared<Context>(this);
             }
@@ -868,11 +859,13 @@ namespace Gek
             {
             }
 
-            void setSize(uint32_t width, uint32_t height, Video::Format format)
+            const Video::DisplayModeList &getDisplayModeList(void) const
             {
-                this->width = width;
-                this->height = height;
-                this->format = format;
+                return displayModeList;
+            }
+
+            void setDisplayMode(uint32_t displayMode)
+            {
             }
 
             void resize(void)
@@ -884,21 +877,11 @@ namespace Gek
 				return nullptr;
 			}
 
-			void * const getDevice(void)
-			{
-				return nullptr;
-			}
-
-			void * const getSwapChain(void)
-            {
-                return nullptr;
-            }
-
             Video::Target * const getBackBuffer(void)
             {
                 if (!backBuffer)
                 {
-                    backBuffer = std::make_shared<TargetTexture>(format, width, height, 1);
+                    backBuffer = std::make_shared<TargetTexture>(Video::Format::Unknown, 0, 0, 1);
                 }
 
                 return backBuffer.get();
@@ -909,11 +892,6 @@ namespace Gek
                 GEK_REQUIRE(defaultContext);
 
                 return defaultContext.get();
-            }
-
-            bool isFullScreen(void)
-            {
-                return fullScreen;
             }
 
             Video::Device::ContextPtr createDeferredContext(void)
