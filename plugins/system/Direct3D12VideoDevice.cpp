@@ -5,7 +5,12 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoDevice.h"
-#include <Windows.h>
+#include <atlbase.h>
+#include <D3D12.h>
+#include <D3DCompiler.h>
+
+#pragma comment(lib, "d3d12.lib")
+#pragma comment(lib, "d3dcompiler.lib")
 
 namespace Gek
 {

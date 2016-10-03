@@ -17,6 +17,8 @@ namespace Gek
 
         struct Node
         {
+            static const Node Empty;
+
             enum class Source
             {
                 File = 0,
