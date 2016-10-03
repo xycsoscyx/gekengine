@@ -27,6 +27,10 @@ namespace Gek
                 float value;
             };
 
+            ActionParameter(void)
+            {
+            }
+
             ActionParameter(bool state)
                 : state(state)
             {

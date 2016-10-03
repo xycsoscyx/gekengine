@@ -89,6 +89,28 @@ namespace Gek
             Count,
         };
 
+        struct DisplayMode
+        {
+            enum class AspectRatio : uint8_t
+            {
+                Unknown = 0,
+                _4x3,
+                _16x9,
+                _16x10,
+            };
+
+            uint32_t width;
+            uint32_t height;
+            AspectRatio aspectRatio;
+            struct
+            {
+                uint32_t numerator;
+                uint32_t denominator;
+            } refreshRate;
+        };
+
+        using DisplayModeList = std::vector<DisplayMode>;
+
         enum class ProgramType : uint8_t
         {
             Compute = 0,
@@ -566,17 +588,14 @@ namespace Gek
             };
 
             virtual void setFullScreen(bool fullScreen) = 0;
-            virtual void setSize(uint32_t width, uint32_t height, Video::Format format) = 0;
+            virtual const DisplayModeList &getDisplayModeList(void) const = 0;
+            virtual void setDisplayMode(uint32_t displayMode) = 0;
             virtual void resize(void) = 0;
 
 			virtual const char * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 
-			virtual void * const getDevice(void) = 0;
-			virtual void * const getSwapChain(void) = 0;
             virtual Target * const getBackBuffer(void) = 0;
             virtual Context * const getDefaultContext(void) = 0;
-
-            virtual bool isFullScreen(void) = 0;
 
             virtual ContextPtr createDeferredContext(void) = 0;
 
@@ -610,5 +629,14 @@ namespace Gek
 
             virtual void present(bool waitForVerticalSync) = 0;
         };
+
+        namespace Debug
+        {
+            GEK_INTERFACE(Device)
+                : public Video::Device
+            {
+                virtual void *getDevice(void) = 0;
+            };
+        }; // namespace Debug
     }; // namespace Video
 }; // namespace Gek
