@@ -427,6 +427,7 @@ namespace Gek
                 if (showSelectionMenu)
                 {
                     ImGui::Begin("Selection Menu", &showSelectionMenu);
+                    ImGui::PushItemWidth(-1.0f);
 
                     Debug::Population *debugPopulation = dynamic_cast<Debug::Population *>(population);
                     auto entityList = debugPopulation->getEntityList();
@@ -499,12 +500,57 @@ namespace Gek
                         break;
                     };
 
+                    uint32_t componentCount = 10;
+                    uint32_t selectedComponent = 0;
+                    if (ImGui::ListBoxHeader("##Components", componentCount, 5))
+                    {
+                        ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                        while (clipper.Step())
+                        {
+                            for (int displayIndex = clipper.DisplayStart; displayIndex < clipper.DisplayEnd; displayIndex++)
+                            {
+                                ImGui::PushID(displayIndex);
+                                if (ImGui::Selectable("component", (displayIndex == selectedComponent)))
+                                {
+                                    selectedComponent = displayIndex;
+                                }
+
+                                ImGui::PopID();
+                            }
+                        };
+
+                        ImGui::ListBoxFooter();
+                    }
+
+                    uint32_t componentDataCount = 10;
+                    uint32_t selectedComponentData = 0;
+                    if (ImGui::ListBoxHeader("##ComponentData", componentDataCount, 5))
+                    {
+                        ImGuiListClipper clipper(componentDataCount, ImGui::GetTextLineHeightWithSpacing());
+                        while (clipper.Step())
+                        {
+                            for (int displayIndex = clipper.DisplayStart; displayIndex < clipper.DisplayEnd; displayIndex++)
+                            {
+                                ImGui::PushID(displayIndex);
+                                if (ImGui::Selectable("component data", (displayIndex == selectedComponentData)))
+                                {
+                                    selectedComponentData = displayIndex;
+                                }
+
+                                ImGui::PopID();
+                            }
+                        };
+
+                        ImGui::ListBoxFooter();
+                    }
+
                     auto matrix(transformComponent.getMatrix());
                     ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, mCurrentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap.data);
                     transformComponent.rotation = matrix.getQuaternion();
                     transformComponent.position = matrix.translation;
                     transformComponent.scale = matrix.getScaling();
 
+                    ImGui::PopItemWidth();
                     ImGui::End();
                 }
 
