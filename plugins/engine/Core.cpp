@@ -217,7 +217,7 @@ namespace Gek
                 {
                     ImGuiStyle& style = ImGui::GetStyle();
 
-                    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+                    style.WindowTitleAlign = ImGuiAlign_Center;
 
                     // light style from Pacôme Danhiez (user itamago) https://github.com/ocornut/imgui/pull/511#issuecomment-175719267
                     style.Alpha = 1.0f;
@@ -268,34 +268,34 @@ namespace Gek
 
                     if (bStyleDark_)
                     {
-                        for (int i = 0; i <= ImGuiCol_COUNT; i++)
+                        for (int columnIndex = 0; columnIndex <= ImGuiCol_COUNT; ++columnIndex)
                         {
-                            ImVec4& col = style.Colors[i];
+                            ImVec4& color = style.Colors[columnIndex];
                             float H, S, V;
-                            ImGui::ColorConvertRGBtoHSV(col.x, col.y, col.z, H, S, V);
+                            ImGui::ColorConvertRGBtoHSV(color.x, color.y, color.z, H, S, V);
 
                             if (S < 0.1f)
                             {
                                 V = 1.0f - V;
                             }
-                            ImGui::ColorConvertHSVtoRGB(H, S, V, col.x, col.y, col.z);
-                            if (col.w < 1.00f)
+                            ImGui::ColorConvertHSVtoRGB(H, S, V, color.x, color.y, color.z);
+                            if (color.w < 1.00f)
                             {
-                                col.w *= alpha_;
+                                color.w *= alpha_;
                             }
                         }
                     }
                     else
                     {
-                        for (int i = 0; i <= ImGuiCol_COUNT; i++)
+                        for (int columnIndex = 0; columnIndex <= ImGuiCol_COUNT; ++columnIndex)
                         {
-                            ImVec4& col = style.Colors[i];
-                            if (col.w < 1.00f)
+                            ImVec4& color = style.Colors[columnIndex];
+                            if (color.w < 1.00f)
                             {
-                                col.x *= alpha_;
-                                col.y *= alpha_;
-                                col.z *= alpha_;
-                                col.w *= alpha_;
+                                color.x *= alpha_;
+                                color.y *= alpha_;
+                                color.z *= alpha_;
+                                color.w *= alpha_;
                             }
                         }
                     }
@@ -309,26 +309,26 @@ namespace Gek
                     L"    float4x4 ProjectionMatrix;" \
                     L"};" \
                     L"" \
-                    L"struct VS_INPUT" \
+                    L"struct VertexInput" \
                     L"{" \
-                    L"    float2 pos : POSITION;" \
-                    L"    float4 col : COLOR0;" \
-                    L"    float2 uv  : TEXCOORD0;" \
+                    L"    float2 position : POSITION;" \
+                    L"    float4 color : COLOR0;" \
+                    L"    float2 texCoord  : TEXCOORD0;" \
                     L"};" \
                     L"" \
-                    L"struct PS_INPUT" \
+                    L"struct PixelOutput" \
                     L"{" \
-                    L"    float4 pos : SV_POSITION;" \
-                    L"    float4 col : COLOR0;" \
-                    L"    float2 uv  : TEXCOORD0;" \
+                    L"    float4 position : SV_POSITION;" \
+                    L"    float4 color : COLOR0;" \
+                    L"    float2 texCoord  : TEXCOORD0;" \
                     L"};" \
                     L"" \
-                    L"PS_INPUT main(VS_INPUT input)" \
+                    L"PixelOutput main(VertexInput input)" \
                     L"{" \
-                    L"    PS_INPUT output;" \
-                    L"    output.pos = mul( ProjectionMatrix, float4(input.pos.xy, 0.f, 1.f));" \
-                    L"    output.col = input.col;" \
-                    L"    output.uv  = input.uv;" \
+                    L"    PixelOutput output;" \
+                    L"    output.position = mul( ProjectionMatrix, float4(input.position.xy, 0.f, 1.f));" \
+                    L"    output.color = input.color;" \
+                    L"    output.texCoord  = input.texCoord;" \
                     L"    return output;" \
                     L"}";
 
@@ -344,20 +344,19 @@ namespace Gek
                 constantBuffer = device->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
 
                 static const wchar_t *pixelShader =
-                    L"struct PS_INPUT" \
+                    L"struct PixelInput" \
                     L"{" \
-                    L"    float4 pos : SV_POSITION;" \
-                    L"    float4 col : COLOR0;" \
-                    L"    float2 uv  : TEXCOORD0;" \
+                    L"    float4 position : SV_POSITION;" \
+                    L"    float4 color : COLOR0;" \
+                    L"    float2 texCoord  : TEXCOORD0;" \
                     L"};" \
                     L"" \
                     L"sampler sampler0;" \
                     L"Texture2D texture0;" \
                     L"" \
-                    L"float4 main(PS_INPUT input) : SV_Target" \
+                    L"float4 main(PixelInput input) : SV_Target" \
                     L"{" \
-                    L"    float4 out_col = input.col * texture0.Sample(sampler0, input.uv);" \
-                    L"    return out_col;" \
+                    L"    return (input.color * texture0.Sample(sampler0, input.texCoord));" \
                     L"}";
 
                 compiled = resources->compileProgram(Video::ProgramType::Pixel, L"uiPixelProgram", L"main", pixelShader);
@@ -679,22 +678,21 @@ namespace Gek
 
                 if (showMainMenu)
                 {
-                    ImGui::Begin("Debug Menu", &showMainMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
+                    ImGui::Begin("Debug Menu", &showMainMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
 
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                     ImGui::PopItemWidth();
-                    ImGui::Text("");
 
+                    ImGui::NewLine();
                     ImGui::InputText("##Load Level", loadLevelName, 256);
-
                     ImGui::SameLine();
                     if (ImGui::Button("Load"))
                     {
                         population->load(String(loadLevelName));
                     }
 
-                    ImGui::Text("");
+                    ImGui::NewLine();
                     ImGui::PushItemWidth(-1.0f);
                     if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
                     {
@@ -721,7 +719,7 @@ namespace Gek
                         sendShout(&Plugin::CoreListener::onResize);
                     }
 
-                    ImGui::Text("");
+                    ImGui::NewLine();
                     if (ImGui::Button("Quit"))
                     {
                         engineRunning = false;
@@ -795,7 +793,7 @@ namespace Gek
                 ImDrawIdx* indexData = nullptr;
                 device->mapBuffer(vertexBuffer.get(), (void **)&vertexData);
                 device->mapBuffer(indexBuffer.get(), (void **)&indexData);
-                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; commandListIndex++)
+                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                 {
                     const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
                     memcpy(vertexData, commandList->VtxBuffer.Data, commandList->VtxBuffer.Size * sizeof(ImDrawVert));
@@ -832,10 +830,10 @@ namespace Gek
 
                 uint32_t vertexOffset = 0;
                 uint32_t indexOffset = 0;
-                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; commandListIndex++)
+                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                 {
                     const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                    for (uint32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; commandIndex++)
+                    for (uint32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
                     {
                         const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
                         if (command->UserCallback)

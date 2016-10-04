@@ -985,7 +985,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContextPipeline);
 
                 setResourceCache.resize(std::max(resourceCount, setResourceCache.size()));
-                for (uint32_t resource = 0; resource < resourceCount; resource++)
+                for (uint32_t resource = 0; resource < resourceCount; ++resource)
                 {
                     setResourceCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
                 }
@@ -999,7 +999,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContextPipeline);
 
                 setUnorderedAccessCache.resize(std::max(resourceCount, setUnorderedAccessCache.size()));
-                for (uint32_t resource = 0; resource < resourceCount; resource++)
+                for (uint32_t resource = 0; resource < resourceCount; ++resource)
                 {
                     setUnorderedAccessCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
                 }
@@ -1113,7 +1113,7 @@ namespace Gek
 
                 viewPortCache.resize(std::max(renderTargetHandleCount, viewPortCache.size()));
                 renderTargetCache.resize(std::max(renderTargetHandleCount, renderTargetCache.size()));
-                for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; renderTarget++)
+                for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; ++renderTarget)
                 {
                     renderTargetCache[renderTarget] = (renderTargetHandleList ? dynamic_cast<Video::Target *>(resourceCache.getResource(renderTargetHandleList[renderTarget])) : nullptr);
                     if (renderTargetCache[renderTarget])

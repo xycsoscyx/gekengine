@@ -16,7 +16,7 @@ namespace Gek
     namespace Implementation
     {
         class Entity
-            : public Plugin::Entity
+            : public Editor::Entity
         {
         private:
             String name;
@@ -40,6 +40,12 @@ namespace Gek
                 {
                     componentsMap.erase(componentSearch);
                 }
+            }
+
+            // Editor::Entity
+            std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> &getComponentsMap(void)
+            {
+                return componentsMap;
             }
 
             // Plugin::Entity
@@ -77,7 +83,7 @@ namespace Gek
 		};
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
-            , public Debug::Population
+            , public Editor::Population
         {
         private:
             Plugin::Core *core;
@@ -129,10 +135,21 @@ namespace Gek
                 componentsMap.clear();
             }
 
-            // Debug::Population
+            // Editor::Population
             std::vector<Plugin::EntityPtr> &getEntityList(void)
             {
                 return entityList;
+            }
+
+            Editor::Component *getComponent(const std::type_index &type)
+            {
+                auto componentsSearch = componentsMap.find(type);
+                if (componentsSearch != componentsMap.end())
+                {
+                    return dynamic_cast<Editor::Component *>(componentsSearch->second.get());
+                }
+                
+                return nullptr;
             }
 
             // Plugin::Population

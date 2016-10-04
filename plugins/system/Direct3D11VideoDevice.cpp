@@ -1066,7 +1066,7 @@ namespace Gek
                         GEK_REQUIRE(d3dDeviceContext);
 
                         resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dShaderResourceView.p : nullptr);
                         }
@@ -1080,7 +1080,7 @@ namespace Gek
                         GEK_REQUIRE(d3dDeviceContext);
 
                         unorderedAccessCache.resize(std::max(unorderedAccessCount, unorderedAccessCache.size()));
-                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; unorderedAccess++)
+                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
                         {
                             unorderedAccessCache[unorderedAccess] = (unorderedAccessList && unorderedAccessList[unorderedAccess] ? dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess])->d3dUnorderedAccessView.p : nullptr);
                         }
@@ -1142,7 +1142,7 @@ namespace Gek
                         GEK_REQUIRE(d3dDeviceContext);
 
                         resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dShaderResourceView.p : nullptr);
                         }
@@ -1209,7 +1209,7 @@ namespace Gek
                         GEK_REQUIRE(d3dDeviceContext);
 
                         resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dShaderResourceView.p : nullptr);
                         }
@@ -1276,7 +1276,7 @@ namespace Gek
                         GEK_REQUIRE(d3dDeviceContext);
 
                         resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dShaderResourceView.p : nullptr);
                         }
@@ -1290,7 +1290,7 @@ namespace Gek
                         GEK_REQUIRE(d3dDeviceContext);
 
                         unorderedAccessCache.resize(std::max(unorderedAccessCount, unorderedAccessCache.size()));
-                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; unorderedAccess++)
+                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
                         {
                             unorderedAccessCache[unorderedAccess] = (unorderedAccessList && unorderedAccessList[unorderedAccess] ? dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess])->d3dUnorderedAccessView.p : nullptr);
                         }
@@ -1449,7 +1449,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
 
                     d3dRenderTargetViewCache.resize(std::max(renderTargetCount, d3dRenderTargetViewCache.size()));
-                    for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
+                    for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
                     {
                         d3dRenderTargetViewCache[renderTarget] = (renderTargetList && renderTargetList[renderTarget] ? dynamic_cast<RenderTargetView *>(renderTargetList[renderTarget])->d3dRenderTargetView.p : nullptr);
                     }

@@ -489,7 +489,7 @@ namespace Gek
 
                     void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
                     {
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             dynamic_cast<ShaderResourceView *>(resourceList[resource]);
                         }
@@ -497,7 +497,7 @@ namespace Gek
 
                     void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
                     {
-                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; unorderedAccess++)
+                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
                         {
                             dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess]);
                         }
@@ -542,7 +542,7 @@ namespace Gek
 
                     void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
                     {
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             dynamic_cast<ShaderResourceView *>(resourceList[resource]);
                         }
@@ -592,7 +592,7 @@ namespace Gek
 
                     void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
                     {
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             dynamic_cast<ShaderResourceView *>(resourceList[resource]);
                         }
@@ -642,7 +642,7 @@ namespace Gek
 
                     void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
                     {
-                        for (uint32_t resource = 0; resource < resourceCount; resource++)
+                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
                         {
                             dynamic_cast<ShaderResourceView *>(resourceList[resource]);
                         }
@@ -650,7 +650,7 @@ namespace Gek
 
                     void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
                     {
-                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; unorderedAccess++)
+                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
                         {
                             dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess]);
                         }
@@ -761,7 +761,7 @@ namespace Gek
 
                 void setRenderTargets(Video::Target **renderTargetList, uint32_t renderTargetCount, Video::Object *depthBuffer)
                 {
-                    for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
+                    for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
                     {
                         dynamic_cast<RenderTargetView *>(renderTargetList[renderTarget]);
                     }

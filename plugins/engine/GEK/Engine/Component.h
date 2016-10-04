@@ -25,4 +25,13 @@ namespace Gek
             virtual std::unique_ptr<Data> create(const Plugin::Population::ComponentDefinition &componentData) = 0;
         };
     }; // namespace Plugin
+
+    namespace Editor
+    {
+        GEK_INTERFACE(Component)
+            : public Plugin::Component
+        {
+            virtual void showEditor(Plugin::Component::Data *data) = 0;
+        };
+    }; // namespace Editor
 }; // namespace Gek

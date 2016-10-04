@@ -85,12 +85,16 @@ namespace Gek
         };
     }; // namespace Plugin
 
-    namespace Debug
+    namespace Editor
     {
+        GEK_PREDECLARE(Component);
+
         GEK_INTERFACE(Population)
             : public Plugin::Population
         {
             virtual std::vector<Plugin::EntityPtr> &getEntityList(void) = 0;
+
+            virtual Editor::Component *getComponent(const std::type_index &type) = 0;
         };
-    };
+    }; // namespace Editor
 }; // namespace Gek
