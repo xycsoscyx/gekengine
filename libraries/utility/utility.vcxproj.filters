@@ -10,6 +10,12 @@
     <Filter Include="ImGui">
       <UniqueIdentifier>{10a7c0d7-0929-415d-9eb5-55c4140eec88}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ImGui\ImGuizmo">
+      <UniqueIdentifier>{e33dac54-0d28-443b-aa83-c99ebdc4cd35}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ImGui\Base">
+      <UniqueIdentifier>{6dea4d9a-ce3e-4b6b-b31b-882b33011b3f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Timer.cpp">
@@ -31,13 +37,16 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\external\ImGuizmo\ImGuizmo.cpp">
-      <Filter>ImGui</Filter>
+      <Filter>ImGui\ImGuizmo</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\imgui\imgui.cpp">
-      <Filter>ImGui</Filter>
+    <ClCompile Include="..\..\external\imgui-addons\imgui.cpp">
+      <Filter>ImGui\Base</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\imgui\imgui_draw.cpp">
-      <Filter>ImGui</Filter>
+    <ClCompile Include="..\..\external\imgui-addons\imgui_demo.cpp">
+      <Filter>ImGui\Base</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\external\imgui-addons\imgui_draw.cpp">
+      <Filter>ImGui\Base</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -71,11 +80,22 @@
     <ClInclude Include="GEK\Utility\ThreadPool.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\external\imgui\imgui.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="..\..\external\ImGuizmo\ImGuizmo.h">
+      <Filter>ImGui\ImGuizmo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\external\imgui\imgui_internal.h">
-      <Filter>ImGui</Filter>
+    <ClInclude Include="..\..\external\imgui-addons\imgui.h">
+      <Filter>ImGui\Base</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\external\imgui-addons\imgui_internal.h">
+      <Filter>ImGui\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\external\imgui-addons\imgui_user.h">
+      <Filter>ImGui\Base</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\external\imgui-addons\imgui_user.inl">
+      <Filter>ImGui\Base</Filter>
+    </None>
   </ItemGroup>
 </Project>
