@@ -144,23 +144,23 @@ namespace Gek
                 float outerAngle;
                 float falloff;
 
-                LightData(const Components::PointLight &light, const Components::Color &color, const Math::Float3 &position)
+                LightData(const Components::PointLight &light, const Math::Color &color, const Math::Float3 &position)
                     : type(LightType::Point)
                     , position(position)
                     , range(light.range)
                     , radius(light.radius)
-                    , color(color.value)
+                    , color(color)
                 {
                 }
 
-                LightData(const Components::DirectionalLight &light, const Components::Color &color, const Math::Float3 &direction)
+                LightData(const Components::DirectionalLight &light, const Math::Color &color, const Math::Float3 &direction)
                     : type(LightType::Directional)
                     , direction(direction)
-                    , color(color.value)
+                    , color(color)
                 {
                 }
 
-                LightData(const Components::SpotLight &light, const Components::Color &color, const Math::Float3 &position, const Math::Float3 &direction)
+                LightData(const Components::SpotLight &light, const Math::Color &color, const Math::Float3 &position, const Math::Float3 &direction)
                     : type(LightType::Spot)
                     , position(position)
                     , direction(direction)
@@ -169,7 +169,7 @@ namespace Gek
                     , innerAngle(light.innerAngle)
                     , outerAngle(light.outerAngle)
                     , falloff(light.falloff)
-                    , color(color.value)
+                    , color(color)
                 {
                 }
             };
@@ -1316,32 +1316,32 @@ namespace Gek
                 concurrency::concurrent_vector<LightData> lightData;
                 population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity) -> void
                 {
-                    auto &transform = entity->getComponent<Components::Transform>();
-					auto &color = entity->getComponent<Components::Color>();
+                    auto &transformComponent = entity->getComponent<Components::Transform>();
+					auto &colorComponent = entity->getComponent<Components::Color>();
 
                     if (entity->hasComponent<Components::PointLight>())
                     {
 						auto &light = entity->getComponent<Components::PointLight>();
-                        if (viewFrustum.isVisible(Shapes::Sphere(transform.position, light.range)))
+                        if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, light.range)))
                         {
-                            lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz));
+                            lightData.push_back(LightData(light, (colorComponent.value * light.intensity), (viewMatrix * transformComponent.position.w(1.0f)).xyz));
                         }
                     }
                     else if (entity->hasComponent<Components::DirectionalLight>())
                     {
 						auto &light = entity->getComponent<Components::DirectionalLight>();
-                        lightData.push_back(LightData(light, color, (viewMatrix * -transform.rotation.getMatrix().ny)));
+                        lightData.push_back(LightData(light, (colorComponent.value * light.intensity), (viewMatrix * -transformComponent.rotation.getMatrix().ny)));
                     }
                     else if (entity->hasComponent<Components::SpotLight>())
                     {
 						auto &light = entity->getComponent<Components::SpotLight>();
 
 						float halfRange = (light.range * 0.5f);
-                        Math::Float3 direction(transform.rotation.getMatrix().ny);
-						Math::Float3 center(transform.position + (direction * halfRange));
+                        Math::Float3 direction(transformComponent.rotation.getMatrix().ny);
+						Math::Float3 center(transformComponent.position + (direction * halfRange));
                         if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
                         {
-                            lightData.push_back(LightData(light, color, (viewMatrix * transform.position.w(1.0f)).xyz, (viewMatrix * direction)));
+                            lightData.push_back(LightData(light, (colorComponent.value * light.intensity), (viewMatrix * transformComponent.position.w(1.0f)).xyz, (viewMatrix * direction)));
                         }
                     }
                 });

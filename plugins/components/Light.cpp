@@ -12,18 +12,21 @@ namespace Gek
         {
             saveParameter(componentData, L"range", range);
             saveParameter(componentData, L"radius", radius);
+            saveParameter(componentData, L"intensity", intensity);
         }
 
         void PointLight::load(const Plugin::Population::ComponentDefinition &componentData)
         {
             range = loadParameter(componentData, L"range", 0.0f);
             radius = loadParameter(componentData, L"radius", 0.0f);
+            intensity = loadParameter(componentData, L"intensity", 0.0f);
         }
 
         void SpotLight::save(Plugin::Population::ComponentDefinition &componentData) const
         {
             saveParameter(componentData, L"range", range);
             saveParameter(componentData, L"radius", radius);
+            saveParameter(componentData, L"intensity", intensity);
             saveParameter(componentData, L"inner_angle", Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
             saveParameter(componentData, L"outer_angle", Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
             saveParameter(componentData, L"falloff", falloff);
@@ -33,6 +36,7 @@ namespace Gek
         {
             range = loadParameter(componentData, L"range", 0.0f);
             radius = loadParameter(componentData, L"radius", 0.0f);
+            intensity = loadParameter(componentData, L"intensity", 0.0f);
             innerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"inner_angle", 0.0f) * 0.5f));
             outerAngle = std::cos(Math::convertDegreesToRadians(loadParameter(componentData, L"outer_angle", 0.0f) * 0.5f));
             falloff = loadParameter(componentData, L"falloff", 0.0f);
@@ -40,10 +44,12 @@ namespace Gek
 
         void DirectionalLight::save(Plugin::Population::ComponentDefinition &componentData) const
         {
+            saveParameter(componentData, L"intensity", intensity);
         }
 
         void DirectionalLight::load(const Plugin::Population::ComponentDefinition &componentData)
         {
+            intensity = loadParameter(componentData, L"intensity", 0.0f);
         }
     }; // namespace Components
 
