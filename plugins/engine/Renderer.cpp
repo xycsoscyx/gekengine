@@ -19,8 +19,6 @@
 #include <concurrent_vector.h>
 #include <ppl.h>
 
-#include <ImGuizmo.h>
-
 namespace Gek
 {
 	namespace Utility
@@ -313,11 +311,6 @@ namespace Gek
 
             bool showSelectionMenu = true;
             uint32_t selectedEntity = 0;
-            ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
-            bool useSnap = true;
-            Math::Float3 snapPosition = (1.0f / 12.0f);
-            float snapRotation = 10.0f;
-            float snapScale = (1.0f / 10.0f);
             uint32_t selectedComponent = 0;
 
         public:
@@ -452,6 +445,7 @@ namespace Gek
                                 if (ImGui::Selectable(StringUTF8(entityList[entityIndex]->getName()), (entityIndex == selectedEntity)))
                                 {
                                     selectedEntity = entityIndex;
+                                    selectedComponent = 0;
                                 }
 
                                 ImGui::PopID();
@@ -464,92 +458,46 @@ namespace Gek
                     ImGui::PopItemWidth();
 
                     Editor::Entity *entity = dynamic_cast<Editor::Entity *>(entityList[selectedEntity].get());
-
-                    ImGui::NewLine();
-                    if (ImGui::RadioButton("Translate", currentGizmoOperation == ImGuizmo::TRANSLATE))
-                    {
-                        currentGizmoOperation = ImGuizmo::TRANSLATE;
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::RadioButton("Rotate", currentGizmoOperation == ImGuizmo::ROTATE))
-                    {
-                        currentGizmoOperation = ImGuizmo::ROTATE;
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::RadioButton("Scale", currentGizmoOperation == ImGuizmo::SCALE))
-                    {
-                        currentGizmoOperation = ImGuizmo::SCALE;
-                    }
-
-                    auto &transformComponent = entity->getComponent<Components::Transform>();
-                    ImGui::InputFloat3("Position", transformComponent.position.data, 3);
-                    ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 3);
-                    ImGui::InputFloat3("Scale", transformComponent.scale.data, 3);
-
-                    ImGui::NewLine();
-                    ImGui::Checkbox("Snap", &useSnap);
-                    ImGui::SameLine();
-
-                    float *snap = nullptr;
-                    switch (currentGizmoOperation)
-                    {
-                    case ImGuizmo::TRANSLATE:
-                        ImGui::InputFloat3("##Units", snapPosition.data, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                        snap = snapPosition.data;
-                        break;
-
-                    case ImGuizmo::ROTATE:
-                        ImGui::InputFloat("##Degrees", &snapRotation, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                        snap = &snapRotation;
-                        break;
-
-                    case ImGuizmo::SCALE:
-                        ImGui::InputFloat("##Size", &snapScale, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-                        snap = &snapScale;
-                        break;
-                    };
-
-                    ImGui::NewLine();
-                    ImGui::PushItemWidth(-1.0f);
-                    auto &componentsMap = entity->getComponentsMap();
-                    auto componentsSize = componentsMap.size();
-                    Editor::Component *component = nullptr;
-                    Plugin::Component::Data *componentData = nullptr;
-                    if (ImGui::ListBoxHeader("##Components", componentsSize, 5))
-                    {
-                        ImGuiListClipper clipper(componentsSize, ImGui::GetTextLineHeightWithSpacing());
-                        while (clipper.Step())
-                        {
-                            for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                            {
-                                auto componentSearch = componentsMap.begin();
-                                std::advance(componentSearch, componentIndex);
-                                if (ImGui::Selectable(componentSearch->first.name(), false))
-                                {
-                                    component = populationEditor->getComponent(componentSearch->first);
-                                    componentData = componentSearch->second.get();
-                                }
-                            }
-                        };
-
-                        ImGui::ListBoxFooter();
-                    }
-
-                    ImGui::PopItemWidth();
-
-                    if (component && componentData)
+                    if (entity)
                     {
                         ImGui::NewLine();
-                        component->showEditor(componentData);
-                    }
+                        ImGui::PushItemWidth(-1.0f);
+                        auto &componentsMap = entity->getComponentsMap();
+                        auto componentsSize = componentsMap.size();
+                        if (ImGui::ListBoxHeader("##Components", componentsSize, 5))
+                        {
+                            ImGuiListClipper clipper(componentsSize, ImGui::GetTextLineHeightWithSpacing());
+                            while (clipper.Step())
+                            {
+                                for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                {
+                                    auto componentSearch = componentsMap.begin();
+                                    std::advance(componentSearch, componentIndex);
+                                    if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                    {
+                                        selectedComponent = componentIndex;
+                                    }
+                                }
+                            };
 
-                    auto matrix(transformComponent.getMatrix());
-                    ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
-                    transformComponent.rotation = matrix.getQuaternion();
-                    transformComponent.position = matrix.translation;
-                    transformComponent.scale = matrix.getScaling();
+                            ImGui::ListBoxFooter();
+                        }
+
+                        ImGui::PopItemWidth();
+
+                        auto componentSearch = componentsMap.begin();
+                        std::advance(componentSearch, selectedComponent);
+                        if (componentSearch != componentsMap.end())
+                        {
+                            Editor::Component *component = populationEditor->getComponent(componentSearch->first);
+                            Plugin::Component::Data *componentData = componentSearch->second.get();
+                            if (component && componentData)
+                            {
+                                ImGui::NewLine();
+                                component->showEditor(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
+                            }
+                        }
+                    }
 
                     ImGui::End();
                 }
@@ -750,6 +698,8 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
                 resources->clearLocal();
+                selectedEntity = 0;
+                selectedComponent = 0;
             }
 
             void onLoadSucceeded(void)

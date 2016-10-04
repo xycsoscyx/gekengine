@@ -157,8 +157,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\external\imgui\imgui.h" />
-    <ClInclude Include="..\..\external\imgui\imgui_internal.h" />
     <ClInclude Include="GEK\Engine\Application.h" />
     <ClInclude Include="GEK\Engine\Component.h" />
     <ClInclude Include="GEK\Engine\ComponentMixin.h" />
@@ -176,9 +174,6 @@
     <ClInclude Include="ShaderFilter.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\external\ImGuizmo\ImGuizmo.cpp" />
-    <ClCompile Include="..\..\external\imgui\imgui.cpp" />
-    <ClCompile Include="..\..\external\imgui\imgui_draw.cpp" />
     <ClCompile Include="Core.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Filter.cpp" />

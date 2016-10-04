@@ -674,8 +674,6 @@ namespace Gek
                 // Start the frame
                 ImGui::NewFrame();
 
-                ImGuizmo::BeginFrame();
-
                 if (showMainMenu)
                 {
                     ImGui::Begin("Debug Menu", &showMainMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
