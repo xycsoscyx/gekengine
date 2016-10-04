@@ -15,9 +15,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\external\imgui-addons\imgui.cpp" />
+    <ClCompile Include="..\..\external\imgui-addons\imgui_demo.cpp" />
+    <ClCompile Include="..\..\external\imgui-addons\imgui_draw.cpp" />
     <ClCompile Include="..\..\external\ImGuizmo\ImGuizmo.cpp" />
-    <ClCompile Include="..\..\external\imgui\imgui.cpp" />
-    <ClCompile Include="..\..\external\imgui\imgui_draw.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="ShuntingYard.cpp" />
@@ -26,8 +27,10 @@
     <ClCompile Include="XML.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\external\imgui\imgui.h" />
-    <ClInclude Include="..\..\external\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\external\imgui-addons\imgui.h" />
+    <ClInclude Include="..\..\external\imgui-addons\imgui_internal.h" />
+    <ClInclude Include="..\..\external\imgui-addons\imgui_user.h" />
+    <ClInclude Include="..\..\external\ImGuizmo\ImGuizmo.h" />
     <ClInclude Include="GEK\Utility\Allocator.h" />
     <ClInclude Include="GEK\Utility\Evaluator.h" />
     <ClInclude Include="GEK\Utility\Exceptions.h" />
@@ -46,6 +49,9 @@
     <ProjectReference Include="..\..\external\libxml2\win32\VC10\libxml2.vcxproj">
       <Project>{1d6039f6-5078-416f-a3af-a36efc7e6a1c}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\external\imgui-addons\imgui_user.inl" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{BE4F1E7F-E045-4D30-AED6-02A60C83BD97}</ProjectGuid>
