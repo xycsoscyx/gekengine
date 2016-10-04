@@ -113,7 +113,7 @@ namespace Gek
             Video::BufferPtr vertexBuffer;
             Video::BufferPtr indexBuffer;
 
-            bool showMainMenu = true;
+            bool showDebugMenu = true;
             char loadLevelName[256] = "sponza";
 
         public:
@@ -634,10 +634,10 @@ namespace Gek
                         RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
                         if (rawInput->header.dwType == RIM_TYPEMOUSE)
                         {
-                            float xPosRelative = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
-                            float yPosRelative = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
-                            actionQueue.push(Action(L"turn", xPosRelative));
-                            actionQueue.push(Action(L"tilt", yPosRelative));
+                            float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
+                            float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
+                            actionQueue.push(Action(L"turn", xMovement));
+                            actionQueue.push(Action(L"tilt", yMovement));
                         }
 
                         break;
@@ -674,9 +674,28 @@ namespace Gek
                 // Start the frame
                 ImGui::NewFrame();
 
-                if (showMainMenu)
+                if (ImGui::BeginMainMenuBar())
                 {
-                    ImGui::Begin("Debug Menu", &showMainMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                    if (ImGui::BeginMenu("Windows"))
+                    {
+                        if (ImGui::MenuItem("Debug", "D", nullptr))
+                        {
+                            showDebugMenu = true;
+                        }
+
+                        if (ImGui::MenuItem("Editor", "E", nullptr))
+                        {
+                        }
+
+                        ImGui::EndMenu();
+                    }
+
+                    ImGui::EndMainMenuBar();
+                }
+
+                if (showDebugMenu)
+                {
+                    ImGui::Begin("Debug Menu", &showDebugMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
 
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
