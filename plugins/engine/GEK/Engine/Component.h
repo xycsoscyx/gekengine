@@ -8,6 +8,8 @@
 
 #define GEK_COMPONENT(TYPE)         struct TYPE : public Plugin::Component::Data
 
+struct ImGuiContext;
+
 namespace Gek
 {
     namespace Plugin
@@ -31,7 +33,7 @@ namespace Gek
         GEK_INTERFACE(Component)
             : public Plugin::Component
         {
-            virtual void showEditor(Plugin::Component::Data *data) = 0;
+            virtual void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
         };
     }; // namespace Editor
 }; // namespace Gek

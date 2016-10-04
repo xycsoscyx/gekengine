@@ -2,6 +2,7 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
+#include <imgui.h>
 
 namespace Gek
 {
@@ -19,12 +20,24 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Color)
-        , public Plugin::ComponentMixin<Components::Color>
+        , public Plugin::ComponentMixin<Components::Color, Editor::Component>
     {
     public:
         Color(Context *context)
             : ContextRegistration(context)
         {
+        }
+
+        // Editor::Component
+        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            auto &colorComponent = *dynamic_cast<Components::Color *>(data);
+
+            ImGui::SetCurrentContext(guiContext);
+
+            ImGui::ColorEdit4("Color", colorComponent.value.data);
+
+            ImGui::SetCurrentContext(nullptr);
         }
 
         // Plugin::Component

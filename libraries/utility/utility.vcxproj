@@ -15,6 +15,9 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\external\ImGuizmo\ImGuizmo.cpp" />
+    <ClCompile Include="..\..\external\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\external\imgui\imgui_draw.cpp" />
     <ClCompile Include="Evaluator.cpp" />
     <ClCompile Include="FileSystem.cpp" />
     <ClCompile Include="ShuntingYard.cpp" />
@@ -23,6 +26,8 @@
     <ClCompile Include="XML.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\external\imgui\imgui.h" />
+    <ClInclude Include="..\..\external\imgui\imgui_internal.h" />
     <ClInclude Include="GEK\Utility\Allocator.h" />
     <ClInclude Include="GEK\Utility\Evaluator.h" />
     <ClInclude Include="GEK\Utility\Exceptions.h" />

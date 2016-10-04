@@ -41,9 +41,9 @@ namespace Gek
             return defaultValue;
         }
 
-        template <class DATA>
+        template <class DATA, class BASE = Plugin::Component>
         class ComponentMixin
-            : public Component
+            : public BASE
         {
         public:
             ComponentMixin(void)
@@ -60,7 +60,7 @@ namespace Gek
                 return typeid(DATA);
             }
 
-            std::unique_ptr<Data> create(const Plugin::Population::ComponentDefinition &componentData)
+            std::unique_ptr<Plugin::Component::Data> create(const Plugin::Population::ComponentDefinition &componentData)
             {
                 auto data = std::make_unique<DATA>();
                 data->load(componentData);
