@@ -5,12 +5,7 @@
 #include "GEK\Utility\FileSystem.h"
 #include "GEK\Context\ContextUser.h"
 #include "GEK\System\VideoDevice.h"
-#include <atlbase.h>
-#include <D3D12.h>
-#include <D3DCompiler.h>
-
-#pragma comment(lib, "d3d12.lib")
-#pragma comment(lib, "d3dcompiler.lib")
+#include <Windows.h>
 
 namespace Gek
 {
@@ -844,7 +839,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(window)
             {
-                throw Exception("TODO: Finish Direct3D12 Video Device");
+                throw Exception("TODO: Finish OpenGL Video Device");
 
                 GEK_REQUIRE(window);
 

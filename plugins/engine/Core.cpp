@@ -217,6 +217,8 @@ namespace Gek
                 {
                     ImGuiStyle& style = ImGui::GetStyle();
 
+                    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+
                     // light style from Pacôme Danhiez (user itamago) https://github.com/ocornut/imgui/pull/511#issuecomment-175719267
                     style.Alpha = 1.0f;
                     style.FrameRounding = 3.0f;
@@ -677,9 +679,12 @@ namespace Gek
 
                 if (showMainMenu)
                 {
-                    ImGui::Begin("Debug Menu", &showMainMenu, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Begin("Debug Menu", &showMainMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize);
 
-                    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                    ImGui::PushItemWidth(-1.0f);
+                    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                    ImGui::PopItemWidth();
+                    ImGui::Text("");
 
                     ImGui::InputText("##Load Level", loadLevelName, 256);
 
@@ -689,6 +694,8 @@ namespace Gek
                         population->load(String(loadLevelName));
                     }
 
+                    ImGui::Text("");
+                    ImGui::PushItemWidth(-1.0f);
                     if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
                     {
                         Core *core = static_cast<Core *>(data);
@@ -704,7 +711,7 @@ namespace Gek
                         sendShout(&Plugin::CoreListener::onResize);
                     }
 
-                    ImGui::SameLine();
+                    ImGui::PopItemWidth();
                     if (ImGui::Checkbox("FullScreen", &fullScreen))
                     {
                         device->setFullScreen(fullScreen);
@@ -714,6 +721,7 @@ namespace Gek
                         sendShout(&Plugin::CoreListener::onResize);
                     }
 
+                    ImGui::Text("");
                     if (ImGui::Button("Quit"))
                     {
                         engineRunning = false;
