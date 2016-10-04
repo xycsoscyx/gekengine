@@ -141,7 +141,7 @@ namespace Gek
 
                 if (SUCCEEDED(resultValue))
                 {
-                    for (uint32_t keyIndex = 0; keyIndex < 256; keyIndex++)
+                    for (uint32_t keyIndex = 0; keyIndex < 256; ++keyIndex)
                     {
                         if (rawKeyBuffer[keyIndex] & 0x80 ? true : false)
                         {
@@ -240,7 +240,7 @@ namespace Gek
                     axisValues.x = float(mouseStates.lX);
                     axisValues.y = float(mouseStates.lY);
                     axisValues.z = float(mouseStates.lZ);
-                    for (uint32_t buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
+                    for (uint32_t buttonIndex = 0; buttonIndex < getButtonCount(); ++buttonIndex)
                     {
                         if (mouseStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                         {
@@ -356,7 +356,7 @@ namespace Gek
                     rotationValues.x = float(joystickStates.lRx);
                     rotationValues.y = float(joystickStates.lRy);
                     rotationValues.z = float(joystickStates.lRz);
-                    for (uint32_t buttonIndex = 0; buttonIndex < getButtonCount(); buttonIndex++)
+                    for (uint32_t buttonIndex = 0; buttonIndex < getButtonCount(); ++buttonIndex)
                     {
                         if (joystickStates.rgbButtons[buttonIndex] & 0x80 ? true : false)
                         {
