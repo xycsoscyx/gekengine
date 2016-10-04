@@ -40,6 +40,9 @@
     <ClInclude Include="GEK\Utility\XML.h" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\external\freetype2\builds\windows\vc2010\freetype.vcxproj">
+      <Project>{78b079bd-9fc7-4b9e-b4a6-96da0f00248b}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\..\external\libxml2\win32\VC10\libxml2.vcxproj">
       <Project>{1d6039f6-5078-416f-a3af-a36efc7e6a1c}</Project>
     </ProjectReference>
@@ -89,20 +92,20 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(SolutionDir)..\external\freetype2\include;$(IncludePath)</IncludePath>
     <TargetName>$(ProjectName)</TargetName>
     <OutDir>$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <LibraryPath>$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(SolutionDir)..\external\freetype2\include;$(IncludePath)</IncludePath>
     <OutDir>$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <LibraryPath>$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
-    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)..\external\libxml2\include;$(SolutionDir)..\external\freetype2\include;$(IncludePath)</IncludePath>
     <OutDir>$(Configuration)\</OutDir>
     <RunCodeAnalysis>false</RunCodeAnalysis>
     <LibraryPath>$(SolutionDir)..\external\LibXML2\version 2.7.8\lib;$(LibraryPath)</LibraryPath>
