@@ -217,7 +217,7 @@ namespace Gek
                 {
                     ImGuiStyle& style = ImGui::GetStyle();
 
-                    style.WindowTitleAlign = ImGuiAlign_Center;
+                    style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
 
                     // light style from Pacôme Danhiez (user itamago) https://github.com/ocornut/imgui/pull/511#issuecomment-175719267
                     style.Alpha = 1.0f;

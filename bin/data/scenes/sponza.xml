@@ -3,15 +3,15 @@
     <prefabs>
         <basic_spot_light>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)" />
-            <spot_light range="random(10, 20)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
-            <color>(random(1,5), random(1,5), random(1,5))</color>
+            <spot_light range="random(10, 20)" intensity="random(0.5, 1.5)" inner_angle="45" outer_angle="90" falloff="random(0.5, 4.0)" />
+            <color>(random(0.5, 1), random(0.5, 1), random(0.5, 1))</color>
             <spin />
         </basic_spot_light>
 
         <basic_point_light>
             <transform position="(random(-45, 45), random(5, 30), random(-20, 20))" rotation="(0, random(0,360), 0)" />
-            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" />
-            <color>(random(1,5), random(1,5), random(1,5))</color>
+            <point_light range="random(10, 20)" radius="random(0.1, 0.5)" intensity="random(0.5, 1.5)" />
+            <color>(random(0.5, 1), random(0.5, 1), random(0.5, 1))</color>
         </basic_point_light>
 
         <basic_explosion>

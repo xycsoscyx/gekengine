@@ -427,7 +427,7 @@ namespace Gek
 
                 if (showSelectionMenu)
                 {
-                    ImGui::Begin("Edit Menu", &showSelectionMenu, ImVec2(0, 0), -1.0f, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                    ImGui::Begin("Edit Menu", &showSelectionMenu, ImVec2(400, 0), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
 
                     Editor::Population *populationEditor = dynamic_cast<Editor::Population *>(population);
                     auto entityList = populationEditor->getEntityList();
