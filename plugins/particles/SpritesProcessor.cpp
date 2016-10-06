@@ -36,7 +36,7 @@ namespace Gek
 
             void load(const Xml::Leaf &componentData)
             {
-                strength = componentData.getValue(L"strength", 10.0f);
+                strength = loadAttribute(componentData, L"strength", 10.0f);
             }
         };
     }; // namespace Components

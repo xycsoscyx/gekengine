@@ -17,9 +17,9 @@ namespace Gek
 
         void PointLight::load(const Xml::Leaf &componentData)
         {
-            range = componentData.getValue(L"range", 0.0f);
-            radius = componentData.getValue(L"radius", 0.0f);
-            intensity = componentData.getValue(L"intensity", 0.0f);
+            range = loadAttribute(componentData, L"range", 0.0f);
+            radius = loadAttribute(componentData, L"radius", 0.0f);
+            intensity = loadAttribute(componentData, L"intensity", 0.0f);
         }
 
         void SpotLight::save(Xml::Leaf &componentData) const
@@ -34,12 +34,12 @@ namespace Gek
 
         void SpotLight::load(const Xml::Leaf &componentData)
         {
-            range = componentData.getValue(L"range", 0.0f);
-            radius = componentData.getValue(L"radius", 0.0f);
-            intensity = componentData.getValue(L"intensity", 0.0f);
-            innerAngle = std::cos(Math::convertDegreesToRadians(componentData.getValue(L"inner_angle", 0.0f) * 0.5f));
-            outerAngle = std::cos(Math::convertDegreesToRadians(componentData.getValue(L"outer_angle", 0.0f) * 0.5f));
-            falloff = componentData.getValue(L"falloff", 0.0f);
+            range = loadAttribute(componentData, L"range", 0.0f);
+            radius = loadAttribute(componentData, L"radius", 0.0f);
+            intensity = loadAttribute(componentData, L"intensity", 0.0f);
+            innerAngle = std::cos(Math::convertDegreesToRadians(loadAttribute(componentData, L"inner_angle", 0.0f) * 0.5f));
+            outerAngle = std::cos(Math::convertDegreesToRadians(loadAttribute(componentData, L"outer_angle", 0.0f) * 0.5f));
+            falloff = loadAttribute(componentData, L"falloff", 0.0f);
         }
 
         void DirectionalLight::save(Xml::Leaf &componentData) const
@@ -49,7 +49,7 @@ namespace Gek
 
         void DirectionalLight::load(const Xml::Leaf &componentData)
         {
-            intensity = componentData.getValue(L"intensity", 0.0f);
+            intensity = loadAttribute(componentData, L"intensity", 0.0f);
         }
     }; // namespace Components
 

@@ -17,9 +17,9 @@ namespace Gek
 
         void Transform::load(const Xml::Leaf &componentData)
         {
-            position = componentData.getValue(L"position", Math::Float3::Zero);
-            rotation = componentData.getValue(L"rotation", Math::Quaternion::Identity);
-            scale = componentData.getValue(L"scale", Math::Float3::One);
+            position = loadAttribute(componentData, L"position", Math::Float3::Zero);
+            rotation = loadAttribute(componentData, L"rotation", Math::Quaternion::Identity);
+            scale = loadAttribute(componentData, L"scale", Math::Float3::One);
         }
     }; // namespace Components
 

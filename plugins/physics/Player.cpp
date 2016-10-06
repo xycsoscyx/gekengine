@@ -25,10 +25,10 @@ namespace Gek
 
         void Player::load(const Xml::Leaf &componentData)
         {
-			height = componentData.getValue(L"height", 6.0f);
-            outerRadius = componentData.getValue(L"outer_radius", 1.5f);
-            innerRadius = componentData.getValue(L"inner_radius", 0.5f);
-            stairStep = componentData.getValue(L"stair_step", 1.5f);
+			height = loadAttribute(componentData, L"height", 6.0f);
+            outerRadius = loadAttribute(componentData, L"outer_radius", 1.5f);
+            innerRadius = loadAttribute(componentData, L"inner_radius", 0.5f);
+            stairStep = loadAttribute(componentData, L"stair_step", 1.5f);
         }
     }; // namespace Components
 

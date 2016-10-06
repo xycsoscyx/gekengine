@@ -11,6 +11,23 @@
 
 struct ImGuiContext;
 
+namespace ImGui
+{
+    inline bool InputText(const char* label, Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL)
+    {
+        Gek::StringUTF8 stringUTF8(string);
+        char stringData[256];
+        strcpy(stringData, stringUTF8);
+        if (InputText(label, stringData, 255, flags, callback, user_data))
+        {
+            string = stringData;
+            return true;
+        }
+
+        return false;
+    }
+}; // namespace ImGui
+
 namespace Gek
 {
     namespace Plugin

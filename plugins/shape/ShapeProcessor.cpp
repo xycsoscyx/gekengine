@@ -410,6 +410,9 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &shapeComponent = *dynamic_cast<Components::Shape *>(data);
+            ImGui::InputText("Type", shapeComponent.type);
+            ImGui::InputText("Parameters", shapeComponent.parameters);
+            ImGui::InputText("Skin", shapeComponent.skin);
             ImGui::SetCurrentContext(nullptr);
         }
 

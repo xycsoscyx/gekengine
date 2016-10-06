@@ -32,6 +32,20 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &filterComponent = *dynamic_cast<Components::Filter *>(data);
+            if (ImGui::ListBoxHeader("Filters", filterComponent.list.size(), 5))
+            {
+                ImGuiListClipper clipper(filterComponent.list.size(), ImGui::GetTextLineHeightWithSpacing());
+                while (clipper.Step())
+                {
+                    for (int filterIndex = clipper.DisplayStart; filterIndex < clipper.DisplayEnd; ++filterIndex)
+                    {
+                        ImGui::InputText("##", filterComponent.list[filterIndex]);
+                    }
+                };
+
+                ImGui::ListBoxFooter();
+            }
+
             ImGui::SetCurrentContext(nullptr);
         }
 

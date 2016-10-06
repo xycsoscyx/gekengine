@@ -4,8 +4,8 @@
 #include "GEK\Context\Context.h"
 #include "GEK\Context\Broadcaster.h"
 #include "GEK\Engine\Processor.h"
-#include <functional>
 #include <unordered_map>
+#include <functional>
 #include <typeindex>
 #include <vector>
 
