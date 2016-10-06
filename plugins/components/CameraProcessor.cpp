@@ -1,13 +1,13 @@
-﻿#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\Core.h"
-#include "GEK\Engine\Processor.h"
-#include "GEK\Engine\Population.h"
-#include "GEK\Engine\Renderer.h"
-#include "GEK\Engine\Entity.h"
-#include "GEK\Engine\ComponentMixin.h"
-#include "GEK\Components\Transform.h"
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
+﻿#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Engine\Core.hpp"
+#include "GEK\Engine\Processor.hpp"
+#include "GEK\Engine\Population.hpp"
+#include "GEK\Engine\Renderer.hpp"
+#include "GEK\Engine\Entity.hpp"
+#include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Components\Transform.hpp"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Float4x4.hpp"
 #include <unordered_map>
 #include <ppl.h>
 
@@ -74,7 +74,7 @@ namespace Gek
         , public Plugin::Processor
     {
     public:
-        struct Camera
+        struct Data
         {
             ResourceHandle target;
         };
@@ -84,8 +84,7 @@ namespace Gek
         Plugin::Resources *resources;
         Plugin::Renderer *renderer;
 
-        using EntityDataMap = std::unordered_map<Plugin::Entity *, Camera>;
-        EntityDataMap entityDataMap;
+        Plugin::ProcessorHelper<Data, Components::FirstPersonCamera, Components::Transform> helper;
 
     public:
         CameraProcessor(Context *context, Plugin::Core *core)
@@ -111,25 +110,24 @@ namespace Gek
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
-            entityDataMap.clear();
+            helper.clear();
         }
 
         void onLoadSucceeded(void)
         {
             population->listEntities<Components::FirstPersonCamera, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
-
-                Camera data;
-                if (!cameraComponent.name.empty())
+                helper.addEntity(entity, [&](Data &data) -> void
                 {
-                    auto backBuffer = renderer->getDevice()->getBackBuffer();
-                    uint32_t width = backBuffer->getWidth();
-                    uint32_t height = backBuffer->getHeight();
-                    data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.name), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
-                }
-
-                entityDataMap.insert(std::make_pair(entity, data));
+                    const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
+                    if (!cameraComponent.name.empty())
+                    {
+                        auto backBuffer = renderer->getDevice()->getBackBuffer();
+                        uint32_t width = backBuffer->getWidth();
+                        uint32_t height = backBuffer->getHeight();
+                        data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.name), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    }
+                });
             });
         }
 
@@ -139,13 +137,7 @@ namespace Gek
 
         void onEntityDestroyed(Plugin::Entity *entity)
         {
-            GEK_REQUIRE(entity);
-
-            auto entitySearch = entityDataMap.find(entity);
-            if (entitySearch != entityDataMap.end())
-            {
-                entityDataMap.erase(entitySearch);
-            }
+            helper.removeEntity(entity);
         }
 
         // Plugin::PopulationStep
@@ -155,12 +147,9 @@ namespace Gek
 
             if (state != State::Loading)
             {
-                std::for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
+                helper.list([&](Plugin::Entity *entity, Data &camera) -> void
                 {
-					const Plugin::Entity *entity = entityDataPair.first;
 					const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
-					const auto &camera = entityDataPair.second;
-
 					const auto backBuffer = renderer->getDevice()->getBackBuffer();
 					const float width = float(backBuffer->getWidth());
 					const float height = float(backBuffer->getHeight());

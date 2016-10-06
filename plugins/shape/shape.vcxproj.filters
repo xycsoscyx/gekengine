@@ -18,7 +18,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Shape\Base.h">
+    <ClInclude Include="GEK\Shape\Base.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

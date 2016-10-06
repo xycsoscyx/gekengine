@@ -23,13 +23,13 @@
     <ClCompile Include="Sphere.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Shapes\AlignedBox.h" />
-    <ClInclude Include="GEK\Shapes\Frustum.h" />
-    <ClInclude Include="GEK\Shapes\OrientedBox.h" />
-    <ClInclude Include="GEK\Shapes\Plane.h" />
-    <ClInclude Include="GEK\Shapes\Ray.h" />
-    <ClInclude Include="GEK\Shapes\Rectangle.h" />
-    <ClInclude Include="GEK\Shapes\Sphere.h" />
+    <ClInclude Include="GEK\Shapes\AlignedBox.hpp" />
+    <ClInclude Include="GEK\Shapes\Frustum.hpp" />
+    <ClInclude Include="GEK\Shapes\OrientedBox.hpp" />
+    <ClInclude Include="GEK\Shapes\Plane.hpp" />
+    <ClInclude Include="GEK\Shapes\Ray.hpp" />
+    <ClInclude Include="GEK\Shapes\Rectangle.hpp" />
+    <ClInclude Include="GEK\Shapes\Sphere.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{4EBFE6D0-93E4-436B-9249-19EE13E7CF0B}</ProjectGuid>

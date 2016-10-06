@@ -1,6 +1,6 @@
-#include "GEK\Utility\ShuntingYard.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Math\Common.h"
+#include "GEK\Utility\ShuntingYard.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Math\Common.hpp"
 #include <unordered_map>
 #include <functional>
 #include <random>

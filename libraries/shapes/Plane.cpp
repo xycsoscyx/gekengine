@@ -1,4 +1,4 @@
-#include "GEK\Shapes\Plane.h"
+#include "GEK\Shapes\Plane.hpp"
 
 namespace Gek
 {

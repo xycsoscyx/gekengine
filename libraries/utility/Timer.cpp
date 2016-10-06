@@ -1,4 +1,4 @@
-#include "GEK\Utility\Timer.h"
+#include "GEK\Utility\Timer.hpp"
 
 namespace Gek
 {

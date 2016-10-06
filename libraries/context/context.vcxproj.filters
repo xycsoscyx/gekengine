@@ -14,13 +14,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Context\Context.h">
+    <ClInclude Include="GEK\Context\Context.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Context\ContextUser.h">
+    <ClInclude Include="GEK\Context\ContextUser.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Context\Broadcaster.h">
+    <ClInclude Include="GEK\Context\Broadcaster.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -184,9 +184,9 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\System\AudioDevice.h" />
-    <ClInclude Include="GEK\System\InputSystem.h" />
-    <ClInclude Include="GEK\System\VideoDevice.h" />
+    <ClInclude Include="GEK\System\AudioDevice.hpp" />
+    <ClInclude Include="GEK\System\InputSystem.hpp" />
+    <ClInclude Include="GEK\System\VideoDevice.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

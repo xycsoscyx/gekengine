@@ -29,25 +29,25 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Shapes\Frustum.h">
+    <ClInclude Include="GEK\Shapes\Frustum.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\OrientedBox.h">
+    <ClInclude Include="GEK\Shapes\OrientedBox.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\Plane.h">
+    <ClInclude Include="GEK\Shapes\Plane.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\Ray.h">
+    <ClInclude Include="GEK\Shapes\Ray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\Rectangle.h">
+    <ClInclude Include="GEK\Shapes\Rectangle.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\Sphere.h">
+    <ClInclude Include="GEK\Shapes\Sphere.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\AlignedBox.h">
+    <ClInclude Include="GEK\Shapes\AlignedBox.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

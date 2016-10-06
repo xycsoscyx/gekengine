@@ -1,7 +1,7 @@
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\System\AudioDevice.h"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\System\AudioDevice.hpp"
 #include <Windows.h>
 
 #include <AL\al.h>

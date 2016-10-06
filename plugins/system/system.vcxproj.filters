@@ -36,13 +36,13 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\System\VideoDevice.h">
+    <ClInclude Include="GEK\System\VideoDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\AudioDevice.h">
+    <ClInclude Include="GEK\System\AudioDevice.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\System\InputSystem.h">
+    <ClInclude Include="GEK\System\InputSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

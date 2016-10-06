@@ -1,10 +1,10 @@
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\ComponentMixin.h"
-#include "GEK\Components\Transform.h"
-#include "GEK\Newton\Base.h"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Components\Transform.hpp"
+#include "GEK\Newton\Base.hpp"
 
 #include <Newton.h>
 

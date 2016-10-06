@@ -1,13 +1,13 @@
-﻿#include "GEK\Utility\String.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Utility\XML.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\System\VideoDevice.h"
-#include "GEK\Engine\Shader.h"
-#include "GEK\Engine\Resources.h"
-#include "GEK\Engine\Renderer.h"
-#include "GEK\Engine\Material.h"
-#include "ShaderFilter.h"
+﻿#include "GEK\Utility\String.hpp"
+#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Utility\XML.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\System\VideoDevice.hpp"
+#include "GEK\Engine\Shader.hpp"
+#include "GEK\Engine\Resources.hpp"
+#include "GEK\Engine\Renderer.hpp"
+#include "GEK\Engine\Material.hpp"
+#include "ShaderFilter.hpp"
 #include <ppl.h>
 
 namespace Gek

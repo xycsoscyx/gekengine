@@ -1,10 +1,10 @@
 #pragma warning(disable : 4005)
 
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\System\VideoDevice.h"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
 
 namespace Gek

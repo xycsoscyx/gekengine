@@ -1,4 +1,4 @@
-#include "GEK\Utility\ThreadPool.h"
+#include "GEK\Utility\ThreadPool.hpp"
 #include <Windows.h>
 
 namespace Gek

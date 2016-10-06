@@ -33,16 +33,16 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Components\Light.h">
+    <ClInclude Include="GEK\Components\Light.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Components\Transform.h">
+    <ClInclude Include="GEK\Components\Transform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Components\Color.h">
+    <ClInclude Include="GEK\Components\Color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Components\Filter.h">
+    <ClInclude Include="GEK\Components\Filter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

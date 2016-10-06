@@ -18,7 +18,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Model\Base.h">
+    <ClInclude Include="GEK\Model\Base.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

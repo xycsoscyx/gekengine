@@ -1,8 +1,8 @@
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Context\Context.h"
-#include "GEK\Context\ContextUser.h"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Context\Context.hpp"
+#include "GEK\Context\ContextUser.hpp"
 #include <Windows.h>
 #include <unordered_map>
 #include <list>

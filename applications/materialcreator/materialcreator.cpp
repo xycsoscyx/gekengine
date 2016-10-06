@@ -1,10 +1,10 @@
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float3.h"
-#include "GEK\Math\Float4x4.h"
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Utility\XML.h"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Float3.hpp"
+#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Utility\XML.hpp"
 #include <Windows.h>
 #include <experimental\filesystem>
 
