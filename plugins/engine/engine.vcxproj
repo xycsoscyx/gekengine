@@ -157,21 +157,21 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Engine\Application.h" />
-    <ClInclude Include="GEK\Engine\Component.h" />
-    <ClInclude Include="GEK\Engine\ComponentMixin.h" />
-    <ClInclude Include="GEK\Engine\Core.h" />
-    <ClInclude Include="GEK\Engine\Entity.h" />
-    <ClInclude Include="GEK\Engine\Filter.h" />
-    <ClInclude Include="GEK\Engine\Material.h" />
-    <ClInclude Include="GEK\Engine\Population.h" />
-    <ClInclude Include="GEK\Engine\Processor.h" />
-    <ClInclude Include="GEK\Engine\Renderer.h" />
-    <ClInclude Include="GEK\Engine\Resources.h" />
-    <ClInclude Include="GEK\Engine\Shader.h" />
-    <ClInclude Include="GEK\Engine\Visual.h" />
+    <ClInclude Include="GEK\Engine\Application.hpp" />
+    <ClInclude Include="GEK\Engine\Component.hpp" />
+    <ClInclude Include="GEK\Engine\ComponentMixin.hpp" />
+    <ClInclude Include="GEK\Engine\Core.hpp" />
+    <ClInclude Include="GEK\Engine\Entity.hpp" />
+    <ClInclude Include="GEK\Engine\Filter.hpp" />
+    <ClInclude Include="GEK\Engine\Material.hpp" />
+    <ClInclude Include="GEK\Engine\Population.hpp" />
+    <ClInclude Include="GEK\Engine\Processor.hpp" />
+    <ClInclude Include="GEK\Engine\Renderer.hpp" />
+    <ClInclude Include="GEK\Engine\Resources.hpp" />
+    <ClInclude Include="GEK\Engine\Shader.hpp" />
+    <ClInclude Include="GEK\Engine\Visual.hpp" />
     <ClInclude Include="resource.h" />
-    <ClInclude Include="ShaderFilter.h" />
+    <ClInclude Include="ShaderFilter.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core.cpp" />

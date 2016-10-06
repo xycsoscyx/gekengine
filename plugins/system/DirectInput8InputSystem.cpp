@@ -1,6 +1,6 @@
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\System\InputSystem.h"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\System\InputSystem.hpp"
 #include <atlbase.h>
 
 #define DIRECTINPUT_VERSION 0x0800

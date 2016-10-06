@@ -1,5 +1,5 @@
-#include "GEK\Math\Float3x2.h"
-#include "GEK\Math\Common.h"
+#include "GEK\Math\Float3x2.hpp"
+#include "GEK\Math\Common.hpp"
 #include <algorithm>
 
 namespace Gek

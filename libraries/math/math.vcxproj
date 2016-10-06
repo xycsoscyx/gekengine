@@ -15,14 +15,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Math\Color.h" />
-    <ClInclude Include="GEK\Math\Common.h" />
-    <ClInclude Include="GEK\Math\Float2.h" />
-    <ClInclude Include="GEK\Math\Float3.h" />
-    <ClInclude Include="GEK\Math\Float3x2.h" />
-    <ClInclude Include="GEK\Math\Float4.h" />
-    <ClInclude Include="GEK\Math\Float4x4.h" />
-    <ClInclude Include="GEK\Math\Quaternion.h" />
+    <ClInclude Include="GEK\Math\Color.hpp" />
+    <ClInclude Include="GEK\Math\Common.hpp" />
+    <ClInclude Include="GEK\Math\Float2.hpp" />
+    <ClInclude Include="GEK\Math\Float3.hpp" />
+    <ClInclude Include="GEK\Math\Float3x2.hpp" />
+    <ClInclude Include="GEK\Math\Float4.hpp" />
+    <ClInclude Include="GEK\Math\Float4x4.hpp" />
+    <ClInclude Include="GEK\Math\Quaternion.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Color.cpp" />

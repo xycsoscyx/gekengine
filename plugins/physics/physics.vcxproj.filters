@@ -30,7 +30,7 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Newton\Base.h">
+    <ClInclude Include="GEK\Newton\Base.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

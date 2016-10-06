@@ -9,28 +9,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Math\Quaternion.h">
+    <ClInclude Include="GEK\Math\Quaternion.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Common.h">
+    <ClInclude Include="GEK\Math\Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Color.h">
+    <ClInclude Include="GEK\Math\Color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float4x4.h">
+    <ClInclude Include="GEK\Math\Float4x4.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float2.h">
+    <ClInclude Include="GEK\Math\Float2.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float3.h">
+    <ClInclude Include="GEK\Math\Float3.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float3x2.h">
+    <ClInclude Include="GEK\Math\Float3x2.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float4.h">
+    <ClInclude Include="GEK\Math\Float4.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

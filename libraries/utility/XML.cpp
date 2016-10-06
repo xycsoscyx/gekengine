@@ -1,5 +1,5 @@
-#include "GEK\Utility\XML.h"
-#include "GEK\Utility\FileSystem.h"
+#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\FileSystem.hpp"
 #include <libxml/tree.h>
 #include <libxml/parser.h>
 

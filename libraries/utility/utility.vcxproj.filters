@@ -50,34 +50,34 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Utility\Timer.h">
+    <ClInclude Include="GEK\Utility\Timer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\XML.h">
+    <ClInclude Include="GEK\Utility\XML.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\Evaluator.h">
+    <ClInclude Include="GEK\Utility\Evaluator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\FileSystem.h">
+    <ClInclude Include="GEK\Utility\FileSystem.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\String.h">
+    <ClInclude Include="GEK\Utility\String.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\Hash.h">
+    <ClInclude Include="GEK\Utility\Hash.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\Allocator.h">
+    <ClInclude Include="GEK\Utility\Allocator.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\ShuntingYard.h">
+    <ClInclude Include="GEK\Utility\ShuntingYard.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\Exceptions.h">
+    <ClInclude Include="GEK\Utility\Exceptions.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Utility\ThreadPool.h">
+    <ClInclude Include="GEK\Utility\ThreadPool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\external\ImGuizmo\ImGuizmo.h">

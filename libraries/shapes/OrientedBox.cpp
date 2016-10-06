@@ -1,5 +1,5 @@
-#include "GEK\Shapes\OrientedBox.h"
-#include "GEK\Shapes\Plane.h"
+#include "GEK\Shapes\OrientedBox.hpp"
+#include "GEK\Shapes\Plane.hpp"
 #include <algorithm>
 
 namespace Gek

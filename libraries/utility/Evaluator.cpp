@@ -1,7 +1,7 @@
-#include "GEK\Utility\Evaluator.h"
-#include "GEK\Utility\ShuntingYard.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Math\Common.h"
+#include "GEK\Utility\Evaluator.hpp"
+#include "GEK\Utility\ShuntingYard.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Math\Common.hpp"
 
 namespace Gek
 {

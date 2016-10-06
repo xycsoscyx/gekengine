@@ -1,4 +1,4 @@
-#include "GEK\Shapes\Frustum.h"
+#include "GEK\Shapes\Frustum.hpp"
 
 namespace Gek
 {

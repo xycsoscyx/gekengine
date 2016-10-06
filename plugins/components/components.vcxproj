@@ -177,10 +177,10 @@
     <ResourceCompile Include="..\..\solution\gekengine.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Components\Color.h" />
-    <ClInclude Include="GEK\Components\Filter.h" />
-    <ClInclude Include="GEK\Components\Light.h" />
-    <ClInclude Include="GEK\Components\Transform.h" />
+    <ClInclude Include="GEK\Components\Color.hpp" />
+    <ClInclude Include="GEK\Components\Filter.hpp" />
+    <ClInclude Include="GEK\Components\Light.hpp" />
+    <ClInclude Include="GEK\Components\Transform.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

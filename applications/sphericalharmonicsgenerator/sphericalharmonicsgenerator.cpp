@@ -1,8 +1,8 @@
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\FileSystem.h"
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Float4x4.hpp"
 #include <DirectXTex.h>
 #include <array>
 #include <ppl.h>
@@ -472,7 +472,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
         }
 
-        FileSystem::save(L"..//data//programs//Standard//radiance.h", output);
+        FileSystem::save(L"..//data//programs//Standard//radiance.hpp", output);
         printf("%s", output.c_str());
     }
     catch (const std::exception &exception)

@@ -31,46 +31,46 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />
-    <ClInclude Include="GEK\Engine\ComponentMixin.h">
+    <ClInclude Include="GEK\Engine\ComponentMixin.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Entity.h">
+    <ClInclude Include="GEK\Engine\Entity.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Material.h">
+    <ClInclude Include="GEK\Engine\Material.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Population.h">
+    <ClInclude Include="GEK\Engine\Population.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Processor.h">
+    <ClInclude Include="GEK\Engine\Processor.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Shader.h">
+    <ClInclude Include="GEK\Engine\Shader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Component.h">
+    <ClInclude Include="GEK\Engine\Component.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Resources.h">
+    <ClInclude Include="GEK\Engine\Resources.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Filter.h">
+    <ClInclude Include="GEK\Engine\Filter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Application.h">
+    <ClInclude Include="GEK\Engine\Application.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Visual.h">
+    <ClInclude Include="GEK\Engine\Visual.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Core.h">
+    <ClInclude Include="GEK\Engine\Core.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Renderer.h">
+    <ClInclude Include="GEK\Engine\Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ShaderFilter.h">
+    <ClInclude Include="ShaderFilter.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
   </ItemGroup>

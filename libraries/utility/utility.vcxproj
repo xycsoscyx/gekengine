@@ -31,16 +31,16 @@
     <ClInclude Include="..\..\external\imgui\imconfig.h" />
     <ClInclude Include="..\..\external\imgui\imgui.h" />
     <ClInclude Include="..\..\external\imgui\imgui_internal.h" />
-    <ClInclude Include="GEK\Utility\Allocator.h" />
-    <ClInclude Include="GEK\Utility\Evaluator.h" />
-    <ClInclude Include="GEK\Utility\Exceptions.h" />
-    <ClInclude Include="GEK\Utility\FileSystem.h" />
-    <ClInclude Include="GEK\Utility\Hash.h" />
-    <ClInclude Include="GEK\Utility\ShuntingYard.h" />
-    <ClInclude Include="GEK\Utility\String.h" />
-    <ClInclude Include="GEK\Utility\ThreadPool.h" />
-    <ClInclude Include="GEK\Utility\Timer.h" />
-    <ClInclude Include="GEK\Utility\XML.h" />
+    <ClInclude Include="GEK\Utility\Allocator.hpp" />
+    <ClInclude Include="GEK\Utility\Evaluator.hpp" />
+    <ClInclude Include="GEK\Utility\Exceptions.hpp" />
+    <ClInclude Include="GEK\Utility\FileSystem.hpp" />
+    <ClInclude Include="GEK\Utility\Hash.hpp" />
+    <ClInclude Include="GEK\Utility\ShuntingYard.hpp" />
+    <ClInclude Include="GEK\Utility\String.hpp" />
+    <ClInclude Include="GEK\Utility\ThreadPool.hpp" />
+    <ClInclude Include="GEK\Utility\Timer.hpp" />
+    <ClInclude Include="GEK\Utility\XML.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\external\libxml2\win32\VC10\libxml2.vcxproj">

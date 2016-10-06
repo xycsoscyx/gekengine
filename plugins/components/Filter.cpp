@@ -1,7 +1,7 @@
-﻿#include "GEK\Components\Filter.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\ComponentMixin.h"
-#include "GEK\Utility\String.h"
+﻿#include "GEK\Components\Filter.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Utility\String.hpp"
 
 namespace Gek
 {
@@ -32,14 +32,18 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &filterComponent = *dynamic_cast<Components::Filter *>(data);
-            if (ImGui::ListBoxHeader("Filters", filterComponent.list.size(), 5))
+            if (ImGui::ListBoxHeader("##Filters", filterComponent.list.size(), 5))
             {
                 ImGuiListClipper clipper(filterComponent.list.size(), ImGui::GetTextLineHeightWithSpacing());
                 while (clipper.Step())
                 {
                     for (int filterIndex = clipper.DisplayStart; filterIndex < clipper.DisplayEnd; ++filterIndex)
                     {
+                        ImGui::PushID(filterIndex);
+                        ImGui::PushItemWidth(-1);
                         ImGui::InputText("##", filterComponent.list[filterIndex]);
+                        ImGui::PopItemWidth();
+                        ImGui::PopID();
                     }
                 };
 

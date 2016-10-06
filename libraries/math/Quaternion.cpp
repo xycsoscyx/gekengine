@@ -1,7 +1,7 @@
-#include "GEK\Math\Quaternion.h"
-#include "GEK\Math\Float4x4.h"
-#include "GEK\Math\Float3.h"
-#include "GEK\Math\Common.h"
+#include "GEK\Math\Quaternion.hpp"
+#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Math\Float3.hpp"
+#include "GEK\Math\Common.hpp"
 #include <algorithm>
 
 namespace Gek

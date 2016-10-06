@@ -1,13 +1,13 @@
-﻿#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\Core.h"
-#include "GEK\Engine\Processor.h"
-#include "GEK\Engine\Population.h"
-#include "GEK\Engine\Renderer.h"
-#include "GEK\Engine\Entity.h"
-#include "GEK\Engine\ComponentMixin.h"
-#include "GEK\Components\Transform.h"
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
+﻿#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Engine\Core.hpp"
+#include "GEK\Engine\Processor.hpp"
+#include "GEK\Engine\Population.hpp"
+#include "GEK\Engine\Renderer.hpp"
+#include "GEK\Engine\Entity.hpp"
+#include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Components\Transform.hpp"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Float4x4.hpp"
 #include <random>
 
 namespace Gek
@@ -63,8 +63,6 @@ namespace Gek
         , public Plugin::PopulationStep
         , public Plugin::Processor
     {
-    public:
-
     private:
         Plugin::Population *population;
 

@@ -1,9 +1,9 @@
-#include "GEK\Math\Common.h"
-#include "GEK\Math\Float4x4.h"
-#include "GEK\Utility\Exceptions.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Utility\XML.h"
-#include "GEK\Engine\Population.h"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Utility\Exceptions.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Utility\XML.hpp"
+#include "GEK\Engine\Population.hpp"
 #include <Windows.h>
 
 #include <assimp/config.h>

@@ -1,8 +1,8 @@
-#include "GEK\Components\Light.h"
-#include "GEK\Context\ContextUser.h"
-#include "GEK\Engine\ComponentMixin.h"
-#include "GEK\Utility\String.h"
-#include "GEK\Math\Common.h"
+#include "GEK\Components\Light.hpp"
+#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Utility\String.hpp"
+#include "GEK\Math\Common.hpp"
 
 namespace Gek
 {
