@@ -541,6 +541,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             header.type = 0;
             header.version = 5;
             header.materialCount = materialMap.size();
+            header.boundingBox = boundingBox;
             fwrite(&header, sizeof(ModelHeader), 1, file);
             for (auto &material : materialMap)
             {
