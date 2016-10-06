@@ -25,8 +25,8 @@ namespace Gek
             Math::Quaternion rotation;
             Math::Float3 scale;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const;
-            void load(const Plugin::Population::ComponentDefinition &componentData);
+            void save(Xml::Leaf &componentData) const;
+            void load(const Xml::Leaf &componentData);
 
             inline Math::Float4x4 getMatrix(void) const
             {

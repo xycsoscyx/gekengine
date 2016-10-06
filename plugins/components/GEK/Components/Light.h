@@ -13,8 +13,8 @@ namespace Gek
             float radius;
             float intensity;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const;
-            void load(const Plugin::Population::ComponentDefinition &componentData);
+            void save(Xml::Leaf &componentData) const;
+            void load(const Xml::Leaf &componentData);
         };
 
         GEK_COMPONENT(SpotLight)
@@ -26,16 +26,16 @@ namespace Gek
             float outerAngle;
             float falloff;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const;
-            void load(const Plugin::Population::ComponentDefinition &componentData);
+            void save(Xml::Leaf &componentData) const;
+            void load(const Xml::Leaf &componentData);
         };
 
         GEK_COMPONENT(DirectionalLight)
         {
             float intensity;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const;
-            void load(const Plugin::Population::ComponentDefinition &componentData);
+            void save(Xml::Leaf &componentData) const;
+            void load(const Xml::Leaf &componentData);
         };
     }; // namespace Components
 }; // namespace Gek

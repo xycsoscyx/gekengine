@@ -229,7 +229,7 @@ namespace Gek
 
                 Xml::Node shaderNode = Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader");
 
-                shaderNode.getValue(L"priority", priority);
+                priority = shaderNode.getValue(L"priority", 0);
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = backBuffer->getWidth();
@@ -1314,7 +1314,7 @@ namespace Gek
                 GEK_REQUIRE(deviceContext);
 
                 concurrency::concurrent_vector<LightData> lightData;
-                population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity) -> void
+                population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {
                     auto &transformComponent = entity->getComponent<Components::Transform>();
 					auto &colorComponent = entity->getComponent<Components::Color>();

@@ -3,7 +3,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
-    <IncludePath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um;$(SolutionDir)..\external\imgui-addons;$(SolutionDir)..\external\imguizmo;$(SolutionDir)..\libraries\math;$(SolutionDir)..\libraries\shapes;$(SolutionDir)..\libraries\utility;$(SolutionDir)..\libraries\context;$(ProjectDir);$(IncludePath)</IncludePath>
+    <IncludePath>C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\shared;C:\Program Files (x86)\Windows Kits\10\Include\10.0.14393.0\um;$(SolutionDir)..\external\imgui;$(SolutionDir)..\external\imguizmo;$(SolutionDir)..\libraries\math;$(SolutionDir)..\libraries\shapes;$(SolutionDir)..\libraries\utility;$(SolutionDir)..\libraries\context;$(ProjectDir);$(IncludePath)</IncludePath>
     <LibraryPath>C:\Program Files (x86)\Windows Kits\10\Lib\10.0.14393.0\um\x86;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <ItemDefinitionGroup>

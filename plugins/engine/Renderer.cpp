@@ -427,28 +427,40 @@ namespace Gek
 
                 if (showSelectionMenu)
                 {
-                    ImGui::Begin("Edit Menu", &showSelectionMenu, ImVec2(400, 0), -1.0f, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                    ImGui::Begin("Edit Menu", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                    ImGui::Dummy(ImVec2(350, 0));
 
                     Editor::Population *populationEditor = dynamic_cast<Editor::Population *>(population);
-                    auto entityList = populationEditor->getEntityList();
-                    auto entityCount = entityList.size();
+                    auto entityMap = populationEditor->getEntityMap();
+                    auto entityCount = entityMap.size();
+
+                    if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                    {
+                    }
 
                     ImGui::PushItemWidth(-1.0f);
-                    if (ImGui::ListBoxHeader("##Entities", entityCount, 10))
+                    if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                     {
                         ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
                         while (clipper.Step())
                         {
-                            for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex)
+                            auto entitySearch = entityMap.begin();
+                            std::advance(entitySearch, clipper.DisplayStart);
+                            for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                             {
-                                ImGui::PushID(entityIndex);
-                                if (ImGui::Selectable(StringUTF8(entityList[entityIndex]->getName()), (entityIndex == selectedEntity)))
+                                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
+                                if (ImGui::Button("X"))
+                                {
+                                }
+
+                                ImGui::PopStyleVar();
+                                ImGui::SameLine();
+                                ImGui::SetItemAllowOverlap();
+                                if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
                                 {
                                     selectedEntity = entityIndex;
                                     selectedComponent = 0;
                                 }
-
-                                ImGui::PopID();
                             }
                         };
 
@@ -457,20 +469,34 @@ namespace Gek
 
                     ImGui::PopItemWidth();
 
-                    Editor::Entity *entity = dynamic_cast<Editor::Entity *>(entityList[selectedEntity].get());
+                    auto entitySearch = entityMap.begin();
+                    std::advance(entitySearch, selectedEntity);
+                    Editor::Entity *entity = dynamic_cast<Editor::Entity *>(entitySearch->second.get());
                     if (entity)
                     {
                         ImGui::NewLine();
                         ImGui::PushItemWidth(-1.0f);
+                        if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                        {
+                        }
+
                         auto &componentsMap = entity->getComponentsMap();
                         auto componentsSize = componentsMap.size();
-                        if (ImGui::ListBoxHeader("##Components", componentsSize, 5))
+                        if (ImGui::ListBoxHeader("##Components", componentsSize, 7))
                         {
                             ImGuiListClipper clipper(componentsSize, ImGui::GetTextLineHeightWithSpacing());
                             while (clipper.Step())
                             {
                                 for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                 {
+                                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
+                                    if (ImGui::Button("X"))
+                                    {
+                                    }
+
+                                    ImGui::PopStyleVar();
+                                    ImGui::SameLine();
+                                    ImGui::SetItemAllowOverlap();
                                     auto componentSearch = componentsMap.begin();
                                     std::advance(componentSearch, componentIndex);
                                     if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))

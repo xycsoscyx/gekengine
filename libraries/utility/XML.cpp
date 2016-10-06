@@ -7,47 +7,55 @@ namespace Gek
 {
     namespace Xml
     {
-        const Node Node::Empty(nullptr, Source::Code);
+        Leaf::Leaf(void)
+            : source(Source::Code)
+        {
+        }
 
-        Node::Node(const wchar_t *type, Source source)
+        Leaf::Leaf(const wchar_t *type, Source source)
             : source(source)
             , type(type)
         {
         }
 
-        Node::Node(const Node &node)
-            : source(node.source)
-            , type(node.type)
-            , text(node.text)
-            , attributes(node.attributes)
-            , children(node.children)
+        Leaf::Leaf(const Leaf &leaf)
+            : source(leaf.source)
+            , type(leaf.type)
+            , text(leaf.text)
+            , attributes(leaf.attributes)
         {
         }
 
-        Node::Node(Node &&node)
-            : source(node.source)
-            , type(std::move(node.type))
-            , text(std::move(node.text))
-            , attributes(std::move(node.attributes))
-            , children(std::move(node.children))
+        Leaf::Leaf(Leaf &&leaf)
+            : source(leaf.source)
+            , type(std::move(leaf.type))
+            , text(std::move(leaf.text))
+            , attributes(std::move(leaf.attributes))
         {
         }
 
-        void Node::operator = (Node &&node)
+        void Leaf::operator = (const Leaf &leaf)
         {
-            const_cast<Source>(source) = node.source;
-            type = std::move(node.type);
-            text = std::move(node.text);
-            attributes = std::move(node.attributes);
-            children = std::move(node.children);
+            const_cast<Source>(source) = leaf.source;
+            type = leaf.type;
+            text = leaf.text;
+            attributes = leaf.attributes;
         }
 
-        bool Node::isFromFile(void)
+        void Leaf::operator = (Leaf &&leaf)
+        {
+            const_cast<Source>(source) = leaf.source;
+            type = std::move(leaf.type);
+            text = std::move(leaf.text);
+            attributes = std::move(leaf.attributes);
+        }
+
+        bool Leaf::isFromFile(void)
         {
             return (source == Source::File);
         }
 
-        String Node::getAttribute(const wchar_t *name, const wchar_t *defaultValue) const
+        String Leaf::getAttribute(const wchar_t *name, const wchar_t *defaultValue) const
         {
             auto &attributeSearch = attributes.find(name);
             if (attributeSearch == attributes.end())
@@ -60,16 +68,49 @@ namespace Gek
             }
         }
 
+        Node::Node(void)
+        {
+        }
+
+        Node::Node(const wchar_t *type, Source source)
+            : Leaf(type, source)
+        {
+        }
+
+        Node::Node(const Node &node)
+            : Leaf(node)
+            , children(node.children)
+        {
+        }
+
+        Node::Node(Node &&node)
+            : Leaf(std::move(node))
+            , children(std::move(node.children))
+        {
+        }
+
+        void Node::operator = (const Node &node)
+        {
+            (Leaf &)(*this) = node;
+            children = node.children;
+        }
+
+        void Node::operator = (Node &&node)
+        {
+            (Leaf &)(*this) = std::move(node);
+            children = std::move(node.children);
+        }
+
         bool Node::findChild(const wchar_t *type, std::function<void(Node &)> onChildFound)
         {
             return (std::find_if(children.begin(), children.end(), [type, onChildFound](Node &node) -> bool
             {
                 if (node.type.compare(type) == 0)
                 {
-					if (onChildFound)
-					{
-						onChildFound(node);
-					}
+                    if (onChildFound)
+                    {
+                        onChildFound(node);
+                    }
 
                     return true;
                 }

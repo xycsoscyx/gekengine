@@ -2,25 +2,24 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
-#include <imgui.h>
 #include <ImGuizmo.h>
 
 namespace Gek
 {
     namespace Components
     {
-        void Transform::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Transform::save(Xml::Leaf &componentData) const
         {
-            saveParameter(componentData, L"position", position);
-            saveParameter(componentData, L"rotation", rotation);
-            saveParameter(componentData, L"scale", scale);
+            componentData.attributes[L"position"] = position;
+            componentData.attributes[L"rotation"] = rotation;
+            componentData.attributes[L"scale"] = scale;
         }
 
-        void Transform::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Transform::load(const Xml::Leaf &componentData)
         {
-            position = loadParameter(componentData, L"position", Math::Float3::Zero);
-            rotation = loadParameter(componentData, L"rotation", Math::Quaternion::Identity);
-            scale = loadParameter(componentData, L"scale", Math::Float3::One);
+            position = componentData.getValue(L"position", Math::Float3::Zero);
+            rotation = componentData.getValue(L"rotation", Math::Quaternion::Identity);
+            scale = componentData.getValue(L"scale", Math::Float3::One);
         }
     }; // namespace Components
 
@@ -43,10 +42,8 @@ namespace Gek
         // Editor::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
-            auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-
             ImGui::SetCurrentContext(guiContext);
-
+            auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
             if (ImGui::RadioButton("Translate", currentGizmoOperation == ImGuizmo::TRANSLATE))
             {
                 currentGizmoOperation = ImGuizmo::TRANSLATE;
@@ -81,12 +78,12 @@ namespace Gek
                 break;
 
             case ImGuizmo::ROTATE:
-                ImGui::InputFloat("##Degrees", &snapRotation, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("##Degrees", &snapRotation, 10.0f, 90.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = &snapRotation;
                 break;
 
             case ImGuizmo::SCALE:
-                ImGui::InputFloat("##Size", &snapScale, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("##Size", &snapScale, (1.0f / 10.0f), 1.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
                 snap = &snapScale;
                 break;
             };
@@ -98,7 +95,6 @@ namespace Gek
             transformComponent.rotation = matrix.getQuaternion();
             transformComponent.position = matrix.translation;
             transformComponent.scale = matrix.getScaling();
-
             ImGui::SetCurrentContext(nullptr);
         }
 

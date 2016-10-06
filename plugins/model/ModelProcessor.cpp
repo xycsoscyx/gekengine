@@ -33,26 +33,34 @@ namespace Gek
 {
     namespace Components
     {
-        void Model::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Model::save(Xml::Leaf &componentData) const
         {
-            saveParameter(componentData, nullptr, name);
-            saveParameter(componentData, L"skin", skin);
+            componentData.text = name;
+            componentData.attributes[L"skin"] = skin;
         }
 
-        void Model::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Model::load(const Xml::Leaf &componentData)
         {
-            name = loadParameter(componentData, nullptr, String());
-            skin = loadParameter(componentData, L"skin", String());
+            name = componentData.text;
+            skin = componentData.getAttribute(L"skin");
         }
     }; // namespace Components
 
     GEK_CONTEXT_USER(Model)
-        , public Plugin::ComponentMixin<Components::Model>
+        , public Plugin::ComponentMixin<Components::Model, Editor::Component>
     {
     public:
         Model(Context *context)
             : ContextRegistration(context)
         {
+        }
+
+        // Editor::Component
+        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ImGui::SetCurrentContext(guiContext);
+            auto &modelComponent = *dynamic_cast<Components::Model *>(data);
+            ImGui::SetCurrentContext(nullptr);
         }
 
         // Plugin::Component
@@ -206,14 +214,6 @@ namespace Gek
             entityDataMap.clear();
         }
 
-        void onLoadSucceeded(void)
-        {
-        }
-
-        void onLoadFailed(void)
-        {
-        }
-
         template <typename TYPE>
         std::vector<uint8_t> getBuffer(uint8_t **bufferData, uint32_t count)
         {
@@ -223,12 +223,9 @@ namespace Gek
             return std::vector<uint8_t>(start, end);
         }
 
-        void onEntityCreated(Plugin::Entity *entity)
+        void onLoadSucceeded(void)
         {
-            GEK_REQUIRE(resources);
-            GEK_REQUIRE(entity);
-
-            if (entity->hasComponents<Components::Model, Components::Transform>())
+            population->listEntities<Components::Model, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
                 const auto &modelComponent = entity->getComponent<Components::Model>();
                 String fileName(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".gek"));
@@ -256,7 +253,7 @@ namespace Gek
                             throw InvalidModelVersion();
                         }
 
-						model.alignedBox = header->boundingBox;
+                        model.alignedBox = header->boundingBox;
                         loadPool.enqueue([this, &model, name, fileName](void) -> void
                         {
                             std::vector<uint8_t> buffer;
@@ -294,7 +291,11 @@ namespace Gek
 
                 Data data(pair.first->second, skinMaterial);
                 entityDataMap.insert(std::make_pair(entity, data));
-            }
+            });
+        }
+
+        void onLoadFailed(void)
+        {
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)

@@ -22,31 +22,43 @@ namespace Gek
             float farClip;
             String name;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const
+            void save(Xml::Leaf &componentData) const
             {
-                saveParameter(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
-                saveParameter(componentData, L"near_clip", nearClip);
-                saveParameter(componentData, L"far_clip", farClip);
-                saveParameter(componentData, L"name", name);
+                componentData.attributes[L"field_of_view"] = Math::convertRadiansToDegrees(fieldOfView);
+                componentData.attributes[L"near_clip"] = nearClip;
+                componentData.attributes[L"far_clip"] = farClip;
+                componentData.attributes[L"name"] = name;
             }
 
-            void load(const Plugin::Population::ComponentDefinition &componentData)
+            void load(const Xml::Leaf &componentData)
             {
-                fieldOfView = Math::convertDegreesToRadians(loadParameter(componentData, L"field_of_view", 90.0f));
-                nearClip = loadParameter(componentData, L"near_clip", 1.0f);
-                farClip = loadParameter(componentData, L"far_clip", 100.0f);
-                name = loadParameter(componentData, L"name", String());
+                fieldOfView = Math::convertDegreesToRadians(componentData.getValue(L"field_of_view", 90.0f));
+                nearClip = componentData.getValue(L"near_clip", 1.0f);
+                farClip = componentData.getValue(L"far_clip", 100.0f);
+                name = componentData.getAttribute(L"name");
             }
         };
     };
 
     GEK_CONTEXT_USER(FirstPersonCamera)
-        , public Plugin::ComponentMixin<Components::FirstPersonCamera>
+        , public Plugin::ComponentMixin<Components::FirstPersonCamera, Editor::Component>
     {
     public:
         FirstPersonCamera(Context *context)
             : ContextRegistration(context)
         {
+        }
+
+        // Editor::Component
+        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ImGui::SetCurrentContext(guiContext);
+            auto &firstPersonCameraComponent = *dynamic_cast<Components::FirstPersonCamera *>(data);
+            ImGui::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            //ImGui::InputText("Name", firstPersonCameraComponent.range);
+            ImGui::SetCurrentContext(nullptr);
         }
 
         // Plugin::Component
@@ -104,19 +116,9 @@ namespace Gek
 
         void onLoadSucceeded(void)
         {
-        }
-
-        void onLoadFailed(void)
-        {
-        }
-
-        void onEntityCreated(Plugin::Entity *entity)
-        {
-            GEK_REQUIRE(entity);
-
-            if (entity->hasComponents<Components::FirstPersonCamera, Components::Transform>())
+            population->listEntities<Components::FirstPersonCamera, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-				const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
+                const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
 
                 Camera data;
                 if (!cameraComponent.name.empty())
@@ -128,7 +130,11 @@ namespace Gek
                 }
 
                 entityDataMap.insert(std::make_pair(entity, data));
-            }
+            });
+        }
+
+        void onLoadFailed(void)
+        {
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)

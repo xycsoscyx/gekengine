@@ -15,10 +15,8 @@ namespace Gek
         GEK_ADD_EXCEPTION(UnableToSave);
         GEK_ADD_EXCEPTION(InvalidRootNode);
 
-        struct Node
+        struct Leaf
         {
-            static const Node Empty;
-
             enum class Source
             {
                 File = 0,
@@ -30,31 +28,47 @@ namespace Gek
             String type;
             String text;
             std::unordered_map<String, String> attributes;
-            std::list<Node> children;
 
-            Node(const wchar_t *type, Source source = Source::Code);
-            Node(const Node &node);
-            Node(Node &&node);
-
-            void operator = (Node &&node);
+            Leaf(void);
+            Leaf(const wchar_t *type, Source source = Source::Code);
+            Leaf(const Leaf &node);
+            Leaf(Leaf &&node);
 
             bool isFromFile(void);
+
+            void operator = (const Leaf &node);
+            void operator = (Leaf &&node);
+
             String getAttribute(const wchar_t *name, const wchar_t *defaultValue = String(L"")) const;
-            bool findChild(const wchar_t *type, std::function<void(Node &)> onChildFound);
-            Node & getChild(const wchar_t *type);
 
             template <typename TYPE>
-            bool getValue(const wchar_t *name, TYPE &value) const
+            TYPE getValue(const wchar_t *name, const TYPE &defaultValue) const
             {
                 auto attributeSearch = attributes.find(name);
                 if (attributeSearch != attributes.end())
                 {
-                    value = attributeSearch->second;
-                    return true;
+                    return attributeSearch->second;
                 }
 
-                return false;
+                return defaultValue;
             }
+        };
+
+        struct Node
+            : public Leaf
+        {
+            std::list<Node> children;
+
+            Node(void);
+            Node(const wchar_t *type, Source source = Source::Code);
+            Node(const Node &node);
+            Node(Node &&node);
+
+            void operator = (const Node &node);
+            void operator = (Node &&node);
+
+            bool findChild(const wchar_t *type, std::function<void(Node &)> onChildFound);
+            Node & getChild(const wchar_t *type);
         };
 
         Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD = false);

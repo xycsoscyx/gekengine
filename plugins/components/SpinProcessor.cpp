@@ -22,11 +22,11 @@ namespace Gek
         {
             Math::Float3 torque;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const
+            void save(Xml::Leaf &componentData) const
             {
             }
 
-            void load(const Plugin::Population::ComponentDefinition &componentData)
+            void load(const Xml::Leaf &componentData)
             {
                 torque.x = random(mersineTwister);
                 torque.y = random(mersineTwister);
@@ -36,12 +36,20 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Spin)
-        , public Plugin::ComponentMixin<Components::Spin>
+        , public Plugin::ComponentMixin<Components::Spin, Editor::Component>
     {
     public:
         Spin(Context *context)
             : ContextRegistration(context)
         {
+        }
+
+        // Editor::Component
+        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ImGui::SetCurrentContext(guiContext);
+            auto &spinComponent = *dynamic_cast<Components::Spin *>(data);
+            ImGui::SetCurrentContext(nullptr);
         }
 
         // Plugin::Component
@@ -52,7 +60,6 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
-        , public Plugin::PopulationListener
         , public Plugin::PopulationStep
         , public Plugin::Processor
     {
@@ -68,35 +75,12 @@ namespace Gek
         {
             GEK_REQUIRE(population);
 
-            population->addListener(this);
             population->addStep(this, 0);
         }
 
         ~SpinProcessor(void)
         {
             population->removeStep(this);
-            population->removeListener(this);
-        }
-
-        // Plugin::PopulationListener
-        void onLoadBegin(void)
-        {
-        }
-
-        void onLoadSucceeded(void)
-        {
-        }
-
-        void onLoadFailed(void)
-        {
-        }
-
-        void onEntityCreated(Plugin::Entity *entity)
-        {
-        }
-
-        void onEntityDestroyed(Plugin::Entity *entity)
-        {
         }
 
         // Plugin::PopulationStep
@@ -106,7 +90,7 @@ namespace Gek
 
             if (state == State::Active)
             {
-                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity) -> void
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {
                     auto &transform = entity->getComponent<Components::Transform>();
                     auto &spin = entity->getComponent<Components::Spin>();

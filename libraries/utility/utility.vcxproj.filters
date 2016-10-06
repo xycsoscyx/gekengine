@@ -39,13 +39,13 @@
     <ClCompile Include="..\..\external\ImGuizmo\ImGuizmo.cpp">
       <Filter>ImGui\ImGuizmo</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\imgui-addons\imgui.cpp">
+    <ClCompile Include="..\..\external\imgui\imgui_demo.cpp">
       <Filter>ImGui\Base</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\imgui-addons\imgui_demo.cpp">
+    <ClCompile Include="..\..\external\imgui\imgui_draw.cpp">
       <Filter>ImGui\Base</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\external\imgui-addons\imgui_draw.cpp">
+    <ClCompile Include="..\..\external\imgui\imgui.cpp">
       <Filter>ImGui\Base</Filter>
     </ClCompile>
   </ItemGroup>
@@ -83,19 +83,14 @@
     <ClInclude Include="..\..\external\ImGuizmo\ImGuizmo.h">
       <Filter>ImGui\ImGuizmo</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\external\imgui-addons\imgui.h">
+    <ClInclude Include="..\..\external\imgui\imgui_internal.h">
       <Filter>ImGui\Base</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\external\imgui-addons\imgui_internal.h">
+    <ClInclude Include="..\..\external\imgui\imconfig.h">
       <Filter>ImGui\Base</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\external\imgui-addons\imgui_user.h">
+    <ClInclude Include="..\..\external\imgui\imgui.h">
       <Filter>ImGui\Base</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\..\external\imgui-addons\imgui_user.inl">
-      <Filter>ImGui\Base</Filter>
-    </None>
   </ItemGroup>
 </Project>
