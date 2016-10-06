@@ -202,37 +202,37 @@ namespace Gek
                         auto &prefabsNode = worldNode.getChild(L"prefabs");
                         for(auto &entityNode : worldNode.getChild(L"population").children)
                         {
-                            std::unordered_map<String, Xml::Leaf> entityPrefabMap;
+                            std::unordered_map<String, Xml::Leaf> entityComponentMap;
                             prefabsNode.findChild(entityNode.getAttribute(L"prefab"), [&](Xml::Node &prefabNode) -> void
                             {
                                 for (auto &prefabComponentNode : prefabNode.children)
                                 {
-                                    entityPrefabMap[prefabComponentNode.type] = prefabComponentNode;
+                                    entityComponentMap[prefabComponentNode.type] = prefabComponentNode;
                                 }
                             });
 
-                            auto entity(std::make_shared<Entity>());
                             for (auto &componentNode : entityNode.children)
                             {
-                                Xml::Leaf componentData(componentNode.type);
-                                if (entityPrefabMap.count(componentNode.type) > 0)
+                                auto insertSearch = entityComponentMap.insert(std::make_pair(componentNode.type, componentNode));
+                                if (!insertSearch.second)
                                 {
-                                    auto &prefabNode = entityPrefabMap[componentNode.type];
-                                    componentData.attributes = prefabNode.attributes;
-                                    componentData.text = prefabNode.text;
-                                }
+                                    auto &entityComponentData = insertSearch.first->second;
+                                    if (!componentNode.text.empty())
+                                    {
+                                        entityComponentData.text = componentNode.text;
+                                    }
 
-                                if (!componentNode.text.empty())
-                                {
-                                    componentData.text = componentNode.text;
+                                    for (auto &attribute : componentNode.attributes)
+                                    {
+                                        entityComponentData.attributes[attribute.first] = attribute.second;
+                                    }
                                 }
+                            }
 
-                                for (auto &attribute : componentNode.attributes)
-                                {
-                                    componentData.attributes[attribute.first] = attribute.second;
-                                }
-                                
-                                addComponent(entity.get(), componentData);
+                            auto entity(std::make_shared<Entity>());
+                            for (auto &entityComponentData : entityComponentMap)
+                            {
+                                addComponent(entity.get(), entityComponentData.second);
                             }
 
                             if (entityNode.attributes.count(L"name") > 0)
