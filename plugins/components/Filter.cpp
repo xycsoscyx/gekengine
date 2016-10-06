@@ -7,24 +7,32 @@ namespace Gek
 {
     namespace Components
     {
-        void Filter::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Filter::save(Xml::Leaf &componentData) const
         {
-            saveParameter(componentData, nullptr, String::create(list, L','));
+            componentData.text.join(list, L',');
         }
 
-        void Filter::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Filter::load(const Xml::Leaf &componentData)
         {
-            list = loadParameter(componentData, nullptr, String()).split(L',');
+            list = componentData.text.split(L',');
         }
     }; // namespace Components
 
     GEK_CONTEXT_USER(Filter)
-        , public Plugin::ComponentMixin<Components::Filter>
+        , public Plugin::ComponentMixin<Components::Filter, Editor::Component>
     {
     public:
         Filter(Context *context)
             : ContextRegistration(context)
         {
+        }
+
+        // Editor::Component
+        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ImGui::SetCurrentContext(guiContext);
+            auto &filterComponent = *dynamic_cast<Components::Filter *>(data);
+            ImGui::SetCurrentContext(nullptr);
         }
 
         // Plugin::Component

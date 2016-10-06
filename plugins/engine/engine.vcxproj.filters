@@ -4,7 +4,6 @@
     <ClCompile Include="Population.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Material.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -24,6 +23,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Visual.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="entrypoints.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

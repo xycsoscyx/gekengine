@@ -169,11 +169,11 @@ namespace Gek
                         materialNode.findChild(L"surface", [&](auto &surfaceNode) -> void
                         {
                             Surface surface;
-                            surfaceNode.getValue(L"ghost", surface.ghost);
-                            surfaceNode.getValue(L"staticfriction", surface.staticFriction);
-                            surfaceNode.getValue(L"kineticfriction", surface.kineticFriction);
-                            surfaceNode.getValue(L"elasticity", surface.elasticity);
-                            surfaceNode.getValue(L"softness", surface.softness);
+                            surface.ghost = surfaceNode.getValue(L"ghost", surface.ghost);
+                            surface.staticFriction = surfaceNode.getValue(L"static_friction", surface.staticFriction);
+                            surface.kineticFriction = surfaceNode.getValue(L"kinetic_friction", surface.kineticFriction);
+                            surface.elasticity = surfaceNode.getValue(L"elasticity", surface.elasticity);
+                            surface.softness = surfaceNode.getValue(L"softness", surface.softness);
 
                             surfaceIndex = surfaceList.size();
                             surfaceList.push_back(surface);
@@ -309,6 +309,10 @@ namespace Gek
                 NewtonInvalidateCache(newtonWorld);
 
                 surfaceList.push_back(Surface());
+            }
+
+            void onLoadSucceeded(void)
+            {
                 newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
                 if (newtonStaticScene == nullptr)
                 {
@@ -316,31 +320,7 @@ namespace Gek
                 }
 
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-            }
-
-            void onLoadSucceeded(void)
-            {
-                if (newtonStaticScene)
-                {
-                    NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                    newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-                }
-            }
-
-            void onLoadFailed(void)
-            {
-                if (newtonStaticScene)
-                {
-                    NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                }
-            }
-
-            void onEntityCreated(Plugin::Entity *entity)
-            {
-                GEK_REQUIRE(newtonStaticScene);
-                GEK_REQUIRE(entity);
-
-                if (entity->hasComponents<Components::Transform, Components::Physical>())
+                population->listEntities<Components::Physical, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {
                     const auto &transformComponent = entity->getComponent<Components::Transform>();
                     const auto &physicalComponent = entity->getComponent<Components::Physical>();
@@ -363,7 +343,7 @@ namespace Gek
                         }
                         else if (entity->hasComponents<Components::Shape>())
                         {
-							const auto &shapeComponent = entity->getComponent<Components::Shape>();
+                            const auto &shapeComponent = entity->getComponent<Components::Shape>();
                             newtonCollision = createCollision(shapeComponent);
                         }
 
@@ -387,7 +367,14 @@ namespace Gek
                             }
                         }
                     }
-                }
+                });
+
+                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+            }
+
+            void onLoadFailed(void)
+            {
             }
 
             void onEntityDestroyed(Plugin::Entity *entity)

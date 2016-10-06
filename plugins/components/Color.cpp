@@ -2,20 +2,19 @@
 #include "GEK\Context\ContextUser.h"
 #include "GEK\Engine\ComponentMixin.h"
 #include "GEK\Utility\String.h"
-#include <imgui.h>
 
 namespace Gek
 {
     namespace Components
     {
-        void Color::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Color::save(Xml::Leaf &componentData) const
         {
-            saveParameter(componentData, nullptr, value);
+            componentData.text = value;
         }
 
-        void Color::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Color::load(const Xml::Leaf &componentData)
         {
-            value = loadParameter(componentData, nullptr, Math::Color::White);
+            value = (componentData.text.empty() ? Math::Color::White : componentData.text);
         }
     }; // namespace Components
 
@@ -31,12 +30,9 @@ namespace Gek
         // Editor::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
-            auto &colorComponent = *dynamic_cast<Components::Color *>(data);
-
             ImGui::SetCurrentContext(guiContext);
-
+            auto &colorComponent = *dynamic_cast<Components::Color *>(data);
             ImGui::ColorEdit4("Color", colorComponent.value.data);
-
             ImGui::SetCurrentContext(nullptr);
         }
 

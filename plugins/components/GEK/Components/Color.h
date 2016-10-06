@@ -11,8 +11,8 @@ namespace Gek
         {
             Math::Color value;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const;
-            void load(const Plugin::Population::ComponentDefinition &componentData);
+            void save(Xml::Leaf &componentData) const;
+            void load(const Xml::Leaf &componentData);
         };
     }; // namespace Components
 }; // namespace Gek

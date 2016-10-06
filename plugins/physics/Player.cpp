@@ -15,32 +15,44 @@ namespace Gek
 {
     namespace Components
     {
-        void Player::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Player::save(Xml::Leaf &componentData) const
         {
-			saveParameter(componentData, L"height", height);
-            saveParameter(componentData, L"outer_radius", outerRadius);
-            saveParameter(componentData, L"inner_radius", innerRadius);
-            saveParameter(componentData, L"stair_step", stairStep);
+			componentData.attributes[L"height"] = height;
+            componentData.attributes[L"outer_radius"] = outerRadius;
+            componentData.attributes[L"inner_radius"] = innerRadius;
+            componentData.attributes[L"stair_step"] = stairStep;
         }
 
-        void Player::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Player::load(const Xml::Leaf &componentData)
         {
-			height = loadParameter(componentData, L"height", 6.0f);
-            outerRadius = loadParameter(componentData, L"outer_radius", 1.5f);
-            innerRadius = loadParameter(componentData, L"inner_radius", 0.5f);
-            stairStep = loadParameter(componentData, L"stair_step", 1.5f);
+			height = componentData.getValue(L"height", 6.0f);
+            outerRadius = componentData.getValue(L"outer_radius", 1.5f);
+            innerRadius = componentData.getValue(L"inner_radius", 0.5f);
+            stairStep = componentData.getValue(L"stair_step", 1.5f);
         }
     }; // namespace Components
 
     namespace Newton
     {
         GEK_CONTEXT_USER(Player)
-            , public Plugin::ComponentMixin<Components::Player>
+            , public Plugin::ComponentMixin<Components::Player, Editor::Component>
         {
         public:
             Player(Context *context)
                 : ContextRegistration(context)
             {
+            }
+
+            // Editor::Component
+            void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            {
+                ImGui::SetCurrentContext(guiContext);
+                auto &playerComponent = *dynamic_cast<Components::Player *>(data);
+                ImGui::InputFloat("Height", &playerComponent.height, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("Outer Radius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("Inner Radius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("Stair Step", &playerComponent.stairStep, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::SetCurrentContext(nullptr);
             }
 
             // Plugin::Component

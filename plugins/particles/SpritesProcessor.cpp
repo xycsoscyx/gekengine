@@ -29,14 +29,14 @@ namespace Gek
         {
             float strength;
 
-            void save(Plugin::Population::ComponentDefinition &componentData) const
+            void save(Xml::Leaf &componentData) const
             {
-                saveParameter(componentData, L"strength", strength);
+                componentData.attributes[L"strength"] = strength;
             }
 
-            void load(const Plugin::Population::ComponentDefinition &componentData)
+            void load(const Xml::Leaf &componentData)
             {
-                strength = loadParameter(componentData, L"strength", 10.0f);
+                strength = componentData.getValue(L"strength", 10.0f);
             }
         };
     }; // namespace Components
@@ -44,12 +44,20 @@ namespace Gek
     namespace Sprites
     {
         GEK_CONTEXT_USER(Explosion)
-            , public Plugin::ComponentMixin<Components::Explosion>
+            , public Plugin::ComponentMixin<Components::Explosion, Editor::Component>
         {
         public:
             Explosion(Context *context)
                 : ContextRegistration(context)
             {
+            }
+
+            // Editor::Component
+            void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            {
+                ImGui::SetCurrentContext(guiContext);
+                auto &explosionComponent = *dynamic_cast<Components::Explosion *>(data);
+                ImGui::SetCurrentContext(nullptr);
             }
 
             // Plugin::Component
@@ -156,18 +164,7 @@ namespace Gek
 
             void onLoadSucceeded(void)
             {
-            }
-
-            void onLoadFailed(void)
-            {
-            }
-
-            void onEntityCreated(Plugin::Entity *entity)
-            {
-                GEK_REQUIRE(resources);
-                GEK_REQUIRE(entity);
-
-                if (entity->hasComponent<Components::Transform>())
+                population->listEntities<Components::Explosion, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {
                     static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
                     static const std::uniform_real_distribution<float> spawnTheta(0.0f, (Gek::Math::Pi * 2.0f));
@@ -307,6 +304,16 @@ namespace Gek
                             spark(entity, entityEmitterList[index]);
                         }
                     }
+                });
+            }
+
+            void onEntityCreated(Plugin::Entity *entity)
+            {
+                GEK_REQUIRE(resources);
+                GEK_REQUIRE(entity);
+
+                if (entity->hasComponent<Components::Transform>())
+                {
                 }
             }
 

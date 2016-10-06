@@ -1,8 +1,9 @@
 #pragma once
 
+#include "GEK\Utility\XML.h"
 #include "GEK\Context\Context.h"
-#include "GEK\Engine\Population.h"
 #include <typeindex>
+#include <imgui.h>
 
 #pragma warning(disable:4503)
 
@@ -24,7 +25,9 @@ namespace Gek
             virtual const wchar_t * const getName(void) const = 0;
             virtual std::type_index getIdentifier(void) const = 0;
 
-            virtual std::unique_ptr<Data> create(const Plugin::Population::ComponentDefinition &componentData) = 0;
+            virtual std::unique_ptr<Data> create(void) = 0;
+            virtual void save(Data *data, Xml::Leaf &componentData) const = 0;
+            virtual void load(Data *data, const Xml::Leaf &componentData) = 0;
         };
     }; // namespace Plugin
 

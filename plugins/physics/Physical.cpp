@@ -8,26 +8,35 @@ namespace Gek
 {
     namespace Components
     {
-        void Physical::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Physical::save(Xml::Leaf &componentData) const
         {
-            saveParameter(componentData, L"mass", mass);
+            componentData.text = mass;
         }
 
-        void Physical::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Physical::load(const Xml::Leaf &componentData)
         {
-            mass = loadParameter(componentData, L"mass", 0.0f);
+            mass = (componentData.text.empty() ? 0.0f : componentData.text);
         }
     }; // namespace Components
 
     namespace Newton
     {
         GEK_CONTEXT_USER(Physical)
-            , public Plugin::ComponentMixin<Components::Physical>
+            , public Plugin::ComponentMixin<Components::Physical, Editor::Component>
         {
         public:
             Physical(Context *context)
                 : ContextRegistration(context)
             {
+            }
+
+            // Editor::Component
+            void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            {
+                ImGui::SetCurrentContext(guiContext);
+                auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
+                ImGui::InputFloat("Mass", &physicalComponent.mass, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::SetCurrentContext(nullptr);
             }
 
             // Plugin::Component

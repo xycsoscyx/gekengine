@@ -21,8 +21,11 @@ namespace Gek
             virtual void onLoadSucceeded(void) { };
             virtual void onLoadFailed(void) { };
 
-            virtual void onEntityCreated(Plugin::Entity *entity) { };
+            virtual void onEntityCreated(Plugin::Entity *entity, const wchar_t *name) { };
             virtual void onEntityDestroyed(Plugin::Entity *entity) { };
+
+            virtual void onComponentAdded(Plugin::Entity *entity, const std::type_index &type) { };
+            virtual void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type) { };
         };
 
         GEK_INTERFACE(PopulationStep)
@@ -43,45 +46,29 @@ namespace Gek
             , public Sequencer<PopulationStep>
         {
             GEK_START_EXCEPTIONS();
-
-            struct ComponentDefinition
-                : public std::unordered_map<String, String>
-            {
-                String name;
-                String value;
-            };
-
-            struct EntityDefinition
-                : public std::list<ComponentDefinition>
-            {
-                String name;
-            };
+            GEK_ADD_EXCEPTION(EntityNameExists);
 
             virtual float getWorldTime(void) const = 0;
             virtual float getFrameTime(void) const = 0;
 
-            virtual void update(bool isBackgroundProcess, float frameTime = 0.0f) = 0;
-
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(const EntityDefinition &entityDefinition) = 0;
-            virtual void killEntity(Plugin::Entity *entity) = 0;
-            virtual Plugin::Entity *getNamedEntity(const wchar_t *entityName) const = 0;
-
-            virtual void listEntities(std::function<void(Plugin::Entity *)> onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const = 0;
 
             template<typename... ARGUMENTS>
-            void listEntities(std::function<void(Plugin::Entity *)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const
             {
-                listEntities([onEntity = move(onEntity)](Plugin::Entity *entity) -> void
+                listEntities([onEntity = move(onEntity)](Plugin::Entity *entity, const wchar_t *entityName) -> void
                 {
                     if (entity->hasComponents<ARGUMENTS...>())
                     {
-                        onEntity(entity);
+                        onEntity(entity, entityName);
                     }
                 });
             }
+
+            virtual void update(bool isBackgroundProcess, float frameTime = 0.0f) = 0;
         };
     }; // namespace Plugin
 
@@ -92,7 +79,7 @@ namespace Gek
         GEK_INTERFACE(Population)
             : public Plugin::Population
         {
-            virtual std::vector<Plugin::EntityPtr> &getEntityList(void) = 0;
+            virtual std::unordered_map<String, Plugin::EntityPtr> &getEntityMap(void) = 0;
 
             virtual Editor::Component *getComponent(const std::type_index &type) = 0;
         };

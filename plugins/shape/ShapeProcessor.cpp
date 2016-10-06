@@ -381,28 +381,36 @@ namespace Gek
 
     namespace Components
     {
-        void Shape::save(Plugin::Population::ComponentDefinition &componentData) const
+        void Shape::save(Xml::Leaf &componentData) const
         {
-            saveParameter(componentData, nullptr, type);
-            saveParameter(componentData, L"parameters", parameters);
-            saveParameter(componentData, L"skin", skin);
+            componentData.text = type;
+            componentData.attributes[L"parameters"] = parameters;
+            componentData.attributes[L"skin"] = skin;
         }
 
-        void Shape::load(const Plugin::Population::ComponentDefinition &componentData)
+        void Shape::load(const Xml::Leaf &componentData)
         {
-            type = loadParameter(componentData, nullptr, String());
-            parameters = loadParameter(componentData, L"parameters", String());
-            skin = loadParameter(componentData, L"skin", String());
+            type = componentData.text;
+            parameters = componentData.getAttribute(L"parameters");
+            skin = componentData.getAttribute(L"skin");
         }
     }; // namespace Components
 
     GEK_CONTEXT_USER(Shape)
-        , public Plugin::ComponentMixin<Components::Shape>
+        , public Plugin::ComponentMixin<Components::Shape, Editor::Component>
     {
     public:
         Shape(Context *context)
             : ContextRegistration(context)
         {
+        }
+
+        // Editor::Component
+        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ImGui::SetCurrentContext(guiContext);
+            auto &shapeComponent = *dynamic_cast<Components::Shape *>(data);
+            ImGui::SetCurrentContext(nullptr);
         }
 
         // Plugin::Component
@@ -502,21 +510,10 @@ namespace Gek
 
         void onLoadSucceeded(void)
         {
-        }
-
-        void onLoadFailed(void)
-        {
-        }
-
-        void onEntityCreated(Plugin::Entity *entity)
-        {
-            GEK_REQUIRE(resources);
-            GEK_REQUIRE(entity);
-
-            if (entity->hasComponents<Components::Shape, Components::Transform>())
+            population->listEntities<Components::Shape, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
                 const auto &shapeComponent = entity->getComponent<Components::Shape>();
-				auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
+                auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {
@@ -569,7 +566,11 @@ namespace Gek
 
                 Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin));
                 entityDataMap.insert(std::make_pair(entity, data));
-            }
+            });
+        }
+
+        void onLoadFailed(void)
+        {
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)
