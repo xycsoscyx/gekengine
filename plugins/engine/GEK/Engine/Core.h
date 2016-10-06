@@ -3,8 +3,6 @@
 #include "GEK\Context\Broadcaster.h"
 #include "GEK\Utility\XML.h"
 #include <Windows.h>
-#include <imgui.h>
-#include <ImGuizmo.h>
 
 namespace Gek
 {
@@ -63,8 +61,6 @@ namespace Gek
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;
             virtual Plugin::Renderer * getRenderer(void) const = 0;
-
-            virtual ImGuiContext *getDefaultUIContext(void) const = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

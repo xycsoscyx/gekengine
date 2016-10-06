@@ -6,6 +6,37 @@
 
 namespace Gek
 {
+    namespace Components
+    {
+        template <typename TYPE>
+        TYPE loadText(const Xml::Leaf &componentData, const TYPE &defaultValue)
+        {
+            if (componentData.text.empty())
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return Evaluator::get<TYPE>(componentData.text);
+            }
+        }
+
+        template <typename TYPE>
+        TYPE loadAttribute(const Xml::Leaf &componentData, const wchar_t *name, const TYPE &defaultValue)
+        {
+            auto attributeSearch = componentData.attributes.find(name);
+            if (attributeSearch == componentData.attributes.end())
+            {
+                return defaultValue;
+            }
+            else
+            {
+                return Evaluator::get<TYPE>(attributeSearch->second);
+            }
+
+        }
+    }; // namespace Components
+
     namespace Plugin
     {
         template <class DATA, class BASE = Plugin::Component>

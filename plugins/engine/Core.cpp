@@ -13,6 +13,8 @@
 #include <queue>
 #include <ppl.h>
 
+#include <imgui.h>
+
 namespace Gek
 {
     namespace Implementation

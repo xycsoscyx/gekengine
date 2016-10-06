@@ -15,7 +15,7 @@ namespace Gek
 
         void Physical::load(const Xml::Leaf &componentData)
         {
-            mass = (componentData.text.empty() ? 0.0f : componentData.text);
+            mass = loadText(componentData, 0.0f);
         }
     }; // namespace Components
 

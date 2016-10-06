@@ -14,7 +14,7 @@ namespace Gek
 
         void Color::load(const Xml::Leaf &componentData)
         {
-            value = (componentData.text.empty() ? Math::Color::White : componentData.text);
+            value = loadText(componentData, Math::Color::White);
         }
     }; // namespace Components
 
