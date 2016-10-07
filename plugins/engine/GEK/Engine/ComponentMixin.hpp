@@ -78,7 +78,7 @@ namespace Gek
         };
 
         template <class CLASS, typename... REQUIRED>
-        class ProcessorHelper
+        class ProcessorMixin
         {
         private:
             struct Data : public CLASS::Data
@@ -90,34 +90,38 @@ namespace Gek
             EntityDataMap entityDataMap;
 
         public:
-            ProcessorHelper(void)
+            ProcessorMixin(void)
             {
             }
 
-            virtual ~ProcessorHelper(void)
+            virtual ~ProcessorMixin(void)
             {
             }
 
-            // ProcessorHelper
+            // ProcessorMixin
             void clear(void)
             {
                 entityDataMap.clear();
             }
 
-            void addEntity(Plugin::Entity *entity, std::function<void(Data &data)> onAdded)
+            void addEntity(Plugin::Entity *entity, std::function<void(Data &data, REQUIRED&... components)> onAdded)
             {
+                GEK_REQUIRE(entity);
+
                 if (entity->hasComponents<REQUIRED...>())
                 {
                     auto insertSearch = entityDataMap.insert(std::make_pair(entity, Data()));
-                    if (insertSearch.second)
+                    if (insertSearch.second && onAdded)
                     {
-                        onAdded(insertSearch.first->second);
+                        onAdded(insertSearch.first->second, entity->getComponent<REQUIRED>()...);
                     }
                 }
             }
 
             void removeEntity(Plugin::Entity *entity)
             {
+                GEK_REQUIRE(entity);
+
                 auto entitySearch = entityDataMap.find(entity);
                 if (entitySearch != entityDataMap.end())
                 {
@@ -125,11 +129,13 @@ namespace Gek
                 }
             }
 
-            void list(std::function<void(Plugin::Entity *entity, Data &data)> onEntity)
+            void list(std::function<void(Plugin::Entity *entity, Data &data, REQUIRED&... components)> onEntity)
             {
+                GEK_REQUIRE(onEntity);
+
                 concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entitySearch) -> void
                 {
-                    onEntity(entitySearch.first, entitySearch.second);
+                    onEntity(entitySearch.first, entitySearch.second, entitySearch.first->getComponent<REQUIRED>()...);
                 });
             }
         };

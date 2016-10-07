@@ -430,14 +430,26 @@ namespace Gek
                     ImGui::Dummy(ImVec2(350, 0));
 
                     Editor::Population *populationEditor = dynamic_cast<Editor::Population *>(population);
-                    auto entityMap = populationEditor->getEntityMap();
-                    auto entityCount = entityMap.size();
-
                     if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                     {
+                        ImGui::OpenPopup("Entity Name");
+                    }
+
+                    if (ImGui::BeginPopup("Entity Name"))
+                    {
+                        char name[256] = "";
+                        if (ImGui::InputText("Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
+                        {
+                            population->createEntity(String(name));
+                            ImGui::CloseCurrentPopup();
+                        }
+
+                        ImGui::EndPopup();
                     }
 
                     ImGui::PushItemWidth(-1.0f);
+                    auto &entityMap = populationEditor->getEntityMap();
+                    auto entityCount = entityMap.size();
                     if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                     {
                         ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
@@ -477,17 +489,50 @@ namespace Gek
                         ImGui::PushItemWidth(-1.0f);
                         if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                         {
+                            ImGui::OpenPopup("Select Component");
                         }
 
-                        auto &componentsMap = entity->getComponentsMap();
-                        auto componentsSize = componentsMap.size();
-                        if (ImGui::ListBoxHeader("##Components", componentsSize, 7))
+                        if (ImGui::BeginPopup("Select Component"))
                         {
-                            ImGuiListClipper clipper(componentsSize, ImGui::GetTextLineHeightWithSpacing());
+                            auto &componentMap = populationEditor->getComponentMap();
+                            auto componentCount = componentMap.size();
+                            if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                            {
+                                ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                                while (clipper.Step())
+                                {
+                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                    {
+                                        auto componentSearch = componentMap.begin();
+                                        std::advance(componentSearch, componentIndex);
+                                        if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                        {
+                                            Xml::Leaf componentData;
+                                            componentData.type = componentSearch->second->getName();
+                                            population->addComponent(entity, componentData);
+                                            ImGui::CloseCurrentPopup();
+                                        }
+                                    }
+                                };
+
+                                ImGui::ListBoxFooter();
+                            }
+
+                            ImGui::EndPopup();
+                        }
+
+                        auto &entityComponentMap = entity->getComponentMap();
+                        auto entityComponentsCount = entityComponentMap.size();
+                        if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
+                        {
+                            ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
                             while (clipper.Step())
                             {
                                 for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                 {
+                                    auto entityComponentSearch = entityComponentMap.begin();
+                                    std::advance(entityComponentSearch, componentIndex);
+
                                     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
                                     if (ImGui::Button("X"))
                                     {
@@ -496,9 +541,7 @@ namespace Gek
                                     ImGui::PopStyleVar();
                                     ImGui::SameLine();
                                     ImGui::SetItemAllowOverlap();
-                                    auto componentSearch = componentsMap.begin();
-                                    std::advance(componentSearch, componentIndex);
-                                    if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                    if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
                                     {
                                         selectedComponent = componentIndex;
                                     }
@@ -510,12 +553,12 @@ namespace Gek
 
                         ImGui::PopItemWidth();
 
-                        auto componentSearch = componentsMap.begin();
-                        std::advance(componentSearch, selectedComponent);
-                        if (componentSearch != componentsMap.end())
+                        auto entityComponentSearch = entityComponentMap.begin();
+                        std::advance(entityComponentSearch, selectedComponent);
+                        if (entityComponentSearch != entityComponentMap.end())
                         {
-                            Editor::Component *component = populationEditor->getComponent(componentSearch->first);
-                            Plugin::Component::Data *componentData = componentSearch->second.get();
+                            Editor::Component *component = populationEditor->getComponent(entityComponentSearch->first);
+                            Plugin::Component::Data *componentData = entityComponentSearch->second.get();
                             if (component && componentData)
                             {
                                 ImGui::NewLine();

@@ -20,39 +20,39 @@ namespace Gek
             : public Editor::Entity
         {
         private:
-            std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> componentsMap;
+            ComponentMap componentMap;
 
         public:
             void addComponent(Plugin::Component *component, std::unique_ptr<Plugin::Component::Data> &&data)
             {
-                componentsMap[component->getIdentifier()] = std::move(data);
+                componentMap[component->getIdentifier()] = std::move(data);
             }
 
             void removeComponent(const std::type_index &type)
             {
-                auto componentSearch = componentsMap.find(type);
-                if (componentSearch != componentsMap.end())
+                auto componentSearch = componentMap.find(type);
+                if (componentSearch != componentMap.end())
                 {
-                    componentsMap.erase(componentSearch);
+                    componentMap.erase(componentSearch);
                 }
             }
 
             // Editor::Entity
-            std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> &getComponentsMap(void)
+            ComponentMap &getComponentMap(void)
             {
-                return componentsMap;
+                return componentMap;
             }
 
             // Plugin::Entity
             bool hasComponent(const std::type_index &type) const
             {
-                return (componentsMap.count(type) > 0);
+                return (componentMap.count(type) > 0);
             }
 
 			Plugin::Component::Data *getComponent(const std::type_index &type)
 			{
-				auto componentSearch = componentsMap.find(type);
-				if (componentSearch == componentsMap.end())
+				auto componentSearch = componentMap.find(type);
+				if (componentSearch == componentMap.end())
 				{
 					throw ComponentNotFound();
 				}
@@ -62,8 +62,8 @@ namespace Gek
 
 			const Plugin::Component::Data *getComponent(const std::type_index &type) const
 			{
-				auto componentSearch = componentsMap.find(type);
-				if (componentSearch == componentsMap.end())
+				auto componentSearch = componentMap.find(type);
+				if (componentSearch == componentMap.end())
 				{
 					throw ComponentNotFound();
 				}
@@ -82,12 +82,11 @@ namespace Gek
             float frameTime;
 
             std::unordered_map<String, std::type_index> componentNamesMap;
-            std::unordered_map<std::type_index, Plugin::ComponentPtr> componentsMap;
+            ComponentMap componentMap;
 
             ThreadPool loadPool;
             std::future<bool> loaded;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
-            using EntityMap = std::unordered_map<String, Plugin::EntityPtr>;
             EntityMap entityMap;
 
             uint32_t uniqueEntityIdentifier = 0;
@@ -103,12 +102,12 @@ namespace Gek
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className));
-                    auto componentSearch = componentsMap.insert(std::make_pair(component->getIdentifier(), component));
+                    auto componentSearch = componentMap.insert(std::make_pair(component->getIdentifier(), component));
                     if (componentSearch.second)
                     {
                         if (!componentNamesMap.insert(std::make_pair(component->getName(), component->getIdentifier())).second)
                         {
-                            componentsMap.erase(componentSearch.first);
+                            componentMap.erase(componentSearch.first);
                         }
                     }
                     else
@@ -121,10 +120,15 @@ namespace Gek
             {
                 entityMap.clear();
                 componentNamesMap.clear();
-                componentsMap.clear();
+                componentMap.clear();
             }
 
             // Editor::Population
+            ComponentMap &getComponentMap(void)
+            {
+                return componentMap;
+            }
+
             EntityMap &getEntityMap(void)
             {
                 return entityMap;
@@ -132,8 +136,8 @@ namespace Gek
 
             Editor::Component *getComponent(const std::type_index &type)
             {
-                auto componentsSearch = componentsMap.find(type);
-                if (componentsSearch != componentsMap.end())
+                auto componentsSearch = componentMap.find(type);
+                if (componentsSearch != componentMap.end())
                 {
                     return dynamic_cast<Editor::Component *>(componentsSearch->second.get());
                 }
@@ -270,7 +274,7 @@ namespace Gek
                 sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get(), entityName);
                 entityQueue.push([this, entityName = String(entityName), entity](void) -> void
                 {
-                    entityMap.insert(std::make_pair((entityName ? entityName : String::create(L"unnamed_%v", ++uniqueEntityIdentifier)), entity));
+                    entityMap.insert(std::make_pair((entityName.empty() ? String::create(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity));
                 });
 
                 return entity.get();
@@ -301,8 +305,8 @@ namespace Gek
                 if (componentNameSearch != componentNamesMap.end())
                 {
                     std::type_index componentIdentifier(componentNameSearch->second);
-                    auto componentSearch = componentsMap.find(componentIdentifier);
-                    if (componentSearch != componentsMap.end())
+                    auto componentSearch = componentMap.find(componentIdentifier);
+                    if (componentSearch != componentMap.end())
                     {
                         Plugin::Component *componentManager = componentSearch->second.get();
                         auto component(componentManager->create());

@@ -14,6 +14,7 @@ namespace Gek
     namespace Plugin
     {
         GEK_PREDECLARE(Entity);
+        GEK_PREDECLARE(Component);
 
         GEK_INTERFACE(PopulationListener)
         {
@@ -54,6 +55,11 @@ namespace Gek
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
 
+            virtual Plugin::Entity *createEntity(const wchar_t *entityName) = 0;
+            virtual void killEntity(Plugin::Entity *entity) = 0;
+            virtual void addComponent(Plugin::Entity *entity, const Xml::Leaf &componentData) = 0;
+            virtual void removeComponent(Plugin::Entity *entity, const std::type_index &type) = 0;
+
             virtual void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const = 0;
 
             template<typename... ARGUMENTS>
@@ -79,7 +85,11 @@ namespace Gek
         GEK_INTERFACE(Population)
             : public Plugin::Population
         {
-            virtual std::unordered_map<String, Plugin::EntityPtr> &getEntityMap(void) = 0;
+            using ComponentMap = std::unordered_map<std::type_index, Plugin::ComponentPtr>;
+            virtual ComponentMap &getComponentMap(void) = 0;
+
+            using EntityMap = std::unordered_map<String, Plugin::EntityPtr>;
+            virtual EntityMap &getEntityMap(void) = 0;
 
             virtual Editor::Component *getComponent(const std::type_index &type) = 0;
         };

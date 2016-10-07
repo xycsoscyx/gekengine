@@ -51,7 +51,8 @@ namespace Gek
         GEK_INTERFACE(Entity)
             : public Plugin::Entity
         {
-            virtual std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>> &getComponentsMap(void) = 0;
+            using ComponentMap = std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>>;
+            virtual ComponentMap &getComponentMap(void) = 0;
         };
     }; // namespace Editor
 }; // namespace Gek
