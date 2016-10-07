@@ -48,7 +48,7 @@ namespace Gek
     {
     private:
         std::mutex mutex;
-        std::multimap<uint32_t, STEP *> stepMap;
+        std::multimap<int32_t, STEP *> stepMap;
 
     public:
         virtual ~Sequencer(void)

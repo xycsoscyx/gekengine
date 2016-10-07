@@ -46,7 +46,7 @@ namespace Gek
 		};
     }; // namespace Plugin
 
-    namespace Editor
+    namespace Edit
     {
         GEK_INTERFACE(Entity)
             : public Plugin::Entity
@@ -54,5 +54,5 @@ namespace Gek
             using ComponentMap = std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>>;
             virtual ComponentMap &getComponentMap(void) = 0;
         };
-    }; // namespace Editor
+    }; // namespace Edit
 }; // namespace Gek

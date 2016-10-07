@@ -47,12 +47,12 @@ namespace Gek
         };
     }; // namespace Plugin
 
-    namespace Editor
+    namespace Edit
     {
         GEK_INTERFACE(Component)
             : public Plugin::Component
         {
             virtual void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
         };
-    }; // namespace Editor
+    }; // namespace Edit
 }; // namespace Gek

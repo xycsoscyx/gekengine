@@ -19,7 +19,7 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Color)
-        , public Plugin::ComponentMixin<Components::Color, Editor::Component>
+        , public Plugin::ComponentMixin<Components::Color, Edit::Component>
     {
     public:
         Color(Context *context)
@@ -27,7 +27,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);

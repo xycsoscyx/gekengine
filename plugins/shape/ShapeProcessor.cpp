@@ -397,7 +397,7 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Shape)
-        , public Plugin::ComponentMixin<Components::Shape, Editor::Component>
+        , public Plugin::ComponentMixin<Components::Shape, Edit::Component>
     {
     public:
         Shape(Context *context)
@@ -405,7 +405,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);

@@ -17,7 +17,7 @@ namespace Gek
     namespace Implementation
     {
         class Entity
-            : public Editor::Entity
+            : public Edit::Entity
         {
         private:
             ComponentMap componentMap;
@@ -37,7 +37,7 @@ namespace Gek
                 }
             }
 
-            // Editor::Entity
+            // Edit::Entity
             ComponentMap &getComponentMap(void)
             {
                 return componentMap;
@@ -73,7 +73,7 @@ namespace Gek
 		};
 
         GEK_CONTEXT_USER(Population, Plugin::Core *)
-            , public Editor::Population
+            , public Edit::Population
         {
         private:
             Plugin::Core *core;
@@ -123,7 +123,7 @@ namespace Gek
                 componentMap.clear();
             }
 
-            // Editor::Population
+            // Edit::Population
             ComponentMap &getComponentMap(void)
             {
                 return componentMap;
@@ -134,12 +134,12 @@ namespace Gek
                 return entityMap;
             }
 
-            Editor::Component *getComponent(const std::type_index &type)
+            Edit::Component *getComponent(const std::type_index &type)
             {
                 auto componentsSearch = componentMap.find(type);
                 if (componentsSearch != componentMap.end())
                 {
-                    return dynamic_cast<Editor::Component *>(componentsSearch->second.get());
+                    return dynamic_cast<Edit::Component *>(componentsSearch->second.get());
                 }
                 
                 return nullptr;
@@ -185,8 +185,6 @@ namespace Gek
 
             void load(const wchar_t *populationName)
             {
-                GEK_REQUIRE(populationName);
-
                 if (loaded.valid())
                 {
                     loaded.get();
@@ -201,52 +199,55 @@ namespace Gek
 
                         sendShout(&Plugin::PopulationListener::onLoadBegin);
 
-                        Xml::Node worldNode = Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world");
-
-                        auto &prefabsNode = worldNode.getChild(L"prefabs");
-                        for(auto &entityNode : worldNode.getChild(L"population").children)
+                        if (!populationName.empty())
                         {
-                            std::unordered_map<String, Xml::Leaf> entityComponentMap;
-                            prefabsNode.findChild(entityNode.getAttribute(L"prefab"), [&](Xml::Node &prefabNode) -> void
+                            Xml::Node worldNode = Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world");
+
+                            auto &prefabsNode = worldNode.getChild(L"prefabs");
+                            for (auto &entityNode : worldNode.getChild(L"population").children)
                             {
-                                for (auto &prefabComponentNode : prefabNode.children)
+                                std::unordered_map<String, Xml::Leaf> entityComponentMap;
+                                prefabsNode.findChild(entityNode.getAttribute(L"prefab"), [&](Xml::Node &prefabNode) -> void
                                 {
-                                    entityComponentMap[prefabComponentNode.type] = prefabComponentNode;
-                                }
-                            });
+                                    for (auto &prefabComponentNode : prefabNode.children)
+                                    {
+                                        entityComponentMap[prefabComponentNode.type] = prefabComponentNode;
+                                    }
+                                });
 
-                            for (auto &componentNode : entityNode.children)
-                            {
-                                auto insertSearch = entityComponentMap.insert(std::make_pair(componentNode.type, componentNode));
-                                if (!insertSearch.second)
+                                for (auto &componentNode : entityNode.children)
                                 {
-                                    auto &entityComponentData = insertSearch.first->second;
-                                    if (!componentNode.text.empty())
+                                    auto insertSearch = entityComponentMap.insert(std::make_pair(componentNode.type, componentNode));
+                                    if (!insertSearch.second)
                                     {
-                                        entityComponentData.text = componentNode.text;
-                                    }
+                                        auto &entityComponentData = insertSearch.first->second;
+                                        if (!componentNode.text.empty())
+                                        {
+                                            entityComponentData.text = componentNode.text;
+                                        }
 
-                                    for (auto &attribute : componentNode.attributes)
-                                    {
-                                        entityComponentData.attributes[attribute.first] = attribute.second;
+                                        for (auto &attribute : componentNode.attributes)
+                                        {
+                                            entityComponentData.attributes[attribute.first] = attribute.second;
+                                        }
                                     }
                                 }
-                            }
 
-                            auto entity(std::make_shared<Entity>());
-                            for (auto &entityComponentData : entityComponentMap)
-                            {
-                                addComponent(entity.get(), entityComponentData.second);
-                            }
+                                auto entity(std::make_shared<Entity>());
+                                for (auto &entityComponentData : entityComponentMap)
+                                {
+                                    addComponent(entity.get(), entityComponentData.second);
+                                }
 
-                            if (entityNode.attributes.count(L"name") > 0)
-                            {
-                                entityMap[entityNode.attributes[L"name"]] = std::move(entity);
-                            }
-                            else
-                            {
-                                auto name(String::create(L"unnamed_%v", ++uniqueEntityIdentifier));
-                                entityMap[name] = std::move(entity);
+                                if (entityNode.attributes.count(L"name") > 0)
+                                {
+                                    entityMap[entityNode.attributes[L"name"]] = std::move(entity);
+                                }
+                                else
+                                {
+                                    auto name(String::create(L"unnamed_%v", ++uniqueEntityIdentifier));
+                                    entityMap[name] = std::move(entity);
+                                }
                             }
                         }
 

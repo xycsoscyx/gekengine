@@ -41,7 +41,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(FirstPersonCamera)
-        , public Plugin::ComponentMixin<Components::FirstPersonCamera, Editor::Component>
+        , public Plugin::ComponentMixin<Components::FirstPersonCamera, Edit::Component>
     {
     public:
         FirstPersonCamera(Context *context)
@@ -49,7 +49,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);

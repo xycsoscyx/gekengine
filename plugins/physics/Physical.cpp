@@ -22,7 +22,7 @@ namespace Gek
     namespace Newton
     {
         GEK_CONTEXT_USER(Physical)
-            , public Plugin::ComponentMixin<Components::Physical, Editor::Component>
+            , public Plugin::ComponentMixin<Components::Physical, Edit::Component>
         {
         public:
             Physical(Context *context)
@@ -30,7 +30,7 @@ namespace Gek
             {
             }
 
-            // Editor::Component
+            // Edit::Component
             void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
             {
                 ImGui::SetCurrentContext(guiContext);

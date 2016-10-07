@@ -54,7 +54,7 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(PointLight)
-        , public Plugin::ComponentMixin<Components::PointLight, Editor::Component>
+        , public Plugin::ComponentMixin<Components::PointLight, Edit::Component>
     {
     public:
         PointLight(Context *context)
@@ -62,7 +62,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
@@ -81,7 +81,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(SpotLight)
-        , public Plugin::ComponentMixin<Components::SpotLight, Editor::Component>
+        , public Plugin::ComponentMixin<Components::SpotLight, Edit::Component>
     {
     public:
         SpotLight(Context *context)
@@ -89,7 +89,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
@@ -111,7 +111,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(DirectionalLight)
-        , public Plugin::ComponentMixin<Components::DirectionalLight, Editor::Component>
+        , public Plugin::ComponentMixin<Components::DirectionalLight, Edit::Component>
     {
     public:
         DirectionalLight(Context *context)
@@ -119,7 +119,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);

@@ -35,7 +35,7 @@ namespace Gek
     namespace Newton
     {
         GEK_CONTEXT_USER(Player)
-            , public Plugin::ComponentMixin<Components::Player, Editor::Component>
+            , public Plugin::ComponentMixin<Components::Player, Edit::Component>
         {
         public:
             Player(Context *context)
@@ -43,7 +43,7 @@ namespace Gek
             {
             }
 
-            // Editor::Component
+            // Edit::Component
             void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
             {
                 ImGui::SetCurrentContext(guiContext);
