@@ -459,12 +459,15 @@ namespace Gek
                             std::advance(entitySearch, clipper.DisplayStart);
                             for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                             {
+                                ImGui::PushID(entityIndex);
                                 ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
                                 if (ImGui::Button("X"))
                                 {
+                                    populationEditor->killEntity(entitySearch->second.get());
                                 }
 
                                 ImGui::PopStyleVar();
+                                ImGui::PopID();
                                 ImGui::SameLine();
                                 ImGui::SetItemAllowOverlap();
                                 if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
@@ -525,6 +528,7 @@ namespace Gek
                         auto entityComponentsCount = entityComponentMap.size();
                         if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
                         {
+                            std::vector<std::type_index> componentDeleteList;
                             ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
                             while (clipper.Step())
                             {
@@ -533,12 +537,15 @@ namespace Gek
                                     auto entityComponentSearch = entityComponentMap.begin();
                                     std::advance(entityComponentSearch, componentIndex);
 
+                                    ImGui::PushID(componentIndex);
                                     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
                                     if (ImGui::Button("X"))
                                     {
+                                        componentDeleteList.push_back(entityComponentSearch->first);
                                     }
 
                                     ImGui::PopStyleVar();
+                                    ImGui::PopID();
                                     ImGui::SameLine();
                                     ImGui::SetItemAllowOverlap();
                                     if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
@@ -549,6 +556,10 @@ namespace Gek
                             };
 
                             ImGui::ListBoxFooter();
+                            for (auto &componentType : componentDeleteList)
+                            {
+                                population->removeComponent(entity, componentType);
+                            }
                         }
 
                         ImGui::PopItemWidth();
