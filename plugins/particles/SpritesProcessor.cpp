@@ -44,7 +44,7 @@ namespace Gek
     namespace Sprites
     {
         GEK_CONTEXT_USER(Explosion)
-            , public Plugin::ComponentMixin<Components::Explosion, Editor::Component>
+            , public Plugin::ComponentMixin<Components::Explosion, Edit::Component>
         {
         public:
             Explosion(Context *context)
@@ -52,7 +52,7 @@ namespace Gek
             {
             }
 
-            // Editor::Component
+            // Edit::Component
             void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
             {
                 ImGui::SetCurrentContext(guiContext);

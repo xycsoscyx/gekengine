@@ -597,7 +597,12 @@ namespace Gek
                     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                     ImGui::PopItemWidth();
 
-                    ImGui::NewLine();
+                    ImGui::Separator();
+                    if (ImGui::Button("New Level", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                    {
+                        population->load(nullptr);
+                    }
+
                     ImGui::InputText("##Load Level", loadLevelName, 256);
                     ImGui::SameLine();
                     if (ImGui::Button("Load"))
@@ -605,7 +610,7 @@ namespace Gek
                         population->load(String(loadLevelName));
                     }
 
-                    ImGui::NewLine();
+                    ImGui::Separator();
                     ImGui::PushItemWidth(-1.0f);
                     if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
                     {
@@ -632,7 +637,7 @@ namespace Gek
                         sendShout(&Plugin::CoreListener::onResize);
                     }
 
-                    ImGui::NewLine();
+                    ImGui::Separator();
                     if (ImGui::Button("Quit", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                     {
                         engineRunning = false;

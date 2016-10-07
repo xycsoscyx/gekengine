@@ -46,7 +46,7 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Model)
-        , public Plugin::ComponentMixin<Components::Model, Editor::Component>
+        , public Plugin::ComponentMixin<Components::Model, Edit::Component>
     {
     public:
         Model(Context *context)
@@ -54,7 +54,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);

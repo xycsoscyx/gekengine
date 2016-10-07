@@ -25,9 +25,10 @@
     <ClCompile Include="Visual.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="entrypoints.cpp">
+    <ClCompile Include="Editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="entrypoints.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h" />

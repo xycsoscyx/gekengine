@@ -36,7 +36,7 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Spin)
-        , public Plugin::ComponentMixin<Components::Spin, Editor::Component>
+        , public Plugin::ComponentMixin<Components::Spin, Edit::Component>
     {
     public:
         Spin(Context *context)
@@ -44,7 +44,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);

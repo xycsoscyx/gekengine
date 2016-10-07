@@ -78,7 +78,7 @@ namespace Gek
         };
     }; // namespace Plugin
 
-    namespace Editor
+    namespace Edit
     {
         GEK_PREDECLARE(Component);
 
@@ -91,7 +91,7 @@ namespace Gek
             using EntityMap = std::unordered_map<String, Plugin::EntityPtr>;
             virtual EntityMap &getEntityMap(void) = 0;
 
-            virtual Editor::Component *getComponent(const std::type_index &type) = 0;
+            virtual Edit::Component *getComponent(const std::type_index &type) = 0;
         };
-    }; // namespace Editor
+    }; // namespace Edit
 }; // namespace Gek

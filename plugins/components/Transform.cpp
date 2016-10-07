@@ -24,7 +24,7 @@ namespace Gek
     }; // namespace Components
 
     GEK_CONTEXT_USER(Transform)
-        , public Plugin::ComponentMixin<Components::Transform, Editor::Component>
+        , public Plugin::ComponentMixin<Components::Transform, Edit::Component>
     {
     private:
         ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
@@ -39,7 +39,7 @@ namespace Gek
         {
         }
 
-        // Editor::Component
+        // Edit::Component
         void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
@@ -61,11 +61,12 @@ namespace Gek
                 currentGizmoOperation = ImGuizmo::SCALE;
             }
 
+            ImGui::Separator();
             ImGui::InputFloat3("Position", transformComponent.position.data, 3);
             ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 3);
             ImGui::InputFloat3("Scale", transformComponent.scale.data, 3);
 
-            ImGui::NewLine();
+            ImGui::Separator();
             ImGui::Checkbox("Snap", &useSnap);
             ImGui::SameLine();
 
