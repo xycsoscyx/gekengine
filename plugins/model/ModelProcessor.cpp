@@ -279,11 +279,8 @@ namespace Gek
                         });
                     }
 
+                    data.skin = resources->loadMaterial(modelComponent.skin);
                     data.model = &pair.first->second;
-                    if (!modelComponent.skin.empty())
-                    {
-                        data.skin = resources->loadMaterial(modelComponent.skin);
-                    }
                 });
             });
         }

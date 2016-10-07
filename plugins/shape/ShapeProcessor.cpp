@@ -562,8 +562,8 @@ namespace Gek
                         });
                     }
 
-                    data.shape = &pair.first->second;
                     data.skin = resources->loadMaterial(shapeComponent.skin);
+                    data.shape = &pair.first->second;
                 });
             });
         }
