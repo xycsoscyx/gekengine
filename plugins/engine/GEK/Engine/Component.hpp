@@ -16,11 +16,10 @@ namespace ImGui
     inline bool InputText(const char* label, Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL)
     {
         Gek::StringUTF8 stringUTF8(string);
-        char stringData[256];
-        strcpy(stringData, stringUTF8);
-        if (InputText(label, stringData, 255, flags, callback, user_data))
+        stringUTF8.reserve(256);
+        if (InputText(label, &stringUTF8.front(), 255, flags, callback, user_data))
         {
-            string = stringData;
+            string = stringUTF8;
             return true;
         }
 

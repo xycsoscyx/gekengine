@@ -424,6 +424,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)
+        , public Plugin::ProcessorHelper<ShapeProcessor, Components::Shape, Components::Transform>
         , public Plugin::PopulationListener
         , public Plugin::RendererListener
         , public Plugin::Processor
@@ -438,14 +439,8 @@ namespace Gek
 
         struct Data
         {
-            Shape &shape;
+            Shape *shape;
             MaterialHandle skin;
-
-            Data(Shape &shape, MaterialHandle skin)
-                : shape(shape)
-                , skin(skin)
-            {
-            }
         };
 
         __declspec(align(16))
@@ -469,8 +464,6 @@ namespace Gek
         ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Shape> shapeMap;
-        using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
-        EntityDataMap entityDataMap;
 
         using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
         using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
@@ -508,67 +501,70 @@ namespace Gek
         {
             loadPool.clear();
             shapeMap.clear();
-            entityDataMap.clear();
+            clear();
         }
 
         void onLoadSucceeded(void)
         {
-            population->listEntities<Components::Shape, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
+            population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                const auto &shapeComponent = entity->getComponent<Components::Shape>();
-                auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
-                auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
-                if (pair.second)
+                addEntity(entity, [&](auto &data) -> void
                 {
-                    loadPool.enqueue([this, &shape = pair.first->second, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](void) -> void
+                    const auto &shapeComponent = entity->getComponent<Components::Shape>();
+                    auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
+                    auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
+                    if (pair.second)
                     {
-                        if (type.compareNoCase(L"sphere") == 0)
+                        loadPool.enqueue([this, &shape = pair.first->second, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](void) -> void
                         {
-                            GeoSphere geoSphere;
-                            uint32_t divisionCount = parameters;
-                            geoSphere.generate(divisionCount);
-
-                            shape.vertexBuffer = geoSphere.createVertexBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), resources);
-                            shape.indexBuffer = geoSphere.createIndexBuffer(String::create(L"shape:index:%v:%v", type, parameters), resources);
-                            shape.indexCount = geoSphere.getIndexCount();
-                        }
-                        else if (type.compareNoCase(L"cube") == 0)
-                        {
-                            static const Vertex vertices[] =
+                            if (type.compareNoCase(L"sphere") == 0)
                             {
-                                { Math::Float3(-0.5f, +0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //0
-                                { Math::Float3(+0.5f, +0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //1
-                                { Math::Float3(+0.5f, +0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //2
-                                { Math::Float3(-0.5f, +0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //3
+                                GeoSphere geoSphere;
+                                uint32_t divisionCount = parameters;
+                                geoSphere.generate(divisionCount);
 
-                                { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //4
-                                { Math::Float3(+0.5f, -0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //5
-                                { Math::Float3(+0.5f, -0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //6
-                                { Math::Float3(-0.5f, -0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //7
-                            };
-
-                            static const uint16_t indices[] =
+                                shape.vertexBuffer = geoSphere.createVertexBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), resources);
+                                shape.indexBuffer = geoSphere.createIndexBuffer(String::create(L"shape:index:%v:%v", type, parameters), resources);
+                                shape.indexCount = geoSphere.getIndexCount();
+                            }
+                            else if (type.compareNoCase(L"cube") == 0)
                             {
-                                3,1,0,2,1,3, //top
-                                0,5,4,1,5,0,
-                                3,4,7,0,4,3,
-                                1,6,5,2,6,1,
-                                2,7,6,3,7,2,
-                                6,4,5,7,4,6,
-                            };
+                                static const Vertex vertices[] =
+                                {
+                                    { Math::Float3(-0.5f, +0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //0
+                                    { Math::Float3(+0.5f, +0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //1
+                                    { Math::Float3(+0.5f, +0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //2
+                                    { Math::Float3(-0.5f, +0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //3
 
-                            static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
-                            static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
+                                    { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //4
+                                    { Math::Float3(+0.5f, -0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //5
+                                    { Math::Float3(+0.5f, -0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //6
+                                    { Math::Float3(-0.5f, -0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //7
+                                };
 
-                            shape.vertexBuffer = resources->createBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
-                            shape.indexBuffer = resources->createBuffer(String::create(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
-                            shape.indexCount = 36;
-                        }
-                    });
-                }
+                                static const uint16_t indices[] =
+                                {
+                                    3,1,0,2,1,3, //top
+                                    0,5,4,1,5,0,
+                                    3,4,7,0,4,3,
+                                    1,6,5,2,6,1,
+                                    2,7,6,3,7,2,
+                                    6,4,5,7,4,6,
+                                };
 
-                Data data(pair.first->second, resources->loadMaterial(shapeComponent.skin));
-                entityDataMap.insert(std::make_pair(entity, data));
+                                static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
+                                static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
+
+                                shape.vertexBuffer = resources->createBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
+                                shape.indexBuffer = resources->createBuffer(String::create(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
+                                shape.indexCount = 36;
+                            }
+                        });
+                    }
+
+                    data.shape = &pair.first->second;
+                    data.skin = resources->loadMaterial(shapeComponent.skin);
+                });
             });
         }
 
@@ -578,13 +574,17 @@ namespace Gek
 
         void onEntityDestroyed(Plugin::Entity *entity)
         {
-            GEK_REQUIRE(entity);
+            removeEntity(entity);
+        }
 
-            auto entitySearch = entityDataMap.find(entity);
-            if (entitySearch != entityDataMap.end())
-            {
-                entityDataMap.unsafe_erase(entitySearch);
-            }
+        void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+        {
+            //addEntity(entity, [](auto &) {});
+        }
+
+        void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+        {
+            removeEntity(entity);
         }
 
         // Plugin::RendererListener
@@ -607,11 +607,8 @@ namespace Gek
             GEK_REQUIRE(cameraEntity);
 
             visibleMap.clear();
-            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
+            list([&](Plugin::Entity *entity, auto &data) -> void
             {
-                const Plugin::Entity *entity = entityDataPair.first;
-                const Data &data = entityDataPair.second;
-
                 const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
 
@@ -621,7 +618,7 @@ namespace Gek
 
                 if (viewFrustum.isVisible(orientedBox))
                 {
-                    auto &materialMap = visibleMap[&data.shape];
+                    auto &materialMap = visibleMap[data.shape];
                     auto &instanceList = materialMap[data.skin];
 
                     auto instance(matrix * viewMatrix);

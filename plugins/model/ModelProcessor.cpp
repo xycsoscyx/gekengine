@@ -1,5 +1,4 @@
-﻿#define _CRT_NONSTDC_NO_DEPRECATE
-#include "GEK\Math\Float4x4.hpp"
+﻿#include "GEK\Math\Float4x4.hpp"
 #include "GEK\Shapes\AlignedBox.hpp"
 #include "GEK\Shapes\OrientedBox.hpp"
 #include "GEK\Utility\String.hpp"
@@ -73,6 +72,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
+        , public Plugin::ProcessorHelper<ModelProcessor, Components::Model, Components::Transform>
         , public Plugin::PopulationListener
         , public Plugin::RendererListener
         , public Plugin::Processor
@@ -143,14 +143,8 @@ namespace Gek
 
         struct Data
         {
-            Model &model;
+            Model *model;
             MaterialHandle skin;
-
-            Data(Model &model, MaterialHandle skin)
-                : model(model)
-                , skin(skin)
-            {
-            }
         };
 
         __declspec(align(16))
@@ -174,8 +168,6 @@ namespace Gek
         ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
-        using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
-        EntityDataMap entityDataMap;
 
         using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
         using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
@@ -213,7 +205,7 @@ namespace Gek
         {
             loadPool.clear();
             modelMap.clear();
-            entityDataMap.clear();
+            clear();
         }
 
         template <typename TYPE>
@@ -227,72 +219,72 @@ namespace Gek
 
         void onLoadSucceeded(void)
         {
-            population->listEntities<Components::Model, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
+            population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                const auto &modelComponent = entity->getComponent<Components::Model>();
-                String fileName(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".gek"));
-                auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
-                if (pair.second)
+                addEntity(entity, [&](auto &data) -> void
                 {
-                    loadPool.enqueue([this, name = String(modelComponent.name), fileName, &model = pair.first->second](void) -> void
+                    const auto &modelComponent = entity->getComponent<Components::Model>();
+                    String fileName(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".gek"));
+                    auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
+                    if (pair.second)
                     {
-                        std::vector<uint8_t> buffer;
-                        FileSystem::load(fileName, buffer, sizeof(Header));
-
-                        Header *header = (Header *)buffer.data();
-                        if (header->identifier != *(uint32_t *)"GEKX")
-                        {
-                            throw InvalidModelIdentifier();
-                        }
-
-                        if (header->type != 0)
-                        {
-                            throw InvalidModelType();
-                        }
-
-                        if (header->version != 5)
-                        {
-                            throw InvalidModelVersion();
-                        }
-
-                        model.alignedBox = header->boundingBox;
-                        loadPool.enqueue([this, &model, name, fileName](void) -> void
+                        loadPool.enqueue([this, name = String(modelComponent.name), fileName, &model = pair.first->second](void) -> void
                         {
                             std::vector<uint8_t> buffer;
-                            FileSystem::load(fileName, buffer);
+                            FileSystem::load(fileName, buffer, sizeof(Header));
 
                             Header *header = (Header *)buffer.data();
-                            model.materialList.resize(header->materialCount);
-                            uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
-                            for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                            if (header->identifier != *(uint32_t *)"GEKX")
                             {
-                                Header::Material &materialHeader = header->materialList[materialIndex];
-                                Material &material = model.materialList[materialIndex];
-                                if (wcsicmp(materialHeader.name, L"skin") == 0)
-                                {
-                                    material.skin = true;
-                                }
-                                else
-                                {
-                                    material.material = resources->loadMaterial(materialHeader.name);
-                                }
-
-                                material.indexCount = materialHeader.indexCount;
-                                material.indexBuffer = resources->createBuffer(String::create(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
-                                material.vertexBuffer = resources->createBuffer(String::create(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
+                                throw InvalidModelIdentifier();
                             }
+
+                            if (header->type != 0)
+                            {
+                                throw InvalidModelType();
+                            }
+
+                            if (header->version != 5)
+                            {
+                                throw InvalidModelVersion();
+                            }
+
+                            model.alignedBox = header->boundingBox;
+                            loadPool.enqueue([this, &model, name, fileName](void) -> void
+                            {
+                                std::vector<uint8_t> buffer;
+                                FileSystem::load(fileName, buffer);
+
+                                Header *header = (Header *)buffer.data();
+                                model.materialList.resize(header->materialCount);
+                                uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
+                                for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                                {
+                                    Header::Material &materialHeader = header->materialList[materialIndex];
+                                    Material &material = model.materialList[materialIndex];
+                                    if (wcsicmp(materialHeader.name, L"skin") == 0)
+                                    {
+                                        material.skin = true;
+                                    }
+                                    else
+                                    {
+                                        material.material = resources->loadMaterial(materialHeader.name);
+                                    }
+
+                                    material.indexCount = materialHeader.indexCount;
+                                    material.indexBuffer = resources->createBuffer(String::create(L"model:index:%v:%v", name, materialIndex), Video::Format::R16_UINT, materialHeader.indexCount, Video::BufferType::Index, 0, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
+                                    material.vertexBuffer = resources->createBuffer(String::create(L"model:vertex:%v:%v", name, materialIndex), sizeof(Vertex), materialHeader.vertexCount, Video::BufferType::Vertex, 0, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
+                                }
+                            });
                         });
-                    });
-                }
+                    }
 
-                MaterialHandle skinMaterial;
-                if (!modelComponent.skin.empty())
-                {
-                    skinMaterial = resources->loadMaterial(modelComponent.skin);
-                }
-
-                Data data(pair.first->second, skinMaterial);
-                entityDataMap.insert(std::make_pair(entity, data));
+                    data.model = &pair.first->second;
+                    if (!modelComponent.skin.empty())
+                    {
+                        data.skin = resources->loadMaterial(modelComponent.skin);
+                    }
+                });
             });
         }
 
@@ -302,13 +294,17 @@ namespace Gek
 
         void onEntityDestroyed(Plugin::Entity *entity)
         {
-            GEK_REQUIRE(entity);
+            removeEntity(entity);
+        }
 
-            auto entitySearch = entityDataMap.find(entity);
-            if (entitySearch != entityDataMap.end())
-            {
-                entityDataMap.unsafe_erase(entitySearch);
-            }
+        void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+        {
+            //addEntity(entity, [](auto &) {});
+        }
+
+        void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+        {
+            removeEntity(entity);
         }
 
         // Plugin::RendererListener
@@ -331,11 +327,9 @@ namespace Gek
             GEK_REQUIRE(cameraEntity);
 
             visibleMap.clear();
-            concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entityDataPair) -> void
+            list([&](Plugin::Entity *entity, auto &data) -> void
             {
-                const Plugin::Entity *entity = entityDataPair.first;
-                const Data &data = entityDataPair.second;
-                Model &model = data.model;
+                Model &model = *data.model;
 
                 const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());

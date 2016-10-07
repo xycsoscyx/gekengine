@@ -1,4 +1,3 @@
-#define _CRT_NONSTDC_NO_DEPRECATE
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\FileSystem.hpp"

@@ -1,5 +1,3 @@
-#define _CRT_NONSTDC_NO_DEPRECATE
-#define _CRT_SECURE_NO_WARNINGS
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Float3.hpp"
 #include "GEK\Math\Float4x4.hpp"

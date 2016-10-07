@@ -2,7 +2,7 @@
 
 #include "GEK\Utility\Evaluator.hpp"
 #include "GEK\Engine\Component.hpp"
-#include <unordered_map>
+#include <concurrent_unordered_map.h>
 #include <new>
 
 namespace Gek
@@ -77,11 +77,16 @@ namespace Gek
             }
         };
 
-        template <class DATA, typename... REQUIRED>
+        template <class CLASS, typename... REQUIRED>
         class ProcessorHelper
         {
+        private:
+            struct Data : public CLASS::Data
+            {
+            };
+
         protected:
-            using EntityDataMap = std::unordered_map<Plugin::Entity *, DATA>;
+            using EntityDataMap = concurrency::concurrent_unordered_map<Plugin::Entity *, Data>;
             EntityDataMap entityDataMap;
 
         public:
@@ -99,11 +104,11 @@ namespace Gek
                 entityDataMap.clear();
             }
 
-            void addEntity(Plugin::Entity *entity, std::function<void(DATA &)> onAdded)
+            void addEntity(Plugin::Entity *entity, std::function<void(Data &data)> onAdded)
             {
                 if (entity->hasComponents<REQUIRED...>())
                 {
-                    auto insertSearch = entityDataMap.insert(std::make_pair(entity, DATA()));
+                    auto insertSearch = entityDataMap.insert(std::make_pair(entity, Data()));
                     if (insertSearch.second)
                     {
                         onAdded(insertSearch.first->second);
@@ -116,16 +121,16 @@ namespace Gek
                 auto entitySearch = entityDataMap.find(entity);
                 if (entitySearch != entityDataMap.end())
                 {
-                    entityDataMap.erase(entitySearch);
+                    entityDataMap.unsafe_erase(entitySearch);
                 }
             }
 
-            void list(std::function<void(Plugin::Entity *entity, DATA &data)> onEntity)
+            void list(std::function<void(Plugin::Entity *entity, Data &data)> onEntity)
             {
-                for (auto &entitySearch : entityDataMap)
+                concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entitySearch) -> void
                 {
                     onEntity(entitySearch.first, entitySearch.second);
-                }
+                });
             }
         };
     }; // namespace Plugin

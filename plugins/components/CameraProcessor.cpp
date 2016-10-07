@@ -69,6 +69,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
+        , public Plugin::ProcessorHelper<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
         , public Plugin::PopulationListener
         , public Plugin::PopulationStep
         , public Plugin::Processor
@@ -83,8 +84,6 @@ namespace Gek
         Plugin::Population *population;
         Plugin::Resources *resources;
         Plugin::Renderer *renderer;
-
-        Plugin::ProcessorHelper<Data, Components::FirstPersonCamera, Components::Transform> helper;
 
     public:
         CameraProcessor(Context *context, Plugin::Core *core)
@@ -110,14 +109,14 @@ namespace Gek
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
-            helper.clear();
+            clear();
         }
 
         void onLoadSucceeded(void)
         {
-            population->listEntities<Components::FirstPersonCamera, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
+            population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                helper.addEntity(entity, [&](Data &data) -> void
+                addEntity(entity, [&](auto &data) -> void
                 {
                     const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
                     if (!cameraComponent.name.empty())
@@ -137,7 +136,17 @@ namespace Gek
 
         void onEntityDestroyed(Plugin::Entity *entity)
         {
-            helper.removeEntity(entity);
+            removeEntity(entity);
+        }
+
+        void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+        {
+            //addEntity(entity, ResourceHandle());
+        }
+
+        void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+        {
+            removeEntity(entity);
         }
 
         // Plugin::PopulationStep
@@ -147,7 +156,7 @@ namespace Gek
 
             if (state != State::Loading)
             {
-                helper.list([&](Plugin::Entity *entity, Data &camera) -> void
+                list([&](Plugin::Entity *entity, auto &data) -> void
                 {
 					const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
 					const auto backBuffer = renderer->getDevice()->getBackBuffer();
@@ -155,7 +164,7 @@ namespace Gek
 					const float height = float(backBuffer->getHeight());
                     Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                    renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, camera.target);
+                    renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
                 });
             }
         }
