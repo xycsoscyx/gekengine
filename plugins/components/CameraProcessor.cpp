@@ -69,7 +69,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
-        , public Plugin::ProcessorHelper<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
+        , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera>
         , public Plugin::PopulationListener
         , public Plugin::PopulationStep
         , public Plugin::Processor
@@ -106,6 +106,20 @@ namespace Gek
             population->removeListener(this);
         }
 
+        void addEntity(Plugin::Entity *entity)
+        {
+            ProcessorMixin::addEntity(entity, [&](auto &data, auto &cameraComponent) -> void
+            {
+                if (!cameraComponent.name.empty())
+                {
+                    auto backBuffer = renderer->getDevice()->getBackBuffer();
+                    uint32_t width = backBuffer->getWidth();
+                    uint32_t height = backBuffer->getHeight();
+                    data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.name), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                }
+            });
+        }
+
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
@@ -116,17 +130,7 @@ namespace Gek
         {
             population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                addEntity(entity, [&](auto &data) -> void
-                {
-                    const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
-                    if (!cameraComponent.name.empty())
-                    {
-                        auto backBuffer = renderer->getDevice()->getBackBuffer();
-                        uint32_t width = backBuffer->getWidth();
-                        uint32_t height = backBuffer->getHeight();
-                        data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.name), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
-                    }
-                });
+                addEntity(entity);
             });
         }
 
@@ -141,7 +145,7 @@ namespace Gek
 
         void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
         {
-            //addEntity(entity, ResourceHandle());
+            addEntity(entity);
         }
 
         void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
@@ -156,9 +160,8 @@ namespace Gek
 
             if (state != State::Loading)
             {
-                list([&](Plugin::Entity *entity, auto &data) -> void
+                list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent) -> void
                 {
-					const auto &cameraComponent = entity->getComponent<Components::FirstPersonCamera>();
 					const auto backBuffer = renderer->getDevice()->getBackBuffer();
 					const float width = float(backBuffer->getWidth());
 					const float height = float(backBuffer->getHeight());

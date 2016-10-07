@@ -424,7 +424,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)
-        , public Plugin::ProcessorHelper<ShapeProcessor, Components::Shape, Components::Transform>
+        , public Plugin::ProcessorMixin<ShapeProcessor, Components::Shape, Components::Transform>
         , public Plugin::PopulationListener
         , public Plugin::RendererListener
         , public Plugin::Processor
@@ -496,6 +496,66 @@ namespace Gek
             population->removeListener(this);
         }
 
+        void addEntity(Plugin::Entity *entity)
+        {
+            ProcessorMixin::addEntity(entity, [&](auto &data, auto &shapeComponent, auto &transformComponent) -> void
+            {
+                auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
+                auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
+                if (pair.second)
+                {
+                    loadPool.enqueue([this, &shape = pair.first->second, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](void) -> void
+                    {
+                        if (type.compareNoCase(L"sphere") == 0)
+                        {
+                            GeoSphere geoSphere;
+                            uint32_t divisionCount = parameters;
+                            geoSphere.generate(divisionCount);
+
+                            shape.vertexBuffer = geoSphere.createVertexBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), resources);
+                            shape.indexBuffer = geoSphere.createIndexBuffer(String::create(L"shape:index:%v:%v", type, parameters), resources);
+                            shape.indexCount = geoSphere.getIndexCount();
+                        }
+                        else if (type.compareNoCase(L"cube") == 0)
+                        {
+                            static const Vertex vertices[] =
+                            {
+                                { Math::Float3(-0.5f, +0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //0
+                                { Math::Float3(+0.5f, +0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //1
+                                { Math::Float3(+0.5f, +0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //2
+                                { Math::Float3(-0.5f, +0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //3
+
+                                { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //4
+                                { Math::Float3(+0.5f, -0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //5
+                                { Math::Float3(+0.5f, -0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //6
+                                { Math::Float3(-0.5f, -0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //7
+                            };
+
+                            static const uint16_t indices[] =
+                            {
+                                3,1,0,2,1,3, //top
+                                0,5,4,1,5,0,
+                                3,4,7,0,4,3,
+                                1,6,5,2,6,1,
+                                2,7,6,3,7,2,
+                                6,4,5,7,4,6,
+                            };
+
+                            static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
+                            static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
+
+                            shape.vertexBuffer = resources->createBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
+                            shape.indexBuffer = resources->createBuffer(String::create(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
+                            shape.indexCount = 36;
+                        }
+                    });
+                }
+
+                data.skin = resources->loadMaterial(shapeComponent.skin);
+                data.shape = &pair.first->second;
+            });
+        }
+
         // Plugin::PopulationListener
         void onLoadBegin(void)
         {
@@ -508,63 +568,7 @@ namespace Gek
         {
             population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                addEntity(entity, [&](auto &data) -> void
-                {
-                    const auto &shapeComponent = entity->getComponent<Components::Shape>();
-                    auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
-                    auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
-                    if (pair.second)
-                    {
-                        loadPool.enqueue([this, &shape = pair.first->second, type = String(shapeComponent.type), parameters = String(shapeComponent.parameters)](void) -> void
-                        {
-                            if (type.compareNoCase(L"sphere") == 0)
-                            {
-                                GeoSphere geoSphere;
-                                uint32_t divisionCount = parameters;
-                                geoSphere.generate(divisionCount);
-
-                                shape.vertexBuffer = geoSphere.createVertexBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), resources);
-                                shape.indexBuffer = geoSphere.createIndexBuffer(String::create(L"shape:index:%v:%v", type, parameters), resources);
-                                shape.indexCount = geoSphere.getIndexCount();
-                            }
-                            else if (type.compareNoCase(L"cube") == 0)
-                            {
-                                static const Vertex vertices[] =
-                                {
-                                    { Math::Float3(-0.5f, +0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //0
-                                    { Math::Float3(+0.5f, +0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //1
-                                    { Math::Float3(+0.5f, +0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //2
-                                    { Math::Float3(-0.5f, +0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //3
-
-                                    { Math::Float3(-0.5f, -0.5f, -0.5f), Math::Float2(0.0f, 0.0f) }, //4
-                                    { Math::Float3(+0.5f, -0.5f, -0.5f), Math::Float2(1.0f, 0.0f) }, //5
-                                    { Math::Float3(+0.5f, -0.5f, +0.5f), Math::Float2(1.0f, 1.0f) }, //6
-                                    { Math::Float3(-0.5f, -0.5f, +0.5f), Math::Float2(0.0f, 1.0f) }, //7
-                                };
-
-                                static const uint16_t indices[] =
-                                {
-                                    3,1,0,2,1,3, //top
-                                    0,5,4,1,5,0,
-                                    3,4,7,0,4,3,
-                                    1,6,5,2,6,1,
-                                    2,7,6,3,7,2,
-                                    6,4,5,7,4,6,
-                                };
-
-                                static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
-                                static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
-
-                                shape.vertexBuffer = resources->createBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
-                                shape.indexBuffer = resources->createBuffer(String::create(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
-                                shape.indexCount = 36;
-                            }
-                        });
-                    }
-
-                    data.skin = resources->loadMaterial(shapeComponent.skin);
-                    data.shape = &pair.first->second;
-                });
+                addEntity(entity);
             });
         }
 
@@ -579,7 +583,7 @@ namespace Gek
 
         void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
         {
-            //addEntity(entity, [](auto &) {});
+            addEntity(entity);
         }
 
         void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
@@ -607,9 +611,8 @@ namespace Gek
             GEK_REQUIRE(cameraEntity);
 
             visibleMap.clear();
-            list([&](Plugin::Entity *entity, auto &data) -> void
+            list([&](Plugin::Entity *entity, auto &data, auto &shapeComponent, auto &transformComponent) -> void
             {
-                const auto &transformComponent = entity->getComponent<Components::Transform>();
                 Math::Float4x4 matrix(transformComponent.getMatrix());
 
                 static const Shapes::AlignedBox unitCube(1.0f);
