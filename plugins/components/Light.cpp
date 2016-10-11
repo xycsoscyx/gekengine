@@ -63,14 +63,24 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &pointLightComponent = *dynamic_cast<Components::PointLight *>(data);
-            ImGui::InputFloat("Range", &pointLightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Radius", &pointLightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Intensity", &pointLightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat("Range", &pointLightComponent.range, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Radius", &pointLightComponent.radius, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Intensity", &pointLightComponent.intensity, 1.0f, 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
+        }
+
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
 
         // Plugin::Component
@@ -90,17 +100,27 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &spotLightComponent = *dynamic_cast<Components::SpotLight *>(data);
-            ImGui::InputFloat("Range", &spotLightComponent.range, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Radius", &spotLightComponent.radius, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Intensity", &spotLightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Inner Angle", &spotLightComponent.innerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Outer Angle", &spotLightComponent.outerAngle, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
-            ImGui::InputFloat("Falloff", &spotLightComponent.falloff, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat("Range", &spotLightComponent.range, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Radius", &spotLightComponent.radius, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Intensity", &spotLightComponent.intensity, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Inner Angle", &spotLightComponent.innerAngle, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Outer Angle", &spotLightComponent.outerAngle, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Falloff", &spotLightComponent.falloff, 1.0f, 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
+        }
+
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
 
         // Plugin::Component
@@ -120,12 +140,22 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &directionalLightComponent = *dynamic_cast<Components::DirectionalLight *>(data);
-            ImGui::InputFloat("Intensity", &directionalLightComponent.intensity, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat("Intensity", &directionalLightComponent.intensity, 1.0f, 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
+        }
+
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
 
         // Plugin::Component

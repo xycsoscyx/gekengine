@@ -31,12 +31,22 @@ namespace Gek
             }
 
             // Edit::Component
-            void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
             {
                 ImGui::SetCurrentContext(guiContext);
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
-                ImGui::InputFloat("Mass", &physicalComponent.mass, 1.0f, 10.0f, 3, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                ImGui::InputFloat("Mass", &physicalComponent.mass, 1.0f, 10.0f, 3, flags);
                 ImGui::SetCurrentContext(nullptr);
+            }
+
+            void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+            {
+                ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+            }
+
+            void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            {
+                ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             }
 
             // Plugin::Component

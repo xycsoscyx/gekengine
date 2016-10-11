@@ -441,7 +441,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 								{
 									String materialName(FileSystem::replaceExtension(fileName).getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
-									materialAlbedoMap[albedoNode.attributes[L"file"]] = materialName;
+									materialAlbedoMap[albedoNode.getAttribute(L"file")] = materialName;
 									//printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
 								}
 							});

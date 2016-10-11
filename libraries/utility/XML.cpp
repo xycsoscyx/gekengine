@@ -101,9 +101,9 @@ namespace Gek
             children = std::move(node.children);
         }
 
-        bool Node::findChild(const wchar_t *type, std::function<void(Node &)> onChildFound)
+        bool Node::findChild(const wchar_t *type, std::function<void(const Node &)> onChildFound) const
         {
-            return (std::find_if(children.begin(), children.end(), [type, onChildFound](Node &node) -> bool
+            return (std::find_if(children.begin(), children.end(), [type, onChildFound](const Node &node) -> bool
             {
                 if (node.type.compare(type) == 0)
                 {

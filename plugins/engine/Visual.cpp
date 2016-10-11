@@ -57,7 +57,7 @@ namespace Gek
 					{
 						if (elementNode.attributes.count(L"system"))
 						{
-							String system(elementNode.attributes[L"system"]);
+                            String system(elementNode.getAttribute(L"system"));
 							if (system.compareNoCase(L"InstanceID") == 0)
 							{
 								inputVertexData.format(L"    uint %v : SV_InstanceId;\r\n", elementNode.type);
@@ -86,16 +86,16 @@ namespace Gek
 						else
 						{
 							Video::InputElement element;
-							String bindType(elementNode.attributes[L"bind"]);
+                            String bindType(elementNode.getAttribute(L"bind"));
 							element.format = getBindFormat(getBindType(bindType));
 							if (element.format == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							element.semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
-							element.source = Utility::getElementSource(elementNode.attributes[L"source"]);
-							element.sourceIndex = elementNode.attributes[L"sourceIndex"];
+							element.semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
+							element.source = Utility::getElementSource(elementNode.getAttribute(L"source"));
+							element.sourceIndex = elementNode.getAttribute(L"sourceIndex");
 
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
 							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(element.semantic), semanticIndex);
@@ -110,14 +110,14 @@ namespace Gek
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : outputNode.children)
 					{
-						String bindType(elementNode.attributes[L"bind"]);
+						String bindType(elementNode.getAttribute(L"bind"));
 						auto bindFormat = getBindFormat(getBindType(bindType));
 						if (bindFormat == Video::Format::Unknown)
 						{
 							throw InvalidElementType();
 						}
 
-						auto semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
+						auto semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
 						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
 					}

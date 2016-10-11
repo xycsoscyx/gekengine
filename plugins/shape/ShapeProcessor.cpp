@@ -406,14 +406,24 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &shapeComponent = *dynamic_cast<Components::Shape *>(data);
-            ImGui::InputText("Type", shapeComponent.type);
-            ImGui::InputText("Parameters", shapeComponent.parameters);
-            ImGui::InputText("Skin", shapeComponent.skin);
+            ImGui::InputText("Type", shapeComponent.type, flags);
+            ImGui::InputText("Parameters", shapeComponent.parameters, flags);
+            ImGui::InputText("Skin", shapeComponent.skin, flags);
             ImGui::SetCurrentContext(nullptr);
+        }
+
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, 0);
         }
 
         // Plugin::Component

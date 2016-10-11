@@ -37,7 +37,7 @@ namespace Gek
                         throw MissingParameters();
                     }
 
-                    Engine::Shader *shader = resources->getShader(shaderNode.attributes[L"name"], materialHandle);
+                    Engine::Shader *shader = resources->getShader(shaderNode.getAttribute(L"name"), materialHandle);
                     if (!shader)
                     {
                         throw MissingParameters();
@@ -52,25 +52,25 @@ namespace Gek
                             ResourceHandle &resource = resourceMap[resourceNode.type];
                             if (resourceNode.attributes.count(L"file"))
                             {
-                                String resourceFileName(resourceNode.attributes[L"file"]);
+                                String resourceFileName(resourceNode.getAttribute(L"file"));
                                 uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
                                 resource = this->resources->loadTexture(resourceFileName, flags);
                             }
                             else if (resourceNode.attributes.count(L"pattern"))
                             {
-                                resource = this->resources->createTexture(resourceNode.attributes[L"pattern"], resourceNode.attributes[L"parameters"]);
+                                resource = this->resources->createTexture(resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"));
                             }
                             else if (resourceNode.attributes.count(L"name"))
                             {
-                                resource = this->resources->getResourceHandle(resourceNode.attributes[L"name"]);
+                                resource = this->resources->getResourceHandle(resourceNode.getAttribute(L"name"));
                             }
                         }
                     }
 
                     this->data = shader->loadMaterialData(passMap);
-					materialNode.findChild(L"renderstates", [&](auto &renderstatesNode) -> void
+					materialNode.findChild(L"renderstates", [&](auto &renderStatesNode) -> void
 					{
-						renderState = loadRenderState(resources, renderstatesNode);
+						renderState = loadRenderState(resources, renderStatesNode);
 					});
 				}))
                 {

@@ -28,7 +28,7 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &filterComponent = *dynamic_cast<Components::Filter *>(data);
@@ -41,7 +41,7 @@ namespace Gek
                     {
                         ImGui::PushID(filterIndex);
                         ImGui::PushItemWidth(-1);
-                        ImGui::InputText("##", filterComponent.list[filterIndex]);
+                        ImGui::InputText("##", filterComponent.list[filterIndex], flags);
                         ImGui::PopItemWidth();
                         ImGui::PopID();
                     }
@@ -51,6 +51,16 @@ namespace Gek
             }
 
             ImGui::SetCurrentContext(nullptr);
+        }
+
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, 0);
         }
 
         // Plugin::Component

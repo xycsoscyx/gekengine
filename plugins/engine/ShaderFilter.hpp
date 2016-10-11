@@ -456,7 +456,7 @@ namespace Gek
 			return (flags | Video::BufferFlags::Resource);
 		}
 
-		__forceinline void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, Xml::Node &stencilNode)
+		__forceinline void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, const Xml::Node &stencilNode)
 		{
 			stencilState.passOperation = Utility::getStencilOperation(stencilNode.getChild(L"pass").text);
 			stencilState.failOperation = Utility::getStencilOperation(stencilNode.getChild(L"fail").text);
@@ -464,7 +464,7 @@ namespace Gek
 			stencilState.comparisonFunction = Utility::getComparisonFunction(stencilNode.getChild(L"comparison").text);
 		}
 
-		__forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, Xml::Node &renderNode)
+		__forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, const Xml::Node &renderNode)
 		{
 			Video::RenderStateInformation renderState;
 			renderState.fillMode = Utility::getFillMode(renderNode.getChild(L"fillmode").text);
@@ -479,7 +479,7 @@ namespace Gek
 			return resources->createRenderState(renderState);
 		}
 
-		__forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, Xml::Node &blendNode)
+		__forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, const Xml::Node &blendNode)
 		{
 			blendState.enable = blendNode.isFromFile();
 			if (!blendNode.findChild(L"writemask", [&](auto &writeMaskNode) -> void
@@ -513,7 +513,7 @@ namespace Gek
 			blendState.alphaOperation = Utility::getBlendOperation(alphaNode.getAttribute(L"operation"));
 		}
 
-		__forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, Xml::Node &blendNode, std::unordered_map<String, String> &renderTargetsMap)
+		__forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, const Xml::Node &blendNode, std::unordered_map<String, String> &renderTargetsMap)
 		{
 			bool alphaToCoverage = blendNode.getChild(L"alphatocoverage").text;
 			bool unifiedStates = blendNode.getAttribute(L"unified", L"true");
@@ -540,7 +540,7 @@ namespace Gek
 			}
 		}
 
-		__forceinline std::unordered_map<String, String> loadChildMap(Xml::Node &parentNode)
+		__forceinline std::unordered_map<String, String> loadChildMap(const Xml::Node &parentNode)
 		{
 			std::unordered_map<String, String> childMap;
 			for (auto &childNode : parentNode.children)
@@ -551,9 +551,15 @@ namespace Gek
 			return childMap;
 		}
 
-		__forceinline std::unordered_map<String, String> loadChildMap(Xml::Node &rootNode, const wchar_t *childName)
+		__forceinline std::unordered_map<String, String> loadChildMap(const Xml::Node &rootNode, const wchar_t *childName)
 		{
-			return loadChildMap(rootNode.getChild(childName));
+            std::unordered_map<String, String> result;
+            rootNode.findChild(childName, [&](auto &childNode) -> void
+            {
+                result = loadChildMap(childNode);
+            });
+
+            return result;
 		}
 	}; // namespace Implementation
 }; // namespace Gek

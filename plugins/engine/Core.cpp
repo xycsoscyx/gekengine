@@ -135,6 +135,7 @@ namespace Gek
                 };
 
                 configuration.getChild(L"editor").attributes[L"enabled"] = false;
+                configuration.getChild(L"editor").attributes[L"show_selector"] = false;
                 auto &displayNode = configuration.getChild(L"display");
                 fullScreen = displayNode.getAttribute(L"fullscreen", L"false");
                 currentDisplayMode = displayNode.getAttribute(L"mode", L"-1");
@@ -184,7 +185,7 @@ namespace Gek
 
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
-                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
+                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this, device.get(), getPopulation(), resources.get());
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
@@ -565,6 +566,7 @@ namespace Gek
             }
 
             bool showLoadLevel = false;
+            bool editorSelected = false;
             bool update(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -597,17 +599,17 @@ namespace Gek
                     if (ImGui::BeginMenu("File", true))
                     {
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::MenuItem("New Level"))
+                        if (ImGui::MenuItem("New Level", "N"))
                         {
                             population->load(nullptr);
                         }
 
-                        if (ImGui::MenuItem("Load Level"))
+                        if (ImGui::MenuItem("Load Level", "L"))
                         {
                             showLoadLevel = true;
                         }
 
-                        if (ImGui::MenuItem("Quit"))
+                        if (ImGui::MenuItem("Quit", "Q"))
                         {
                             engineRunning = false;
                         }
@@ -619,14 +621,20 @@ namespace Gek
                     if (ImGui::BeginMenu("Edit"))
                     {
                         ImGui::PushItemWidth(-1);
-                        if (ImGui::MenuItem("Options"))
+                        if (ImGui::MenuItem("Options", "O"))
                         {
                             showOptionsMenu = true;
                         }
 
-                        if (ImGui::MenuItem("Editor"))
+                        if (ImGui::MenuItem("Selector", "S"))
                         {
-                            configuration.getChild(L"editor").attributes[L"enabled"] = true;
+                            configuration.getChild(L"editor").attributes[L"show_selector"] = true;
+                        }
+
+                        if (ImGui::MenuItem("Editor", "E", &editorSelected))
+                        {
+                            bool enabled = configuration.getChild(L"editor").attributes[L"enabled"];
+                            configuration.getChild(L"editor").attributes[L"enabled"] = !enabled;
                         }
 
                         ImGui::PopItemWidth();
