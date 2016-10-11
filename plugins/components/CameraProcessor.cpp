@@ -121,12 +121,12 @@ namespace Gek
         }
 
         // Plugin::PopulationListener
-        void onLoadBegin(void)
+        void onLoadBegin(const String &populationName)
         {
             clear();
         }
 
-        void onLoadSucceeded(void)
+        void onLoadSucceeded(const String &populationName)
         {
             population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
@@ -134,7 +134,7 @@ namespace Gek
             });
         }
 
-        void onLoadFailed(void)
+        void onLoadFailed(const String &populationName)
         {
         }
 
@@ -158,7 +158,7 @@ namespace Gek
         {
             GEK_REQUIRE(renderer);
 
-            if (state != State::Loading)
+            if (state == State::Active)
             {
                 list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent) -> void
                 {

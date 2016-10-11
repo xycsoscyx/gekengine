@@ -283,7 +283,7 @@ namespace Gek
             }
 
             // Plugin::PopulationListener
-            void onLoadBegin(void)
+            void onLoadBegin(const String &populationName)
             {
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -311,7 +311,7 @@ namespace Gek
                 surfaceList.push_back(Surface());
             }
 
-            void onLoadSucceeded(void)
+            void onLoadSucceeded(const String &populationName)
             {
                 newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
                 if (newtonStaticScene == nullptr)
@@ -373,7 +373,7 @@ namespace Gek
                 newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
             }
 
-            void onLoadFailed(void)
+            void onLoadFailed(const String &populationName)
             {
             }
 

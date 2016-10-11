@@ -12,6 +12,7 @@
 #include "GEK\Engine\Population.hpp"
 #include "GEK\Engine\Entity.hpp"
 #include "GEK\Engine\Component.hpp"
+#include "GEK\Engine\Editor.hpp"
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Components\Filter.hpp"
 #include "GEK\Shapes\Sphere.hpp"
@@ -612,17 +613,17 @@ namespace Gek
             }
 
             // Plugin::PopulationListener
-            void onLoadBegin(void)
+            void onLoadBegin(const String &populationName)
             {
                 GEK_REQUIRE(resources);
                 resources->clearLocal();
             }
 
-            void onLoadSucceeded(void)
+            void onLoadSucceeded(const String &populationName)
             {
             }
 
-            void onLoadFailed(void)
+            void onLoadFailed(const String &populationName)
             {
             }
         };

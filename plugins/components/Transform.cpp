@@ -62,9 +62,9 @@ namespace Gek
             }
 
             ImGui::Separator();
-            ImGui::InputFloat3("Position", transformComponent.position.data, 3);
-            ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 3);
-            ImGui::InputFloat3("Scale", transformComponent.scale.data, 3);
+            ImGui::InputFloat3("Position", transformComponent.position.data, 4);
+            ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 4);
+            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4);
 
             ImGui::Separator();
             ImGui::Checkbox("Snap", &useSnap);

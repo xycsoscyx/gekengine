@@ -115,7 +115,7 @@ namespace Gek
             Video::BufferPtr vertexBuffer;
             Video::BufferPtr indexBuffer;
 
-            bool showDebugMenu = true;
+            bool showOptionsMenu = false;
             char loadLevelName[256] = "sponza";
 
         public:
@@ -134,6 +134,7 @@ namespace Gek
                     configuration = Xml::Node(L"config");
                 };
 
+                configuration.getChild(L"editor").attributes[L"enabled"] = false;
                 auto &displayNode = configuration.getChild(L"display");
                 fullScreen = displayNode.getAttribute(L"fullscreen", L"false");
                 currentDisplayMode = displayNode.getAttribute(L"mode", L"-1");
@@ -563,6 +564,7 @@ namespace Gek
                 return 0;
             }
 
+            bool showLoadLevel = false;
             bool update(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -589,26 +591,75 @@ namespace Gek
 
                 // Start the frame
                 ImGui::NewFrame();
-                if (showDebugMenu)
-                {
-                    ImGui::Begin("Debug Menu", &showDebugMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
 
+                if (ImGui::BeginMainMenuBar())
+                {
+                    if (ImGui::BeginMenu("File", true))
+                    {
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::MenuItem("New Level"))
+                        {
+                            population->load(nullptr);
+                        }
+
+                        if (ImGui::MenuItem("Load Level"))
+                        {
+                            showLoadLevel = true;
+                        }
+
+                        if (ImGui::MenuItem("Quit"))
+                        {
+                            engineRunning = false;
+                        }
+
+                        ImGui::PopItemWidth();
+                        ImGui::EndMenu();
+                    }
+
+                    if (ImGui::BeginMenu("Edit"))
+                    {
+                        ImGui::PushItemWidth(-1);
+                        if (ImGui::MenuItem("Options"))
+                        {
+                            showOptionsMenu = true;
+                        }
+
+                        if (ImGui::MenuItem("Editor"))
+                        {
+                            configuration.getChild(L"editor").attributes[L"enabled"] = true;
+                        }
+
+                        ImGui::PopItemWidth();
+                        ImGui::EndMenu();
+                    }
+
+                    ImGui::EndMainMenuBar();
+                }
+
+                if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                {
+                    char name[256] = "";
+                    if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
+                    {
+                        population->load(String(name));
+                        showLoadLevel = false;
+                    }
+
+                    ImGui::SameLine();
+                    if (ImGui::Button("OK"))
+                    {
+                        population->load(String(name));
+                        showLoadLevel = false;
+                    }
+
+                    ImGui::End();
+                }
+
+                if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                {
                     ImGui::PushItemWidth(-1.0f);
                     ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                     ImGui::PopItemWidth();
-
-                    ImGui::Separator();
-                    if (ImGui::Button("New Level", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                    {
-                        population->load(nullptr);
-                    }
-
-                    ImGui::InputText("##Load Level", loadLevelName, 256);
-                    ImGui::SameLine();
-                    if (ImGui::Button("Load"))
-                    {
-                        population->load(String(loadLevelName));
-                    }
 
                     ImGui::Separator();
                     ImGui::PushItemWidth(-1.0f);
@@ -637,12 +688,6 @@ namespace Gek
                         sendShout(&Plugin::CoreListener::onResize);
                     }
 
-                    ImGui::Separator();
-                    if (ImGui::Button("Quit", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                    {
-                        engineRunning = false;
-                    }
-
                     ImGui::End();
                 }
 
@@ -657,6 +702,7 @@ namespace Gek
             {
                 if (order == 0)
                 {
+                    device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), Math::Color::Black);
                     if (state == State::Active)
                     {
                         Action action;
