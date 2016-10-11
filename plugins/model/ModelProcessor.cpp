@@ -274,14 +274,14 @@ namespace Gek
         }
 
         // Plugin::PopulationListener
-        void onLoadBegin(void)
+        void onLoadBegin(const String &populationName)
         {
             loadPool.clear();
             modelMap.clear();
             clear();
         }
 
-        void onLoadSucceeded(void)
+        void onLoadSucceeded(const String &populationName)
         {
             population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
@@ -289,7 +289,7 @@ namespace Gek
             });
         }
 
-        void onLoadFailed(void)
+        void onLoadFailed(const String &populationName)
         {
         }
 

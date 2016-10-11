@@ -157,12 +157,12 @@ namespace Gek
             }
 
             // Plugin::PopulationListener
-            void onLoadBegin(void)
+            void onLoadBegin(const String &populationName)
             {
                 entityEmitterMap.clear();
             }
 
-            void onLoadSucceeded(void)
+            void onLoadSucceeded(const String &populationName)
             {
                 population->listEntities<Components::Explosion, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {

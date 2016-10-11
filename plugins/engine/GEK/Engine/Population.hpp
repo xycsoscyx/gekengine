@@ -18,9 +18,9 @@ namespace Gek
 
         GEK_INTERFACE(PopulationListener)
         {
-            virtual void onLoadBegin(void) { };
-            virtual void onLoadSucceeded(void) { };
-            virtual void onLoadFailed(void) { };
+            virtual void onLoadBegin(const String &populationName) { };
+            virtual void onLoadSucceeded(const String &populationName) { };
+            virtual void onLoadFailed(const String &populationName) { };
 
             virtual void onEntityCreated(Plugin::Entity *entity, const wchar_t *name) { };
             virtual void onEntityDestroyed(Plugin::Entity *entity) { };
@@ -55,7 +55,7 @@ namespace Gek
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(const wchar_t *entityName) = 0;
+            virtual Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<Xml::Leaf> &componentList = std::vector<Xml::Leaf>()) = 0;
             virtual void killEntity(Plugin::Entity *entity) = 0;
             virtual void addComponent(Plugin::Entity *entity, const Xml::Leaf &componentData) = 0;
             virtual void removeComponent(Plugin::Entity *entity, const std::type_index &type) = 0;
