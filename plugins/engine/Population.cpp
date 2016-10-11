@@ -139,7 +139,7 @@ namespace Gek
                         for (auto &entityNode : worldNode.getChild(L"population").children)
                         {
                             std::unordered_map<String, Xml::Leaf> entityComponentMap;
-                            prefabsNode.findChild(entityNode.getAttribute(L"prefab"), [&](Xml::Node &prefabNode) -> void
+                            prefabsNode.findChild(entityNode.getAttribute(L"prefab"), [&](auto &prefabNode) -> void
                             {
                                 for (auto &prefabComponentNode : prefabNode.children)
                                 {

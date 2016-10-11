@@ -40,7 +40,17 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ImGui::SetCurrentContext(guiContext);
+            auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
+            ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
+            ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
+            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
+            ImGui::SetCurrentContext(nullptr);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
@@ -96,6 +106,7 @@ namespace Gek
             transformComponent.rotation = matrix.getQuaternion();
             transformComponent.position = matrix.translation;
             transformComponent.scale = matrix.getScaling();
+
             ImGui::SetCurrentContext(nullptr);
         }
 

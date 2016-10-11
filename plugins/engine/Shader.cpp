@@ -345,7 +345,7 @@ namespace Gek
                     {
 						if (elementNode.attributes.count(L"system"))
 						{
-							String system(elementNode.attributes[L"system"]);
+                            String system(elementNode.getAttribute(L"system"));
 							if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
 								String format(elementNode.getAttribute(L"format", L"bool"));
@@ -369,14 +369,14 @@ namespace Gek
 						}
                         else
                         {
-							String bindType(elementNode.attributes[L"bind"]);
+							String bindType(elementNode.getAttribute(L"bind"));
 							auto bindFormat = getBindFormat(getBindType(bindType));
 							if (bindFormat == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							auto semantic = Utility::getElementSemantic(elementNode.attributes[L"semantic"]);
+							auto semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
 							inputData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
                         }
@@ -708,7 +708,7 @@ namespace Gek
                                     throw MissingParameters();
                                 }
 
-                                auto resourceSearch = resourceMap.find(depthNode.attributes["target"]);
+                                auto resourceSearch = resourceMap.find(depthNode.getAttribute(L"target"));
                                 if (resourceSearch == resourceMap.end())
                                 {
                                     throw InvalidParameters();
@@ -724,8 +724,15 @@ namespace Gek
                                     pass.clearDepthValue = clearNode.text;
                                 });
 
-                                depthState.comparisonFunction = Utility::getComparisonFunction(depthNode.getChild(L"comparison").text);
-                                depthState.writeMask = Utility::getDepthWriteMask(depthNode.getChild(L"writemask").text);
+                                depthNode.findChild(L"comparison", [&](auto &comparisonNode) -> void
+                                {
+                                    depthState.comparisonFunction = Utility::getComparisonFunction(comparisonNode.text);
+                                });
+
+                                depthNode.findChild(L"writemask", [&](auto &writeMaskNode) -> void
+                                {
+                                    depthState.writeMask = Utility::getDepthWriteMask(writeMaskNode.text);
+                                });
 
                                 depthNode.findChild(L"stencil", [&](auto &stencilNode) -> void
                                 {

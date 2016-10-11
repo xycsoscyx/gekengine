@@ -39,7 +39,7 @@ namespace Gek
             void operator = (const Leaf &node);
             void operator = (Leaf &&node);
 
-            String getAttribute(const wchar_t *name, const wchar_t *defaultValue = String(L"")) const;
+            String getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const;
 
             template <typename TYPE>
             TYPE getValue(const wchar_t *name, const TYPE &defaultValue) const
@@ -67,7 +67,7 @@ namespace Gek
             void operator = (const Node &node);
             void operator = (Node &&node);
 
-            bool findChild(const wchar_t *type, std::function<void(Node &)> onChildFound);
+            bool findChild(const wchar_t *type, std::function<void(const Node &)> onChildFound) const;
             Node & getChild(const wchar_t *type);
         };
 

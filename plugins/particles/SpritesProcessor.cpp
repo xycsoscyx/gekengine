@@ -53,11 +53,12 @@ namespace Gek
             }
 
             // Edit::Component
-            void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
             {
-                ImGui::SetCurrentContext(guiContext);
-                auto &explosionComponent = *dynamic_cast<Components::Explosion *>(data);
-                ImGui::SetCurrentContext(nullptr);
+            }
+
+            void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            {
             }
 
             // Plugin::Component

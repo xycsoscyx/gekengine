@@ -3,12 +3,13 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Context\ContextUser.hpp"
-#include "GEK\Engine\Editor.hpp"
 #include "GEK\Engine\Core.hpp"
+#include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Population.hpp"
 #include "GEK\Engine\Entity.hpp"
 #include "GEK\Engine\Component.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Engine\Editor.hpp"
 #include "GEK\Components\Transform.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -38,7 +39,12 @@ namespace Gek
             }
 
             // Edit::Component
-            void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+            {
+                auto &editorCamera = *dynamic_cast<Private::EditorCamera *>(data);
+            }
+
+            void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
             {
                 auto &editorCamera = *dynamic_cast<Private::EditorCamera *>(data);
             }
@@ -120,19 +126,17 @@ namespace Gek
             // Plugin::PopulationListener
             void onLoadBegin(const String &populationName)
             {
-                camera = nullptr;
-
                 selectedEntity = 0;
                 selectedComponent = 0;
-
-                std::vector<Xml::Leaf> editorComponentList(2);
-                editorComponentList[0].type = L"transform";
-                editorComponentList[1].type = L"editor_camera";
-                camera = population->createEntity(L"editor_camera", editorComponentList);
+                camera = nullptr;
             }
 
             void onLoadSucceeded(const String &populationName)
             {
+                std::vector<Xml::Leaf> editorComponentList(2);
+                editorComponentList[0].type = L"transform";
+                editorComponentList[1].type = L"editor_camera";
+                camera = population->createEntity(L"editor_camera", editorComponentList);
             }
 
             void onLoadFailed(const String &populationName)
@@ -144,10 +148,27 @@ namespace Gek
             {
                 auto changeConfiguration = core->changeConfiguration();
                 Xml::Node &configuration = *changeConfiguration;
-                bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
+                bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
+                if (editingEnabled && camera)
+                {
+                    float frameTime = population->getFrameTime();
+
+                    auto &editorCamera = camera->getComponent<Private::EditorCamera>();
+                    float forwardSpeed = (((editorCamera.moveForward ? 1.0f : 0.0f) + (editorCamera.moveBackward ? -1.0f : 0.0f)) * 5.0f);
+                    float lateralSpeed = (((editorCamera.strafeLeft ? -1.0f : 0.0f) + (editorCamera.strafeRight ? 1.0f : 0.0f)) * 5.0f);
+
+                    auto &transformComponent = camera->getComponent<Components::Transform>();
+
+                    static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
+                    auto cameraMatrix((transformComponent.rotation = Math::Quaternion::createAngularRotation(upAxis, editorCamera.headingAngle)).getMatrix());
+                    transformComponent.position += (cameraMatrix.nz * forwardSpeed * frameTime);
+                    transformComponent.position += (cameraMatrix.nx * lateralSpeed * frameTime);
+                }
+                
+                bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
                 if (showSelectionMenu)
                 {
-                    ImGui::Begin("Level Editor", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                    ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
                     ImGui::Dummy(ImVec2(350, 0));
 
                     if (state == State::Loading)
@@ -178,7 +199,7 @@ namespace Gek
                             }
 
                             ImGui::PushItemWidth(-1.0f);
-                            auto entityCount = entityMap.size();
+                            auto entityCount = entityMap.size() - 1;
                             if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                             {
                                 ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
@@ -186,6 +207,11 @@ namespace Gek
                                 {
                                     auto entitySearch = entityMap.begin();
                                     std::advance(entitySearch, clipper.DisplayStart);
+                                    if (entitySearch->second.get() == camera)
+                                    {
+                                        std::advance(entitySearch, 1);
+                                    }
+
                                     for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                                     {
                                         ImGui::PushID(entityIndex);
@@ -301,17 +327,24 @@ namespace Gek
                                     {
                                         Edit::Component *component = population->getComponent(entityComponentSearch->first);
                                         Plugin::Component::Data *componentData = entityComponentSearch->second.get();
-                                        if (component && componentData)
+                                        if (component && componentData && camera)
                                         {
                                             ImGui::Separator();
+                                            if (editingEnabled)
+                                            {
+                                                auto cameraMatrix(camera->getComponent<Components::Transform>().getMatrix());
+                                                auto viewMatrix(cameraMatrix.getInverse());
 
-                                            auto cameraMatrix(camera->getComponent<Components::Transform>().getMatrix());
-                                            auto viewMatrix(cameraMatrix.getInverse());
-
-                                            const float width = 800.0f;
-                                            const float height = 600.0f;
-                                            auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-                                            component->showEditor(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
+                                                const auto backBuffer = core->getRenderer()->getDevice()->getBackBuffer();
+                                                const float width = float(backBuffer->getWidth());
+                                                const float height = float(backBuffer->getHeight());
+                                                auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                                                component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
+                                            }
+                                            else
+                                            {
+                                                component->show(ImGui::GetCurrentContext(), componentData);
+                                            }
                                         }
                                     }
                                 }
@@ -322,7 +355,7 @@ namespace Gek
                     ImGui::End();
                 }
 
-                configuration.getChild(L"editor").attributes[L"enabled"] = showSelectionMenu;
+                configuration.getChild(L"editor").attributes[L"show_selector"] = showSelectionMenu;
             }
         };
 

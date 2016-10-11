@@ -28,12 +28,22 @@ namespace Gek
         }
 
         // Edit::Component
-        void showEditor(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
             ImGui::ColorEdit4("Color", colorComponent.value.data);
             ImGui::SetCurrentContext(nullptr);
+        }
+
+        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, 0);
+        }
+
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        {
+            ui(guiContext, data, 0);
         }
 
         // Plugin::Component
