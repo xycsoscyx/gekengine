@@ -405,11 +405,7 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(cameraEntity);
 
-                bool editingEnabled = false;
-                core->getConfiguration().findChild(L"editor", [&](auto &editorNode) -> void
-                {
-                    editingEnabled = editorNode.getAttribute(L"enabled", L"false");
-                });
+                bool editingEnabled = core->getConfiguration().getChild(L"editor").getAttribute(L"enabled", L"false");
 
                 const auto &cameraTransform = cameraEntity->getComponent<Components::Transform>();
                 const Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());

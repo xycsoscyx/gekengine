@@ -97,7 +97,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                Xml::Node filterNode = Xml::load(getContext()->getFileName(L"data\\filters", filterName).append(L".xml"), L"filter");
+                const Xml::Node filterNode(Xml::load(getContext()->getFileName(L"data\\filters", filterName).append(L".xml"), L"filter"));
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = device->getBackBuffer()->getWidth();
@@ -180,8 +180,8 @@ namespace Gek
                     if (textureNode.attributes.count(L"source"))
                     {
                         // preload shader to make sure all resource names are cached
-                        resources->getShader(textureNode.attributes[L"source"], MaterialHandle());
-                        resourceMap[textureNode.type] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureNode.type, textureNode.attributes[L"source"]));
+                        resources->getShader(textureNode.getAttribute(L"source"), MaterialHandle());
+                        resourceMap[textureNode.type] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureNode.type, textureNode.getAttribute(L"source")));
                     }
                     else
                     {
@@ -195,7 +195,7 @@ namespace Gek
                         uint32_t textureHeight = device->getBackBuffer()->getHeight();
                         if (textureNode.attributes.count(L"size"))
                         {
-                            Math::Float2 size = evaluate(globalDefinesMap, textureNode.attributes[L"size"], BindType::UInt2);
+                            Math::Float2 size = evaluate(globalDefinesMap, textureNode.getAttribute(L"size"), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
@@ -318,9 +318,10 @@ namespace Gek
                             L"\r\n";
 
                         std::unordered_map<String, String> renderTargetsMap;
-                        if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
+                        auto &targetsNode = passNode.getChild(L"targets");
+                        if(targetsNode.valid)
                         {
-                            renderTargetsMap = loadChildMap(targetsNode);
+                            renderTargetsMap = loadChildrenMap(targetsNode);
                             if (renderTargetsMap.empty())
                             {
                                 pass.width = 0.0f;
@@ -346,7 +347,8 @@ namespace Gek
                                     pass.renderTargetList.push_back(resourceSearch->second);
                                 }
                             }
-                        }))
+                        }
+                        else
                         {
                             throw MissingParameters();
                         }
@@ -402,7 +404,7 @@ namespace Gek
                     }
 
                     std::unordered_map<String, String> resourceAliasMap;
-                    std::unordered_map<String, String> unorderedAccessAliasMap = loadChildMap(passNode, L"unorderedaccess");
+                    std::unordered_map<String, String> unorderedAccessAliasMap = loadNodeChildren(passNode, L"unorderedaccess");
                     for (auto &resourceNode : passNode.getChild(L"resources").children)
                     {
                         auto resourceSearch = resourceMap.find(resourceNode.type);
@@ -423,7 +425,7 @@ namespace Gek
 
                         if (resourceNode.attributes.count(L"copy"))
                         {
-                            auto sourceResourceSearch = resourceMap.find(resourceNode.attributes[L"copy"]);
+                            auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
                             if (sourceResourceSearch == resourceMap.end())
                             {
                                 throw InvalidParameters();

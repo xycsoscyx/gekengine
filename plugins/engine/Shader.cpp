@@ -226,7 +226,7 @@ namespace Gek
                 
                 auto backBuffer = device->getBackBuffer();
 
-                Xml::Node shaderNode = Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader");
+                const Xml::Node shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader"));
 
                 priority = shaderNode.getValue(L"priority", 0);
 
@@ -338,7 +338,8 @@ namespace Gek
                 };
 
                 String inputData;
-                shaderNode.findChild(L"input", [&](auto &inputNode) -> void
+                auto &inputNode = shaderNode.getChild(L"input");
+                if (inputNode.valid)
                 {
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.children)
@@ -381,59 +382,54 @@ namespace Gek
 							inputData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
                         }
                     }
-                });
+                }
 
                 String lightingData;
-                shaderNode.findChild(L"lighting", [&](auto &lightingNode) -> void
+                auto &lightingNode = shaderNode.getChild(L"lighting");
+                if (lightingNode.valid)
                 {
-                    if (!lightingNode.findChild(L"lightsPerPass", [&](auto &lightsPerPassNode) -> void
+                    lightsPerPass = lightingNode.getChild(L"lightsPerPass").text;
+                    if (lightsPerPass <= 0)
                     {
-                        lightsPerPass = lightsPerPassNode.text;
-                        if (lightsPerPass <= 0)
-                        {
-                            throw InvalidParameters();
-                        }
-
-                        globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
-
-                        lightingData.format(
-                            L"namespace Lighting\r\n" \
-                            L"{\r\n" \
-                            L"    cbuffer Parameters : register(b3)\r\n" \
-                            L"    {\r\n" \
-                            L"        uint count;\r\n" \
-                            L"        uint padding[3];\r\n" \
-                            L"    };\r\n" \
-                            L"\r\n" \
-                            L"    namespace Type\r\n" \
-                            L"    {\r\n" \
-                            L"        static const uint Point = 0;\r\n" \
-                            L"        static const uint Directional = 1;\r\n" \
-                            L"        static const uint Spot = 2;\r\n" \
-                            L"    };\r\n" \
-                            L"\r\n" \
-                            L"    struct Data\r\n" \
-                            L"    {\r\n" \
-                            L"        uint   type;\r\n" \
-                            L"        float3 color;\r\n" \
-                            L"        float3 position;\r\n" \
-                            L"        float3 direction;\r\n" \
-                            L"        float  range;\r\n" \
-                            L"        float  radius;\r\n" \
-                            L"        float  innerAngle;\r\n" \
-                            L"        float  outerAngle;\r\n" \
-                            L"        float  falloff;\r\n" \
-                            L"    };\r\n" \
-                            L"\r\n" \
-                            L"    StructuredBuffer<Data> list : register(t0);\r\n" \
-                            L"    static const uint lightsPerPass = %v;\r\n" \
-                            L"};\r\n" \
-                            L"\r\n", lightsPerPass);
-                    }))
-                    {
-                        throw MissingParameters();
+                        throw InvalidParameters();
                     }
-                });
+
+                    globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
+
+                    lightingData.format(
+                        L"namespace Lighting\r\n" \
+                        L"{\r\n" \
+                        L"    cbuffer Parameters : register(b3)\r\n" \
+                        L"    {\r\n" \
+                        L"        uint count;\r\n" \
+                        L"        uint padding[3];\r\n" \
+                        L"    };\r\n" \
+                        L"\r\n" \
+                        L"    namespace Type\r\n" \
+                        L"    {\r\n" \
+                        L"        static const uint Point = 0;\r\n" \
+                        L"        static const uint Directional = 1;\r\n" \
+                        L"        static const uint Spot = 2;\r\n" \
+                        L"    };\r\n" \
+                        L"\r\n" \
+                        L"    struct Data\r\n" \
+                        L"    {\r\n" \
+                        L"        uint   type;\r\n" \
+                        L"        float3 color;\r\n" \
+                        L"        float3 position;\r\n" \
+                        L"        float3 direction;\r\n" \
+                        L"        float  range;\r\n" \
+                        L"        float  radius;\r\n" \
+                        L"        float  innerAngle;\r\n" \
+                        L"        float  outerAngle;\r\n" \
+                        L"        float  falloff;\r\n" \
+                        L"    };\r\n" \
+                        L"\r\n" \
+                        L"    StructuredBuffer<Data> list : register(t0);\r\n" \
+                        L"    static const uint lightsPerPass = %v;\r\n" \
+                        L"};\r\n" \
+                        L"\r\n", lightsPerPass);
+                }
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
@@ -456,8 +452,8 @@ namespace Gek
 
                     if (textureNode.attributes.count(L"source"))
                     {
-                        resources->getShader(textureNode.attributes[L"source"], MaterialHandle());
-                        resourceMap[textureNode.type] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureNode.type, textureNode.attributes[L"source"]));
+                        resources->getShader(textureNode.getAttribute(L"source"), MaterialHandle());
+                        resourceMap[textureNode.type] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureNode.type, textureNode.getAttribute(L"source")));
                     }
                     else
                     {
@@ -471,7 +467,7 @@ namespace Gek
                         uint32_t textureHeight = displayHeight;
                         if (textureNode.attributes.count(L"size"))
                         {
-                            Math::Float2 size = evaluate(globalDefinesMap, textureNode.attributes[L"size"], BindType::UInt2);
+                            Math::Float2 size = evaluate(globalDefinesMap, textureNode.getAttribute(L"size"), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
@@ -644,9 +640,10 @@ namespace Gek
                             }
 
                             std::unordered_map<String, String> renderTargetsMap;
-                            if (!passNode.findChild(L"targets", [&](auto &targetsNode) -> void
+                            auto &targetsNode = passNode.getChild(L"targets");
+                            if (targetsNode.valid)
                             {
-                                renderTargetsMap = loadChildMap(targetsNode);
+                                renderTargetsMap = loadChildrenMap(targetsNode);
                                 if (renderTargetsMap.empty())
                                 {
                                     pass.width = float(backBuffer->getWidth());
@@ -672,7 +669,8 @@ namespace Gek
                                         pass.renderTargetList.push_back(resourceSearch->second);
                                     }
                                 }
-                            }))
+                            }
+                            else
                             {
                                 throw MissingParameters();
                             }
@@ -701,7 +699,8 @@ namespace Gek
                             }
 
                             Video::DepthStateInformation depthState;
-                            passNode.findChild(L"depthstates", [&](auto &depthNode) -> void
+                            auto &depthNode = passNode.getChild(L"depthstates");
+                            if (depthNode.valid)
                             {
                                 if (depthNode.attributes.count(L"target") == 0)
                                 {
@@ -718,35 +717,40 @@ namespace Gek
                                 depthState.enable = true;
                                 pass.enableDepth = true;
 
-                                depthNode.findChild(L"clear", [&](auto &clearNode) -> void
+                                auto clearNode = depthNode.getChild(L"clear");
+                                if (clearNode.valid)
                                 {
                                     pass.clearDepthFlags |= Video::ClearFlags::Depth;
                                     pass.clearDepthValue = clearNode.text;
-                                });
+                                }
 
-                                depthNode.findChild(L"comparison", [&](auto &comparisonNode) -> void
+                                auto comparisonNode = depthNode.getChild(L"comparison");
+                                if (comparisonNode.valid)
                                 {
                                     depthState.comparisonFunction = Utility::getComparisonFunction(comparisonNode.text);
-                                });
+                                }
 
-                                depthNode.findChild(L"writemask", [&](auto &writeMaskNode) -> void
+                                auto writeMaskNode = depthNode.getChild(L"writemask");
+                                if (writeMaskNode.valid)
                                 {
                                     depthState.writeMask = Utility::getDepthWriteMask(writeMaskNode.text);
-                                });
+                                }
 
-                                depthNode.findChild(L"stencil", [&](auto &stencilNode) -> void
+                                auto stencilNode = depthNode.getChild(L"stencil");
+                                if (stencilNode.valid)
                                 {
                                     depthState.stencilEnable = true;
-                                    stencilNode.findChild(L"clear", [&](auto &clearNode) -> void
+                                    auto clearStencilNode = stencilNode.getChild(L"clear");
+                                    if (clearStencilNode.valid)
                                     {
                                         pass.clearDepthFlags |= Video::ClearFlags::Stencil;
-                                        pass.clearStencilValue = clearNode.text;
-                                    });
+                                        pass.clearStencilValue = clearStencilNode.text;
+                                    }
 
                                     loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
                                     loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
-                                });
-                            });
+                                }
+                            }
 
                             pass.depthState = resources->createDepthState(depthState);
                             pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
@@ -754,7 +758,7 @@ namespace Gek
                         }
 
                         std::unordered_map<String, String> resourceAliasMap;
-                        std::unordered_map<String, String> unorderedAccessAliasMap = loadChildMap(passNode, L"unorderedaccess");
+                        std::unordered_map<String, String> unorderedAccessAliasMap = loadNodeChildren(passNode, L"unorderedaccess");
                         for(auto &resourceNode : passNode.getChild(L"resources").children)
                         {
                             auto resourceSearch = resourceMap.find(resourceNode.type);
@@ -775,7 +779,7 @@ namespace Gek
 
                             if (resourceNode.attributes.count(L"copy"))
                             {
-                                auto sourceResourceSearch = resourceMap.find(resourceNode.attributes[L"copy"]);
+                                auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
                                 if (sourceResourceSearch == resourceMap.end())
                                 {
                                     throw InvalidParameters();
@@ -795,7 +799,8 @@ namespace Gek
                         if (pass.mode == Pass::Mode::Forward)
                         {
                             String passMaterial(passNode.getAttribute(L"forward"));
-                            if (!materialNode.findChild(passMaterial, [&](auto &namedMaterialNode) -> void
+                            auto &namedMaterialNode = materialNode.getChild(passMaterial);
+                            if (namedMaterialNode.valid)
                             {
                                 forwardPassMap[passMaterial] = &pass;
 
@@ -864,7 +869,8 @@ namespace Gek
                                         break;
                                     };
                                 }
-                            }))
+                            }
+                            else
                             {
                                 throw MissingParameters();
                             }

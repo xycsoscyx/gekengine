@@ -165,8 +165,9 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        Xml::Node materialNode(Xml::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".xml"), L"material"));
-                        materialNode.findChild(L"surface", [&](auto &surfaceNode) -> void
+                        const Xml::Node materialNode(Xml::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".xml"), L"material"));
+                        auto &surfaceNode = materialNode.getChild(L"surface");
+                        if (surfaceNode.valid)
                         {
                             Surface surface;
                             surface.ghost = surfaceNode.getValue(L"ghost", surface.ghost);
@@ -178,7 +179,7 @@ namespace Gek
                             surfaceIndex = surfaceList.size();
                             surfaceList.push_back(surface);
                             surfaceIndexMap[hash] = surfaceIndex;
-                        });
+                        }
                     }
                     catch (const Xml::Exception &)
                     {

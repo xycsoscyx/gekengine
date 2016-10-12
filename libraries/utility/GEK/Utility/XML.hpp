@@ -17,27 +17,19 @@ namespace Gek
 
         struct Leaf
         {
-            enum class Source
-            {
-                File = 0,
-                Code,
-            };
-
-            const Source source;
+            const bool valid;
 
             String type;
             String text;
             std::unordered_map<String, String> attributes;
 
             Leaf(void);
-            Leaf(const wchar_t *type, Source source = Source::Code);
+            Leaf(const wchar_t *type);
             Leaf(const Leaf &node);
             Leaf(Leaf &&node);
 
-            bool isFromFile(void);
-
-            void operator = (const Leaf &node);
-            void operator = (Leaf &&node);
+            Leaf &operator = (const Leaf &leaf);
+            Leaf &operator = (Leaf &&leaf);
 
             String getAttribute(const wchar_t *name, const wchar_t *defaultValue = nullptr) const;
 
@@ -60,14 +52,14 @@ namespace Gek
             std::list<Node> children;
 
             Node(void);
-            Node(const wchar_t *type, Source source = Source::Code);
+            Node(const wchar_t *type);
             Node(const Node &node);
             Node(Node &&node);
 
-            void operator = (const Node &node);
-            void operator = (Node &&node);
+            Node &operator = (const Node &node);
+            Node &operator = (Node &&node);
 
-            bool findChild(const wchar_t *type, std::function<void(const Node &)> onChildFound) const;
+            const Node & getChild(const wchar_t *type) const;
             Node & getChild(const wchar_t *type);
         };
 
