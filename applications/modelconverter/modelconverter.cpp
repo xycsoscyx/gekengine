@@ -430,12 +430,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 				try
 				{
 					//printf("Material: %S\r\n", fileName);
-					Xml::Node materialNode = Xml::load(fileName, L"material");
-					materialNode.findChild(L"shader", [&](auto &shaderNode) -> void
+                    const Xml::Node materialNode(Xml::load(fileName, L"material"));
+                    auto &shaderNode = materialNode.getChild(L"shader");
+                    if (shaderNode.valid)
 					{
 						for (auto &shaderPassNode : shaderNode.children)
 						{
-							shaderPassNode.findChild(L"albedo", [&](auto &albedoNode) -> void
+                            auto &albedoNode = shaderPassNode.getChild(L"albedo");
+                            if (albedoNode.valid)
 							{
 								if (albedoNode.attributes.count(L"file"))
 								{
@@ -444,9 +446,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 									materialAlbedoMap[albedoNode.getAttribute(L"file")] = materialName;
 									//printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
 								}
-							});
+							}
 						}
-					});
+					}
 				}
 				catch (...)
 				{

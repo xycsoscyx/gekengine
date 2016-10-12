@@ -46,11 +46,12 @@ namespace Gek
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(resources);
 
-                Xml::Node visualNode = Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual");
+                const Xml::Node visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual"));
 
 				String inputVertexData;
 				std::vector<Video::InputElement> elementList;
-				visualNode.findChild(L"input", [&](auto &inputNode) -> void
+                auto inputNode = visualNode.getChild(L"input");
+                if (inputNode.valid)
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.children)
@@ -102,10 +103,11 @@ namespace Gek
 							elementList.push_back(element);
 						}
 					}
-				});
+				}
 
 				String outputVertexData;
-				visualNode.findChild(L"output", [&](auto &outputNode) -> void
+                auto outputNode = visualNode.getChild(L"output");
+                if (outputNode.valid)
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : outputNode.children)
@@ -121,10 +123,11 @@ namespace Gek
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
 						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
 					}
-				});
+				}
 
-				if (!visualNode.findChild(L"vertex", [&](auto &vertexNode) -> void
-				{
+                auto vertexNode = visualNode.getChild(L"vertex");
+                if (vertexNode.valid)
+                {
 					String engineData;
 					engineData.format(
 						L"struct InputVertex\r\n" \
@@ -153,19 +156,21 @@ namespace Gek
 					{
 						inputLayout = device->createInputLayout(elementList, compiledProgram.data(), compiledProgram.size());
 					}
-				}))
+				}
+                else
 				{
 					throw MissingParameters();
 				}
 
-				visualNode.findChild(L"geometry", [&](auto &geometryNode) -> void
+                auto geometryNode = visualNode.getChild(L"geometry");
+                if (geometryNode.valid)
 				{
                     String entryFunction(geometryNode.getAttribute(L"entry"));
                     String name(FileSystem::getFileName(visualName, geometryNode.text).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::ProgramType::Geometry, name, entryFunction);
                     geometryProgram = device->createProgram(Video::ProgramType::Geometry, compiledProgram.data(), compiledProgram.size());
                     geometryProgram->setName(String::create(L"%v:%v", name, entryFunction));
-                });
+                }
 			}
 
             // Plugin

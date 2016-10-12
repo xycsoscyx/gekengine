@@ -29,8 +29,9 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                Xml::Node materialNode = Xml::load(getContext()->getFileName(L"data\\materials", materialName).append(L".xml"), L"material");
-                if (!materialNode.findChild(L"shader", [&](auto &shaderNode) -> void
+                const Xml::Node materialNode(Xml::load(getContext()->getFileName(L"data\\materials", materialName).append(L".xml"), L"material"));
+                auto &shaderNode = materialNode.getChild(L"shader");
+                if (shaderNode.valid)
                 {
                     if (!shaderNode.attributes.count(L"name"))
                     {
@@ -68,11 +69,9 @@ namespace Gek
                     }
 
                     this->data = shader->loadMaterialData(passMap);
-					materialNode.findChild(L"renderstates", [&](auto &renderStatesNode) -> void
-					{
-						renderState = loadRenderState(resources, renderStatesNode);
-					});
-				}))
+			        renderState = loadRenderState(resources, materialNode.getChild(L"renderstates"));
+				}
+                else
                 {
                     throw MissingParameters();
                 }

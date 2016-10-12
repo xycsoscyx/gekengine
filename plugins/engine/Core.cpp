@@ -138,7 +138,6 @@ namespace Gek
                 configuration.getChild(L"editor").attributes[L"show_selector"] = false;
                 auto &displayNode = configuration.getChild(L"display");
                 fullScreen = displayNode.getAttribute(L"fullscreen", L"false");
-                currentDisplayMode = displayNode.getAttribute(L"mode", L"-1");
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -147,9 +146,9 @@ namespace Gek
                 }
 
                 device = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
-
+                
                 auto &displayModeList = device->getDisplayModeList();
-                if (currentDisplayMode < 0 || currentDisplayMode >= displayModeList.size())
+                if (displayNode.attributes.count(L"mode") < 0 || currentDisplayMode >= displayModeList.size())
                 {
                     currentDisplayMode = 0;
                     for (auto &displayMode : displayModeList)
@@ -161,6 +160,10 @@ namespace Gek
 
                         currentDisplayMode++;
                     }
+                }
+                else
+                {
+                    currentDisplayMode = displayNode.getAttribute(L"mode", L"0");
                 }
 
                 device->setDisplayMode(currentDisplayMode);

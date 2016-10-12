@@ -7,19 +7,21 @@ namespace Gek
 {
     namespace Xml
     {
+        static const Node nullNode;
+
         Leaf::Leaf(void)
-            : source(Source::Code)
+            : valid(false)
         {
         }
 
-        Leaf::Leaf(const wchar_t *type, Source source)
-            : source(source)
+        Leaf::Leaf(const wchar_t *type)
+            : valid(true)
             , type(type)
         {
         }
 
         Leaf::Leaf(const Leaf &leaf)
-            : source(leaf.source)
+            : valid(leaf.valid)
             , type(leaf.type)
             , text(leaf.text)
             , attributes(leaf.attributes)
@@ -27,32 +29,29 @@ namespace Gek
         }
 
         Leaf::Leaf(Leaf &&leaf)
-            : source(leaf.source)
+            : valid(leaf.valid)
             , type(std::move(leaf.type))
             , text(std::move(leaf.text))
             , attributes(std::move(leaf.attributes))
         {
         }
 
-        void Leaf::operator = (const Leaf &leaf)
+        Leaf &Leaf::operator = (const Leaf &leaf)
         {
-            const_cast<Source>(source) = leaf.source;
+            *const_cast<bool *>(&valid) = leaf.valid;
             type = leaf.type;
             text = leaf.text;
             attributes = leaf.attributes;
+            return (*this);
         }
 
-        void Leaf::operator = (Leaf &&leaf)
+        Leaf &Leaf::operator = (Leaf &&leaf)
         {
-            const_cast<Source>(source) = leaf.source;
+            *const_cast<bool *>(&valid) = leaf.valid;
             type = std::move(leaf.type);
             text = std::move(leaf.text);
             attributes = std::move(leaf.attributes);
-        }
-
-        bool Leaf::isFromFile(void)
-        {
-            return (source == Source::File);
+            return (*this);
         }
 
         String Leaf::getAttribute(const wchar_t *name, const wchar_t *defaultValue) const
@@ -72,8 +71,8 @@ namespace Gek
         {
         }
 
-        Node::Node(const wchar_t *type, Source source)
-            : Leaf(type, source)
+        Node::Node(const wchar_t *type)
+            : Leaf(type)
         {
         }
 
@@ -89,34 +88,35 @@ namespace Gek
         {
         }
 
-        void Node::operator = (const Node &node)
+        Node &Node::operator = (const Node &node)
         {
             (Leaf &)(*this) = node;
             children = node.children;
+            return (*this);
         }
 
-        void Node::operator = (Node &&node)
+        Node &Node::operator = (Node &&node)
         {
             (Leaf &)(*this) = std::move(node);
             children = std::move(node.children);
+            return (*this);
         }
 
-        bool Node::findChild(const wchar_t *type, std::function<void(const Node &)> onChildFound) const
+        const Node & Node::getChild(const wchar_t *type) const
         {
-            return (std::find_if(children.begin(), children.end(), [type, onChildFound](const Node &node) -> bool
+            auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
             {
-                if (node.type.compare(type) == 0)
-                {
-                    if (onChildFound)
-                    {
-                        onChildFound(node);
-                    }
+                return (node.type.compare(type) == 0);
+            });
 
-                    return true;
-                }
-
-                return false;
-            }) == children.end() ? false : true);
+            if (childSearch == children.end())
+            {
+                return nullNode;
+            }
+            else
+            {
+                return *childSearch;
+            }
         }
 
         Node & Node::getChild(const wchar_t *type)
@@ -156,7 +156,7 @@ namespace Gek
                 if (child->type == XML_ELEMENT_NODE)
                 {
                     String childName(reinterpret_cast<const char *>(child->name));
-                    nodeData.children.push_back(Node(childName, Node::Source::File));
+                    nodeData.children.push_back(Node(childName));
                     getNodeData(child, nodeData.children.back());
                 }
             }
@@ -208,7 +208,7 @@ namespace Gek
                 throw InvalidRootNode();
             }
 
-            Node rootData(rootType, Node::Source::File);
+            Node rootData(rootType);
             getNodeData(root, rootData);
             return rootData;
         }

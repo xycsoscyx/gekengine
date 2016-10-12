@@ -481,8 +481,9 @@ namespace Gek
 
 		__forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, const Xml::Node &blendNode)
 		{
-			blendState.enable = blendNode.isFromFile();
-			if (!blendNode.findChild(L"writemask", [&](auto &writeMaskNode) -> void
+            blendState.enable = blendNode.valid;
+            auto &writeMaskNode = blendNode.getChild(L"writemask");
+            if(writeMaskNode.valid)
 			{
 				String writeMask(writeMaskNode.text.getLower());
 				if (writeMask.compare(L"all") == 0)
@@ -497,7 +498,8 @@ namespace Gek
 					if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::B;
 					if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::A;
 				}
-			}))
+			}
+            else
 			{
 				blendState.writeMask = Video::BlendStateInformation::Mask::RGBA;
 			}
@@ -540,7 +542,7 @@ namespace Gek
 			}
 		}
 
-		__forceinline std::unordered_map<String, String> loadChildMap(const Xml::Node &parentNode)
+		__forceinline std::unordered_map<String, String> loadChildrenMap(const Xml::Node &parentNode)
 		{
 			std::unordered_map<String, String> childMap;
 			for (auto &childNode : parentNode.children)
@@ -551,15 +553,9 @@ namespace Gek
 			return childMap;
 		}
 
-		__forceinline std::unordered_map<String, String> loadChildMap(const Xml::Node &rootNode, const wchar_t *childName)
+		__forceinline std::unordered_map<String, String> loadNodeChildren(const Xml::Node &rootNode, const wchar_t *childName)
 		{
-            std::unordered_map<String, String> result;
-            rootNode.findChild(childName, [&](auto &childNode) -> void
-            {
-                result = loadChildMap(childNode);
-            });
-
-            return result;
+            return loadChildrenMap(rootNode.getChild(childName));
 		}
 	}; // namespace Implementation
 }; // namespace Gek

@@ -133,19 +133,20 @@ namespace Gek
                     sendShout(&Plugin::PopulationListener::onLoadBegin, populationName);
                     if (!populationName.empty())
                     {
-                        Xml::Node worldNode = Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world");
+                        const Xml::Node worldNode(Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world"));
 
                         auto &prefabsNode = worldNode.getChild(L"prefabs");
                         for (auto &entityNode : worldNode.getChild(L"population").children)
                         {
                             std::unordered_map<String, Xml::Leaf> entityComponentMap;
-                            prefabsNode.findChild(entityNode.getAttribute(L"prefab"), [&](auto &prefabNode) -> void
+                            auto &prefabNode = prefabsNode.getChild(entityNode.getAttribute(L"prefab"));
+                            if (prefabNode.valid)
                             {
                                 for (auto &prefabComponentNode : prefabNode.children)
                                 {
                                     entityComponentMap[prefabComponentNode.type] = prefabComponentNode;
                                 }
-                            });
+                            }
 
                             for (auto &componentNode : entityNode.children)
                             {
@@ -173,7 +174,7 @@ namespace Gek
 
                             if (entityNode.attributes.count(L"name") > 0)
                             {
-                                entityMap[entityNode.attributes[L"name"]] = std::move(entity);
+                                entityMap[entityNode.getAttribute(L"name")] = std::move(entity);
                             }
                             else
                             {

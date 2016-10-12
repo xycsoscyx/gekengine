@@ -97,8 +97,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							return true;
 						});
 
-						if (solidNode.findChild(L"albedo", nullptr) &&
-							solidNode.findChild(L"normal", nullptr))
+						if (solidNode.getChild(L"albedo").valid &&
+							solidNode.getChild(L"normal").valid)
 						{
 							std::function<void(const wchar_t *)> createParent;
 							createParent = [&](const wchar_t *directory) -> void
