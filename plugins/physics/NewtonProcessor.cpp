@@ -390,7 +390,7 @@ namespace Gek
             }
 
             // Plugin::PopulationStep
-            void onUpdate(uint32_t order, State state)
+            bool onUpdate(int32_t order, State state)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(newtonWorld);
@@ -399,6 +399,8 @@ namespace Gek
                 {
                     NewtonUpdateAsync(newtonWorld, population->getFrameTime());
                 }
+
+                return true;
             }
 
         private:

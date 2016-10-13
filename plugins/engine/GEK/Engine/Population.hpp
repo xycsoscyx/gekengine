@@ -39,7 +39,7 @@ namespace Gek
                 Loading,
             };
 
-            virtual void onUpdate(uint32_t order, State state) = 0;
+            virtual bool onUpdate(int32_t order, State state) = 0;
         };
 
         GEK_INTERFACE(Population)

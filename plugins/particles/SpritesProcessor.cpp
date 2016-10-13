@@ -330,7 +330,7 @@ namespace Gek
             }
 
             // Plugin::PopulationStep
-            void onUpdate(uint32_t order, State state)
+            bool onUpdate(int32_t order, State state)
             {
                 if (state == State::Active)
                 {
@@ -344,6 +344,8 @@ namespace Gek
                         });
                     });
                 }
+
+                return true;
             }
 
             // Plugin::RendererListener

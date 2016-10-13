@@ -83,7 +83,7 @@ namespace Gek
         }
 
         // Plugin::PopulationStep
-        void onUpdate(uint32_t order, State state)
+        bool onUpdate(int32_t order, State state)
         {
             GEK_REQUIRE(population);
 
@@ -99,6 +99,8 @@ namespace Gek
                     transform.rotation *= rotation;
                 });
             }
+
+            return true;
         }
     };
 
