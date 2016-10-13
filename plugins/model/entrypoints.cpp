@@ -1,4 +1,4 @@
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 
 namespace Gek
 {

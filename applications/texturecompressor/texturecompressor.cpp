@@ -6,8 +6,8 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
-#include "GEK\Context\Context.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\Context.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <Shlwapi.h>
 #include <DirectXTex.h>

@@ -158,9 +158,6 @@
     <ClCompile Include="demo.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\libraries\context\context.vcxproj">
-      <Project>{e4015f2b-c176-414f-8733-1c2d88ef3fb5}</Project>
-    </ProjectReference>
     <ProjectReference Include="..\..\libraries\math\math.vcxproj">
       <Project>{80c85026-e106-47bf-91fa-43220b44141b}</Project>
     </ProjectReference>

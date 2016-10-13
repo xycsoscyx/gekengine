@@ -2,8 +2,8 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\XML.hpp"
-#include "GEK\Context\Context.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\Context.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Application.hpp"
 #include "GEK\Engine\Core.hpp"
 #include <experimental\filesystem>

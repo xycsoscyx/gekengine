@@ -4,7 +4,7 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Shapes\Sphere.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\Engine\Renderer.hpp"

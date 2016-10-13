@@ -2,7 +2,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Population.hpp"
@@ -57,16 +57,13 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Editor, Plugin::Core *)
-            , public Plugin::PopulationListener
             , public Plugin::PopulationStep
             , public Plugin::Processor
-            , public Plugin::CoreListener
         {
         private:
             Plugin::Core *core;
             Edit::Population *population;
             Plugin::Renderer *renderer;
-
 
             Plugin::Entity *camera = nullptr;
 
@@ -82,19 +79,24 @@ namespace Gek
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(core);
-                core->addListener(this);
-                population->addListener(this);
-                population->addStep(this, -1);
+
+                population->onLoadBegin.connect<Editor, &Editor::onLoadBegin>(this);
+                population->onLoadSucceeded.connect<Editor, &Editor::onLoadSucceeded>(this);
+                population->onLoadFailed.connect<Editor, &Editor::onLoadFailed>(this);
+                population->addStep(this, 10);
+                core->onAction.connect<Editor, &Editor::onAction>(this);
             }
 
             ~Editor(void)
             {
+                core->onAction.disconnect<Editor, &Editor::onAction>(this);
                 population->removeStep(this);
-                population->removeListener(this);
-                core->removeListener(this);
+                population->onLoadFailed.connect<Editor, &Editor::onLoadFailed>(this);
+                population->onLoadSucceeded.connect<Editor, &Editor::onLoadSucceeded>(this);
+                population->onLoadBegin.connect<Editor, &Editor::onLoadBegin>(this);
             }
 
-            // Plugin::CoreListener
+            // Plugin::Core Signals
             void onAction(const wchar_t *actionName, const Plugin::ActionParameter &parameter)
             {
                 if (camera)
@@ -127,7 +129,7 @@ namespace Gek
                 }
             }
 
-            // Plugin::PopulationListener
+            // Plugin::Population Signals
             void onLoadBegin(const String &populationName)
             {
                 selectedEntity = 0;

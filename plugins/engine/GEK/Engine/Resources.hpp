@@ -3,8 +3,8 @@
 #include "GEK\Math\Color.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Hash.hpp"
-#include "GEK\Context\Context.hpp"
-#include "GEK\Context\Broadcaster.hpp"
+#include "GEK\Utility\Context.hpp"
+#include "GEK\Utility\Broadcaster.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <type_traits>
 #include <typeindex>

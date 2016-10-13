@@ -5,7 +5,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Allocator.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Processor.hpp"
@@ -69,7 +69,6 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(EmitterProcessor, Plugin::Core *)
-            , public Plugin::PopulationListener
             , public Plugin::PopulationStep
             , public Plugin::RendererListener
             , public Plugin::Processor
@@ -142,7 +141,12 @@ namespace Gek
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(renderer);
 
-                population->addListener(this);
+                population->onLoadBegin.disconnect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
+                population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
+                population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
+                population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
+                population->onComponentAdded.disconnect<EmitterProcessor, &EmitterProcessor::onComponentAdded>(this);
+                population->onComponentRemoved.disconnect<EmitterProcessor, &EmitterProcessor::onComponentRemoved>(this);
                 population->addStep(this, 60);
                 renderer->addListener(this);
 
@@ -154,10 +158,15 @@ namespace Gek
             {
                 renderer->removeListener(this);
                 population->removeStep(this);
-                population->removeListener(this);
+                population->onComponentRemoved.disconnect<EmitterProcessor, &EmitterProcessor::onComponentRemoved>(this);
+                population->onComponentAdded.disconnect<EmitterProcessor, &EmitterProcessor::onComponentAdded>(this);
+                population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
+                population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
+                population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
+                population->onLoadBegin.disconnect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
             }
 
-            // Plugin::PopulationListener
+            // Plugin::Population Signals
             void onLoadBegin(const String &populationName)
             {
                 entityEmitterMap.clear();
@@ -308,7 +317,7 @@ namespace Gek
                 });
             }
 
-            void onEntityCreated(Plugin::Entity *entity)
+            void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
             {
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(entity);

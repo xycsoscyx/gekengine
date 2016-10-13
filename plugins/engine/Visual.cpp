@@ -1,7 +1,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Visual.hpp"

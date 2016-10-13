@@ -1,7 +1,8 @@
 #pragma once
 
-#include "GEK\Context\Broadcaster.hpp"
+#include "GEK\Utility\Context.hpp"
 #include "GEK\Utility\XML.hpp"
+#include <nano_signal_slot.hpp>
 #include <Windows.h>
 
 namespace Gek
@@ -40,20 +41,14 @@ namespace Gek
             }
         };
 
-        GEK_INTERFACE(CoreListener)
-        {
-            virtual void onResize(void) { };
-
-            virtual void onConfigurationChanged(void) { };
-
-            virtual void onAction(const wchar_t *actionName, const ActionParameter &parameter) { };
-        };
-
         GEK_INTERFACE(Core)
-            : public Broadcaster<CoreListener>
         {
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InitializationFailed);
+
+            Nano::Signal<void(void)> onResize;
+            Nano::Signal<void(void)> onConfigurationChanged;
+            Nano::Signal<void(const wchar_t *actionName, const ActionParameter &actionParameter)> onAction;
 
             virtual ConfigurationPtr changeConfiguration(void) = 0;
             virtual Xml::Node const &getConfiguration(void) const = 0;

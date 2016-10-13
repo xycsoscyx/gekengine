@@ -3,7 +3,7 @@
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <atlbase.h>
 #include <d3d11.h>
@@ -29,14 +29,14 @@ namespace Gek
         using ArgumentTypes = typename FunctionCache<decltype(&CLASS::operator())>::ArgumentTypes;
     };
 
-    template <typename RETURN, typename CLASS, typename... ARGUMENTS>
-    struct FunctionCache<RETURN(__stdcall CLASS::*)(ARGUMENTS...)>
+    template <typename RETURN, typename CLASS, typename... PARAMETERS>
+    struct FunctionCache<RETURN(__stdcall CLASS::*)(PARAMETERS...)>
     {
         using ReturnType = RETURN;
-        using ArgumentTypes = std::tuple<typename std::decay<ARGUMENTS>::type...>;
+        using ArgumentTypes = std::tuple<typename std::decay<PARAMETERS>::type...>;
 
         ArgumentTypes cache;
-        void operator()(CLASS *classObject, RETURN(__stdcall CLASS::*function)(ARGUMENTS...), ARGUMENTS... arguments)
+        void operator()(CLASS *classObject, RETURN(__stdcall CLASS::*function)(PARAMETERS...), PARAMETERS... arguments)
         {
             auto current = std::tie(arguments...);
             if (current != cache)
@@ -2381,8 +2381,8 @@ namespace Gek
                 return std::make_shared<InputLayout>(d3dInputLayout);
             }
 
-            template <class SHADER, class PROGRAM, typename RETURN, typename CLASS, typename... ARGUMENTS>
-            Video::ObjectPtr createProgram(const void *compiledData, uint32_t compiledSize, RETURN(__stdcall CLASS::*function)(ARGUMENTS...))
+            template <class SHADER, class PROGRAM, typename RETURN, typename CLASS, typename... PARAMETERS>
+            Video::ObjectPtr createProgram(const void *compiledData, uint32_t compiledSize, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
             {
                 CComPtr<SHADER> d3dShader;
                 HRESULT resultValue = (d3dDevice->*function)(compiledData, compiledSize, nullptr, &d3dShader);

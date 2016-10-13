@@ -1,7 +1,7 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Float4x4.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"

@@ -7,7 +7,7 @@
 #include "GEK\Shapes\Rectangle.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Context\Context.hpp"
+#include "GEK\Utility\Context.hpp"
 #include <unordered_map>
 #include <functional>
 #include <memory>

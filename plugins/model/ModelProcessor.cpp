@@ -6,7 +6,7 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Allocator.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Processor.hpp"
@@ -83,7 +83,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
-        , public Plugin::PopulationListener
         , public Plugin::RendererListener
         , public Plugin::Processor
     {
@@ -196,7 +195,12 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->addListener(this);
+            population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.disconnect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             renderer->addListener(this);
 
             visual = resources->loadVisual(L"model");
@@ -207,7 +211,12 @@ namespace Gek
         ~ModelProcessor(void)
         {
             renderer->removeListener(this);
-            population->removeListener(this);
+            population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
+            population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
+            population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
+            population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
+            population->onLoadSucceeded.disconnect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
+            population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
         }
 
         template <typename TYPE>
@@ -283,7 +292,7 @@ namespace Gek
             });
         }
 
-        // Plugin::PopulationListener
+        // Plugin::Population Signals
         void onLoadBegin(const String &populationName)
         {
             loadPool.clear();
@@ -299,8 +308,9 @@ namespace Gek
             });
         }
 
-        void onLoadFailed(const String &populationName)
+        void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
         {
+            addEntity(entity);
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)

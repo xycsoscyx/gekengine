@@ -4,7 +4,7 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Shapes\Sphere.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Visual.hpp"
 #include "GEK\Engine\Renderer.hpp"
@@ -18,7 +18,7 @@
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Components\Light.hpp"
 #include "GEK\Components\Color.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_unordered_set.h>
 #include <concurrent_queue.h>
@@ -269,7 +269,6 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(Resources, Plugin::Core *, Video::Device *)
-            , public Plugin::CoreListener
             , public Engine::Resources
             , public ResourceRequester
         {
@@ -310,15 +309,15 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(device);
-                core->addListener(this);
+                core->onResize.connect<Resources, &Resources::onResize>(this);
             }
 
             ~Resources(void)
             {
-                core->removeListener(this);
+                core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
-            // Plugin::CoreListener
+            // Plugin::Core Signals
             void onResize(void)
             {
                 programCache.clear();
