@@ -2,7 +2,7 @@
 
 #include "GEK\Utility\String.hpp"
 #include "GEK\Shapes\Frustum.hpp"
-#include "GEK\Context\Context.hpp"
+#include "GEK\Utility\Context.hpp"
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\Engine\Material.hpp"
 #include <memory>

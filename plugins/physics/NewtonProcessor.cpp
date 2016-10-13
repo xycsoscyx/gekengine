@@ -1,7 +1,7 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Float4x4.hpp"
 #include "GEK\Shapes\AlignedBox.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\Evaluator.hpp"
 #include "GEK\Utility\String.hpp"
@@ -28,7 +28,6 @@ namespace Gek
         extern EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
 
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
-            , public Plugin::PopulationListener
             , public Plugin::PopulationStep
             , public Plugin::Processor
             , public Newton::World
@@ -109,14 +108,18 @@ namespace Gek
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
 
-                population->addListener(this);
+                population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
+                population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
+                population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
                 population->addStep(this, 50);
             }
 
             ~Processor(void)
             {
                 population->removeStep(this);
-                population->removeListener(this);
+                population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
+                population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
+                population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -141,6 +144,122 @@ namespace Gek
                 NewtonInvalidateCache(newtonWorld);
                 NewtonDestroy(newtonWorld);
                 GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
+            }
+
+            // Plugin::Population Signals
+            void onLoadBegin(const String &populationName)
+            {
+                NewtonWaitForUpdateToFinish(newtonWorld);
+                for (auto &collisionPair : collisionMap)
+                {
+                    if (collisionPair.second)
+                    {
+                        NewtonDestroyCollision(collisionPair.second);
+                    }
+                }
+
+                if (newtonStaticScene)
+                {
+                    NewtonDestroyCollision(newtonStaticScene);
+                    newtonStaticScene = nullptr;
+                }
+
+                collisionMap.clear();
+                entityMap.clear();
+                surfaceList.clear();
+                surfaceIndexMap.clear();
+                newtonStaticBody = nullptr;
+                NewtonDestroyAllBodies(newtonWorld);
+                NewtonInvalidateCache(newtonWorld);
+
+                surfaceList.push_back(Surface());
+            }
+
+            void onLoadSucceeded(const String &populationName)
+            {
+                newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
+                if (newtonStaticScene == nullptr)
+                {
+                    throw Newton::UnableToCreateCollision();
+                }
+
+                NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
+                population->listEntities<Components::Physical, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
+                {
+                    const auto &transformComponent = entity->getComponent<Components::Transform>();
+                    const auto &physicalComponent = entity->getComponent<Components::Physical>();
+                    if (entity->hasComponent<Components::Player>())
+                    {
+                        Newton::EntityPtr playerBody(createPlayerBody(core, newtonWorld, entity));
+                        if (playerBody)
+                        {
+                            entityMap[entity] = playerBody;
+                            NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
+                        }
+                    }
+                    else
+                    {
+                        NewtonCollision *newtonCollision = nullptr;
+                        if (entity->hasComponents<Components::Model>())
+                        {
+                            const auto &modelComponent = entity->getComponent<Components::Model>();
+                            newtonCollision = loadCollision(modelComponent);
+                        }
+                        else if (entity->hasComponents<Components::Shape>())
+                        {
+                            const auto &shapeComponent = entity->getComponent<Components::Shape>();
+                            newtonCollision = createCollision(shapeComponent);
+                        }
+
+                        if (newtonCollision)
+                        {
+                            if (physicalComponent.mass == 0.0f)
+                            {
+                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
+                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
+                                NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
+                                NewtonDestroyCollision(clonedCollision);
+                            }
+                            else
+                            {
+                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
+                                if (rigidBody)
+                                {
+                                    entityMap[entity] = rigidBody;
+                                    NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
+                                }
+                            }
+                        }
+                    }
+                });
+
+                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+            }
+
+            void onEntityDestroyed(Plugin::Entity *entity)
+            {
+                GEK_REQUIRE(entity);
+
+                auto entitySearch = entityMap.find(entity);
+                if (entitySearch != entityMap.end())
+                {
+                    entityMap.unsafe_erase(entitySearch);
+                }
+            }
+
+            // Plugin::PopulationStep
+            bool onUpdate(int32_t order, State state)
+            {
+                GEK_REQUIRE(population);
+                GEK_REQUIRE(newtonWorld);
+
+                if (state == State::Active)
+                {
+                    NewtonUpdateAsync(newtonWorld, population->getFrameTime());
+                }
+
+                return true;
             }
 
             // Newton::World
@@ -281,126 +400,6 @@ namespace Gek
                 }
 
                 NewtonWorldCriticalSectionUnlock(newtonWorld);
-            }
-
-            // Plugin::PopulationListener
-            void onLoadBegin(const String &populationName)
-            {
-                NewtonWaitForUpdateToFinish(newtonWorld);
-                for (auto &collisionPair : collisionMap)
-                {
-                    if (collisionPair.second)
-                    {
-                        NewtonDestroyCollision(collisionPair.second);
-                    }
-                }
-
-                if (newtonStaticScene)
-                {
-                    NewtonDestroyCollision(newtonStaticScene);
-                    newtonStaticScene = nullptr;
-                }
-
-                collisionMap.clear();
-                entityMap.clear();
-                surfaceList.clear();
-                surfaceIndexMap.clear();
-                newtonStaticBody = nullptr;
-                NewtonDestroyAllBodies(newtonWorld);
-                NewtonInvalidateCache(newtonWorld);
-
-                surfaceList.push_back(Surface());
-            }
-
-            void onLoadSucceeded(const String &populationName)
-            {
-                newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
-                if (newtonStaticScene == nullptr)
-                {
-                    throw Newton::UnableToCreateCollision();
-                }
-
-                NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-                population->listEntities<Components::Physical, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
-                {
-                    const auto &transformComponent = entity->getComponent<Components::Transform>();
-                    const auto &physicalComponent = entity->getComponent<Components::Physical>();
-                    if (entity->hasComponent<Components::Player>())
-                    {
-                        Newton::EntityPtr playerBody(createPlayerBody(core, newtonWorld, entity));
-                        if (playerBody)
-                        {
-                            entityMap[entity] = playerBody;
-                            NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
-                        }
-                    }
-                    else
-                    {
-                        NewtonCollision *newtonCollision = nullptr;
-                        if (entity->hasComponents<Components::Model>())
-                        {
-                            const auto &modelComponent = entity->getComponent<Components::Model>();
-                            newtonCollision = loadCollision(modelComponent);
-                        }
-                        else if (entity->hasComponents<Components::Shape>())
-                        {
-                            const auto &shapeComponent = entity->getComponent<Components::Shape>();
-                            newtonCollision = createCollision(shapeComponent);
-                        }
-
-                        if (newtonCollision)
-                        {
-                            if (physicalComponent.mass == 0.0f)
-                            {
-                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
-                                NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
-                                NewtonDestroyCollision(clonedCollision);
-                            }
-                            else
-                            {
-                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
-                                if (rigidBody)
-                                {
-                                    entityMap[entity] = rigidBody;
-                                    NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
-                                }
-                            }
-                        }
-                    }
-                });
-
-                NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
-            }
-
-            void onLoadFailed(const String &populationName)
-            {
-            }
-
-            void onEntityDestroyed(Plugin::Entity *entity)
-            {
-                GEK_REQUIRE(entity);
-
-                auto entitySearch = entityMap.find(entity);
-                if (entitySearch != entityMap.end())
-                {
-                    entityMap.unsafe_erase(entitySearch);
-                }
-            }
-
-            // Plugin::PopulationStep
-            bool onUpdate(int32_t order, State state)
-            {
-                GEK_REQUIRE(population);
-                GEK_REQUIRE(newtonWorld);
-
-                if (state == State::Active)
-                {
-                    NewtonUpdateAsync(newtonWorld, population->getFrameTime());
-                }
-
-                return true;
             }
 
         private:

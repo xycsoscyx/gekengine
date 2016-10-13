@@ -8,7 +8,7 @@
 #include "GEK\Engine\Population.hpp"
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\Engine\Renderer.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include <concurrent_queue.h>
 #include <queue>
 #include <ppl.h>
@@ -52,7 +52,6 @@ namespace Gek
         GEK_CONTEXT_USER(Core, HWND)
             , public Application
             , public Plugin::Core
-            , public Plugin::PopulationListener
             , public Plugin::PopulationStep
             , public Plugin::RendererListener
             , public CoreConfiguration
@@ -117,6 +116,9 @@ namespace Gek
 
             bool showOptionsMenu = false;
             char loadLevelName[256] = "sponza";
+
+            static const int32_t UpdateActions = -1000;
+            static const int32_t PresentScreen = +1000;
 
         public:
             Core(Context *context, HWND window)
@@ -194,7 +196,7 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
-                population->addStep(this, 0, 100);
+                population->addStep(this, UpdateActions, PresentScreen);
                 renderer->addListener(this);
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -420,7 +422,7 @@ namespace Gek
             void changeConfiguration(Xml::Node &&configuration)
             {
                 this->configuration = std::move(configuration);
-                sendShout(&Plugin::CoreListener::onConfigurationChanged);
+                onConfigurationChanged.emit();
             }
 
             // Plugin::Core
@@ -685,8 +687,8 @@ namespace Gek
                         device->setDisplayMode(currentDisplayMode);
                         auto &displayNode = configuration.getChild(L"display");
                         displayNode.attributes[L"mode"] = currentDisplayMode;
-                        sendShout(&Plugin::CoreListener::onConfigurationChanged);
-                        sendShout(&Plugin::CoreListener::onResize);
+                        onConfigurationChanged.emit();
+                        onResize.emit();
                     }
 
                     ImGui::PopItemWidth();
@@ -695,8 +697,8 @@ namespace Gek
                         device->setFullScreen(fullScreen);
                         auto &displayNode = configuration.getChild(L"display");
                         displayNode.attributes[L"fullscreen"] = fullScreen;
-                        sendShout(&Plugin::CoreListener::onConfigurationChanged);
-                        sendShout(&Plugin::CoreListener::onResize);
+                        onConfigurationChanged.emit();
+                        onResize.emit();
                     }
 
                     ImGui::End();
@@ -711,7 +713,7 @@ namespace Gek
             // Plugin::PopulationStep
             bool onUpdate(int32_t order, State state)
             {
-                if (order == 0)
+                if (order == UpdateActions)
                 {
                     device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), Math::Color::Black);
                     if (state == State::Active)
@@ -719,7 +721,7 @@ namespace Gek
                         Action action;
                         while (actionQueue.try_pop(action))
                         {
-                            sendShout(&Plugin::CoreListener::onAction, action.name, action.parameter);
+                            onAction.emit(action.name, action.parameter);
                         };
                     }
                     else
@@ -727,7 +729,7 @@ namespace Gek
                         actionQueue.clear();
                     }
                 }
-                else if (order == 100)
+                else if (order == PresentScreen)
                 {
                     ImGui::Render();
                     device->present(false);

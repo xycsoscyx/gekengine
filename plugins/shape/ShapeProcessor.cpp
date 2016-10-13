@@ -6,7 +6,7 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Allocator.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
@@ -435,7 +435,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<ShapeProcessor, Components::Shape, Components::Transform>
-        , public Plugin::PopulationListener
         , public Plugin::RendererListener
         , public Plugin::Processor
     {
@@ -492,7 +491,12 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->addListener(this);
+            population->onLoadBegin.disconnect<ShapeProcessor, &ShapeProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.disconnect<ShapeProcessor, &ShapeProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.disconnect<ShapeProcessor, &ShapeProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.disconnect<ShapeProcessor, &ShapeProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.disconnect<ShapeProcessor, &ShapeProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.disconnect<ShapeProcessor, &ShapeProcessor::onComponentRemoved>(this);
             renderer->addListener(this);
 
             visual = resources->loadVisual(L"shape");
@@ -503,7 +507,12 @@ namespace Gek
         ~ShapeProcessor(void)
         {
             renderer->removeListener(this);
-            population->removeListener(this);
+            population->onComponentRemoved.disconnect<ShapeProcessor, &ShapeProcessor::onComponentRemoved>(this);
+            population->onComponentAdded.disconnect<ShapeProcessor, &ShapeProcessor::onComponentAdded>(this);
+            population->onEntityDestroyed.disconnect<ShapeProcessor, &ShapeProcessor::onEntityDestroyed>(this);
+            population->onEntityCreated.disconnect<ShapeProcessor, &ShapeProcessor::onEntityCreated>(this);
+            population->onLoadSucceeded.disconnect<ShapeProcessor, &ShapeProcessor::onLoadSucceeded>(this);
+            population->onLoadBegin.disconnect<ShapeProcessor, &ShapeProcessor::onLoadBegin>(this);
         }
 
         void addEntity(Plugin::Entity *entity)
@@ -566,7 +575,7 @@ namespace Gek
             });
         }
 
-        // Plugin::PopulationListener
+        // Plugin::Population Signals
         void onLoadBegin(const String &populationName)
         {
             loadPool.clear();
@@ -582,8 +591,9 @@ namespace Gek
             });
         }
 
-        void onLoadFailed(const String &populationName)
+        void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
         {
+            addEntity(entity);
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)

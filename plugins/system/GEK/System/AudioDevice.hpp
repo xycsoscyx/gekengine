@@ -3,7 +3,7 @@
 #include "GEK\Math\Float4.hpp"
 #include "GEK\Math\Float4x4.hpp"
 #include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Context\Context.hpp"
+#include "GEK\Utility\Context.hpp"
 
 namespace Gek
 {

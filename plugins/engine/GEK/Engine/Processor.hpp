@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Context\Context.hpp"
+#include "GEK\Utility\Context.hpp"
 
 namespace Gek
 {

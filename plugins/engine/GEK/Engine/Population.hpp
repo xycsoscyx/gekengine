@@ -1,9 +1,9 @@
 #pragma once
 
 #include "GEK\Utility\String.hpp"
-#include "GEK\Context\Context.hpp"
-#include "GEK\Context\Broadcaster.hpp"
+#include "GEK\Utility\Context.hpp"
 #include "GEK\Engine\Processor.hpp"
+#include <nano_signal_slot.hpp>
 #include <unordered_map>
 #include <functional>
 #include <typeindex>
@@ -16,21 +16,11 @@ namespace Gek
         GEK_PREDECLARE(Entity);
         GEK_PREDECLARE(Component);
 
-        GEK_INTERFACE(PopulationListener)
+        GEK_INTERFACE(Population)
         {
-            virtual void onLoadBegin(const String &populationName) { };
-            virtual void onLoadSucceeded(const String &populationName) { };
-            virtual void onLoadFailed(const String &populationName) { };
+            GEK_START_EXCEPTIONS();
+            GEK_ADD_EXCEPTION(EntityNameExists);
 
-            virtual void onEntityCreated(Plugin::Entity *entity, const wchar_t *name) { };
-            virtual void onEntityDestroyed(Plugin::Entity *entity) { };
-
-            virtual void onComponentAdded(Plugin::Entity *entity, const std::type_index &type) { };
-            virtual void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type) { };
-        };
-
-        GEK_INTERFACE(PopulationStep)
-        {
             enum class State : uint8_t
             {
                 Unknown = 0,
@@ -39,15 +29,16 @@ namespace Gek
                 Loading,
             };
 
-            virtual bool onUpdate(int32_t order, State state) = 0;
-        };
+            std::map<int32_t, Nano::Signal<void(State state)>> onUpdate;
+            Nano::Signal<void(const String &populationName)> onLoadBegin;
+            Nano::Signal<void(const String &populationName)> onLoadSucceeded;
+            Nano::Signal<void(const String &populationName)> onLoadFailed;
 
-        GEK_INTERFACE(Population)
-            : public Broadcaster<PopulationListener>
-            , public Sequencer<PopulationStep>
-        {
-            GEK_START_EXCEPTIONS();
-            GEK_ADD_EXCEPTION(EntityNameExists);
+            Nano::Signal<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntityCreated;
+            Nano::Signal<void(Plugin::Entity *entity)> onEntityDestroyed;
+
+            Nano::Signal<void(Plugin::Entity *entity, const std::type_index &type)> onComponentAdded;
+            Nano::Signal<void(Plugin::Entity *entity, const std::type_index &type)> onComponentRemoved;
 
             virtual float getWorldTime(void) const = 0;
             virtual float getFrameTime(void) const = 0;
@@ -62,12 +53,12 @@ namespace Gek
 
             virtual void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const = 0;
 
-            template<typename... ARGUMENTS>
+            template<typename... PARAMETERS>
             void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const
             {
                 listEntities([onEntity = move(onEntity)](Plugin::Entity *entity, const wchar_t *entityName) -> void
                 {
-                    if (entity->hasComponents<ARGUMENTS...>())
+                    if (entity->hasComponents<PARAMETERS...>())
                     {
                         onEntity(entity, entityName);
                     }

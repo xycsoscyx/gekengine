@@ -48,6 +48,9 @@
     <ClCompile Include="..\..\external\imgui\imgui.cpp">
       <Filter>ImGui\Base</Filter>
     </ClCompile>
+    <ClCompile Include="Context.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Utility\Timer.hpp">
@@ -91,6 +94,12 @@
     </ClInclude>
     <ClInclude Include="..\..\external\imgui\imgui.h">
       <Filter>ImGui\Base</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Utility\ContextUser.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Utility\Context.hpp">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

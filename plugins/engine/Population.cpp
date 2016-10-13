@@ -2,7 +2,7 @@
 #include "GEK\Utility\ThreadPool.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Population.hpp"
 #include "GEK\Engine\Processor.hpp"
@@ -130,7 +130,7 @@ namespace Gek
                 {
                     entityMap.clear();
                     entityQueue.clear();
-                    sendShout(&Plugin::PopulationListener::onLoadBegin, populationName);
+                    onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
                         const Xml::Node worldNode(Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world"));
@@ -186,11 +186,11 @@ namespace Gek
 
                     frameTime = 0.0f;
                     worldTime = 0.0f;
-                    sendShout(&Plugin::PopulationListener::onLoadSucceeded, populationName);
+                    onLoadSucceeded.emit(populationName);
                 }
                 catch (const std::exception &)
                 {
-                    sendShout(&Plugin::PopulationListener::onLoadFailed, populationName);
+                    onLoadFailed.emit(populationName);
                 };
 
                 return true;
@@ -292,7 +292,7 @@ namespace Gek
                     addComponent(entity.get(), componentData);
                 }
 
-                sendShout(&Plugin::PopulationListener::onEntityCreated, entity.get(), entityName);
+                onEntityCreated.emit(entity.get(), entityName);
                 entityQueue.push([this, entityName = String(entityName), entity](void) -> void
                 {
                     entityMap.insert(std::make_pair((entityName.empty() ? String::create(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity));
@@ -303,7 +303,7 @@ namespace Gek
 
             void killEntity(Plugin::Entity *entity)
             {
-                sendShout(&Plugin::PopulationListener::onEntityDestroyed, entity);
+                onEntityDestroyed.emit(entity);
                 entityQueue.push([this, entity](void) -> void
                 {
                     auto entitySearch = std::find_if(entityMap.begin(), entityMap.end(), [entity](const EntityMap::value_type &entitySearch) -> bool
@@ -350,14 +350,14 @@ namespace Gek
                 std::type_index componentIdentifier(typeid(nullptr));
                 if (addComponent(static_cast<Entity *>(entity), componentData, &componentIdentifier))
                 {
-                    sendShout(&Plugin::PopulationListener::onComponentAdded, static_cast<Plugin::Entity *>(entity), componentIdentifier);
+                    onComponentAdded.emit(static_cast<Plugin::Entity *>(entity), componentIdentifier);
                 }
             }
 
             void removeComponent(Plugin::Entity *entity, const std::type_index &type)
             {
                 GEK_REQUIRE(entity);
-                sendShout(&Plugin::PopulationListener::onComponentRemoved, entity, type);
+                onComponentRemoved.emit(entity, type);
                 static_cast<Entity *>(entity)->removeComponent(type);
             }
 

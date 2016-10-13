@@ -3,7 +3,7 @@
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
 

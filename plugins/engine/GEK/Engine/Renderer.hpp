@@ -1,7 +1,7 @@
 #pragma once
 
-#include "GEK\Context\Context.hpp"
-#include "GEK\Context\Broadcaster.hpp"
+#include "GEK\Utility\Context.hpp"
+#include "GEK\Utility\Broadcaster.hpp"
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Shapes\Frustum.hpp"

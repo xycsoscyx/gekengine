@@ -1,7 +1,7 @@
 ﻿#include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Resources.hpp"
@@ -183,7 +183,6 @@ namespace Gek
 	namespace Implementation
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
-            , public Plugin::PopulationListener
             , public Plugin::Renderer
         {
         public:
@@ -316,7 +315,7 @@ namespace Gek
                 , population(population)
                 , resources(resources)
             {
-                population->addListener(this);
+                population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
 
                 Video::SamplerStateInformation pointSamplerStateData;
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::AllPoint;
@@ -376,7 +375,14 @@ namespace Gek
 
             ~Renderer(void)
             {
-                population->removeListener(this);
+                population->onLoadBegin.disconnect<Renderer, &Renderer::onLoadBegin>(this);
+            }
+
+            // Plugin::Population Signals
+            void onLoadBegin(const String &populationName)
+            {
+                GEK_REQUIRE(resources);
+                resources->clearLocal();
             }
 
             // Renderer
@@ -610,21 +616,6 @@ namespace Gek
                     deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 1);
                     deviceContext->computePipeline()->setConstantBuffer(nullptr, 1);
                 }
-            }
-
-            // Plugin::PopulationListener
-            void onLoadBegin(const String &populationName)
-            {
-                GEK_REQUIRE(resources);
-                resources->clearLocal();
-            }
-
-            void onLoadSucceeded(const String &populationName)
-            {
-            }
-
-            void onLoadFailed(const String &populationName)
-            {
             }
         };
 

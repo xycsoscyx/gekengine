@@ -1,7 +1,7 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Float4x4.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"
@@ -114,8 +114,7 @@ namespace Gek
 		};
 
 		class PlayerBody
-			: public Plugin::CoreListener
-			, public Newton::Entity
+			: public Newton::Entity
 		{
 		public:
 			Plugin::Core *core;
@@ -256,10 +255,10 @@ namespace Gek
 				NewtonDestroyCollision(newtonCastingShape);
 				NewtonDestroyCollision(newtonSupportShape);
 				NewtonDestroyCollision(newtonUpperBodyShape);
-				core->removeListener(this);
+                core->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
 			}
 
-			// Plugin::CoreObserver
+			// Plugin::Core Signals
 			void onAction(const wchar_t *actionName, const Plugin::ActionParameter &parameter)
 			{
 				if (_wcsicmp(actionName, L"turn") == 0)
@@ -853,7 +852,7 @@ namespace Gek
 		Newton::EntityPtr createPlayerBody(Plugin::Core *core, NewtonWorld *newtonWorld, Plugin::Entity *entity)
 		{
 			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(core, newtonWorld, entity));
-			core->addListener(player.get());
+            core->onAction.connect<PlayerBody, &PlayerBody::onAction>(player.get());
 			return player;
 		}
 	}; // namespace Newton

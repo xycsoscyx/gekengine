@@ -1,5 +1,5 @@
 #include "GEK\Components\Transform.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Utility\String.hpp"
 #include <ImGuizmo.h>

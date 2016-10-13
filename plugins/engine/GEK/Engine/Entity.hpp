@@ -1,6 +1,6 @@
 #pragma once
 
-#include "GEK\Context\Context.hpp"
+#include "GEK\Utility\Context.hpp"
 #include "GEK\Engine\Component.hpp"
 #include <typeindex>
 #include <algorithm>

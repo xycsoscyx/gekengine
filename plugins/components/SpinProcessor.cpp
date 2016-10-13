@@ -1,4 +1,4 @@
-﻿#include "GEK\Context\ContextUser.hpp"
+﻿#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Processor.hpp"
 #include "GEK\Engine\Population.hpp"
@@ -74,7 +74,7 @@ namespace Gek
         {
             GEK_REQUIRE(population);
 
-            population->addStep(this, 0);
+            population->addStep(this, 50);
         }
 
         ~SpinProcessor(void)

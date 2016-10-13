@@ -1,4 +1,4 @@
-﻿#include "GEK\Context\ContextUser.hpp"
+﻿#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Processor.hpp"
 #include "GEK\Engine\Population.hpp"
@@ -80,7 +80,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera>
-        , public Plugin::PopulationListener
         , public Plugin::PopulationStep
         , public Plugin::Processor
     {
@@ -106,14 +105,24 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->addListener(this);
+            population->onLoadBegin.disconnect<CameraProcessor, &CameraProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.disconnect<CameraProcessor, &CameraProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.disconnect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.disconnect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
             population->addStep(this, 90);
         }
 
         ~CameraProcessor(void)
         {
             population->removeStep(this);
-            population->removeListener(this);
+            population->onComponentRemoved.disconnect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
+            population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
+            population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
+            population->onEntityCreated.disconnect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
+            population->onLoadSucceeded.disconnect<CameraProcessor, &CameraProcessor::onLoadSucceeded>(this);
+            population->onLoadBegin.disconnect<CameraProcessor, &CameraProcessor::onLoadBegin>(this);
         }
 
         void addEntity(Plugin::Entity *entity)
@@ -130,7 +139,7 @@ namespace Gek
             });
         }
 
-        // Plugin::PopulationListener
+        // Plugin::Population Signals
         void onLoadBegin(const String &populationName)
         {
             clear();
@@ -144,8 +153,9 @@ namespace Gek
             });
         }
 
-        void onLoadFailed(const String &populationName)
+        void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
         {
+            addEntity(entity);
         }
 
         void onEntityDestroyed(Plugin::Entity *entity)

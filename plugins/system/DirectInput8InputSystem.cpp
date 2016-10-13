@@ -1,5 +1,5 @@
 #include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Context\ContextUser.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\InputSystem.hpp"
 #include <atlbase.h>
 

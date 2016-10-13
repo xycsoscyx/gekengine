@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Context\Context.hpp"
+#include "GEK\Utility\Context.hpp"
 #include <unordered_map>
 
 #define GEK_CONTEXT_USER(CLASS, ...) struct CLASS : public ContextRegistration<CLASS, __VA_ARGS__>
