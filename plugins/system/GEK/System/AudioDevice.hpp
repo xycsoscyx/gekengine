@@ -1,3 +1,10 @@
+/// @file
+/// @author Todd Zupan <toddzupan@gmail.com>
+/// @version $Revision$
+/// @section LICENSE
+/// https://en.wikipedia.org/wiki/MIT_License
+/// @section DESCRIPTION
+/// Last Changed: $Date$
 #pragma once
 
 #include "GEK\Math\Float4.hpp"

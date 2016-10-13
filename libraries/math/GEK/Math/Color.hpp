@@ -2,8 +2,8 @@
 /// @author Todd Zupan <toddzupan@gmail.com>
 /// @version $Revision$
 /// @section LICENSE
+/// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Class to store RGBA floating point color values.
 /// Last Changed: $Date$
 #pragma once
 
