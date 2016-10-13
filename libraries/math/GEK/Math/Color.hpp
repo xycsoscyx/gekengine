@@ -1,3 +1,10 @@
+/// @file
+/// @author Todd Zupan <toddzupan@gmail.com>
+/// @version $Revision$
+/// @section LICENSE
+/// @section DESCRIPTION
+/// Class to store RGBA floating point color values.
+/// Last Changed: $Date$
 #pragma once
 
 #include <xmmintrin.h>
