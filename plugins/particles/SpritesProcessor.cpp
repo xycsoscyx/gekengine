@@ -69,8 +69,6 @@ namespace Gek
         };
 
         GEK_CONTEXT_USER(EmitterProcessor, Plugin::Core *)
-            , public Plugin::PopulationStep
-            , public Plugin::RendererListener
             , public Plugin::Processor
         {
         public:
@@ -145,10 +143,8 @@ namespace Gek
                 population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
                 population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
                 population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
-                population->onComponentAdded.disconnect<EmitterProcessor, &EmitterProcessor::onComponentAdded>(this);
-                population->onComponentRemoved.disconnect<EmitterProcessor, &EmitterProcessor::onComponentRemoved>(this);
-                population->addStep(this, 60);
-                renderer->addListener(this);
+                population->onUpdate[60].connect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
+                renderer->onRenderScene.connect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
 
                 visual = resources->loadVisual(L"Sprites");
                 spritesBuffer = renderer->getDevice()->createBuffer(sizeof(Sprite), SpritesBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
@@ -156,17 +152,15 @@ namespace Gek
 
             ~EmitterProcessor(void)
             {
-                renderer->removeListener(this);
-                population->removeStep(this);
-                population->onComponentRemoved.disconnect<EmitterProcessor, &EmitterProcessor::onComponentRemoved>(this);
-                population->onComponentAdded.disconnect<EmitterProcessor, &EmitterProcessor::onComponentAdded>(this);
+                renderer->onRenderScene.disconnect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
+                population->onUpdate[60].disconnect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
                 population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
                 population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
                 population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
                 population->onLoadBegin.disconnect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
             }
 
-            // Plugin::Population Signals
+            // Plugin::Population Slots
             void onLoadBegin(const String &populationName)
             {
                 entityEmitterMap.clear();
@@ -338,26 +332,22 @@ namespace Gek
                 }
             }
 
-            // Plugin::PopulationStep
-            bool onUpdate(int32_t order, State state)
+            void onUpdate(void)
             {
-                if (state == State::Active)
-                {
-                    const float frameTime = population->getFrameTime() * 0.1f;
-                    concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
-                    {
-                        const Plugin::Entity *entity = entityEmitterPair.first;
-                        concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
-                        {
-                            emitter.update(entity, emitter, frameTime);
-                        });
-                    });
-                }
+                GEK_REQUIRE(population);
 
-                return true;
+                const float frameTime = population->getFrameTime() * 0.1f;
+                concurrency::parallel_for_each(entityEmitterMap.begin(), entityEmitterMap.end(), [&](auto &entityEmitterPair) -> void
+                {
+                    const Plugin::Entity *entity = entityEmitterPair.first;
+                    concurrency::parallel_for_each(entityEmitterPair.second.begin(), entityEmitterPair.second.end(), [&](auto &emitter) -> void
+                    {
+                        emitter.update(entity, emitter, frameTime);
+                    });
+                });
             }
 
-            // Plugin::RendererListener
+            // Plugin::Renderer Slots
             static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const VisibleMap::iterator visibleBegin, const VisibleMap::iterator visibleEnd, Video::Buffer *spritesBuffer)
             {
                 GEK_REQUIRE(deviceContext);

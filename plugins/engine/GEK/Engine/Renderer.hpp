@@ -1,10 +1,10 @@
 #pragma once
 
 #include "GEK\Utility\Context.hpp"
-#include "GEK\Utility\Broadcaster.hpp"
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Shapes\Frustum.hpp"
+#include <nano_signal_slot.hpp>
 
 namespace Gek
 {
@@ -27,21 +27,16 @@ namespace Gek
     {
         GEK_PREDECLARE(Entity);
 
-        GEK_INTERFACE(RendererListener)
-        {
-            virtual void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) { };
-            virtual void onRenderDisplay(void) { };
-        };
-
         GEK_INTERFACE(Renderer)
-            : public Broadcaster<RendererListener>
         {
             GEK_START_EXCEPTIONS();
 
-        virtual Video::Device * getDevice(void) const = 0;
+            Nano::Signal<void(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)> onRenderScene;
 
-        virtual void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
-        virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
+            virtual Video::Device * getDevice(void) const = 0;
+
+            virtual void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
+            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

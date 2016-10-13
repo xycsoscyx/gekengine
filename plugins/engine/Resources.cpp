@@ -317,7 +317,7 @@ namespace Gek
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
-            // Plugin::Core Signals
+            // Plugin::Core Slots
             void onResize(void)
             {
                 programCache.clear();

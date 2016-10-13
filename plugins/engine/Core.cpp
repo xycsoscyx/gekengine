@@ -52,8 +52,6 @@ namespace Gek
         GEK_CONTEXT_USER(Core, HWND)
             , public Application
             , public Plugin::Core
-            , public Plugin::PopulationStep
-            , public Plugin::RendererListener
             , public CoreConfiguration
         {
         public:
@@ -116,9 +114,6 @@ namespace Gek
 
             bool showOptionsMenu = false;
             char loadLevelName[256] = "sponza";
-
-            static const int32_t UpdateActions = -1000;
-            static const int32_t PresentScreen = +1000;
 
         public:
             Core(Context *context, HWND window)
@@ -196,8 +191,8 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
-                population->addStep(this, UpdateActions, PresentScreen);
-                renderer->addListener(this);
+                population->onUpdate[-1000].connect<Core, &Core::onUpdateActions>(this);
+                population->onUpdate[+1000].connect<Core, &Core::onUpdateScreen>(this);
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
@@ -367,12 +362,8 @@ namespace Gek
 
                 if (population)
                 {
-                    population->removeStep(this);
-                }
-
-                if (renderer)
-                {
-                    renderer->removeListener(this);
+                    population->onUpdate[+1000].disconnect<Core, &Core::onUpdateScreen>(this);
+                    population->onUpdate[-1000].disconnect<Core, &Core::onUpdateActions>(this);
                 }
 
                 processorList.clear();
@@ -449,6 +440,11 @@ namespace Gek
             Plugin::Renderer * getRenderer(void) const
             {
                 return renderer.get();
+            }
+
+            ImGuiContext *getDefaultUIContext(void) const
+            {
+                return ImGui::GetCurrentContext();
             }
 
             // Application
@@ -710,37 +706,26 @@ namespace Gek
                 return engineRunning;
             }
 
-            // Plugin::PopulationStep
-            bool onUpdate(int32_t order, State state)
+            // Plugin::Population Slots
+            void onUpdateActions(void)
             {
-                if (order == UpdateActions)
-                {
-                    device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), Math::Color::Black);
-                    if (state == State::Active)
-                    {
-                        Action action;
-                        while (actionQueue.try_pop(action))
-                        {
-                            onAction.emit(action.name, action.parameter);
-                        };
-                    }
-                    else
-                    {
-                        actionQueue.clear();
-                    }
-                }
-                else if (order == PresentScreen)
-                {
-                    ImGui::Render();
-                    device->present(false);
-                }
+                GEK_REQUIRE(device);
 
-                return true;
+                device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), Math::Color::Black);
+
+                Action action;
+                while (actionQueue.try_pop(action))
+                {
+                    onAction.emit(action.name, action.parameter);
+                };
             }
 
-            ImGuiContext *getDefaultUIContext(void) const
+            void onUpdateScreen(void)
             {
-                return ImGui::GetCurrentContext();
+                GEK_REQUIRE(device);
+
+                ImGui::Render();
+                device->present(false);
             }
 
             // ImGui

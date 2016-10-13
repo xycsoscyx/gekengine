@@ -378,7 +378,7 @@ namespace Gek
                 population->onLoadBegin.disconnect<Renderer, &Renderer::onLoadBegin>(this);
             }
 
-            // Plugin::Population Signals
+            // Plugin::Population Slots
             void onLoadBegin(const String &populationName)
             {
                 GEK_REQUIRE(resources);
@@ -428,7 +428,7 @@ namespace Gek
                 cameraConstantData.projectionMatrix = projectionMatrix;
 
                 drawCallList.clear();
-                sendShout(&Plugin::RendererListener::onRenderScene, cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
+                onRenderScene.emit(cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
                 if (!drawCallList.empty())
                 {
                     Video::Device::Context *deviceContext = device->getDefaultContext();

@@ -8,6 +8,7 @@
 #include <functional>
 #include <typeindex>
 #include <vector>
+#include <map>
 
 namespace Gek
 {
@@ -21,15 +22,9 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(EntityNameExists);
 
-            enum class State : uint8_t
-            {
-                Unknown = 0,
-                Active,
-                Idle,
-                Loading,
-            };
-
-            std::map<int32_t, Nano::Signal<void(State state)>> onUpdate;
+            std::map<int32_t, Nano::Signal<void(void)>> onUpdate;
+            std::map<int32_t, Nano::Signal<void(void)>> onLoading;
+            std::map<int32_t, Nano::Signal<void(void)>> onIdle;
             Nano::Signal<void(const String &populationName)> onLoadBegin;
             Nano::Signal<void(const String &populationName)> onLoadSucceeded;
             Nano::Signal<void(const String &populationName)> onLoadFailed;

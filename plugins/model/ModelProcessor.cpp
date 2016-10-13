@@ -83,7 +83,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
-        , public Plugin::RendererListener
         , public Plugin::Processor
     {
         GEK_START_EXCEPTIONS();
@@ -201,7 +200,7 @@ namespace Gek
             population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
             population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
-            renderer->addListener(this);
+            renderer->onRenderScene.connect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
 
             visual = resources->loadVisual(L"model");
 
@@ -210,7 +209,7 @@ namespace Gek
 
         ~ModelProcessor(void)
         {
-            renderer->removeListener(this);
+            renderer->onRenderScene.disconnect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
             population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
@@ -292,7 +291,7 @@ namespace Gek
             });
         }
 
-        // Plugin::Population Signals
+        // Plugin::Population Slots
         void onLoadBegin(const String &populationName)
         {
             loadPool.clear();
@@ -328,7 +327,7 @@ namespace Gek
             removeEntity(entity);
         }
 
-        // Plugin::RendererListener
+        // Plugin::Renderer Slots
         static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;
