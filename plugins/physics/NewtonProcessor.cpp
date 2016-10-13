@@ -107,9 +107,9 @@ namespace Gek
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
 
-                population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
-                population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
-                population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
+                population->onLoadBegin.connect<Processor, &Processor::onLoadBegin>(this);
+                population->onLoadSucceeded.connect<Processor, &Processor::onLoadSucceeded>(this);
+                population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onUpdate[50].connect<Processor, &Processor::onUpdate>(this);
             }
 

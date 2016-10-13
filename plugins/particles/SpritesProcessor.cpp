@@ -139,10 +139,10 @@ namespace Gek
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(renderer);
 
-                population->onLoadBegin.disconnect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
-                population->onLoadSucceeded.disconnect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
-                population->onEntityCreated.disconnect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
-                population->onEntityDestroyed.disconnect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
+                population->onLoadBegin.connect<EmitterProcessor, &EmitterProcessor::onLoadBegin>(this);
+                population->onLoadSucceeded.connect<EmitterProcessor, &EmitterProcessor::onLoadSucceeded>(this);
+                population->onEntityCreated.connect<EmitterProcessor, &EmitterProcessor::onEntityCreated>(this);
+                population->onEntityDestroyed.connect<EmitterProcessor, &EmitterProcessor::onEntityDestroyed>(this);
                 population->onUpdate[60].connect<EmitterProcessor, &EmitterProcessor::onUpdate>(this);
                 renderer->onRenderScene.connect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
 
