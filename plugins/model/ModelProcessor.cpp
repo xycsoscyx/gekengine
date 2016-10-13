@@ -194,12 +194,12 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
-            population->onLoadSucceeded.disconnect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
-            population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
+            population->onLoadBegin.connect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.connect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.connect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.connect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
             renderer->onRenderScene.connect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
 
             visual = resources->loadVisual(L"model");

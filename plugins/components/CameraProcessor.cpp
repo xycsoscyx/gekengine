@@ -104,12 +104,12 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->onLoadBegin.disconnect<CameraProcessor, &CameraProcessor::onLoadBegin>(this);
-            population->onLoadSucceeded.disconnect<CameraProcessor, &CameraProcessor::onLoadSucceeded>(this);
-            population->onEntityCreated.disconnect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.disconnect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
+            population->onLoadBegin.connect<CameraProcessor, &CameraProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.connect<CameraProcessor, &CameraProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.connect<CameraProcessor, &CameraProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.connect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.connect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.connect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
             population->onUpdate[90].connect<CameraProcessor, &CameraProcessor::onUpdate>(this);
         }
 

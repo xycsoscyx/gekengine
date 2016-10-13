@@ -490,12 +490,12 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->onLoadBegin.disconnect<ShapeProcessor, &ShapeProcessor::onLoadBegin>(this);
-            population->onLoadSucceeded.disconnect<ShapeProcessor, &ShapeProcessor::onLoadSucceeded>(this);
-            population->onEntityCreated.disconnect<ShapeProcessor, &ShapeProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.disconnect<ShapeProcessor, &ShapeProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.disconnect<ShapeProcessor, &ShapeProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.disconnect<ShapeProcessor, &ShapeProcessor::onComponentRemoved>(this);
+            population->onLoadBegin.connect<ShapeProcessor, &ShapeProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.connect<ShapeProcessor, &ShapeProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.connect<ShapeProcessor, &ShapeProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.connect<ShapeProcessor, &ShapeProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.connect<ShapeProcessor, &ShapeProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.connect<ShapeProcessor, &ShapeProcessor::onComponentRemoved>(this);
             renderer->onRenderScene.connect<ShapeProcessor, &ShapeProcessor::onRenderScene>(this);
 
             visual = resources->loadVisual(L"shape");
