@@ -60,6 +60,7 @@ namespace Gek
 						else
 						{
 							auto lastError = GetLastError();
+                            OutputDebugString(String::create(L"Unable to load library: %v (%v)\r\n", fileName, lastError));
 							throw InvalidPlugin();
 						}
 					}
