@@ -188,7 +188,7 @@ namespace Gek
 
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
-                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this, device.get(), getPopulation(), resources.get());
+                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
@@ -709,7 +709,7 @@ namespace Gek
             }
 
             // Plugin::PopulationStep
-            void onUpdate(uint32_t order, State state)
+            bool onUpdate(int32_t order, State state)
             {
                 if (order == 0)
                 {
@@ -732,6 +732,8 @@ namespace Gek
                     ImGui::Render();
                     device->present(false);
                 }
+
+                return true;
             }
 
             ImGuiContext *getDefaultUIContext(void) const

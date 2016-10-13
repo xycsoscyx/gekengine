@@ -81,11 +81,14 @@ namespace Gek
         }
 
         template <typename... PARAMETERS, typename... ARGUMENTS>
-        void sendUpdate(void(STEP::*function)(uint32_t order, PARAMETERS...), ARGUMENTS&&... arguments) const
+        void sendUpdate(bool(STEP::*function)(int32_t order, PARAMETERS...), ARGUMENTS&&... arguments) const
         {
             for (auto &stepSearch : stepMap)
             {
-                (stepSearch.second->*function)(stepSearch.first, std::forward<ARGUMENTS>(arguments)...);
+                if (!(stepSearch.second->*function)(stepSearch.first, std::forward<ARGUMENTS>(arguments)...))
+                {
+                    break;
+                }
             }
         }
     };

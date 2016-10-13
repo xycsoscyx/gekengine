@@ -65,6 +65,9 @@ namespace Gek
         private:
             Plugin::Core *core;
             Edit::Population *population;
+            Plugin::Renderer *renderer;
+
+
             Plugin::Entity *camera = nullptr;
 
             uint32_t selectedEntity = 0;
@@ -75,6 +78,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
                 , population(dynamic_cast<Edit::Population *>(core->getPopulation()))
+                , renderer(core->getRenderer())
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(core);
@@ -133,9 +137,11 @@ namespace Gek
 
             void onLoadSucceeded(const String &populationName)
             {
-                std::vector<Xml::Leaf> editorComponentList(2);
+                std::vector<Xml::Leaf> editorComponentList(3);
                 editorComponentList[0].type = L"transform";
                 editorComponentList[1].type = L"editor_camera";
+                editorComponentList[2].type = L"filter";
+                editorComponentList[2].text = L"antialias, tonemap";
                 camera = population->createEntity(L"editor_camera", editorComponentList);
             }
 
@@ -144,8 +150,13 @@ namespace Gek
             }
 
             // Plugin::PopulationStep
-            void onUpdate(uint32_t order, State state)
+            bool onUpdate(int32_t order, State state)
             {
+                const auto backBuffer = renderer->getDevice()->getBackBuffer();
+                const float width = float(backBuffer->getWidth());
+                const float height = float(backBuffer->getHeight());
+                auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+
                 auto changeConfiguration = core->changeConfiguration();
                 Xml::Node &configuration = *changeConfiguration;
                 bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
@@ -164,7 +175,7 @@ namespace Gek
                     transformComponent.position += (cameraMatrix.nz * forwardSpeed * frameTime);
                     transformComponent.position += (cameraMatrix.nx * lateralSpeed * frameTime);
                 }
-                
+
                 bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
                 if (showSelectionMenu)
                 {
@@ -334,11 +345,6 @@ namespace Gek
                                             {
                                                 auto cameraMatrix(camera->getComponent<Components::Transform>().getMatrix());
                                                 auto viewMatrix(cameraMatrix.getInverse());
-
-                                                const auto backBuffer = core->getRenderer()->getDevice()->getBackBuffer();
-                                                const float width = float(backBuffer->getWidth());
-                                                const float height = float(backBuffer->getHeight());
-                                                auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
                                                 component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
                                             }
                                             else
@@ -356,6 +362,14 @@ namespace Gek
                 }
 
                 configuration.getChild(L"editor").attributes[L"show_selector"] = showSelectionMenu;
+
+                if (editingEnabled && camera)
+                {
+                    renderer->render(camera, projectionMatrix, 1.0f, 200.0f, ResourceHandle());
+                    return false;
+                }
+
+                return true;
             }
         };
 

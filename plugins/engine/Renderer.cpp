@@ -182,7 +182,7 @@ namespace Gek
 	
 	namespace Implementation
     {
-        GEK_CONTEXT_USER(Renderer, Plugin::Core *, Video::Device *, Plugin::Population *, Engine::Resources *)
+        GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::PopulationListener
             , public Plugin::Renderer
         {
@@ -294,7 +294,6 @@ namespace Gek
             };
 
         private:
-            Plugin::Core *core;
             Video::Device *device;
             Plugin::Population *population;
             Engine::Resources *resources;
@@ -311,9 +310,8 @@ namespace Gek
             DrawCallList drawCallList;
 
         public:
-            Renderer(Context *context, Plugin::Core *core, Video::Device *device, Plugin::Population *population, Engine::Resources *resources)
+            Renderer(Context *context, Video::Device *device, Plugin::Population *population, Engine::Resources *resources)
                 : ContextRegistration(context)
-                , core(core)
                 , device(device)
                 , population(population)
                 , resources(resources)
@@ -404,8 +402,6 @@ namespace Gek
                 GEK_REQUIRE(device);
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(cameraEntity);
-
-                bool editingEnabled = core->getConfiguration().getChild(L"editor").getAttribute(L"enabled", L"false");
 
                 const auto &cameraTransform = cameraEntity->getComponent<Components::Transform>();
                 const Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
