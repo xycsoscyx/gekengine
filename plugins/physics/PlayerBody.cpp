@@ -258,7 +258,7 @@ namespace Gek
                 core->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
 			}
 
-			// Plugin::Core Signals
+			// Plugin::Core Slots
 			void onAction(const wchar_t *actionName, const Plugin::ActionParameter &parameter)
 			{
 				if (_wcsicmp(actionName, L"turn") == 0)

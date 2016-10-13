@@ -61,7 +61,6 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
-        , public Plugin::PopulationStep
         , public Plugin::Processor
     {
     private:
@@ -74,33 +73,28 @@ namespace Gek
         {
             GEK_REQUIRE(population);
 
-            population->addStep(this, 50);
+            population->onUpdate[50].connect<SpinProcessor, &SpinProcessor::onUpdate>(this);
         }
 
         ~SpinProcessor(void)
         {
-            population->removeStep(this);
+            population->onUpdate[50].disconnect<SpinProcessor, &SpinProcessor::onUpdate>(this);
         }
 
-        // Plugin::PopulationStep
-        bool onUpdate(int32_t order, State state)
+        // Plugin::Population Slots
+        void onUpdate(void)
         {
             GEK_REQUIRE(population);
 
-            if (state == State::Active)
+            population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *) -> void
             {
-                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *) -> void
-                {
-                    auto &transform = entity->getComponent<Components::Transform>();
-                    auto &spin = entity->getComponent<Components::Spin>();
-                    Math::Quaternion rotation(Math::Quaternion::createEulerRotation((population->getFrameTime() * spin.torque.x),
-                                                                                    (population->getFrameTime() * spin.torque.y),
-                                                                                    (population->getFrameTime() * spin.torque.z)));
-                    transform.rotation *= rotation;
-                });
-            }
-
-            return true;
+                auto &transform = entity->getComponent<Components::Transform>();
+                auto &spin = entity->getComponent<Components::Spin>();
+                Math::Quaternion rotation(Math::Quaternion::createEulerRotation((population->getFrameTime() * spin.torque.x),
+                                                                                (population->getFrameTime() * spin.torque.y),
+                                                                                (population->getFrameTime() * spin.torque.z)));
+                transform.rotation *= rotation;
+            });
         }
     };
 

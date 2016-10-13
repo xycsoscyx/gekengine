@@ -1,9 +1,9 @@
 #pragma once
 
 #include "GEK\Math\Float3.hpp"
-#include "GEK\Utility\Broadcaster.hpp"
 #include "GEK\Engine\Component.hpp"
 #include "GEK\Engine\Entity.hpp"
+#include <nano_signal_slot.hpp>
 #include <Newton.h>
 
 namespace Gek
@@ -59,13 +59,7 @@ namespace Gek
             virtual void onSetTransform(const float* const matrixData, int threadHandle) { };
         };
 
-        GEK_INTERFACE(WorldListener)
-        {
-            virtual void onCollision(Plugin::Entity *entity0, Plugin::Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal) { };
-        };
-
         GEK_INTERFACE(World)
-            : public Broadcaster<WorldListener>
         {
             struct Surface
             {
@@ -84,6 +78,8 @@ namespace Gek
                 {
                 }
             };
+            
+            Nano::Signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal)> onCollision;
 
             virtual Math::Float3 getGravity(const Math::Float3 &position) = 0;
 

@@ -80,7 +80,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera>
-        , public Plugin::PopulationStep
         , public Plugin::Processor
     {
     public:
@@ -111,12 +110,12 @@ namespace Gek
             population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
             population->onComponentRemoved.disconnect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
-            population->addStep(this, 90);
+            population->onUpdate[90].connect<CameraProcessor, &CameraProcessor::onUpdate>(this);
         }
 
         ~CameraProcessor(void)
         {
-            population->removeStep(this);
+            population->onUpdate[90].disconnect<CameraProcessor, &CameraProcessor::onUpdate>(this);
             population->onComponentRemoved.disconnect<CameraProcessor, &CameraProcessor::onComponentRemoved>(this);
             population->onComponentAdded.disconnect<CameraProcessor, &CameraProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<CameraProcessor, &CameraProcessor::onEntityDestroyed>(this);
@@ -139,7 +138,7 @@ namespace Gek
             });
         }
 
-        // Plugin::Population Signals
+        // Plugin::Population Slots
         void onLoadBegin(const String &populationName)
         {
             clear();
@@ -173,25 +172,20 @@ namespace Gek
             removeEntity(entity);
         }
 
-        // Plugin::PopulationStep
-        bool onUpdate(int32_t order, State state)
+        // Plugin::Population Slots
+        void onUpdate(void)
         {
             GEK_REQUIRE(renderer);
 
-            if (state == State::Active)
+            list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent) -> void
             {
-                list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent) -> void
-                {
-					const auto backBuffer = renderer->getDevice()->getBackBuffer();
-					const float width = float(backBuffer->getWidth());
-					const float height = float(backBuffer->getHeight());
-                    Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
+				const auto backBuffer = renderer->getDevice()->getBackBuffer();
+				const float width = float(backBuffer->getWidth());
+				const float height = float(backBuffer->getHeight());
+                Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                    renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
-                });
-            }
-
-            return true;
+                renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
+            });
         }
     };
 

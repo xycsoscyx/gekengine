@@ -435,7 +435,6 @@ namespace Gek
 
     GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)
         , public Plugin::ProcessorMixin<ShapeProcessor, Components::Shape, Components::Transform>
-        , public Plugin::RendererListener
         , public Plugin::Processor
     {
     public:
@@ -497,7 +496,7 @@ namespace Gek
             population->onEntityDestroyed.disconnect<ShapeProcessor, &ShapeProcessor::onEntityDestroyed>(this);
             population->onComponentAdded.disconnect<ShapeProcessor, &ShapeProcessor::onComponentAdded>(this);
             population->onComponentRemoved.disconnect<ShapeProcessor, &ShapeProcessor::onComponentRemoved>(this);
-            renderer->addListener(this);
+            renderer->onRenderScene.connect<ShapeProcessor, &ShapeProcessor::onRenderScene>(this);
 
             visual = resources->loadVisual(L"shape");
 
@@ -506,7 +505,7 @@ namespace Gek
 
         ~ShapeProcessor(void)
         {
-            renderer->removeListener(this);
+            renderer->onRenderScene.disconnect<ShapeProcessor, &ShapeProcessor::onRenderScene>(this);
             population->onComponentRemoved.disconnect<ShapeProcessor, &ShapeProcessor::onComponentRemoved>(this);
             population->onComponentAdded.disconnect<ShapeProcessor, &ShapeProcessor::onComponentAdded>(this);
             population->onEntityDestroyed.disconnect<ShapeProcessor, &ShapeProcessor::onEntityDestroyed>(this);
@@ -575,7 +574,7 @@ namespace Gek
             });
         }
 
-        // Plugin::Population Signals
+        // Plugin::Population Slots
         void onLoadBegin(const String &populationName)
         {
             loadPool.clear();
@@ -611,7 +610,7 @@ namespace Gek
             removeEntity(entity);
         }
 
-        // Plugin::RendererListener
+        // Plugin::Renderer Slots
         static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Shape *shape, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;

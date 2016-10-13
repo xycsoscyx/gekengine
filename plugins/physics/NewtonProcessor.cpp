@@ -28,7 +28,6 @@ namespace Gek
         extern EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
 
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
-            , public Plugin::PopulationStep
             , public Plugin::Processor
             , public Newton::World
         {
@@ -111,12 +110,12 @@ namespace Gek
                 population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
                 population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
-                population->addStep(this, 50);
+                population->onUpdate[50].connect<Processor, &Processor::onUpdate>(this);
             }
 
             ~Processor(void)
             {
-                population->removeStep(this);
+                population->onUpdate[50].disconnect<Processor, &Processor::onUpdate>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
                 population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
@@ -146,7 +145,7 @@ namespace Gek
                 GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
             }
 
-            // Plugin::Population Signals
+            // Plugin::Population Slots
             void onLoadBegin(const String &populationName)
             {
                 NewtonWaitForUpdateToFinish(newtonWorld);
@@ -248,18 +247,12 @@ namespace Gek
                 }
             }
 
-            // Plugin::PopulationStep
-            bool onUpdate(int32_t order, State state)
+            void onUpdate(void)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(newtonWorld);
 
-                if (state == State::Active)
-                {
-                    NewtonUpdateAsync(newtonWorld, population->getFrameTime());
-                }
-
-                return true;
+                NewtonUpdateAsync(newtonWorld, population->getFrameTime());
             }
 
             // Newton::World
@@ -385,7 +378,7 @@ namespace Gek
                     const Surface &surface0 = processor->getSurface(surfaceIndex0);
                     const Surface &surface1 = processor->getSurface(surfaceIndex1);
 
-                    processor->sendShout(&Newton::WorldListener::onCollision, entity0, entity1, position, normal);
+                    processor->onCollision.emit(entity0, entity1, position, normal);
                     if (surface0.ghost || surface1.ghost)
                     {
                         NewtonContactJointRemoveContact(contactJoint, newtonContact);

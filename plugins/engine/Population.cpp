@@ -231,10 +231,12 @@ namespace Gek
 
             void update(bool isBackgroundProcess, float frameTime)
             {
-                Plugin::PopulationStep::State state = Plugin::PopulationStep::State::Unknown;
                 if (loaded.valid() && loaded.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
                 {
-                    state = Plugin::PopulationStep::State::Loading;
+                    for (auto &slot : onLoading)
+                    {
+                        slot.second.emit();
+                    }
                 }
                 else
                 {
@@ -251,21 +253,28 @@ namespace Gek
                             return loadLevel(populationName);
                         });
 
-                        state = Plugin::PopulationStep::State::Loading;
+                        for (auto &slot : onLoading)
+                        {
+                            slot.second.emit();
+                        }
                     }
                     else if (isBackgroundProcess)
                     {
-                        state = Plugin::PopulationStep::State::Idle;
+                        for (auto &slot : onIdle)
+                        {
+                            slot.second.emit();
+                        }
                     }
                     else
                     {
-                        state = Plugin::PopulationStep::State::Active;
                         this->frameTime = frameTime;
                         this->worldTime += frameTime;
+                        for (auto &slot : onUpdate)
+                        {
+                            slot.second.emit();
+                        }
                     }
                 }
-               
-                Sequencer::sendUpdate(&Plugin::PopulationStep::onUpdate, state);
 
                 std::function<void(void)> entityAction;
                 while (entityQueue.try_pop(entityAction))
