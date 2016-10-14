@@ -122,7 +122,6 @@ namespace Gek
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
             virtual ResourceHandle getResourceHandle(const wchar_t *resourceName) const = 0;
 
-            virtual Material * const getMaterial(MaterialHandle handle) const = 0;
             virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Filter * const getFilter(const wchar_t *filterName) = 0;
@@ -143,6 +142,7 @@ namespace Gek
             virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
+            virtual void setMaterial(Video::Device::Context *videoContext, void *pass, MaterialHandle handle) = 0;
             virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) const = 0;
             virtual void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
             virtual void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
@@ -153,6 +153,8 @@ namespace Gek
             virtual void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer) = 0;
 
             virtual void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer) = 0;
+
+            virtual void startDrawBlock(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek
