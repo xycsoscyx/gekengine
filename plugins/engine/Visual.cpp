@@ -33,17 +33,17 @@ namespace Gek
             , public Plugin::Visual
         {
         private:
-            Video::Device *device;
+            Video::Device *videoDevice;
 			Video::ObjectPtr inputLayout;
 			Video::ObjectPtr vertexProgram;
 			Video::ObjectPtr geometryProgram;
 
         public:
-            Visual(Context *context, Video::Device *device, Engine::Resources *resources, String visualName)
+            Visual(Context *context, Video::Device *videoDevice, Engine::Resources *resources, String visualName)
                 : ContextRegistration(context)
-                , device(device)
+                , videoDevice(videoDevice)
             {
-                GEK_REQUIRE(device);
+                GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
 
                 const Xml::Node visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual"));
@@ -99,7 +99,7 @@ namespace Gek
 							element.sourceIndex = elementNode.getAttribute(L"sourceIndex");
 
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
-							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(element.semantic), semanticIndex);
+							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
 							elementList.push_back(element);
 						}
 					}
@@ -121,7 +121,7 @@ namespace Gek
 
 						auto semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
+						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 					}
 				}
 
@@ -150,11 +150,11 @@ namespace Gek
                     String entryFunction(vertexNode.getAttribute(L"entry"));
                     String name(FileSystem::getFileName(visualName, vertexNode.text).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::ProgramType::Vertex, name, entryFunction, engineData);
-					vertexProgram = device->createProgram(Video::ProgramType::Vertex, compiledProgram.data(), compiledProgram.size());
+					vertexProgram = videoDevice->createProgram(Video::ProgramType::Vertex, compiledProgram.data(), compiledProgram.size());
                     vertexProgram->setName(String::create(L"%v:%v", name, entryFunction));
                     if (!elementList.empty())
 					{
-						inputLayout = device->createInputLayout(elementList, compiledProgram.data(), compiledProgram.size());
+						inputLayout = videoDevice->createInputLayout(elementList, compiledProgram.data(), compiledProgram.size());
 					}
 				}
                 else
@@ -168,17 +168,17 @@ namespace Gek
                     String entryFunction(geometryNode.getAttribute(L"entry"));
                     String name(FileSystem::getFileName(visualName, geometryNode.text).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::ProgramType::Geometry, name, entryFunction);
-                    geometryProgram = device->createProgram(Video::ProgramType::Geometry, compiledProgram.data(), compiledProgram.size());
+                    geometryProgram = videoDevice->createProgram(Video::ProgramType::Geometry, compiledProgram.data(), compiledProgram.size());
                     geometryProgram->setName(String::create(L"%v:%v", name, entryFunction));
                 }
 			}
 
             // Plugin
-            void enable(Video::Device::Context *deviceContext)
+            void enable(Video::Device::Context *videoContext)
             {
-				deviceContext->setInputLayout(inputLayout.get());
-				deviceContext->vertexPipeline()->setProgram(vertexProgram.get());
-				deviceContext->geometryPipeline()->setProgram(geometryProgram.get());
+				videoContext->setInputLayout(inputLayout.get());
+				videoContext->vertexPipeline()->setProgram(vertexProgram.get());
+				videoContext->geometryPipeline()->setProgram(geometryProgram.get());
 			}
         };
 

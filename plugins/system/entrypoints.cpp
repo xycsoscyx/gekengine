@@ -39,7 +39,7 @@ namespace Gek
 
     GEK_CONTEXT_BEGIN(System);
         GEK_CONTEXT_ADD_CLASS(Default::System::Input, DirectInput8::System);
-		GEK_CONTEXT_ADD_CLASS(Default::System::Audio, OpenALSoft::Device);
+		GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, OpenALSoft::Device);
         GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Direct3D11::Device);
 
         GEK_CONTEXT_ADD_CLASS(System::Input::DI8, DirectInput8::System);

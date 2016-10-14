@@ -204,7 +204,7 @@ namespace Gek
 
             visual = resources->loadVisual(L"model");
 
-            constantBuffer = renderer->getDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+            constantBuffer = renderer->getVideoDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
         }
 
         ~ModelProcessor(void)
@@ -328,17 +328,17 @@ namespace Gek
         }
 
         // Plugin::Renderer Slots
-        static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, Video::Buffer *constantBuffer)
+        static void drawCall(Video::Device *videoDevice, Video::Device::Context *videoContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;
-            deviceContext->getDevice()->mapBuffer(constantBuffer, (void **)&instanceData);
+            videoDevice->mapBuffer(constantBuffer, (void **)&instanceData);
             memcpy(instanceData, instanceList, sizeof(Instance));
-            deviceContext->getDevice()->unmapBuffer(constantBuffer);
+            videoDevice->unmapBuffer(constantBuffer);
 
-            deviceContext->vertexPipeline()->setConstantBuffer(constantBuffer, 4);
-            resources->setVertexBuffer(deviceContext, 0, material.vertexBuffer, 0);
-            resources->setIndexBuffer(deviceContext, material.indexBuffer, 0);
-            deviceContext->drawIndexedPrimitive(material.indexCount, 0, 0);
+            videoContext->vertexPipeline()->setConstantBuffer(constantBuffer, 4);
+            resources->setVertexBuffer(videoContext, 0, material.vertexBuffer, 0);
+            resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
+            resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
         }
 
         void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
@@ -374,7 +374,7 @@ namespace Gek
                         {
                             concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
                             {
-                                renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
+                                renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, renderer->getVideoDevice(), std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
                             });
                         });
                     });

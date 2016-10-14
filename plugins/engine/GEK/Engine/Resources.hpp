@@ -84,19 +84,24 @@ namespace Gek
             virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
             virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
 
-            virtual void mapBuffer(ResourceHandle buffer, void **data) = 0;
-            virtual void unmapBuffer(ResourceHandle buffer) = 0;
+            virtual void setVertexBuffer(Video::Device::Context *videoContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset) = 0;
+            virtual void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
 
-            virtual void setVertexBuffer(Video::Device::Context *deviceContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset) = 0;
-            virtual void setIndexBuffer(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
+            virtual void setConstantBuffer(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
 
-            virtual void setConstantBuffer(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+            virtual void setResource(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+            virtual void setUnorderedAccess(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
 
-            virtual void setResource(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
-            virtual void setUnorderedAccess(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle resourceHandle, uint32_t stage) = 0;
+            virtual void setResourceList(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage) = 0;
+            virtual void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage) = 0;
 
-            virtual void setResourceList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage) = 0;
-            virtual void setUnorderedAccessList(Video::Device::Context::Pipeline *deviceContextPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage) = 0;
+            virtual void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex) = 0;
+            virtual void drawInstancedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex) = 0;
+
+            virtual void drawIndexedPrimitive(Video::Device::Context *videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
+            virtual void drawInstancedIndexedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
+
+            virtual void dispatch(Video::Device::Context *videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
         };
     }; // namespace Plugin
 
@@ -109,18 +114,15 @@ namespace Gek
         GEK_INTERFACE(Resources)
             : virtual public Plugin::Resources
         {
-            virtual void clearLocal(void) = 0;
+            virtual void clear(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
             virtual ResourceHandle getResourceHandle(const wchar_t *resourceName) const = 0;
 
-            virtual Shader * const getShader(ShaderHandle handle) const = 0;
-            virtual Plugin::Visual * const getVisual(VisualHandle handle) const = 0;
             virtual Material * const getMaterial(MaterialHandle handle) const = 0;
-            virtual Video::Texture * const getTexture(ResourceHandle handle) const = 0;
-
-            virtual Filter * const getFilter(const wchar_t *filterName) = 0;
             virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
+            virtual Shader * const getShader(ShaderHandle handle) const = 0;
+            virtual Filter * const getFilter(const wchar_t *filterName) = 0;
 
             virtual std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
             virtual ProgramHandle loadProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
@@ -130,19 +132,21 @@ namespace Gek
             virtual BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState) = 0;
             virtual BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
 
-            virtual void generateMipMaps(Video::Device::Context *deviceContext, ResourceHandle resourceHandle) = 0;
+            virtual void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
             virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
-            virtual void setRenderState(Video::Device::Context *deviceContext, RenderStateHandle renderStateHandle) = 0;
-            virtual void setDepthState(Video::Device::Context *deviceContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
-            virtual void setBlendState(Video::Device::Context *deviceContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
-            virtual void setProgram(Video::Device::Context::Pipeline *deviceContextPipeline, ProgramHandle programHandle) = 0;
-            virtual void setRenderTargets(Video::Device::Context *deviceContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer) = 0;
-            virtual void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Float4 &value) = 0;
-            virtual void clearUnorderedAccess(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const uint32_t value[4]) = 0;
-            virtual void clearRenderTarget(Video::Device::Context *deviceContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
-            virtual void clearDepthStencilTarget(Video::Device::Context *deviceContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
-            virtual void setBackBuffer(Video::Device::Context *deviceContext, ResourceHandle *depthBuffer) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const uint32_t value[4]) = 0;
+            virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
+            virtual void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
+
+            virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) const = 0;
+            virtual void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
+            virtual void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
+            virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
+            virtual void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle) = 0;
+            virtual void setRenderTargets(Video::Device::Context *videoContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer) = 0;
+            virtual void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

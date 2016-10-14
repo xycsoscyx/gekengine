@@ -168,7 +168,7 @@ namespace Gek
 
             void onUpdate(void)
             {
-                const auto backBuffer = renderer->getDevice()->getBackBuffer();
+                const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                 const float width = float(backBuffer->getWidth());
                 const float height = float(backBuffer->getHeight());
                 auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));

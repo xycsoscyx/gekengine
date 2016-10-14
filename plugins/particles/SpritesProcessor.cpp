@@ -147,7 +147,7 @@ namespace Gek
                 renderer->onRenderScene.connect<EmitterProcessor, &EmitterProcessor::onRenderScene>(this);
 
                 visual = resources->loadVisual(L"Sprites");
-                spritesBuffer = renderer->getDevice()->createBuffer(sizeof(Sprite), SpritesBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
+                spritesBuffer = renderer->getVideoDevice()->createBuffer(sizeof(Sprite), SpritesBufferCount, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource, false);
             }
 
             ~EmitterProcessor(void)
@@ -348,16 +348,16 @@ namespace Gek
             }
 
             // Plugin::Renderer Slots
-            static void drawCall(Video::Device::Context *deviceContext, Plugin::Resources *resources, const VisibleMap::iterator visibleBegin, const VisibleMap::iterator visibleEnd, Video::Buffer *spritesBuffer)
+            static void drawCall(Video::Device *videoDevice, Video::Device::Context *videoContext, Plugin::Resources *resources, const VisibleMap::iterator visibleBegin, const VisibleMap::iterator visibleEnd, Video::Buffer *spritesBuffer)
             {
-                GEK_REQUIRE(deviceContext);
+                GEK_REQUIRE(videoContext);
                 GEK_REQUIRE(resources);
 
-                deviceContext->vertexPipeline()->setResource(spritesBuffer, 0);
+                videoContext->vertexPipeline()->setResource(spritesBuffer, 0);
 
                 uint32_t bufferCopied = 0;
                 Sprite *bufferData = nullptr;
-                deviceContext->getDevice()->mapBuffer(spritesBuffer, (void **)&bufferData);
+                videoDevice->mapBuffer(spritesBuffer, (void **)&bufferData);
                 for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
                 {
                     const auto &emitter = *emitterSearch->second;
@@ -376,18 +376,18 @@ namespace Gek
                         spritesCopied += copyCount;
                         if (bufferCopied >= SpritesBufferCount)
                         {
-                            deviceContext->getDevice()->unmapBuffer(spritesBuffer);
-                            deviceContext->drawPrimitive((SpritesBufferCount * 6), 0);
-                            deviceContext->getDevice()->mapBuffer(spritesBuffer, (void **)&bufferData);
+                            videoDevice->unmapBuffer(spritesBuffer);
+                            videoContext->drawPrimitive((SpritesBufferCount * 6), 0);
+                            videoDevice->mapBuffer(spritesBuffer, (void **)&bufferData);
                             bufferCopied = 0;
                         }
                     };
                 }
 
-                deviceContext->getDevice()->unmapBuffer(spritesBuffer);
+                videoDevice->unmapBuffer(spritesBuffer);
                 if (bufferCopied > 0)
                 {
-                    deviceContext->drawPrimitive((bufferCopied * 6), 0);
+                    videoContext->drawPrimitive((bufferCopied * 6), 0);
                 }
             }
 
@@ -411,7 +411,7 @@ namespace Gek
                 for (auto propertiesSearch = visibleMap.begin(); propertiesSearch != visibleMap.end(); )
                 {
                     const auto emittersRange = visibleMap.equal_range(propertiesSearch->first);
-                    renderer->queueDrawCall(visual, propertiesSearch->first, std::bind(drawCall, std::placeholders::_1, resources, emittersRange.first, emittersRange.second, spritesBuffer.get()));
+                    renderer->queueDrawCall(visual, propertiesSearch->first, std::bind(drawCall, renderer->getVideoDevice(), std::placeholders::_1, resources, emittersRange.first, emittersRange.second, spritesBuffer.get()));
                     propertiesSearch = emittersRange.second;
                 }
             }

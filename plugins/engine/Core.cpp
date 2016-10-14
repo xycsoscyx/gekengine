@@ -3,6 +3,7 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Timer.hpp"
+#include "GEK\System\AudioDevice.hpp"
 #include "GEK\Engine\Application.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Population.hpp"
@@ -92,7 +93,7 @@ namespace Gek
             Timer timer;
             float mouseSensitivity = 0.5f;
 
-            Video::DevicePtr device;
+            Video::DevicePtr videoDevice;
             Plugin::RendererPtr renderer;
             Engine::ResourcesPtr resources;
             std::list<Plugin::ProcessorPtr> processorList;
@@ -142,9 +143,9 @@ namespace Gek
                     throw InitializationFailed();
                 }
 
-                device = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
+                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
                 
-                auto &displayModeList = device->getDisplayModeList();
+                auto &displayModeList = videoDevice->getDisplayModeList();
                 if (displayNode.attributes.count(L"mode") < 0 || currentDisplayMode >= displayModeList.size())
                 {
                     currentDisplayMode = 0;
@@ -163,7 +164,7 @@ namespace Gek
                     currentDisplayMode = displayNode.getAttribute(L"mode", L"0");
                 }
 
-                device->setDisplayMode(currentDisplayMode);
+                videoDevice->setDisplayMode(currentDisplayMode);
                 for (auto &displayMode : displayModeList)
                 {
                     StringUTF8 displayModeString(StringUTF8::create("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
@@ -184,8 +185,8 @@ namespace Gek
                 }
 
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
-                resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, device.get());
-                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", device.get(), getPopulation(), resources.get());
+                resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, videoDevice.get());
+                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", videoDevice.get(), getPopulation(), resources.get());
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
@@ -251,15 +252,15 @@ namespace Gek
                     L"}";
 
                 auto &compiled = resources->compileProgram(Video::ProgramType::Vertex, L"uiVertexProgram", L"main", vertexShader);
-                vertexProgram = device->createProgram(Video::ProgramType::Vertex, compiled.data(), compiled.size());
+                vertexProgram = videoDevice->createProgram(Video::ProgramType::Vertex, compiled.data(), compiled.size());
 
                 std::vector<Video::InputElement> elementList;
                 elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::Position));
                 elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::TexCoord));
                 elementList.push_back(Video::InputElement(Video::Format::R8G8B8A8_UNORM, Video::InputElement::Semantic::Color));
-                inputLayout = device->createInputLayout(elementList, compiled.data(), compiled.size());
+                inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
 
-                constantBuffer = device->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
+                constantBuffer = videoDevice->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
 
                 static const wchar_t *pixelShader =
                     L"struct PixelInput" \
@@ -278,7 +279,7 @@ namespace Gek
                     L"}";
 
                 compiled = resources->compileProgram(Video::ProgramType::Pixel, L"uiPixelProgram", L"main", pixelShader);
-                pixelProgram = device->createProgram(Video::ProgramType::Pixel, compiled.data(), compiled.size());
+                pixelProgram = videoDevice->createProgram(Video::ProgramType::Pixel, compiled.data(), compiled.size());
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendStateInformation.enable = true;
@@ -288,25 +289,25 @@ namespace Gek
                 blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
                 blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
                 blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
-                blendState = device->createBlendState(blendStateInformation);
+                blendState = videoDevice->createBlendState(blendStateInformation);
 
                 Video::RenderStateInformation renderStateInformation;
                 renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
                 renderStateInformation.cullMode = Video::RenderStateInformation::CullMode::None;
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
-                renderState = device->createRenderState(renderStateInformation);
+                renderState = videoDevice->createRenderState(renderStateInformation);
 
                 Video::DepthStateInformation depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                 depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
-                depthState = device->createDepthState(depthStateInformation);
+                depthState = videoDevice->createDepthState(depthStateInformation);
 
                 uint8_t *pixels = nullptr;
                 int32_t fontWidth = 0, fontHeight = 0;
                 imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
-                font = device->createTexture(Video::Format::R8G8B8A8_UNORM, fontWidth, fontHeight, 1, 1, Video::TextureFlags::Resource, pixels);
+                font = videoDevice->createTexture(Video::Format::R8G8B8A8_UNORM, fontWidth, fontHeight, 1, 1, Video::TextureFlags::Resource, pixels);
                 imGuiIo.Fonts->TexID = (Video::Object *)font.get();
 
                 Video::SamplerStateInformation samplerStateInformation;
@@ -314,7 +315,7 @@ namespace Gek
                 samplerStateInformation.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
-                samplerState = device->createSamplerState(samplerStateInformation);
+                samplerState = videoDevice->createSamplerState(samplerStateInformation);
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -370,7 +371,7 @@ namespace Gek
                 renderer = nullptr;
                 resources = nullptr;
                 population = nullptr;
-                device = nullptr;
+                videoDevice = nullptr;
                 Xml::save(configuration, getContext()->getFileName(L"config.xml"));
                 CoUninitialize();
             }
@@ -480,7 +481,7 @@ namespace Gek
                     return 1;
 
                 case WM_SIZE:
-                    device->resize();
+                    videoDevice->resize();
                     return 1;
 
                 case WM_LBUTTONDOWN:
@@ -572,7 +573,7 @@ namespace Gek
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
 
-                auto backBuffer = device->getBackBuffer();
+                auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getWidth();
                 uint32_t height = backBuffer->getHeight();
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
@@ -680,7 +681,7 @@ namespace Gek
                         return true;
                     }, this, displayModeStringList.size(), 5))
                     {
-                        device->setDisplayMode(currentDisplayMode);
+                        videoDevice->setDisplayMode(currentDisplayMode);
                         auto &displayNode = configuration.getChild(L"display");
                         displayNode.attributes[L"mode"] = currentDisplayMode;
                         onConfigurationChanged.emit();
@@ -690,7 +691,7 @@ namespace Gek
                     ImGui::PopItemWidth();
                     if (ImGui::Checkbox("FullScreen", &fullScreen))
                     {
-                        device->setFullScreen(fullScreen);
+                        videoDevice->setFullScreen(fullScreen);
                         auto &displayNode = configuration.getChild(L"display");
                         displayNode.attributes[L"fullscreen"] = fullScreen;
                         onConfigurationChanged.emit();
@@ -709,9 +710,9 @@ namespace Gek
             // Plugin::Population Slots
             void onUpdateActions(void)
             {
-                GEK_REQUIRE(device);
+                GEK_REQUIRE(videoDevice);
 
-                device->getDefaultContext()->clearRenderTarget(device->getBackBuffer(), Math::Color::Black);
+                videoDevice->getDefaultContext()->clearRenderTarget(videoDevice->getBackBuffer(), Math::Color::Black);
 
                 Action action;
                 while (actionQueue.try_pop(action))
@@ -722,10 +723,10 @@ namespace Gek
 
             void onUpdateScreen(void)
             {
-                GEK_REQUIRE(device);
+                GEK_REQUIRE(videoDevice);
 
                 ImGui::Render();
-                device->present(false);
+                videoDevice->present(false);
             }
 
             // ImGui
@@ -733,7 +734,7 @@ namespace Gek
             {
                 if (!vertexBuffer || vertexBuffer->getCount() < drawData->TotalVtxCount)
                 {
-                    vertexBuffer = device->createBuffer(sizeof(ImDrawVert), drawData->TotalVtxCount, Video::BufferType::Vertex, Video::BufferFlags::Mappable);
+                    vertexBuffer = videoDevice->createBuffer(sizeof(ImDrawVert), drawData->TotalVtxCount, Video::BufferType::Vertex, Video::BufferFlags::Mappable);
                 }
 
                 if (!indexBuffer || indexBuffer->getCount() < drawData->TotalIdxCount)
@@ -741,11 +742,11 @@ namespace Gek
                     switch (sizeof(ImDrawIdx))
                     {
                     case 2:
-                        indexBuffer = device->createBuffer(Video::Format::R16_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
+                        indexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
                         break;
 
                     case 4:
-                        indexBuffer = device->createBuffer(Video::Format::R32_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
+                        indexBuffer = videoDevice->createBuffer(Video::Format::R32_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
                         break;
 
                     default:
@@ -755,8 +756,8 @@ namespace Gek
 
                 ImDrawVert* vertexData = nullptr;
                 ImDrawIdx* indexData = nullptr;
-                device->mapBuffer(vertexBuffer.get(), (void **)&vertexData);
-                device->mapBuffer(indexBuffer.get(), (void **)&indexData);
+                videoDevice->mapBuffer(vertexBuffer.get(), (void **)&vertexData);
+                videoDevice->mapBuffer(indexBuffer.get(), (void **)&indexData);
                 for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                 {
                     const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
@@ -766,16 +767,16 @@ namespace Gek
                     indexData += commandList->IdxBuffer.Size;
                 }
 
-                device->unmapBuffer(indexBuffer.get());
-                device->unmapBuffer(vertexBuffer.get());
+                videoDevice->unmapBuffer(indexBuffer.get());
+                videoDevice->unmapBuffer(vertexBuffer.get());
 
-                auto backBuffer = device->getBackBuffer();
+                auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getWidth();
                 uint32_t height = backBuffer->getHeight();
                 auto orthographic = Math::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-                device->updateResource(constantBuffer.get(), &orthographic);
+                videoDevice->updateResource(constantBuffer.get(), &orthographic);
 
-                auto context = device->getDefaultContext();
+                auto context = videoDevice->getDefaultContext();
                 context->setRenderTargets(&backBuffer, 1, nullptr);
                 context->setViewports(&backBuffer->getViewPort(), 1);
 

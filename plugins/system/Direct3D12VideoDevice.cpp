@@ -680,16 +680,6 @@ namespace Gek
             }
 
             // Video::Context
-            Device * const getDevice(void)
-            {
-                return device;
-            }
-
-            void * const getDeviceContext(void)
-            {
-                return nullptr;
-            }
-
             Pipeline * const computePipeline(void)
             {
                 GEK_REQUIRE(computeSystemHandler);

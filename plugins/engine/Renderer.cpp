@@ -293,7 +293,7 @@ namespace Gek
             };
 
         private:
-            Video::Device *device;
+            Video::Device *videoDevice;
             Plugin::Population *population;
             Engine::Resources *resources;
 
@@ -309,9 +309,9 @@ namespace Gek
             DrawCallList drawCallList;
 
         public:
-            Renderer(Context *context, Video::Device *device, Plugin::Population *population, Engine::Resources *resources)
+            Renderer(Context *context, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
                 : ContextRegistration(context)
-                , device(device)
+                , videoDevice(videoDevice)
                 , population(population)
                 , resources(resources)
             {
@@ -321,26 +321,26 @@ namespace Gek
                 pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::AllPoint;
                 pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
-                pointSamplerState = device->createSamplerState(pointSamplerStateData);
+                pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
 
                 Video::SamplerStateInformation linearClampSamplerStateData;
                 linearClampSamplerStateData.maximumAnisotropy = 8;
                 linearClampSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
                 linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
-                linearClampSamplerState = device->createSamplerState(linearClampSamplerStateData);
+                linearClampSamplerState = videoDevice->createSamplerState(linearClampSamplerStateData);
 
                 Video::SamplerStateInformation linearWrapSamplerStateData;
                 linearWrapSamplerStateData.maximumAnisotropy = 8;
                 linearWrapSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::Anisotropic;
                 linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
-                linearWrapSamplerState = device->createSamplerState(linearWrapSamplerStateData);
+                linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
 
-                engineConstantBuffer = device->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
+                engineConstantBuffer = videoDevice->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
                 engineConstantBuffer->setName(L"engineConstantBuffer");
 
-                cameraConstantBuffer = device->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
+                cameraConstantBuffer = videoDevice->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
                 cameraConstantBuffer->setName(L"cameraConstantBuffer");
 
                 static const wchar_t program[] =
@@ -365,11 +365,11 @@ namespace Gek
                     L"}";
 
 				auto compiledVertexProgram = resources->compileProgram(Video::ProgramType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
-				deferredVertexProgram = device->createProgram(Video::ProgramType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
+				deferredVertexProgram = videoDevice->createProgram(Video::ProgramType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
                 deferredVertexProgram->setName(L"deferredVertexProgram");
 
 				auto compiledPixelProgram = resources->compileProgram(Video::ProgramType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
-				deferredPixelProgram = device->createProgram(Video::ProgramType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
+				deferredPixelProgram = videoDevice->createProgram(Video::ProgramType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"deferredPixelProgram");
             }
 
@@ -382,16 +382,16 @@ namespace Gek
             void onLoadBegin(const String &populationName)
             {
                 GEK_REQUIRE(resources);
-                resources->clearLocal();
+                resources->clear();
             }
 
             // Renderer
-            Video::Device * getDevice(void) const
+            Video::Device * getVideoDevice(void) const
             {
-                return device;
+                return videoDevice;
             }
 
-            void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *deviceContext)> draw)
+            void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> draw)
             {
                 if (plugin && material && draw)
                 {
@@ -405,7 +405,7 @@ namespace Gek
 
             void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
-                GEK_REQUIRE(device);
+                GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(cameraEntity);
 
@@ -431,30 +431,30 @@ namespace Gek
                 onRenderScene.emit(cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
                 if (!drawCallList.empty())
                 {
-                    Video::Device::Context *deviceContext = device->getDefaultContext();
-                    deviceContext->clearState();
+                    Video::Device::Context *videoContext = videoDevice->getDefaultContext();
+                    videoContext->clearState();
 
-                    device->updateResource(engineConstantBuffer.get(), &engineConstantData);
-                    deviceContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-                    deviceContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-                    deviceContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-                    deviceContext->computePipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                    videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
+                    videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                    videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                    videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
+                    videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
 
-                    device->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
-                    deviceContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
-                    deviceContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
-                    deviceContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
-                    deviceContext->computePipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                    videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
+                    videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                    videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                    videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
+                    videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
 
-                    deviceContext->pixelPipeline()->setSamplerState(pointSamplerState.get(), 0);
-                    deviceContext->pixelPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
-                    deviceContext->pixelPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
+                    videoContext->pixelPipeline()->setSamplerState(pointSamplerState.get(), 0);
+                    videoContext->pixelPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
+                    videoContext->pixelPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
 
-                    deviceContext->vertexPipeline()->setSamplerState(pointSamplerState.get(), 0);
-                    deviceContext->vertexPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
-                    deviceContext->vertexPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
+                    videoContext->vertexPipeline()->setSamplerState(pointSamplerState.get(), 0);
+                    videoContext->vertexPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
+                    videoContext->vertexPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
 
-                    deviceContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
                     concurrency::parallel_sort(drawCallList.begin(), drawCallList.end(), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
                     {
@@ -488,10 +488,9 @@ namespace Gek
                     {
                         for(auto &shaderDrawCall : shaderDrawCallList.second)
                         {
-                            bool visualEnabled = false;
                             bool materialEnabled = false;
                             auto &shader = shaderDrawCall.shader;
-                            for (auto block = shader->begin(deviceContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
+                            for (auto block = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                             {
                                 while (block->prepare())
                                 {
@@ -508,16 +507,8 @@ namespace Gek
                                                 {
                                                     if (currentVisual != drawCall->plugin)
                                                     {
-                                                        visualEnabled = false;
                                                         currentVisual = drawCall->plugin;
-                                                        Plugin::Visual *visual = resources->getVisual(currentVisual);
-                                                        if (!visual)
-                                                        {
-                                                            continue;
-                                                        }
-
-                                                        visual->enable(deviceContext);
-                                                        visualEnabled = true;
+                                                        resources->setVisual(videoContext, currentVisual);
                                                     }
 
                                                     if (currentMaterial != drawCall->material)
@@ -533,11 +524,11 @@ namespace Gek
                                                         materialEnabled = pass->enableMaterial(material);
                                                     }
 
-                                                    if (visualEnabled && materialEnabled)
+                                                    if (materialEnabled)
                                                     {
                                                         try
                                                         {
-                                                            drawCall->onDraw(deviceContext);
+                                                            drawCall->onDraw(videoContext);
                                                         }
                                                         catch (const Plugin::Resources::ResourceNotLoaded &)
                                                         {
@@ -549,8 +540,8 @@ namespace Gek
                                             break;
 
                                         case Engine::Shader::Pass::Mode::Deferred:
-                                            deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                                            deviceContext->drawPrimitive(3, 0);
+                                            videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                                            videoContext->drawPrimitive(3, 0);
                                             break;
 
                                         case Engine::Shader::Pass::Mode::Compute:
@@ -564,7 +555,7 @@ namespace Gek
                         }
                     }
 
-                    deviceContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                     if (cameraEntity->hasComponent<Components::Filter>())
                     {
                         const auto &filterList = cameraEntity->getComponent<Components::Filter>().list;
@@ -573,12 +564,12 @@ namespace Gek
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
                             {
-                                for (auto pass = filter->begin(deviceContext); pass; pass = pass->next())
+                                for (auto pass = filter->begin(videoContext); pass; pass = pass->next())
                                 {
                                     switch (pass->prepare())
                                     {
                                     case Engine::Filter::Pass::Mode::Deferred:
-                                        deviceContext->drawPrimitive(3, 0);
+                                        resources->drawPrimitive(videoContext, 3, 0);
                                         break;
 
                                     case Engine::Filter::Pass::Mode::Compute:
@@ -591,30 +582,30 @@ namespace Gek
                         }
                     }
 
-                    deviceContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
-                    resources->setResource(deviceContext->pixelPipeline(), resources->getResourceHandle(L"screen"), 0);
+                    videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
+                    resources->setResource(videoContext->pixelPipeline(), resources->getResourceHandle(L"screen"), 0);
                     if (cameraTarget)
                     {
-                        resources->setRenderTargets(deviceContext, &cameraTarget, 1, nullptr);
+                        resources->setRenderTargets(videoContext, &cameraTarget, 1, nullptr);
                     }
                     else
                     {
-						auto backBuffer = device->getBackBuffer();
-						deviceContext->setRenderTargets(&backBuffer, 1, nullptr);
-                        deviceContext->setViewports(&backBuffer->getViewPort(), 1);
+						auto backBuffer = videoDevice->getBackBuffer();
+						videoContext->setRenderTargets(&backBuffer, 1, nullptr);
+                        videoContext->setViewports(&backBuffer->getViewPort(), 1);
                     }
 
-                    deviceContext->drawPrimitive(3, 0);
+                    videoContext->drawPrimitive(3, 0);
 
-                    deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 0);
-                    deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 0);
-                    deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 0);
-                    deviceContext->computePipeline()->setConstantBuffer(nullptr, 0);
+                    videoContext->geometryPipeline()->setConstantBuffer(nullptr, 0);
+                    videoContext->vertexPipeline()->setConstantBuffer(nullptr, 0);
+                    videoContext->pixelPipeline()->setConstantBuffer(nullptr, 0);
+                    videoContext->computePipeline()->setConstantBuffer(nullptr, 0);
 
-                    deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 1);
-                    deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 1);
-                    deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 1);
-                    deviceContext->computePipeline()->setConstantBuffer(nullptr, 1);
+                    videoContext->geometryPipeline()->setConstantBuffer(nullptr, 1);
+                    videoContext->vertexPipeline()->setConstantBuffer(nullptr, 1);
+                    videoContext->pixelPipeline()->setConstantBuffer(nullptr, 1);
+                    videoContext->computePipeline()->setConstantBuffer(nullptr, 1);
                 }
             }
         };
