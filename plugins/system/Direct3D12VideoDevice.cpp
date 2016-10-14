@@ -464,43 +464,38 @@ namespace Gek
                 // Video::Pipeline
                 void setProgram(Video::Object *program)
                 {
-                    dynamic_cast<ComputeProgram *>(program);
                 }
 
                 void setSamplerState(Video::Object *samplerState, uint32_t stage)
                 {
-                    dynamic_cast<SamplerState *>(samplerState);
                 }
 
                 void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
                 {
-                    dynamic_cast<Buffer *>(buffer);
                 }
 
                 void setResource(Video::Object *resource, uint32_t firstStage)
                 {
-                    setResourceList(&resource, 1, firstStage);
                 }
 
                 void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                 {
-                    setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                 }
 
-                void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
                 {
-                    for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                    {
-                        dynamic_cast<ShaderResourceView *>(resourceList[resource]);
-                    }
                 }
 
-                void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
                 {
-                    for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
-                    {
-                        dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess]);
-                    }
+                }
+
+                void setResourceList(const std::vector<Video::Object *> &resourceList, uint32_t firstStage)
+                {
+                }
+
+                void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
                 }
             };
 
@@ -517,40 +512,38 @@ namespace Gek
                 // Video::Pipeline
                 void setProgram(Video::Object *program)
                 {
-                    dynamic_cast<VertexProgram *>(program);
                 }
 
                 void setSamplerState(Video::Object *samplerState, uint32_t stage)
                 {
-                    dynamic_cast<SamplerState *>(samplerState);
                 }
 
                 void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
                 {
-                    dynamic_cast<Buffer *>(buffer);
                 }
 
                 void setResource(Video::Object *resource, uint32_t firstStage)
                 {
-                    setResourceList(&resource, 1, firstStage);
                 }
 
                 void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                 {
-                    setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                 }
 
-                void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
                 {
-                    for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                    {
-                        dynamic_cast<ShaderResourceView *>(resourceList[resource]);
-                    }
                 }
 
-                void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
                 {
-                    throw Video::UnsupportedOperation();
+                }
+
+                void setResourceList(const std::vector<Video::Object *> &resourceList, uint32_t firstStage)
+                {
+                }
+
+                void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
                 }
             };
 
@@ -567,40 +560,38 @@ namespace Gek
                 // Video::Pipeline
                 void setProgram(Video::Object *program)
                 {
-                    dynamic_cast<GeometryProgram *>(program);
                 }
 
                 void setSamplerState(Video::Object *samplerState, uint32_t stage)
                 {
-                    dynamic_cast<SamplerState *>(samplerState);
                 }
 
                 void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
                 {
-                    dynamic_cast<Buffer *>(buffer);
                 }
 
                 void setResource(Video::Object *resource, uint32_t firstStage)
                 {
-                    setResourceList(&resource, 1, firstStage);
                 }
 
                 void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                 {
-                    setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                 }
 
-                void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
                 {
-                    for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                    {
-                        dynamic_cast<ShaderResourceView *>(resourceList[resource]);
-                    }
                 }
 
-                void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
                 {
-                    throw Video::UnsupportedOperation();
+                }
+
+                void setResourceList(const std::vector<Video::Object *> &resourceList, uint32_t firstStage)
+                {
+                }
+
+                void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
                 }
             };
 
@@ -617,43 +608,38 @@ namespace Gek
                 // Video::Pipeline
                 void setProgram(Video::Object *program)
                 {
-                    dynamic_cast<PixelProgram *>(program);
                 }
 
                 void setSamplerState(Video::Object *samplerState, uint32_t stage)
                 {
-                    dynamic_cast<SamplerState *>(samplerState);
                 }
 
                 void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
                 {
-                    dynamic_cast<Buffer *>(buffer);
                 }
 
                 void setResource(Video::Object *resource, uint32_t firstStage)
                 {
-                    setResourceList(&resource, 1, firstStage);
                 }
 
                 void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
                 {
-                    setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
                 }
 
-                void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
                 {
-                    for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                    {
-                        dynamic_cast<ShaderResourceView *>(resourceList[resource]);
-                    }
                 }
 
-                void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
                 {
-                    for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
-                    {
-                        dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess]);
-                    }
+                }
+
+                void setResourceList(const std::vector<Video::Object *> &resourceList, uint32_t firstStage)
+                {
+                }
+
+                void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
                 }
             };
 
@@ -710,18 +696,9 @@ namespace Gek
 
             void generateMipMaps(Video::Texture *texture)
             {
-                dynamic_cast<ShaderResourceView *>(texture);
             }
 
             void clearState(void)
-            {
-            }
-
-            void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount)
-            {
-            }
-
-            void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
             {
             }
 
@@ -731,45 +708,54 @@ namespace Gek
 
             void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
             {
-                auto unorderedAccessView = dynamic_cast<UnorderedAccessView *>(object);
             }
 
             void clearUnorderedAccess(Video::Object *object, const uint32_t value[4])
             {
-                auto unorderedAccessView = dynamic_cast<UnorderedAccessView *>(object);
             }
 
             void clearRenderTarget(Video::Target *renderTarget, const Math::Color &clearColor)
             {
-                auto targetViewTexture = dynamic_cast<TargetViewTexture *>(renderTarget);
             }
 
             void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
             {
-                auto depthTexture = dynamic_cast<DepthTexture *>(depthBuffer);
+            }
+
+            void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
+            {
+            }
+
+            void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount)
+            {
             }
 
             void setRenderTargets(Video::Target **renderTargetList, uint32_t renderTargetCount, Video::Object *depthBuffer)
             {
-                for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; renderTarget++)
-                {
-                    dynamic_cast<RenderTargetView *>(renderTargetList[renderTarget]);
-                }
+            }
+
+            void setScissorRectList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleListt)
+            {
+            }
+
+            void setViewportList(const std::vector<Video::ViewPort> &viewPortList)
+            {
+            }
+
+            void setRenderTargetList(const std::vector<Video::Target *> &renderTargetList, Video::Object *depthBuffer)
+            {
             }
 
             void setRenderState(Video::Object *renderState)
             {
-                dynamic_cast<RenderState *>(renderState);
             }
 
             void setDepthState(Video::Object *depthState, uint32_t stencilReference)
             {
-                dynamic_cast<DepthState *>(depthState);
             }
 
             void setBlendState(Video::Object *blendState, const Math::Color &blendFactor, uint32_t mask)
             {
-                dynamic_cast<BlendState *>(blendState);
             }
 
             void setInputLayout(Video::Object *inputLayout)
@@ -778,12 +764,14 @@ namespace Gek
 
             void setVertexBuffer(uint32_t slot, Video::Buffer *vertexBuffer, uint32_t offset)
             {
-                dynamic_cast<Buffer *>(vertexBuffer);
+            }
+
+            void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
+            {
             }
 
             void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
             {
-                dynamic_cast<Buffer *>(indexBuffer);
             }
 
             void setPrimitiveType(Video::PrimitiveType primitiveType)
@@ -896,12 +884,10 @@ namespace Gek
 
             void setEvent(Video::Object *event)
             {
-                dynamic_cast<Event *>(event);
             }
 
             bool isEventSet(Video::Object *event)
             {
-                dynamic_cast<Event *>(event);
                 return false;
             }
 
@@ -948,22 +934,18 @@ namespace Gek
 
             void mapBuffer(Video::Buffer *buffer, void **data, Video::Map mapping)
             {
-                dynamic_cast<Buffer *>(buffer);
             }
 
             void unmapBuffer(Video::Buffer *buffer)
             {
-                dynamic_cast<Buffer *>(buffer);
             }
 
             void updateResource(Video::Object *object, const void *data)
             {
-                dynamic_cast<Resource *>(object);
             }
 
             void copyResource(Video::Object *destination, Video::Object *source)
             {
-                dynamic_cast<Resource *>(destination);
             }
 
 
@@ -1005,7 +987,6 @@ namespace Gek
 
             void executeCommandList(Video::Object *commandList)
             {
-                dynamic_cast<CommandList *>(commandList);
             }
 
             void present(bool waitForVerticalSync)

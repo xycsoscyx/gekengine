@@ -725,7 +725,7 @@ namespace Gek
                     setResourceCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
                 }
 
-                videoPipeline->setResourceList(setResourceCache.data(), resourceCount, firstStage);
+                videoPipeline->setResourceList(setResourceCache, firstStage);
             }
 
             std::vector<Video::Object *> setUnorderedAccessCache;
@@ -739,7 +739,7 @@ namespace Gek
                     setUnorderedAccessCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
                 }
 
-                videoPipeline->setUnorderedAccessList(setUnorderedAccessCache.data(), resourceCount, firstStage);
+                videoPipeline->setUnorderedAccessList(setUnorderedAccessCache, firstStage);
             }
 
             void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex)
