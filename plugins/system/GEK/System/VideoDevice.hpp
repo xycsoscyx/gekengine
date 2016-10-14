@@ -541,14 +541,16 @@ namespace Gek
                 GEK_INTERFACE(Pipeline)
                 {
 					virtual void setProgram(Object *program) = 0;
+
                     virtual void setSamplerState(Object *samplerState, uint32_t stage) = 0;
                     virtual void setConstantBuffer(Buffer *constantBuffer, uint32_t stage) = 0;
-
                     virtual void setResource(Object *resource, uint32_t firstStage) = 0;
                     virtual void setUnorderedAccess(Object *unorderedAccess, uint32_t firstStage, uint32_t count = 0) = 0;
 
-                    virtual void setResourceList(Object **resourceList, uint32_t resourceCount, uint32_t firstStage) = 0;
-                    virtual void setUnorderedAccessList(Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList = nullptr) = 0;
+                    virtual void setSamplerStateList(const std::vector<Object *> &samplerState, uint32_t firstStage) { };
+                    virtual void setConstantBufferList(const std::vector<Buffer *> &constantBuffer, uint32_t firstStage) { };
+                    virtual void setResourceList(const std::vector<Object *> &resourceList, uint32_t firstStage) { };
+                    virtual void setUnorderedAccessList(const std::vector<Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList = nullptr) { };
                 };
 
                 virtual Pipeline * const computePipeline(void) = 0;
@@ -560,16 +562,19 @@ namespace Gek
 
                 virtual void clearState(void) = 0;
 
-                virtual void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
-                virtual void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
-
                 virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;
                 virtual void clearUnorderedAccess(Object *object, const uint32_t value[4]) = 0;
 
                 virtual void clearRenderTarget(Target *renderTarget, const Math::Color &clearColor) = 0;
                 virtual void clearDepthStencilTarget(Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
+                virtual void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount) = 0;
+                virtual void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount) = 0;
                 virtual void setRenderTargets(Target **renderTargetList, uint32_t renderTargetCount, Object *depthBuffer) = 0;
+
+                virtual void setScissorRectList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleListt) { };
+                virtual void setViewportList(const std::vector<ViewPort> &viewPortList) { };
+                virtual void setRenderTargetList(const std::vector<Target *> &renderTargetList, Object *depthBuffer) { };
 
                 virtual void setRenderState(Object *renderState) = 0;
                 virtual void setDepthState(Object *depthState, uint32_t stencilReference) = 0;
@@ -577,7 +582,8 @@ namespace Gek
 
                 virtual void setInputLayout(Object *inputLayout) = 0;
                 virtual void setVertexBuffer(uint32_t slot, Buffer *vertexBuffer, uint32_t offset) = 0;
-                virtual void setIndexBuffer(Buffer *indexBuffer, uint32_t offset) = 0;
+                virtual void setVertexBufferList(const std::vector<Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList = nullptr) { };
+                virtual void setIndexBuffer(Buffer *indexBuffer, uint32_t offset = 0) = 0;
                 virtual void setPrimitiveType(Video::PrimitiveType type) = 0;
 
                 virtual void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex) = 0;
