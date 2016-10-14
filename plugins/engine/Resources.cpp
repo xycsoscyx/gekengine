@@ -867,11 +867,6 @@ namespace Gek
 				return generalCache.getHandle(getHash(resourceName));
             }
 
-            Engine::Material * const getMaterial(MaterialHandle handle) const
-            {
-                return materialCache.getResource(handle);
-            }
-
             Engine::Shader * const getShader(ShaderHandle handle) const
             {
                 return shaderCache.getResource(handle);
@@ -1107,6 +1102,14 @@ namespace Gek
                 videoContext->clearDepthStencilTarget(depthBuffer, flags, clearDepth, clearStencil);
             }
 
+            void setMaterial(Video::Device::Context *videoContext, void *pass, MaterialHandle handle)
+            {
+                auto material = materialCache.getResource(handle);
+                if (material)
+                {
+                }
+            }
+
             void setVisual(Video::Device::Context *videoContext, VisualHandle handle) const
             {
                 auto visual = visualCache.getResource(handle);
@@ -1208,6 +1211,10 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 videoContext->clearRenderTargetList(count, depthBuffer);
+            }
+
+            void startDrawBlock(void)
+            {
             }
         };
 

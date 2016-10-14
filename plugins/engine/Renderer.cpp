@@ -480,10 +480,10 @@ namespace Gek
                     {
                         for(auto &shaderDrawCall : shaderDrawCallList.second)
                         {
-                            bool materialEnabled = false;
                             auto &shader = shaderDrawCall.shader;
                             for (auto block = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                             {
+                                resources->startDrawBlock();
                                 while (block->prepare())
                                 {
                                     for (auto pass = block->begin(); pass; pass = pass->next())
@@ -505,27 +505,12 @@ namespace Gek
 
                                                     if (currentMaterial != drawCall->material)
                                                     {
-                                                        materialEnabled = false;
                                                         currentMaterial = drawCall->material;
-                                                        Engine::Material *material = resources->getMaterial(currentMaterial);
-                                                        if (!material)
-                                                        {
-                                                            continue;
-                                                        }
+                                                        resources->setMaterial(videoContext, pass, currentMaterial);
 
-                                                        materialEnabled = pass->enableMaterial(material);
                                                     }
 
-                                                    if (materialEnabled)
-                                                    {
-                                                        try
-                                                        {
-                                                            drawCall->onDraw(videoContext);
-                                                        }
-                                                        catch (const Plugin::Resources::ResourceNotLoaded &)
-                                                        {
-                                                        };
-                                                    }
+                                                    drawCall->onDraw(videoContext);
                                                 }
                                             }
 
