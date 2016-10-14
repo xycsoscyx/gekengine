@@ -10,7 +10,6 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Shapes\Frustum.hpp"
 #include "GEK\Utility\Context.hpp"
-#include "GEK\Engine\Resources.hpp"
 #include "GEK\Engine\Material.hpp"
 #include <memory>
 
@@ -67,7 +66,7 @@ namespace Gek
 
             virtual Material::DataPtr loadMaterialData(const Material::PassMap &passMap) = 0;
 
-            virtual Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
+            virtual Block::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

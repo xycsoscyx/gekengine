@@ -63,7 +63,7 @@ namespace Gek
             };
 
         private:
-            Video::Device *device;
+            Video::Device *videoDevice;
             Engine::Resources *resources;
 
             String filterName;
@@ -75,18 +75,18 @@ namespace Gek
             std::list<PassData> passList;
 
         public:
-            Filter(Context *context, Video::Device *device, Engine::Resources *resources, String filterName)
+            Filter(Context *context, Video::Device *videoDevice, Engine::Resources *resources, String filterName)
                 : ContextRegistration(context)
-                , device(device)
+                , videoDevice(videoDevice)
                 , resources(resources)
                 , filterName(filterName)
             {
-                GEK_REQUIRE(device);
+                GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
 
                 reload();
 
-                filterConstantBuffer = device->createBuffer(sizeof(FilterConstantData), 1, Video::BufferType::Constant, 0);
+                filterConstantBuffer = videoDevice->createBuffer(sizeof(FilterConstantData), 1, Video::BufferType::Constant, 0);
                 filterConstantBuffer->setName(String::create(L"%v:filterConstantBuffer", filterName));
             }
 
@@ -100,8 +100,8 @@ namespace Gek
                 const Xml::Node filterNode(Xml::load(getContext()->getFileName(L"data\\filters", filterName).append(L".xml"), L"filter"));
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
-                uint32_t displayWidth = device->getBackBuffer()->getWidth();
-                uint32_t displayHeight = device->getBackBuffer()->getHeight();
+                uint32_t displayWidth = videoDevice->getBackBuffer()->getWidth();
+                uint32_t displayHeight = videoDevice->getBackBuffer()->getHeight();
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
@@ -166,7 +166,7 @@ namespace Gek
                 resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
 
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
-                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(device->getBackBuffer()->getWidth(), device->getBackBuffer()->getHeight());
+                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(videoDevice->getBackBuffer()->getWidth(), videoDevice->getBackBuffer()->getHeight());
 
                 std::unordered_map<String, String> resourceStructuresMap;
 
@@ -191,8 +191,8 @@ namespace Gek
                             throw InvalidParameters();
                         }
 
-                        uint32_t textureWidth = device->getBackBuffer()->getWidth();
-                        uint32_t textureHeight = device->getBackBuffer()->getHeight();
+                        uint32_t textureWidth = videoDevice->getBackBuffer()->getWidth();
+                        uint32_t textureHeight = videoDevice->getBackBuffer()->getHeight();
                         if (textureNode.attributes.count(L"size"))
                         {
                             Math::Float2 size = evaluate(globalDefinesMap, textureNode.getAttribute(L"size"), BindType::UInt2);
@@ -297,8 +297,8 @@ namespace Gek
                     {
                         pass.mode = Pass::Mode::Compute;
 
-                        pass.width = float(device->getBackBuffer()->getWidth());
-                        pass.height = float(device->getBackBuffer()->getHeight());
+                        pass.width = float(videoDevice->getBackBuffer()->getWidth());
+                        pass.height = float(videoDevice->getBackBuffer()->getHeight());
 
                         Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
                         pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
@@ -543,29 +543,29 @@ namespace Gek
             }
 
             // Filter
-            Pass::Mode preparePass(Video::Device::Context *deviceContext, PassData &pass)
+            Pass::Mode preparePass(Video::Device::Context *videoContext, PassData &pass)
             {
                 for (auto &clearTarget : pass.clearResourceMap)
                 {
                     switch (clearTarget.second.type)
                     {
                     case ClearType::Target:
-                        resources->clearRenderTarget(deviceContext, clearTarget.first, clearTarget.second.color);
+                        resources->clearRenderTarget(videoContext, clearTarget.first, clearTarget.second.color);
                         break;
 
                     case ClearType::Float:
-                        resources->clearUnorderedAccess(deviceContext, clearTarget.first, clearTarget.second.value);
+                        resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.value);
                         break;
 
                     case ClearType::UInt:
-                        resources->clearUnorderedAccess(deviceContext, clearTarget.first, clearTarget.second.uint);
+                        resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.uint);
                         break;
                     };
                 }
 
                 for (auto &resource : pass.generateMipMapsList)
                 {
-                    resources->generateMipMaps(deviceContext, resource);
+                    resources->generateMipMaps(videoContext, resource);
                 }
 
                 for (auto &copyResource : pass.copyResourceMap)
@@ -573,11 +573,11 @@ namespace Gek
                     resources->copyResource(copyResource.first, copyResource.second);
                 }
 
-                Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
+                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
 
                 if (!pass.resourceList.empty())
                 {
-                    resources->setResourceList(deviceContextPipeline, pass.resourceList.data(), pass.resourceList.size(), 0);
+                    resources->setResourceList(videoPipeline, pass.resourceList.data(), pass.resourceList.size(), 0);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -588,34 +588,33 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->setUnorderedAccessList(videoPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
-                resources->setProgram(deviceContextPipeline, pass.program);
+                resources->setProgram(videoPipeline, pass.program);
 
                 FilterConstantData filterConstantData;
                 filterConstantData.targetSize.x = pass.width;
                 filterConstantData.targetSize.y = pass.height;
-                device->updateResource(filterConstantBuffer.get(), &filterConstantData);
-                deviceContext->geometryPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
-                deviceContext->vertexPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
-                deviceContext->pixelPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
-                deviceContext->computePipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
+                videoDevice->updateResource(filterConstantBuffer.get(), &filterConstantData);
+                videoContext->geometryPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
+                videoContext->vertexPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
+                videoContext->pixelPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
+                videoContext->computePipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
 
                 switch (pass.mode)
                 {
                 case Pass::Mode::Compute:
-                    deviceContext->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                    resources->dispatch(videoContext, pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                     break;
 
                 default:
-                    resources->setDepthState(deviceContext, depthState, 0x0);
-                    resources->setRenderState(deviceContext, renderState);
-                    resources->setBlendState(deviceContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
-
+                    resources->setDepthState(videoContext, depthState, 0x0);
+                    resources->setRenderState(videoContext, renderState);
+                    resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
                     if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargets(deviceContext, pass.renderTargetList.data(), pass.renderTargetList.size(), nullptr);
+                        resources->setRenderTargets(videoContext, pass.renderTargetList.data(), pass.renderTargetList.size(), nullptr);
                     }
 
                     break;
@@ -624,13 +623,12 @@ namespace Gek
                 return pass.mode;
             }
 
-            void clearPass(Video::Device::Context *deviceContext, PassData &pass)
+            void clearPass(Video::Device::Context *videoContext, PassData &pass)
             {
-                Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
-
+                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
-                    resources->setResourceList(deviceContextPipeline,  nullptr, pass.resourceList.size(), 0);
+                    resources->setResourceList(videoPipeline,  nullptr, pass.resourceList.size(), 0);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -641,31 +639,31 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->setUnorderedAccessList(videoPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
                 if (!pass.renderTargetList.empty())
                 {
-                    resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
+                    resources->setRenderTargets(videoContext, nullptr, pass.renderTargetList.size(), nullptr);
                 }
 
-                deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
-                deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
-                deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
-                deviceContext->computePipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->computePipeline()->setConstantBuffer(nullptr, 2);
             }
 
             class PassImplementation
                 : public Pass
             {
             public:
-                Video::Device::Context *deviceContext;
+                Video::Device::Context *videoContext;
                 Filter *filterNode;
                 std::list<Filter::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *deviceContext, Filter *filterNode, std::list<Filter::PassData>::iterator current, std::list<Filter::PassData>::iterator end)
-                    : deviceContext(deviceContext)
+                PassImplementation(Video::Device::Context *videoContext, Filter *filterNode, std::list<Filter::PassData>::iterator current, std::list<Filter::PassData>::iterator end)
+                    : videoContext(videoContext)
                     , filterNode(filterNode)
                     , current(current)
                     , end(end)
@@ -675,14 +673,14 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new PassImplementation(deviceContext, filterNode, next, end));
+                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, filterNode, next, end));
                 }
 
                 Mode prepare(void)
                 {
                     try
                     {
-                        return filterNode->preparePass(deviceContext, (*current));
+                        return filterNode->preparePass(videoContext, (*current));
                     }
                     catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
@@ -692,14 +690,14 @@ namespace Gek
 
                 void clear(void)
                 {
-                    filterNode->clearPass(deviceContext, (*current));
+                    filterNode->clearPass(videoContext, (*current));
                 }
             };
 
-            Pass::Iterator begin(Video::Device::Context *deviceContext)
+            Pass::Iterator begin(Video::Device::Context *videoContext)
             {
-                GEK_REQUIRE(deviceContext);
-                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(deviceContext, this, passList.begin(), passList.end()));
+                GEK_REQUIRE(videoContext);
+                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, passList.begin(), passList.end()));
             }
         };
 

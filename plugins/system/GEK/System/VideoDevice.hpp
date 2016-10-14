@@ -551,9 +551,6 @@ namespace Gek
                     virtual void setUnorderedAccessList(Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList = nullptr) = 0;
                 };
 
-                virtual Device * const getDevice(void) = 0;
-				virtual void * const getDeviceContext(void) = 0;
-
                 virtual Pipeline * const computePipeline(void) = 0;
                 virtual Pipeline * const vertexPipeline(void) = 0;
                 virtual Pipeline * const geometryPipeline(void) = 0;

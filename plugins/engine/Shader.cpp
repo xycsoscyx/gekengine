@@ -174,7 +174,7 @@ namespace Gek
             };
 
         private:
-            Video::Device *device;
+            Video::Device *videoDevice;
             Engine::Resources *resources;
             Plugin::Population *population;
 
@@ -192,28 +192,28 @@ namespace Gek
             std::unordered_map<String, PassData *> forwardPassMap;
 
         public:
-            Shader(Context *context, Video::Device *device, Engine::Resources *resources, Plugin::Population *population, String shaderName)
+            Shader(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, String shaderName)
                 : ContextRegistration(context)
-                , device(device)
+                , videoDevice(videoDevice)
                 , resources(resources)
                 , population(population)
                 , shaderName(shaderName)
             {
-                GEK_REQUIRE(device);
+                GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
                 GEK_REQUIRE(population);
 
                 reload();
 
-                shaderConstantBuffer = device->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+                shaderConstantBuffer = videoDevice->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
                 shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
 
                 if (lightsPerPass > 0)
                 {
-                    lightConstantBuffer = device->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+                    lightConstantBuffer = videoDevice->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
                     lightConstantBuffer->setName(String::create(L"%v:lightConstantBuffer", shaderName));
 
-                    lightDataBuffer = device->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                    lightDataBuffer = videoDevice->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
                     lightDataBuffer->setName(String::create(L"%v:lightDataBuffer", shaderName));
                 }
             }
@@ -224,7 +224,7 @@ namespace Gek
                 blockList.clear();
                 forwardPassMap.clear();
                 
-                auto backBuffer = device->getBackBuffer();
+                auto backBuffer = videoDevice->getBackBuffer();
 
                 const Xml::Node shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader"));
 
@@ -379,7 +379,7 @@ namespace Gek
 
 							auto semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-							inputData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, device->getSemanticMoniker(semantic), semanticIndex);
+							inputData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                         }
                     }
                 }
@@ -1019,7 +1019,7 @@ namespace Gek
                 return data;
             }
 
-            bool enableMaterial(Video::Device::Context *deviceContext, BlockData &block, PassData &pass, Engine::Material *material)
+            bool enableMaterial(Video::Device::Context *videoContext, BlockData &block, PassData &pass, Engine::Material *material)
             {
                 uint32_t firstStage = (block.lighting ? 1 : 0);
                 Data *data = dynamic_cast<Data *>(material->getData());
@@ -1031,8 +1031,8 @@ namespace Gek
                         try
                         {
 							auto renderState = material->getRenderState();
-							resources->setRenderState(deviceContext, (renderState ? renderState : pass.renderState));
-							resources->setResourceList(deviceContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
+							resources->setRenderState(videoContext, (renderState ? renderState : pass.renderState));
+							resources->setResourceList(videoContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
 							return true;
                         }
                         catch (const Plugin::Resources::ResourceNotLoaded &)
@@ -1045,11 +1045,11 @@ namespace Gek
                 return false;
             }
 
-            Pass::Mode preparePass(Video::Device::Context *deviceContext, BlockData &block, PassData &pass)
+            Pass::Mode preparePass(Video::Device::Context *videoContext, BlockData &block, PassData &pass)
             {
                 for (auto &resource : pass.generateMipMapsList)
                 {
-                    resources->generateMipMaps(deviceContext, resource);
+                    resources->generateMipMaps(videoContext, resource);
                 }
 
                 for (auto &copyResource : pass.copyResourceMap)
@@ -1057,15 +1057,15 @@ namespace Gek
                     resources->copyResource(copyResource.first, copyResource.second);
                 }
 
-                Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
+                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
 
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = 0;
                     if (block.lighting)
                     {
-                        deviceContextPipeline->setResource(lightDataBuffer.get(), 0);
-                        deviceContextPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
+                        videoPipeline->setResource(lightDataBuffer.get(), 0);
+                        videoPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
                         firstResourceStage = 1;
                     }
 
@@ -1074,7 +1074,7 @@ namespace Gek
                         firstResourceStage += pass.materialResourceList.size();
                     }
 
-                    resources->setResourceList(deviceContextPipeline, pass.resourceList.data(), pass.resourceList.size(), firstResourceStage);
+                    resources->setResourceList(videoPipeline, pass.resourceList.data(), pass.resourceList.size(), firstResourceStage);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -1085,39 +1085,38 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(deviceContextPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->setUnorderedAccessList(videoPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
-                resources->setProgram(deviceContextPipeline, pass.program);
+                resources->setProgram(videoPipeline, pass.program);
 
                 ShaderConstantData shaderConstantData;
                 shaderConstantData.targetSize.x = pass.width;
                 shaderConstantData.targetSize.y = pass.height;
-                device->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
-                deviceContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                deviceContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                deviceContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                deviceContext->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                videoDevice->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
+                videoContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                videoContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                videoContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                videoContext->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
 
                 switch (pass.mode)
                 {
                 case Pass::Mode::Compute:
-                    deviceContext->dispatch(pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
+                    resources->dispatch(videoContext, pass.dispatchWidth, pass.dispatchHeight, pass.dispatchDepth);
                     break;
 
                 default:
-                    resources->setDepthState(deviceContext, pass.depthState, 0x0);
-                    //resources->setRenderState(deviceContext, pass.renderState);
-                    resources->setBlendState(deviceContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
-
+                    resources->setDepthState(videoContext, pass.depthState, 0x0);
+                    //resources->setRenderState(videoContext, pass.renderState);
+                    resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
                     if (pass.clearDepthFlags > 0)
                     {
-                        resources->clearDepthStencilTarget(deviceContext, pass.depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
+                        resources->clearDepthStencilTarget(videoContext, pass.depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
                     }
 
                     if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargets(deviceContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &pass.depthBuffer : nullptr));
+                        resources->setRenderTargets(videoContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &pass.depthBuffer : nullptr));
                     }
 
                     break;
@@ -1126,17 +1125,16 @@ namespace Gek
                 return pass.mode;
             }
 
-            void clearPass(Video::Device::Context *deviceContext, BlockData &block, PassData &pass)
+            void clearPass(Video::Device::Context *videoContext, BlockData &block, PassData &pass)
             {
-                Video::Device::Context::Pipeline *deviceContextPipeline = (pass.mode == Pass::Mode::Compute ? deviceContext->computePipeline() : deviceContext->pixelPipeline());
-
+                Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = 0;
                     if (block.lighting)
                     {
-                        deviceContextPipeline->setResource(nullptr, 0);
-                        deviceContextPipeline->setConstantBuffer(nullptr, 3);
+                        videoPipeline->setResource(nullptr, 0);
+                        videoPipeline->setConstantBuffer(nullptr, 3);
                         firstResourceStage = 1;
                     }
 
@@ -1145,7 +1143,7 @@ namespace Gek
                         firstResourceStage += pass.materialResourceList.size();
                     }
 
-                    resources->setResourceList(deviceContextPipeline, nullptr, pass.resourceList.size(), firstResourceStage);
+                    resources->setResourceList(videoPipeline, nullptr, pass.resourceList.size(), firstResourceStage);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -1156,21 +1154,21 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(deviceContextPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->setUnorderedAccessList(videoPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
                 if (!pass.renderTargetList.empty())
                 {
-                    resources->setRenderTargets(deviceContext, nullptr, pass.renderTargetList.size(), nullptr);
+                    resources->setRenderTargets(videoContext, nullptr, pass.renderTargetList.size(), nullptr);
                 }
 
-                deviceContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
-                deviceContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
-                deviceContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
-                deviceContext->computePipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->computePipeline()->setConstantBuffer(nullptr, 2);
             }
 
-            bool prepareBlock(uint32_t &base, Video::Device::Context *deviceContext, BlockData &block)
+            bool prepareBlock(uint32_t &base, Video::Device::Context *videoContext, BlockData &block)
             {
                 if (!block.enabled)
                 {
@@ -1184,15 +1182,15 @@ namespace Gek
                         switch (clearTarget.second.type)
                         {
                         case ClearType::Target:
-                            resources->clearRenderTarget(deviceContext, clearTarget.first, clearTarget.second.color);
+                            resources->clearRenderTarget(videoContext, clearTarget.first, clearTarget.second.color);
                             break;
 
                         case ClearType::Float:
-                            resources->clearUnorderedAccess(deviceContext, clearTarget.first, clearTarget.second.value);
+                            resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.value);
                             break;
 
                         case ClearType::UInt:
-                            resources->clearUnorderedAccess(deviceContext, clearTarget.first, clearTarget.second.uint);
+                            resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.uint);
                             break;
                         };
                     }
@@ -1207,14 +1205,14 @@ namespace Gek
                         uint32_t lightPassCount = std::min((lightListCount - base), lightsPerPass);
 
                         LightConstantData *lightConstants = nullptr;
-                        device->mapBuffer(lightConstantBuffer.get(), (void **)&lightConstants);
+                        videoDevice->mapBuffer(lightConstantBuffer.get(), (void **)&lightConstants);
                         lightConstants->count = lightPassCount;
-                        device->unmapBuffer(lightConstantBuffer.get());
+                        videoDevice->unmapBuffer(lightConstantBuffer.get());
 
                         LightData *lightingData = nullptr;
-                        device->mapBuffer(lightDataBuffer.get(), (void **)&lightingData);
+                        videoDevice->mapBuffer(lightDataBuffer.get(), (void **)&lightingData);
                         memcpy(lightingData, &lightList[base], (sizeof(LightData) * lightPassCount));
-                        device->unmapBuffer(lightDataBuffer.get());
+                        videoDevice->unmapBuffer(lightDataBuffer.get());
 
                         base += lightsPerPass;
                         enableBlock = true;
@@ -1233,14 +1231,14 @@ namespace Gek
                 : public Pass
             {
             public:
-                Video::Device::Context *deviceContext;
+                Video::Device::Context *videoContext;
                 Shader *shaderNode;
                 Block *block;
                 std::list<Shader::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *deviceContext, Shader *shaderNode, Block *block, std::list<Shader::PassData>::iterator current, std::list<Shader::PassData>::iterator end)
-                    : deviceContext(deviceContext)
+                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, Block *block, std::list<Shader::PassData>::iterator current, std::list<Shader::PassData>::iterator end)
+                    : videoContext(videoContext)
                     , shaderNode(shaderNode)
                     , block(block)
                     , current(current)
@@ -1251,14 +1249,14 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new PassImplementation(deviceContext, shaderNode, block, next, end));
+                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, shaderNode, block, next, end));
                 }
 
                 Mode prepare(void)
                 {
                     try
                     {
-                        return shaderNode->preparePass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                        return shaderNode->preparePass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                     }
                     catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
@@ -1268,12 +1266,12 @@ namespace Gek
 
                 void clear(void)
                 {
-                    shaderNode->clearPass(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                    shaderNode->clearPass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                 }
 
                 bool enableMaterial(Engine::Material *material)
                 {
-                    return shaderNode->enableMaterial(deviceContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current), material);
+                    return shaderNode->enableMaterial(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current), material);
                 }
             };
 
@@ -1281,14 +1279,14 @@ namespace Gek
                 : public Block
             {
             public:
-                Video::Device::Context *deviceContext;
+                Video::Device::Context *videoContext;
                 Shader *shaderNode;
                 std::list<Shader::BlockData>::iterator current, end;
                 uint32_t base;
 
             public:
-                BlockImplementation(Video::Device::Context *deviceContext, Shader *shaderNode, std::list<Shader::BlockData>::iterator current, std::list<Shader::BlockData>::iterator end)
-                    : deviceContext(deviceContext)
+                BlockImplementation(Video::Device::Context *videoContext, Shader *shaderNode, std::list<Shader::BlockData>::iterator current, std::list<Shader::BlockData>::iterator end)
+                    : videoContext(videoContext)
                     , shaderNode(shaderNode)
                     , current(current)
                     , end(end)
@@ -1299,19 +1297,19 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new BlockImplementation(deviceContext, shaderNode, next, end));
+                    return Iterator(++next == end ? nullptr : new BlockImplementation(videoContext, shaderNode, next, end));
                 }
 
                 Pass::Iterator begin(void)
                 {
-                    return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(deviceContext, shaderNode, this, current->passList.begin(), current->passList.end()));
+                    return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(videoContext, shaderNode, this, current->passList.begin(), current->passList.end()));
                 }
 
                 bool prepare(void)
                 {
                     try
                     {
-                        return shaderNode->prepareBlock(base, deviceContext, (*current));
+                        return shaderNode->prepareBlock(base, videoContext, (*current));
                     }
                     catch (const Plugin::Resources::ResourceNotLoaded &)
                     {
@@ -1320,10 +1318,10 @@ namespace Gek
                 }
             };
 
-            Block::Iterator begin(Video::Device::Context *deviceContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+            Block::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
                 GEK_REQUIRE(population);
-                GEK_REQUIRE(deviceContext);
+                GEK_REQUIRE(videoContext);
 
                 concurrency::concurrent_vector<LightData> lightData;
                 population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *) -> void
@@ -1359,7 +1357,7 @@ namespace Gek
                 });
 
                 lightList.assign(lightData.begin(), lightData.end());
-                return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(deviceContext, this, blockList.begin(), blockList.end()));
+                return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(videoContext, this, blockList.begin(), blockList.end()));
             }
         };
 

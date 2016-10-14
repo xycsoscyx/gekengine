@@ -1300,7 +1300,6 @@ namespace Gek
                 };
 
             public:
-                Device *device;
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 PipelinePtr computeSystemHandler;
                 PipelinePtr vertexSystemHandler;
@@ -1308,15 +1307,13 @@ namespace Gek
                 PipelinePtr pixelSystemHandler;
 
             public:
-                Context(Device *device, ID3D11DeviceContext *d3dDeviceContext)
-                    : device(device)
-                    , d3dDeviceContext(d3dDeviceContext)
+                Context(ID3D11DeviceContext *d3dDeviceContext)
+                    : d3dDeviceContext(d3dDeviceContext)
                     , computeSystemHandler(new ComputePipeline(d3dDeviceContext))
                     , vertexSystemHandler(new VertexPipeline(d3dDeviceContext))
                     , geomtrySystemHandler(new GeometryPipeline(d3dDeviceContext))
                     , pixelSystemHandler(new PixelPipeline(d3dDeviceContext))
                 {
-                    GEK_REQUIRE(device);
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(computeSystemHandler);
                     GEK_REQUIRE(vertexSystemHandler);
@@ -1325,16 +1322,6 @@ namespace Gek
                 }
 
                 // Video::Context
-                Device * const getDevice(void)
-                {
-                    return device;
-                }
-
-                void * const getDeviceContext(void)
-                {
-                    return d3dDeviceContext.p;
-                }
-
                 Pipeline * const computePipeline(void)
                 {
                     GEK_REQUIRE(computeSystemHandler);
@@ -1653,7 +1640,7 @@ namespace Gek
                 //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
-                defaultContext = std::make_shared<Context>(this, d3dDeviceContext);
+                defaultContext = std::make_shared<Context>(d3dDeviceContext);
                 getDisplayModes();
             }
 
@@ -1914,7 +1901,7 @@ namespace Gek
                     throw Video::OperationFailed();
                 }
 
-                return std::make_shared<Context>(this, d3dDeferredDeviceContext.p);
+                return std::make_shared<Context>(d3dDeferredDeviceContext.p);
             }
 
             Video::ObjectPtr createEvent(void)
