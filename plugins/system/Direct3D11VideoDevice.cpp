@@ -485,7 +485,7 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(const CComPtr<CLASS> &object, const wchar_t *name)
+        void setDebugName(CComPtr<CLASS> &object, const wchar_t *name)
         {
             if (object)
             {
@@ -494,19 +494,75 @@ namespace Gek
             }
         }
 
+        template <typename CONVERT, typename SOURCE>
+        auto getObject(SOURCE *source)
+        {
+            return (source ? dynamic_cast<CONVERT *>(source)->CONVERT::d3dObject.p : nullptr);
+        }
+
         template <typename TYPE>
-        class BasicD3DObject
+        struct ObjectCache
+        {
+            std::vector<TYPE *> objectList;
+
+            template <typename CONVERT, typename INPUT>
+            void set(const std::vector<INPUT> &inputList)
+            {
+                uint32_t listCount = inputList.size();
+                objectList.reserve(std::max(listCount, objectList.size()));
+                objectList.resize(listCount);
+
+                for (uint32_t object = 0; object < listCount; ++object)
+                {
+                    objectList[object] = getObject<CONVERT>(inputList[object]);
+                }
+            }
+
+            void clear(uint32_t listCount)
+            {
+                objectList.reserve(std::max(listCount, objectList.size()));
+                objectList.resize(listCount);
+
+                for (uint32_t object = 0; object < listCount; ++object)
+                {
+                    objectList[object] = nullptr;
+                }
+            }
+
+            TYPE * const *get(void) const
+            {
+                return objectList.data();
+            }
+        };
+
+        template <typename TYPE>
+        class BaseObject
+        {
+        public:
+            CComPtr<TYPE> d3dObject;
+
+        public:
+            template <typename TYPE>
+            BaseObject(TYPE *d3dSource)
+                : d3dObject(CComQIPtr<TYPE>(d3dSource))
+            {
+            }
+
+            virtual ~BaseObject(void) = default;
+        };
+
+        template <typename TYPE>
+        class BaseVideoObject
             : public Video::Object
         {
         public:
-            CComQIPtr<TYPE> d3dObject;
+            CComPtr<TYPE> d3dObject;
 
         public:
-            template <typename INPUT>
-            BasicD3DObject(const INPUT &d3dObject)
-                : d3dObject(d3dObject)
+            template <typename SOURCE>
+            BaseVideoObject(const SOURCE &d3dSource)
+                : d3dObject(CComQIPtr<TYPE>(d3dSource))
             {
-                GEK_REQUIRE(d3dObject);
             }
 
             void setName(const wchar_t *name)
@@ -515,35 +571,19 @@ namespace Gek
             }
         };
 
-        using CommandList = BasicD3DObject<ID3D11CommandList>;
-        using RenderState = BasicD3DObject<ID3D11RasterizerState>;
-        using DepthState = BasicD3DObject<ID3D11DepthStencilState>;
-        using BlendState = BasicD3DObject<ID3D11BlendState>;
-        using SamplerState = BasicD3DObject<ID3D11SamplerState>;
-        using Event = BasicD3DObject<ID3D11Query>;
-        using InputLayout = BasicD3DObject<ID3D11InputLayout>;
-        using ComputeProgram = BasicD3DObject<ID3D11ComputeShader>;
-        using VertexProgram = BasicD3DObject<ID3D11VertexShader>;
-        using GeometryProgram = BasicD3DObject<ID3D11GeometryShader>;
-        using PixelProgram = BasicD3DObject<ID3D11PixelShader>;
-        using Resource = BasicD3DObject<ID3D11Resource>;
+        using CommandList = BaseVideoObject<ID3D11CommandList>;
+        using RenderState = BaseVideoObject<ID3D11RasterizerState>;
+        using DepthState = BaseVideoObject<ID3D11DepthStencilState>;
+        using BlendState = BaseVideoObject<ID3D11BlendState>;
+        using SamplerState = BaseVideoObject<ID3D11SamplerState>;
+        using Event = BaseVideoObject<ID3D11Query>;
+        using InputLayout = BaseVideoObject<ID3D11InputLayout>;
+        using ComputeProgram = BaseVideoObject<ID3D11ComputeShader>;
+        using VertexProgram = BaseVideoObject<ID3D11VertexShader>;
+        using GeometryProgram = BaseVideoObject<ID3D11GeometryShader>;
+        using PixelProgram = BaseVideoObject<ID3D11PixelShader>;
 
-        template <typename TYPE>
-        class BaseObject
-        {
-        public:
-            CComQIPtr<TYPE> d3dObject;
-
-        public:
-            template <typename INPUT>
-            BaseObject(const INPUT &d3dObject)
-                : d3dObject(d3dObject)
-            {
-            }
-            
-            virtual ~BaseObject(void) = default;
-        };
-
+        using Resource = BaseObject<ID3D11Resource>;
         using ShaderResourceView = BaseObject<ID3D11ShaderResourceView>;
         using UnorderedAccessView = BaseObject<ID3D11UnorderedAccessView>;
         using RenderTargetView = BaseObject<ID3D11RenderTargetView>;
@@ -561,11 +601,11 @@ namespace Gek
             uint32_t count;
 
         public:
-            Buffer(const CComPtr<ID3D11Buffer> &d3dObject, const CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView, const CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView, Video::Format format, uint32_t stride, uint32_t count)
-                : Resource(d3dObject)
+            Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t stride, uint32_t count)
+                : Resource(d3dBuffer)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
-                , d3dObject(d3dObject)
+                , d3dObject(d3dBuffer)
                 , format(format)
                 , stride(stride)
                 , count(count)
@@ -576,8 +616,8 @@ namespace Gek
 
             void setName(const wchar_t *name)
             {
+                setDebugName(d3dObject, name);
                 setDebugName(Resource::d3dObject, name);
-                setDebugName(Buffer::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
                 setDebugName(UnorderedAccessView::d3dObject, name);
             }
@@ -658,7 +698,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ViewTexture(const CComQIPtr<ID3D11Resource> &d3dResource, const CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView, const CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
+            ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
                 : Texture(format, width, height, depth)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
@@ -724,7 +764,7 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(const CComQIPtr<ID3D11Resource> &d3dResource, const CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
+            TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
                 : Target(format, width, height, depth)
                 , Resource(d3dResource)
                 , RenderTargetView(d3dRenderTargetView)
@@ -746,7 +786,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            TargetViewTexture(const CComQIPtr<ID3D11Resource> &d3dResource, const CComPtr<ID3D11RenderTargetView> &d3dRenderTargetView, const CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView, const CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
+            TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
                 : TargetTexture(d3dResource, d3dRenderTargetView, format, width, height, depth)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
@@ -774,7 +814,7 @@ namespace Gek
             CComPtr<ID3D11DepthStencilView> d3dObject;
 
         public:
-            DepthTexture(const CComQIPtr<ID3D11Resource> &d3dResource, const CComPtr<ID3D11DepthStencilView> &d3dDepthStencilView, const CComPtr<ID3D11ShaderResourceView> &d3dShaderResourceView, const CComPtr<ID3D11UnorderedAccessView> &d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
+            DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
                 : Texture(format, width, height, depth)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
@@ -818,61 +858,75 @@ namespace Gek
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        d3dDeviceContext->CSSetShader(program ? dynamic_cast<ComputeProgram *>(program)->d3dObject.p : nullptr, nullptr, 0);
+                        d3dDeviceContext->CSSetShader(getObject<ComputeProgram>(program), nullptr, 0);
                     }
 
-                    void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dObject.p : nullptr };
-                        d3dDeviceContext->CSSetSamplers(stage, 1, list);
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->CSSetSamplers(firstStage, list.size(), samplerStateCache.get());
                     }
 
-                    void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dObject.p : nullptr };
-                        d3dDeviceContext->CSSetConstantBuffers(stage, 1, list);
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->CSSetConstantBuffers(firstStage, list.size(), constantBufferCache.get());
                     }
 
-                    void setResource(Video::Object *resource, uint32_t firstStage)
-                    {
-                        setResourceList(&resource, 1, firstStage);
-                    }
-
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                    {
-                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
-                    }
-
-                    std::vector<ID3D11ShaderResourceView *> resourceCache;
-                    void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                        {
-                            resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dObject.p : nullptr);
-                        }
-
-                        d3dDeviceContext->CSSetShaderResources(firstStage, resourceCount, resourceCache.data());
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->CSSetShaderResources(firstStage, list.size(), resourceCache.get());
                     }
 
-                    std::vector<ID3D11UnorderedAccessView *> unorderedAccessCache;
-                    void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                    ObjectCache<ID3D11UnorderedAccessView> unorderedAccessCache;
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        unorderedAccessCache.resize(std::max(unorderedAccessCount, unorderedAccessCache.size()));
-                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
-                        {
-                            unorderedAccessCache[unorderedAccess] = (unorderedAccessList && unorderedAccessList[unorderedAccess] ? dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess])->d3dObject.p : nullptr);
-                        }
+                        unorderedAccessCache.set<UnorderedAccessView>(list);
+                        d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, list.size(), unorderedAccessCache.get(), countList);
+                    }
 
-                        d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, unorderedAccessCount, unorderedAccessCache.data(), countList);
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->CSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->CSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->CSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        unorderedAccessCache.clear(count);
+                        d3dDeviceContext->CSSetUnorderedAccessViews(firstStage, count, unorderedAccessCache.get(), nullptr);
                     }
                 };
 
@@ -894,50 +948,66 @@ namespace Gek
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        d3dDeviceContext->VSSetShader(program ? dynamic_cast<VertexProgram *>(program)->d3dObject.p : nullptr, nullptr, 0);
+                        d3dDeviceContext->VSSetShader(getObject<VertexProgram>(program), nullptr, 0);
                     }
 
-                    void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dObject.p : nullptr };
-                        d3dDeviceContext->VSSetSamplers(stage, 1, list);
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->VSSetSamplers(firstStage, list.size(), samplerStateCache.get());
                     }
 
-                    void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dObject.p : nullptr };
-                        d3dDeviceContext->VSSetConstantBuffers(stage, 1, list);
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->VSSetConstantBuffers(firstStage, list.size(), constantBufferCache.get());
                     }
 
-                    void setResource(Video::Object *resource, uint32_t firstStage)
-                    {
-                        setResourceList(&resource, 1, firstStage);
-                    }
-
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                    {
-                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
-                    }
-
-                    std::vector<ID3D11ShaderResourceView *> resourceCache;
-                    void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                        {
-                            resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dObject.p : nullptr);
-                        }
-
-                        d3dDeviceContext->VSSetShaderResources(firstStage, resourceCount, resourceCache.data());
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->VSSetShaderResources(firstStage, list.size(), resourceCache.get());
                     }
 
-                    void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    {
+                        throw Video::UnsupportedOperation();
+                    }
+
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->VSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->VSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->VSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                     {
                         throw Video::UnsupportedOperation();
                     }
@@ -961,50 +1031,66 @@ namespace Gek
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        d3dDeviceContext->GSSetShader(program ? dynamic_cast<GeometryProgram *>(program)->d3dObject.p : nullptr, nullptr, 0);
+                        d3dDeviceContext->GSSetShader(getObject<GeometryProgram>(program), nullptr, 0);
                     }
 
-                    void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dObject.p : nullptr };
-                        d3dDeviceContext->GSSetSamplers(stage, 1, list);
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->GSSetSamplers(firstStage, list.size(), samplerStateCache.get());
                     }
 
-                    void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dObject.p : nullptr };
-                        d3dDeviceContext->GSSetConstantBuffers(stage, 1, list);
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->GSSetConstantBuffers(firstStage, list.size(), constantBufferCache.get());
                     }
 
-                    void setResource(Video::Object *resource, uint32_t firstStage)
-                    {
-                        setResourceList(&resource, 1, firstStage);
-                    }
-
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                    {
-                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
-                    }
-
-                    std::vector<ID3D11ShaderResourceView *> resourceCache;
-                    void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                        {
-                            resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dObject.p : nullptr);
-                        }
-
-                        d3dDeviceContext->GSSetShaderResources(firstStage, resourceCount, resourceCache.data());
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->GSSetShaderResources(firstStage, list.size(), resourceCache.get());
                     }
 
-                    void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
+                    {
+                        throw Video::UnsupportedOperation();
+                    }
+
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->GSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->GSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->GSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                     {
                         throw Video::UnsupportedOperation();
                     }
@@ -1028,61 +1114,75 @@ namespace Gek
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        d3dDeviceContext->PSSetShader(program ? dynamic_cast<PixelProgram *>(program)->d3dObject.p : nullptr, nullptr, 0);
+                        d3dDeviceContext->PSSetShader(getObject<PixelProgram>(program), nullptr, 0);
                     }
 
-                    void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                    ObjectCache<ID3D11SamplerState> samplerStateCache;
+                    void setSamplerStateList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11SamplerState *list[1] = { samplerState ? dynamic_cast<SamplerState *>(samplerState)->d3dObject.p : nullptr };
-                        d3dDeviceContext->PSSetSamplers(stage, 1, list);
+                        samplerStateCache.set<SamplerState>(list);
+                        d3dDeviceContext->PSSetSamplers(firstStage, list.size(), samplerStateCache.get());
                     }
 
-                    void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
+                    ObjectCache<ID3D11Buffer> constantBufferCache;
+                    void setConstantBufferList(const std::vector<Video::Buffer *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        ID3D11Buffer *list[1] = { buffer ? dynamic_cast<Buffer *>(buffer)->d3dObject.p : nullptr };
-                        d3dDeviceContext->PSSetConstantBuffers(stage, 1, list);
+                        constantBufferCache.set<Buffer>(list);
+                        d3dDeviceContext->PSSetConstantBuffers(firstStage, list.size(), constantBufferCache.get());
                     }
 
-                    void setResource(Video::Object *resource, uint32_t firstStage)
-                    {
-                        setResourceList(&resource, 1, firstStage);
-                    }
-
-                    void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                    {
-                        setUnorderedAccessList(&unorderedAccess, 1, firstStage, &count);
-                    }
-
-                    std::vector<ID3D11ShaderResourceView *> resourceCache;
-                    void setResourceList(Video::Object **resourceList, uint32_t resourceCount, uint32_t firstStage)
+                    ObjectCache<ID3D11ShaderResourceView> resourceCache;
+                    void setResourceList(const std::vector<Video::Object *> &list, uint32_t firstStage)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        resourceCache.resize(std::max(resourceCount, resourceCache.size()));
-                        for (uint32_t resource = 0; resource < resourceCount; ++resource)
-                        {
-                            resourceCache[resource] = (resourceList && resourceList[resource] ? dynamic_cast<ShaderResourceView *>(resourceList[resource])->d3dObject.p : nullptr);
-                        }
-
-                        d3dDeviceContext->PSSetShaderResources(firstStage, resourceCount, resourceCache.data());
+                        resourceCache.set<ShaderResourceView>(list);
+                        d3dDeviceContext->PSSetShaderResources(firstStage, list.size(), resourceCache.get());
                     }
 
-                    std::vector<ID3D11UnorderedAccessView *> unorderedAccessCache;
-                    void setUnorderedAccessList(Video::Object **unorderedAccessList, uint32_t unorderedAccessCount, uint32_t firstStage, uint32_t *countList)
+                    ObjectCache<ID3D11UnorderedAccessView> unorderedAccessCache;
+                    void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
 
-                        unorderedAccessCache.resize(std::max(unorderedAccessCount, unorderedAccessCache.size()));
-                        for (uint32_t unorderedAccess = 0; unorderedAccess < unorderedAccessCount; ++unorderedAccess)
-                        {
-                            unorderedAccessCache[unorderedAccess] = (unorderedAccessList && unorderedAccessList[unorderedAccess] ? dynamic_cast<UnorderedAccessView *>(unorderedAccessList[unorderedAccess])->d3dObject.p : nullptr);
-                        }
+                        unorderedAccessCache.set<UnorderedAccessView>(list);
+                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, list.size(), unorderedAccessCache.get(), countList);
+                    }
 
-                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, unorderedAccessCount, unorderedAccessCache.data(), countList);
+                    void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        samplerStateCache.clear(count);
+                        d3dDeviceContext->PSSetSamplers(firstStage, count, samplerStateCache.get());
+                    }
+
+                    void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        constantBufferCache.clear(count);
+                        d3dDeviceContext->PSSetConstantBuffers(firstStage, count, constantBufferCache.get());
+                    }
+
+                    void clearResourceList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        resourceCache.clear(count);
+                        d3dDeviceContext->PSSetShaderResources(firstStage, count, resourceCache.get());
+                    }
+
+                    void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
+                    {
+                        GEK_REQUIRE(d3dDeviceContext);
+
+                        unorderedAccessCache.clear(count);
+                        d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, count, unorderedAccessCache.get(), nullptr);
                     }
                 };
 
@@ -1142,7 +1242,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(texture);
 
-                    d3dDeviceContext->GenerateMips(dynamic_cast<ShaderResourceView *>(texture)->d3dObject);
+                    d3dDeviceContext->GenerateMips(getObject<ShaderResourceView>(texture));
                 }
 
                 void clearState(void)
@@ -1152,24 +1252,18 @@ namespace Gek
                     d3dDeviceContext->ClearState();
                 }
 
-                void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount)
+                void setViewportList(const std::vector<Video::ViewPort> &viewPortList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    if (viewPortCount)
-                    {
-                        d3dDeviceContext->RSSetViewports(viewPortCount, (D3D11_VIEWPORT *)viewPortList);
-                    }
+                    d3dDeviceContext->RSSetViewports(viewPortList.size(), (D3D11_VIEWPORT *)viewPortList.data());
                 }
 
-                void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
+                void setScissorList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    if (rectangleCount > 0)
-                    {
-                        d3dDeviceContext->RSSetScissorRects(rectangleCount, (D3D11_RECT *)rectangleList);
-                    }
+                    d3dDeviceContext->RSSetScissorRects(rectangleList.size(), (D3D11_RECT *)rectangleList.data());
                 }
 
                 void clearResource(Video::Object *object, const Math::Float4 &value)
@@ -1183,8 +1277,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
 
-                    auto unorderedAccessView = dynamic_cast<UnorderedAccessView *>(object);
-                    d3dDeviceContext->ClearUnorderedAccessViewFloat(unorderedAccessView->d3dObject, value.data);
+                    d3dDeviceContext->ClearUnorderedAccessViewFloat(getObject<UnorderedAccessView>(object), value.data);
                 }
 
                 void clearUnorderedAccess(Video::Object *object, const uint32_t value[4])
@@ -1192,8 +1285,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
 
-                    auto unorderedAccessView = dynamic_cast<UnorderedAccessView *>(object);
-                    d3dDeviceContext->ClearUnorderedAccessViewUint(unorderedAccessView->d3dObject, value);
+                    d3dDeviceContext->ClearUnorderedAccessViewUint(getObject<UnorderedAccessView>(object), value);
                 }
 
                 void clearRenderTarget(Video::Target *renderTarget, const Math::Color &clearColor)
@@ -1201,8 +1293,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(renderTarget);
 
-                    auto renderTargetView = dynamic_cast<RenderTargetView *>(renderTarget);
-                    d3dDeviceContext->ClearRenderTargetView(renderTargetView->d3dObject, clearColor.data);
+                    d3dDeviceContext->ClearRenderTargetView(getObject<RenderTargetView>(renderTarget), clearColor.data);
                 }
 
                 void clearDepthStencilTarget(Video::Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
@@ -1210,25 +1301,44 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(depthBuffer);
 
-                    auto depthTexture = dynamic_cast<DepthTexture *>(depthBuffer);
-                    d3dDeviceContext->ClearDepthStencilView(depthTexture->d3dObject,
+                    d3dDeviceContext->ClearDepthStencilView(getObject<DepthTexture>(depthBuffer), 
                         ((flags & Video::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
                         (flags & Video::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                         clearDepth, clearStencil);
                 }
 
-                std::vector<ID3D11RenderTargetView *> d3dRenderTargetViewCache;
-                void setRenderTargets(Video::Target **renderTargetList, uint32_t renderTargetCount, Video::Object *depthBuffer)
+                void clearIndexBuffer(void)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dRenderTargetViewCache.resize(std::max(renderTargetCount, d3dRenderTargetViewCache.size()));
-                    for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
-                    {
-                        d3dRenderTargetViewCache[renderTarget] = (renderTargetList && renderTargetList[renderTarget] ? dynamic_cast<RenderTargetView *>(renderTargetList[renderTarget])->d3dObject.p : nullptr);
-                    }
+                    d3dDeviceContext->IASetIndexBuffer(nullptr, DXGI_FORMAT_UNKNOWN, 0);
+                }
 
-                    d3dDeviceContext->OMSetRenderTargets(renderTargetCount, d3dRenderTargetViewCache.data(), (depthBuffer ? dynamic_cast<DepthTexture *>(depthBuffer)->d3dObject.p : nullptr));
+                void clearVertexBufferList(uint32_t count, uint32_t firstSlot)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+
+                    vertexBufferCache.clear(count);
+                    vertexBufferStrideCache.resize(count);
+                    vertexBufferOffsetsCache.resize(count);
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, count, vertexBufferCache.get(), vertexBufferStrideCache.data(), vertexBufferOffsetsCache.data());
+                }
+
+                void clearRenderTargetList(uint32_t count, bool depthBuffer)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+
+                    renderTargetViewCache.clear(count);
+                    d3dDeviceContext->OMSetRenderTargets(count, renderTargetViewCache.get(), nullptr);
+                }
+
+                ObjectCache<ID3D11RenderTargetView> renderTargetViewCache;
+                void setRenderTargetList(const std::vector<Video::Target *> &renderTargetList, Video::Object *depthBuffer)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+
+                    renderTargetViewCache.set<RenderTargetView>(renderTargetList);
+                    d3dDeviceContext->OMSetRenderTargets(renderTargetList.size(), renderTargetViewCache.get(), getObject<DepthTexture>(depthBuffer));
                 }
 
                 void setRenderState(Video::Object *renderState)
@@ -1236,7 +1346,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(renderState);
 
-                    d3dDeviceContext->RSSetState(dynamic_cast<RenderState *>(renderState)->d3dObject);
+                    d3dDeviceContext->RSSetState(getObject<RenderState>(renderState));
                 }
 
                 void setDepthState(Video::Object *depthState, uint32_t stencilReference)
@@ -1244,7 +1354,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(depthState);
 
-                    d3dDeviceContext->OMSetDepthStencilState(dynamic_cast<DepthState *>(depthState)->d3dObject, stencilReference);
+                    d3dDeviceContext->OMSetDepthStencilState(getObject<DepthState>(depthState), stencilReference);
                 }
 
                 void setBlendState(Video::Object *blendState, const Math::Color &blendFactor, uint32_t mask)
@@ -1252,24 +1362,14 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(blendState);
 
-                    d3dDeviceContext->OMSetBlendState(dynamic_cast<BlendState *>(blendState)->d3dObject, blendFactor.data, mask);
+                    d3dDeviceContext->OMSetBlendState(getObject<BlendState>(blendState), blendFactor.data, mask);
                 }
 
                 void setInputLayout(Video::Object *inputLayout)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->IASetInputLayout(inputLayout ? dynamic_cast<InputLayout *>(inputLayout)->d3dObject.p : nullptr);
-                }
-
-                void setVertexBuffer(uint32_t slot, Video::Buffer *vertexBuffer, uint32_t offset)
-                {
-                    GEK_REQUIRE(d3dDeviceContext);
-                    GEK_REQUIRE(vertexBuffer);
-
-                    uint32_t stride = vertexBuffer->getStride();
-                    auto baseBuffer = dynamic_cast<Buffer *>(vertexBuffer);
-                    d3dDeviceContext->IASetVertexBuffers(slot, 1, &baseBuffer->d3dObject.p, &stride, &offset);
+                    d3dDeviceContext->IASetInputLayout(getObject<InputLayout>(inputLayout));
                 }
 
                 void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
@@ -1278,8 +1378,27 @@ namespace Gek
                     GEK_REQUIRE(indexBuffer);
 
                     DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getFormat())];
-                    auto baseBuffer = dynamic_cast<Buffer *>(indexBuffer);
-                    d3dDeviceContext->IASetIndexBuffer(baseBuffer->d3dObject.p, format, offset);
+                    d3dDeviceContext->IASetIndexBuffer(getObject<Buffer>(indexBuffer), format, offset);
+                }
+
+                ObjectCache<ID3D11Buffer> vertexBufferCache;
+                std::vector<uint32_t> vertexBufferStrideCache;
+                std::vector<uint32_t> vertexBufferOffsetsCache;
+                void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    
+                    uint32_t vertexBufferCount = vertexBufferList.size();
+                    vertexBufferStrideCache.resize(vertexBufferCount);
+                    vertexBufferOffsetsCache.resize(vertexBufferCount);
+                    for (uint32_t buffer = 0; buffer < vertexBufferCount; buffer++)
+                    {
+                        vertexBufferStrideCache[buffer] = vertexBufferList[buffer]->getStride();
+                        vertexBufferOffsetsCache[buffer] = (offsetList ? offsetList[buffer] : 0);
+                    }
+
+                    vertexBufferCache.set<Buffer>(vertexBufferList);
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, vertexBufferCount, vertexBufferCache.get(), vertexBufferStrideCache.data(), vertexBufferOffsetsCache.data());
                 }
 
                 void setPrimitiveType(Video::PrimitiveType primitiveType)
@@ -1335,7 +1454,7 @@ namespace Gek
                         throw Video::OperationFailed();
                     }
 
-                    return std::make_shared<CommandList>(d3dCommandList);
+                    return std::make_shared<CommandList>(d3dCommandList.p);
                 }
             };
 
@@ -1666,7 +1785,7 @@ namespace Gek
                     case DXGI_FORMAT_R8_SNORM: format = Video::Format::R8_NORM; break;
                     };
 
-                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView, format, description.Width, description.Height, 1);
+                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1);
                 }
 
                 return backBuffer.get();
@@ -1690,7 +1809,7 @@ namespace Gek
                     throw Video::OperationFailed();
                 }
 
-                return std::make_shared<Context>(d3dDeferredDeviceContext);
+                return std::make_shared<Context>(d3dDeferredDeviceContext.p);
             }
 
             Video::ObjectPtr createEvent(void)
@@ -1711,21 +1830,21 @@ namespace Gek
                 return std::make_shared<Event>(d3dQuery);
             }
 
-            void setEvent(Video::Object *videoEvent)
+            void setEvent(Video::Object *gpuEvent)
             {
                 GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(videoEvent);
+                GEK_REQUIRE(gpuEvent);
 
-                d3dDeviceContext->End(dynamic_cast<Event *>(videoEvent)->d3dObject);
+                d3dDeviceContext->End(getObject<Event>(gpuEvent));
             }
 
-            bool isEventSet(Video::Object *videoEvent)
+            bool isEventSet(Video::Object *gpuEvent)
             {
                 GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(videoEvent);
+                GEK_REQUIRE(gpuEvent);
 
                 uint32_t isEventSet = 0;
-                if (FAILED(d3dDeviceContext->GetData(dynamic_cast<Event *>(videoEvent)->d3dObject, (void *)&isEventSet, sizeof(uint32_t), TRUE)))
+                if (FAILED(d3dDeviceContext->GetData(getObject<Event>(gpuEvent), (void *)&isEventSet, sizeof(uint32_t), TRUE)))
                 {
                     isEventSet = 0;
                 }
@@ -2061,7 +2180,7 @@ namespace Gek
                 mappedSubResource.RowPitch = 0;
                 mappedSubResource.DepthPitch = 0;
 
-                HRESULT resultValue = d3dDeviceContext->Map(dynamic_cast<Buffer *>(buffer)->d3dObject, 0, d3dMapping, 0, &mappedSubResource);
+                HRESULT resultValue = d3dDeviceContext->Map(getObject<Buffer>(buffer), 0, d3dMapping, 0, &mappedSubResource);
                 if (FAILED(resultValue))
                 {
                     throw Video::OperationFailed();
@@ -2075,7 +2194,7 @@ namespace Gek
                 GEK_REQUIRE(d3dDeviceContext);
                 GEK_REQUIRE(buffer);
 
-                d3dDeviceContext->Unmap(dynamic_cast<Buffer *>(buffer)->d3dObject, 0);
+                d3dDeviceContext->Unmap(getObject<Buffer>(buffer), 0);
             }
 
             void updateResource(Video::Object *object, const void *data)
@@ -2084,7 +2203,7 @@ namespace Gek
                 GEK_REQUIRE(object);
                 GEK_REQUIRE(data);
 
-                d3dDeviceContext->UpdateSubresource(dynamic_cast<Resource *>(object)->d3dObject, 0, nullptr, data, 0, 0);
+                d3dDeviceContext->UpdateSubresource(getObject<Resource>(object), 0, nullptr, data, 0, 0);
             }
 
             void copyResource(Video::Object *destination, Video::Object *source)
@@ -2105,7 +2224,7 @@ namespace Gek
                     }
                 }
 
-                d3dDeviceContext->CopyResource(dynamic_cast<Resource *>(destination)->d3dObject, dynamic_cast<Resource *>(source)->d3dObject);
+                d3dDeviceContext->CopyResource(getObject<Resource>(destination), getObject<Resource>(source));
             }
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
@@ -2417,7 +2536,7 @@ namespace Gek
                         throw Video::CreateObjectFailed();
                     }
 
-                    return std::make_shared<TargetViewTexture>(d3dResource, d3dRenderTargetView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height, depth);
+                    return std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
                 }
                 else if (flags & Video::TextureFlags::DepthTarget)
                 {
@@ -2434,11 +2553,11 @@ namespace Gek
                         throw Video::CreateObjectFailed();
                     }
 
-                    return std::make_shared<DepthTexture>(d3dResource, d3dDepthStencilView, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height, depth);
+                    return std::make_shared<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
                 }
                 else
                 {
-                    return std::make_shared<ViewTexture>(d3dResource, d3dShaderResourceView, d3dUnorderedAccessView, format, width, height, depth);
+                    return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
                 }
             }
 
@@ -2499,7 +2618,7 @@ namespace Gek
                     throw Video::CreateObjectFailed();
                 }
 
-                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView, nullptr, Video::Format::Unknown, image.GetMetadata().width, image.GetMetadata().height, image.GetMetadata().depth);
+                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, image.GetMetadata().width, image.GetMetadata().height, image.GetMetadata().depth);
             }
 
             void executeCommandList(Video::Object *commandList)
@@ -2508,7 +2627,7 @@ namespace Gek
                 GEK_REQUIRE(commandList);
 
                 CComQIPtr<ID3D11CommandList> d3dCommandList;
-                d3dDeviceContext->ExecuteCommandList(dynamic_cast<CommandList *>(commandList)->d3dObject, FALSE);
+                d3dDeviceContext->ExecuteCommandList(getObject<CommandList>(commandList), FALSE);
             }
 
             void present(bool waitForVerticalSync)

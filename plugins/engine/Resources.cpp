@@ -268,6 +268,60 @@ namespace Gek
             }
         };
 
+        template <typename TYPE>
+        struct ObjectCache
+        {
+            std::vector<TYPE *> objectList;
+
+            template <typename INPUT, typename HANDLE, typename SOURCE>
+            bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, SOURCE> &cache)
+            {
+                uint32_t listCount = inputList.size();
+                objectList.reserve(std::max(listCount, objectList.size()));
+                objectList.resize(listCount);
+
+                for (uint32_t object = 0; object < listCount; ++object)
+                {
+                    objectList[object] = dynamic_cast<TYPE *>(cache.getResource(inputList[object]));
+                    if (!objectList[object])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            template <typename INPUT, typename HANDLE>
+            bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, TYPE> &cache)
+            {
+                uint32_t listCount = inputList.size();
+                objectList.reserve(std::max(listCount, objectList.size()));
+                objectList.resize(listCount);
+
+                for (uint32_t object = 0; object < listCount; ++object)
+                {
+                    objectList[object] = cache.getResource(inputList[object]);
+                    if (!objectList[object])
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
+            }
+
+            std::vector<TYPE *> &get(void)
+            {
+                return objectList;
+            }
+
+            const std::vector<TYPE *> &get(void) const
+            {
+                return objectList;
+            }
+        };
+
         GEK_CONTEXT_USER(Resources, Plugin::Core *, Video::Device *)
             , public Engine::Resources
             , public ResourceRequester
@@ -284,7 +338,7 @@ namespace Gek
             GeneralResourceCache<MaterialHandle, Engine::Material> materialCache;
             ReloadResourceCache<ShaderHandle, Engine::Shader> shaderCache;
             ReloadResourceCache<ResourceHandle, Engine::Filter> filterCache;
-            GeneralResourceCache<ResourceHandle, Video::Object> resourceCache;
+            GeneralResourceCache<ResourceHandle, Video::Object> generalCache;
             GeneralResourceCache<RenderStateHandle, Video::Object> renderStateCache;
             GeneralResourceCache<DepthStateHandle, Video::Object> depthStateCache;
             GeneralResourceCache<BlendStateHandle, Video::Object> blendStateCache;
@@ -301,7 +355,7 @@ namespace Gek
                 , materialCache(this)
                 , shaderCache(this)
                 , filterCache(this)
-                , resourceCache(this)
+                , generalCache(this)
                 , renderStateCache(this)
                 , depthStateCache(this)
                 , blendStateCache(this)
@@ -601,7 +655,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(textureName);
-                return resourceCache.getHandle(hash, std::move(load));
+                return generalCache.getHandle(hash, std::move(load));
             }
 
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
@@ -612,7 +666,7 @@ namespace Gek
                 };
 
                 auto hash = getHash(pattern, parameters);
-                return resourceCache.getHandle(hash, std::move(load));
+                return generalCache.getHandle(hash, std::move(load));
             }
 
             ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
@@ -626,7 +680,7 @@ namespace Gek
 
                 auto hash = getHash(textureName);
                 auto parameters = getHash(format, width, height, depth, mipmaps, flags);
-                return resourceCache.getHandle(hash, parameters, std::move(load));
+                return generalCache.getHandle(hash, parameters, std::move(load));
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
@@ -642,11 +696,11 @@ namespace Gek
                 if (staticData.empty())
                 {
                     auto parameters = getHash(stride, count, type, flags);
-                    return resourceCache.getHandle(hash, parameters, std::move(load));
+                    return generalCache.getHandle(hash, parameters, std::move(load));
                 }
                 else
                 {
-                    return resourceCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
+                    return generalCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
                 }
             }
 
@@ -663,83 +717,92 @@ namespace Gek
                 if (staticData.empty())
                 {
                     auto parameters = getHash(format, count, type, flags);
-                    return resourceCache.getHandle(hash, parameters, std::move(load));
+                    return generalCache.getHandle(hash, parameters, std::move(load));
                 }
                 else
                 {
-                    return resourceCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
+                    return generalCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
                 }
-            }
-
-            void setVertexBuffer(Video::Device::Context *videoContext, uint32_t slot, ResourceHandle resourceHandle, uint32_t offset)
-            {
-                GEK_REQUIRE(videoContext);
-
-                auto resource = resourceCache.getResource(resourceHandle);
-                if (resource == nullptr)
-                {
-                    throw ResourceNotLoaded();
-                }
-
-                videoContext->setVertexBuffer(slot, dynamic_cast<Video::Buffer *>(resource), offset);
             }
 
             void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset)
             {
                 GEK_REQUIRE(videoContext);
 
-                auto resource = resourceCache.getResource(resourceHandle);
-                if (resource == nullptr)
+                auto resource = generalCache.getResource(resourceHandle);
+                if (resource)
                 {
-                    throw ResourceNotLoaded();
+                    videoContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
                 }
-
-                videoContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
             }
 
-            void setConstantBuffer(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage)
+            ObjectCache<Video::Buffer> vertexBufferCache;
+            void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList)
+            {
+                GEK_REQUIRE(videoContext);
+
+                if (vertexBufferCache.set(resourceHandleList, generalCache))
+                {
+                    videoContext->setVertexBufferList(vertexBufferCache.get(), firstSlot, offsetList);
+                }
+            }
+
+            ObjectCache<Video::Buffer> constantBufferCache;
+            void setConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
             {
                 GEK_REQUIRE(videoPipeline);
 
-                videoPipeline->setConstantBuffer((resourceHandle ? dynamic_cast<Video::Buffer *>(resourceCache.getResource(resourceHandle)) : nullptr), stage);
+                if (constantBufferCache.set(resourceHandleList, generalCache))
+                {
+                    videoPipeline->setConstantBufferList(constantBufferCache.get(), firstStage);
+                }
             }
 
-            void setResource(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage)
-            {
-                setResourceList(videoPipeline, &resourceHandle, 1, stage);
-            }
-
-            void setUnorderedAccess(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage)
-            {
-                setUnorderedAccessList(videoPipeline, &resourceHandle, 1, stage);
-            }
-
-            std::vector<Video::Object *> setResourceCache;
-            void setResourceList(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
+            ObjectCache<Video::Object> resourceCache;
+            void setResourceList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
             {
                 GEK_REQUIRE(videoPipeline);
 
-                setResourceCache.resize(std::max(resourceCount, setResourceCache.size()));
-                for (uint32_t resource = 0; resource < resourceCount; ++resource)
+                if (resourceCache.set(resourceHandleList, generalCache))
                 {
-                    setResourceCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
+                    videoPipeline->setResourceList(resourceCache.get(), firstStage);
                 }
-
-                videoPipeline->setResourceList(setResourceCache, firstStage);
             }
 
-            std::vector<Video::Object *> setUnorderedAccessCache;
-            void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle *resourceHandleList, uint32_t resourceCount, uint32_t firstStage)
+            ObjectCache<Video::Object> unorderedAccessCache;
+            void setUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage)
             {
                 GEK_REQUIRE(videoPipeline);
 
-                setUnorderedAccessCache.resize(std::max(resourceCount, setUnorderedAccessCache.size()));
-                for (uint32_t resource = 0; resource < resourceCount; ++resource)
+                if (unorderedAccessCache.set(resourceHandleList, generalCache))
                 {
-                    setUnorderedAccessCache[resource] = (resourceHandleList ? resourceCache.getResource(resourceHandleList[resource]) : nullptr);
+                    videoPipeline->setUnorderedAccessList(unorderedAccessCache.get(), firstStage);
                 }
+            }
 
-                videoPipeline->setUnorderedAccessList(setUnorderedAccessCache, firstStage);
+            void clearIndexBuffer(Video::Device::Context *videoContext)
+            {
+                videoContext->clearIndexBuffer();
+            }
+
+            void clearVertexBufferList(Video::Device::Context *videoContext, uint32_t count, uint32_t firstSlot)
+            {
+                videoContext->clearVertexBufferList(count, firstSlot);
+            }
+
+            void clearConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
+            {
+                videoPipeline->clearConstantBufferList(count, firstStage);
+            }
+
+            void clearResourceList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
+            {
+                videoPipeline->clearResourceList(count, firstStage);
+            }
+
+            void clearUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
+            {
+                videoPipeline->clearUnorderedAccessList(count, firstStage);
             }
 
             void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex)
@@ -776,7 +839,7 @@ namespace Gek
                 materialCache.clear();
                 shaderCache.clear();
                 filterCache.clear();
-                resourceCache.clear();
+                generalCache.clear();
                 renderStateCache.clear();
                 depthStateCache.clear();
                 blendStateCache.clear();
@@ -801,7 +864,7 @@ namespace Gek
 
             ResourceHandle getResourceHandle(const wchar_t *resourceName) const
             {
-				return resourceCache.getHandle(getHash(resourceName));
+				return generalCache.getHandle(getHash(resourceName));
             }
 
             Engine::Material * const getMaterial(MaterialHandle handle) const
@@ -971,7 +1034,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto resource = resourceCache.getResource(resourceHandle);
+                auto resource = generalCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -982,8 +1045,8 @@ namespace Gek
 
             void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
-                auto source = resourceCache.getResource(sourceHandle);
-                auto destination = resourceCache.getResource(destinationHandle);
+                auto source = generalCache.getResource(sourceHandle);
+                auto destination = generalCache.getResource(destinationHandle);
                 if (source == nullptr || destination == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -996,7 +1059,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto resource = resourceCache.getResource(resourceHandle);
+                auto resource = generalCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1009,7 +1072,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto resource = resourceCache.getResource(resourceHandle);
+                auto resource = generalCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1022,7 +1085,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto resource = resourceCache.getResource(resourceHandle);
+                auto resource = generalCache.getResource(resourceHandle);
                 if (resource == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1035,7 +1098,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto depthBuffer = resourceCache.getResource(depthBufferHandle);
+                auto depthBuffer = generalCache.getResource(depthBufferHandle);
                 if (depthBuffer == nullptr)
                 {
                     throw ResourceNotLoaded();
@@ -1105,44 +1168,46 @@ namespace Gek
                 videoPipeline->setProgram(program);
             }
 
+            ObjectCache<Video::Target> renderTargetCache;
             std::vector<Video::ViewPort> viewPortCache;
-            std::vector<Video::Target *> renderTargetCache;
-            void setRenderTargets(Video::Device::Context *videoContext, ResourceHandle *renderTargetHandleList, uint32_t renderTargetHandleCount, ResourceHandle *depthBuffer)
+            void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle *depthBuffer)
             {
                 GEK_REQUIRE(videoContext);
 
-                viewPortCache.resize(std::max(renderTargetHandleCount, viewPortCache.size()));
-                renderTargetCache.resize(std::max(renderTargetHandleCount, renderTargetCache.size()));
-                for (uint32_t renderTarget = 0; renderTarget < renderTargetHandleCount; ++renderTarget)
+                if (renderTargetCache.set(renderTargetHandleList, generalCache))
                 {
-                    renderTargetCache[renderTarget] = (renderTargetHandleList ? dynamic_cast<Video::Target *>(resourceCache.getResource(renderTargetHandleList[renderTarget])) : nullptr);
-                    if (renderTargetCache[renderTarget])
+                    auto &renderTargetList = renderTargetCache.get();
+                    uint32_t renderTargetCount = renderTargetList.size();
+                    viewPortCache.resize(renderTargetCount);
+                    for (uint32_t renderTarget = 0; renderTarget < renderTargetCount; ++renderTarget)
                     {
-                        viewPortCache[renderTarget] = renderTargetCache[renderTarget]->getViewPort();
+                        viewPortCache[renderTarget] = renderTargetList[renderTarget]->getViewPort();
                     }
-                }
 
-                videoContext->setRenderTargets(renderTargetCache.data(), renderTargetHandleCount, (depthBuffer ? resourceCache.getResource(*depthBuffer) : nullptr));
-                if (renderTargetHandleList)
-                {
-                    videoContext->setViewports(viewPortCache.data(), renderTargetHandleCount);
+                    videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? generalCache.getResource(*depthBuffer) : nullptr));
+                    videoContext->setViewportList(viewPortCache);
                 }
             }
 
             void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer)
             {
                 GEK_REQUIRE(videoContext);
+                
+                auto &renderTargetList = renderTargetCache.get();
+                renderTargetList.resize(1);
+                renderTargetList[0] = videoDevice->getBackBuffer();
+                videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? generalCache.getResource(*depthBuffer) : nullptr));
 
-                viewPortCache.resize(std::max(1U, viewPortCache.size()));
-                renderTargetCache.resize(std::max(1U, renderTargetCache.size()));
+                viewPortCache.resize(1);
+                viewPortCache[0] = renderTargetList[0]->getViewPort();
+                videoContext->setViewportList(viewPortCache);
+            }
 
-                auto backBuffer = videoDevice->getBackBuffer();
+            void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer)
+            {
+                GEK_REQUIRE(videoContext);
 
-                renderTargetCache[0] = backBuffer;
-                videoContext->setRenderTargets(renderTargetCache.data(), 1, (depthBuffer ? resourceCache.getResource(*depthBuffer) : nullptr));
-
-                viewPortCache[0] = renderTargetCache[0]->getViewPort();
-                videoContext->setViewports(viewPortCache.data(), 1);
+                videoContext->clearRenderTargetList(count, depthBuffer);
             }
         };
 

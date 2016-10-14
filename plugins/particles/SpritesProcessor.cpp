@@ -353,7 +353,7 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
                 GEK_REQUIRE(resources);
 
-                videoContext->vertexPipeline()->setResource(spritesBuffer, 0);
+                videoContext->vertexPipeline()->setResourceList({ spritesBuffer }, 0);
 
                 uint32_t bufferCopied = 0;
                 Sprite *bufferData = nullptr;

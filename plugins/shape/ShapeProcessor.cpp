@@ -618,8 +618,8 @@ namespace Gek
             memcpy(instanceData, instanceList, sizeof(Instance));
             videoDevice->unmapBuffer(constantBuffer);
 
-            videoContext->vertexPipeline()->setConstantBuffer(constantBuffer, 4);
-            resources->setVertexBuffer(videoContext, 0, shape->vertexBuffer, 0);
+            videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer }, 4);
+            resources->setVertexBufferList(videoContext, { shape->vertexBuffer }, 0);
             resources->setIndexBuffer(videoContext, shape->indexBuffer, 0);
             resources->drawIndexedPrimitive(videoContext, shape->indexCount, 0, 0);
         }
