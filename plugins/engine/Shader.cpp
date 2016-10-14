@@ -1032,7 +1032,7 @@ namespace Gek
                         {
 							auto renderState = material->getRenderState();
 							resources->setRenderState(videoContext, (renderState ? renderState : pass.renderState));
-							resources->setResourceList(videoContext->pixelPipeline(), passSearch->second.data(), passSearch->second.size(), firstStage);
+							resources->setResourceList(videoContext->pixelPipeline(), passSearch->second, firstStage);
 							return true;
                         }
                         catch (const Plugin::Resources::ResourceNotLoaded &)
@@ -1064,8 +1064,8 @@ namespace Gek
                     uint32_t firstResourceStage = 0;
                     if (block.lighting)
                     {
-                        videoPipeline->setResource(lightDataBuffer.get(), 0);
-                        videoPipeline->setConstantBuffer(lightConstantBuffer.get(), 3);
+                        videoPipeline->setResourceList({ lightDataBuffer.get() }, 0);
+                        videoPipeline->setConstantBufferList({ lightConstantBuffer.get() }, 3);
                         firstResourceStage = 1;
                     }
 
@@ -1074,7 +1074,7 @@ namespace Gek
                         firstResourceStage += pass.materialResourceList.size();
                     }
 
-                    resources->setResourceList(videoPipeline, pass.resourceList.data(), pass.resourceList.size(), firstResourceStage);
+                    resources->setResourceList(videoPipeline, pass.resourceList, firstResourceStage);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -1085,7 +1085,7 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(videoPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->setUnorderedAccessList(videoPipeline, pass.unorderedAccessList, firstUnorderedAccessStage);
                 }
 
                 resources->setProgram(videoPipeline, pass.program);
@@ -1094,10 +1094,10 @@ namespace Gek
                 shaderConstantData.targetSize.x = pass.width;
                 shaderConstantData.targetSize.y = pass.height;
                 videoDevice->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
-                videoContext->geometryPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                videoContext->vertexPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                videoContext->pixelPipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
-                videoContext->computePipeline()->setConstantBuffer(shaderConstantBuffer.get(), 2);
+                videoContext->geometryPipeline()->setConstantBufferList({ shaderConstantBuffer.get() }, 2);
+                videoContext->vertexPipeline()->setConstantBufferList({ shaderConstantBuffer.get() }, 2);
+                videoContext->pixelPipeline()->setConstantBufferList({ shaderConstantBuffer.get() }, 2);
+                videoContext->computePipeline()->setConstantBufferList({ shaderConstantBuffer.get() }, 2);
 
                 switch (pass.mode)
                 {
@@ -1116,7 +1116,7 @@ namespace Gek
 
                     if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargets(videoContext, pass.renderTargetList.data(), pass.renderTargetList.size(), (pass.enableDepth ? &pass.depthBuffer : nullptr));
+                        resources->setRenderTargetList(videoContext, pass.renderTargetList, (pass.enableDepth ? &pass.depthBuffer : nullptr));
                     }
 
                     break;
@@ -1133,8 +1133,8 @@ namespace Gek
                     uint32_t firstResourceStage = 0;
                     if (block.lighting)
                     {
-                        videoPipeline->setResource(nullptr, 0);
-                        videoPipeline->setConstantBuffer(nullptr, 3);
+                        videoPipeline->clearResourceList(1, 0);
+                        videoPipeline->clearConstantBufferList(1, 3);
                         firstResourceStage = 1;
                     }
 
@@ -1143,7 +1143,7 @@ namespace Gek
                         firstResourceStage += pass.materialResourceList.size();
                     }
 
-                    resources->setResourceList(videoPipeline, nullptr, pass.resourceList.size(), firstResourceStage);
+                    resources->clearResourceList(videoPipeline, pass.resourceList.size(), firstResourceStage);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -1154,18 +1154,18 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(videoPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->clearUnorderedAccessList(videoPipeline, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
                 if (!pass.renderTargetList.empty())
                 {
-                    resources->setRenderTargets(videoContext, nullptr, pass.renderTargetList.size(), nullptr);
+                    resources->clearRenderTargetList(videoContext, pass.renderTargetList.size(), true);
                 }
 
-                videoContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
-                videoContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
-                videoContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
-                videoContext->computePipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->geometryPipeline()->clearConstantBufferList(1, 2);
+                videoContext->vertexPipeline()->clearConstantBufferList(1, 2);
+                videoContext->pixelPipeline()->clearConstantBufferList(1, 2);
+                videoContext->computePipeline()->clearConstantBufferList(1, 2);
             }
 
             bool prepareBlock(uint32_t &base, Video::Device::Context *videoContext, BlockData &block)

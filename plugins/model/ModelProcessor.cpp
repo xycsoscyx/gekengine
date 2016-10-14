@@ -335,8 +335,8 @@ namespace Gek
             memcpy(instanceData, instanceList, sizeof(Instance));
             videoDevice->unmapBuffer(constantBuffer);
 
-            videoContext->vertexPipeline()->setConstantBuffer(constantBuffer, 4);
-            resources->setVertexBuffer(videoContext, 0, material.vertexBuffer, 0);
+            videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer }, 4);
+            resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);
             resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
             resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
         }

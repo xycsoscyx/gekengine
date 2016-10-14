@@ -466,27 +466,11 @@ namespace Gek
                 {
                 }
 
-                void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerStateList, uint32_t firstStage)
                 {
                 }
 
-                void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
-                {
-                }
-
-                void setResource(Video::Object *resource, uint32_t firstStage)
-                {
-                }
-
-                void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                {
-                }
-
-                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
-                {
-                }
-
-                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBufferList, uint32_t firstStage)
                 {
                 }
 
@@ -495,6 +479,22 @@ namespace Gek
                 }
 
                 void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
+                }
+
+                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearResourceList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                 {
                 }
             };
@@ -514,27 +514,11 @@ namespace Gek
                 {
                 }
 
-                void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerStateList, uint32_t firstStage)
                 {
                 }
 
-                void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
-                {
-                }
-
-                void setResource(Video::Object *resource, uint32_t firstStage)
-                {
-                }
-
-                void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                {
-                }
-
-                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
-                {
-                }
-
-                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBufferList, uint32_t firstStage)
                 {
                 }
 
@@ -543,6 +527,22 @@ namespace Gek
                 }
 
                 void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
+                }
+
+                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearResourceList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                 {
                 }
             };
@@ -562,27 +562,11 @@ namespace Gek
                 {
                 }
 
-                void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerStateList, uint32_t firstStage)
                 {
                 }
 
-                void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
-                {
-                }
-
-                void setResource(Video::Object *resource, uint32_t firstStage)
-                {
-                }
-
-                void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                {
-                }
-
-                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
-                {
-                }
-
-                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBufferList, uint32_t firstStage)
                 {
                 }
 
@@ -591,6 +575,22 @@ namespace Gek
                 }
 
                 void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
+                }
+
+                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearResourceList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                 {
                 }
             };
@@ -610,27 +610,11 @@ namespace Gek
                 {
                 }
 
-                void setSamplerState(Video::Object *samplerState, uint32_t stage)
+                void setSamplerStateList(const std::vector<Video::Object *> &samplerStateList, uint32_t firstStage)
                 {
                 }
 
-                void setConstantBuffer(Video::Buffer *buffer, uint32_t stage)
-                {
-                }
-
-                void setResource(Video::Object *resource, uint32_t firstStage)
-                {
-                }
-
-                void setUnorderedAccess(Video::Object *unorderedAccess, uint32_t firstStage, uint32_t count)
-                {
-                }
-
-                void setSamplerStateList(const std::vector<Video::Object *> &samplerState, uint32_t firstStage)
-                {
-                }
-
-                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBuffer, uint32_t firstStage)
+                void setConstantBufferList(const std::vector<Video::Buffer *> &constantBufferList, uint32_t firstStage)
                 {
                 }
 
@@ -639,6 +623,22 @@ namespace Gek
                 }
 
                 void setUnorderedAccessList(const std::vector<Video::Object *> &unorderedAccessList, uint32_t firstStage, uint32_t *countList)
+                {
+                }
+
+                void clearSamplerStateList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearConstantBufferList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearResourceList(uint32_t count, uint32_t firstStage)
+                {
+                }
+
+                void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                 {
                 }
             };
@@ -722,23 +722,23 @@ namespace Gek
             {
             }
 
-            void setScissorRect(const Shapes::Rectangle<uint32_t> *rectangleList, uint32_t rectangleCount)
+            void clearRenderTargetList(uint32_t count, bool depthBuffer)
             {
             }
 
-            void setViewports(const Video::ViewPort *viewPortList, uint32_t viewPortCount)
+            void clearIndexBuffer(void)
             {
             }
 
-            void setRenderTargets(Video::Target **renderTargetList, uint32_t renderTargetCount, Video::Object *depthBuffer)
-            {
-            }
-
-            void setScissorRectList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleListt)
+            void clearVertexBufferList(uint32_t count, uint32_t firstSlot)
             {
             }
 
             void setViewportList(const std::vector<Video::ViewPort> &viewPortList)
+            {
+            }
+
+            void setScissorList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleList)
             {
             }
 
@@ -762,15 +762,11 @@ namespace Gek
             {
             }
 
-            void setVertexBuffer(uint32_t slot, Video::Buffer *vertexBuffer, uint32_t offset)
+            void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
             {
             }
 
             void setVertexBufferList(const std::vector<Video::Buffer *> &vertexBufferList, uint32_t firstSlot, uint32_t *offsetList)
-            {
-            }
-
-            void setIndexBuffer(Video::Buffer *indexBuffer, uint32_t offset)
             {
             }
 

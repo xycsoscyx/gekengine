@@ -577,7 +577,7 @@ namespace Gek
 
                 if (!pass.resourceList.empty())
                 {
-                    resources->setResourceList(videoPipeline, pass.resourceList.data(), pass.resourceList.size(), 0);
+                    resources->setResourceList(videoPipeline, pass.resourceList, 0);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -588,7 +588,7 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(videoPipeline, pass.unorderedAccessList.data(), pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->setUnorderedAccessList(videoPipeline, pass.unorderedAccessList, firstUnorderedAccessStage);
                 }
 
                 resources->setProgram(videoPipeline, pass.program);
@@ -597,10 +597,10 @@ namespace Gek
                 filterConstantData.targetSize.x = pass.width;
                 filterConstantData.targetSize.y = pass.height;
                 videoDevice->updateResource(filterConstantBuffer.get(), &filterConstantData);
-                videoContext->geometryPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
-                videoContext->vertexPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
-                videoContext->pixelPipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
-                videoContext->computePipeline()->setConstantBuffer(filterConstantBuffer.get(), 2);
+                videoContext->geometryPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
+                videoContext->vertexPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
+                videoContext->pixelPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
+                videoContext->computePipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
 
                 switch (pass.mode)
                 {
@@ -614,7 +614,7 @@ namespace Gek
                     resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
                     if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargets(videoContext, pass.renderTargetList.data(), pass.renderTargetList.size(), nullptr);
+                        resources->setRenderTargetList(videoContext, pass.renderTargetList, nullptr);
                     }
 
                     break;
@@ -628,7 +628,7 @@ namespace Gek
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
-                    resources->setResourceList(videoPipeline,  nullptr, pass.resourceList.size(), 0);
+                    resources->clearResourceList(videoPipeline,  pass.resourceList.size(), 0);
                 }
 
                 if (!pass.unorderedAccessList.empty())
@@ -639,18 +639,18 @@ namespace Gek
                         firstUnorderedAccessStage = pass.renderTargetList.size();
                     }
 
-                    resources->setUnorderedAccessList(videoPipeline, nullptr, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
+                    resources->clearUnorderedAccessList(videoPipeline, pass.unorderedAccessList.size(), firstUnorderedAccessStage);
                 }
 
                 if (!pass.renderTargetList.empty())
                 {
-                    resources->setRenderTargets(videoContext, nullptr, pass.renderTargetList.size(), nullptr);
+                    resources->clearRenderTargetList(videoContext, pass.renderTargetList.size(), true);
                 }
 
-                videoContext->geometryPipeline()->setConstantBuffer(nullptr, 2);
-                videoContext->vertexPipeline()->setConstantBuffer(nullptr, 2);
-                videoContext->pixelPipeline()->setConstantBuffer(nullptr, 2);
-                videoContext->computePipeline()->setConstantBuffer(nullptr, 2);
+                videoContext->geometryPipeline()->clearConstantBufferList(1, 2);
+                videoContext->vertexPipeline()->clearConstantBufferList(1, 2);
+                videoContext->pixelPipeline()->clearConstantBufferList(1, 2);
+                videoContext->computePipeline()->clearConstantBufferList(1, 2);
             }
 
             class PassImplementation

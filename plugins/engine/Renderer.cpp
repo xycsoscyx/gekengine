@@ -435,24 +435,16 @@ namespace Gek
                     videoContext->clearState();
 
                     videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
-                    videoContext->geometryPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-                    videoContext->vertexPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-                    videoContext->pixelPipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-                    videoContext->computePipeline()->setConstantBuffer(engineConstantBuffer.get(), 0);
-
                     videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
-                    videoContext->geometryPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
-                    videoContext->vertexPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
-                    videoContext->pixelPipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
-                    videoContext->computePipeline()->setConstantBuffer(cameraConstantBuffer.get(), 1);
 
-                    videoContext->pixelPipeline()->setSamplerState(pointSamplerState.get(), 0);
-                    videoContext->pixelPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
-                    videoContext->pixelPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
+                    std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
+                    videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
+                    videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
 
-                    videoContext->vertexPipeline()->setSamplerState(pointSamplerState.get(), 0);
-                    videoContext->vertexPipeline()->setSamplerState(linearClampSamplerState.get(), 1);
-                    videoContext->vertexPipeline()->setSamplerState(linearWrapSamplerState.get(), 2);
+                    std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
+                    videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
 
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
@@ -583,29 +575,22 @@ namespace Gek
                     }
 
                     videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
-                    resources->setResource(videoContext->pixelPipeline(), resources->getResourceHandle(L"screen"), 0);
+                    resources->setResourceList(videoContext->pixelPipeline(), { resources->getResourceHandle(L"screen") }, 0);
                     if (cameraTarget)
                     {
-                        resources->setRenderTargets(videoContext, &cameraTarget, 1, nullptr);
+                        resources->setRenderTargetList(videoContext, { cameraTarget }, nullptr);
                     }
                     else
                     {
-						auto backBuffer = videoDevice->getBackBuffer();
-						videoContext->setRenderTargets(&backBuffer, 1, nullptr);
-                        videoContext->setViewports(&backBuffer->getViewPort(), 1);
+                        resources->setBackBuffer(videoContext, nullptr);
                     }
 
                     videoContext->drawPrimitive(3, 0);
 
-                    videoContext->geometryPipeline()->setConstantBuffer(nullptr, 0);
-                    videoContext->vertexPipeline()->setConstantBuffer(nullptr, 0);
-                    videoContext->pixelPipeline()->setConstantBuffer(nullptr, 0);
-                    videoContext->computePipeline()->setConstantBuffer(nullptr, 0);
-
-                    videoContext->geometryPipeline()->setConstantBuffer(nullptr, 1);
-                    videoContext->vertexPipeline()->setConstantBuffer(nullptr, 1);
-                    videoContext->pixelPipeline()->setConstantBuffer(nullptr, 1);
-                    videoContext->computePipeline()->setConstantBuffer(nullptr, 1);
+                    videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
+                    videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
+                    videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
+                    videoContext->computePipeline()->clearConstantBufferList(2, 0);
                 }
             }
         };

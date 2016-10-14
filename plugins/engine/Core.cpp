@@ -776,22 +776,21 @@ namespace Gek
                 auto orthographic = Math::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 videoDevice->updateResource(constantBuffer.get(), &orthographic);
 
-                auto context = videoDevice->getDefaultContext();
-                context->setRenderTargets(&backBuffer, 1, nullptr);
-                context->setViewports(&backBuffer->getViewPort(), 1);
+                auto videoContext = videoDevice->getDefaultContext();
+                resources->setBackBuffer(videoContext, nullptr);
 
-                context->setInputLayout(inputLayout.get());
-                context->setVertexBuffer(0, vertexBuffer.get(), 0);
-                context->setIndexBuffer(indexBuffer.get(), 0);
-                context->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                context->vertexPipeline()->setProgram(vertexProgram.get());
-                context->vertexPipeline()->setConstantBuffer(constantBuffer.get(), 0);
-                context->pixelPipeline()->setProgram(pixelProgram.get());
-                context->pixelPipeline()->setSamplerState(samplerState.get(), 0);
+                videoContext->setInputLayout(inputLayout.get());
+                videoContext->setVertexBufferList({ vertexBuffer.get() }, 0);
+                videoContext->setIndexBuffer(indexBuffer.get(), 0);
+                videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                videoContext->vertexPipeline()->setProgram(vertexProgram.get());
+                videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 0);
+                videoContext->pixelPipeline()->setProgram(pixelProgram.get());
+                videoContext->pixelPipeline()->setSamplerStateList({ samplerState.get() }, 0);
 
-                context->setBlendState(blendState.get(), Math::Color::Black, 0xFFFFFFFF);
-                context->setDepthState(depthState.get(), 0);
-                context->setRenderState(renderState.get());
+                videoContext->setBlendState(blendState.get(), Math::Color::Black, 0xFFFFFFFF);
+                videoContext->setDepthState(depthState.get(), 0);
+                videoContext->setRenderState(renderState.get());
 
                 uint32_t vertexOffset = 0;
                 uint32_t indexOffset = 0;
@@ -815,9 +814,9 @@ namespace Gek
                                 uint32_t(command->ClipRect.w),
                             };
 
-                            context->setScissorRect(&scissor, 1);
-                            context->pixelPipeline()->setResource((Video::Object *)command->TextureId, 0);
-                            context->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
+                            videoContext->setScissorList({ scissor });
+                            videoContext->pixelPipeline()->setResourceList({ (Video::Object *)command->TextureId }, 0);
+                            videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
                         }
 
                         indexOffset += command->ElemCount;
