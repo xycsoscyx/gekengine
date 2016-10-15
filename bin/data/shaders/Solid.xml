@@ -29,7 +29,7 @@
         <gaussianRadius bind="int">2</gaussianRadius>
         <gaussianSigma>2.3</gaussianSigma>
         <edgeSharpness>0.1</edgeSharpness>
-</defines>
+    </defines>
 
     <textures>
         <depthBuffer bind="float" flags="depth">D32_FLOAT</depthBuffer>
