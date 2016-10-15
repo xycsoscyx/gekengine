@@ -364,12 +364,12 @@ namespace Gek
                     L"    return float4(screenBuffer[inputPixel.screen.xy], 1.0);" \
                     L"}";
 
-				auto compiledVertexProgram = resources->compileProgram(Video::ProgramType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
-				deferredVertexProgram = videoDevice->createProgram(Video::ProgramType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
+				auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
+				deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
                 deferredVertexProgram->setName(L"deferredVertexProgram");
 
-				auto compiledPixelProgram = resources->compileProgram(Video::ProgramType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
-				deferredPixelProgram = videoDevice->createProgram(Video::ProgramType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
+				auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
+				deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"deferredPixelProgram");
             }
 
@@ -483,7 +483,7 @@ namespace Gek
                             auto &shader = shaderDrawCall.shader;
                             for (auto block = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
                             {
-                                resources->startDrawBlock();
+                                resources->sartResourceBlock();
                                 while (block->prepare())
                                 {
                                     for (auto pass = block->begin(); pass; pass = pass->next())
@@ -506,8 +506,7 @@ namespace Gek
                                                     if (currentMaterial != drawCall->material)
                                                     {
                                                         currentMaterial = drawCall->material;
-                                                        resources->setMaterial(videoContext, pass, currentMaterial);
-
+                                                        resources->setMaterial(videoContext, pass.get(), currentMaterial);
                                                     }
 
                                                     drawCall->onDraw(videoContext);

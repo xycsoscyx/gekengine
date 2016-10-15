@@ -534,7 +534,7 @@ namespace Gek
 
                     String entryPoint(passNode.getAttribute(L"entry"));
                     String name(FileSystem::getFileName(filterName, passNode.type).append(L".hlsl"));
-                    pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::ProgramType::Compute : Video::ProgramType::Pixel), name, entryPoint, engineData);
+                    pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                 }
             }
 
@@ -678,14 +678,7 @@ namespace Gek
 
                 Mode prepare(void)
                 {
-                    try
-                    {
-                        return filterNode->preparePass(videoContext, (*current));
-                    }
-                    catch (const Plugin::Resources::ResourceNotLoaded &)
-                    {
-                        return Mode::None;
-                    };
+                    return filterNode->preparePass(videoContext, (*current));
                 }
 
                 void clear(void)

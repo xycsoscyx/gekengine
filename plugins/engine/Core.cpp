@@ -251,8 +251,8 @@ namespace Gek
                     L"    return output;" \
                     L"}";
 
-                auto &compiled = resources->compileProgram(Video::ProgramType::Vertex, L"uiVertexProgram", L"main", vertexShader);
-                vertexProgram = videoDevice->createProgram(Video::ProgramType::Vertex, compiled.data(), compiled.size());
+                auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
+                vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
 
                 std::vector<Video::InputElement> elementList;
                 elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::Position));
@@ -278,8 +278,8 @@ namespace Gek
                     L"    return (input.color * uiTexture.Sample(uiSampler, input.texCoord));" \
                     L"}";
 
-                compiled = resources->compileProgram(Video::ProgramType::Pixel, L"uiPixelProgram", L"main", pixelShader);
-                pixelProgram = videoDevice->createProgram(Video::ProgramType::Pixel, compiled.data(), compiled.size());
+                compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
+                pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendStateInformation.enable = true;

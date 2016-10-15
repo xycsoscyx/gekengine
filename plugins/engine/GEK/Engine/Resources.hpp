@@ -9,59 +9,14 @@
 
 #include "GEK\Math\Color.hpp"
 #include "GEK\Utility\XML.hpp"
-#include "GEK\Utility\Hash.hpp"
 #include "GEK\Utility\Context.hpp"
 #include "GEK\System\VideoDevice.hpp"
+#include "GEK\Engine\Shader.hpp"
 #include <type_traits>
 #include <typeindex>
 
 namespace Gek
 {
-    template <typename TYPE, uint8_t UNIQUE>
-    struct Handle
-    {
-        TYPE identifier;
-
-        Handle(void)
-            : identifier(0)
-        {
-        }
-
-        void assign(uint64_t identifier)
-        {
-            this->identifier = TYPE(identifier);
-        }
-
-        operator bool() const
-        {
-            return (identifier != 0);
-        }
-
-        operator std::size_t() const
-        {
-            return identifier;
-        }
-
-        bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const
-        {
-            return (identifier == handle.identifier);
-        }
-
-        bool operator != (const typename Handle<TYPE, UNIQUE> &handle) const
-        {
-            return (identifier != handle.identifier);
-        }
-    };
-
-    using RenderStateHandle = Handle<uint8_t, __LINE__>;
-    using DepthStateHandle = Handle<uint8_t, __LINE__>;
-    using BlendStateHandle = Handle<uint8_t, __LINE__>;
-    using ProgramHandle = Handle<uint16_t, __LINE__>;
-    using VisualHandle = Handle<uint8_t, __LINE__>;
-    using ShaderHandle = Handle<uint8_t, __LINE__>;
-    using MaterialHandle = Handle<uint16_t, __LINE__>;
-    using ResourceHandle = Handle<uint32_t, __LINE__>;
-
     namespace Plugin
     {
         GEK_PREDECLARE(Visual);
@@ -69,7 +24,6 @@ namespace Gek
         GEK_INTERFACE(Resources)
         {
             GEK_START_EXCEPTIONS();
-            GEK_ADD_EXCEPTION(ResourceNotLoaded);
             GEK_ADD_EXCEPTION(InvalidParameter);
             GEK_ADD_EXCEPTION(InvalidIncludeType);
             GEK_ADD_EXCEPTION(InvalidIncludeName);
@@ -126,8 +80,8 @@ namespace Gek
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Filter * const getFilter(const wchar_t *filterName) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
-            virtual ProgramHandle loadProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
+            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
+            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
 
             virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;
@@ -142,8 +96,8 @@ namespace Gek
             virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
-            virtual void setMaterial(Video::Device::Context *videoContext, void *pass, MaterialHandle handle) = 0;
-            virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) const = 0;
+            virtual void setMaterial(Video::Device::Context *videoContext, Shader::Pass *pass, MaterialHandle handle) = 0;
+            virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) = 0;
             virtual void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
             virtual void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
             virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
@@ -154,19 +108,7 @@ namespace Gek
 
             virtual void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer) = 0;
 
-            virtual void startDrawBlock(void) = 0;
+            virtual void sartResourceBlock(void) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek
-
-namespace std
-{
-    template <typename TYPE, int UNIQUE>
-    struct hash<Gek::Handle<TYPE, UNIQUE>>
-    {
-        size_t operator()(const Gek::Handle<TYPE, UNIQUE> &value) const
-        {
-            return value.identifier;
-        }
-    };
-};

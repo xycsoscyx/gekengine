@@ -10,6 +10,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Shapes\Frustum.hpp"
 #include "GEK\Utility\Context.hpp"
+#include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Material.hpp"
 #include <memory>
 
@@ -46,7 +47,8 @@ namespace Gek
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
 
-                virtual bool enableMaterial(Material *material) = 0;
+                virtual uint32_t getIdentifier(void) const = 0;
+                virtual uint32_t getFirstResourceStage(void) const = 0;
             };
 
             GEK_INTERFACE(Block)
@@ -60,11 +62,28 @@ namespace Gek
                 virtual bool prepare(void) = 0;
             };
 
+            struct Material
+            {
+                struct Resource
+                {
+                    String name;
+                    String pattern;
+                    String parameters;
+                };
+
+                uint32_t identifier;
+                std::vector<Resource> resourceList;
+
+                Material(uint32_t identifier)
+                    : identifier(identifier)
+                {
+                }
+            };
+
             virtual void reload(void) = 0;
 
-            virtual uint32_t getPriority(void) = 0;
-
-            virtual Material::DataPtr loadMaterialData(const Material::PassMap &passMap) = 0;
+            virtual uint32_t getPriority(void) const = 0;
+            virtual const Material *getPassMaterial(const wchar_t *materialName) const = 0;
 
             virtual Block::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };

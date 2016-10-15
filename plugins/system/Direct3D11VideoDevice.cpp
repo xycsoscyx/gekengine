@@ -854,6 +854,11 @@ namespace Gek
                     }
 
                     // Video::Pipeline
+                    Video::PipelineType getType(void) const
+                    {
+                        return Video::PipelineType::Compute;
+                    }
+
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -944,6 +949,11 @@ namespace Gek
                     }
 
                     // Video::Pipeline
+                    Video::PipelineType getType(void) const
+                    {
+                        return Video::PipelineType::Vertex;
+                    }
+
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -1027,6 +1037,11 @@ namespace Gek
                     }
 
                     // Video::Pipeline
+                    Video::PipelineType getType(void) const
+                    {
+                        return Video::PipelineType::Geometry;
+                    }
+
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -1110,6 +1125,11 @@ namespace Gek
                     }
 
                     // Video::Pipeline
+                    Video::PipelineType getType(void) const
+                    {
+                        return Video::PipelineType::Pixel;
+                    }
+
                     void setProgram(Video::Object *program)
                     {
                         GEK_REQUIRE(d3dDeviceContext);
@@ -2289,20 +2309,20 @@ namespace Gek
                 return std::make_shared<PROGRAM>(d3dShader);
             }
 
-            Video::ObjectPtr createProgram(Video::ProgramType programType, const void *compiledData, uint32_t compiledSize)
+            Video::ObjectPtr createProgram(Video::PipelineType pipelineType, const void *compiledData, uint32_t compiledSize)
             {
-                switch (programType)
+                switch (pipelineType)
                 {
-                case Video::ProgramType::Compute:
+                case Video::PipelineType::Compute:
                     return createProgram<ID3D11ComputeShader, ComputeProgram>(compiledData, compiledSize, &ID3D11Device::CreateComputeShader);
 
-                case Video::ProgramType::Vertex:
+                case Video::PipelineType::Vertex:
                     return createProgram<ID3D11VertexShader, VertexProgram>(compiledData, compiledSize, &ID3D11Device::CreateVertexShader);
 
-                case Video::ProgramType::Geometry:
+                case Video::PipelineType::Geometry:
                     return createProgram<ID3D11GeometryShader, GeometryProgram>(compiledData, compiledSize, &ID3D11Device::CreateGeometryShader);
 
-                case Video::ProgramType::Pixel:
+                case Video::PipelineType::Pixel:
                     return createProgram<ID3D11PixelShader, PixelProgram>(compiledData, compiledSize, &ID3D11Device::CreatePixelShader);
                 };
 
@@ -2331,20 +2351,20 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
             {
-                switch (programType)
+                switch (pipelineType)
                 {
-                case Video::ProgramType::Compute:
+                case Video::PipelineType::Compute:
                     return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
 
-                case Video::ProgramType::Vertex:
+                case Video::PipelineType::Vertex:
                     return compileProgram(name, "vs_5_0", uncompiledProgram, entryFunction);
 
-                case Video::ProgramType::Geometry:
+                case Video::PipelineType::Geometry:
                     return compileProgram(name, "gs_5_0", uncompiledProgram, entryFunction);
 
-                case Video::ProgramType::Pixel:
+                case Video::PipelineType::Pixel:
                     return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
                 };
 

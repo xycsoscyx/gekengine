@@ -345,6 +345,9 @@ namespace Gek
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
+            bool drawPrimitiveValid = false;
+            bool dispatchValid = false;
+
         public:
             Resources(Context *context, Plugin::Core *core, Video::Device *videoDevice)
                 : ContextRegistration(context)
@@ -368,7 +371,16 @@ namespace Gek
 
             ~Resources(void)
             {
+                GEK_REQUIRE(core);
+
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
+            }
+
+            bool &getValid(Video::Device::Context::Pipeline *videoPipeline)
+            {
+                GEK_REQUIRE(videoPipeline);
+
+                return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
             Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
@@ -729,10 +741,13 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto resource = generalCache.getResource(resourceHandle);
-                if (resource)
+                if (drawPrimitiveValid)
                 {
-                    videoContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
+                    auto resource = generalCache.getResource(resourceHandle);
+                    if (drawPrimitiveValid = (resource != nullptr))
+                    {
+                        videoContext->setIndexBuffer(dynamic_cast<Video::Buffer *>(resource), offset);
+                    }
                 }
             }
 
@@ -741,7 +756,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                if (vertexBufferCache.set(resourceHandleList, generalCache))
+                if (drawPrimitiveValid && (drawPrimitiveValid = vertexBufferCache.set(resourceHandleList, generalCache)))
                 {
                     videoContext->setVertexBufferList(vertexBufferCache.get(), firstSlot, offsetList);
                 }
@@ -752,7 +767,8 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                if (constantBufferCache.set(resourceHandleList, generalCache))
+                bool &valid = getValid(videoPipeline);
+                if (valid && (valid = constantBufferCache.set(resourceHandleList, generalCache)))
                 {
                     videoPipeline->setConstantBufferList(constantBufferCache.get(), firstStage);
                 }
@@ -763,7 +779,8 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                if (resourceCache.set(resourceHandleList, generalCache))
+                bool &valid = getValid(videoPipeline);
+                if (valid && (valid = resourceCache.set(resourceHandleList, generalCache)))
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
                 }
@@ -774,7 +791,8 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                if (unorderedAccessCache.set(resourceHandleList, generalCache))
+                bool &valid = getValid(videoPipeline);
+                if (valid && (valid = unorderedAccessCache.set(resourceHandleList, generalCache)))
                 {
                     videoPipeline->setUnorderedAccessList(unorderedAccessCache.get(), firstStage);
                 }
@@ -807,27 +825,42 @@ namespace Gek
 
             void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex)
             {
-                videoContext->drawPrimitive(vertexCount, firstVertex);
+                if (drawPrimitiveValid)
+                {
+                    videoContext->drawPrimitive(vertexCount, firstVertex);
+                }
             }
 
             void drawInstancedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t vertexCount, uint32_t firstVertex)
             {
-                videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
+                if (drawPrimitiveValid)
+                {
+                    videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
+                }
             }
 
             void drawIndexedPrimitive(Video::Device::Context *videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
-                videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
+                if (drawPrimitiveValid)
+                {
+                    videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
+                }
             }
 
             void drawInstancedIndexedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
-                videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
+                if (drawPrimitiveValid)
+                {
+                    videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
+                }
             }
 
             void dispatch(Video::Device::Context *videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
             {
-                videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                if (dispatchValid)
+                {
+                    videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
+                }
             }
 
             // Engine::Resources
@@ -902,7 +935,7 @@ namespace Gek
                 return filterCache.getResource(filter);
             }
 
-            std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
             {
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
@@ -917,19 +950,19 @@ namespace Gek
                 }
                 else
                 {
-                    compiledProgram = videoDevice->compileProgram(programType, name, uncompiledProgram, entryFunction);
+                    compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
                     FileSystem::save(cacheFileName, compiledProgram);
                 }
 
                 return compiledProgram;
             }
 
-            ProgramHandle loadProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
+            ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
             {
-                auto load = [this, programType, name = String(name), entryFunction = String(entryFunction), engineData = String(engineData)](ProgramHandle)->Video::ObjectPtr
+                auto load = [this, pipelineType, name = String(name), entryFunction = String(entryFunction), engineData = String(engineData)](ProgramHandle)->Video::ObjectPtr
                 {
-                    auto compiledProgram = compileProgram(programType, name, entryFunction, engineData);
-                    auto program = videoDevice->createProgram(programType, compiledProgram.data(), compiledProgram.size());
+                    auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
+                    auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
                     program->setName(String::create(L"%v:%v", name, entryFunction));
                     return program;
                 };
@@ -1030,24 +1063,20 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 auto resource = generalCache.getResource(resourceHandle);
-                if (resource == nullptr)
+                if (resource)
                 {
-                    throw ResourceNotLoaded();
+                    videoContext->generateMipMaps(dynamic_cast<Video::Texture *>(resource));
                 }
-
-                videoContext->generateMipMaps(dynamic_cast<Video::Texture *>(resource));
             }
 
             void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
                 auto source = generalCache.getResource(sourceHandle);
                 auto destination = generalCache.getResource(destinationHandle);
-                if (source == nullptr || destination == nullptr)
+                if (source && destination)
                 {
-                    throw ResourceNotLoaded();
+                    videoDevice->copyResource(destination, source);
                 }
-
-                videoDevice->copyResource(destination, source);
             }
 
             void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value)
@@ -1055,12 +1084,10 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 auto resource = generalCache.getResource(resourceHandle);
-                if (resource == nullptr)
+                if (resource)
                 {
-                    throw ResourceNotLoaded();
+                    videoContext->clearUnorderedAccess(resource, value);
                 }
-
-                videoContext->clearUnorderedAccess(resource, value);
             }
 
             void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const uint32_t value[4])
@@ -1068,12 +1095,10 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 auto resource = generalCache.getResource(resourceHandle);
-                if (resource == nullptr)
+                if (resource)
                 {
-                    throw ResourceNotLoaded();
+                    videoContext->clearUnorderedAccess(resource, value);
                 }
-
-                videoContext->clearUnorderedAccess(resource, value);
             }
 
             void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Color &color)
@@ -1081,12 +1106,10 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 auto resource = generalCache.getResource(resourceHandle);
-                if (resource == nullptr)
+                if (resource)
                 {
-                    throw ResourceNotLoaded();
+                    videoContext->clearRenderTarget(dynamic_cast<Video::Target *>(resource), color);
                 }
-
-                videoContext->clearRenderTarget(dynamic_cast<Video::Target *>(resource), color);
             }
 
             void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBufferHandle, uint32_t flags, float clearDepth, uint32_t clearStencil)
@@ -1094,28 +1117,38 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 auto depthBuffer = generalCache.getResource(depthBufferHandle);
-                if (depthBuffer == nullptr)
+                if (depthBuffer)
                 {
-                    throw ResourceNotLoaded();
-                }
-
-                videoContext->clearDepthStencilTarget(depthBuffer, flags, clearDepth, clearStencil);
-            }
-
-            void setMaterial(Video::Device::Context *videoContext, void *pass, MaterialHandle handle)
-            {
-                auto material = materialCache.getResource(handle);
-                if (material)
-                {
+                    videoContext->clearDepthStencilTarget(depthBuffer, flags, clearDepth, clearStencil);
                 }
             }
 
-            void setVisual(Video::Device::Context *videoContext, VisualHandle handle) const
+            void setMaterial(Video::Device::Context *videoContext, Engine::Shader::Pass *pass, MaterialHandle handle)
             {
-                auto visual = visualCache.getResource(handle);
-                if (visual)
+                if (drawPrimitiveValid)
                 {
-                    visual->enable(videoContext);
+                    auto material = materialCache.getResource(handle);
+                    if (drawPrimitiveValid =( material != nullptr))
+                    {
+                        auto resourceList = material->getResourceList(pass->getIdentifier());
+                        if (drawPrimitiveValid = (resourceList != nullptr))
+                        {
+                            setRenderState(videoContext, material->getRenderState());
+                            setResourceList(videoContext->pixelPipeline(), (*resourceList), pass->getFirstResourceStage());
+                        }
+                    }
+                }
+            }
+
+            void setVisual(Video::Device::Context *videoContext, VisualHandle handle)
+            {
+                if (drawPrimitiveValid)
+                {
+                    auto visual = visualCache.getResource(handle);
+                    if (drawPrimitiveValid = (visual != nullptr))
+                    {
+                        visual->enable(videoContext);
+                    }
                 }
             }
 
@@ -1123,52 +1156,57 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                auto renderState = renderStateCache.getResource(renderStateHandle);
-                if (renderState == nullptr)
+                if (drawPrimitiveValid)
                 {
-                    throw ResourceNotLoaded();
+                    auto renderState = renderStateCache.getResource(renderStateHandle);
+                    if (drawPrimitiveValid = (renderState != nullptr))
+                    {
+                        videoContext->setRenderState(renderState);
+                    }
                 }
-
-                videoContext->setRenderState(renderState);
             }
 
             void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference)
             {
                 GEK_REQUIRE(videoContext);
 
-                auto depthState = depthStateCache.getResource(depthStateHandle);
-                if (depthState == nullptr)
+                if (drawPrimitiveValid)
                 {
-                    throw ResourceNotLoaded();
+                    auto depthState = depthStateCache.getResource(depthStateHandle);
+                    if (drawPrimitiveValid = (depthState != nullptr))
+                    {
+                        videoContext->setDepthState(depthState, stencilReference);
+                    }
                 }
-
-                videoContext->setDepthState(depthState, stencilReference);
             }
 
             void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask)
             {
                 GEK_REQUIRE(videoContext);
 
-                auto blendState = blendStateCache.getResource(blendStateHandle);
-                if (blendState == nullptr)
+                if (drawPrimitiveValid)
                 {
-                    throw ResourceNotLoaded();
+                    auto blendState = blendStateCache.getResource(blendStateHandle);
+                    if (drawPrimitiveValid = (blendState != nullptr))
+                    {
+                        videoContext->setBlendState(blendState, blendFactor, sampleMask);
+                    }
                 }
-
-                videoContext->setBlendState(blendState, blendFactor, sampleMask);
             }
 
             void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle)
             {
                 GEK_REQUIRE(videoPipeline);
 
-                auto program = programCache.getResource(programHandle);
-                if (program == nullptr)
+                bool &valid = getValid(videoPipeline);
+                if (valid)
                 {
-                    throw ResourceNotLoaded();
+                    auto program = programCache.getResource(programHandle);
+                    if (valid && (valid = (program != nullptr)))
+                    {
+                        videoPipeline->setProgram(program);
+                    }
                 }
-
-                videoPipeline->setProgram(program);
             }
 
             ObjectCache<Video::Target> renderTargetCache;
@@ -1177,7 +1215,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoContext);
 
-                if (renderTargetCache.set(renderTargetHandleList, generalCache))
+                if (drawPrimitiveValid && (drawPrimitiveValid = renderTargetCache.set(renderTargetHandleList, generalCache)))
                 {
                     auto &renderTargetList = renderTargetCache.get();
                     uint32_t renderTargetCount = renderTargetList.size();
@@ -1213,8 +1251,10 @@ namespace Gek
                 videoContext->clearRenderTargetList(count, depthBuffer);
             }
 
-            void startDrawBlock(void)
+            void sartResourceBlock(void)
             {
+                drawPrimitiveValid = true;
+                dispatchValid = true;
             }
         };
 

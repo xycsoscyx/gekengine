@@ -462,6 +462,11 @@ namespace Gek
                 }
 
                 // Video::Pipeline
+                Video::PipelineType getType(void) const
+                {
+                    return Video::PipelineType::Compute;
+                }
+
                 void setProgram(Video::Object *program)
                 {
                 }
@@ -510,6 +515,11 @@ namespace Gek
                 }
 
                 // Video::Pipeline
+                Video::PipelineType getType(void) const
+                {
+                    return Video::PipelineType::Vertex;
+                }
+
                 void setProgram(Video::Object *program)
                 {
                 }
@@ -558,6 +568,11 @@ namespace Gek
                 }
 
                 // Video::Pipeline
+                Video::PipelineType getType(void) const
+                {
+                    return Video::PipelineType::Geometry;
+                }
+
                 void setProgram(Video::Object *program)
                 {
                 }
@@ -606,6 +621,11 @@ namespace Gek
                 }
 
                 // Video::Pipeline
+                Video::PipelineType getType(void) const
+                {
+                    return Video::PipelineType::Pixel;
+                }
+
                 void setProgram(Video::Object *program)
                 {
                 }
@@ -950,12 +970,12 @@ namespace Gek
                 return std::make_shared<InputLayout>();
             }
 
-            Video::ObjectPtr createProgram(Video::ProgramType programType, const void *compiledData, uint32_t compiledSize)
+            Video::ObjectPtr createProgram(Video::PipelineType pipelineType, const void *compiledData, uint32_t compiledSize)
             {
                 return std::make_shared<ComputeProgram>();
             }
 
-            std::vector<uint8_t> compileProgram(Video::ProgramType programType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
             {
                 return std::vector<uint8_t>();
             }
