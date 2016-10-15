@@ -19,8 +19,8 @@ namespace Gek
         {
         private:
             Engine::Resources *resources;
-            DataPtr data;
 			RenderStateHandle renderState;
+            std::unordered_map<uint32_t, std::vector<ResourceHandle>> passMaps;
 
         public:
             Material(Context *context, Engine::Resources *resources, String materialName, MaterialHandle materialHandle)
@@ -44,32 +44,53 @@ namespace Gek
                         throw MissingParameters();
                     }
 
-                    PassMap passMap;
                     for (auto &passNode : shaderNode.children)
                     {
-                        auto &resourceMap = passMap[passNode.type];
-                        for (auto &resourceNode : passNode.children)
+                        auto passMaterial = shader->getPassMaterial(passNode.type);
+                        if (passMaterial)
                         {
-                            ResourceHandle &resource = resourceMap[resourceNode.type];
-                            if (resourceNode.attributes.count(L"file"))
+                            auto passData = passMaps[passMaterial->identifier];
+                            for (auto &resource : passMaterial->resourceList)
                             {
-                                String resourceFileName(resourceNode.getAttribute(L"file"));
-                                uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
-                                resource = this->resources->loadTexture(resourceFileName, flags);
-                            }
-                            else if (resourceNode.attributes.count(L"pattern"))
-                            {
-                                resource = this->resources->createTexture(resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"));
-                            }
-                            else if (resourceNode.attributes.count(L"name"))
-                            {
-                                resource = this->resources->getResourceHandle(resourceNode.getAttribute(L"name"));
+                                ResourceHandle resourceHandle;
+                                auto &resourceNode = passNode.getChild(resource.name);
+                                if (resourceNode.valid)
+                                {
+                                    if (resourceNode.attributes.count(L"file"))
+                                    {
+                                        String resourceFileName(resourceNode.getAttribute(L"file"));
+                                        uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
+                                        resourceHandle = resources->loadTexture(resourceFileName, flags);
+                                    }
+                                    else if (resourceNode.attributes.count(L"pattern"))
+                                    {
+                                        resourceHandle = resources->createTexture(resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"));
+                                    }
+                                    else if (resourceNode.attributes.count(L"name"))
+                                    {
+                                        resourceHandle = resources->getResourceHandle(resourceNode.getAttribute(L"name"));
+                                    }
+                                }
+                                
+                                if (!resourceHandle)
+                                {
+                                    resourceHandle = resources->createTexture(resource.pattern, resource.parameters);
+                                }
+
+                                passData.push_back(resourceHandle);
                             }
                         }
                     }
 
-                    this->data = shader->loadMaterialData(passMap);
-			        renderState = loadRenderState(resources, materialNode.getChild(L"renderstates"));
+                    auto &renderStateNode = materialNode.getChild(L"renderstate");
+                    if (renderStateNode.valid)
+                    {
+                        renderState = loadRenderState(resources, renderStateNode);
+                    }
+                    else
+                    {
+                        //renderState = shader->getRenderState();
+                    }
 				}
                 else
                 {
@@ -78,15 +99,15 @@ namespace Gek
             }
 
             // Material
-            Data * const getData(void) const
-            {
-                return data.get();
-            }
-
 			RenderStateHandle getRenderState(void) const
 			{
 				return renderState;
 			}
+
+            const std::vector<ResourceHandle> *getResourceList(uint32_t passIdentifier)
+            {
+                return nullptr;
+            }
         };
 
         GEK_REGISTER_CONTEXT_USER(Material);

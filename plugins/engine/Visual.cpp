@@ -149,8 +149,8 @@ namespace Gek
 
                     String entryFunction(vertexNode.getAttribute(L"entry"));
                     String name(FileSystem::getFileName(visualName, vertexNode.text).append(L".hlsl"));
-                    auto compiledProgram = resources->compileProgram(Video::ProgramType::Vertex, name, entryFunction, engineData);
-					vertexProgram = videoDevice->createProgram(Video::ProgramType::Vertex, compiledProgram.data(), compiledProgram.size());
+                    auto compiledProgram = resources->compileProgram(Video::PipelineType::Vertex, name, entryFunction, engineData);
+					vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledProgram.data(), compiledProgram.size());
                     vertexProgram->setName(String::create(L"%v:%v", name, entryFunction));
                     if (!elementList.empty())
 					{
@@ -167,8 +167,8 @@ namespace Gek
 				{
                     String entryFunction(geometryNode.getAttribute(L"entry"));
                     String name(FileSystem::getFileName(visualName, geometryNode.text).append(L".hlsl"));
-                    auto compiledProgram = resources->compileProgram(Video::ProgramType::Geometry, name, entryFunction);
-                    geometryProgram = videoDevice->createProgram(Video::ProgramType::Geometry, compiledProgram.data(), compiledProgram.size());
+                    auto compiledProgram = resources->compileProgram(Video::PipelineType::Geometry, name, entryFunction);
+                    geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledProgram.data(), compiledProgram.size());
                     geometryProgram->setName(String::create(L"%v:%v", name, entryFunction));
                 }
 			}

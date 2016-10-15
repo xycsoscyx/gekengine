@@ -43,16 +43,8 @@ namespace Gek
             , public Engine::Shader
         {
         public:
-			struct Resource
-			{
-				String name;
-				String pattern;
-				String parameters;
-			};
-
-            struct PassData
+            struct PassData : public Material
             {
-                uint8_t index;
                 Pass::Mode mode;
                 bool enableDepth;
                 ResourceHandle depthBuffer;
@@ -64,7 +56,6 @@ namespace Gek
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
                 float width, height;
-                std::vector<Resource> materialResourceList;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
@@ -76,8 +67,8 @@ namespace Gek
                 std::vector<ResourceHandle> generateMipMapsList;
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
 
-                PassData(uint8_t index)
-                    : index(index)
+                PassData(uint8_t identifier)
+                    : Material(identifier)
                     , mode(Pass::Mode::Forward)
                     , enableDepth(false)
                     , clearDepthFlags(0)
@@ -754,7 +745,7 @@ namespace Gek
 
                             pass.depthState = resources->createDepthState(depthState);
                             pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
-                            pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstates"));
+                            pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstate"));
                         }
 
                         std::unordered_map<String, String> resourceAliasMap;
@@ -831,7 +822,7 @@ namespace Gek
                                     }
                                 }
 
-                                pass.materialResourceList.reserve(materialMap.size());
+                                pass.Material::resourceList.reserve(materialMap.size());
                                 for (auto &resourcePair : materialMap)
                                 {
                                     auto &resourceName = resourcePair.first;
@@ -841,11 +832,11 @@ namespace Gek
 										throw MissingParameters();
 									}
 
-									Resource resource;
+									Material::Resource resource;
 									resource.name = resourceName;
 									resource.pattern = map.pattern;
 									resource.parameters = map.parameters;
-									pass.materialResourceList.push_back(resource);
+									pass.Material::resourceList.push_back(resource);
 
 									uint32_t currentStage = nextResourceStage++;
                                     switch (map.source)
@@ -973,76 +964,26 @@ namespace Gek
 
                         String entryPoint(passNode.getAttribute(L"entry"));
                         String name(FileSystem::getFileName(shaderName, passNode.type).append(L".hlsl"));
-                        pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::ProgramType::Compute : Video::ProgramType::Pixel), name, entryPoint, engineData);
+                        pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                     }
                 }
 			}
 
             // Shader
-            uint32_t getPriority(void)
+            uint32_t getPriority(void) const
             {
                 return priority;
             }
 
-            GEK_INTERFACE(Data)
-                : public Engine::Material::Data
+            const Material *getPassMaterial(const wchar_t *passName) const
             {
-                std::unordered_map<uint8_t, std::vector<ResourceHandle>> passMap;
-            };
-
-            Engine::Material::DataPtr loadMaterialData(const Engine::Material::PassMap &passMap)
-            {
-                DataPtr data(std::make_shared<Data>());
-                for(auto &passPair : passMap)
+                auto passSearch = forwardPassMap.find(passName);
+                if (passSearch != forwardPassMap.end())
                 {
-                    auto &passName = passPair.first;
-                    auto passSearch = forwardPassMap.find(passName);
-                    if (passSearch != forwardPassMap.end())
-                    {
-                        PassData &pass = (*passSearch->second);
-                        auto &resourceMap = passPair.second;
-                        for (auto &resource : pass.materialResourceList)
-                        {
-                            auto &resourceSearch = resourceMap.find(resource.name);
-                            if (resourceSearch == resourceMap.end())
-							{
-								data->passMap[pass.index].push_back(resources->createTexture(resource.pattern, resource.parameters));
-							}
-							else
-							{
-                                data->passMap[pass.index].push_back(resourceSearch->second);
-                            }
-                        }
-                    }
+                    return passSearch->second;
                 }
 
-                return data;
-            }
-
-            bool enableMaterial(Video::Device::Context *videoContext, BlockData &block, PassData &pass, Engine::Material *material)
-            {
-                uint32_t firstStage = (block.lighting ? 1 : 0);
-                Data *data = dynamic_cast<Data *>(material->getData());
-                if (data)
-                {
-                    auto &passSearch = data->passMap.find(pass.index);
-                    if (passSearch != data->passMap.end())
-                    {
-                        try
-                        {
-							auto renderState = material->getRenderState();
-							resources->setRenderState(videoContext, (renderState ? renderState : pass.renderState));
-							resources->setResourceList(videoContext->pixelPipeline(), passSearch->second, firstStage);
-							return true;
-                        }
-                        catch (const Plugin::Resources::ResourceNotLoaded &)
-                        {
-                            return false;
-                        };
-                    }
-                }
-
-                return false;
+                return nullptr;
             }
 
             Pass::Mode preparePass(Video::Device::Context *videoContext, BlockData &block, PassData &pass)
@@ -1071,7 +1012,7 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        firstResourceStage += pass.materialResourceList.size();
+                        firstResourceStage += pass.Material::resourceList.size();
                     }
 
                     resources->setResourceList(videoPipeline, pass.resourceList, firstResourceStage);
@@ -1107,7 +1048,6 @@ namespace Gek
 
                 default:
                     resources->setDepthState(videoContext, pass.depthState, 0x0);
-                    //resources->setRenderState(videoContext, pass.renderState);
                     resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
                     if (pass.clearDepthFlags > 0)
                     {
@@ -1140,7 +1080,7 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        firstResourceStage += pass.materialResourceList.size();
+                        firstResourceStage += pass.Material::resourceList.size();
                     }
 
                     resources->clearResourceList(videoPipeline, pass.resourceList.size(), firstResourceStage);
@@ -1254,14 +1194,7 @@ namespace Gek
 
                 Mode prepare(void)
                 {
-                    try
-                    {
-                        return shaderNode->preparePass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
-                    }
-                    catch (const Plugin::Resources::ResourceNotLoaded &)
-                    {
-                        return Mode::None;
-                    };
+                    return shaderNode->preparePass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                 }
 
                 void clear(void)
@@ -1269,9 +1202,14 @@ namespace Gek
                     shaderNode->clearPass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
                 }
 
-                bool enableMaterial(Engine::Material *material)
+                uint32_t getIdentifier(void) const
                 {
-                    return shaderNode->enableMaterial(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current), material);
+                    return (*current).identifier;
+                }
+
+                uint32_t getFirstResourceStage(void) const
+                {
+                    return ((*dynamic_cast<BlockImplementation *>(block)->current).lighting ? 1 : 0);
                 }
             };
 
@@ -1307,14 +1245,7 @@ namespace Gek
 
                 bool prepare(void)
                 {
-                    try
-                    {
-                        return shaderNode->prepareBlock(base, videoContext, (*current));
-                    }
-                    catch (const Plugin::Resources::ResourceNotLoaded &)
-                    {
-                        return false;
-                    };
+                    return shaderNode->prepareBlock(base, videoContext, (*current));
                 }
             };
 

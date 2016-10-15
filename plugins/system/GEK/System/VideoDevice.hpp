@@ -118,7 +118,7 @@ namespace Gek
 
         using DisplayModeList = std::vector<DisplayMode>;
 
-        enum class ProgramType : uint8_t
+        enum class PipelineType : uint8_t
         {
             Compute = 0,
             Vertex,
@@ -540,6 +540,8 @@ namespace Gek
             {
                 GEK_INTERFACE(Pipeline)
                 {
+                    virtual Video::PipelineType getType(void) const = 0;
+
 					virtual void setProgram(Object *program) = 0;
 
                     virtual void setSamplerStateList(const std::vector<Object *> &samplerStateList, uint32_t firstStage) = 0;
@@ -627,8 +629,8 @@ namespace Gek
 
 			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(ProgramType programType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction) = 0;
-            virtual ObjectPtr createProgram(ProgramType programType, const void *compiledData, uint32_t compiledSize) = 0;
+            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction) = 0;
+            virtual ObjectPtr createProgram(PipelineType pipelineType, const void *compiledData, uint32_t compiledSize) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;
 
