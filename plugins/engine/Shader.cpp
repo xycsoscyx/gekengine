@@ -52,7 +52,6 @@ namespace Gek
                 float clearDepthValue;
                 uint32_t clearStencilValue;
                 DepthStateHandle depthState;
-                RenderStateHandle renderState;
                 Math::Color blendFactor;
                 BlendStateHandle blendState;
                 float width, height;

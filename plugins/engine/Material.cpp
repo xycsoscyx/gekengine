@@ -20,7 +20,7 @@ namespace Gek
         private:
             Engine::Resources *resources;
 			RenderStateHandle renderState;
-            std::unordered_map<uint32_t, std::vector<ResourceHandle>> passMaps;
+            std::unordered_map<uint32_t, std::vector<ResourceHandle>> passDataMap;
 
         public:
             Material(Context *context, Engine::Resources *resources, String materialName, MaterialHandle materialHandle)
@@ -49,7 +49,17 @@ namespace Gek
                         auto passMaterial = shader->getPassMaterial(passNode.type);
                         if (passMaterial)
                         {
-                            auto passData = passMaps[passMaterial->identifier];
+                            auto &passData = passDataMap[passMaterial->identifier];
+                            auto &renderStateNode = materialNode.getChild(L"renderstate");
+                            if (renderStateNode.valid)
+                            {
+                                renderState = loadRenderState(resources, renderStateNode);
+                            }
+                            else
+                            {
+                                renderState = passMaterial->renderState;
+                            }
+
                             for (auto &resource : passMaterial->resourceList)
                             {
                                 ResourceHandle resourceHandle;
@@ -81,16 +91,6 @@ namespace Gek
                             }
                         }
                     }
-
-                    auto &renderStateNode = materialNode.getChild(L"renderstate");
-                    if (renderStateNode.valid)
-                    {
-                        renderState = loadRenderState(resources, renderStateNode);
-                    }
-                    else
-                    {
-                        //renderState = shader->getRenderState();
-                    }
 				}
                 else
                 {
@@ -106,6 +106,12 @@ namespace Gek
 
             const std::vector<ResourceHandle> *getResourceList(uint32_t passIdentifier)
             {
+                auto passDataSearch = passDataMap.find(passIdentifier);
+                if (passDataSearch != passDataMap.end())
+                {
+                    return &passDataSearch->second;
+                }
+
                 return nullptr;
             }
         };

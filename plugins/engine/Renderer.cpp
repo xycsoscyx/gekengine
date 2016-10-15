@@ -517,7 +517,7 @@ namespace Gek
 
                                         case Engine::Shader::Pass::Mode::Deferred:
                                             videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                                            videoContext->drawPrimitive(3, 0);
+                                            resources->drawPrimitive(videoContext, 3, 0);
                                             break;
 
                                         case Engine::Shader::Pass::Mode::Compute:
