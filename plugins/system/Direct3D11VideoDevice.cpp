@@ -1711,7 +1711,11 @@ namespace Gek
                     throw Video::OperationFailed();
                 }
 
-                getDisplayModes();
+                RECT clientRectangle;
+                GetClientRect(window, &clientRectangle);
+                int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRectangle.right - clientRectangle.left) / 2);
+                int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRectangle.bottom - clientRectangle.top) / 2);
+                SetWindowPos(window, nullptr, centerPositionX, centerPositionY, 0, 0, SWP_NOACTIVATE | SWP_NOOWNERZORDER | SWP_NOSIZE | SWP_NOZORDER);
             }
 
             void resize(void)

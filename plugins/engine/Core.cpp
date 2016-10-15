@@ -114,7 +114,6 @@ namespace Gek
             Video::BufferPtr indexBuffer;
 
             bool showOptionsMenu = false;
-            char loadLevelName[256] = "sponza";
 
         public:
             Core(Context *context, HWND window)
@@ -649,6 +648,7 @@ namespace Gek
                 if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                 {
                     char name[256] = "";
+                    //ImGui::SetKeyboardFocusHere();
                     if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
                     {
                         population->load(String(name));

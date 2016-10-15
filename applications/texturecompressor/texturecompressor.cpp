@@ -215,17 +215,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			throw std::exception("Unable to register window class");
 		}
 
-		RECT clientRect;
-		clientRect.left = 0;
-		clientRect.top = 0;
-		clientRect.right = 1;
-		clientRect.bottom = 1;
-		AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
-		int windowWidth = (clientRect.right - clientRect.left);
-		int windowHeight = (clientRect.bottom - clientRect.top);
-		int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
-		int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
-		HWND window = CreateWindow(L"GEKvX_Engine_Texture_Compressor", L"GEKvX Application - Texture Compressor", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
+		HWND window = CreateWindow(L"GEKvX_Engine_Texture_Compressor", L"GEKvX Application - Texture Compressor", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, 0, 0, 1, 1, 0, nullptr, GetModuleHandle(nullptr), 0);
 		if (window == nullptr)
 		{
 			throw std::exception("Unable to create window");

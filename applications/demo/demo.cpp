@@ -92,16 +92,16 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             throw std::exception("Unable to register window class");
         }
 
-        RECT clientRect;
-        clientRect.left = 0;
-        clientRect.top = 0;
-        clientRect.right = 800;
-        clientRect.bottom = 600;
-        AdjustWindowRect(&clientRect, WS_OVERLAPPEDWINDOW, false);
-        int windowWidth = (clientRect.right - clientRect.left);
-        int windowHeight = (clientRect.bottom - clientRect.top);
-        int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRect.right - clientRect.left) / 2);
-        int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRect.bottom - clientRect.top) / 2);
+        RECT clientRectangle;
+        clientRectangle.left = 0;
+        clientRectangle.top = 0;
+        clientRectangle.right = 800;
+        clientRectangle.bottom = 600;
+        AdjustWindowRect(&clientRectangle, WS_OVERLAPPEDWINDOW, false);
+        int windowWidth = (clientRectangle.right - clientRectangle.left);
+        int windowHeight = (clientRectangle.bottom - clientRectangle.top);
+        int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRectangle.right - clientRectangle.left) / 2);
+        int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRectangle.bottom - clientRectangle.top) / 2);
         HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Application - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
         if (window == nullptr)
         {

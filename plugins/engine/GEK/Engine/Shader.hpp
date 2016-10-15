@@ -72,6 +72,7 @@ namespace Gek
                 };
 
                 uint32_t identifier;
+                RenderStateHandle renderState;
                 std::vector<Resource> resourceList;
 
                 Material(uint32_t identifier)

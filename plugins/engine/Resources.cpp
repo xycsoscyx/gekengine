@@ -345,8 +345,28 @@ namespace Gek
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
 
-            bool drawPrimitiveValid = false;
-            bool dispatchValid = false;
+            struct Validate
+            {
+                bool state;
+                Validate(void)
+                    : state(false)
+                {
+                }
+
+                operator bool ()
+                {
+                    return state;
+                }
+
+                bool operator = (bool state)
+                {
+                    this->state = state;
+                    return state;
+                }
+            };
+
+            Validate drawPrimitiveValid;
+            Validate dispatchValid;
 
         public:
             Resources(Context *context, Plugin::Core *core, Video::Device *videoDevice)
@@ -376,7 +396,7 @@ namespace Gek
                 core->onResize.disconnect<Resources, &Resources::onResize>(this);
             }
 
-            bool &getValid(Video::Device::Context::Pipeline *videoPipeline)
+            Validate &getValid(Video::Device::Context::Pipeline *videoPipeline)
             {
                 GEK_REQUIRE(videoPipeline);
 
@@ -767,7 +787,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                bool &valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid && (valid = constantBufferCache.set(resourceHandleList, generalCache)))
                 {
                     videoPipeline->setConstantBufferList(constantBufferCache.get(), firstStage);
@@ -779,7 +799,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                bool &valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid && (valid = resourceCache.set(resourceHandleList, generalCache)))
                 {
                     videoPipeline->setResourceList(resourceCache.get(), firstStage);
@@ -791,7 +811,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                bool &valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid && (valid = unorderedAccessCache.set(resourceHandleList, generalCache)))
                 {
                     videoPipeline->setUnorderedAccessList(unorderedAccessCache.get(), firstStage);
@@ -1198,7 +1218,7 @@ namespace Gek
             {
                 GEK_REQUIRE(videoPipeline);
 
-                bool &valid = getValid(videoPipeline);
+                auto &valid = getValid(videoPipeline);
                 if (valid)
                 {
                     auto program = programCache.getResource(programHandle);
