@@ -18,8 +18,6 @@ float3 getExposedColor(float3 color, float averageLuminance, float threshold, ou
     exposure = 0.0;
     if (Defines::autoExposureMode >= 1 && Defines::autoExposureMode <= 2)
     {
-        averageLuminance = max(averageLuminance, Math::Epsilon);
-
         float keyValue = 0.0;
         if (Defines::autoExposureMode == 1)
         {
@@ -157,7 +155,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 baseColor = Resources::screenBuffer[inputPixel.screen.xy];
 
     float exposure = 0.0;
-    float averageLuminance = exp(Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0)));
+    float averageLuminance = Resources::averageLuminanceBuffer.Load(uint3(0, 0, 0));
     float3 tonedColor = getToneMappedColor(baseColor, averageLuminance, 0.0, exposure);
     return tonedColor;
 }
