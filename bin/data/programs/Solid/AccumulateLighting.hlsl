@@ -13,10 +13,9 @@ namespace Light
 
     float getFalloff(float distance, float range)
     {
-        float distanceOverRange = pow((distance / range), 4.0);
-        float falloff = pow(saturate(1.0 - distanceOverRange), 2.0);
-        falloff /= (pow(distance, 2.0) + 1.0);
-        return falloff;
+        float denominator = (pow(distance, 2.0) + 1.0);
+        float attenuation = pow((distance / range), 4.0);
+        return (pow(saturate(1.0 - attenuation), 2.0) / denominator);
     }
 
 	namespace Punctual
@@ -87,7 +86,7 @@ namespace Light
 		switch (light.type)
 		{
 		case Lighting::Type::Point:
-			return Area::getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+			return Punctual::getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
 		case Lighting::Type::Directional:
 			return Punctual::getDirectionalProperties(light, surfacePosition, surfaceNormal, reflectNormal);
