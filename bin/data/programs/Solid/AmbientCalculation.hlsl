@@ -12,8 +12,8 @@
 
 namespace Defines
 {
-    static const float radiusSquared = square(Defines::radius);
-    static const float radiusCubed = cube(Defines::radius);
+    static const float radiusSquared = pow(Defines::radius, 2.0);
+    static const float radiusCubed = pow(Defines::radius, 3.0);
     static const float inverseTapCount = rcp(Defines::tapCount);
     static const float intensityDivR6 = Defines::intensity / pow(Defines::radius, 6.0f);
 };
@@ -79,20 +79,20 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
             // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/	
             // Epsilon inside the sqrt for rsqrt operation
             float falloff = max(1.0 - deltaAngle * (1.0 / Defines::radiusSquared), 0.0);
-            return falloff * max((normalAngle - Defines::bias) * rsqrt(Defines::epsilon + deltaAngle), 0.0);
+            return (falloff * max((normalAngle - Defines::bias) * rsqrt(Defines::epsilon + deltaAngle), 0.0));
         }
 
     case FalloffHPG12:
         // A: From the HPG12 paper
         // Note large Defines::epsilon to avoid overdarkening within cracks
-        return float(deltaAngle < Defines::radiusSquared) * max((normalAngle - Defines::bias) * rcp(Defines::epsilon + deltaAngle), 0.0) * Defines::radiusSquared * 0.6;
+        return (float(deltaAngle < Defines::radiusSquared) * max((normalAngle - Defines::bias) * rcp(Defines::epsilon + deltaAngle), 0.0) * Defines::radiusSquared * 0.6);
 
     case FalloffSmooth:
         if (true)
         {
             // B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
             float falloff = max(Defines::radiusSquared - deltaAngle, 0.0);
-            return cube(falloff) * max((normalAngle - Defines::bias) * rcp(Defines::epsilon + deltaAngle), 0.0);
+            return (pow(falloff, 3.0) * max((normalAngle - Defines::bias) * rcp(Defines::epsilon + deltaAngle), 0.0));
             // / (Defines::epsilon + deltaAngle) (optimization by BartWronski)
         }
 
@@ -100,14 +100,14 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
         // surfacePosition: Medium contrast (which looks better at high radii), no division.  Note that the 
         // contribution still falls off with Defines::radius^2, but we've adjusted the rate in a way that is
         // more computationally efficient and happens to be aesthetically pleasing.
-        return 4.0 * max(1.0 - deltaAngle * 1.0 / Defines::radiusSquared, 0.0) * max(normalAngle - Defines::bias, 0.0);
+        return (4.0 * max(1.0 - deltaAngle * 1.0 / Defines::radiusSquared, 0.0) * max(normalAngle - Defines::bias, 0.0));
 
     case FalloffQuick:
         // D: Low contrast, no division operation
-        return 2.0 * float(deltaAngle < Defines::radiusSquared) * max(normalAngle - Defines::bias, 0.0);
+        return (2.0 * float(deltaAngle < Defines::radiusSquared) * max(normalAngle - Defines::bias, 0.0));
 
     default:
-        return 4.0 * max(1.0 - deltaAngle * 1.0 / Defines::radiusSquared, 0.0) * max(normalAngle - Defines::bias, 0.0);
+        return (4.0 * max(1.0 - deltaAngle * 1.0 / Defines::radiusSquared, 0.0) * max(normalAngle - Defines::bias, 0.0));
     };
 }
 
@@ -117,12 +117,12 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     float3 surfacePosition = getPosition(inputPixel.texCoord);
-    float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
+    float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
     // McGuire noise function
     // Hash function used in the HPG12 AlchemyAO paper
-    float randomPatternRotationAngle = noise1(inputPixel.screen.xy) * 10.0;
-    float diskRadius = -1.0 *  Defines::radius / max(surfacePosition.z, 0.1f);
+    float randomPatternRotationAngle = (getNoise(inputPixel.screen.xy) * 10.0);
+    float diskRadius = (-1.0 *  Defines::radius / max(surfacePosition.z, 0.1f));
     float totalOcclusion = 0.0;
 
     [unroll]
@@ -131,7 +131,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         totalOcclusion += getAmbientObscurance(inputPixel.texCoord, surfacePosition, surfaceNormal, diskRadius, tapIndex, randomPatternRotationAngle);
     }
 
-    totalOcclusion /= square(Defines::radiusCubed);
+    totalOcclusion /= pow(Defines::radiusCubed, 2.0);
 
     [branch]
     if (Defines::falloffFunction == HighQuality)
@@ -144,24 +144,8 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         totalOcclusion = max(0.0f, 1.0f - totalOcclusion * Defines::intensityDivR6 * (5.0f / Defines::tapCount));
     }
 
-    [branch]
-    if (Defines::boxFilter)
-    {
-        // Bilateral box-filter over a quad for free, respecting depth edges
-        // (the difference that this makes is subtle)
-        if (abs(ddx(surfacePosition.z)) < 0.02)
-        {
-            totalOcclusion -= ddx(totalOcclusion) * (((inputPixel.texCoord.x - floor(inputPixel.texCoord.x)) * 2) - 0.5);
-        }
-
-        if (abs(ddy(surfacePosition.z)) < 0.02)
-        {
-            totalOcclusion -= ddy(totalOcclusion) * (((inputPixel.texCoord.y - floor(inputPixel.texCoord.y)) * 2) - 0.5);
-        }
-    }
-
     // Anti-tone map to reduce contrast and drag dark region farther
     // (x^0.2 + 1.2 * x^4)/2.2
-    //totalOcclusion = (pow(totalOcclusion, 0.2) + 1.2 * quad(totalOcclusion)) / 2.2;
+    //totalOcclusion = (pow(totalOcclusion, 0.2) + 1.2 * pow(totalOcclusion, 4.0)) / 2.2;
     return totalOcclusion;
 }

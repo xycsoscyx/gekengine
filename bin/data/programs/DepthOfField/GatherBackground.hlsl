@@ -13,7 +13,7 @@ float2 getNoise(float2 coord)
     }
     else
     {
-        return float2(random(coord.xy), random(coord.yx)) * Defines::noiseStrength;
+        return float2(getRandom(coord.xy), getRandom(coord.yx)) * Defines::noiseStrength;
     }
 }
 

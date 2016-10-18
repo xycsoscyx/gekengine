@@ -5,7 +5,7 @@
 
 static const int maxDiffusionPixels = 16;
 static const int diffusionStridePixels = 2;
-static const float pixelsPerDiffusion2 = square(200.0);
+static const float pixelsPerDiffusionSquared = pow(200.0, 2.0);
 static const int stride = diffusionStridePixels;
 
 // http://graphics.cs.williams.edu/papers/TransparencyI3D16/McGuire2016Transparency.pdf
@@ -15,28 +15,28 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float3 backgroundModulation = backgroundModulationAndDiffusion.rgb;
 
     [branch]
-    if (minComponent(backgroundModulation) == 1.0)
+    if (getMinimum(backgroundModulation) == 1.0)
     {
         return Resources::screenBuffer[inputPixel.screen.xy];
     }
 
-    float diffusionSquared = backgroundModulationAndDiffusion.a * pixelsPerDiffusion2;
+    float diffusionSquared = backgroundModulationAndDiffusion.a * pixelsPerDiffusionSquared;
     float2 refraction = 3.0 * Resources::refractionBuffer[inputPixel.screen.xy] * (1.0 / 8.0);
     float4 accumulation = Resources::accumulationBuffer[inputPixel.screen.xy];
 
     [branch]
     if (isinf(accumulation.a))
     {
-        accumulation.a = maxComponent(accumulation.rgb);
+        accumulation.a = getMaximum(accumulation.rgb);
     }
 
     [branch]
-    if (isinf(maxComponent(accumulation.rgb)))
+    if (isinf(getMaximum(accumulation.rgb)))
     {
         accumulation = (isinf(accumulation.a) ? 1.0 : accumulation.a);
     }
 
-    accumulation.rgb *= 0.5 + backgroundModulation / max(0.01, 2.0 * maxComponent(backgroundModulation));
+    accumulation.rgb *= 0.5 + backgroundModulation / max(0.01, 2.0 * getMaximum(backgroundModulation));
 
     float3 background = 0.0;
 
@@ -59,7 +59,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
                 if (radiusSquared <= diffusionSquared)
                 {
                     int2 tapCoord = inputPixel.screen.xy + tapOffset;
-                    float backgroundBlurRadiusSquared = Resources::modulationDiffusionBuffer[tapCoord].a * pixelsPerDiffusion2;
+                    float backgroundBlurRadiusSquared = Resources::modulationDiffusionBuffer[tapCoord].a * pixelsPerDiffusionSquared;
 
                     [branch]
                     if (radiusSquared <= backgroundBlurRadiusSquared)

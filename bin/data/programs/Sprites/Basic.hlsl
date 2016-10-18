@@ -34,7 +34,7 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     
     Sprite::Data spriteData = Sprite::list[spriteIndex];
     float age = (spriteData.age / spriteData.life);
-    uint frameIndex = floor(age * square(spriteData.frames));
+    uint frameIndex = floor(age * pow(spriteData.frames, 2.0));
     float2 texCoord00 = float2((frameIndex % spriteData.frames),
                                (frameIndex / spriteData.frames)) / float(spriteData.frames);
     float2 texCoord11 = (texCoord00 + (1.0 / float(spriteData.frames)));

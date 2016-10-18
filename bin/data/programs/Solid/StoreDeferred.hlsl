@@ -30,6 +30,6 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
     outputPixel.albedoBuffer = albedo.rgb;
     outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     outputPixel.materialBuffer.y = Resources::metallic.Sample(Global::linearWrapSampler, inputPixel.texCoord);
-    outputPixel.normalBuffer = encodeNormal(normal);
+    outputPixel.normalBuffer = getEncodedNormal(normal);
     return outputPixel;
 }

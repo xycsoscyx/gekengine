@@ -1,19 +1,4 @@
-float square(float x)
-{
-    return (x * x);
-}
-
-float cube(float x)
-{
-    return (x * x * x);
-}
-
-float quad(float x)
-{
-	return (x * x * x * x);
-}
-
-float random(int2 position, float time = 1.0)
+float getRandom(int2 position, float time = 1.0)
 {
     return (61.111231231 * time + (9.2735171213125 * position.x + -7.235171213125 * position.y + 1.53713171123412415411 * (position.x ^ position.y)));
 }
@@ -22,26 +7,26 @@ float random(int2 position, float time = 1.0)
 // All noise functions are designed for values on integer scale.
 // They are tuned to avoid visible periodicity for both positive and
 // negative coordinates within a few orders of magnitude.
-float hash(float n)
+float getHash(float n)
 {
 	return frac(sin(n) * 1e4);
 }
 
-float hash(float2 p)
+float getHash(float2 p)
 {
 	return frac(1e4 * sin(17.0 * p.x + p.y * 0.1) * (0.1 + abs(sin(p.y * 13.0 + p.x))));
 }
 
-float noise1(float2 x)
+float getNoise(float2 x)
 {
 	float2 i = floor(x);
 	float2 f = frac(x);
 
 	// Four corners in 2D of a tile
-	float a = hash(i);
-	float b = hash(i + float2(1.0, 0.0));
-	float c = hash(i + float2(0.0, 1.0));
-	float d = hash(i + float2(1.0, 1.0));
+	float a = getHash(i);
+	float b = getHash(i + float2(1.0, 0.0));
+	float c = getHash(i + float2(0.0, 1.0));
+	float d = getHash(i + float2(1.0, 1.0));
 
 	// Simple 2D lerp using smoothstep envelope between the values.
 	// return float3(lerp(lerp(a, b, smoothstep(0.0, 1.0, f.x)),
@@ -54,12 +39,12 @@ float noise1(float2 x)
 	return lerp(a, b, u.x) + (c - a) * u.y * (1.0 - u.x) + (d - b) * u.x * u.y;
 }
 
-float maxComponent(float3 value)
+float getMaximum(float3 value)
 {
     return max(value.x, max(value.y, value.z));
 }
 
-float minComponent(float3 value)
+float getMinimum(float3 value)
 {
     return min(value.x, min(value.y, value.z));
 }
@@ -127,7 +112,7 @@ float2 signNotZero(float2 v)
 }
 
 // Assume normalized input. Output is on [-1, 1] for each component.
-float2 encodeNormal(float3 v)
+float2 getEncodedNormal(float3 v)
 {
     // Project the sphere onto the octahedron, and then onto the xy plane
     float2 p = v.xy * (1.0 / (abs(v.x) + abs(v.y) + abs(v.z)));
@@ -135,7 +120,7 @@ float2 encodeNormal(float3 v)
     return (v.z <= 0.0) ? ((1.0 - abs(p.yx)) * signNotZero(p)) : p;
 }
 
-float3 decodeNormal(float2 e)
+float3 getDecodedNormal(float2 e)
 {
     float3 v = float3(e.xy, 1.0 - abs(e.x) - abs(e.y));
 	v.xy = (v.z < 0.0 ? (1.0 - abs(v.yx)) * signNotZero(v.xy) : v.xy);
