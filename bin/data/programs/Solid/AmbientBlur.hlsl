@@ -6,8 +6,8 @@
 float calculateGaussianWeight(float offset)
 {
     static const float gaussian = (1.0f / (sqrt(Math::Tau) * Defines::gaussianSigma));
-    static const float denom = rcp(2.0 * pow(Defines::gaussianSigma, 2.0));
-    return ((gaussian * exp(-pow(offset, 2.0) * denom)) / 2.0);
+    static const float denominator = rcp(2.0 * pow(Defines::gaussianSigma, 2.0));
+    return ((gaussian * exp(-pow(offset, 2.0) * denominator)) / 2.0);
 }
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
