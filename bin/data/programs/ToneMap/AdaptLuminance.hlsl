@@ -9,8 +9,8 @@ void mainComputeProgram(void)
     Resources::luminanceBuffer.GetDimensions(0, width, height, mipMapCount);
 
     float averageLuminance = UnorderedAccess::averageLuminanceBuffer[0];
-    float currentLuminance = Resources::luminanceBuffer.Load(uint3(0, 0, (mipMapCount - 1)));
+    float currentLuminance = exp(Resources::luminanceBuffer.Load(uint3(0, 0, (mipMapCount - 1))));
     averageLuminance += (currentLuminance - averageLuminance) * (1.0 - exp(-Engine::frameTime * Defines::adaptionRate));
     averageLuminance = (isfinite(averageLuminance) ? averageLuminance : 0.0);
-    UnorderedAccess::averageLuminanceBuffer[0] = averageLuminance;
+    UnorderedAccess::averageLuminanceBuffer[0] = max(averageLuminance, Math::Epsilon);
 }
