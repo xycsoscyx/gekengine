@@ -20,7 +20,18 @@ namespace Light
 
 	namespace Punctual
 	{
-		Properties getPointProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+        Properties getDirectionalProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+        {
+            Properties properties;
+
+            properties.direction = light.direction;
+
+            properties.falloff = 1.0;
+
+            return properties;
+        }
+
+        Properties getPointProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
 		{
 			Properties properties;
 
@@ -29,30 +40,13 @@ namespace Light
 			properties.direction = (lightRay / lightDistance);
 
             properties.falloff = getFalloff(lightDistance, light.range);
-
-			return properties;
-		}
-
-		Properties getDirectionalProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
-		{
-			Properties properties;
-
-			properties.direction = light.direction;
-
-            properties.falloff = 1.0;
 
 			return properties;
 		}
 
 		Properties getSpotProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
 		{
-			Properties properties;
-
-			float3 lightRay = (light.position.xyz - surfacePosition);
-			float lightDistance = length(lightRay);
-			properties.direction = (lightRay / lightDistance);
-
-            properties.falloff = getFalloff(lightDistance, light.range);
+            Properties properties = getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
 			float rho = saturate(dot(light.direction, -properties.direction));
 			float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
@@ -69,8 +63,8 @@ namespace Light
 			Properties properties;
 
 			float3 lightRay = (light.position.xyz - surfacePosition);
-			float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
-			float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
+			float3 centerToRay = (lightRay - (dot(lightRay, reflectNormal) * reflectNormal));
+            float3 closestPoint = (lightRay + (centerToRay * saturate(light.radius / length(centerToRay))));
 			properties.direction = normalize(closestPoint);
 
             float lightDistance = length(closestPoint);
@@ -78,18 +72,29 @@ namespace Light
 
 			return properties;
 		}
-	};
+
+        Properties getSpotProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
+        {
+            Properties properties = getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+
+            float rho = saturate(dot(light.direction, -properties.direction));
+            float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
+            properties.falloff *= spotFactor;
+
+            return properties;
+        }
+    };
 
 	Properties getProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
 	{
 		[branch]
 		switch (light.type)
 		{
-		case Lighting::Type::Point:
-			return Punctual::getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+        case Lighting::Type::Directional:
+            return Punctual::getDirectionalProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
-		case Lighting::Type::Directional:
-			return Punctual::getDirectionalProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+        case Lighting::Type::Point:
+			return Area::getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
 		case Lighting::Type::Spot:
 			return Punctual::getSpotProperties(light, surfacePosition, surfaceNormal, reflectNormal);

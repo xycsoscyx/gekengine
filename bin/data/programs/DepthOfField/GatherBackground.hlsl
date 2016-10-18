@@ -8,8 +8,8 @@ float2 getNoise(float2 coord)
     if (Defines::enableDithering)
     {
         return float2(
-            clamp(frac(sin(dot(coord, float2(12.9898, 78.233))) * 43758.5453), 0.0, 1.0) * 2.0 - 1.0,
-            clamp(frac(sin(dot(coord, float2(12.9898, 78.233) * 2.0)) * 43758.5453), 0.0, 1.0) * 2.0 - 1.0) * Defines::noiseStrength;
+            saturate(frac(sin(dot(coord, float2(12.9898, 78.233))) * 43758.5453)) * 2.0 - 1.0,
+            saturate(frac(sin(dot(coord, float2(12.9898, 78.233) * 2.0)) * 43758.5453)) * 2.0 - 1.0) * Defines::noiseStrength;
     }
     else
     {
@@ -72,7 +72,7 @@ float getPentagonalShape(float2 texCoord)
     distance = smoothstep(-Defines::pentagonFeathering, Defines::pentagonFeathering, distance);
 
     inOrOut += distance.x;
-    return clamp(inOrOut, 0.0, 1.0);
+    return saturate(inOrOut);
 }
 
 float getModifier(float2 offset)
