@@ -183,10 +183,8 @@ namespace Gek
                 }
 
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-                population->listEntities<Components::Physical, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
+                population->listEntities<Components::Transform, Components::Physical>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &physicalComponent) -> void
                 {
-                    const auto &transformComponent = entity->getComponent<Components::Transform>();
-                    const auto &physicalComponent = entity->getComponent<Components::Physical>();
                     if (entity->hasComponent<Components::Player>())
                     {
                         Newton::EntityPtr playerBody(createPlayerBody(core, newtonWorld, entity));

@@ -1254,11 +1254,8 @@ namespace Gek
                 GEK_REQUIRE(videoContext);
 
                 concurrency::concurrent_vector<LightData> lightData;
-                population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *) -> void
+                population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &colorComponent) -> void
                 {
-                    auto &transformComponent = entity->getComponent<Components::Transform>();
-					auto &colorComponent = entity->getComponent<Components::Color>();
-
                     if (entity->hasComponent<Components::PointLight>())
                     {
 						auto &light = entity->getComponent<Components::PointLight>();
