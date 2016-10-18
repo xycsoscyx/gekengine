@@ -54,7 +54,7 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
             break;
 
         case aiLightSource_SPOT:
-            printf("    <spot_light range=\"%f\" inner_angle=\"%f\" outer_angle=\"%f\" falloff=\"5\" />\r\n", range, 
+            printf("    <spot_light range=\"%f\" inner_angle=\"%f\" outer_angle=\"%f\" cone_falloff=\"5\" />\r\n", range, 
                 Math::convertRadiansToDegrees(light->mAngleInnerCone), 
                 Math::convertRadiansToDegrees(light->mAngleOuterCone));
             break;

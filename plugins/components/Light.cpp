@@ -29,7 +29,7 @@ namespace Gek
             componentData.attributes[L"intensity"] = intensity;
             componentData.attributes[L"inner_angle"] = Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f);
             componentData.attributes[L"outer_angle"] = Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f);
-            componentData.attributes[L"falloff"] = falloff;
+            componentData.attributes[L"cone_falloff"] = coneFalloff;
         }
 
         void SpotLight::load(const Xml::Leaf &componentData)
@@ -39,7 +39,7 @@ namespace Gek
             intensity = loadAttribute(componentData, L"intensity", 0.0f);
             innerAngle = std::cos(Math::convertDegreesToRadians(loadAttribute(componentData, L"inner_angle", 0.0f) * 0.5f));
             outerAngle = std::cos(Math::convertDegreesToRadians(loadAttribute(componentData, L"outer_angle", 0.0f) * 0.5f));
-            falloff = loadAttribute(componentData, L"falloff", 0.0f);
+            coneFalloff = loadAttribute(componentData, L"cone_falloff", 0.0f);
         }
 
         void DirectionalLight::save(Xml::Leaf &componentData) const
@@ -109,7 +109,7 @@ namespace Gek
             ImGui::InputFloat("Intensity", &spotLightComponent.intensity, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Inner Angle", &spotLightComponent.innerAngle, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Outer Angle", &spotLightComponent.outerAngle, 1.0f, 10.0f, 3, flags);
-            ImGui::InputFloat("Falloff", &spotLightComponent.falloff, 1.0f, 10.0f, 3, flags);
+            ImGui::InputFloat("Cone Falloff", &spotLightComponent.coneFalloff, 1.0f, 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
         }
 

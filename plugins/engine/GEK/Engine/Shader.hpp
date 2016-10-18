@@ -28,8 +28,6 @@ namespace Gek
             GEK_ADD_EXCEPTION(UnknownMaterialType);
             GEK_ADD_EXCEPTION(InvalidElementType);
 
-            GEK_PREDECLARE(Block);
-
             GEK_INTERFACE(Pass)
             {
                 enum class Mode : uint8_t
@@ -49,17 +47,7 @@ namespace Gek
 
                 virtual uint32_t getIdentifier(void) const = 0;
                 virtual uint32_t getFirstResourceStage(void) const = 0;
-            };
-
-            GEK_INTERFACE(Block)
-            {
-                using Iterator = std::unique_ptr<Block>;
-
-                virtual Iterator next(void) = 0;
-
-                virtual Pass::Iterator begin(void) = 0;
-
-                virtual bool prepare(void) = 0;
+                virtual bool isLightingRequired(void) const = 0;
             };
 
             struct Material
@@ -85,8 +73,9 @@ namespace Gek
 
             virtual uint32_t getPriority(void) const = 0;
             virtual const Material *getPassMaterial(const wchar_t *materialName) const = 0;
+            virtual bool isLightingRequired(void) const = 0;
 
-            virtual Block::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
+            virtual Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

@@ -49,7 +49,7 @@ namespace Light
             Properties properties = getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
 			float rho = saturate(dot(light.direction, -properties.direction));
-			float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
+			float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), 4.0);
 			properties.falloff *= spotFactor;
 
 			return properties;
@@ -78,7 +78,7 @@ namespace Light
             Properties properties = getPointProperties(light, surfacePosition, surfaceNormal, reflectNormal);
 
             float rho = saturate(dot(light.direction, -properties.direction));
-            float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
+            float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), 4.0);
             properties.falloff *= spotFactor;
 
             return properties;
