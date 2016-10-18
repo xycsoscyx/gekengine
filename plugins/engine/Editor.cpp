@@ -154,224 +154,232 @@ namespace Gek
             {
                 auto changeConfiguration = core->changeConfiguration();
                 Xml::Node &configuration = *changeConfiguration;
-                bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
-                if (showSelectionMenu)
+                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                if (showCursor)
                 {
-                    if (ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                    bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
+                    if (showSelectionMenu)
                     {
-                        ImGui::Dummy(ImVec2(350, 0));
-                        ImGui::TextDisabled("Loading...");
-                        ImGui::End();
+                        if (ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        {
+                            ImGui::Dummy(ImVec2(350, 0));
+                            ImGui::TextDisabled("Loading...");
+                            ImGui::End();
+                        }
                     }
                 }
             }
 
             void onUpdate(void)
             {
-                const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                const float width = float(backBuffer->getWidth());
-                const float height = float(backBuffer->getHeight());
-                auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
                 auto changeConfiguration = core->changeConfiguration();
                 Xml::Node &configuration = *changeConfiguration;
-                bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
-                if (editingEnabled && camera)
+                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                if (showCursor)
                 {
-                    float frameTime = population->getFrameTime();
+                    const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                    const float width = float(backBuffer->getWidth());
+                    const float height = float(backBuffer->getHeight());
+                    auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
-                    auto &editorCamera = camera->getComponent<Private::EditorCamera>();
-                    float forwardSpeed = (((editorCamera.moveForward ? 1.0f : 0.0f) + (editorCamera.moveBackward ? -1.0f : 0.0f)) * 5.0f);
-                    float lateralSpeed = (((editorCamera.strafeLeft ? -1.0f : 0.0f) + (editorCamera.strafeRight ? 1.0f : 0.0f)) * 5.0f);
-
-                    auto &transformComponent = camera->getComponent<Components::Transform>();
-
-                    static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                    auto cameraMatrix((transformComponent.rotation = Math::Quaternion::createAngularRotation(upAxis, editorCamera.headingAngle)).getMatrix());
-                    transformComponent.position += (cameraMatrix.nz * forwardSpeed * frameTime);
-                    transformComponent.position += (cameraMatrix.nx * lateralSpeed * frameTime);
-                }
-
-                bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
-                if (showSelectionMenu && ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
-                {
-                    ImGui::Dummy(ImVec2(350, 0));
-                    auto &entityMap = population->getEntityMap();
-                    if (!entityMap.empty())
+                    bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
+                    if (editingEnabled && camera)
                     {
-                        ImGui::Separator();
-                        if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                        {
-                            ImGui::OpenPopup("Entity Name");
-                        }
+                        float frameTime = population->getFrameTime();
 
-                        if (ImGui::BeginPopup("Entity Name"))
-                        {
-                            char name[256] = "";
-                            if (ImGui::InputText("Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
-                            {
-                                population->createEntity(String(name));
-                                ImGui::CloseCurrentPopup();
-                            }
+                        auto &editorCamera = camera->getComponent<Private::EditorCamera>();
+                        float forwardSpeed = (((editorCamera.moveForward ? 1.0f : 0.0f) + (editorCamera.moveBackward ? -1.0f : 0.0f)) * 5.0f);
+                        float lateralSpeed = (((editorCamera.strafeLeft ? -1.0f : 0.0f) + (editorCamera.strafeRight ? 1.0f : 0.0f)) * 5.0f);
 
-                            ImGui::EndPopup();
-                        }
+                        auto &transformComponent = camera->getComponent<Components::Transform>();
 
-                        ImGui::PushItemWidth(-1.0f);
-                        auto entityCount = entityMap.size() - 1;
-                        if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
-                        {
-                            ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
-                            while (clipper.Step())
-                            {
-                                auto entitySearch = entityMap.begin();
-                                std::advance(entitySearch, clipper.DisplayStart);
-                                if (entitySearch->second.get() == camera)
-                                {
-                                    std::advance(entitySearch, 1);
-                                }
+                        static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
+                        auto cameraMatrix((transformComponent.rotation = Math::Quaternion::createAngularRotation(upAxis, editorCamera.headingAngle)).getMatrix());
+                        transformComponent.position += (cameraMatrix.nz * forwardSpeed * frameTime);
+                        transformComponent.position += (cameraMatrix.nx * lateralSpeed * frameTime);
+                    }
 
-                                for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
-                                {
-                                    ImGui::PushID(entityIndex);
-                                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
-                                    if (ImGui::Button("X"))
-                                    {
-                                        population->killEntity(entitySearch->second.get());
-                                    }
-
-                                    ImGui::PopStyleVar();
-                                    ImGui::PopID();
-                                    ImGui::SameLine();
-                                    ImGui::SetItemAllowOverlap();
-                                    if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
-                                    {
-                                        selectedEntity = entityIndex;
-                                        selectedComponent = 0;
-                                    }
-                                }
-                            };
-
-                            ImGui::ListBoxFooter();
-                        }
-
-                        ImGui::PopItemWidth();
-
-                        auto entitySearch = entityMap.begin();
-                        std::advance(entitySearch, selectedEntity);
-                        Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
-                        if (entity)
+                    bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
+                    if (showSelectionMenu && ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                    {
+                        ImGui::Dummy(ImVec2(350, 0));
+                        auto &entityMap = population->getEntityMap();
+                        if (!entityMap.empty())
                         {
                             ImGui::Separator();
-                            ImGui::PushItemWidth(-1.0f);
-                            if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                            if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                             {
-                                ImGui::OpenPopup("Select Component");
+                                ImGui::OpenPopup("Entity Name");
                             }
 
-                            if (ImGui::BeginPopup("Select Component"))
+                            if (ImGui::BeginPopup("Entity Name"))
                             {
-                                auto &componentMap = population->getComponentMap();
-                                auto componentCount = componentMap.size();
-                                if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                                char name[256] = "";
+                                if (ImGui::InputText("Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
                                 {
-                                    ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
-                                    while (clipper.Step())
-                                    {
-                                        for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                        {
-                                            auto componentSearch = componentMap.begin();
-                                            std::advance(componentSearch, componentIndex);
-                                            if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                            {
-                                                Xml::Leaf componentData;
-                                                componentData.type = componentSearch->second->getName();
-                                                population->addComponent(entity, componentData);
-                                                ImGui::CloseCurrentPopup();
-                                            }
-                                        }
-                                    };
-
-                                    ImGui::ListBoxFooter();
+                                    population->createEntity(String(name));
+                                    ImGui::CloseCurrentPopup();
                                 }
 
                                 ImGui::EndPopup();
                             }
 
-                            auto &entityComponentMap = entity->getComponentMap();
-                            if (!entityComponentMap.empty())
+                            ImGui::PushItemWidth(-1.0f);
+                            auto entityCount = entityMap.size() - 1;
+                            if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                             {
-                                auto entityComponentsCount = entityComponentMap.size();
-                                if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
+                                ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
+                                while (clipper.Step())
                                 {
-                                    std::vector<std::type_index> componentDeleteList;
-                                    ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
-                                    while (clipper.Step())
+                                    auto entitySearch = entityMap.begin();
+                                    std::advance(entitySearch, clipper.DisplayStart);
+                                    if (entitySearch->second.get() == camera)
                                     {
-                                        for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                        {
-                                            auto entityComponentSearch = entityComponentMap.begin();
-                                            std::advance(entityComponentSearch, componentIndex);
-
-                                            ImGui::PushID(componentIndex);
-                                            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
-                                            if (ImGui::Button("X"))
-                                            {
-                                                componentDeleteList.push_back(entityComponentSearch->first);
-                                            }
-
-                                            ImGui::PopStyleVar();
-                                            ImGui::PopID();
-                                            ImGui::SameLine();
-                                            ImGui::SetItemAllowOverlap();
-                                            if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                            {
-                                                selectedComponent = componentIndex;
-                                            }
-                                        }
-                                    };
-
-                                    ImGui::ListBoxFooter();
-                                    for (auto &componentType : componentDeleteList)
-                                    {
-                                        population->removeComponent(entity, componentType);
+                                        std::advance(entitySearch, 1);
                                     }
+
+                                    for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
+                                    {
+                                        ImGui::PushID(entityIndex);
+                                        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
+                                        if (ImGui::Button("X"))
+                                        {
+                                            population->killEntity(entitySearch->second.get());
+                                        }
+
+                                        ImGui::PopStyleVar();
+                                        ImGui::PopID();
+                                        ImGui::SameLine();
+                                        ImGui::SetItemAllowOverlap();
+                                        if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
+                                        {
+                                            selectedEntity = entityIndex;
+                                            selectedComponent = 0;
+                                        }
+                                    }
+                                };
+
+                                ImGui::ListBoxFooter();
+                            }
+
+                            ImGui::PopItemWidth();
+
+                            auto entitySearch = entityMap.begin();
+                            std::advance(entitySearch, selectedEntity);
+                            Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
+                            if (entity)
+                            {
+                                ImGui::Separator();
+                                ImGui::PushItemWidth(-1.0f);
+                                if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                                {
+                                    ImGui::OpenPopup("Select Component");
                                 }
 
-                                ImGui::PopItemWidth();
-
-                                auto entityComponentSearch = entityComponentMap.begin();
-                                std::advance(entityComponentSearch, selectedComponent);
-                                if (entityComponentSearch != entityComponentMap.end())
+                                if (ImGui::BeginPopup("Select Component"))
                                 {
-                                    Edit::Component *component = population->getComponent(entityComponentSearch->first);
-                                    Plugin::Component::Data *componentData = entityComponentSearch->second.get();
-                                    if (component && componentData && camera)
+                                    auto &componentMap = population->getComponentMap();
+                                    auto componentCount = componentMap.size();
+                                    if (ImGui::ListBoxHeader("##Components", componentCount, 7))
                                     {
-                                        ImGui::Separator();
-                                        if (editingEnabled)
+                                        ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                                        while (clipper.Step())
                                         {
-                                            auto cameraMatrix(camera->getComponent<Components::Transform>().getMatrix());
-                                            auto viewMatrix(cameraMatrix.getInverse());
-                                            component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
+                                            for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                            {
+                                                auto componentSearch = componentMap.begin();
+                                                std::advance(componentSearch, componentIndex);
+                                                if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                                {
+                                                    Xml::Leaf componentData;
+                                                    componentData.type = componentSearch->second->getName();
+                                                    population->addComponent(entity, componentData);
+                                                    ImGui::CloseCurrentPopup();
+                                                }
+                                            }
+                                        };
+
+                                        ImGui::ListBoxFooter();
+                                    }
+
+                                    ImGui::EndPopup();
+                                }
+
+                                auto &entityComponentMap = entity->getComponentMap();
+                                if (!entityComponentMap.empty())
+                                {
+                                    auto entityComponentsCount = entityComponentMap.size();
+                                    if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
+                                    {
+                                        std::vector<std::type_index> componentDeleteList;
+                                        ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
+                                        while (clipper.Step())
+                                        {
+                                            for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                            {
+                                                auto entityComponentSearch = entityComponentMap.begin();
+                                                std::advance(entityComponentSearch, componentIndex);
+
+                                                ImGui::PushID(componentIndex);
+                                                ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
+                                                if (ImGui::Button("X"))
+                                                {
+                                                    componentDeleteList.push_back(entityComponentSearch->first);
+                                                }
+
+                                                ImGui::PopStyleVar();
+                                                ImGui::PopID();
+                                                ImGui::SameLine();
+                                                ImGui::SetItemAllowOverlap();
+                                                if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                                {
+                                                    selectedComponent = componentIndex;
+                                                }
+                                            }
+                                        };
+
+                                        ImGui::ListBoxFooter();
+                                        for (auto &componentType : componentDeleteList)
+                                        {
+                                            population->removeComponent(entity, componentType);
                                         }
-                                        else
+                                    }
+
+                                    ImGui::PopItemWidth();
+
+                                    auto entityComponentSearch = entityComponentMap.begin();
+                                    std::advance(entityComponentSearch, selectedComponent);
+                                    if (entityComponentSearch != entityComponentMap.end())
+                                    {
+                                        Edit::Component *component = population->getComponent(entityComponentSearch->first);
+                                        Plugin::Component::Data *componentData = entityComponentSearch->second.get();
+                                        if (component && componentData && camera)
                                         {
-                                            component->show(ImGui::GetCurrentContext(), componentData);
+                                            ImGui::Separator();
+                                            if (editingEnabled)
+                                            {
+                                                auto cameraMatrix(camera->getComponent<Components::Transform>().getMatrix());
+                                                auto viewMatrix(cameraMatrix.getInverse());
+                                                component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
+                                            }
+                                            else
+                                            {
+                                                component->show(ImGui::GetCurrentContext(), componentData);
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
+
+                        ImGui::End();
                     }
 
-                    ImGui::End();
-                }
-
-                configuration.getChild(L"editor").attributes[L"show_selector"] = showSelectionMenu;
-                if (editingEnabled && camera)
-                {
-                    renderer->render(camera, projectionMatrix, 1.0f, 200.0f, ResourceHandle());
+                    configuration.getChild(L"editor").attributes[L"show_selector"] = showSelectionMenu;
+                    if (editingEnabled && camera)
+                    {
+                        renderer->render(camera, projectionMatrix, 1.0f, 200.0f, ResourceHandle());
+                    }
                 }
             }
         };

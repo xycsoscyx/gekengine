@@ -131,6 +131,7 @@ namespace Gek
                     configuration = Xml::Node(L"config");
                 };
 
+                configuration.getChild(L"display").attributes[L"cursor"] = false;
                 configuration.getChild(L"editor").attributes[L"enabled"] = false;
                 configuration.getChild(L"editor").attributes[L"show_selector"] = false;
                 auto &displayNode = configuration.getChild(L"display");
@@ -454,7 +455,13 @@ namespace Gek
                 switch (message)
                 {
                 case WM_SETCURSOR:
-                    return 1;
+                    if (LOWORD(lParam) == HTCLIENT)
+                    {
+                        ShowCursor(false);
+                        return TRUE;
+                    }
+
+                    break;
 
                 case WM_ACTIVATE:
                     if (HIWORD(wParam))
@@ -477,44 +484,44 @@ namespace Gek
                     }
 
                     timer.pause(!windowActive);
-                    return 1;
+                    return TRUE;
 
                 case WM_SIZE:
                     videoDevice->resize();
-                    return 1;
+                    return TRUE;
 
                 case WM_LBUTTONDOWN:
                     imGuiIo.MouseDown[0] = true;
-                    return true;
+                    return TRUE;
 
                 case WM_LBUTTONUP:
                     imGuiIo.MouseDown[0] = false;
-                    return true;
+                    return TRUE;
 
                 case WM_RBUTTONDOWN:
                     imGuiIo.MouseDown[1] = true;
-                    return true;
+                    return TRUE;
 
                 case WM_RBUTTONUP:
                     imGuiIo.MouseDown[1] = false;
-                    return true;
+                    return TRUE;
 
                 case WM_MBUTTONDOWN:
                     imGuiIo.MouseDown[2] = true;
-                    return true;
+                    return TRUE;
 
                 case WM_MBUTTONUP:
                     imGuiIo.MouseDown[2] = false;
-                    return true;
+                    return TRUE;
 
                 case WM_MOUSEWHEEL:
                     imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
-                    return true;
+                    return TRUE;
 
                 case WM_MOUSEMOVE:
                     imGuiIo.MousePos.x = (int16_t)(lParam);
                     imGuiIo.MousePos.y = (int16_t)(lParam >> 16);
-                    return true;
+                    return TRUE;
 
                 case WM_KEYDOWN:
                     addAction(wParam, true);
@@ -523,16 +530,22 @@ namespace Gek
                         imGuiIo.KeysDown[wParam] = 1;
                     }
 
-                    return true;
+                    return TRUE;
 
                 case WM_KEYUP:
                     addAction(wParam, false);
+                    if (wParam == 192)
+                    {
+                        bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                        configuration.getChild(L"display").attributes[L"cursor"] = !showCursor;
+                    }
+
                     if (wParam < 256)
                     {
                         imGuiIo.KeysDown[wParam] = 0;
                     }
 
-                    return true;
+                    return TRUE;
 
                 case WM_CHAR:
                     // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
@@ -541,7 +554,7 @@ namespace Gek
                         imGuiIo.AddInputCharacter((uint16_t)wParam);
                     }
 
-                    return true;
+                    return TRUE;
 
                 case WM_INPUT:
                     if (true)
@@ -563,7 +576,7 @@ namespace Gek
                     }
                 };
 
-                return 0;
+                return DefWindowProc(window, message, wParam, lParam);
             }
 
             bool showLoadLevel = false;
@@ -589,116 +602,123 @@ namespace Gek
                 // imGuiIo.MouseDown : filled by WM_*BUTTON* events
                 // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
-                // Hide OS mouse cursor if ImGui is drawing it
-                SetCursor(imGuiIo.MouseDrawCursor ? NULL : LoadCursor(NULL, IDC_ARROW));
-
-                // Start the frame
-                ImGui::NewFrame();
-
-                if (ImGui::BeginMainMenuBar())
+                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                if (showCursor)
                 {
-                    if (ImGui::BeginMenu("File", true))
+                    // Start the frame
+                    ImGui::NewFrame();
+
+                    if (ImGui::BeginMainMenuBar())
                     {
-                        ImGui::PushItemWidth(-1);
-                        if (ImGui::MenuItem("New Level", "N"))
+                        if (ImGui::BeginMenu("File", true))
                         {
-                            population->load(nullptr);
+                            ImGui::PushItemWidth(-1);
+                            if (ImGui::MenuItem("New Level", "N"))
+                            {
+                                population->load(nullptr);
+                            }
+
+                            if (ImGui::MenuItem("Load Level", "L"))
+                            {
+                                showLoadLevel = true;
+                            }
+
+                            if (ImGui::MenuItem("Quit", "Q"))
+                            {
+                                engineRunning = false;
+                            }
+
+                            ImGui::PopItemWidth();
+                            ImGui::EndMenu();
                         }
 
-                        if (ImGui::MenuItem("Load Level", "L"))
+                        if (ImGui::BeginMenu("Edit"))
                         {
-                            showLoadLevel = true;
+                            ImGui::PushItemWidth(-1);
+                            if (ImGui::MenuItem("Options", "O"))
+                            {
+                                showOptionsMenu = true;
+                            }
+
+                            if (ImGui::MenuItem("Selector", "S"))
+                            {
+                                configuration.getChild(L"editor").attributes[L"show_selector"] = true;
+                            }
+
+                            if (ImGui::MenuItem("Editor", "E", &editorSelected))
+                            {
+                                bool enabled = configuration.getChild(L"editor").attributes[L"enabled"];
+                                configuration.getChild(L"editor").attributes[L"enabled"] = !enabled;
+                            }
+
+                            ImGui::PopItemWidth();
+                            ImGui::EndMenu();
                         }
 
-                        if (ImGui::MenuItem("Quit", "Q"))
+                        ImGui::EndMainMenuBar();
+                    }
+
+                    if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                    {
+                        char name[256] = "";
+                        //ImGui::SetKeyboardFocusHere();
+                        if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            engineRunning = false;
+                            population->load(String(name));
+                            showLoadLevel = false;
+                        }
+
+                        ImGui::SameLine();
+                        if (ImGui::Button("OK"))
+                        {
+                            population->load(String(name));
+                            showLoadLevel = false;
+                        }
+
+                        ImGui::End();
+                    }
+
+                    if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                    {
+                        ImGui::PushItemWidth(-1.0f);
+                        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                        ImGui::PopItemWidth();
+
+                        ImGui::Separator();
+                        ImGui::PushItemWidth(-1.0f);
+                        if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
+                        {
+                            Core *core = static_cast<Core *>(data);
+                            auto &mode = core->displayModeStringList[index];
+                            (*text) = mode.c_str();
+                            return true;
+                        }, this, displayModeStringList.size(), 5))
+                        {
+                            videoDevice->setDisplayMode(currentDisplayMode);
+                            auto &displayNode = configuration.getChild(L"display");
+                            displayNode.attributes[L"mode"] = currentDisplayMode;
+                            onConfigurationChanged.emit();
+                            onResize.emit();
                         }
 
                         ImGui::PopItemWidth();
-                        ImGui::EndMenu();
+                        if (ImGui::Checkbox("FullScreen", &fullScreen))
+                        {
+                            videoDevice->setFullScreen(fullScreen);
+                            auto &displayNode = configuration.getChild(L"display");
+                            displayNode.attributes[L"fullscreen"] = fullScreen;
+                            onConfigurationChanged.emit();
+                            onResize.emit();
+                        }
+
+                        ImGui::End();
                     }
-
-                    if (ImGui::BeginMenu("Edit"))
-                    {
-                        ImGui::PushItemWidth(-1);
-                        if (ImGui::MenuItem("Options", "O"))
-                        {
-                            showOptionsMenu = true;
-                        }
-
-                        if (ImGui::MenuItem("Selector", "S"))
-                        {
-                            configuration.getChild(L"editor").attributes[L"show_selector"] = true;
-                        }
-
-                        if (ImGui::MenuItem("Editor", "E", &editorSelected))
-                        {
-                            bool enabled = configuration.getChild(L"editor").attributes[L"enabled"];
-                            configuration.getChild(L"editor").attributes[L"enabled"] = !enabled;
-                        }
-
-                        ImGui::PopItemWidth();
-                        ImGui::EndMenu();
-                    }
-
-                    ImGui::EndMainMenuBar();
                 }
-
-                if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                else
                 {
-                    char name[256] = "";
-                    //ImGui::SetKeyboardFocusHere();
-                    if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
-                    {
-                        population->load(String(name));
-                        showLoadLevel = false;
-                    }
-
-                    ImGui::SameLine();
-                    if (ImGui::Button("OK"))
-                    {
-                        population->load(String(name));
-                        showLoadLevel = false;
-                    }
-
-                    ImGui::End();
-                }
-
-                if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
-                {
-                    ImGui::PushItemWidth(-1.0f);
-                    ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                    ImGui::PopItemWidth();
-
-                    ImGui::Separator();
-                    ImGui::PushItemWidth(-1.0f);
-                    if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
-                    {
-                        Core *core = static_cast<Core *>(data);
-                        auto &mode = core->displayModeStringList[index];
-                        (*text) = mode.c_str();
-                        return true;
-                    }, this, displayModeStringList.size(), 5))
-                    {
-                        videoDevice->setDisplayMode(currentDisplayMode);
-                        auto &displayNode = configuration.getChild(L"display");
-                        displayNode.attributes[L"mode"] = currentDisplayMode;
-                        onConfigurationChanged.emit();
-                        onResize.emit();
-                    }
-
-                    ImGui::PopItemWidth();
-                    if (ImGui::Checkbox("FullScreen", &fullScreen))
-                    {
-                        videoDevice->setFullScreen(fullScreen);
-                        auto &displayNode = configuration.getChild(L"display");
-                        displayNode.attributes[L"fullscreen"] = fullScreen;
-                        onConfigurationChanged.emit();
-                        onResize.emit();
-                    }
-
-                    ImGui::End();
+                    RECT windowRectangle;
+                    GetWindowRect(window, &windowRectangle);
+                    SetCursorPos(Math::lerp(windowRectangle.left, windowRectangle.right, 0.5f), Math::lerp(windowRectangle.top, windowRectangle.bottom, 0.5f));
                 }
 
                 timer.update();
@@ -714,18 +734,31 @@ namespace Gek
 
                 videoDevice->getDefaultContext()->clearRenderTarget(videoDevice->getBackBuffer(), Math::Color::Black);
 
-                Action action;
-                while (actionQueue.try_pop(action))
+                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                if (showCursor)
                 {
-                    onAction.emit(action.name, action.parameter);
-                };
+                    actionQueue.clear();
+                }
+                else
+                {
+                    Action action;
+                    while (actionQueue.try_pop(action))
+                    {
+                        onAction.emit(action.name, action.parameter);
+                    };
+                }
             }
 
             void onUpdateScreen(void)
             {
                 GEK_REQUIRE(videoDevice);
 
-                ImGui::Render();
+                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                if (showCursor)
+                {
+                    ImGui::Render();
+                }
+
                 videoDevice->present(false);
             }
 
