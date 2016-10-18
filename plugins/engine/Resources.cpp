@@ -1271,7 +1271,7 @@ namespace Gek
                 videoContext->clearRenderTargetList(count, depthBuffer);
             }
 
-            void sartResourceBlock(void)
+            void startResourceBlock(void)
             {
                 drawPrimitiveValid = true;
                 dispatchValid = true;

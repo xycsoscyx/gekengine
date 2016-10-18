@@ -46,6 +46,7 @@ namespace Gek
             struct PassData : public Material
             {
                 Pass::Mode mode;
+                bool lighting;
                 bool enableDepth;
                 ResourceHandle depthBuffer;
                 uint32_t clearDepthFlags;
@@ -56,6 +57,7 @@ namespace Gek
                 BlendStateHandle blendState;
                 float width, height;
                 std::vector<ResourceHandle> resourceList;
+                std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
                 ProgramHandle program;
@@ -69,6 +71,7 @@ namespace Gek
                 PassData(uint8_t identifier)
                     : Material(identifier)
                     , mode(Pass::Mode::Forward)
+                    , lighting(false)
                     , enableDepth(false)
                     , clearDepthFlags(0)
                     , clearDepthValue(1.0f)
@@ -83,20 +86,6 @@ namespace Gek
                 }
             };
 
-            struct BlockData
-            {
-                bool enabled;
-                bool lighting;
-                std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
-                std::list<PassData> passList;
-
-                BlockData(void)
-                    : enabled(true)
-                    , lighting(false)
-                {
-                }
-            };
-
             __declspec(align(16))
                 struct ShaderConstantData
             {
@@ -104,63 +93,14 @@ namespace Gek
                 float padding[2];
             };
 
-            __declspec(align(16))
-                struct LightConstantData
-            {
-                uint32_t count;
-                uint32_t padding[3];
-            };
-
             struct LightType
             {
                 enum
                 {
-                    Point = 0,
-                    Directional = 1,
+                    Directional = 0,
+                    Point = 1,
                     Spot = 2,
                 };
-            };
-
-            struct LightData
-            {
-                uint32_t type;
-                Math::Float3 color;
-                Math::Float3 position;
-                Math::Float3 direction;
-                float range;
-                float radius;
-                float innerAngle;
-                float outerAngle;
-                float falloff;
-
-                LightData(const Components::PointLight &light, const Math::Color &color, const Math::Float3 &position)
-                    : type(LightType::Point)
-                    , position(position)
-                    , range(light.range)
-                    , radius(light.radius)
-                    , color(color)
-                {
-                }
-
-                LightData(const Components::DirectionalLight &light, const Math::Color &color, const Math::Float3 &direction)
-                    : type(LightType::Directional)
-                    , direction(direction)
-                    , color(color)
-                {
-                }
-
-                LightData(const Components::SpotLight &light, const Math::Color &color, const Math::Float3 &position, const Math::Float3 &direction)
-                    : type(LightType::Spot)
-                    , position(position)
-                    , direction(direction)
-                    , range(light.range)
-                    , radius(light.radius)
-                    , innerAngle(light.innerAngle)
-                    , outerAngle(light.outerAngle)
-                    , falloff(light.falloff)
-                    , color(color)
-                {
-                }
             };
 
         private:
@@ -170,15 +110,11 @@ namespace Gek
 
             String shaderName;
             uint32_t priority = 0;
+            bool lightingRequired = false;
 
             Video::BufferPtr shaderConstantBuffer;
 
-            uint32_t lightsPerPass = 0;
-            Video::BufferPtr lightConstantBuffer;
-            Video::BufferPtr lightDataBuffer;
-            std::vector<LightData> lightList;
-
-            std::list<BlockData> blockList;
+            std::list<PassData> passList;
             std::unordered_map<String, PassData *> forwardPassMap;
 
         public:
@@ -197,21 +133,11 @@ namespace Gek
 
                 shaderConstantBuffer = videoDevice->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
                 shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
-
-                if (lightsPerPass > 0)
-                {
-                    lightConstantBuffer = videoDevice->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
-                    lightConstantBuffer->setName(String::create(L"%v:lightConstantBuffer", shaderName));
-
-                    lightDataBuffer = videoDevice->createBuffer(sizeof(LightData), lightsPerPass, Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                    lightDataBuffer->setName(String::create(L"%v:lightDataBuffer", shaderName));
-                }
             }
 
             void reload(void)
             {
                 uint8_t passIndex = 0;
-                blockList.clear();
                 forwardPassMap.clear();
                 
                 auto backBuffer = videoDevice->getBackBuffer();
@@ -378,47 +304,50 @@ namespace Gek
                 auto &lightingNode = shaderNode.getChild(L"lighting");
                 if (lightingNode.valid)
                 {
-                    lightsPerPass = lightingNode.getChild(L"lightsPerPass").text;
-                    if (lightsPerPass <= 0)
-                    {
-                        throw InvalidParameters();
-                    }
-
-                    globalDefinesMap[L"lightsPerPass"] = std::make_pair(BindType::UInt, lightsPerPass);
-
-                    lightingData.format(
+                    lightingData +=
                         L"namespace Lighting\r\n" \
                         L"{\r\n" \
                         L"    cbuffer Parameters : register(b3)\r\n" \
                         L"    {\r\n" \
-                        L"        uint count;\r\n" \
-                        L"        uint padding[3];\r\n" \
+                        L"        uint directionalLightCount;\r\n" \
+                        L"        uint pointLightCount;\r\n" \
+                        L"        uint spotLightCount;\r\n" \
+                        L"        uint padding;\r\n" \
                         L"    };\r\n" \
                         L"\r\n" \
-                        L"    namespace Type\r\n" \
+                        L"    struct BaseLightData\r\n" \
                         L"    {\r\n" \
-                        L"        static const uint Point = 0;\r\n" \
-                        L"        static const uint Directional = 1;\r\n" \
-                        L"        static const uint Spot = 2;\r\n" \
-                        L"    };\r\n" \
-                        L"\r\n" \
-                        L"    struct Data\r\n" \
-                        L"    {\r\n" \
-                        L"        uint   type;\r\n" \
                         L"        float3 color;\r\n" \
-                        L"        float3 position;\r\n" \
-                        L"        float3 direction;\r\n" \
-                        L"        float  range;\r\n" \
-                        L"        float  radius;\r\n" \
-                        L"        float  innerAngle;\r\n" \
-                        L"        float  outerAngle;\r\n" \
-                        L"        float  falloff;\r\n" \
                         L"    };\r\n" \
                         L"\r\n" \
-                        L"    StructuredBuffer<Data> list : register(t0);\r\n" \
-                        L"    static const uint lightsPerPass = %v;\r\n" \
+                        L"    struct DirectionalLightData\r\n" \
+                        L"        : public BaseLightData\r\n" \
+                        L"    {\r\n" \
+                        L"        float3 direction;\r\n" \
+                        L"        float buffer[2];\r\n" \
+                        L"    };\r\n" \
+                        L"\r\n" \
+                        L"    struct PointLightData\r\n" \
+                        L"        : public BaseLightData\r\n" \
+                        L"    {\r\n" \
+                        L"        float3 position;\r\n" \
+                        L"        float radius;\r\n" \
+                        L"        float range;\r\n" \
+                        L"    };\r\n" \
+                        L"\r\n" \
+                        L"    struct SpotLightData\r\n" \
+                        L"        : public PointLightData\r\n" \
+                        L"    {\r\n" \
+                        L"        float3 direction;\r\n" \
+                        L"        float innerAngle;\r\n" \
+                        L"        float outerAngle;\r\n" \
+                        L"    };\r\n" \
+                        L"\r\n" \
+                        L"    StructuredBuffer<DirectionalLightData> directionalLightList : register(t0);\r\n" \
+                        L"    StructuredBuffer<PointLightData> pointLightList : register(t1);\r\n" \
+                        L"    StructuredBuffer<SpotLightData> spotLightList : register(t1);\r\n" \
                         L"};\r\n" \
-                        L"\r\n", lightsPerPass);
+                        L"\r\n";
                 }
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
@@ -512,19 +441,18 @@ namespace Gek
                 }
 
                 auto &materialNode = shaderNode.getChild(L"material");
-                for (auto &blockNode : shaderNode.getChild(L"blocks").children)
+                for (auto &passNode : shaderNode.getChild(L"passes").children)
                 {
-                    blockList.push_back(BlockData());
-                    BlockData &block = blockList.back();
+                    passList.push_back(PassData(passIndex++));
+                    PassData &pass = passList.back();
 
-                    block.enabled = blockNode.getAttribute(L"enable", L"true");
-                    block.lighting = blockNode.getAttribute(L"lighting", L"false");
-                    if(block.lighting && lightsPerPass == 0)
+                    pass.lighting = passNode.getAttribute(L"lighting", L"false");
+                    if (pass.lighting)
                     {
-                        throw InvalidParameters();
+                        lightingRequired = true;
                     }
 
-                    for (auto &clearTargetNode : blockNode.getChild(L"clear").children)
+                    for (auto &clearTargetNode : passNode.getChild(L"clear").children)
                     {
                         auto resourceSearch = resourceMap.find(clearTargetNode.type);
                         if (resourceSearch == resourceMap.end())
@@ -535,436 +463,430 @@ namespace Gek
                         switch (getClearType(clearTargetNode.getAttribute(L"type")))
                         {
                         case ClearType::Target:
-                            block.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Color)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Color)clearTargetNode.text)));
                             break;
 
                         case ClearType::Float:
-                            block.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
                             break;
 
                         case ClearType::UInt:
-                            block.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((uint32_t)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((uint32_t)clearTargetNode.text)));
                             break;
                         };
                     }
 
-                    for (auto &passNode : blockNode.getChild(L"passes").children)
+                    std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
+                    for (auto &defineNode : passNode.getChild(L"defines").children)
                     {
-                        block.passList.push_back(PassData(passIndex++));
-                        PassData &pass = block.passList.back();
+                        BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
+                        localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
+                    }
 
-                        std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
-                        for (auto &defineNode : passNode.getChild(L"defines").children)
+                    String definesData;
+                    for (auto &define : localDefinesMap)
+                    {
+                        String value(evaluate(localDefinesMap, define.second.second, define.second.first));
+                        String bindType(getBindType(define.second.first));
+                        switch (define.second.first)
                         {
-                            BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
-                            localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
-                        }
+                        case BindType::Bool:
+                        case BindType::Int:
+                        case BindType::UInt:
+                        case BindType::Half:
+                        case BindType::Float:
+                            definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
+                            break;
 
-                        String definesData;
-                        for (auto &define : localDefinesMap)
+                        default:
+                            definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                            break;
+                        };
+                    }
+
+                    String engineData;
+                    if (!definesData.empty())
+                    {
+                        engineData.format(
+                            L"namespace Defines\r\n" \
+                            L"{\r\n" \
+                            L"%v" \
+                            L"};\r\n" \
+                            L"\r\n", definesData);
+                    }
+
+                    if (passNode.attributes.count(L"compute"))
+                    {
+                        pass.mode = Pass::Mode::Compute;
+
+                        pass.width = float(displayWidth);
+                        pass.height = float(displayHeight);
+
+                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
+                        pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
+                        pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
+                        pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
+                    }
+                    else
+                    {
+                        if (passNode.attributes.count("forward"))
                         {
-                            String value(evaluate(localDefinesMap, define.second.second, define.second.first));
-                            String bindType(getBindType(define.second.first));
-                            switch (define.second.first)
-                            {
-                            case BindType::Bool:
-                            case BindType::Int:
-                            case BindType::UInt:
-                            case BindType::Half:
-                            case BindType::Float:
-                                definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
-                                break;
-
-                            default:
-                                definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
-                                break;
-                            };
-                        }
-
-                        String engineData;
-                        if (!definesData.empty())
-                        {
+                            pass.mode = Pass::Mode::Forward;
                             engineData.format(
-                                L"namespace Defines\r\n" \
+                                L"struct InputPixel\r\n" \
                                 L"{\r\n" \
+                                L"    float4 screen : SV_POSITION;\r\n" \
                                 L"%v" \
                                 L"};\r\n" \
-                                L"\r\n", definesData);
-                        }
-
-                        if (passNode.attributes.count(L"compute"))
-                        {
-                            pass.mode = Pass::Mode::Compute;
-
-                            pass.width = float(displayWidth);
-                            pass.height = float(displayHeight);
-
-                            Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
-                            pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
-                            pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
-                            pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
+                                L"\r\n", inputData);
                         }
                         else
                         {
-                            if (passNode.attributes.count("forward"))
+                            pass.mode = Pass::Mode::Deferred;
+                            engineData +=
+                                L"struct InputPixel\r\n" \
+                                L"{\r\n" \
+                                L"    float4 screen : SV_POSITION;\r\n" \
+                                L"    float2 texCoord : TEXCOORD0;\r\n" \
+                                L"};\r\n" \
+                                L"\r\n";
+                        }
+
+                        std::unordered_map<String, String> renderTargetsMap;
+                        auto &targetsNode = passNode.getChild(L"targets");
+                        if (targetsNode.valid)
+                        {
+                            renderTargetsMap = loadChildrenMap(targetsNode);
+                            if (renderTargetsMap.empty())
                             {
-                                pass.mode = Pass::Mode::Forward;
-                                engineData.format(
-                                    L"struct InputPixel\r\n" \
-                                    L"{\r\n" \
-                                    L"    float4 screen : SV_POSITION;\r\n" \
-                                    L"%v" \
-                                    L"};\r\n" \
-                                    L"\r\n", inputData);
+                                pass.width = float(backBuffer->getWidth());
+                                pass.height = float(backBuffer->getHeight());
                             }
                             else
                             {
-                                pass.mode = Pass::Mode::Deferred;
-                                engineData +=
-                                    L"struct InputPixel\r\n" \
-                                    L"{\r\n" \
-                                    L"    float4 screen : SV_POSITION;\r\n" \
-                                    L"    float2 texCoord : TEXCOORD0;\r\n" \
-                                    L"};\r\n" \
-                                    L"\r\n";
-                            }
+                                auto resourceSearch = resourceSizeMap.find(renderTargetsMap.begin()->first);
+                                if (resourceSearch != resourceSizeMap.end())
+                                {
+                                    pass.width = float(resourceSearch->second.first);
+                                    pass.height = float(resourceSearch->second.second);
+                                }
 
-                            std::unordered_map<String, String> renderTargetsMap;
-                            auto &targetsNode = passNode.getChild(L"targets");
-                            if (targetsNode.valid)
+                                for (auto &renderTarget : renderTargetsMap)
+                                {
+                                    auto resourceSearch = resourceMap.find(renderTarget.first);
+                                    if (resourceSearch == resourceMap.end())
+                                    {
+                                        throw UnlistedRenderTarget();
+                                    }
+
+                                    pass.renderTargetList.push_back(resourceSearch->second);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            throw MissingParameters();
+                        }
+
+                        uint32_t currentStage = 0;
+                        String outputData;
+                        for (auto &resourcePair : renderTargetsMap)
+                        {
+                            auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
+                            if (resourceSearch == resourceMappingsMap.end())
                             {
-                                renderTargetsMap = loadChildrenMap(targetsNode);
-                                if (renderTargetsMap.empty())
-                                {
-                                    pass.width = float(backBuffer->getWidth());
-                                    pass.height = float(backBuffer->getHeight());
-                                }
-                                else
-                                {
-                                    auto resourceSearch = resourceSizeMap.find(renderTargetsMap.begin()->first);
-                                    if (resourceSearch != resourceSizeMap.end())
-                                    {
-                                        pass.width = float(resourceSearch->second.first);
-                                        pass.height = float(resourceSearch->second.second);
-                                    }
-
-                                    for (auto &renderTarget : renderTargetsMap)
-                                    {
-                                        auto resourceSearch = resourceMap.find(renderTarget.first);
-                                        if (resourceSearch == resourceMap.end())
-                                        {
-                                            throw UnlistedRenderTarget();
-                                        }
-
-                                        pass.renderTargetList.push_back(resourceSearch->second);
-                                    }
-                                }
+                                throw UnlistedRenderTarget();
                             }
-                            else
+
+                            outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
+                        }
+
+                        if (!outputData.empty())
+                        {
+                            engineData.format(
+                                L"struct OutputPixel\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", outputData);
+                        }
+
+                        Video::DepthStateInformation depthState;
+                        auto &depthNode = passNode.getChild(L"depthstates");
+                        if (depthNode.valid)
+                        {
+                            if (depthNode.attributes.count(L"target") == 0)
                             {
                                 throw MissingParameters();
                             }
 
-                            uint32_t currentStage = 0;
-                            String outputData;
-                            for (auto &resourcePair : renderTargetsMap)
-                            {
-                                auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                                if (resourceSearch == resourceMappingsMap.end())
-                                {
-                                    throw UnlistedRenderTarget();
-                                }
-
-                                outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
-                            }
-
-                            if (!outputData.empty())
-                            {
-                                engineData.format(
-                                    L"struct OutputPixel\r\n" \
-                                    L"{\r\n" \
-                                    L"%v" \
-                                    L"};\r\n" \
-                                    L"\r\n", outputData);
-                            }
-
-                            Video::DepthStateInformation depthState;
-                            auto &depthNode = passNode.getChild(L"depthstates");
-                            if (depthNode.valid)
-                            {
-                                if (depthNode.attributes.count(L"target") == 0)
-                                {
-                                    throw MissingParameters();
-                                }
-
-                                auto resourceSearch = resourceMap.find(depthNode.getAttribute(L"target"));
-                                if (resourceSearch == resourceMap.end())
-                                {
-                                    throw InvalidParameters();
-                                }
-
-                                pass.depthBuffer = resourceSearch->second;
-                                depthState.enable = true;
-                                pass.enableDepth = true;
-
-                                auto clearNode = depthNode.getChild(L"clear");
-                                if (clearNode.valid)
-                                {
-                                    pass.clearDepthFlags |= Video::ClearFlags::Depth;
-                                    pass.clearDepthValue = clearNode.text;
-                                }
-
-                                auto comparisonNode = depthNode.getChild(L"comparison");
-                                if (comparisonNode.valid)
-                                {
-                                    depthState.comparisonFunction = Utility::getComparisonFunction(comparisonNode.text);
-                                }
-
-                                auto writeMaskNode = depthNode.getChild(L"writemask");
-                                if (writeMaskNode.valid)
-                                {
-                                    depthState.writeMask = Utility::getDepthWriteMask(writeMaskNode.text);
-                                }
-
-                                auto stencilNode = depthNode.getChild(L"stencil");
-                                if (stencilNode.valid)
-                                {
-                                    depthState.stencilEnable = true;
-                                    auto clearStencilNode = stencilNode.getChild(L"clear");
-                                    if (clearStencilNode.valid)
-                                    {
-                                        pass.clearDepthFlags |= Video::ClearFlags::Stencil;
-                                        pass.clearStencilValue = clearStencilNode.text;
-                                    }
-
-                                    loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
-                                    loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
-                                }
-                            }
-
-                            pass.depthState = resources->createDepthState(depthState);
-                            pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
-                            pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstate"));
-                        }
-
-                        std::unordered_map<String, String> resourceAliasMap;
-                        std::unordered_map<String, String> unorderedAccessAliasMap = loadNodeChildren(passNode, L"unorderedaccess");
-                        for(auto &resourceNode : passNode.getChild(L"resources").children)
-                        {
-                            auto resourceSearch = resourceMap.find(resourceNode.type);
+                            auto resourceSearch = resourceMap.find(depthNode.getAttribute(L"target"));
                             if (resourceSearch == resourceMap.end())
                             {
                                 throw InvalidParameters();
                             }
 
-                            resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
-                            std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
-                            for (auto &action : actionList)
+                            pass.depthBuffer = resourceSearch->second;
+                            depthState.enable = true;
+                            pass.enableDepth = true;
+
+                            auto clearNode = depthNode.getChild(L"clear");
+                            if (clearNode.valid)
                             {
-                                if (action.compareNoCase(L"generatemipmaps") == 0)
-                                {
-                                    pass.generateMipMapsList.push_back(resourceSearch->second);
-                                }
+                                pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                                pass.clearDepthValue = clearNode.text;
                             }
 
-                            if (resourceNode.attributes.count(L"copy"))
+                            auto comparisonNode = depthNode.getChild(L"comparison");
+                            if (comparisonNode.valid)
                             {
-                                auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
-                                if (sourceResourceSearch == resourceMap.end())
+                                depthState.comparisonFunction = Utility::getComparisonFunction(comparisonNode.text);
+                            }
+
+                            auto writeMaskNode = depthNode.getChild(L"writemask");
+                            if (writeMaskNode.valid)
+                            {
+                                depthState.writeMask = Utility::getDepthWriteMask(writeMaskNode.text);
+                            }
+
+                            auto stencilNode = depthNode.getChild(L"stencil");
+                            if (stencilNode.valid)
+                            {
+                                depthState.stencilEnable = true;
+                                auto clearStencilNode = stencilNode.getChild(L"clear");
+                                if (clearStencilNode.valid)
                                 {
-                                    throw InvalidParameters();
+                                    pass.clearDepthFlags |= Video::ClearFlags::Stencil;
+                                    pass.clearStencilValue = clearStencilNode.text;
                                 }
 
-                                pass.copyResourceMap[resourceSearch->second] = sourceResourceSearch->second;
+                                loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
+                                loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
                             }
                         }
 
-                        if (block.lighting)
+                        pass.depthState = resources->createDepthState(depthState);
+                        pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
+                        pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstate"));
+                    }
+
+                    std::unordered_map<String, String> resourceAliasMap;
+                    std::unordered_map<String, String> unorderedAccessAliasMap = loadNodeChildren(passNode, L"unorderedaccess");
+                    for(auto &resourceNode : passNode.getChild(L"resources").children)
+                    {
+                        auto resourceSearch = resourceMap.find(resourceNode.type);
+                        if (resourceSearch == resourceMap.end())
                         {
-                            engineData += lightingData;
+                            throw InvalidParameters();
                         }
 
-                        String resourceData;
-                        uint32_t nextResourceStage(block.lighting ? 1 : 0);
-                        if (pass.mode == Pass::Mode::Forward)
+                        resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
+                        std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
+                        for (auto &action : actionList)
                         {
-                            String passMaterial(passNode.getAttribute(L"forward"));
-                            auto &namedMaterialNode = materialNode.getChild(passMaterial);
-                            if (namedMaterialNode.valid)
+                            if (action.compareNoCase(L"generatemipmaps") == 0)
                             {
-                                forwardPassMap[passMaterial] = &pass;
+                                pass.generateMipMapsList.push_back(resourceSearch->second);
+                            }
+                        }
 
-                                std::unordered_map<String, Map> materialMap;
-                                for (auto &resourceNode : namedMaterialNode.children)
+                        if (resourceNode.attributes.count(L"copy"))
+                        {
+                            auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
+                            if (sourceResourceSearch == resourceMap.end())
+                            {
+                                throw InvalidParameters();
+                            }
+
+                            pass.copyResourceMap[resourceSearch->second] = sourceResourceSearch->second;
+                        }
+                    }
+
+                    if (pass.lighting)
+                    {
+                        engineData += lightingData;
+                    }
+
+                    String resourceData;
+                    uint32_t nextResourceStage(pass.lighting ? 3 : 0);
+                    if (pass.mode == Pass::Mode::Forward)
+                    {
+                        String passMaterial(passNode.getAttribute(L"forward"));
+                        auto &namedMaterialNode = materialNode.getChild(passMaterial);
+                        if (namedMaterialNode.valid)
+                        {
+                            forwardPassMap[passMaterial] = &pass;
+
+                            std::unordered_map<String, Map> materialMap;
+                            for (auto &resourceNode : namedMaterialNode.children)
+                            {
+                                if (resourceNode.attributes.count(L"name"))
                                 {
-                                    if (resourceNode.attributes.count(L"name"))
+                                    materialMap.insert(std::make_pair(resourceNode.type, Map(resourceNode.getAttribute(L"name"))));
+                                }
+                                else
+                                {
+                                    MapType mapType = getMapType(resourceNode.text);
+                                    BindType bindType = getBindType(resourceNode.getAttribute(L"bind"));
+                                    uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags"));
+                                    if (resourceNode.attributes.count(L"file"))
                                     {
-                                        materialMap.insert(std::make_pair(resourceNode.type, Map(resourceNode.getAttribute(L"name"))));
+                                        materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"file"))));
+                                    }
+                                    else if (resourceNode.attributes.count(L"pattern"))
+                                    {
+                                        materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"))));
                                     }
                                     else
                                     {
-                                        MapType mapType = getMapType(resourceNode.text);
-                                        BindType bindType = getBindType(resourceNode.getAttribute(L"bind"));
-                                        uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags"));
-                                        if (resourceNode.attributes.count(L"file"))
-                                        {
-                                            materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"file"))));
-                                        }
-                                        else if (resourceNode.attributes.count(L"pattern"))
-                                        {
-                                            materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"))));
-                                        }
-                                        else
-                                        {
-                                            throw UnknownMaterialType();
-                                        }
+                                        throw UnknownMaterialType();
                                     }
                                 }
+                            }
 
-                                pass.Material::resourceList.reserve(materialMap.size());
-                                for (auto &resourcePair : materialMap)
+                            pass.Material::resourceList.reserve(materialMap.size());
+                            for (auto &resourcePair : materialMap)
+                            {
+                                auto &resourceName = resourcePair.first;
+                                auto &map = resourcePair.second;
+								if (map.source != MapSource::Pattern)
+								{
+									throw MissingParameters();
+								}
+
+								Material::Resource resource;
+								resource.name = resourceName;
+								resource.pattern = map.pattern;
+								resource.parameters = map.parameters;
+								pass.Material::resourceList.push_back(resource);
+
+								uint32_t currentStage = nextResourceStage++;
+                                switch (map.source)
                                 {
-                                    auto &resourceName = resourcePair.first;
-                                    auto &map = resourcePair.second;
-									if (map.source != MapSource::Pattern)
-									{
-										throw MissingParameters();
-									}
+                                case MapSource::File:
+                                case MapSource::Pattern:
+                                    resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
+                                    break;
 
-									Material::Resource resource;
-									resource.name = resourceName;
-									resource.pattern = map.pattern;
-									resource.parameters = map.parameters;
-									pass.Material::resourceList.push_back(resource);
-
-									uint32_t currentStage = nextResourceStage++;
-                                    switch (map.source)
+                                case MapSource::Resource:
+                                    if (true)
                                     {
-                                    case MapSource::File:
-                                    case MapSource::Pattern:
-                                        resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
-                                        break;
-
-                                    case MapSource::Resource:
-                                        if (true)
+                                        auto resourceSearch = resourceMappingsMap.find(resourceName);
+                                        if (resourceSearch != resourceMappingsMap.end())
                                         {
-                                            auto resourceSearch = resourceMappingsMap.find(resourceName);
-                                            if (resourceSearch != resourceMappingsMap.end())
-                                            {
-                                                auto &resource = resourceSearch->second;
-                                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
-                                            }
+                                            auto &resource = resourceSearch->second;
+                                            resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
                                         }
+                                    }
 
-                                        break;
-                                    };
-                                }
+                                    break;
+                                };
+                            }
+                        }
+                        else
+                        {
+                            throw MissingParameters();
+                        }
+                    }
+
+                    for (auto &resourcePair : resourceAliasMap)
+                    {
+                        auto resourceSearch = resourceMap.find(resourcePair.first);
+                        if (resourceSearch != resourceMap.end())
+                        {
+                            pass.resourceList.push_back(resourceSearch->second);
+                        }
+
+                        uint32_t currentStage = nextResourceStage++;
+                        auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
+                        if (resourceMapSearch != resourceMappingsMap.end())
+                        {
+                            auto &resource = resourceMapSearch->second;
+                            if (resource.first == MapType::ByteAddressBuffer)
+                            {
+                                resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
                             }
                             else
                             {
-                                throw MissingParameters();
+                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
                             }
+
+                            continue;
                         }
 
-                        for (auto &resourcePair : resourceAliasMap)
+                        auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                        if (structureSearch != resourceStructuresMap.end())
                         {
-                            auto resourceSearch = resourceMap.find(resourcePair.first);
-                            if (resourceSearch != resourceMap.end())
-                            {
-                                pass.resourceList.push_back(resourceSearch->second);
-                            }
-
-                            uint32_t currentStage = nextResourceStage++;
-                            auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                            if (resourceMapSearch != resourceMappingsMap.end())
-                            {
-                                auto &resource = resourceMapSearch->second;
-                                if (resource.first == MapType::ByteAddressBuffer)
-                                {
-                                    resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
-                                }
-                                else
-                                {
-                                    resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
-                                }
-
-                                continue;
-                            }
-
-                            auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                            if (structureSearch != resourceStructuresMap.end())
-                            {
-                                auto &structure = structureSearch->second;
-                                resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
-                                continue;
-                            }
+                            auto &structure = structureSearch->second;
+                            resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
+                            continue;
                         }
-
-                        if (!resourceData.empty())
-                        {
-                            engineData.format(
-                                L"namespace Resources\r\n" \
-                                L"{\r\n" \
-                                L"%v" \
-                                L"};\r\n" \
-                                L"\r\n", resourceData);
-                        }
-
-                        String unorderedAccessData;
-                        uint32_t nextUnorderedStage = 0;
-                        if (pass.mode != Pass::Mode::Compute)
-                        {
-                            nextUnorderedStage = pass.renderTargetList.size();
-                        }
-
-                        for (auto &resourcePair : unorderedAccessAliasMap)
-                        {
-                            auto resourceSearch = resourceMap.find(resourcePair.first);
-                            if (resourceSearch != resourceMap.end())
-                            {
-                                pass.unorderedAccessList.push_back(resourceSearch->second);
-                            }
-
-                            uint32_t currentStage = nextUnorderedStage++;
-                            auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                            if (resourceMapSearch != resourceMappingsMap.end())
-                            {
-                                auto &resource = resourceMapSearch->second;
-                                if (resource.first == MapType::ByteAddressBuffer)
-                                {
-                                    unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
-                                }
-                                else
-                                {
-                                    unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
-                                }
-
-                                continue;
-                            }
-
-                            auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                            if (structureSearch != resourceStructuresMap.end())
-                            {
-                                auto &structure = structureSearch->second;
-                                unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
-                                continue;
-                            }
-                        }
-
-                        if (!unorderedAccessData.empty())
-                        {
-                            engineData.format(
-                                L"namespace UnorderedAccess\r\n" \
-                                L"{\r\n" \
-                                L"%v" \
-                                L"};\r\n" \
-                                L"\r\n", unorderedAccessData);
-                        }
-
-                        String entryPoint(passNode.getAttribute(L"entry"));
-                        String name(FileSystem::getFileName(shaderName, passNode.type).append(L".hlsl"));
-                        pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                     }
+
+                    if (!resourceData.empty())
+                    {
+                        engineData.format(
+                            L"namespace Resources\r\n" \
+                            L"{\r\n" \
+                            L"%v" \
+                            L"};\r\n" \
+                            L"\r\n", resourceData);
+                    }
+
+                    String unorderedAccessData;
+                    uint32_t nextUnorderedStage = 0;
+                    if (pass.mode != Pass::Mode::Compute)
+                    {
+                        nextUnorderedStage = pass.renderTargetList.size();
+                    }
+
+                    for (auto &resourcePair : unorderedAccessAliasMap)
+                    {
+                        auto resourceSearch = resourceMap.find(resourcePair.first);
+                        if (resourceSearch != resourceMap.end())
+                        {
+                            pass.unorderedAccessList.push_back(resourceSearch->second);
+                        }
+
+                        uint32_t currentStage = nextUnorderedStage++;
+                        auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
+                        if (resourceMapSearch != resourceMappingsMap.end())
+                        {
+                            auto &resource = resourceMapSearch->second;
+                            if (resource.first == MapType::ByteAddressBuffer)
+                            {
+                                unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                            }
+                            else
+                            {
+                                unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                            }
+
+                            continue;
+                        }
+
+                        auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                        if (structureSearch != resourceStructuresMap.end())
+                        {
+                            auto &structure = structureSearch->second;
+                            unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                            continue;
+                        }
+                    }
+
+                    if (!unorderedAccessData.empty())
+                    {
+                        engineData.format(
+                            L"namespace UnorderedAccess\r\n" \
+                            L"{\r\n" \
+                            L"%v" \
+                            L"};\r\n" \
+                            L"\r\n", unorderedAccessData);
+                    }
+
+                    String entryPoint(passNode.getAttribute(L"entry"));
+                    String name(FileSystem::getFileName(shaderName, passNode.type).append(L".hlsl"));
+                    pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                 }
 			}
 
@@ -985,8 +907,31 @@ namespace Gek
                 return nullptr;
             }
 
-            Pass::Mode preparePass(Video::Device::Context *videoContext, BlockData &block, PassData &pass)
+            bool isLightingRequired(void) const
             {
+                return lightingRequired;
+            }
+
+            Pass::Mode preparePass(Video::Device::Context *videoContext, PassData &pass)
+            {
+                for (auto &clearTarget : pass.clearResourceMap)
+                {
+                    switch (clearTarget.second.type)
+                    {
+                    case ClearType::Target:
+                        resources->clearRenderTarget(videoContext, clearTarget.first, clearTarget.second.color);
+                        break;
+
+                    case ClearType::Float:
+                        resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.value);
+                        break;
+
+                    case ClearType::UInt:
+                        resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.uint);
+                        break;
+                    };
+                }
+
                 for (auto &resource : pass.generateMipMapsList)
                 {
                     resources->generateMipMaps(videoContext, resource);
@@ -1002,11 +947,9 @@ namespace Gek
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = 0;
-                    if (block.lighting)
+                    if (pass.lighting)
                     {
-                        videoPipeline->setResourceList({ lightDataBuffer.get() }, 0);
-                        videoPipeline->setConstantBufferList({ lightConstantBuffer.get() }, 3);
-                        firstResourceStage = 1;
+                        firstResourceStage = 3;
                     }
 
                     if (pass.mode == Pass::Mode::Forward)
@@ -1064,17 +1007,15 @@ namespace Gek
                 return pass.mode;
             }
 
-            void clearPass(Video::Device::Context *videoContext, BlockData &block, PassData &pass)
+            void clearPass(Video::Device::Context *videoContext, PassData &pass)
             {
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = 0;
-                    if (block.lighting)
+                    if (pass.lighting)
                     {
-                        videoPipeline->clearResourceList(1, 0);
-                        videoPipeline->clearConstantBufferList(1, 3);
-                        firstResourceStage = 1;
+                        firstResourceStage = 3;
                     }
 
                     if (pass.mode == Pass::Mode::Forward)
@@ -1107,79 +1048,18 @@ namespace Gek
                 videoContext->computePipeline()->clearConstantBufferList(1, 2);
             }
 
-            bool prepareBlock(uint32_t &base, Video::Device::Context *videoContext, BlockData &block)
-            {
-                if (!block.enabled)
-                {
-                    return false;
-                }
-
-                if (base == 0)
-                {
-                    for (auto &clearTarget : block.clearResourceMap)
-                    {
-                        switch (clearTarget.second.type)
-                        {
-                        case ClearType::Target:
-                            resources->clearRenderTarget(videoContext, clearTarget.first, clearTarget.second.color);
-                            break;
-
-                        case ClearType::Float:
-                            resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.value);
-                            break;
-
-                        case ClearType::UInt:
-                            resources->clearUnorderedAccess(videoContext, clearTarget.first, clearTarget.second.uint);
-                            break;
-                        };
-                    }
-                }
-
-                bool enableBlock = false;
-                if (block.lighting)
-                {
-                    if (base < lightList.size())
-                    {
-                        uint32_t lightListCount = lightList.size();
-                        uint32_t lightPassCount = std::min((lightListCount - base), lightsPerPass);
-
-                        LightConstantData *lightConstants = nullptr;
-                        videoDevice->mapBuffer(lightConstantBuffer.get(), (void **)&lightConstants);
-                        lightConstants->count = lightPassCount;
-                        videoDevice->unmapBuffer(lightConstantBuffer.get());
-
-                        LightData *lightingData = nullptr;
-                        videoDevice->mapBuffer(lightDataBuffer.get(), (void **)&lightingData);
-                        memcpy(lightingData, &lightList[base], (sizeof(LightData) * lightPassCount));
-                        videoDevice->unmapBuffer(lightDataBuffer.get());
-
-                        base += lightsPerPass;
-                        enableBlock = true;
-                    }
-                }
-                else
-                {
-                    enableBlock = (base == 0);
-                    base++;
-                }
-
-                return enableBlock;
-            }
-
             class PassImplementation
                 : public Pass
             {
             public:
                 Video::Device::Context *videoContext;
                 Shader *shaderNode;
-                Block *block;
                 std::list<Shader::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, Block *block, std::list<Shader::PassData>::iterator current, std::list<Shader::PassData>::iterator end)
+                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, std::list<Shader::PassData>::iterator current, std::list<Shader::PassData>::iterator end)
                     : videoContext(videoContext)
                     , shaderNode(shaderNode)
-                    , block(block)
                     , current(current)
                     , end(end)
                 {
@@ -1188,17 +1068,17 @@ namespace Gek
                 Iterator next(void)
                 {
                     auto next = current;
-                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, shaderNode, block, next, end));
+                    return Iterator(++next == end ? nullptr : new PassImplementation(videoContext, shaderNode, next, end));
                 }
 
                 Mode prepare(void)
                 {
-                    return shaderNode->preparePass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                    return shaderNode->preparePass(videoContext, (*current));
                 }
 
                 void clear(void)
                 {
-                    shaderNode->clearPass(videoContext, (*dynamic_cast<BlockImplementation *>(block)->current), (*current));
+                    shaderNode->clearPass(videoContext, (*current));
                 }
 
                 uint32_t getIdentifier(void) const
@@ -1208,83 +1088,21 @@ namespace Gek
 
                 uint32_t getFirstResourceStage(void) const
                 {
-                    return ((*dynamic_cast<BlockImplementation *>(block)->current).lighting ? 1 : 0);
+                    return ((*current).lighting ? 3 : 0);
+                }
+
+                bool isLightingRequired(void) const
+                {
+                    return (*current).lighting;
                 }
             };
 
-            class BlockImplementation
-                : public Block
-            {
-            public:
-                Video::Device::Context *videoContext;
-                Shader *shaderNode;
-                std::list<Shader::BlockData>::iterator current, end;
-                uint32_t base;
-
-            public:
-                BlockImplementation(Video::Device::Context *videoContext, Shader *shaderNode, std::list<Shader::BlockData>::iterator current, std::list<Shader::BlockData>::iterator end)
-                    : videoContext(videoContext)
-                    , shaderNode(shaderNode)
-                    , current(current)
-                    , end(end)
-                    , base(0)
-                {
-                }
-
-                Iterator next(void)
-                {
-                    auto next = current;
-                    return Iterator(++next == end ? nullptr : new BlockImplementation(videoContext, shaderNode, next, end));
-                }
-
-                Pass::Iterator begin(void)
-                {
-                    return Pass::Iterator(current->passList.empty() ? nullptr : new PassImplementation(videoContext, shaderNode, this, current->passList.begin(), current->passList.end()));
-                }
-
-                bool prepare(void)
-                {
-                    return shaderNode->prepareBlock(base, videoContext, (*current));
-                }
-            };
-
-            Block::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+            Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(videoContext);
 
-                concurrency::concurrent_vector<LightData> lightData;
-                population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &colorComponent) -> void
-                {
-                    if (entity->hasComponent<Components::PointLight>())
-                    {
-						auto &light = entity->getComponent<Components::PointLight>();
-                        if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, light.range)))
-                        {
-                            lightData.push_back(LightData(light, (colorComponent.value * light.intensity), (viewMatrix * transformComponent.position.w(1.0f)).xyz));
-                        }
-                    }
-                    else if (entity->hasComponent<Components::DirectionalLight>())
-                    {
-						auto &light = entity->getComponent<Components::DirectionalLight>();
-                        lightData.push_back(LightData(light, (colorComponent.value * light.intensity), (viewMatrix * -transformComponent.rotation.getMatrix().ny)));
-                    }
-                    else if (entity->hasComponent<Components::SpotLight>())
-                    {
-						auto &light = entity->getComponent<Components::SpotLight>();
-
-						float halfRange = (light.range * 0.5f);
-                        Math::Float3 direction(transformComponent.rotation.getMatrix().ny);
-						Math::Float3 center(transformComponent.position + (direction * halfRange));
-                        if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
-                        {
-                            lightData.push_back(LightData(light, (colorComponent.value * light.intensity), (viewMatrix * transformComponent.position.w(1.0f)).xyz, (viewMatrix * direction)));
-                        }
-                    }
-                });
-
-                lightList.assign(lightData.begin(), lightData.end());
-                return Block::Iterator(blockList.empty() ? nullptr : new BlockImplementation(videoContext, this, blockList.begin(), blockList.end()));
+                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, passList.begin(), passList.end()));
             }
         };
 

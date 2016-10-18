@@ -206,6 +206,15 @@ namespace Gek
                 Math::Float4x4 projectionMatrix;
             };
 
+            __declspec(align(16))
+                struct LightConstantData
+            {
+                uint32_t directionalLightCount;
+                uint32_t pointLightCount;
+                uint32_t spotLightCount;
+                uint32_t padding;
+            };
+
             struct DrawCallValue
             {
                 union
@@ -308,6 +317,11 @@ namespace Gek
             Video::ObjectPtr deferredVertexProgram;
             Video::ObjectPtr deferredPixelProgram;
 
+            Video::BufferPtr lightConstantBuffer;
+            Video::BufferPtr directionalLightDataBuffer;
+            Video::BufferPtr pointLightDataBuffer;
+            Video::BufferPtr spotLightDataBuffer;
+
             DrawCallList drawCallList;
 
         public:
@@ -344,6 +358,9 @@ namespace Gek
 
                 cameraConstantBuffer = videoDevice->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
                 cameraConstantBuffer->setName(L"cameraConstantBuffer");
+
+                lightConstantBuffer = videoDevice->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, 0);
+                lightConstantBuffer->setName(L"lightConstantBuffer");
 
                 static const wchar_t program[] =
                     L"struct Pixel" \
@@ -433,39 +450,6 @@ namespace Gek
                 onRenderScene.emit(cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
                 if (!drawCallList.empty())
                 {
-                    population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &colorComponent) -> void
-                    {
-                        if (entity->hasComponent<Components::DirectionalLight>())
-                        {
-                            auto &light = entity->getComponent<Components::DirectionalLight>();
-                            Math::Float3 color((colorComponent.value * light.intensity).xyz);
-                            Math::Float3 direction(viewMatrix * -transformComponent.rotation.getMatrix().ny);
-                        }
-                        else if (entity->hasComponent<Components::PointLight>())
-                        {
-                            auto &light = entity->getComponent<Components::PointLight>();
-                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, light.range)))
-                            {
-                                Math::Float3 color((colorComponent.value * light.intensity).xyz);
-                                Math::Float3 position((viewMatrix * transformComponent.position.w(1.0f)).xyz);
-                            }
-                        }
-                        else if (entity->hasComponent<Components::SpotLight>())
-                        {
-                            auto &light = entity->getComponent<Components::SpotLight>();
-
-                            float halfRange = (light.range * 0.5f);
-                            Math::Float3 direction(transformComponent.rotation.getMatrix().ny);
-                            Math::Float3 center(transformComponent.position + (direction * halfRange));
-                            if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
-                            {
-                                Math::Float3 color((colorComponent.value * light.intensity).xyz);
-                                Math::Float3 position((viewMatrix * transformComponent.position.w(1.0f)).xyz);
-                                Math::Float3 direction(viewMatrix * -transformComponent.rotation.getMatrix().ny);
-                            }
-                        }
-                    });
-
                     Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                     videoContext->clearState();
 
@@ -488,6 +472,8 @@ namespace Gek
                         return (leftValue.value < rightValue.value);
                     });
 
+                    bool isLightingRequired = false;
+
                     ShaderHandle currentShader;
                     std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
                     for (auto &drawCall = drawCallList.begin(); drawCall != drawCallList.end(); )
@@ -509,6 +495,98 @@ namespace Gek
 
                         auto &shaderList = drawCallSetMap[shader->getPriority()];
                         shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
+                        isLightingRequired |= shader->isLightingRequired();
+                    }
+
+                    if (isLightingRequired)
+                    {
+                        concurrency::concurrent_vector<DirectionalLightData> directionalLightQueue;
+                        concurrency::concurrent_vector<PointLightData> pointLightQueue;
+                        concurrency::concurrent_vector<SpotLightData> spotLightQueue;
+                        population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &colorComponent) -> void
+                        {
+                            if (entity->hasComponent<Components::DirectionalLight>())
+                            {
+                                auto &light = entity->getComponent<Components::DirectionalLight>();
+
+                                DirectionalLightData lightData;
+                                lightData.color = (colorComponent.value * light.intensity).xyz;
+                                lightData.direction = (viewMatrix * -transformComponent.rotation.getMatrix().ny);
+                                directionalLightQueue.push_back(lightData);
+                            }
+                            else if (entity->hasComponent<Components::PointLight>())
+                            {
+                                auto &light = entity->getComponent<Components::PointLight>();
+                                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, light.range)))
+                                {
+                                    PointLightData lightData;
+                                    lightData.color = (colorComponent.value * light.intensity).xyz;
+                                    lightData.position = (viewMatrix * transformComponent.position.w(1.0f)).xyz;
+                                    pointLightQueue.push_back(lightData);
+                                }
+                            }
+                            else if (entity->hasComponent<Components::SpotLight>())
+                            {
+                                auto &light = entity->getComponent<Components::SpotLight>();
+
+                                float halfRange = (light.range * 0.5f);
+                                Math::Float3 direction(transformComponent.rotation.getMatrix().ny);
+                                Math::Float3 center(transformComponent.position + (direction * halfRange));
+                                if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
+                                {
+                                    SpotLightData lightData;
+                                    lightData.color = (colorComponent.value * light.intensity).xyz;
+                                    lightData.position = (viewMatrix * transformComponent.position.w(1.0f)).xyz;
+                                    lightData.direction = (viewMatrix * -transformComponent.rotation.getMatrix().ny);
+                                    lightData.innerAngle = light.innerAngle;
+                                    lightData.outerAngle = light.outerAngle;
+                                    spotLightQueue.push_back(lightData);
+                                }
+                            }
+                        });
+
+                        std::vector<DirectionalLightData> directionalLightList(directionalLightQueue.begin(), directionalLightQueue.end());
+                        if (!directionalLightDataBuffer || directionalLightDataBuffer->getCount() < directionalLightList.size())
+                        {
+                            directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                            directionalLightDataBuffer->setName(L"directionalLightDataBuffer");
+                        }
+
+                        DirectionalLightData *directionalLightData = nullptr;
+                        videoDevice->mapBuffer(directionalLightDataBuffer.get(), (void **)&directionalLightData);
+                        memcpy(directionalLightData, directionalLightList.data(), (sizeof(DirectionalLightData) * directionalLightList.size()));
+                        videoDevice->unmapBuffer(directionalLightDataBuffer.get());
+
+                        std::vector<PointLightData> pointLightList(pointLightQueue.begin(), pointLightQueue.end());
+                        if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
+                        {
+                            pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                            pointLightDataBuffer->setName(L"pointLightDataBuffer");
+                        }
+
+                        PointLightData *pointLightData = nullptr;
+                        videoDevice->mapBuffer(pointLightDataBuffer.get(), (void **)&pointLightData);
+                        memcpy(pointLightData, pointLightList.data(), (sizeof(PointLightData) * pointLightList.size()));
+                        videoDevice->unmapBuffer(pointLightDataBuffer.get());
+
+                        std::vector<SpotLightData> spotLightList(spotLightQueue.begin(), spotLightQueue.end());
+                        if (!spotLightDataBuffer || spotLightDataBuffer->getCount() < spotLightList.size())
+                        {
+                            spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                            spotLightDataBuffer->setName(L"spotLightDataBuffer");
+                        }
+
+                        SpotLightData *spotLightData = nullptr;
+                        videoDevice->mapBuffer(spotLightDataBuffer.get(), (void **)&spotLightData);
+                        memcpy(spotLightData, spotLightList.data(), (sizeof(SpotLightData) * spotLightList.size()));
+                        videoDevice->unmapBuffer(spotLightDataBuffer.get());
+
+                        LightConstantData *lightConstants = nullptr;
+                        videoDevice->mapBuffer(lightConstantBuffer.get(), (void **)&lightConstants);
+                        lightConstants->directionalLightCount = directionalLightList.size();
+                        lightConstants->pointLightCount = pointLightList.size();
+                        lightConstants->spotLightCount = spotLightList.size();
+                        videoDevice->unmapBuffer(lightConstantBuffer.get());
                     }
 
                     for (auto &shaderDrawCallList : drawCallSetMap)
@@ -516,52 +594,57 @@ namespace Gek
                         for(auto &shaderDrawCall : shaderDrawCallList.second)
                         {
                             auto &shader = shaderDrawCall.shader;
-                            for (auto block = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); block; block = block->next())
+                            for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); pass; pass = pass->next())
                             {
-                                resources->sartResourceBlock();
-                                while (block->prepare())
+                                resources->startResourceBlock();
+                                if (pass->isLightingRequired())
                                 {
-                                    for (auto pass = block->begin(); pass; pass = pass->next())
+                                    videoContext->pixelPipeline()->setResourceList({ directionalLightDataBuffer.get(), pointLightDataBuffer.get(), spotLightDataBuffer.get() }, 0);
+                                    videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
+                                }
+
+                                switch (pass->prepare())
+                                {
+                                case Engine::Shader::Pass::Mode::Forward:
+                                    if (true)
                                     {
-                                        switch (pass->prepare())
+                                        VisualHandle currentVisual;
+                                        MaterialHandle currentMaterial;
+                                        for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
                                         {
-                                        case Engine::Shader::Pass::Mode::Forward:
-                                            if (true)
+                                            if (currentVisual != drawCall->plugin)
                                             {
-                                                VisualHandle currentVisual;
-                                                MaterialHandle currentMaterial;
-                                                for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
-                                                {
-                                                    if (currentVisual != drawCall->plugin)
-                                                    {
-                                                        currentVisual = drawCall->plugin;
-                                                        resources->setVisual(videoContext, currentVisual);
-                                                    }
-
-                                                    if (currentMaterial != drawCall->material)
-                                                    {
-                                                        currentMaterial = drawCall->material;
-                                                        resources->setMaterial(videoContext, pass.get(), currentMaterial);
-                                                    }
-
-                                                    drawCall->onDraw(videoContext);
-                                                }
+                                                currentVisual = drawCall->plugin;
+                                                resources->setVisual(videoContext, currentVisual);
                                             }
 
-                                            break;
+                                            if (currentMaterial != drawCall->material)
+                                            {
+                                                currentMaterial = drawCall->material;
+                                                resources->setMaterial(videoContext, pass.get(), currentMaterial);
+                                            }
 
-                                        case Engine::Shader::Pass::Mode::Deferred:
-                                            videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                                            resources->drawPrimitive(videoContext, 3, 0);
-                                            break;
-
-                                        case Engine::Shader::Pass::Mode::Compute:
-                                            break;
-                                        };
-
-                                        pass->clear();
+                                            drawCall->onDraw(videoContext);
+                                        }
                                     }
+
+                                    break;
+
+                                case Engine::Shader::Pass::Mode::Deferred:
+                                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                                    resources->drawPrimitive(videoContext, 3, 0);
+                                    break;
+
+                                case Engine::Shader::Pass::Mode::Compute:
+                                    break;
                                 };
+
+                                pass->clear();
+                                if (pass->isLightingRequired())
+                                {
+                                    videoContext->pixelPipeline()->clearResourceList(3, 0);
+                                    videoContext->pixelPipeline()->clearConstantBufferList(1, 3);
+                                }
                             }
                         }
                     }

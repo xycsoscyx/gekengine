@@ -40,164 +40,137 @@
         <gaussianBuffer bind="float" flags="target">R8_UNORM</gaussianBuffer>
     </textures>
 
-    <buffers>
-        <tileIndexList size="dispatchWidth * dispatchHeight * (lightsPerPass + 1)" flags="unorderedAccess">R8_UINT</tileIndexList>
-    </buffers>
+    <passes>
+        <StoreDeferred forward="solid" entry="mainPixelProgram">
+            <depthstates target="depthBuffer">
+                <comparison>less_equal</comparison>
+                <writemask>all</writemask>
+                <clear>1</clear>
+            </depthstates>
 
-    <blocks>
-        <DeferredPass>
-            <passes>
-                <StoreDeferred forward="solid" entry="mainPixelProgram">
-                    <depthstates target="depthBuffer">
-                        <comparison>less_equal</comparison>
-                        <writemask>all</writemask>
-                        <clear>1</clear>
-                    </depthstates>
+            <renderstates>
+                <cullmode>back</cullmode>
+            </renderstates>
 
-                    <renderstates>
-                        <cullmode>back</cullmode>
-                    </renderstates>
+            <targets>
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+            </targets>
+        </StoreDeferred>
 
-                    <targets>
-                        <albedoBuffer />
-                        <materialBuffer />
-                        <normalBuffer />
-                    </targets>
-                </StoreDeferred>
-            </passes>
-        </DeferredPass>
+        <AmbientCalculation entry="mainPixelProgram">
+            <defines>
+                <radius>2</radius>
+                <tapCount bind="uint">24</tapCount>
+                <spiralTurns>13</spiralTurns>
+                <intensity>20</intensity>
+                <bias>0.08</bias>
+                <falloffFunction bind="uint">0</falloffFunction>
+                <epsilon>0.001</epsilon>
+            </defines>
 
-        <AmbientPass>
-            <passes>
-                <AmbientCalculation entry="mainPixelProgram">
-                    <defines>
-                        <radius>2</radius>
-                        <tapCount bind="uint">24</tapCount>
-                        <spiralTurns>13</spiralTurns>
-                        <intensity>20</intensity>
-                        <bias>0.08</bias>
-                        <falloffFunction bind="uint">0</falloffFunction>
-                        <epsilon>0.001</epsilon>
-                    </defines>
+            <resources>
+                <normalBuffer />
+                <depthBuffer />
+            </resources>
 
-                    <resources>
-                        <normalBuffer />
-                        <depthBuffer />
-                    </resources>
+            <targets>
+                <ambientBuffer />
+            </targets>
+        </AmbientCalculation>
 
-                    <targets>
-                        <ambientBuffer />
-                    </targets>
-                </AmbientCalculation>
+        <AmbientBlur entry="mainPixelProgram">
+            <defines>
+                <blurAxis bind="int2">(1,0)</blurAxis>
+            </defines>
 
-                <AmbientBlur entry="mainPixelProgram">
-                    <defines>
-                        <blurAxis bind="int2">(1,0)</blurAxis>
-                    </defines>
+            <resources>
+                <depthBuffer />
+                <ambientBuffer>inputBuffer</ambientBuffer>
+            </resources>
 
-                    <resources>
-                        <depthBuffer />
-                        <ambientBuffer>inputBuffer</ambientBuffer>
-                    </resources>
+            <targets>
+                <gaussianBuffer />
+            </targets>
+        </AmbientBlur>
 
-                    <targets>
-                        <gaussianBuffer />
-                    </targets>
-                </AmbientBlur>
+        <AmbientBlur entry="mainPixelProgram">
+            <defines>
+                <blurAxis bind="int2">(1,0)</blurAxis>
+            </defines>
 
-                <AmbientBlur entry="mainPixelProgram">
-                    <defines>
-                        <blurAxis bind="int2">(1,0)</blurAxis>
-                    </defines>
+            <resources>
+                <depthBuffer />
+                <gaussianBuffer>inputBuffer</gaussianBuffer>
+            </resources>
 
-                    <resources>
-                        <depthBuffer />
-                        <gaussianBuffer>inputBuffer</gaussianBuffer>
-                    </resources>
+            <targets>
+                <ambientBuffer />
+            </targets>
+        </AmbientBlur>
 
-                    <targets>
-                        <ambientBuffer />
-                    </targets>
-                </AmbientBlur>
+        <AmbientBlur entry="mainPixelProgram">
+            <defines>
+                <blurAxis bind="int2">(0,1)</blurAxis>
+            </defines>
 
-                <AmbientBlur entry="mainPixelProgram">
-                    <defines>
-                        <blurAxis bind="int2">(0,1)</blurAxis>
-                    </defines>
+            <resources>
+                <depthBuffer />
+                <ambientBuffer>inputBuffer</ambientBuffer>
+            </resources>
 
-                    <resources>
-                        <depthBuffer />
-                        <ambientBuffer>inputBuffer</ambientBuffer>
-                    </resources>
+            <targets>
+                <gaussianBuffer />
+            </targets>
+        </AmbientBlur>
 
-                    <targets>
-                        <gaussianBuffer />
-                    </targets>
-                </AmbientBlur>
+        <AmbientBlur entry="mainPixelProgram">
+            <defines>
+                <blurAxis bind="int2">(0,1)</blurAxis>
+            </defines>
 
-                <AmbientBlur entry="mainPixelProgram">
-                    <defines>
-                        <blurAxis bind="int2">(0,1)</blurAxis>
-                    </defines>
+            <resources>
+                <depthBuffer />
+                <gaussianBuffer>inputBuffer</gaussianBuffer>
+            </resources>
 
-                    <resources>
-                        <depthBuffer />
-                        <gaussianBuffer>inputBuffer</gaussianBuffer>
-                    </resources>
+            <targets>
+                <ambientBuffer />
+            </targets>
+        </AmbientBlur>
 
-                    <targets>
-                        <ambientBuffer />
-                    </targets>
-                </AmbientBlur>
+        <AmbientLighting entry="mainPixelProgram">
+            <resources>
+                <albedoBuffer />
+                <ambientBuffer />
+                <depthBuffer />
+            </resources>
 
-                <AmbientLighting entry="mainPixelProgram">
-                    <resources>
-                        <albedoBuffer />
-                        <ambientBuffer />
-                        <depthBuffer />
-                    </resources>
+            <targets>
+                <screen />
+            </targets>
+        </AmbientLighting>
 
-                    <targets>
-                        <screen />
-                    </targets>
-                </AmbientLighting>
-            </passes>
-        </AmbientPass>
+        <AccumulateLighting entry="mainPixelProgram" lighting="true">
+            <defines>
+                <useHalfLambert bind="bool">true</useHalfLambert>
+            </defines>
 
-        <LightingPass lighting="true">
-            <passes>
-                <TiledLightCulling compute="(dispatchWidth, dispatchHeight, 1)" entry="mainComputeProgram">
-                    <resources>
-                        <depthBuffer />
-                    </resources>
+            <blendstates unified="true">
+                <color source="one" destination="one" operation="add" />
+            </blendstates>
 
-                    <unorderedaccess>
-                        <tileIndexList />
-                    </unorderedaccess>
-                </TiledLightCulling>
+            <resources>
+                <albedoBuffer />
+                <materialBuffer />
+                <normalBuffer />
+                <depthBuffer />
+            </resources>
 
-                <AccumulateLighting entry="mainPixelProgram">
-                    <defines>
-                        <useHalfLambert bind="bool">true</useHalfLambert>
-                    </defines>
-
-                    <blendstates unified="true">
-                        <color source="one" destination="one" operation="add" />
-                    </blendstates>
-
-                    <resources>
-                        <tileIndexList />
-                        <albedoBuffer />
-                        <materialBuffer />
-                        <normalBuffer />
-                        <depthBuffer />
-                    </resources>
-
-                    <targets>
-                        <screen />
-                    </targets>
-                </AccumulateLighting>
-            </passes>
-        </LightingPass>
-    </blocks>
+            <targets>
+                <screen />
+            </targets>
+        </AccumulateLighting>
+    </passes>
 </shader>

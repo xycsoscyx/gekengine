@@ -31,7 +31,7 @@ namespace Gek
             float intensity;
             float innerAngle;
             float outerAngle;
-            float falloff;
+            float coneFalloff;
 
             void save(Xml::Leaf &componentData) const;
             void load(const Xml::Leaf &componentData);
