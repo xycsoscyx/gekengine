@@ -216,7 +216,6 @@ namespace Gek
                 imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
                 imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
                 imGuiIo.ImeWindowHandle = window;
-                imGuiIo.MouseDrawCursor = true;
 
                 ImGuiStyle& style = ImGui::GetStyle();
                 style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
@@ -454,11 +453,21 @@ namespace Gek
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 switch (message)
                 {
+                case WM_CLOSE:
+                    engineRunning = false;
+                    return TRUE;
+
                 case WM_SETCURSOR:
                     if (LOWORD(lParam) == HTCLIENT)
                     {
                         ShowCursor(false);
+                        imGuiIo.MouseDrawCursor = true;
                         return TRUE;
+                    }
+                    else
+                    {
+                        ShowCursor(true);
+                        imGuiIo.MouseDrawCursor = false;
                     }
 
                     break;

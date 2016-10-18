@@ -82,7 +82,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         windowClass.cbWndExtra = 0;
         windowClass.hInstance = GetModuleHandle(nullptr);
         windowClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
-        windowClass.hCursor = nullptr;
+        windowClass.hCursor = LoadCursor(GetModuleHandle(nullptr), IDC_ARROW);
         windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
         windowClass.lpszMenuName = nullptr;
         windowClass.lpszClassName = L"GEKvX_Engine_Demo";
