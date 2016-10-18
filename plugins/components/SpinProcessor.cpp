@@ -86,14 +86,12 @@ namespace Gek
         {
             GEK_REQUIRE(population);
 
-            population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *) -> void
+            population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
             {
-                auto &transform = entity->getComponent<Components::Transform>();
-                auto &spin = entity->getComponent<Components::Spin>();
-                Math::Quaternion rotation(Math::Quaternion::createEulerRotation((population->getFrameTime() * spin.torque.x),
-                                                                                (population->getFrameTime() * spin.torque.y),
-                                                                                (population->getFrameTime() * spin.torque.z)));
-                transform.rotation *= rotation;
+                Math::Quaternion rotation(Math::Quaternion::createEulerRotation((population->getFrameTime() * spinComponent.torque.x),
+                                                                                (population->getFrameTime() * spinComponent.torque.y),
+                                                                                (population->getFrameTime() * spinComponent.torque.z)));
+                transformComponent.rotation *= rotation;
             });
         }
     };

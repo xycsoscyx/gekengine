@@ -168,14 +168,14 @@ namespace Gek
 
             void onLoadSucceeded(const String &populationName)
             {
-                population->listEntities<Components::Explosion, Components::Transform>([&](Plugin::Entity *entity, const wchar_t *) -> void
+                population->listEntities<Components::Transform, Components::Explosion>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &explosionComponent) -> void
                 {
                     static const Math::Float3 gravity(0.0f, -32.174f, 0.0f);
                     static const std::uniform_real_distribution<float> spawnTheta(0.0f, (Gek::Math::Pi * 2.0f));
                     static const std::uniform_real_distribution<float> spawnPhi(-1.0f, 1.0f);
                     static const std::uniform_real_distribution<float> spawnTorque(0.0f, (Gek::Math::Pi * 0.5f));
 
-                    static const auto smoke = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
+                    auto smoke = [this, &transformComponent, &explosionComponent](const Plugin::Entity *entity, EmitterData &emitter) -> void
                     {
                         static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
@@ -204,9 +204,6 @@ namespace Gek
                                 emitter.update = update;
                             }
                         };
-
-                        const auto &explosionComponent = entity->getComponent<Components::Explosion>();
-                        const auto &transformComponent = entity->getComponent<Components::Transform>();
 
                         static const std::uniform_real_distribution<float> spawnStrength(0.1f, 0.5f);
 
@@ -237,7 +234,7 @@ namespace Gek
                         });
                     };
 
-                    static const auto spark = [this](const Plugin::Entity *entity, EmitterData &emitter) -> void
+                    auto spark = [this, &transformComponent, &explosionComponent](const Plugin::Entity *entity, EmitterData &emitter) -> void
                     {
                         static const auto update = [](const Plugin::Entity *entity, EmitterData &emitter, float frameTime) -> void
                         {
@@ -259,9 +256,6 @@ namespace Gek
                                 sprite.position += (sprite.velocity * frameTime);
                             });
                         };
-
-                        const auto &explosionComponent = entity->getComponent<Components::Explosion>();
-                        const auto &transformComponent = entity->getComponent<Components::Transform>();
 
                         static const std::uniform_real_distribution<float> spawnStrength(0.5f, 1.0f);
 

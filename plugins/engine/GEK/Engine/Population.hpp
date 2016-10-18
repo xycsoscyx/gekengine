@@ -55,14 +55,14 @@ namespace Gek
 
             virtual void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const = 0;
 
-            template<typename... PARAMETERS>
-            void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const
+            template<typename... COMPONENTS>
+            void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName, COMPONENTS&... components)> onEntity) const
             {
                 listEntities([onEntity = move(onEntity)](Plugin::Entity *entity, const wchar_t *entityName) -> void
                 {
-                    if (entity->hasComponents<PARAMETERS...>())
+                    if (entity->hasComponents<COMPONENTS...>())
                     {
-                        onEntity(entity, entityName);
+                        onEntity(entity, entityName, entity->getComponent<COMPONENTS>()...);
                     }
                 });
             }

@@ -14,6 +14,8 @@
 #include "GEK\Engine\Component.hpp"
 #include "GEK\Engine\Editor.hpp"
 #include "GEK\Components\Transform.hpp"
+#include "GEK\Components\Color.hpp"
+#include "GEK\Components\Light.hpp"
 #include "GEK\Components\Filter.hpp"
 #include "GEK\Shapes\Sphere.hpp"
 #include <concurrent_vector.h>
@@ -431,6 +433,39 @@ namespace Gek
                 onRenderScene.emit(cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
                 if (!drawCallList.empty())
                 {
+                    population->listEntities<Components::Transform, Components::Color>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &colorComponent) -> void
+                    {
+                        if (entity->hasComponent<Components::DirectionalLight>())
+                        {
+                            auto &light = entity->getComponent<Components::DirectionalLight>();
+                            Math::Float3 color((colorComponent.value * light.intensity).xyz);
+                            Math::Float3 direction(viewMatrix * -transformComponent.rotation.getMatrix().ny);
+                        }
+                        else if (entity->hasComponent<Components::PointLight>())
+                        {
+                            auto &light = entity->getComponent<Components::PointLight>();
+                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, light.range)))
+                            {
+                                Math::Float3 color((colorComponent.value * light.intensity).xyz);
+                                Math::Float3 position((viewMatrix * transformComponent.position.w(1.0f)).xyz);
+                            }
+                        }
+                        else if (entity->hasComponent<Components::SpotLight>())
+                        {
+                            auto &light = entity->getComponent<Components::SpotLight>();
+
+                            float halfRange = (light.range * 0.5f);
+                            Math::Float3 direction(transformComponent.rotation.getMatrix().ny);
+                            Math::Float3 center(transformComponent.position + (direction * halfRange));
+                            if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
+                            {
+                                Math::Float3 color((colorComponent.value * light.intensity).xyz);
+                                Math::Float3 position((viewMatrix * transformComponent.position.w(1.0f)).xyz);
+                                Math::Float3 direction(viewMatrix * -transformComponent.rotation.getMatrix().ny);
+                            }
+                        }
+                    });
+
                     Video::Device::Context *videoContext = videoDevice->getDefaultContext();
                     videoContext->clearState();
 
