@@ -78,7 +78,6 @@
                         <bias>0.08</bias>
                         <falloffFunction bind="uint">0</falloffFunction>
                         <epsilon>0.001</epsilon>
-                        <boxFilter bind="bool">false</boxFilter>
                     </defines>
 
                     <resources>

@@ -11,6 +11,14 @@ namespace Light
 		float3 direction;
 	};
 
+    float getFalloff(float distance, float range)
+    {
+        float distanceOverRange = pow((distance / range), 4.0);
+        float falloff = pow(saturate(1.0 - distanceOverRange), 2.0);
+        falloff /= (pow(distance, 2.0) + 1.0);
+        return falloff;
+    }
+
 	namespace Punctual
 	{
 		Properties getPointProperties(Lighting::Data light, float3 surfacePosition, float3 surfaceNormal, float3 reflectNormal)
@@ -21,11 +29,7 @@ namespace Light
 			float lightDistance = length(lightRay);
 			properties.direction = (lightRay / lightDistance);
 
-			float distanceOverRange = (lightDistance / light.range);
-			float distanceOverRange2 = square(distanceOverRange);
-			float distanceOverRange4 = square(distanceOverRange2);
-			properties.falloff = square(saturate(1.0 - distanceOverRange4));
-			properties.falloff /= (square(lightDistance) + 1.0);
+            properties.falloff = getFalloff(lightDistance, light.range);
 
 			return properties;
 		}
@@ -35,7 +39,8 @@ namespace Light
 			Properties properties;
 
 			properties.direction = light.direction;
-			properties.falloff = 1.0;
+
+            properties.falloff = 1.0;
 
 			return properties;
 		}
@@ -48,11 +53,7 @@ namespace Light
 			float lightDistance = length(lightRay);
 			properties.direction = (lightRay / lightDistance);
 
-			float distanceOverRange = (lightDistance / light.range);
-			float distanceOverRange2 = square(distanceOverRange);
-			float distanceOverRange4 = square(distanceOverRange2);
-			properties.falloff = square(saturate(1.0 - distanceOverRange4));
-			properties.falloff /= (square(lightDistance) + 1.0);
+            properties.falloff = getFalloff(lightDistance, light.range);
 
 			float rho = saturate(dot(light.direction, -properties.direction));
 			float spotFactor = pow(saturate(rho - light.outerAngle) / (light.innerAngle - light.outerAngle), light.falloff);
@@ -72,13 +73,9 @@ namespace Light
 			float3 centerToRay = ((dot(lightRay, reflectNormal) * reflectNormal) - lightRay);
 			float3 closestPoint = (lightRay + (centerToRay * clamp((light.radius / length(centerToRay)), 0.0, 1.0)));
 			properties.direction = normalize(closestPoint);
-			float lightDistance = length(closestPoint);
 
-			float distanceOverRange = (lightDistance / light.range);
-			float distanceOverRange2 = square(distanceOverRange);
-			float distanceOverRange4 = square(distanceOverRange2);
-			properties.falloff = square(saturate(1.0 - distanceOverRange4));
-			properties.falloff /= (square(lightDistance) + 1.0);
+            float lightDistance = length(closestPoint);
+            properties.falloff = getFalloff(lightDistance, light.range);
 
 			return properties;
 		}
@@ -108,7 +105,7 @@ namespace Light
 float getDistributionGGX(float HdotN, float alpha)
 {
 	// alpha is assumed to be roughness^2
-	float alphaSquared = square(alpha);
+	float alphaSquared = pow(alpha, 2.0);
 
 	//float denominator = (HdotN * HdotN) * (alphaSquared - 1.0) + 1.0;
 	float denominator = (HdotN * alphaSquared - HdotN) * HdotN + 1.0;
@@ -118,7 +115,7 @@ float getDistributionGGX(float HdotN, float alpha)
 float getDistributionDisneyGGX(float HdotN, float alpha)
 {
 	// alpha is assumed to be roughness^2
-	float alphaSquared = square(alpha);
+    float alphaSquared = pow(alpha, 2.0);
 
 	float denominator = (HdotN * HdotN) * (alphaSquared - 1.0) + 1.0;
 	return (alphaSquared / (Math::Pi * denominator));
@@ -169,7 +166,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
 	float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
 	float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
-	float3 surfaceNormal = decodeNormal(Resources::normalBuffer[inputPixel.screen.xy]);
+	float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
 	float3 viewDirection = -normalize(surfacePosition);
 	float3 reflectNormal = reflect(-viewDirection, surfaceNormal);
@@ -198,7 +195,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		{
 			// http://developer.valvesoftware.com/wiki/Half_Lambert
 			half halfLdotN = dot(surfaceNormal, lightProperties.direction) * 0.5 + 0.5;
-			lambert = square(halfLdotN);
+			lambert = pow(halfLdotN, 2.0);
 		}
 		else
 		{
@@ -215,7 +212,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		half3 reflectColor = lerp(materialAlbedo, lightColor, materialMetallic);
 
 		// alpha modifications by Disney - s2012_pbs_disney_brdf_notes_v2.pdf
-		const half alpha = square(materialRoughness);
+		const half alpha = pow(materialRoughness, 2.0);
 
 		// reduce roughness range from [0 .. 1] to [0.5 .. 1]
 		const half alphaG = pow(0.5 + materialRoughness * 0.5, 2.0);
@@ -229,7 +226,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		half3 F = getFresnelSchlick(reflectColor, VdotH);
 
 		// horizon
-		float horizon = square(square(1.0 - LdotN));
+        float horizon = pow((1.0 - LdotN), 4.0);
 		half3 specularLightColor = lightColor - lightColor * horizon;
 		float3 specularColor = saturate(D * G * (F * (specularLightColor * lambert)));
 
