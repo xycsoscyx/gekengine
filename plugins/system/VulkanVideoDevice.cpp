@@ -948,7 +948,7 @@ namespace Gek
                 return createBuffer(format, stride, count, type, flags, data);
             }
 
-            void mapBuffer(Video::Buffer *buffer, void **data, Video::Map mapping)
+            void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
             {
             }
 

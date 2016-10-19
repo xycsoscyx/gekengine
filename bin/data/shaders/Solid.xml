@@ -9,10 +9,6 @@
         <isFrontFacing system="isFrontFacing" />
     </input>
 
-    <lighting>
-        <lightsPerPass>255</lightsPerPass>
-    </lighting>
-
     <material>
         <solid>
             <albedo bind="float4" pattern="system" parameters="debug">Texture2D</albedo>
@@ -156,10 +152,6 @@
             <defines>
                 <useHalfLambert bind="bool">true</useHalfLambert>
             </defines>
-
-            <blendstates unified="true">
-                <color source="one" destination="one" operation="add" />
-            </blendstates>
 
             <resources>
                 <albedoBuffer />

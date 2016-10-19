@@ -379,9 +379,9 @@ namespace Gek
 					}
 
 					float timeToImpact = 0.0f;
-					NewtonWorldConvexCastReturnInfo currentInfoList[D_PLAYER_CONTROLLER_MAX_CONTACTS];
 					Math::Float3 destinationPosition(matrix.translation + (velocity * frameTime));
-					int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destinationPosition.data, newtonUpperBodyShape, &timeToImpact, &preFilterData, ConvexCastPreFilter::preFilter, currentInfoList, ARRAYSIZE(currentInfoList), threadHandle);
+                    std::array<NewtonWorldConvexCastReturnInfo, D_PLAYER_CONTROLLER_MAX_CONTACTS> currentInfoList;
+                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destinationPosition.data, newtonUpperBodyShape, &timeToImpact, &preFilterData, ConvexCastPreFilter::preFilter, currentInfoList.data(), currentInfoList.size(), threadHandle);
 					if (contactCount)
 					{
 						matrix.translation += (velocity * (timeToImpact * frameTime));
@@ -474,8 +474,8 @@ namespace Gek
 						}
 
 						previousContactCount = contactCount;
-						memcpy(previousInfoList, currentInfoList, (previousContactCount * sizeof(NewtonWorldConvexCastReturnInfo)));
-					}
+                        std::copy(currentInfoList.begin(), currentInfoList.end(), previousInfoList);
+                    }
 					else
 					{
 						matrix.translation = destinationPosition;

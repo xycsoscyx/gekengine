@@ -10,7 +10,7 @@ namespace Model
     };
 };
 
-OutputVertex mainVertexProgram(InputVertex inputVertex)
+OutputVertex mainVertexProgram(in InputVertex inputVertex)
 {
     OutputVertex outputVertex;
     outputVertex.position = mul(Model::transform, float4(inputVertex.position, 1.0)).xyz;

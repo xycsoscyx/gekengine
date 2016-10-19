@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-float2 getNoise(float2 coord)
+float2 getNoise(in float2 coord)
 {
     if (Defines::enableDithering)
     {
@@ -17,16 +17,16 @@ float2 getNoise(float2 coord)
     }
 }
 
-float3 getChromaticAberation(float2 texCoord, float blur)
+float3 getChromaticAberation(in float2 texCoord, in float blur)
 {
-    float2 offset = (Shader::pixelSize * Defines::bokehChromaticAberation * blur);
+    const float2 offset = (Shader::pixelSize * Defines::bokehChromaticAberation * blur);
     return float3(
         Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(0.0, 1.0) * offset, 0).r,
         Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(-0.866, -0.5) * offset, 0).g,
         Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(0.866, -0.5) * offset, 0).b);
 }
 
-float3 getColor(float2 texCoord, float blur)
+float3 getColor(in float2 texCoord, in float blur)
 {
     if (Defines::enableChromaticAberation)
     {
@@ -38,15 +38,15 @@ float3 getColor(float2 texCoord, float blur)
     }
 }
 
-float3 getCorrectedColor(float2 texCoord, float blur)
+float3 getCorrectedColor(in float2 texCoord, in float blur)
 {
-    float3 color = getColor(texCoord, blur);
-    float luminance = getLuminance(color);
-    float thresh = (saturate(luminance - Defines::highlightThreshold) * Defines::highlightGain);
+    const float3 color = getColor(texCoord, blur);
+    const float luminance = getLuminance(color);
+    const float thresh = (saturate(luminance - Defines::highlightThreshold) * Defines::highlightGain);
     return (color + lerp(0.0, color, (thresh * blur)));
 }
 
-float getPentagonalShape(float2 texCoord)
+float getPentagonalShape(in float2 texCoord)
 {
     static const float scale = float(Defines::ringCount) - 1.3;
     static const float4  HS0 = float4(1.0, 0.0, 0.0, 1.0);
@@ -56,7 +56,7 @@ float getPentagonalShape(float2 texCoord)
     static const float4  HS4 = float4(0.309016994, -0.951056516, 0.0, 1.0);
     static const float4  HS5 = float4(0.0, 0.0, 1.0, 1.0);
 
-    float4 texCoordScale = float4(texCoord, scale.xx);
+    const float4 texCoordScale = float4(texCoord, scale.xx);
     float4 distance = float4(
         dot(texCoordScale, HS0),
         dot(texCoordScale, HS1),
@@ -75,7 +75,7 @@ float getPentagonalShape(float2 texCoord)
     return saturate(inOrOut);
 }
 
-float getModifier(float2 offset)
+float getModifier(in float2 offset)
 {
     if (Defines::enablePentagon)
     {
@@ -87,10 +87,10 @@ float getModifier(float2 offset)
     }
 }
 
-float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float blurDistance = abs(Resources::circleOfConfusion[inputPixel.screen.xy]);
-    float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
+    const float blurDistance = abs(Resources::circleOfConfusion[inputPixel.screen.xy]);
+    const float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
 
     float totalWeight = 1.0;
     float3 finalColor = Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
@@ -104,12 +104,9 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         [unroll]
         for (float tap = 0.0; tap < ringsamples; tap++)
         {
-            float2 tapOffset = float2(
-                (cos(tap * step) * ring), 
-                (sin(tap * step) * ring));
-
-            float modifier = getModifier(tapOffset);
-            float weight = (lerp(1.0, (ring / float(Defines::ringCount)), Defines::bokehEdgeBias) * modifier);
+            const float2 tapOffset = float2((cos(tap * step) * ring), (sin(tap * step) * ring));
+            const float modifier = getModifier(tapOffset);
+            const float weight = (lerp(1.0, (ring / float(Defines::ringCount)), Defines::bokehEdgeBias) * modifier);
             finalColor += (getCorrectedColor(inputPixel.texCoord + (tapOffset * noise), blurDistance) * weight);
             totalWeight += weight;
         }

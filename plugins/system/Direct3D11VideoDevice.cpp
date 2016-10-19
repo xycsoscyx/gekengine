@@ -2192,10 +2192,9 @@ namespace Gek
                 return createBuffer(format, stride, count, type, flags, data);
             }
 
-            void mapBuffer(Video::Buffer *buffer, void **data, Video::Map mapping)
+            void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
             {
                 GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(data);
 
                 D3D11_MAP d3dMapping = DirectX::MapList[static_cast<uint8_t>(mapping)];
 
@@ -2210,7 +2209,7 @@ namespace Gek
                     throw Video::OperationFailed();
                 }
 
-                (*data) = mappedSubResource.pData;
+                data = mappedSubResource.pData;
             }
 
             void unmapBuffer(Video::Buffer *buffer)

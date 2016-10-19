@@ -43,16 +43,14 @@ namespace Gek
                 Math::Float3 color;
             };
 
-            __declspec(align(16))
-                struct DirectionalLightData
+            struct DirectionalLightData
                 : public BaseLightData
             {
                 Math::Float3 direction;
                 float buffer[2];
             };
 
-            __declspec(align(16))
-                struct PointLightData
+            struct PointLightData
                 : public BaseLightData
             {
                 Math::Float3 position;
@@ -60,13 +58,13 @@ namespace Gek
                 float range;
             };
 
-            __declspec(align(16))
-                struct SpotLightData
+            struct SpotLightData
                 : public PointLightData
             {
                 Math::Float3 direction;
                 float innerAngle;
                 float outerAngle;
+                float buffer[3];
             };
 
             Nano::Signal<void(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)> onRenderScene;

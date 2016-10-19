@@ -621,7 +621,14 @@ namespace Gek
 
             virtual BufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
             virtual BufferPtr createBuffer(Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
-            virtual void mapBuffer(Buffer *buffer, void **data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
+
+            template <typename TYPE>
+            void mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)
+            {
+                mapBuffer(buffer, (void *&)data, mapping);
+            }
+
+            virtual void mapBuffer(Buffer *buffer, void *&data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
             virtual void unmapBuffer(Buffer *buffer) = 0;
 
             virtual void updateResource(Object *buffer, const void *data) = 0;

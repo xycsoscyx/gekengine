@@ -73,7 +73,6 @@ namespace Gek
 
             virtual uint32_t getPriority(void) const = 0;
             virtual const Material *getPassMaterial(const wchar_t *materialName) const = 0;
-            virtual bool isLightingRequired(void) const = 0;
 
             virtual Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };

@@ -110,7 +110,6 @@ namespace Gek
 
             String shaderName;
             uint32_t priority = 0;
-            bool lightingRequired = false;
 
             Video::BufferPtr shaderConstantBuffer;
 
@@ -300,55 +299,49 @@ namespace Gek
                     }
                 }
 
-                String lightingData;
-                auto &lightingNode = shaderNode.getChild(L"lighting");
-                if (lightingNode.valid)
-                {
-                    lightingData +=
-                        L"namespace Lighting\r\n" \
-                        L"{\r\n" \
-                        L"    cbuffer Parameters : register(b3)\r\n" \
-                        L"    {\r\n" \
-                        L"        uint directionalLightCount;\r\n" \
-                        L"        uint pointLightCount;\r\n" \
-                        L"        uint spotLightCount;\r\n" \
-                        L"        uint padding;\r\n" \
-                        L"    };\r\n" \
-                        L"\r\n" \
-                        L"    struct BaseLightData\r\n" \
-                        L"    {\r\n" \
-                        L"        float3 color;\r\n" \
-                        L"    };\r\n" \
-                        L"\r\n" \
-                        L"    struct DirectionalLightData\r\n" \
-                        L"        : public BaseLightData\r\n" \
-                        L"    {\r\n" \
-                        L"        float3 direction;\r\n" \
-                        L"        float buffer[2];\r\n" \
-                        L"    };\r\n" \
-                        L"\r\n" \
-                        L"    struct PointLightData\r\n" \
-                        L"        : public BaseLightData\r\n" \
-                        L"    {\r\n" \
-                        L"        float3 position;\r\n" \
-                        L"        float radius;\r\n" \
-                        L"        float range;\r\n" \
-                        L"    };\r\n" \
-                        L"\r\n" \
-                        L"    struct SpotLightData\r\n" \
-                        L"        : public PointLightData\r\n" \
-                        L"    {\r\n" \
-                        L"        float3 direction;\r\n" \
-                        L"        float innerAngle;\r\n" \
-                        L"        float outerAngle;\r\n" \
-                        L"    };\r\n" \
-                        L"\r\n" \
-                        L"    StructuredBuffer<DirectionalLightData> directionalLightList : register(t0);\r\n" \
-                        L"    StructuredBuffer<PointLightData> pointLightList : register(t1);\r\n" \
-                        L"    StructuredBuffer<SpotLightData> spotLightList : register(t1);\r\n" \
-                        L"};\r\n" \
-                        L"\r\n";
-                }
+                static const wchar_t lightingData[] = 
+                    L"namespace Lighting\r\n" \
+                    L"{\r\n" \
+                    L"    cbuffer Parameters : register(b3)\r\n" \
+                    L"    {\r\n" \
+                    L"        uint directionalCount;\r\n" \
+                    L"        uint pointCount;\r\n" \
+                    L"        uint spotCount;\r\n" \
+                    L"        uint padding;\r\n" \
+                    L"    };\r\n" \
+                    L"\r\n" \
+                    L"    struct DirectionalData\r\n" \
+                    L"    {\r\n" \
+                    L"        float3 color;\r\n" \
+                    L"        float3 direction;\r\n" \
+                    L"        float buffer[2];\r\n" \
+                    L"    };\r\n" \
+                    L"\r\n" \
+                    L"    struct PointData\r\n" \
+                    L"    {\r\n" \
+                    L"        float3 color;\r\n" \
+                    L"        float3 position;\r\n" \
+                    L"        float radius;\r\n" \
+                    L"        float range;\r\n" \
+                    L"    };\r\n" \
+                    L"\r\n" \
+                    L"    struct SpotData\r\n" \
+                    L"    {\r\n" \
+                    L"        float3 color;\r\n" \
+                    L"        float3 position;\r\n" \
+                    L"        float radius;\r\n" \
+                    L"        float range;\r\n" \
+                    L"        float3 direction;\r\n" \
+                    L"        float innerAngle;\r\n" \
+                    L"        float outerAngle;\r\n" \
+                    L"        float buffer[3];\r\n" \
+                    L"    };\r\n" \
+                    L"\r\n" \
+                    L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
+                    L"    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
+                    L"    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
+                    L"};\r\n" \
+                    L"\r\n";
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
@@ -447,11 +440,6 @@ namespace Gek
                     PassData &pass = passList.back();
 
                     pass.lighting = passNode.getAttribute(L"lighting", L"false");
-                    if (pass.lighting)
-                    {
-                        lightingRequired = true;
-                    }
-
                     for (auto &clearTargetNode : passNode.getChild(L"clear").children)
                     {
                         auto resourceSearch = resourceMap.find(clearTargetNode.type);
@@ -907,11 +895,6 @@ namespace Gek
                 return nullptr;
             }
 
-            bool isLightingRequired(void) const
-            {
-                return lightingRequired;
-            }
-
             Pass::Mode preparePass(Video::Device::Context *videoContext, PassData &pass)
             {
                 for (auto &clearTarget : pass.clearResourceMap)
@@ -943,7 +926,6 @@ namespace Gek
                 }
 
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
-
                 if (!pass.resourceList.empty())
                 {
                     uint32_t firstResourceStage = 0;

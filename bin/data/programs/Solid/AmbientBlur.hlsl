@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-float calculateGaussianWeight(float offset)
+float calculateGaussianWeight(in float offset)
 {
     static const float gaussian = (1.0f / (sqrt(Math::Tau) * Defines::gaussianSigma));
     static const float denominator = rcp(2.0 * pow(Defines::gaussianSigma, 2.0));
@@ -12,7 +12,7 @@ float calculateGaussianWeight(float offset)
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    float surfaceDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
+    const float surfaceDepth = getLinearDepthFromSample(Resources::depthBuffer[inputPixel.screen.xy]);
     float totalOcclusion = Resources::inputBuffer[inputPixel.screen.xy];
 
     float totalWeight = calculateGaussianWeight(0);
@@ -25,9 +25,9 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         [branch]
         if (tapIndex != 0)
         {
-            float2 tapCoord = inputPixel.screen.xy + Defines::blurAxis * tapIndex;
-            float tapDepth = getLinearDepthFromSample(Resources::depthBuffer[tapCoord]);
-            float tapOcclusion = Resources::inputBuffer[tapCoord];
+            const float2 tapCoord = inputPixel.screen.xy + Defines::blurAxis * tapIndex;
+            const float tapDepth = getLinearDepthFromSample(Resources::depthBuffer[tapCoord]);
+            const float tapOcclusion = Resources::inputBuffer[tapCoord];
 
             // spatial domain: offset gaussian tap
             float tapWeight = 0.3 + calculateGaussianWeight(abs(tapIndex));

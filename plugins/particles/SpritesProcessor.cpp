@@ -76,7 +76,6 @@ namespace Gek
             static std::random_device randomDevice;
             static std::mt19937 mersineTwister;
 
-            __declspec(align(16))
             struct Sprite
             {
                 Math::Float3 position;
@@ -87,14 +86,6 @@ namespace Gek
                 float age;
                 float life;
                 uint32_t frames;
-
-                Sprite(void)
-                    : halfSize(0.0f)
-                    , age(Math::NegativeInfinity)
-                    , life(0.0f)
-                    , frames(0)
-                {
-                }
             };
 
             struct EmitterData
@@ -351,7 +342,7 @@ namespace Gek
 
                 uint32_t bufferCopied = 0;
                 Sprite *bufferData = nullptr;
-                videoDevice->mapBuffer(spritesBuffer, (void **)&bufferData);
+                videoDevice->mapBuffer(spritesBuffer, bufferData);
                 for (auto emitterSearch = visibleBegin; emitterSearch != visibleEnd; ++emitterSearch)
                 {
                     const auto &emitter = *emitterSearch->second;
@@ -364,7 +355,7 @@ namespace Gek
                         uint32_t bufferRemaining = (SpritesBufferCount - bufferCopied);
                         uint32_t spritesRemaining = (spritesCount - spritesCopied);
                         uint32_t copyCount = std::min(bufferRemaining, spritesRemaining);
-                        memcpy(&bufferData[bufferCopied], &spriteData[spritesCopied], (sizeof(Sprite) * copyCount));
+                        std::copy(&bufferData[bufferCopied], &bufferData[bufferCopied + copyCount], &spriteData[spritesCopied]);
 
                         bufferCopied += copyCount;
                         spritesCopied += copyCount;
@@ -372,7 +363,7 @@ namespace Gek
                         {
                             videoDevice->unmapBuffer(spritesBuffer);
                             videoContext->drawPrimitive((SpritesBufferCount * 6), 0);
-                            videoDevice->mapBuffer(spritesBuffer, (void **)&bufferData);
+                            videoDevice->mapBuffer(spritesBuffer, bufferData);
                             bufferCopied = 0;
                         }
                     };
