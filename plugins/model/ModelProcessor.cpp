@@ -155,8 +155,7 @@ namespace Gek
             MaterialHandle skin;
         };
 
-        __declspec(align(16))
-            struct Instance
+        struct Instance
         {
             Math::Float4x4 matrix;
 
@@ -331,8 +330,8 @@ namespace Gek
         static void drawCall(Video::Device *videoDevice, Video::Device::Context *videoContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, Video::Buffer *constantBuffer)
         {
             Instance *instanceData = nullptr;
-            videoDevice->mapBuffer(constantBuffer, (void **)&instanceData);
-            memcpy(instanceData, instanceList, sizeof(Instance));
+            videoDevice->mapBuffer(constantBuffer, instanceData);
+            std::copy(instanceList, (instanceList + 1), instanceData);
             videoDevice->unmapBuffer(constantBuffer);
 
             videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer }, 4);

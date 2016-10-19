@@ -55,8 +55,7 @@ namespace Gek
                 }
             };
 
-            __declspec(align(16))
-                struct FilterConstantData
+            struct FilterConstantData
             {
                 Math::Float2 targetSize;
                 float padding[2];

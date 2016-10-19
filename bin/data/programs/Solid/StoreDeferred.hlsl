@@ -3,10 +3,10 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-OutputPixel mainPixelProgram(InputPixel inputPixel)
+OutputPixel mainPixelProgram(in InputPixel inputPixel)
 {
     // final images will be in sRGB format and converted to linear automatically
-    float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    const float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
     
     [branch]
     if(albedo.a < 0.5)
@@ -14,7 +14,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
         discard;
     }
 
-	float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
+    const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
 	//float3x3 viewBasis = getCoTangentFrame(inputPixel.position, inputPixel.normal, inputPixel.texCoord);
 
     float3 normal;

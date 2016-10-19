@@ -798,13 +798,13 @@ namespace Gek
 
                 ImDrawVert* vertexData = nullptr;
                 ImDrawIdx* indexData = nullptr;
-                videoDevice->mapBuffer(vertexBuffer.get(), (void **)&vertexData);
-                videoDevice->mapBuffer(indexBuffer.get(), (void **)&indexData);
+                videoDevice->mapBuffer(vertexBuffer.get(), vertexData);
+                videoDevice->mapBuffer(indexBuffer.get(), indexData);
                 for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                 {
                     const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                    memcpy(vertexData, commandList->VtxBuffer.Data, commandList->VtxBuffer.Size * sizeof(ImDrawVert));
-                    memcpy(indexData, commandList->IdxBuffer.Data, commandList->IdxBuffer.Size * sizeof(ImDrawIdx));
+                    std::copy(commandList->VtxBuffer.Data, (commandList->VtxBuffer.Data + commandList->VtxBuffer.Size), vertexData);
+                    std::copy(commandList->IdxBuffer.Data, (commandList->IdxBuffer.Data + commandList->IdxBuffer.Size), indexData);
                     vertexData += commandList->VtxBuffer.Size;
                     indexData += commandList->IdxBuffer.Size;
                 }

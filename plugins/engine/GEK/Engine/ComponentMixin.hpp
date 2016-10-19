@@ -136,6 +136,11 @@ namespace Gek
                 }
             }
 
+            uint32_t getEntityCount(void)
+            {
+                return entityDataMap.size();
+            }
+
             void list(std::function<void(Plugin::Entity *entity, Data &data, REQUIRED&... components)> onEntity)
             {
                 GEK_REQUIRE(onEntity);

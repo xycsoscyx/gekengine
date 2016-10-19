@@ -19,11 +19,11 @@ namespace Defines
 };
 
 /** Returns a unit vector and a screen-space Defines::radius for the tap on a unit disk (the caller should scale by the actual disk Defines::radius) */
-float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)
+float2 getTapLocation(in int tapIndex, in float spinAngle, out float tapRadius)
 {
     // Radius relative to tapRadius
-    float alpha = float(tapIndex + 0.5) * Defines::inverseTapCount;
-    float angle = alpha * (Defines::spiralTurns * 6.28) + spinAngle;
+    const float alpha = float(tapIndex + 0.5) * Defines::inverseTapCount;
+    const float angle = alpha * (Defines::spiralTurns * 6.28) + spinAngle;
 
     tapRadius = alpha;
 
@@ -33,17 +33,16 @@ float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)
 }
 
 /** Read the camera-space position of the point at screen-space pixel ssP */
-float3 getPosition(float2 ssP)
+float3 getPosition(in float2 ssP)
 {
-    float depth = Resources::depthBuffer.SampleLevel(Global::pointSampler, ssP, 0);
-    float3 position = getPositionFromSample(ssP, depth);
-    return position;
+    const float depth = Resources::depthBuffer.SampleLevel(Global::pointSampler, ssP, 0);
+    return getPositionFromSample(ssP, depth);
 }
 
 /** Read the camera-space position of the point at screen-space pixel ssP + tapOffset * tapRadius.  Assumes length(tapOffset) == 1 */
-float3 getOffsetPosition(float2 texCoord, float2 tapOffset, float tapRadius)
+float3 getOffsetPosition(in float2 texCoord, in float2 tapOffset, in float tapRadius)
 {
-    float2 tapCoord = tapRadius*tapOffset + texCoord;
+    const float2 tapCoord = tapRadius*tapOffset + texCoord;
     return getPosition(tapCoord);
 }
 
@@ -58,16 +57,16 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
 {
     // Offset on the unit disk, spun for this pixel
     float tapRadius;
-    float2 tapOffset = getTapLocation(tapIndex, randomPatternRotationAngle, tapRadius);
+    const float2 tapOffset = getTapLocation(tapIndex, randomPatternRotationAngle, tapRadius);
     tapRadius *= diskRadius;
 
     // The occluding point in camera space
-    float3 tapPosition = getOffsetPosition(texCoord, tapOffset, tapRadius);
+    const float3 tapPosition = getOffsetPosition(texCoord, tapOffset, tapRadius);
 
-    float3 deltaVector = tapPosition - surfacePosition;
+    const float3 deltaVector = tapPosition - surfacePosition;
 
-    float deltaAngle = dot(deltaVector, deltaVector);
-    float normalAngle = dot(deltaVector, surfaceNormal);
+    const float deltaAngle = dot(deltaVector, deltaVector);
+    const float normalAngle = dot(deltaVector, surfaceNormal);
 
     // [Boulotaur2024] yes branching is bad but choice is good...
     [branch]
@@ -78,7 +77,7 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
         {
             // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/	
             // Epsilon inside the sqrt for rsqrt operation
-            float falloff = max(1.0 - deltaAngle * (1.0 / Defines::radiusSquared), 0.0);
+            const float falloff = max(1.0 - deltaAngle * (1.0 / Defines::radiusSquared), 0.0);
             return (falloff * max((normalAngle - Defines::bias) * rsqrt(Defines::epsilon + deltaAngle), 0.0));
         }
 
@@ -91,7 +90,7 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
         if (true)
         {
             // B: Smoother transition to zero (lowers contrast, smoothing out corners). [Recommended]
-            float falloff = max(Defines::radiusSquared - deltaAngle, 0.0);
+            const float falloff = max(Defines::radiusSquared - deltaAngle, 0.0);
             return (pow(falloff, 3.0) * max((normalAngle - Defines::bias) * rcp(Defines::epsilon + deltaAngle), 0.0));
             // / (Defines::epsilon + deltaAngle) (optimization by BartWronski)
         }
@@ -114,15 +113,15 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
 // Scalable Ambient Obscurance
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 // https://github.com/PeterTh/gedosato/blob/master/pack/assets/dx9/SAO.fx
-float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+float mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
 {
-    float3 surfacePosition = getPosition(inputPixel.texCoord);
-    float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
+    const float3 surfacePosition = getPosition(inputPixel.texCoord);
+    const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
     // McGuire noise function
     // Hash function used in the HPG12 AlchemyAO paper
-    float randomPatternRotationAngle = (getNoise(inputPixel.screen.xy) * 10.0);
-    float diskRadius = (-1.0 *  Defines::radius / max(surfacePosition.z, 0.1f));
+    const float randomPatternRotationAngle = (getNoise(inputPixel.screen.xy) * 10.0);
+    const float diskRadius = (-1.0 *  Defines::radius / max(surfacePosition.z, 0.1f));
     float totalOcclusion = 0.0;
 
     [unroll]

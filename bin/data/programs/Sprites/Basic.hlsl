@@ -27,17 +27,17 @@ static const uint indexBuffer[6] =
     1, 3, 2,
 };
 
-OutputVertex mainVertexProgram(InputVertex inputVertex)
+OutputVertex mainVertexProgram(in InputVertex inputVertex)
 {
-    uint spriteIndex = (inputVertex.vertexIndex / 6);
-    uint cornerIndex = indexBuffer[inputVertex.vertexIndex % 6];
+    const uint spriteIndex = (inputVertex.vertexIndex / 6);
+    const uint cornerIndex = indexBuffer[inputVertex.vertexIndex % 6];
     
     Sprite::Data spriteData = Sprite::list[spriteIndex];
-    float age = (spriteData.age / spriteData.life);
-    uint frameIndex = floor(age * pow(spriteData.frames, 2.0));
-    float2 texCoord00 = float2((frameIndex % spriteData.frames),
-                               (frameIndex / spriteData.frames)) / float(spriteData.frames);
-    float2 texCoord11 = (texCoord00 + (1.0 / float(spriteData.frames)));
+    const float age = (spriteData.age / spriteData.life);
+    const uint frameIndex = floor(age * pow(spriteData.frames, 2.0));
+    const float2 texCoord00 = float2((frameIndex % spriteData.frames),
+                                     (frameIndex / spriteData.frames)) / float(spriteData.frames);
+    const float2 texCoord11 = (texCoord00 + (1.0 / float(spriteData.frames)));
 
     float sinAngle, cosAngle;
     sincos(spriteData.angle, sinAngle, cosAngle);
