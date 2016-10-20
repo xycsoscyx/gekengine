@@ -15,7 +15,6 @@
 #include <ppl.h>
 
 #include <imgui.h>
-#include <ImGuiUtils.h>
 
 namespace ImGui
 {

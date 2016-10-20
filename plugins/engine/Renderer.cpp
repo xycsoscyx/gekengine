@@ -616,7 +616,8 @@ namespace Gek
                         {
                             if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                             {
-                                auto &lightData = *pointLightList.grow_by(1);
+                                auto lightIterator = pointLightList.grow_by(1); 
+                                auto &lightData = *lightIterator;
                                 lightData.color = (colorComponent.value * lightComponent.intensity).xyz;
                                 lightData.position = (viewMatrix * transformComponent.position.w(1.0f)).xyz;
                                 lightData.radius = lightComponent.radius;

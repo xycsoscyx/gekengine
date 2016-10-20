@@ -7,15 +7,14 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "GEK\Math\Float3.hpp"
+#include "GEK\Math\Float4.hpp"
 #include <xmmintrin.h>
 
 namespace Gek
 {
     namespace Math
     {
-        struct Float3;
-        struct Float4;
-
         struct Color
         {
         public:

@@ -20,6 +20,7 @@ namespace Gek
             Plane planes[6];
 
         public:
+            Frustum(void);
             Frustum(const Math::Float4x4 &perspectiveTransform);
 
             template <class SHAPE>

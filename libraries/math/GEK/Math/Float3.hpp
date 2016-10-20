@@ -11,106 +11,176 @@ namespace Gek
 {
     namespace Math
     {
-        struct Float4;
-
-        struct Float3
+        template <typename TYPE>
+        struct Vector3
         {
         public:
-            static const Float3 Zero;
-            static const Float3 One;
+            static const Vector3 Zero;
+            static const Vector3 One;
 
         public:
             union
             {
-                struct { float x, y, z; };
-                struct { float data[3]; };
+                struct { TYPE x, y, z; };
+                struct { TYPE data[3]; };
             };
 
         public:
-            inline Float3(void)
+            inline Vector3(void)
             {
             }
 
-            inline Float3(const float(&data)[3])
+            inline Vector3(const TYPE(&data)[3])
                 : data{ data[0], data[1], data[2] }
             {
             }
 
-            inline Float3(const float *data)
+            inline Vector3(const TYPE *data)
                 : data{ data[0], data[1], data[2] }
             {
             }
 
-            inline Float3(float scalar)
+            inline Vector3(TYPE scalar)
                 : data{ scalar, scalar, scalar }
             {
             }
 
-            inline Float3(const Float3 &vector)
+            inline Vector3(const Vector3 &vector)
                 : data{ vector.data[0], vector.data[1], vector.data[2] }
             {
             }
 
-            inline Float3(float x, float y, float z)
+            inline Vector3(TYPE x, TYPE y, TYPE z)
                 : data{ x, y, z }
             {
             }
 
-            Float4 w(float w) const;
-
-            inline void set(float x, float y, float z)
+            inline void set(TYPE x, TYPE y, TYPE z)
             {
                 this->x = x;
                 this->y = y;
                 this->z = z;
             }
 
-            inline void set(float value)
+            inline void set(TYPE value)
             {
                 this->x = value;
                 this->y = value;
                 this->z = value;
             }
 
-            float getLengthSquared(void) const;
-            float getLength(void) const;
-            float getDistance(const Float3 &vector) const;
-            Float3 getNormal(void) const;
+            TYPE getLengthSquared(void) const
+            {
+                return ((x * x) + (y * y) + (z * z));
+            }
 
-            float dot(const Float3 &vector) const;
-            Float3 cross(const Float3 &vector) const;
-            Float3 lerp(const Float3 &vector, float factor) const;
-            void normalize(void);
+            TYPE getLength(void) const
+            {
+                return std::sqrt(getLengthSquared());
+            }
 
-            bool operator < (const Float3 &vector) const;
-            bool operator > (const Float3 &vector) const;
-            bool operator <= (const Float3 &vector) const;
-            bool operator >= (const Float3 &vector) const;
-            bool operator == (const Float3 &vector) const;
-            bool operator != (const Float3 &vector) const;
+            TYPE getDistance(const Vector3 &vector) const
+            {
+                return (vector - (*this)).getLength();
+            }
 
-            inline float operator [] (int axis) const
+            Vector3 getNormal(void) const
+            {
+                return ((*this) / getLength());
+            }
+
+            TYPE dot(const Vector3 &vector) const
+            {
+                return ((x * vector.x) + (y * vector.y) + (z * vector.z));
+            }
+
+            Vector3 cross(const Vector3 &vector) const
+            {
+                return Vector3(((y * vector.z) - (z * vector.y)),
+                    ((z * vector.x) - (x * vector.z)),
+                    ((x * vector.y) - (y * vector.x)));
+            }
+
+            Vector3 lerp(const Vector3 &vector, TYPE factor) const
+            {
+                return Math::lerp((*this), vector, factor);
+            }
+
+            void normalize(void)
+            {
+                (*this) = getNormal();
+            }
+
+            bool operator < (const Vector3 &vector) const
+            {
+                if (x >= vector.x) return false;
+                if (y >= vector.y) return false;
+                if (z >= vector.z) return false;
+                return true;
+            }
+
+            bool operator > (const Vector3 &vector) const
+            {
+                if (x <= vector.x) return false;
+                if (y <= vector.y) return false;
+                if (z <= vector.z) return false;
+                return true;
+            }
+
+            bool operator <= (const Vector3 &vector) const
+            {
+                if (x > vector.x) return false;
+                if (y > vector.y) return false;
+                if (z > vector.z) return false;
+                return true;
+            }
+
+            bool operator >= (const Vector3 &vector) const
+            {
+                if (x < vector.x) return false;
+                if (y < vector.y) return false;
+                if (z < vector.z) return false;
+                return true;
+            }
+
+            bool operator == (const Vector3 &vector) const
+            {
+                if (x != vector.x) return false;
+                if (y != vector.y) return false;
+                if (z != vector.z) return false;
+                return true;
+            }
+
+            bool operator != (const Vector3 &vector) const
+            {
+                if (x != vector.x) return true;
+                if (y != vector.y) return true;
+                if (z != vector.z) return true;
+                return false;
+            }
+
+            inline TYPE operator [] (int axis) const
             {
                 return data[axis];
             }
 
-            inline float &operator [] (int axis)
+            inline TYPE &operator [] (int axis)
             {
                 return data[axis];
             }
 
-            inline operator const float *() const
+            inline operator const TYPE *() const
             {
                 return data;
             }
 
-            inline operator float *()
+            inline operator TYPE *()
             {
                 return data;
             }
 
             // vector operations
-            inline Float3 &operator = (const Float3 &vector)
+            inline Vector3 &operator = (const Vector3 &vector)
             {
                 x = vector.x;
                 y = vector.y;
@@ -118,56 +188,56 @@ namespace Gek
                 return (*this);
             }
 
-            inline void operator -= (const Float3 &vector)
+            inline void operator -= (const Vector3 &vector)
             {
                 x -= vector.x;
                 y -= vector.y;
                 z -= vector.z;
             }
 
-            inline void operator += (const Float3 &vector)
+            inline void operator += (const Vector3 &vector)
             {
                 x += vector.x;
                 y += vector.y;
                 z += vector.z;
             }
 
-            inline void operator /= (const Float3 &vector)
+            inline void operator /= (const Vector3 &vector)
             {
                 x /= vector.x;
                 y /= vector.y;
                 z /= vector.z;
             }
 
-            inline void operator *= (const Float3 &vector)
+            inline void operator *= (const Vector3 &vector)
             {
                 x *= vector.x;
                 y *= vector.y;
                 z *= vector.z;
             }
 
-            inline Float3 operator - (const Float3 &vector) const
+            inline Vector3 operator - (const Vector3 &vector) const
             {
-                return Float3((x - vector.x), (y - vector.y), (z - vector.z));
+                return Vector3((x - vector.x), (y - vector.y), (z - vector.z));
             }
 
-            inline Float3 operator + (const Float3 &vector) const
+            inline Vector3 operator + (const Vector3 &vector) const
             {
-                return Float3((x + vector.x), (y + vector.y), (z + vector.z));
+                return Vector3((x + vector.x), (y + vector.y), (z + vector.z));
             }
 
-            inline Float3 operator / (const Float3 &vector) const
+            inline Vector3 operator / (const Vector3 &vector) const
             {
-                return Float3((x / vector.x), (y / vector.y), (z / vector.z));
+                return Vector3((x / vector.x), (y / vector.y), (z / vector.z));
             }
 
-            inline Float3 operator * (const Float3 &vector) const
+            inline Vector3 operator * (const Vector3 &vector) const
             {
-                return Float3((x * vector.x), (y * vector.y), (z * vector.z));
+                return Vector3((x * vector.x), (y * vector.y), (z * vector.z));
             }
 
             // scalar operations
-            inline Float3 &operator = (float scalar)
+            inline Vector3 &operator = (TYPE scalar)
             {
                 x = scalar;
                 y = scalar;
@@ -175,78 +245,87 @@ namespace Gek
                 return (*this);
             }
 
-            inline void operator -= (float scalar)
+            inline void operator -= (TYPE scalar)
             {
                 x -= scalar;
                 y -= scalar;
                 z -= scalar;
             }
 
-            inline void operator += (float scalar)
+            inline void operator += (TYPE scalar)
             {
                 x += scalar;
                 y += scalar;
                 z += scalar;
             }
 
-            inline void operator /= (float scalar)
+            inline void operator /= (TYPE scalar)
             {
                 x /= scalar;
                 y /= scalar;
                 z /= scalar;
             }
 
-            inline void operator *= (float scalar)
+            inline void operator *= (TYPE scalar)
             {
                 x *= scalar;
                 y *= scalar;
                 z *= scalar;
             }
 
-            inline Float3 operator - (float scalar) const
+            inline Vector3 operator - (TYPE scalar) const
             {
-                return Float3((x - scalar), (y - scalar), (z - scalar));
+                return Vector3((x - scalar), (y - scalar), (z - scalar));
             }
 
-            inline Float3 operator + (float scalar) const
+            inline Vector3 operator + (TYPE scalar) const
             {
-                return Float3((x + scalar), (y + scalar), (z + scalar));
+                return Vector3((x + scalar), (y + scalar), (z + scalar));
             }
 
-            inline Float3 operator / (float scalar) const
+            inline Vector3 operator / (TYPE scalar) const
             {
-                return Float3((x / scalar), (y / scalar), (z / scalar));
+                return Vector3((x / scalar), (y / scalar), (z / scalar));
             }
 
-            inline Float3 operator * (float scalar) const
+            inline Vector3 operator * (TYPE scalar) const
             {
-                return Float3((x * scalar), (y * scalar), (z * scalar));
+                return Vector3((x * scalar), (y * scalar), (z * scalar));
             }
         };
 
-        inline Float3 operator - (const Float3 &vector)
+        template <typename TYPE>
+        inline Vector3<TYPE> operator - (const Vector3<TYPE> &vector)
         {
-            return Float3(-vector.x, -vector.y, -vector.z);
+            return Vector3(-vector.x, -vector.y, -vector.z);
         }
 
-        inline Float3 operator + (float scalar, const Float3 &vector)
+        template <typename TYPE>
+        inline Vector3<TYPE> operator + (TYPE scalar, const Vector3<TYPE> &vector)
         {
-            return Float3(scalar + vector.x, scalar + vector.y, scalar + vector.z);
+            return Vector3(scalar + vector.x, scalar + vector.y, scalar + vector.z);
         }
 
-        inline Float3 operator - (float scalar, const Float3 &vector)
+        template <typename TYPE>
+        inline Vector3<TYPE> operator - (TYPE scalar, const Vector3<TYPE> &vector)
         {
-            return Float3(scalar - vector.x, scalar - vector.y, scalar - vector.z);
+            return Vector3(scalar - vector.x, scalar - vector.y, scalar - vector.z);
         }
 
-        inline Float3 operator * (float scalar, const Float3 &vector)
+        template <typename TYPE>
+        inline Vector3<TYPE> operator * (TYPE scalar, const Vector3<TYPE> &vector)
         {
-            return Float3(scalar * vector.x, scalar * vector.y, scalar * vector.z);
+            return Vector3(scalar * vector.x, scalar * vector.y, scalar * vector.z);
         }
 
-        inline Float3 operator / (float scalar, const Float3 &vector)
+        template <typename TYPE>
+        inline Vector3<TYPE> operator / (TYPE scalar, const Vector3<TYPE> &vector)
         {
-            return Float3(scalar / vector.x, scalar / vector.y, scalar / vector.z);
+            return Vector3(scalar / vector.x, scalar / vector.y, scalar / vector.z);
         }
+
+        using Float3 = Vector3<float>;
+        using Int3 = Vector3<int>;
+        using UInt3 = Vector3<unsigned int>;
     }; // namespace Math
 }; // namespace Gek
