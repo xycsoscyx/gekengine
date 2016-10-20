@@ -11,226 +11,297 @@ namespace Gek
 {
     namespace Math
     {
-        struct Float2
+        template <typename TYPE>
+        struct Vector2
         {
         public:
-            static const Float2 Zero;
-            static const Float2 One;
+            static const Vector2 Zero;
+            static const Vector2 One;
 
         public:
             union
             {
-                struct { float x, y; };
-                struct { float u, v; };
-                struct { float data[2]; };
+                struct { TYPE x, y; };
+                struct { TYPE u, v; };
+                struct { TYPE data[2]; };
             };
 
         public:
-            inline Float2(void)
+            inline Vector2(void)
             {
             }
 
-            inline Float2(const float(&data)[2])
+            inline Vector2(const TYPE(&data)[2])
                 : data{ data[0], data[1] }
             {
             }
 
-            inline Float2(const float *data)
+            inline Vector2(const TYPE *data)
                 : data{ data[0], data[1] }
             {
             }
 
-            inline Float2(float scalar)
+            inline Vector2(TYPE scalar)
                 : data{ scalar, scalar }
             {
             }
 
-            inline Float2(const Float2 &vector)
+            inline Vector2(const Vector2 &vector)
                 : data{ vector.data[0], vector.data[1] }
             {
             }
 
-            inline Float2(float x, float y)
+            inline Vector2(TYPE x, TYPE y)
                 : data{ x, y }
             {
             }
 
-            inline void set(float x, float y)
+            inline void set(TYPE x, TYPE y)
             {
                 this->x = x;
                 this->y = y;
             }
 
-            inline void set(float value)
+            inline void set(TYPE value)
             {
                 this->x = value;
                 this->y = value;
             }
 
-            float getLengthSquared(void) const;
-            float getLength(void) const;
-            float getDistance(const Float2 &vector) const;
-            Float2 getNormal(void) const;
+            TYPE getLengthSquared(void) const
+            {
+                return ((x * x) + (y * y));
+            }
 
-            void normalize(void);
-            float dot(const Float2 &vector) const;
-            Float2 lerp(const Float2 &vector, float factor) const;
+            TYPE getLength(void) const
+            {
+                return std::sqrt(getLengthSquared());
+            }
 
-            bool operator < (const Float2 &vector) const;
-            bool operator > (const Float2 &vector) const;
-            bool operator <= (const Float2 &vector) const;
-            bool operator >= (const Float2 &vector) const;
-            bool operator == (const Float2 &vector) const;
-            bool operator != (const Float2 &vector) const;
+            TYPE getDistance(const Vector2 &vector) const
+            {
+                return (vector - (*this)).getLength();
+            }
 
-            inline float operator [] (int axis) const
+            Vector2 getNormal(void) const
+            {
+                return ((*this) / getLength());
+            }
+
+            void normalize(void)
+            {
+                (*this) = getNormal();
+            }
+
+            TYPE dot(const Vector2 &vector) const
+            {
+                return ((x * vector.x) + (y * vector.y));
+            }
+
+            Vector2 lerp(const Vector2 &vector, TYPE factor) const
+            {
+                return Math::lerp((*this), vector, factor);
+            }
+
+            bool operator < (const Vector2 &vector) const
+            {
+                if (x >= vector.x) return false;
+                if (y >= vector.y) return false;
+                return true;
+            }
+
+            bool operator > (const Vector2 &vector) const
+            {
+                if (x <= vector.x) return false;
+                if (y <= vector.y) return false;
+                return true;
+            }
+
+            bool operator <= (const Vector2 &vector) const
+            {
+                if (x > vector.x) return false;
+                if (y > vector.y) return false;
+                return true;
+            }
+
+            bool operator >= (const Vector2 &vector) const
+            {
+                if (x < vector.x) return false;
+                if (y < vector.y) return false;
+                return true;
+            }
+
+            bool operator == (const Vector2 &vector) const
+            {
+                if (x != vector.x) return false;
+                if (y != vector.y) return false;
+                return true;
+            }
+
+            bool operator != (const Vector2 &vector) const
+            {
+                if (x != vector.x) return true;
+                if (y != vector.y) return true;
+                return false;
+            }
+
+            inline TYPE operator [] (int axis) const
             {
                 return data[axis];
             }
 
-            inline float &operator [] (int axis)
+            inline TYPE &operator [] (int axis)
             {
                 return data[axis];
             }
 
-            inline operator const float *() const
+            inline operator const TYPE *() const
             {
                 return data;
             }
 
-            inline operator float *()
+            inline operator TYPE *()
             {
                 return data;
             }
 
             // vector operations
-            inline Float2 &operator = (const Float2 &vector)
+            inline Vector2 &operator = (const Vector2 &vector)
             {
                 x = vector.x;
                 y = vector.y;
                 return (*this);
             }
 
-            inline void operator -= (const Float2 &vector)
+            inline void operator -= (const Vector2 &vector)
             {
                 x -= vector.x;
                 y -= vector.y;
             }
 
-            inline void operator += (const Float2 &vector)
+            inline void operator += (const Vector2 &vector)
             {
                 x += vector.x;
                 y += vector.y;
             }
 
-            inline void operator /= (const Float2 &vector)
+            inline void operator /= (const Vector2 &vector)
             {
                 x /= vector.x;
                 y /= vector.y;
             }
 
-            inline void operator *= (const Float2 &vector)
+            inline void operator *= (const Vector2 &vector)
             {
                 x *= vector.x;
                 y *= vector.y;
             }
 
-            inline Float2 operator - (const Float2 &vector) const
+            inline Vector2 operator - (const Vector2 &vector) const
             {
-                return Float2((x - vector.x), (y - vector.y));
+                return Vector2((x - vector.x), (y - vector.y));
             }
 
-            inline Float2 operator + (const Float2 &vector) const
+            inline Vector2 operator + (const Vector2 &vector) const
             {
-                return Float2((x + vector.x), (y + vector.y));
+                return Vector2((x + vector.x), (y + vector.y));
             }
 
-            inline Float2 operator / (const Float2 &vector) const
+            inline Vector2 operator / (const Vector2 &vector) const
             {
-                return Float2((x / vector.x), (y / vector.y));
+                return Vector2((x / vector.x), (y / vector.y));
             }
 
-            inline Float2 operator * (const Float2 &vector) const
+            inline Vector2 operator * (const Vector2 &vector) const
             {
-                return Float2((x * vector.x), (y * vector.y));
+                return Vector2((x * vector.x), (y * vector.y));
             }
 
             // scalar operations
-            inline Float2 &operator = (float scalar)
+            inline Vector2 &operator = (TYPE scalar)
             {
                 x = scalar;
                 y = scalar;
                 return (*this);
             }
 
-            inline void operator -= (float scalar)
+            inline void operator -= (TYPE scalar)
             {
                 x -= scalar;
                 y -= scalar;
             }
 
-            inline void operator += (float scalar)
+            inline void operator += (TYPE scalar)
             {
                 x += scalar;
                 y += scalar;
             }
 
-            inline void operator /= (float scalar)
+            inline void operator /= (TYPE scalar)
             {
                 x /= scalar;
                 y /= scalar;
             }
 
-            inline void operator *= (float scalar)
+            inline void operator *= (TYPE scalar)
             {
                 x *= scalar;
                 y *= scalar;
             }
 
-            inline Float2 operator - (float scalar) const
+            inline Vector2 operator - (TYPE scalar) const
             {
-                return Float2((x - scalar), (y - scalar));
+                return Vector2((x - scalar), (y - scalar));
             }
 
-            inline Float2 operator + (float scalar) const
+            inline Vector2 operator + (TYPE scalar) const
             {
-                return Float2((x + scalar), (y + scalar));
+                return Vector2((x + scalar), (y + scalar));
             }
 
-            inline Float2 operator / (float scalar) const
+            inline Vector2 operator / (TYPE scalar) const
             {
-                return Float2((x / scalar), (y / scalar));
+                return Vector2((x / scalar), (y / scalar));
             }
 
-            inline Float2 operator * (float scalar) const
+            inline Vector2 operator * (TYPE scalar) const
             {
-                return Float2((x * scalar), (y * scalar));
+                return Vector2((x * scalar), (y * scalar));
             }
         };
 
-        inline Float2 operator - (const Float2 &vector)
+        template <typename TYPE>
+        inline Vector2<TYPE> operator - (const Vector2<TYPE> &vector)
         {
-            return Float2(-vector.x, -vector.y);
+            return Vector2(-vector.x, -vector.y);
         }
 
-        inline Float2 operator + (float scalar, const Float2 &vector)
+        template <typename TYPE>
+        inline Vector2<TYPE> operator + (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Float2(scalar + vector.x, scalar + vector.y);
+            return Vector2(scalar + vector.x, scalar + vector.y);
         }
 
-        inline Float2 operator - (float scalar, const Float2 &vector)
+        template <typename TYPE>
+        inline Vector2<TYPE> operator - (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Float2(scalar - vector.x, scalar - vector.y);
+            return Vector2(scalar - vector.x, scalar - vector.y);
         }
 
-        inline Float2 operator * (float scalar, const Float2 &vector)
+        template <typename TYPE>
+        inline Vector2<TYPE> operator * (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Float2(scalar * vector.x, scalar * vector.y);
+            return Vector2(scalar * vector.x, scalar * vector.y);
         }
 
-        inline Float2 operator / (float scalar, const Float2 &vector)
+        template <typename TYPE>
+        inline Vector2<TYPE> operator / (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Float2(scalar / vector.x, scalar / vector.y);
+            return Vector2(scalar / vector.x, scalar / vector.y);
         }
+
+        using Float2 = Vector2<float>;
+        using Int2 = Vector2<int>;
+        using UInt2 = Vector2<unsigned int>;
     }; // namespace Math
 }; // namespace Gek

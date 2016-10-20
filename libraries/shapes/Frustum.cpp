@@ -4,6 +4,10 @@ namespace Gek
 {
     namespace Shapes
     {
+        Frustum::Frustum(void)
+        {
+        }
+
         Frustum::Frustum(const Math::Float4x4 &perspectiveTransform)
         {
             // Left clipping plane
