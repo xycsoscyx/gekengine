@@ -85,7 +85,7 @@ namespace Gek
             ComponentMap componentMap;
 
             ThreadPool loadPool;
-            std::future<bool> loaded;
+            std::atomic<bool> loading = false;
             concurrency::concurrent_queue<String> loadQueue;
             concurrency::concurrent_queue<std::function<void(void)>> entityQueue;
             EntityMap entityMap;
@@ -124,8 +124,9 @@ namespace Gek
                 componentMap.clear();
             }
 
-            bool loadLevel(const String &populationName)
+            void loadLevel(const String &populationName)
             {
+                loading = true;
                 try
                 {
                     entityMap.clear();
@@ -193,7 +194,7 @@ namespace Gek
                     onLoadFailed.emit(populationName);
                 };
 
-                return true;
+                loading = false;
             }
 
             // Edit::Population
@@ -231,7 +232,7 @@ namespace Gek
 
             void update(bool isBackgroundProcess, float frameTime)
             {
-                if (loaded.valid() && loaded.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+                if (loading)
                 {
                     for (auto &slot : onLoading)
                     {
@@ -243,20 +244,10 @@ namespace Gek
                     String populationName;
                     if (loadQueue.try_pop(populationName))
                     {
-                        if (loaded.valid())
+                        loadPool.enqueue([this, populationName](void) -> void
                         {
-                            loaded.get();
-                        }
-
-                        loaded = loadPool.enqueue([this, populationName](void) -> bool
-                        {
-                            return loadLevel(populationName);
+                            loadLevel(populationName);
                         });
-
-                        for (auto &slot : onLoading)
-                        {
-                            slot.second.emit();
-                        }
                     }
                     else if (isBackgroundProcess)
                     {
@@ -273,14 +264,14 @@ namespace Gek
                         {
                             slot.second.emit();
                         }
+
+                        std::function<void(void)> entityAction;
+                        while (entityQueue.try_pop(entityAction))
+                        {
+                            entityAction();
+                        };
                     }
                 }
-
-                std::function<void(void)> entityAction;
-                while (entityQueue.try_pop(entityAction))
-                {
-                    entityAction();
-                };
             }
 
             void load(const wchar_t *populationName)

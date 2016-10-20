@@ -614,7 +614,7 @@ namespace Gek
                         pointLightList.clear();
                         pointLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
                         {
-                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
+                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                             {
                                 auto &lightData = *pointLightList.grow_by(1);
                                 lightData.color = (colorComponent.value * lightComponent.intensity).xyz;
@@ -641,10 +641,7 @@ namespace Gek
                         spotLightList.clear();
                         spotLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
                         {
-                            float halfRange = (lightComponent.range * 0.5f);
-                            Math::Float3 direction(transformComponent.rotation.getMatrix().ny);
-                            Math::Float3 center(transformComponent.position + (direction * halfRange));
-                            if (viewFrustum.isVisible(Shapes::Sphere(center, halfRange)))
+                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
                             {
                                 auto &lightData = *spotLightList.grow_by(1);
                                 lightData.color = (colorComponent.value * lightComponent.intensity).xyz;

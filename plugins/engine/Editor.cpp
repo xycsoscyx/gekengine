@@ -150,26 +150,6 @@ namespace Gek
             {
             }
 
-            void onLoading(void)
-            {
-                auto changeConfiguration = core->changeConfiguration();
-                Xml::Node &configuration = *changeConfiguration;
-                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
-                if (showCursor)
-                {
-                    bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
-                    if (showSelectionMenu)
-                    {
-                        if (ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
-                        {
-                            ImGui::Dummy(ImVec2(350, 0));
-                            ImGui::TextDisabled("Loading...");
-                            ImGui::End();
-                        }
-                    }
-                }
-            }
-
             void onUpdate(void)
             {
                 auto changeConfiguration = core->changeConfiguration();
