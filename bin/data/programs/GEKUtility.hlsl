@@ -49,6 +49,16 @@ float getMinimum(in float3 value)
     return min(value.x, min(value.y, value.z));
 }
 
+float getMaximum(in float4 value)
+{
+    return max(value.x, max(value.y, max(value.z, value.w)));
+}
+
+float getMinimum(in float4 value)
+{
+    return min(value.x, min(value.y, min(value.z, value.w)));
+}
+
 float getLuminance(in float3 color)
 {
     float luminance = max(dot(color, float3(0.299, 0.587, 0.114)), Math::Epsilon);
