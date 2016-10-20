@@ -8,12 +8,11 @@
 //texture reads can be a bottleneck
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const int2 screenCoord = int2(inputPixel.screen.xy);
-    const float3 colorMD = Resources::screenBuffer.Load(screenCoord);
-    const float3 colorNW = Resources::screenBuffer.Load(screenCoord + uint2(-1, +1));
-    const float3 colorNE = Resources::screenBuffer.Load(screenCoord + uint2(+1, +1));
-    const float3 colorSW = Resources::screenBuffer.Load(screenCoord + uint2(-1, -1));
-    const float3 colorSE = Resources::screenBuffer.Load(screenCoord + uint2(+1, -1));
+    const float3 colorMD = Resources::screenBuffer[inputPixel.screen.xy];
+    const float3 colorNW = Resources::screenBuffer[inputPixel.screen.xy + float2(-1, +1)];
+    const float3 colorNE = Resources::screenBuffer[inputPixel.screen.xy + float2(+1, +1)];
+    const float3 colorSW = Resources::screenBuffer[inputPixel.screen.xy + float2(-1, -1)];
+    const float3 colorSE = Resources::screenBuffer[inputPixel.screen.xy + float2(+1, -1)];
 
     const float luminanceMD = getLuminance(colorMD);
     const float luminanceNW = getLuminance(colorNW);

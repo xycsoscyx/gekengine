@@ -7,9 +7,9 @@ namespace Lighting
 {
 	struct Properties
 	{
-        float3 contribution;
         float3 direction;
-	};
+        float3 radiance;
+    };
 
     float getFalloff(in float distance, in float range)
     {
@@ -22,7 +22,7 @@ namespace Lighting
     {
         Properties properties;
         properties.direction = lightData.direction;
-        properties.contribution = lightData.color;
+        properties.radiance = lightData.color;
         return properties;
     }
 
@@ -35,7 +35,7 @@ namespace Lighting
             
             Properties properties;
             properties.direction = (lightRay / lightDistance);
-            properties.contribution = (lightData.color * getFalloff(lightDistance, lightData.range));
+            properties.radiance = (lightData.color * getFalloff(lightDistance, lightData.range));
             return properties;
 		}
 
@@ -48,7 +48,7 @@ namespace Lighting
             properties.direction = (lightRay / lightDistance);
             const float rho = saturate(dot(lightData.direction, -properties.direction));
             const float spotFactor = pow(saturate(rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle), 4.0);
-            properties.contribution = (lightData.color * getFalloff(lightDistance, lightData.range) * spotFactor);
+            properties.radiance = (lightData.color * getFalloff(lightDistance, lightData.range) * spotFactor);
 
             return properties;
 		}
@@ -65,7 +65,7 @@ namespace Lighting
 
             Properties properties;
             properties.direction = normalize(closestPoint);
-            properties.contribution = (lightData.color * getFalloff(lightDistance, lightData.range));
+            properties.radiance = (lightData.color * getFalloff(lightDistance, lightData.range));
 			return properties;
 		}
     };
@@ -78,7 +78,7 @@ namespace Lighting
         const float alphaSquared = pow(alpha, 2.0);
 
         //float denominator = (HdotN * HdotN) * (alphaSquared - 1.0) + 1.0;
-        const float denominator = (HdotN * alphaSquared - HdotN) * HdotN + 1.0;
+        const float denominator = ((((HdotN * alphaSquared) - HdotN) * HdotN) + 1.0);
         return (alphaSquared / (Math::Pi * denominator * denominator));
     }
 
@@ -87,22 +87,22 @@ namespace Lighting
         // alpha is assumed to be roughness^2
         const float alphaSquared = pow(alpha, 2.0);
 
-        const float denominator = (HdotN * HdotN) * (alphaSquared - 1.0) + 1.0;
+        const float denominator = (((HdotN * HdotN) * (alphaSquared - 1.0)) + 1.0);
         return (alphaSquared / (Math::Pi * denominator));
     }
 
     float getDistribution1886GGX(in float HdotN, in float alpha)
     {
-        return (alpha / (Math::Pi * pow(HdotN * HdotN * (alpha - 1.0) + 1.0, 2.0)));
+        return (alpha / (Math::Pi * pow(((HdotN * HdotN * (alpha - 1.0)) + 1.0), 2.0)));
     }
 
     // Visibility term G( l, v, h )
     // Very similar to Marmoset Toolbag 2 and gives almost the same results as Smith GGX
     float getVisibilitySchlick(in float VdotN, in float LdotN, in float alpha)
     {
-        const float k = alpha * 0.5;
-        const float schlickL = (LdotN * (1.0 - k) + k);
-        const float schlickV = (VdotN * (1.0 - k) + k);
+        const float k = (alpha * 0.5);
+        const float schlickL = ((LdotN * (1.0 - k)) + k);
+        const float schlickV = ((VdotN * (1.0 - k)) + k);
         return (0.25 / (schlickL * schlickV));
         //return ((schlickL * schlickV) / (4.0 * VdotN * LdotN));
     }
@@ -112,8 +112,8 @@ namespace Lighting
     // this visibility function also provides some sort of back lighting
     float getVisibilitySmithGGX(in float VdotN, in float LdotN, in float alpha)
     {
-        const float V1 = LdotN + sqrt(alpha + (1.0 - alpha) * LdotN * LdotN);
-        const float V2 = VdotN + sqrt(alpha + (1.0 - alpha) * VdotN * VdotN);
+        const float V1 = (LdotN + (sqrt(alpha + ((1.0 - alpha) * LdotN * LdotN))));
+        const float V2 = (VdotN + (sqrt(alpha + ((1.0 - alpha) * VdotN * VdotN))));
 
         // avoid too bright spots
         return (1.0 / max(V1 * V2, 0.15));
@@ -135,7 +135,7 @@ namespace Lighting
         if (Defines::useHalfLambert)
         {
             // http://developer.valvesoftware.com/wiki/Half_Lambert
-            half halfLdotN = dot(surfaceNormal, lightProperties.direction) * 0.5 + 0.5;
+            half halfLdotN = ((dot(surfaceNormal, lightProperties.direction) * 0.5) + 0.5);
             lambert = pow(halfLdotN, 2.0);
         }
         else
@@ -148,7 +148,7 @@ namespace Lighting
 
         const half VdotH = saturate(dot(viewDirection, halfAngleVector));
 
-        const half3 reflectColor = lerp(materialAlbedo, lightProperties.contribution, materialMetallic);
+        const half3 reflectColor = lerp(materialAlbedo, lightProperties.radiance, materialMetallic);
 
         //const half D = pow(abs(HdotN), 10.0f);
         const half D = getDistributionGGX(HdotN, alpha);
@@ -160,12 +160,12 @@ namespace Lighting
 
         // horizon
         const float horizon = pow((1.0 - LdotN), 4.0);
-        const half3 specularLightColor = lightProperties.contribution - lightProperties.contribution * horizon;
+        const half3 specularLightColor = (lightProperties.radiance - (lightProperties.radiance * horizon));
         const float3 specularColor = saturate(D * G * (F * (specularLightColor * lambert)));
 
         // see http://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
         lambert /= Math::Pi;
-        half3 diffuseColor = lerp(materialAlbedo, 0.0, materialMetallic) * lightProperties.contribution * lambert;
+        half3 diffuseColor = (lerp(materialAlbedo, 0.0, materialMetallic) * lightProperties.radiance * lambert);
 
         /* Maintain energy conservation
             Energy conservation is a restriction on the reflection model
@@ -174,6 +174,7 @@ namespace Lighting
             http://www.rorydriscoll.com/2009/01/25/energy-conservation-in-games/
         */
         diffuseColor *= (1.0 - specularColor);
+
         return (diffuseColor + specularColor);
     }
 };
@@ -201,7 +202,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     // reduce roughness range from [0 .. 1] to [0.5 .. 1]
     const half clampedAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
 
-    float3 surfaceIrradiance = (materialAlbedo * surfaceAmbient * 0.01);
+    float3 surfaceIrradiance = (materialAlbedo * surfaceAmbient * 0.001);
 
     [loop]
     for (uint directionalIndex = 0; directionalIndex < Lighting::directionalCount; directionalIndex++)
