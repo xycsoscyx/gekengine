@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-namespace Light
+namespace Lighting
 {
 	struct Properties
 	{
@@ -127,7 +127,7 @@ namespace Light
         return specularColor + (1.0 - specularColor) * pow(1.0 - VdotH, 5.0);
     }
 
-    float3 getContribution(in Light::Properties lightProperties, in float3 surfaceNormal, in float3 viewDirection, in float3 VdotN, in float3 materialAlbedo, in float materialRoughness, in float materialMetallic, in float alpha, in float alphaG)
+    float3 getContribution(in Lighting::Properties lightProperties, in float3 surfaceNormal, in float3 viewDirection, in float3 VdotN, in float3 materialAlbedo, in float materialRoughness, in float materialMetallic, in float alpha, in float clampedAlpha)
     {
         const half LdotN = saturate(dot(surfaceNormal, lightProperties.direction));
 
@@ -150,12 +150,12 @@ namespace Light
 
         const half3 reflectColor = lerp(materialAlbedo, lightProperties.contribution, materialMetallic);
 
-        //const half3 D = pow(abs(HdotN), 10.0f);
-        const half3 D = getDistributionGGX(HdotN, alpha);
-        //const half3 D = getDistribution1886GGX(HdotN, alpha);
-        //const half3 D = getDistributionDisneyGGX(HdotN, alphaG);
-        const half3 G = getVisibilitySchlick(LdotN, VdotN, alpha);
-        //const half3 G = getVisibilitySmithGGX(LdotN, VdotN, alpha);
+        //const half D = pow(abs(HdotN), 10.0f);
+        const half D = getDistributionGGX(HdotN, alpha);
+        //const half D = getDistribution1886GGX(HdotN, alpha);
+        //const half D = getDistributionDisneyGGX(HdotN, clampedAlpha);
+        const half G = getVisibilitySchlick(LdotN, VdotN, alpha);
+        //const half G = getVisibilitySmithGGX(LdotN, VdotN, alpha);
         const half3 F = getFresnelSchlick(reflectColor, VdotH);
 
         // horizon
@@ -185,6 +185,7 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     const float materialRoughness = ((materialInfo.x * 0.9) + 0.1); // account for infinitely small point lights
     const float materialMetallic = materialInfo.y;
 
+    const float surfaceAmbient = Resources::ambientBuffer[inputPixel.screen.xy];
     const float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
     const float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
     const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
@@ -198,33 +199,33 @@ float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
     const half alpha = pow(materialRoughness, 2.0);
 
     // reduce roughness range from [0 .. 1] to [0.5 .. 1]
-    const half alphaG = pow(0.5 + materialRoughness * 0.5, 2.0);
+    const half clampedAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
 
-    float3 surfaceLight = 0;
+    float3 surfaceIrradiance = (materialAlbedo * surfaceAmbient * 0.01);
 
     [loop]
     for (uint directionalIndex = 0; directionalIndex < Lighting::directionalCount; directionalIndex++)
     {
-        const Lighting::DirectionalData light = Lighting::directionalList[directionalIndex];
-        const Light::Properties lightProperties = Light::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-        surfaceLight += Light::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, alphaG);
+        const Lighting::DirectionalData light = Lighting::directionalList.Load(directionalIndex);
+        const Lighting::Properties lightProperties = Lighting::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+        surfaceIrradiance += Lighting::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, clampedAlpha);
     }
 
     [loop]
     for (uint pointIndex = 0; pointIndex < Lighting::pointCount; pointIndex++)
     {
-        const Lighting::PointData light = Lighting::pointList[pointIndex];
-        const Light::Properties lightProperties = Light::Area::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-        surfaceLight += Light::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, alphaG);
+        const Lighting::PointData light = Lighting::pointList.Load(pointIndex);
+        const Lighting::Properties lightProperties = Lighting::Area::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+        surfaceIrradiance += Lighting::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, clampedAlpha);
     }
 
     [loop]
     for (uint spotIndex = 0; spotIndex < Lighting::spotCount; spotIndex++)
     {
-        const Lighting::SpotData light = Lighting::spotList[spotIndex];
-        const Light::Properties lightProperties = Light::Punctual::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
-        surfaceLight += Light::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, alphaG);
+        const Lighting::SpotData light = Lighting::spotList.Load(spotIndex);
+        const Lighting::Properties lightProperties = Lighting::Punctual::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+        surfaceIrradiance += Lighting::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, clampedAlpha);
     }
 
-    return surfaceLight;
+    return surfaceIrradiance;
 }

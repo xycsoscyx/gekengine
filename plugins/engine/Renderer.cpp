@@ -399,7 +399,7 @@ namespace Gek
                     L"}" \
                     L"" \
                     L"Texture2D<float3> screenBuffer : register(t0);" \
-                    L"float4 mainPixelProgram(Pixel inputPixel) : SV_TARGET0" \
+                    L"float4 mainPixelProgram(in Pixel inputPixel) : SV_TARGET0" \
                     L"{" \
                     L"    return float4(screenBuffer[inputPixel.screen.xy], 1.0);" \
                     L"}";
@@ -411,6 +411,18 @@ namespace Gek
 				auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
 				deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"deferredPixelProgram");
+
+                directionalLightList.reserve(10);
+                directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                directionalLightDataBuffer->setName(L"directionalLightDataBuffer");
+
+                pointLightList.reserve(200);
+                pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                pointLightDataBuffer->setName(L"pointLightDataBuffer");
+
+                spotLightList.reserve(200);
+                spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                spotLightDataBuffer->setName(L"spotLightDataBuffer");
             }
 
             ~Renderer(void)
@@ -435,6 +447,9 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
                 resources->clear();
+                directionalLightEntities.clear();
+                pointLightEntities.clear();
+                spotLightEntities.clear();
             }
 
             void onLoadSucceeded(const String &populationName)

@@ -38,29 +38,27 @@ namespace Gek
         {
             GEK_START_EXCEPTIONS();
 
-            struct BaseLightData
+            struct DirectionalLightData
             {
                 Math::Float3 color;
-            };
-
-            struct DirectionalLightData
-                : public BaseLightData
-            {
                 Math::Float3 direction;
                 float buffer[2];
             };
 
             struct PointLightData
-                : public BaseLightData
             {
+                Math::Float3 color;
                 Math::Float3 position;
                 float radius;
                 float range;
             };
 
             struct SpotLightData
-                : public PointLightData
             {
+                Math::Float3 color;
+                Math::Float3 position;
+                float radius;
+                float range;
                 Math::Float3 direction;
                 float innerAngle;
                 float outerAngle;

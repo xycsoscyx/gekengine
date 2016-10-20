@@ -241,7 +241,7 @@ namespace Gek
                     L"    float2 texCoord  : TEXCOORD0;" \
                     L"};" \
                     L"" \
-                    L"PixelOutput main(VertexInput input)" \
+                    L"PixelOutput main(in VertexInput input)" \
                     L"{" \
                     L"    PixelOutput output;" \
                     L"    output.position = mul( ProjectionMatrix, float4(input.position.xy, 0.f, 1.f));" \

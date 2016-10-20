@@ -136,24 +136,13 @@
             </targets>
         </AmbientBlur>
 
-        <AmbientLighting entry="mainPixelProgram">
-            <resources>
-                <albedoBuffer />
-                <ambientBuffer />
-                <depthBuffer />
-            </resources>
-
-            <targets>
-                <screen />
-            </targets>
-        </AmbientLighting>
-
         <AccumulateLighting entry="mainPixelProgram" lighting="true">
             <defines>
                 <useHalfLambert bind="bool">true</useHalfLambert>
             </defines>
 
             <resources>
+                <ambientBuffer />
                 <albedoBuffer />
                 <materialBuffer />
                 <normalBuffer />

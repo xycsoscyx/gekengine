@@ -25,8 +25,8 @@ float4 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
             const int2 sampleCoord = (inputPixel.screen.xy + sampleOffset);
             const float sampleWeight = calculateGaussianWeight(offset);
 
-            const float sampleCircleOfConfusion = Resources::circleOfConfusion[sampleCoord];
-            const float3 sampleColor = Resources::foregroundBuffer[sampleCoord];
+            const float sampleCircleOfConfusion = Resources::circleOfConfusion.Load(sampleCoord);
+            const float3 sampleColor = Resources::foregroundBuffer.Load(sampleCoord);
 
 			finalValue += (float4(sampleColor, saturate(-sampleCircleOfConfusion)) * sampleWeight);
 			totalWeight += sampleWeight;
