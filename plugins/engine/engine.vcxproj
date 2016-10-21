@@ -181,7 +181,6 @@
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Filter.cpp" />
-    <ClCompile Include="LightGrid.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Renderer.cpp" />

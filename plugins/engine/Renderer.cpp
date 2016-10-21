@@ -332,10 +332,13 @@ namespace Gek
             LightEntityMap<Components::SpotLight> spotLightEntities;
 
             concurrency::concurrent_vector<DirectionalLightData> directionalLightList;
-            concurrency::concurrent_vector<PointLightData> pointLightList;
-            concurrency::concurrent_vector<SpotLightData> spotLightList;
 
-            LightGrid<16, 8> lightGrid;
+            concurrency::concurrent_vector<PointLightData> pointLightList;
+            LightGrid<PointLightData> pointLightGrid;
+
+            concurrency::concurrent_vector<SpotLightData> spotLightList;
+            LightGrid<SpotLightData> spotLightGrid;
+
             Video::BufferPtr lightConstantBuffer;
             Video::BufferPtr directionalLightDataBuffer;
             Video::BufferPtr pointLightDataBuffer;
@@ -349,6 +352,8 @@ namespace Gek
                 , videoDevice(videoDevice)
                 , population(population)
                 , resources(resources)
+                , pointLightGrid(pointLightList)
+                , spotLightGrid(spotLightList)
             {
                 population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Renderer, &Renderer::onLoadSucceeded>(this);
@@ -655,9 +660,6 @@ namespace Gek
 
                         if (!pointLightList.empty())
                         {
-                            Math::UInt2 tileSize;
-                            Math::UInt2 resolution;
-                            //lightGrid.build(tileSize, resolution, pointLightList, viewMatrix, projectionMatrix, nearClip);
                             if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
                             {
                                 pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
@@ -701,6 +703,18 @@ namespace Gek
                             std::copy(spotLightList.begin(), spotLightList.end(), spotLightData);
                             videoDevice->unmapBuffer(spotLightDataBuffer.get());
                         }
+
+                        Math::UInt2 resolution;
+                        resolution.x = videoDevice->getBackBuffer()->getWidth();
+                        resolution.y = videoDevice->getBackBuffer()->getHeight();
+
+                        Math::UInt2 tileSize;
+                        tileSize.x = resolution.x / 16;
+                        tileSize.y = resolution.y / 8;
+
+                        std::vector<Math::Float2> gridMinMaxZ;
+                        pointLightGrid.build(tileSize, resolution,  projectionMatrix, nearClip, gridMinMaxZ);
+                        spotLightGrid.build(tileSize, resolution,  projectionMatrix, nearClip, gridMinMaxZ);
 
                         LightConstantData lightConstants;
                         lightConstants.directionalLightCount = directionalLightList.size();

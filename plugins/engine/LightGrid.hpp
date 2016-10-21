@@ -10,53 +10,44 @@
 
 namespace Gek
 {
-    template <uint32_t TILE_X_COUNT, uint32_t TILE_Y_COUNT>
+#define LIGHT_GRID_MAX_DIM_X 16
+#define LIGHT_GRID_MAX_DIM_Y 8
+
+    template <typename LIGHTDATA>
     class LightGrid
     {
     public:
-        struct ScreenRect
+        struct ScreenBox
         {
             Math::UInt2 min;
             Math::UInt2 max;
+            uint32_t lightIndex;
         };
 
-        using ScreenRects = std::vector<ScreenRect>;
-        using Lights = concurrency::concurrent_vector<Shapes::Sphere>;
+        using ScreenBoxList = std::vector<ScreenBox>;
+        using LightList = concurrency::concurrent_vector<LIGHTDATA>;
 
-    protected:
+    private:
         Math::UInt2 m_tileSize;
         Math::UInt2 m_gridDim;
-        int m_gridOffsets[TILE_X_COUNT * TILE_Y_COUNT];
-        int m_gridCounts[TILE_X_COUNT * TILE_Y_COUNT];
+
+        std::vector<Math::Float2> m_gridMinMaxZ;
+        int m_gridOffsets[LIGHT_GRID_MAX_DIM_X * LIGHT_GRID_MAX_DIM_Y];
+        int m_gridCounts[LIGHT_GRID_MAX_DIM_X * LIGHT_GRID_MAX_DIM_Y];
         std::vector<int> m_tileLightIndexLists;
-        uint32_t m_maxTileLightCount;
+        bool m_minMaxGridValid;
 
-        Lights m_viewSpaceLights;
-        ScreenRects m_screenRects;
+        LightList &m_viewSpaceLights;
+        ScreenBoxList m_screenRects;
 
-    protected:
-        void buildRects(const Math::UInt2 resolution, const Lights &lights, const Math::Float4x4 &modelView, const Math::Float4x4 &projection, float near)
-        {
-            m_viewSpaceLights.clear();
-            m_screenRects.clear();
-            for (uint32_t i = 0; i < lights.size(); ++i)
-            {
-                const Shapes::Sphere &l = lights[i];
-                Math::Float3 vp = modelView.transform(l.position);
-                ScreenRect rect = findScreenSpaceBounds(projection, vp, l.radius, resolution.x, resolution.y, near);
-                if (rect.min.x < rect.max.x && rect.min.y < rect.max.y)
-                {
-                    m_screenRects.push_back(rect);
-                    m_viewSpaceLights.push_back(Shapes::Sphere(vp, l.radius));
-                }
-            }
-        }
-
-        // nc: Tangent plane x/y normal coordinate (view space)
-        // lc: Light x/y coordinate (view space)
-        // lz: Light z coordinate (view space)
-        // cameraScale: Project scale for coordinate (_11 or _22 for x/y respectively)
-        void updateClipRegionRoot(float nc, float lc, float lz, float lightRadius, float cameraScale, float &clipMin, float &clipMax)
+    private:
+        void updateClipRegionRoot(float nc,          // Tangent plane x/y normal coordinate (view space)
+            float lc,          // Light x/y coordinate (view space)
+            float lz,          // Light z coordinate (view space)
+            float lightRadius,
+            float cameraScale, // Project scale for coordinate (_11 or _22 for x/y respectively)
+            float &clipMin,
+            float &clipMax)
         {
             float nz = (lightRadius - nc * lc) / lz;
             float pz = (lc * lc + lz * lz - lightRadius * lightRadius) / (lz - (nz / nc) * lc);
@@ -75,10 +66,12 @@ namespace Gek
             }
         }
 
-        // lc: Light x/y coordinate (view space)
-        // lz: Light z coordinate (view space)
-        // cameraScale: Project scale for coordinate (_11 or _22 for x/y respectively)
-        void updateClipRegion(float lc, float lz, float lightRadius, float cameraScale, float &clipMin, float &clipMax)
+        void updateClipRegion(float lc,          // Light x/y coordinate (view space)
+            float lz,          // Light z coordinate (view space)
+            float lightRadius,
+            float cameraScale, // Project scale for coordinate (_11 or _22 for x/y respectively)
+            float &clipMin,
+            float &clipMax)
         {
             float rSq = lightRadius * lightRadius;
             float lcSqPluslzSq = lc * lc + lz * lz;
@@ -96,6 +89,7 @@ namespace Gek
 
         Math::Float4 computeClipRegion(const Math::Float3 &lightPosView, float lightRadius, float cameraNear, const Math::Float4x4 &projection)
         {
+            // Early out with empty rectangle if the lightData is too far behind the view frustum
             Math::Float4 clipRegion(1.0f, 1.0f, -1.0f, -1.0f);
             if (lightPosView.z - lightRadius <= -cameraNear)
             {
@@ -103,52 +97,96 @@ namespace Gek
                 Math::Float2 clipMax(1.0f, 1.0f);
                 updateClipRegion(lightPosView.x, lightPosView.z, lightRadius, projection._11, clipMin.x, clipMax.x);
                 updateClipRegion(lightPosView.y, lightPosView.z, lightRadius, projection._22, clipMin.y, clipMax.y);
-                clipRegion.set(clipMin.x, clipMin.y, clipMax.x, clipMax.y);
+                clipRegion = Math::Float4(clipMin.x, clipMin.y, clipMax.x, clipMax.y);
             }
 
             return clipRegion;
         }
 
-        bool testDepthBounds(const Math::Float2 &zRange, const Shapes::Sphere& light)
+        void buildRects(const Math::UInt2 resolution, const Math::Float4x4 &projection, float nearClip)
         {
-            float lightMin = light.position.z + light.radius;
-            float lightMax = light.position.z - light.radius;
-            return (zRange.y < lightMin && zRange.x > lightMax);
+            m_screenRects.clear();
+            for (uint32_t i = 0; i < m_viewSpaceLights.size(); ++i)
+            {
+                const auto &lightData = m_viewSpaceLights[i];
+                ScreenBox screenBox = findScreenSpaceBounds(projection, lightData.position, lightData.range, resolution.x, resolution.y, nearClip);
+                if (screenBox.min.x < screenBox.max.x && screenBox.min.y < screenBox.max.y)
+                {
+                    screenBox.lightIndex = i;
+                    m_screenRects.push_back(screenBox);
+                }
+            }
         }
 
     public:
-        LightGrid(void)
+        LightGrid(LightList &lights)
+            : m_viewSpaceLights(lights)
         {
         }
 
-        void build(const Math::UInt2 tileSize, const Math::UInt2 resolution, const Lights &lights, const Math::Float4x4 &modelView, const Math::Float4x4 &projection, float near)
+        ScreenBox findScreenSpaceBounds(const Math::Float4x4 &projection, Math::Float3 pt, float rad, int width, int height, float nearClip)
         {
-            m_tileSize = tileSize;
-            m_gridDim = (resolution + tileSize - 1) / tileSize;
-            m_maxTileLightCount = 0;
+            Math::Float4 reg = computeClipRegion(pt, rad, nearClip, projection);
+            reg = -reg;
 
-            buildRects(resolution, lights, modelView, projection, near);
+            std::swap(reg.x, reg.z);
+            std::swap(reg.y, reg.w);
+            reg *= 0.5f;
+            reg += 0.5f;
+
+            static const Math::Float4 zeros = { 0.0f, 0.0f, 0.0f, 0.0f };
+            static const Math::Float4 ones = { 1.0f, 1.0f, 1.0f, 1.0f };
+            reg = Math::clamp(reg, zeros, ones);
+
+            ScreenBox result;
+            result.min.x = int(reg.x * float(width));
+            result.min.y = int(reg.y * float(height));
+            result.max.x = int(reg.z * float(width));
+            result.max.y = int(reg.w * float(height));
+
+            return result;
+        }
+
+        bool testDepthBounds(const Math::Float2 &zRange, const LIGHTDATA& lightData)
+        {
+            float lightMin = lightData.position.z + lightData.range;
+            float lightMax = lightData.position.z - lightData.range;
+            return (zRange.y < lightMin && zRange.x > lightMax);
+        }
+
+        void build(const Math::UInt2 tileSize, const Math::UInt2 resolution, const Math::Float4x4 &projection, float nearClip, const std::vector<Math::Float2> &gridMinMaxZ)
+        {
+            m_gridMinMaxZ = gridMinMaxZ;
+            m_minMaxGridValid = !gridMinMaxZ.empty();
+
+            const Math::Float2 *gridMinMaxZPtr = m_minMaxGridValid ? m_gridMinMaxZ.data() : nullptr;
+
+            m_tileSize = tileSize;
+            m_gridDim = (resolution + tileSize - 1U) / tileSize;
+            buildRects(resolution, projection, nearClip);
 
             memset(m_gridOffsets, 0, sizeof(m_gridOffsets));
             memset(m_gridCounts, 0, sizeof(m_gridCounts));
 
-#define GRID_OFFSETS(_x_,_y_) (m_gridOffsets[_x_ + _y_ * TILE_X_COUNT])
-#define GRID_COUNTS(_x_,_y_) (m_gridCounts[_x_ + _y_ * TILE_X_COUNT])
+#define GRID_OFFSETS(_x_,_y_) (m_gridOffsets[_x_ + _y_ * LIGHT_GRID_MAX_DIM_X])
+#define GRID_COUNTS(_x_,_y_) (m_gridCounts[_x_ + _y_ * LIGHT_GRID_MAX_DIM_X])
+
             int totalus = 0;
             for (size_t i = 0; i < m_screenRects.size(); ++i)
             {
-                ScreenRect r = m_screenRects[i];
-                Shapes::Sphere light = m_viewSpaceLights[i];
-
-                Math::UInt2 l = Math::clamp(r.min / tileSize, Math::UInt2(0, 0), m_gridDim + 1);
-                Math::UInt2 u = Math::clamp((r.max + tileSize - 1) / tileSize, Math::UInt2(0, 0), m_gridDim + 1);
-
+                auto &screenBox = m_screenRects[i];
+                auto &lightData = m_viewSpaceLights[i];
+                Math::UInt2 l = Math::clamp(screenBox.min / tileSize, Math::UInt2(0, 0), m_gridDim + 1U);
+                Math::UInt2 u = Math::clamp((screenBox.max + tileSize - 1U) / tileSize, Math::UInt2(0, 0), m_gridDim + 1U);
                 for (uint32_t y = l.y; y < u.y; ++y)
                 {
                     for (uint32_t x = l.x; x < u.x; ++x)
                     {
-                        GRID_COUNTS(x, y) += 1;
-                        ++totalus;
+                        if (!m_minMaxGridValid || testDepthBounds(gridMinMaxZPtr[y * m_gridDim.x + x], lightData))
+                        {
+                            GRID_COUNTS(x, y) += 1;
+                            ++totalus;
+                        }
                     }
                 }
             }
@@ -161,119 +199,121 @@ namespace Gek
                 for (uint32_t x = 0; x < m_gridDim.x; ++x)
                 {
                     uint32_t count = GRID_COUNTS(x, y);
-                    // set offset to be just past end, then decrement while filling in
                     GRID_OFFSETS(x, y) = offset + count;
                     offset += count;
-
-                    // for debug/profiling etc.
-                    m_maxTileLightCount = std::max(m_maxTileLightCount, count);
                 }
             }
 
             if (m_screenRects.size() && !m_tileLightIndexLists.empty())
             {
-                int *data = m_tileLightIndexLists.data();
+                int *data = &m_tileLightIndexLists[0];
                 for (size_t i = 0; i < m_screenRects.size(); ++i)
                 {
                     uint32_t lightId = uint32_t(i);
-
-                    Shapes::Sphere light = m_viewSpaceLights[i];
-                    ScreenRect r = m_screenRects[i];
-
-                    Math::UInt2 l = Math::clamp(r.min / tileSize, Math::UInt2(0, 0), m_gridDim + 1);
-                    Math::UInt2 u = Math::clamp((r.max + tileSize - 1) / tileSize, Math::UInt2(0, 0), m_gridDim + 1);
-
+                    auto &lightData = m_viewSpaceLights[i];
+                    auto &screenBox = m_screenRects[i];
+                    Math::UInt2 l = Math::clamp(screenBox.min / tileSize, Math::UInt2(0, 0), m_gridDim + 1U);
+                    Math::UInt2 u = Math::clamp((screenBox.max + tileSize - 1U) / tileSize, Math::UInt2(0, 0), m_gridDim + 1U);
                     for (uint32_t y = l.y; y < u.y; ++y)
                     {
                         for (uint32_t x = l.x; x < u.x; ++x)
                         {
-                            // store reversely into next free slot
-                            uint32_t offset = GRID_OFFSETS(x, y) - 1;
-                            data[offset] = lightId;
-                            GRID_OFFSETS(x, y) = offset;
+                            if (!m_minMaxGridValid || testDepthBounds(gridMinMaxZPtr[y * m_gridDim.x + x], lightData))
+                            {
+                                uint32_t offset = GRID_OFFSETS(x, y) - 1;
+                                data[offset] = lightId;
+                                GRID_OFFSETS(x, y) = offset;
+                            }
                         }
                     }
+                }
+            }
+        }
+
+        void prune(const std::vector<Math::Float2> &gridMinMaxZ)
+        {
+            m_gridMinMaxZ = gridMinMaxZ;
+            m_minMaxGridValid = !gridMinMaxZ.empty();
+            if (!m_minMaxGridValid || m_tileLightIndexLists.empty())
+            {
+                return;
+            }
+
+            const Math::Float2 *gridMinMaxZPtr = m_minMaxGridValid ? m_gridMinMaxZ.data() : nullptr;
+            int *lightInds = &m_tileLightIndexLists[0];
+#define GRID_OFFSETS(_x_,_y_) (m_gridOffsets[_x_ + _y_ * LIGHT_GRID_MAX_DIM_X])
+#define GRID_COUNTS(_x_,_y_) (m_gridCounts[_x_ + _y_ * LIGHT_GRID_MAX_DIM_X])
+
+            int totalus = 0;
+            for (uint32_t y = 0; y < m_gridDim.y; ++y)
+            {
+                for (uint32_t x = 0; x < m_gridDim.x; ++x)
+                {
+                    uint32_t count = GRID_COUNTS(x, y);
+                    uint32_t offset = GRID_OFFSETS(x, y);
+
+                    for (uint32_t i = 0; i < count; ++i)
+                    {
+                        const auto &l = m_viewSpaceLights[lightInds[offset + i]];
+                        if (!testDepthBounds(gridMinMaxZPtr[y * m_gridDim.x + x], l))
+                        {
+                            std::swap(lightInds[offset + i], lightInds[offset + count - 1]);
+                            --count;
+                        }
+                    }
+
+                    totalus += count;
+                    GRID_COUNTS(x, y) = count;
                 }
             }
 #undef GRID_COUNTS
 #undef GRID_OFFSETS
         }
 
-        const Math::UInt2 &getTileSize(void) const
+        void pruneFarOnly(float aNear, const std::vector<Math::Float2> &gridMinMaxZ)
         {
-            return m_tileSize;
+            m_gridMinMaxZ = gridMinMaxZ;
+            m_minMaxGridValid = !gridMinMaxZ.empty();
+            if (!m_minMaxGridValid || m_tileLightIndexLists.empty())
+            {
+                return;
+            }
+
+            for (std::vector<Math::Float2>::iterator it = m_gridMinMaxZ.begin(); it != m_gridMinMaxZ.end(); ++it)
+            {
+                it->x = -aNear;
+            }
+
+            const Math::Float2 *gridMinMaxZPtr = m_minMaxGridValid ? m_gridMinMaxZ.data() : nullptr;
+            int *lightInds = &m_tileLightIndexLists[0];
+
+#	define GRID_OFFSETS(_x_,_y_) (m_gridOffsets[_x_ + _y_ * LIGHT_GRID_MAX_DIM_X])
+#	define GRID_COUNTS(_x_,_y_) (m_gridCounts[_x_ + _y_ * LIGHT_GRID_MAX_DIM_X])
+
+            int totalus = 0;
+            for (uint32_t y = 0; y < m_gridDim.y; ++y)
+            {
+                for (uint32_t x = 0; x < m_gridDim.x; ++x)
+                {
+                    uint32_t count = GRID_COUNTS(x, y);
+                    uint32_t offset = GRID_OFFSETS(x, y);
+
+                    for (uint32_t i = 0; i < count; ++i)
+                    {
+                        const auto &l = m_viewSpaceLights[lightInds[offset + i]];
+                        if (!testDepthBounds(gridMinMaxZPtr[y * m_gridDim.x + x], l))
+                        {
+                            std::swap(lightInds[offset + i], lightInds[offset + count - 1]);
+                            --count;
+                        }
+                    }
+
+                    totalus += count;
+                    GRID_COUNTS(x, y) = count;
+                }
+            }
+#	undef GRID_COUNTS
+#	undef GRID_OFFSETS
         }
-
-        const Math::UInt2 &getGridDim(void) const
-        {
-            return m_gridDim;
-        }
-
-        uint32_t getMaxTileLightCount(void) const
-        {
-            return m_maxTileLightCount;
-        }
-
-        uint32_t getTotalTileLightIndexListLength(void) const
-        {
-            return uint32_t(m_tileLightIndexLists.size());
-        }
-
-        int tileLightCount(uint32_t x, uint32_t y) const
-        {
-            return m_gridCounts[x + y * TILE_X_COUNT];
-        }
-
-        const int *tileLightIndexList(uint32_t x, uint32_t y) const
-        {
-            return &m_tileLightIndexLists[m_gridOffsets[x + y * TILE_X_COUNT]];
-        }
-
-        const int *tileDataPtr(void) const
-        {
-            return m_gridOffsets;
-        }
-
-        const int *tileCountsDataPtr(void) const
-        {
-            return m_gridCounts;
-        }
-
-        const int *tileLightIndexListsPtr(void) const
-        {
-            return m_tileLightIndexLists.data();
-        }
-
-        const Lights &getViewSpaceLights(void) const
-        {
-            return m_viewSpaceLights;
-        }
-
-        bool empty(void) const
-        {
-            return m_screenRects.empty();
-        }
-
-        ScreenRect findScreenSpaceBounds(const Math::Float4x4 &projection, Math::Float3 pt, float rad, int width, int height, float near)
-        {
-            Math::Float4 reg = computeClipRegion(pt, rad, near, projection);
-            reg = -reg;
-
-            std::swap(reg.x, reg.z);
-            std::swap(reg.y, reg.w);
-            reg *= 0.5f;
-            reg += 0.5f;
-
-            reg = Math::saturate(reg);
-
-            LightGrid::ScreenRect result;
-            result.min.x = int(reg.x * float(width));
-            result.min.y = int(reg.y * float(height));
-            result.max.x = int(reg.z * float(width));
-            result.max.y = int(reg.w * float(height));
-
-            return result;
-        }
-
     };
 }; // namespace Gek
