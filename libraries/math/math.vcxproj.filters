@@ -12,48 +12,54 @@
     <ClInclude Include="GEK\Math\Quaternion.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="GEK\Math\Vector2.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Math\Vector3.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="GEK\Math\Vector4.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="GEK\Math\Common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Color.hpp">
+    <ClInclude Include="GEK\Math\Matrix3x2.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float4x4.hpp">
+    <ClInclude Include="GEK\Math\Matrix4x4.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float2.hpp">
+    <ClInclude Include="GEK\Math\RGBA.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Math\Float3.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Math\Float3x2.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="GEK\Math\Float4.hpp">
+    <ClInclude Include="GEK\Math\Convert.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Quaternion.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Color.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Float2.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Float3.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Float3x2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Float4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Float4x4.cpp">
+    <ClCompile Include="Quaternion.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Float2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RGBA.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Convert.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix3x2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Matrix4x4.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

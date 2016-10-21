@@ -174,7 +174,8 @@ namespace Gek
                         auto &transformComponent = camera->getComponent<Components::Transform>();
 
                         static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                        auto cameraMatrix((transformComponent.rotation = Math::Quaternion::createAngularRotation(upAxis, editorCamera.headingAngle)).getMatrix());
+                        transformComponent.rotation = Math::Quaternion::createAngularRotation(upAxis, editorCamera.headingAngle);
+                        auto cameraMatrix(Math::convert(transformComponent.rotation));
                         transformComponent.position += (cameraMatrix.nz * forwardSpeed * frameTime);
                         transformComponent.position += (cameraMatrix.nx * lateralSpeed * frameTime);
                     }

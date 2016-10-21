@@ -1,6 +1,6 @@
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\Float3.hpp"
-#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Shapes\AlignedBox.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
@@ -172,7 +172,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                         mesh->mVertices[vertexIndex].x,
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
-                    vertex.position = (nodeTransform * vertex.position.w(1.0)).xyz * parameters.feetPerUnit;
+                    vertex.position = (nodeTransform.rotate(vertex.position) * parameters.feetPerUnit);
                     boundingBox.extend(vertex.position);
 
 					if (parameters.fullModel)

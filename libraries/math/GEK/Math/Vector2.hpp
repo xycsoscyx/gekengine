@@ -7,6 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include <cmath>
+
 namespace Gek
 {
     namespace Math
@@ -27,42 +29,42 @@ namespace Gek
             };
 
         public:
-            inline Vector2(void)
+            Vector2(void)
             {
             }
 
-            inline Vector2(const TYPE(&data)[2])
+            Vector2(const TYPE(&data)[2])
                 : data{ data[0], data[1] }
             {
             }
 
-            inline Vector2(const TYPE *data)
+            Vector2(const TYPE *data)
                 : data{ data[0], data[1] }
             {
             }
 
-            inline Vector2(TYPE scalar)
+            Vector2(TYPE scalar)
                 : data{ scalar, scalar }
             {
             }
 
-            inline Vector2(const Vector2 &vector)
+            Vector2(const Vector2 &vector)
                 : data{ vector.data[0], vector.data[1] }
             {
             }
 
-            inline Vector2(TYPE x, TYPE y)
+            Vector2(TYPE x, TYPE y)
                 : data{ x, y }
             {
             }
 
-            inline void set(TYPE x, TYPE y)
+            void set(TYPE x, TYPE y)
             {
                 this->x = x;
                 this->y = y;
             }
 
-            inline void set(TYPE value)
+            void set(TYPE value)
             {
                 this->x = value;
                 this->y = value;
@@ -145,163 +147,162 @@ namespace Gek
                 return false;
             }
 
-            inline TYPE operator [] (int axis) const
+            TYPE operator [] (int axis) const
             {
                 return data[axis];
             }
 
-            inline TYPE &operator [] (int axis)
+            TYPE &operator [] (int axis)
             {
                 return data[axis];
             }
 
-            inline operator const TYPE *() const
+            operator const TYPE *() const
             {
                 return data;
             }
 
-            inline operator TYPE *()
+            operator TYPE *()
             {
                 return data;
             }
 
             // vector operations
-            inline Vector2 &operator = (const Vector2 &vector)
+            Vector2 &operator = (const Vector2 &vector)
             {
                 x = vector.x;
                 y = vector.y;
                 return (*this);
             }
 
-            inline void operator -= (const Vector2 &vector)
+            void operator -= (const Vector2 &vector)
             {
                 x -= vector.x;
                 y -= vector.y;
             }
 
-            inline void operator += (const Vector2 &vector)
+            void operator += (const Vector2 &vector)
             {
                 x += vector.x;
                 y += vector.y;
             }
 
-            inline void operator /= (const Vector2 &vector)
+            void operator /= (const Vector2 &vector)
             {
                 x /= vector.x;
                 y /= vector.y;
             }
 
-            inline void operator *= (const Vector2 &vector)
+            void operator *= (const Vector2 &vector)
             {
                 x *= vector.x;
                 y *= vector.y;
             }
 
-            inline Vector2 operator - (const Vector2 &vector) const
+            Vector2 operator - (const Vector2 &vector) const
             {
                 return Vector2((x - vector.x), (y - vector.y));
             }
 
-            inline Vector2 operator + (const Vector2 &vector) const
+            Vector2 operator + (const Vector2 &vector) const
             {
                 return Vector2((x + vector.x), (y + vector.y));
             }
 
-            inline Vector2 operator / (const Vector2 &vector) const
+            Vector2 operator / (const Vector2 &vector) const
             {
                 return Vector2((x / vector.x), (y / vector.y));
             }
 
-            inline Vector2 operator * (const Vector2 &vector) const
+            Vector2 operator * (const Vector2 &vector) const
             {
                 return Vector2((x * vector.x), (y * vector.y));
             }
 
             // scalar operations
-            inline Vector2 &operator = (TYPE scalar)
+            Vector2 &operator = (TYPE scalar)
             {
                 x = scalar;
                 y = scalar;
                 return (*this);
             }
 
-            inline void operator -= (TYPE scalar)
+            void operator -= (TYPE scalar)
             {
                 x -= scalar;
                 y -= scalar;
             }
 
-            inline void operator += (TYPE scalar)
+            void operator += (TYPE scalar)
             {
                 x += scalar;
                 y += scalar;
             }
 
-            inline void operator /= (TYPE scalar)
+            void operator /= (TYPE scalar)
             {
                 x /= scalar;
                 y /= scalar;
             }
 
-            inline void operator *= (TYPE scalar)
+            void operator *= (TYPE scalar)
             {
                 x *= scalar;
                 y *= scalar;
             }
 
-            inline Vector2 operator - (TYPE scalar) const
+            Vector2 operator - (TYPE scalar) const
             {
                 return Vector2((x - scalar), (y - scalar));
             }
 
-            inline Vector2 operator + (TYPE scalar) const
+            Vector2 operator + (TYPE scalar) const
             {
                 return Vector2((x + scalar), (y + scalar));
             }
 
-            inline Vector2 operator / (TYPE scalar) const
+            Vector2 operator / (TYPE scalar) const
             {
                 return Vector2((x / scalar), (y / scalar));
             }
 
-            inline Vector2 operator * (TYPE scalar) const
+            Vector2 operator * (TYPE scalar) const
             {
                 return Vector2((x * scalar), (y * scalar));
             }
         };
 
         template <typename TYPE>
-        inline Vector2<TYPE> operator - (const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator - (const Vector2<TYPE> &vector)
         {
             return Vector2(-vector.x, -vector.y);
         }
 
         template <typename TYPE>
-        inline Vector2<TYPE> operator + (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator + (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar + vector.x, scalar + vector.y);
         }
 
         template <typename TYPE>
-        inline Vector2<TYPE> operator - (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator - (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar - vector.x, scalar - vector.y);
         }
 
         template <typename TYPE>
-        inline Vector2<TYPE> operator * (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator * (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar * vector.x, scalar * vector.y);
         }
 
         template <typename TYPE>
-        inline Vector2<TYPE> operator / (TYPE scalar, const Vector2<TYPE> &vector)
+        Vector2<TYPE> operator / (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar / vector.x, scalar / vector.y);
         }
 
         using Float2 = Vector2<float>;
-        using Int2 = Vector2<int>;
-        using UInt2 = Vector2<unsigned int>;
+        using Point = Vector2<int>;
     }; // namespace Math
 }; // namespace Gek

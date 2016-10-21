@@ -1,3 +1,4 @@
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Shapes\OrientedBox.hpp"
 #include "GEK\Shapes\Plane.hpp"
 #include <algorithm>
@@ -17,7 +18,7 @@ namespace Gek
         }
 
         OrientedBox::OrientedBox(const AlignedBox &box, const Math::Quaternion &rotation, const Math::Float3 &translation)
-            : matrix(rotation.getMatrix())
+            : matrix(Math::convert(rotation))
             , halfsize(box.getSize() * 0.5f)
         {
             matrix.translation = (translation + box.getCenter());

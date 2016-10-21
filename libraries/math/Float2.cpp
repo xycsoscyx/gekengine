@@ -1,6 +1,4 @@
-#include "GEK\Math\Float2.hpp"
-#include "GEK\Math\Common.hpp"
-#include <algorithm>
+#include "GEK\Math\Vector2.hpp"
 
 namespace Gek
 {

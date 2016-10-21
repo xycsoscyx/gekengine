@@ -1,5 +1,5 @@
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
@@ -195,8 +195,8 @@ namespace Gek
 				for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
 				{
 					Math::Float4x4 rotation(Math::Float4x4::createPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps));
-					convexPoints[0][currentPoint] = (rotation * point0);
-					convexPoints[1][currentPoint] = (rotation * point1);
+					convexPoints[0][currentPoint] = rotation.rotate(point0);
+					convexPoints[1][currentPoint] = rotation.rotate(point1);
 				}
 
 				NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
@@ -237,8 +237,8 @@ namespace Gek
 				for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
 				{
 					Math::Float4x4 rotation(Math::Float4x4::createPitchRotation(currentPoint * 2.0f * Math::Pi / numberOfSteps));
-					convexPoints[0][currentPoint] = (rotation * point0);
-					convexPoints[1][currentPoint] = (rotation * point1);
+					convexPoints[0][currentPoint] = rotation.rotate(point0);
+					convexPoints[1][currentPoint] = rotation.rotate(point1);
 				}
 
 				newtonCastingShape = NewtonCreateConvexHull(newtonWorld, (numberOfSteps * 2), convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
@@ -344,8 +344,8 @@ namespace Gek
 				NewtonBodyGetOmega(newtonBody, omega.data);
 
 				// integrate body angular velocity
-				Math::Quaternion bodyRotation(integrateOmega(initialMatrix.getQuaternion(), omega, frameTime));
-				auto matrix(bodyRotation.getMatrix());
+				Math::Quaternion bodyRotation(integrateOmega(Math::convert(initialMatrix), omega, frameTime));
+				auto matrix(Math::convert(bodyRotation));
 				matrix.translation = initialMatrix.translation;
 
 				// integrate linear velocity
@@ -510,7 +510,7 @@ namespace Gek
 
 				auto &transform = entity->getComponent<Components::Transform>();
 				transform.position = (matrix.translation + (matrix.ny * player.height));
-				transform.rotation = matrix.getQuaternion();
+				transform.rotation = Math::convert(matrix);
 			}
 
 		private:

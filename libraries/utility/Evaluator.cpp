@@ -104,9 +104,9 @@ namespace Gek
                 case 3:
                     if (true)
                     {
-                        Math::Float3 rgbValue;
-                        shuntingYard.evaluate(expression, rgbValue);
-                        result.set(rgbValue);
+                        Math::Float3 rgb;
+                        shuntingYard.evaluate(expression, rgb);
+                        result.set(rgb.x, rgb.y, rgb.z, 1.0f);
                     }
 
                     break;

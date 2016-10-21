@@ -7,9 +7,10 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Float3.hpp"
+#include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Math\Quaternion.hpp"
-#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Engine\Component.hpp"
 
 namespace Gek
@@ -37,7 +38,7 @@ namespace Gek
 
             inline Math::Float4x4 getMatrix(void) const
             {
-                auto matrix(rotation.getMatrix());
+                auto matrix(Math::convert(rotation));
                 matrix.translation = position;
                 return matrix;
             }

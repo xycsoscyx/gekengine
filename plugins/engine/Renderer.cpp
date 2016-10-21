@@ -587,14 +587,38 @@ namespace Gek
                         }
                     }
 
+                    auto getDirection = [](const Math::Quaternion &quaternion) -> Math::Float3
+                    {
+                        float xx(quaternion.x * quaternion.x);
+                        float yy(quaternion.y * quaternion.y);
+                        float zz(quaternion.z * quaternion.z);
+                        float ww(quaternion.w * quaternion.w);
+                        float length(xx + yy + zz + ww);
+                        if (length == 0.0f)
+                        {
+                            return Math::Float3(0.0f, 1.0f, 0.0f);
+                        }
+                        else
+                        {
+                            float determinant(1.0f / length);
+                            float xy(quaternion.x * quaternion.y);
+                            float xw(quaternion.x * quaternion.w);
+                            float yz(quaternion.y * quaternion.z);
+                            float zw(quaternion.z * quaternion.w);
+                            return -Math::Float3((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant));
+                        }
+                    };
+
                     if (isLightingRequired)
                     {
                         directionalLightList.clear();
                         directionalLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
                         {
                             auto &lightData = *directionalLightList.grow_by(1);
-                            lightData.color = (colorComponent.value * lightComponent.intensity).xyz;
-                            lightData.direction = (viewMatrix * -transformComponent.rotation.getMatrix().ny);
+                            lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
+                            lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
+                            lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+                            lightData.direction = viewMatrix.rotate(getDirection(transformComponent.rotation));
                         });
 
                         if (!directionalLightList.empty())
@@ -616,10 +640,11 @@ namespace Gek
                         {
                             if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                             {
-                                auto lightIterator = pointLightList.grow_by(1); 
-                                auto &lightData = *lightIterator;
-                                lightData.color = (colorComponent.value * lightComponent.intensity).xyz;
-                                lightData.position = (viewMatrix * transformComponent.position.w(1.0f)).xyz;
+                                auto &lightData = *pointLightList.grow_by(1);
+                                lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
+                                lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
+                                lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+                                lightData.position = viewMatrix.transform(transformComponent.position);
                                 lightData.radius = lightComponent.radius;
                                 lightData.range = lightComponent.range;
                             }
@@ -645,11 +670,13 @@ namespace Gek
                             if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
                             {
                                 auto &lightData = *spotLightList.grow_by(1);
-                                lightData.color = (colorComponent.value * lightComponent.intensity).xyz;
-                                lightData.position = (viewMatrix * transformComponent.position.w(1.0f)).xyz;
+                                lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
+                                lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
+                                lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+                                lightData.position = viewMatrix.transform(transformComponent.position);
                                 lightData.radius = lightComponent.radius;
                                 lightData.range = lightComponent.range;
-                                lightData.direction = (viewMatrix * -transformComponent.rotation.getMatrix().ny);
+                                lightData.direction = viewMatrix.rotate(getDirection(transformComponent.rotation));
                                 lightData.innerAngle = lightComponent.innerAngle;
                                 lightData.outerAngle = lightComponent.outerAngle;
                             }

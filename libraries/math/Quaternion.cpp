@@ -1,6 +1,5 @@
 #include "GEK\Math\Quaternion.hpp"
-#include "GEK\Math\Float4x4.hpp"
-#include "GEK\Math\Float3.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Math\Common.hpp"
 #include <algorithm>
 
@@ -39,33 +38,6 @@ namespace Gek
                 (normal.z * sinAngle),
                 std::cos(halfRadians),
             });
-        }
-
-        Float4x4 Quaternion::getMatrix(void) const
-        {
-            float xx(x * x);
-            float yy(y * y);
-            float zz(z * z);
-            float ww(w * w);
-            float length(xx + yy + zz + ww);
-            if (length == 0.0f)
-            {
-                return Float4x4::Identity;
-            }
-            else
-            {
-                float determinant(1.0f / length);
-                float xy(x * y);
-                float xz(x * z);
-                float xw(x * w);
-                float yz(y * z);
-                float yw(y * w);
-                float zw(z * w);
-                return Float4x4({ ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
-                                   (2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
-                                   (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f,
-                                    0.0f, 0.0f, 0.0f, 1.0f });
-            }
         }
 
         float Quaternion::getLengthSquared(void) const

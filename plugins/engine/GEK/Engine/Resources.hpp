@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Color.hpp"
+#include "GEK\Math\RGBA.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Context.hpp"
 #include "GEK\System\VideoDevice.hpp"

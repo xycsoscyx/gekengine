@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Shapes\Plane.hpp"
 
 namespace Gek
