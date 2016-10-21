@@ -8,9 +8,9 @@
 #pragma once
 
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\Color.hpp"
-#include "GEK\Math\Float2.hpp"
-#include "GEK\Math\Float4.hpp"
+#include "GEK\Math\RGBA.hpp"
+#include "GEK\Math\Vector2.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Shapes\Rectangle.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"

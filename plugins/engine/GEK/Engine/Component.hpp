@@ -7,6 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Context.hpp"
 #include <typeindex>

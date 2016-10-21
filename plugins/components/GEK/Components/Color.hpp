@@ -7,7 +7,7 @@
 /// Last Changed: $Date: 2016-10-13 13:29:45 -0700 (Thu, 13 Oct 2016) $
 #pragma once
 
-#include "GEK\Math\Color.hpp"
+#include "GEK\Math\RGBA.hpp"
 #include "GEK\Engine\Component.hpp"
 
 namespace Gek

@@ -103,7 +103,7 @@ namespace Gek
 
             ImGuizmo::BeginFrame();
             ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
-            transformComponent.rotation = matrix.getQuaternion();
+            transformComponent.rotation = Math::convert(matrix);
             transformComponent.position = matrix.translation;
             transformComponent.scale = matrix.getScaling();
 

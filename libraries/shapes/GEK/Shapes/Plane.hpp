@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Float3.hpp"
-#include "GEK\Math\Float4.hpp"
+#include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Vector4.hpp"
 
 namespace Gek
 {

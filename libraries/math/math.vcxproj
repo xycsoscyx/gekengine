@@ -15,23 +15,25 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="GEK\Math\Color.hpp" />
     <ClInclude Include="GEK\Math\Common.hpp" />
-    <ClInclude Include="GEK\Math\Float2.hpp" />
-    <ClInclude Include="GEK\Math\Float3.hpp" />
-    <ClInclude Include="GEK\Math\Float3x2.hpp" />
-    <ClInclude Include="GEK\Math\Float4.hpp" />
-    <ClInclude Include="GEK\Math\Float4x4.hpp" />
+    <ClInclude Include="GEK\Math\Convert.hpp" />
+    <ClInclude Include="GEK\Math\Matrix3x2.hpp" />
+    <ClInclude Include="GEK\Math\Matrix4x4.hpp" />
     <ClInclude Include="GEK\Math\Quaternion.hpp" />
+    <ClInclude Include="GEK\Math\RGBA.hpp" />
+    <ClInclude Include="GEK\Math\Vector2.hpp" />
+    <ClInclude Include="GEK\Math\Vector3.hpp" />
+    <ClInclude Include="GEK\Math\Vector4.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Color.cpp" />
+    <ClCompile Include="Convert.cpp" />
     <ClCompile Include="Float2.cpp" />
     <ClCompile Include="Float3.cpp" />
-    <ClCompile Include="Float3x2.cpp" />
     <ClCompile Include="Float4.cpp" />
-    <ClCompile Include="Float4x4.cpp" />
+    <ClCompile Include="Matrix3x2.cpp" />
+    <ClCompile Include="Matrix4x4.cpp" />
     <ClCompile Include="Quaternion.cpp" />
+    <ClCompile Include="RGBA.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{80C85026-E106-47BF-91FA-43220B44141B}</ProjectGuid>

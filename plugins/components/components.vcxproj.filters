@@ -39,10 +39,10 @@
     <ClInclude Include="GEK\Components\Transform.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Components\Color.hpp">
+    <ClInclude Include="GEK\Components\Filter.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Components\Filter.hpp">
+    <ClInclude Include="GEK\Components\Color.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

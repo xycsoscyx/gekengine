@@ -7,48 +7,47 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Float3.hpp"
-#include "GEK\Math\Float4.hpp"
 #include <xmmintrin.h>
 
 namespace Gek
 {
     namespace Math
     {
-        struct Color
+        template <typename TYPE>
+        struct RGBA
         {
         public:
-            static const Color Black;
-            static const Color White;
+            static const RGBA Black;
+            static const RGBA White;
 
         public:
             union
             {
-                struct { float r, g, b, a; };
-                struct { float data[4]; };
+                struct { TYPE r, g, b, a; };
+                struct { TYPE data[4]; };
             };
 
         public:
-            inline Color(void)
+            RGBA(void)
             {
             }
 
-            inline Color(float value)
+            RGBA(TYPE value)
                 : data{ value, value, value, value }
             {
             }
 
-            inline Color(const float(&data)[4])
+            RGBA(const TYPE(&data)[4])
                 : data{ data[0], data[1], data[2], data[3] }
             {
             }
 
-            inline Color(const float *data)
+            RGBA(const TYPE *data)
                 : data{ data[0], data[1], data[2], data[3] }
             {
             }
 
-            inline Color(const Color &color)
+            RGBA(const RGBA &color)
                 : r(color.r)
                 , g(color.g)
                 , b(color.b)
@@ -56,7 +55,7 @@ namespace Gek
             {
             }
 
-            inline Color(float r, float g, float b, float a)
+            RGBA(TYPE r, TYPE g, TYPE b, TYPE a)
                 : r(r)
                 , g(g)
                 , b(b)
@@ -64,20 +63,12 @@ namespace Gek
             {
             }
 
-            Color(const Float3 &rgb);
-            Color(const Float4 &rgba);
-
-            Float3 getXYZ(void) const;
-            Float4 getXYZW(void) const;
-            __declspec(property(get = getXYZ)) Float3 xyz;
-            __declspec(property(get = getXYZW)) Float4 xyzw;
-
-            inline void set(float value)
+            void set(TYPE value)
             {
                 r = g = b = a = value;
             }
 
-            inline void set(float r, float g, float b, float a)
+            void set(TYPE r, TYPE g, TYPE b, TYPE a)
             {
                 this->r = r;
                 this->g = g;
@@ -85,7 +76,7 @@ namespace Gek
                 this->a = a;
             }
 
-            inline void set(const Color &color)
+            void set(const RGBA &color)
             {
                 this->r = color.r;
                 this->g = color.g;
@@ -93,34 +84,38 @@ namespace Gek
                 this->a = color.a;
             }
 
-            void set(const Float3 &vector);
-            void set(const Float4 &vector);
+            float dot(const RGBA &color) const
+            {
+                return ((r * color.r) + (g * color.g) + (b * color.b) + (a * color.a));
+            }
 
-            float dot(const Color &color) const;
-            Color lerp(const Color &color, float factor) const;
+            RGBA lerp(const RGBA &color, float factor) const
+            {
+                return Math::lerp((*this), color, factor);
+            }
 
-            inline float operator [] (int channel) const
+            TYPE operator [] (int channel) const
             {
                 return data[channel];
             }
 
-            inline float &operator [] (int channel)
+            TYPE &operator [] (int channel)
             {
                 return data[channel];
             }
 
-            inline operator const float *() const
+            operator const TYPE *() const
             {
                 return data;
             }
 
-            inline operator float *()
+            operator TYPE *()
             {
                 return data;
             }
 
             // color operations
-            inline Color &operator = (const Color &color)
+            RGBA &operator = (const RGBA &color)
             {
                 this->r = color.r;
                 this->g = color.g;
@@ -129,7 +124,7 @@ namespace Gek
                 return (*this);
             }
 
-            inline void operator -= (const Color &color)
+            void operator -= (const RGBA &color)
             {
                 this->r -= color.r;
                 this->b -= color.g;
@@ -137,7 +132,7 @@ namespace Gek
                 this->a -= color.a;
             }
 
-            inline void operator += (const Color &color)
+            void operator += (const RGBA &color)
             {
                 this->r += color.r;
                 this->b += color.g;
@@ -145,7 +140,7 @@ namespace Gek
                 this->a += color.a;
             }
 
-            inline void operator /= (const Color &color)
+            void operator /= (const RGBA &color)
             {
                 this->r /= color.r;
                 this->b /= color.g;
@@ -153,7 +148,7 @@ namespace Gek
                 this->a /= color.a;
             }
 
-            inline void operator *= (const Color &color)
+            void operator *= (const RGBA &color)
             {
                 this->r *= color.r;
                 this->b *= color.g;
@@ -161,46 +156,46 @@ namespace Gek
                 this->a *= color.a;
             }
 
-            inline Color operator - (const Color &color) const
+            RGBA operator - (const RGBA &color) const
             {
-                return Color((this->r - color.r),
+                return RGBA((this->r - color.r),
                              (this->g - color.g),
                              (this->b - color.b),
                              (this->a - color.a));
             }
 
-            inline Color operator + (const Color &color) const
+            RGBA operator + (const RGBA &color) const
             {
-                return Color((this->r + color.r),
+                return RGBA((this->r + color.r),
                              (this->g + color.g),
                              (this->b + color.b),
                              (this->a + color.a));
             }
 
-            inline Color operator / (const Color &color) const
+            RGBA operator / (const RGBA &color) const
             {
-                return Color((this->r / color.r),
+                return RGBA((this->r / color.r),
                              (this->g / color.g),
                              (this->b / color.b),
                              (this->a / color.a));
             }
 
-            inline Color operator * (const Color &color) const
+            RGBA operator * (const RGBA &color) const
             {
-                return Color((this->r * color.r),
+                return RGBA((this->r * color.r),
                              (this->g * color.g),
                              (this->b * color.b),
                              (this->a * color.a));
             }
 
             // scalar operations
-            inline Color &operator = (float scalar)
+            RGBA &operator = (TYPE scalar)
             {
                 this->r = this->g = this->b = this->a = scalar;
                 return (*this);
             }
 
-            inline void operator -= (float scalar)
+            void operator -= (TYPE scalar)
             {
                 this->r -= scalar;
                 this->g -= scalar;
@@ -208,7 +203,7 @@ namespace Gek
                 this->a -= scalar;
             }
 
-            inline void operator += (float scalar)
+            void operator += (TYPE scalar)
             {
                 this->r += scalar;
                 this->g += scalar;
@@ -216,7 +211,7 @@ namespace Gek
                 this->a += scalar;
             }
 
-            inline void operator /= (float scalar)
+            void operator /= (TYPE scalar)
             {
                 this->r /= scalar;
                 this->g /= scalar;
@@ -224,7 +219,7 @@ namespace Gek
                 this->a /= scalar;
             }
 
-            inline void operator *= (float scalar)
+            void operator *= (TYPE scalar)
             {
                 this->r *= scalar;
                 this->g *= scalar;
@@ -232,74 +227,82 @@ namespace Gek
                 this->a *= scalar;
             }
 
-            inline Color operator - (float scalar) const
+            RGBA operator - (TYPE scalar) const
             {
-                return Color((this->r - scalar),
+                return RGBA((this->r - scalar),
                              (this->g - scalar),
                              (this->b - scalar),
                              (this->a - scalar));
             }
 
-            inline Color operator + (float scalar) const
+            RGBA operator + (TYPE scalar) const
             {
-                return Color((this->r + scalar),
+                return RGBA((this->r + scalar),
                              (this->g + scalar),
                              (this->b + scalar),
                              (this->a + scalar));
             }
 
-            inline Color operator / (float scalar) const
+            RGBA operator / (TYPE scalar) const
             {
-                return Color((this->r / scalar),
+                return RGBA((this->r / scalar),
                              (this->g / scalar),
                              (this->b / scalar),
                              (this->a / scalar));
             }
 
-            inline Color operator * (float scalar) const
+            RGBA operator * (TYPE scalar) const
             {
-                return Color((this->r * scalar),
+                return RGBA((this->r * scalar),
                              (this->g * scalar),
                              (this->b * scalar),
                              (this->a * scalar));
             }
         };
 
-        inline Color operator - (const Color &color)
+        template <typename TYPE>
+        RGBA<TYPE> operator - (const RGBA<TYPE> &color)
         {
-            return Color(-color.r, -color.g, -color.b, -color.a);
+            return RGBA<TYPE>(-color.r, -color.g, -color.b, -color.a);
         }
 
-        inline Color operator + (float scalar, const Color &color)
+        template <typename TYPE>
+        RGBA<TYPE> operator + (TYPE scalar, const RGBA<TYPE> &color)
         {
-            return Color((scalar + color.r),
+            return RGBA<TYPE>((scalar + color.r),
                          (scalar + color.g),
                          (scalar + color.b),
                          (scalar + color.a));
         }
 
-        inline Color operator - (float scalar, const Color &color)
+        template <typename TYPE>
+        RGBA<TYPE> operator - (TYPE scalar, const RGBA<TYPE> &color)
         {
-            return Color((scalar - color.r),
+            return RGBA<TYPE>((scalar - color.r),
                          (scalar - color.g),
                          (scalar - color.b),
                          (scalar - color.a));
         }
 
-        inline Color operator * (float scalar, const Color &color)
+        template <typename TYPE>
+        RGBA<TYPE> operator * (TYPE scalar, const RGBA<TYPE> &color)
         {
-            return Color((scalar * color.r),
+            return RGBA<TYPE>((scalar * color.r),
                          (scalar * color.g),
                          (scalar * color.b),
                          (scalar * color.a));
         }
 
-        inline Color operator / (float scalar, const Color &color)
+        template <typename TYPE>
+        RGBA<TYPE> operator / (TYPE scalar, const RGBA<TYPE> &color)
         {
-            return Color((scalar / color.r),
+            return RGBA<TYPE>((scalar / color.r),
                          (scalar / color.g),
                          (scalar / color.b),
                          (scalar / color.a));
         }
+
+        using Color = RGBA<float>;
+        using Pixel = RGBA<unsigned char>;
     }; // namespace Math
 }; // namespace Gek

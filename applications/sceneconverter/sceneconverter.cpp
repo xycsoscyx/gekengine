@@ -1,5 +1,6 @@
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\Float4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\XML.hpp"
@@ -31,8 +32,8 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
     if (lightSearch != lights.end())
     {
         const aiLight *light = lightSearch->second;
-        Math::Float3 position((nodeTransform * Math::Float3(light->mPosition.x, light->mPosition.y, light->mPosition.z).w(1.0f)).xyz * parameters.feetPerUnit);
-        Math::Quaternion rotation(nodeTransform.getQuaternion());
+        Math::Float3 position(nodeTransform.rotate(Math::Float3(light->mPosition.x, light->mPosition.y, light->mPosition.z)) * parameters.feetPerUnit);
+        Math::Quaternion rotation(Math::convert(nodeTransform));
 
         printf("--- constant: %f, linear: %f, quadradic: %f\r\n", light->mAttenuationConstant, light->mAttenuationLinear, light->mAttenuationQuadratic);
 
