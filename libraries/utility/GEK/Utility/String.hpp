@@ -402,7 +402,7 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString &operator = (const Math::Quaternion &value)
+        BaseString &operator = (const Math::QuaternionFloat &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -539,7 +539,7 @@ namespace Gek
             append(stream.str());
         }
 
-        void operator += (const Math::Quaternion &value)
+        void operator += (const Math::QuaternionFloat &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -664,15 +664,15 @@ namespace Gek
             return (stream.fail() ? Math::Color::White : value);
         }
 
-        operator Math::Quaternion () const
+        operator Math::QuaternionFloat () const
         {
-            Math::Quaternion value;
+            Math::QuaternionFloat value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z;
             switch (stream.peek())
             {
             case ')':
-                value = Math::Quaternion::createEulerRotation(value.x, value.y, value.z);
+                value = Math::QuaternionFloat::createEulerRotation(value.x, value.y, value.z);
                 stream >> MustMatch(')');
                 break;
 
@@ -681,7 +681,7 @@ namespace Gek
                 break;
             };
 
-            return (stream.fail() ? Math::Quaternion::Identity : value);
+            return (stream.fail() ? Math::QuaternionFloat::Identity : value);
         }
 
         operator const ELEMENT * () const

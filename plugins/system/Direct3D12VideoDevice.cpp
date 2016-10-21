@@ -758,7 +758,7 @@ namespace Gek
             {
             }
 
-            void setScissorList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleList)
+            void setScissorList(const std::vector<Video::ScissorBox> &rectangleList)
             {
             }
 

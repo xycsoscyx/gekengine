@@ -587,7 +587,7 @@ namespace Gek
                         }
                     }
 
-                    auto getDirection = [](const Math::Quaternion &quaternion) -> Math::Float3
+                    auto getDirection = [](const Math::QuaternionFloat &quaternion) -> Math::Float3
                     {
                         float xx(quaternion.x * quaternion.x);
                         float yy(quaternion.y * quaternion.y);
