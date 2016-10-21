@@ -25,7 +25,7 @@ namespace Gek
         void get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue = Math::Float3::Zero);
         void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue = Math::Float4::Zero);
         void get(const wchar_t *expression, Math::Color &result, const Math::Color &defaultValue = Math::Color::White);
-        void get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue = Math::Quaternion::Identity);
+        void get(const wchar_t *expression, Math::QuaternionFloat &result, const Math::QuaternionFloat &defaultValue = Math::QuaternionFloat::Identity);
         void get(const wchar_t *expression, String &result);
 
         template <typename TYPE>

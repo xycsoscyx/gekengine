@@ -41,9 +41,6 @@
     <ClInclude Include="GEK\Shapes\Ray.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Shapes\Rectangle.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Shapes\Sphere.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -33,7 +33,7 @@ void getLights(const Parameters &parameters, const aiScene *scene, const aiNode 
     {
         const aiLight *light = lightSearch->second;
         Math::Float3 position(nodeTransform.rotate(Math::Float3(light->mPosition.x, light->mPosition.y, light->mPosition.z)) * parameters.feetPerUnit);
-        Math::Quaternion rotation(Math::convert(nodeTransform));
+        Math::QuaternionFloat rotation(Math::convert(nodeTransform));
 
         printf("--- constant: %f, linear: %f, quadradic: %f\r\n", light->mAttenuationConstant, light->mAttenuationLinear, light->mAttenuationQuadratic);
 

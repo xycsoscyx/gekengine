@@ -1279,7 +1279,7 @@ namespace Gek
                     d3dDeviceContext->RSSetViewports(viewPortList.size(), (D3D11_VIEWPORT *)viewPortList.data());
                 }
 
-                void setScissorList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleList)
+                void setScissorList(const std::vector<Video::ScissorBox> &rectangleList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 

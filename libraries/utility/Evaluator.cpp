@@ -122,7 +122,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
+        void get(const wchar_t *expression, Math::QuaternionFloat &result, const Math::QuaternionFloat &defaultValue)
         {
             try
             {
@@ -134,7 +134,7 @@ namespace Gek
                     {
                         Math::Float3 euler;
                         shuntingYard.evaluate(expression, euler);
-                        result = Math::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
+                        result = Math::QuaternionFloat::createEulerRotation(euler.x, euler.y, euler.z);
                     }
 
                     break;

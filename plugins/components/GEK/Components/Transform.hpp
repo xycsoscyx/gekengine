@@ -30,7 +30,7 @@ namespace Gek
             }
 
             Math::Float3 position;
-            Math::Quaternion rotation;
+            Math::QuaternionFloat rotation;
             Math::Float3 scale;
 
             void save(Xml::Leaf &componentData) const;

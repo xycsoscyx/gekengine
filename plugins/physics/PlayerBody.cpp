@@ -323,7 +323,7 @@ namespace Gek
 
 				float rotation[4];
 				NewtonBodyGetRotation(newtonBody, rotation);
-				setDesiredOmega(Math::Quaternion(rotation[1], rotation[2], rotation[3], rotation[0]), frameTime);
+				setDesiredOmega(Math::QuaternionFloat(rotation[1], rotation[2], rotation[3], rotation[0]), frameTime);
 
 				Math::Float4x4 matrix;
 				NewtonBodyGetMatrix(newtonBody, matrix.data);
@@ -344,7 +344,7 @@ namespace Gek
 				NewtonBodyGetOmega(newtonBody, omega.data);
 
 				// integrate body angular velocity
-				Math::Quaternion bodyRotation(integrateOmega(Math::convert(initialMatrix), omega, frameTime));
+				Math::QuaternionFloat bodyRotation(integrateOmega(Math::convert(initialMatrix), omega, frameTime));
 				auto matrix(Math::convert(bodyRotation));
 				matrix.translation = initialMatrix.translation;
 
@@ -524,13 +524,13 @@ namespace Gek
 				maximumSlope = std::cos(std::abs(slopeInRadians));
 			}
 
-			Math::Quaternion integrateOmega(const Math::Quaternion &rotation, const Math::Float3 &omega, float frameTime) const
+			Math::QuaternionFloat integrateOmega(const Math::QuaternionFloat &rotation, const Math::Float3 &omega, float frameTime) const
 			{
 				Math::Float3 theta(omega * frameTime * 0.5f);
 				float thetaMagnitideSquared = theta.getLengthSquared();
 
 				float angle;
-				Math::Quaternion deltaRotation;
+				Math::QuaternionFloat deltaRotation;
 				if (thetaMagnitideSquared * thetaMagnitideSquared / 24.0f < Math::Epsilon)
 				{
 					deltaRotation.w = 1.0f - thetaMagnitideSquared / 2.0f;
@@ -549,18 +549,18 @@ namespace Gek
 				return (deltaRotation * rotation);
 			}
 
-			void setDesiredOmega(const Math::Quaternion &rotation, float frameTime) const
+			void setDesiredOmega(const Math::QuaternionFloat &rotation, float frameTime) const
 			{
 				static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
 
-				Math::Quaternion quaternion0(rotation);
-				Math::Quaternion quaternion1(Math::Quaternion::createAngularRotation(upAxis, headingAngle));
+				Math::QuaternionFloat quaternion0(rotation);
+				Math::QuaternionFloat quaternion1(Math::QuaternionFloat::createAngularRotation(upAxis, headingAngle));
 				if (quaternion0.dot(quaternion1) < 0.0f)
 				{
 					quaternion0 *= -1.0f;
 				}
 
-				Math::Quaternion deltaQuaternion(quaternion0.getInverse() * quaternion1);
+				Math::QuaternionFloat deltaQuaternion(quaternion0.getInverse() * quaternion1);
 				Math::Float3 omegaDirection(deltaQuaternion.x, deltaQuaternion.y, deltaQuaternion.z);
 				float directionMagnitudeSquared = omegaDirection.getLengthSquared();
 				if (directionMagnitudeSquared >= PLAYER_EPSILON_SQUARED)

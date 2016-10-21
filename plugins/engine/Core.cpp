@@ -1338,16 +1338,16 @@ namespace Gek
                         }
                         else
                         {
-                            const Shapes::Rectangle<uint32_t> scissor =
-                            {
-                                uint32_t(command->ClipRect.x),
-                                uint32_t(command->ClipRect.y),
-                                uint32_t(command->ClipRect.z),
-                                uint32_t(command->ClipRect.w),
-                            };
+                            std::vector<Video::ScissorBox> scissorBoxList(1);
+                            scissorBoxList[0].minimum = Math::Point(command->ClipRect.x, command->ClipRect.y);
+                            scissorBoxList[0].maximum = Math::Point(command->ClipRect.z, command->ClipRect.w);
 
-                            videoContext->setScissorList({ scissor });
-                            videoContext->pixelPipeline()->setResourceList({ (Video::Object *)command->TextureId }, 0);
+                            std::vector<Video::Object *> textureList(1);
+                            textureList[0] = (Video::Object *)command->TextureId;
+
+                            videoContext->setScissorList(scissorBoxList);
+                            videoContext->pixelPipeline()->setResourceList(textureList, 0);
+
                             videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
                         }
 

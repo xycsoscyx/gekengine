@@ -11,7 +11,6 @@
 #include "GEK\Math\RGBA.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Shapes\Rectangle.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\Context.hpp"
@@ -204,6 +203,28 @@ namespace Gek
                 Stencil = 1 << 1,
             };
         }; // ClearFlags
+
+        struct ScissorBox
+        {
+            Math::Point minimum;
+            Math::Point maximum;
+
+            ScissorBox(void)
+            {
+            }
+
+            ScissorBox(const Math::Point &minimum, const Math::Point &maximum)
+                : minimum(minimum)
+                , maximum(maximum)
+            {
+            }
+
+            ScissorBox(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
+                : minimum(left, top)
+                , maximum(right, bottom)
+            {
+            }
+        };
 
         struct ViewPort
         {
@@ -573,7 +594,7 @@ namespace Gek
                 virtual void clearVertexBufferList(uint32_t count, uint32_t firstSlot) = 0;
 
                 virtual void setViewportList(const std::vector<Video::ViewPort> &viewPortList) = 0;
-                virtual void setScissorList(const std::vector<Shapes::Rectangle<uint32_t>> &rectangleList) = 0;
+                virtual void setScissorList(const std::vector<Video::ScissorBox> &rectangleList) = 0;
                 virtual void setRenderTargetList(const std::vector<Target *> &renderTargetList, Object *depthBuffer) = 0;
 
                 virtual void setRenderState(Object *renderState) = 0;
