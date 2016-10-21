@@ -206,14 +206,14 @@ namespace Gek
 
         struct ScissorBox
         {
-            Math::Point minimum;
-            Math::Point maximum;
+            Math::UInt2 minimum;
+            Math::UInt2 maximum;
 
             ScissorBox(void)
             {
             }
 
-            ScissorBox(const Math::Point &minimum, const Math::Point &maximum)
+            ScissorBox(const Math::UInt2 &minimum, const Math::UInt2 &maximum)
                 : minimum(minimum)
                 , maximum(maximum)
             {

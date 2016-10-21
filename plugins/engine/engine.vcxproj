@@ -172,6 +172,7 @@
     <ClInclude Include="GEK\Engine\Resources.hpp" />
     <ClInclude Include="GEK\Engine\Shader.hpp" />
     <ClInclude Include="GEK\Engine\Visual.hpp" />
+    <ClInclude Include="LightGrid.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ShaderFilter.hpp" />
   </ItemGroup>
@@ -180,6 +181,7 @@
     <ClCompile Include="Editor.cpp" />
     <ClCompile Include="entrypoints.cpp" />
     <ClCompile Include="Filter.cpp" />
+    <ClCompile Include="LightGrid.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Population.cpp" />
     <ClCompile Include="Renderer.cpp" />

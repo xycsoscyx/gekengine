@@ -7,13 +7,15 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include <type_traits>
+#include <cstdint>
 #include <cmath>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct Vector2
         {
         public:
@@ -25,6 +27,7 @@ namespace Gek
             {
                 struct { TYPE x, y; };
                 struct { TYPE u, v; };
+                struct { TYPE minimum, maximum; };
                 struct { TYPE data[2]; };
             };
 
@@ -33,41 +36,47 @@ namespace Gek
             {
             }
 
-            Vector2(const TYPE(&data)[2])
-                : data{ data[0], data[1] }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2(const OTHER(&data)[2])
+                : data{ TYPE(data[0]), TYPE(data[1]) }
             {
             }
 
-            Vector2(const TYPE *data)
-                : data{ data[0], data[1] }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2(const OTHER *data)
+                : data{ TYPE(data[0]), TYPE(data[1]) }
             {
             }
 
-            Vector2(TYPE scalar)
-                : data{ scalar, scalar }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2(OTHER scalar)
+                : data{ TYPE(scalar), TYPE(scalar) }
             {
             }
 
-            Vector2(const Vector2 &vector)
-                : data{ vector.data[0], vector.data[1] }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2(const Vector2<OTHER> &vector)
+                : data{ TYPE(vector.data[0]), TYPE(vector.data[1]) }
             {
             }
 
-            Vector2(TYPE x, TYPE y)
-                : data{ x, y }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2(OTHER x, OTHER y)
+                : data{ TYPE(x), TYPE(y) }
             {
             }
 
-            void set(TYPE x, TYPE y)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            void set(OTHER x, OTHER y)
             {
-                this->x = x;
-                this->y = y;
+                this->x = TYPE(x);
+                this->y = TYPE(y);
             }
 
-            void set(TYPE value)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            void set(OTHER value)
             {
-                this->x = value;
-                this->y = value;
+                this->x = this->y = TYPE(value);
             }
 
             TYPE getLengthSquared(void) const
@@ -168,10 +177,11 @@ namespace Gek
             }
 
             // vector operations
-            Vector2 &operator = (const Vector2 &vector)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2 &operator = (const Vector2<OTHER> &vector)
             {
-                x = vector.x;
-                y = vector.y;
+                x = TYPE(vector.x);
+                y = TYPE(vector.y);
                 return (*this);
             }
 
@@ -220,10 +230,10 @@ namespace Gek
             }
 
             // scalar operations
-            Vector2 &operator = (TYPE scalar)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector2 &operator = (OTHER scalar)
             {
-                x = scalar;
-                y = scalar;
+                x = y = TYPE(scalar);
                 return (*this);
             }
 
@@ -272,37 +282,38 @@ namespace Gek
             }
         };
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator - (const Vector2<TYPE> &vector)
         {
             return Vector2(-vector.x, -vector.y);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator + (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar + vector.x, scalar + vector.y);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator - (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar - vector.x, scalar - vector.y);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator * (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar * vector.x, scalar * vector.y);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator / (TYPE scalar, const Vector2<TYPE> &vector)
         {
             return Vector2(scalar / vector.x, scalar / vector.y);
         }
 
         using Float2 = Vector2<float>;
-        using Point = Vector2<int>;
+        using Int2 = Vector2<int32_t>;
+        using UInt2 = Vector2<uint32_t>;
     }; // namespace Math
 }; // namespace Gek

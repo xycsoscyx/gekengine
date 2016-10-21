@@ -9,12 +9,13 @@
 
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
+#include <type_traits>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct Quaternion
         {
         public:

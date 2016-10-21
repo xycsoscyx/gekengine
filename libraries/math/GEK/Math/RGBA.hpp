@@ -7,13 +7,13 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include <xmmintrin.h>
+#include <type_traits>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct RGBA
         {
         public:
@@ -260,13 +260,13 @@ namespace Gek
             }
         };
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         RGBA<TYPE> operator - (const RGBA<TYPE> &color)
         {
             return RGBA<TYPE>(-color.r, -color.g, -color.b, -color.a);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         RGBA<TYPE> operator + (TYPE scalar, const RGBA<TYPE> &color)
         {
             return RGBA<TYPE>((scalar + color.r),
@@ -275,7 +275,7 @@ namespace Gek
                          (scalar + color.a));
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         RGBA<TYPE> operator - (TYPE scalar, const RGBA<TYPE> &color)
         {
             return RGBA<TYPE>((scalar - color.r),
@@ -284,7 +284,7 @@ namespace Gek
                          (scalar - color.a));
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         RGBA<TYPE> operator * (TYPE scalar, const RGBA<TYPE> &color)
         {
             return RGBA<TYPE>((scalar * color.r),
@@ -293,7 +293,7 @@ namespace Gek
                          (scalar * color.a));
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         RGBA<TYPE> operator / (TYPE scalar, const RGBA<TYPE> &color)
         {
             return RGBA<TYPE>((scalar / color.r),
