@@ -7,15 +7,16 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include <xmmintrin.h>
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\Vector4.hpp"
+#include <xmmintrin.h>
+#include <type_traits>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct Matrix4x4
         {
         public:

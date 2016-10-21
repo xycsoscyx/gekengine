@@ -7,13 +7,15 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include <type_traits>
+#include <cstdint>
 #include <cmath>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct Vector3
         {
         public:
@@ -32,43 +34,48 @@ namespace Gek
             {
             }
 
-            Vector3(const TYPE(&data)[3])
-                : data{ data[0], data[1], data[2] }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3(const OTHER(&data)[3])
+                : data{ TYPE(data[0]), TYPE(data[1]), TYPE(data[2]) }
             {
             }
 
-            Vector3(const TYPE *data)
-                : data{ data[0], data[1], data[2] }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3(const OTHER *data)
+                : data{ TYPE(data[0]), TYPE(data[1]), TYPE(data[2]) }
             {
             }
 
-            Vector3(TYPE scalar)
-                : data{ scalar, scalar, scalar }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3(OTHER scalar)
+                : data{ TYPE(scalar), TYPE(scalar), TYPE(scalar) }
             {
             }
 
-            Vector3(const Vector3 &vector)
-                : data{ vector.data[0], vector.data[1], vector.data[2] }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3(const Vector3<OTHER> &vector)
+                : data{ TYPE(vector.data[0]), TYPE(vector.data[1]), TYPE(vector.data[2]) }
             {
             }
 
-            Vector3(TYPE x, TYPE y, TYPE z)
-                : data{ x, y, z }
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3(OTHER x, OTHER y, OTHER z)
+                : data{ TYPE(x), TYPE(y), TYPE(z) }
             {
             }
 
-            void set(TYPE x, TYPE y, TYPE z)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            void set(OTHER x, OTHER y, OTHER z)
             {
-                this->x = x;
-                this->y = y;
-                this->z = z;
+                this->x = TYPE(x);
+                this->y = TYPE(y);
+                this->z = TYPE(z);
             }
 
-            void set(TYPE value)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            void set(OTHER value)
             {
-                this->x = value;
-                this->y = value;
-                this->z = value;
+                this->x = this->y = this->z = TYPE(value);
             }
 
             TYPE getLengthSquared(void) const
@@ -182,11 +189,12 @@ namespace Gek
             }
 
             // vector operations
-            Vector3 &operator = (const Vector3 &vector)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3 &operator = (const Vector3<OTHER> &vector)
             {
-                x = vector.x;
-                y = vector.y;
-                z = vector.z;
+                x = TYPE(vector.x);
+                y = TYPE(vector.y);
+                z = TYPE(vector.z);
                 return (*this);
             }
 
@@ -239,11 +247,10 @@ namespace Gek
             }
 
             // scalar operations
-            Vector3 &operator = (TYPE scalar)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector3 &operator = (OTHER scalar)
             {
-                x = scalar;
-                y = scalar;
-                z = scalar;
+                x = y = z = TYPE(scalar);
                 return (*this);
             }
 
@@ -296,36 +303,38 @@ namespace Gek
             }
         };
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector3<TYPE> operator - (const Vector3<TYPE> &vector)
         {
             return Vector3<TYPE>(-vector.x, -vector.y, -vector.z);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector3<TYPE> operator + (TYPE scalar, const Vector3<TYPE> &vector)
         {
             return Vector3<TYPE>(scalar + vector.x, scalar + vector.y, scalar + vector.z);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector3<TYPE> operator - (TYPE scalar, const Vector3<TYPE> &vector)
         {
             return Vector3<TYPE>(scalar - vector.x, scalar - vector.y, scalar - vector.z);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector3<TYPE> operator * (TYPE scalar, const Vector3<TYPE> &vector)
         {
             return Vector3<TYPE>(scalar * vector.x, scalar * vector.y, scalar * vector.z);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector3<TYPE> operator / (TYPE scalar, const Vector3<TYPE> &vector)
         {
             return Vector3<TYPE>(scalar / vector.x, scalar / vector.y, scalar / vector.z);
         }
 
         using Float3 = Vector3<float>;
+        using Int3 = Vector3<int32_t>;
+        using UInt3 = Vector3<uint32_t>;
     }; // namespace Math
 }; // namespace Gek

@@ -8,12 +8,13 @@
 #pragma once
 
 #include "GEK\Math\Vector2.hpp"
+#include <type_traits>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct Matrix3x2
         {
         public:

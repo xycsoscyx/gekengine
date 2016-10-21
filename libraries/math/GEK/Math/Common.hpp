@@ -32,31 +32,31 @@ namespace Gek
         }
 
         template <typename DATA, typename TYPE>
-        DATA lerp(const DATA &x, const DATA &y, TYPE factor)
+        DATA lerp(const DATA &valueA, const DATA &valueB, TYPE factor)
         {
-            return (((y - x) * factor) + x);
+            return (((valueB - valueA) * factor) + valueA);
         }
 
         template <typename DATA, typename TYPE>
-        DATA blend(const DATA &x, const DATA &y, TYPE factor)
+        DATA blend(const DATA &valueA, const DATA &valueB, TYPE factor)
         {
-            return ((x * (1.0f - factor)) + (y * factor));
+            return ((valueA * (1.0f - factor)) + (valueB * factor));
         }
 
         template <typename DATA, typename TYPE>
-        DATA blend(const DATA &x, TYPE factorX, const DATA &y, TYPE factorY)
+        DATA blend(const DATA &valueA, TYPE factorX, const DATA &valueB, TYPE factorY)
         {
-            return ((x * factorX) + (y * factorY));
+            return ((valueA * factorX) + (valueB * factorY));
         }
 
         template<typename DATA>
-        DATA clamp(DATA value, DATA min, DATA max)
+        DATA clamp(const DATA &value, const DATA &min, const DATA &max)
         {
             return std::min(std::max(value, min), max);
         }
 
         template<typename DATA>
-        DATA saturate(DATA value)
+        DATA saturate(const DATA &value)
         {
             return clamp(value, DATA(0.0), DATA(1.0));
         }

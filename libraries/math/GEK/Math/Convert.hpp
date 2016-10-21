@@ -10,12 +10,13 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Math\Quaternion.hpp"
+#include <type_traits>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Matrix4x4<TYPE> convert(const Quaternion<TYPE> &quaternion)
         {
             TYPE xx(quaternion.x * quaternion.x);
@@ -43,7 +44,7 @@ namespace Gek
             }
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Quaternion<TYPE> convert(const Matrix4x4<TYPE> &matrix)
         {
             TYPE trace(matrix.table[0][0] + matrix.table[1][1] + matrix.table[2][2] + 1.0f);

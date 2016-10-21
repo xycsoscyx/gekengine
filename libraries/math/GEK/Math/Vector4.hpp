@@ -9,13 +9,15 @@
 
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
+#include <type_traits>
+#include <cstdint>
 #include <cmath>
 
 namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         struct Vector4
         {
         public:
@@ -283,36 +285,38 @@ namespace Gek
             }
         };
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator - (const Vector4<TYPE> &vector)
         {
             return _mm_sub_ps(_mm_set1_ps(0.0f), vector.simd);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator + (TYPE scalar, const Vector4<TYPE> &vector)
         {
             return _mm_add_ps(_mm_set1_ps(scalar), vector.simd);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator - (TYPE scalar, const Vector4<TYPE> &vector)
         {
             return _mm_sub_ps(_mm_set1_ps(scalar), vector.simd);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator * (TYPE scalar, const Vector4<TYPE> &vector)
         {
             return _mm_mul_ps(_mm_set1_ps(scalar), vector.simd);
         }
 
-        template <typename TYPE>
+        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator / (TYPE scalar, const Vector4<TYPE> &vector)
         {
             return _mm_div_ps(_mm_set1_ps(scalar), vector.simd);
         }
 
         using Float4 = Vector4<float>;
+        using Int4 = Vector4<int32_t>;
+        using UInt4 = Vector4<uint32_t>;
     }; // namespace Math
 }; // namespace Gek
