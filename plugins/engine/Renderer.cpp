@@ -22,8 +22,6 @@
 #include <concurrent_vector.h>
 #include <ppl.h>
 
-#include "LightGrid.hpp"
-
 namespace Gek
 {
 	namespace Utility
@@ -332,12 +330,8 @@ namespace Gek
             LightEntityMap<Components::SpotLight> spotLightEntities;
 
             concurrency::concurrent_vector<DirectionalLightData> directionalLightList;
-
             concurrency::concurrent_vector<PointLightData> pointLightList;
-            LightGrid<PointLightData> pointLightGrid;
-
             concurrency::concurrent_vector<SpotLightData> spotLightList;
-            LightGrid<SpotLightData> spotLightGrid;
 
             Video::BufferPtr lightConstantBuffer;
             Video::BufferPtr directionalLightDataBuffer;
@@ -352,8 +346,6 @@ namespace Gek
                 , videoDevice(videoDevice)
                 , population(population)
                 , resources(resources)
-                , pointLightGrid(pointLightList)
-                , spotLightGrid(spotLightList)
             {
                 population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Renderer, &Renderer::onLoadSucceeded>(this);
@@ -595,30 +587,30 @@ namespace Gek
                         }
                     }
 
-                    auto getDirection = [](const Math::QuaternionFloat &quaternion) -> Math::Float3
-                    {
-                        float xx(quaternion.x * quaternion.x);
-                        float yy(quaternion.y * quaternion.y);
-                        float zz(quaternion.z * quaternion.z);
-                        float ww(quaternion.w * quaternion.w);
-                        float length(xx + yy + zz + ww);
-                        if (length == 0.0f)
-                        {
-                            return Math::Float3(0.0f, 1.0f, 0.0f);
-                        }
-                        else
-                        {
-                            float determinant(1.0f / length);
-                            float xy(quaternion.x * quaternion.y);
-                            float xw(quaternion.x * quaternion.w);
-                            float yz(quaternion.y * quaternion.z);
-                            float zw(quaternion.z * quaternion.w);
-                            return -Math::Float3((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant));
-                        }
-                    };
-
                     if (isLightingRequired)
                     {
+                        auto getLightDirection = [](const Math::QuaternionFloat &quaternion) -> Math::Float3
+                        {
+                            float xx(quaternion.x * quaternion.x);
+                            float yy(quaternion.y * quaternion.y);
+                            float zz(quaternion.z * quaternion.z);
+                            float ww(quaternion.w * quaternion.w);
+                            float length(xx + yy + zz + ww);
+                            if (length == 0.0f)
+                            {
+                                return Math::Float3(0.0f, 1.0f, 0.0f);
+                            }
+                            else
+                            {
+                                float determinant(1.0f / length);
+                                float xy(quaternion.x * quaternion.y);
+                                float xw(quaternion.x * quaternion.w);
+                                float yz(quaternion.y * quaternion.z);
+                                float zw(quaternion.z * quaternion.w);
+                                return -Math::Float3((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant));
+                            }
+                        };
+
                         directionalLightList.clear();
                         directionalLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
                         {
@@ -626,7 +618,7 @@ namespace Gek
                             lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
                             lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
                             lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
-                            lightData.direction = viewMatrix.rotate(getDirection(transformComponent.rotation));
+                            lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                         });
 
                         if (!directionalLightList.empty())
@@ -684,7 +676,7 @@ namespace Gek
                                 lightData.position = viewMatrix.transform(transformComponent.position);
                                 lightData.radius = lightComponent.radius;
                                 lightData.range = lightComponent.range;
-                                lightData.direction = viewMatrix.rotate(getDirection(transformComponent.rotation));
+                                lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                                 lightData.innerAngle = lightComponent.innerAngle;
                                 lightData.outerAngle = lightComponent.outerAngle;
                             }
@@ -703,18 +695,6 @@ namespace Gek
                             std::copy(spotLightList.begin(), spotLightList.end(), spotLightData);
                             videoDevice->unmapBuffer(spotLightDataBuffer.get());
                         }
-
-                        Math::UInt2 resolution;
-                        resolution.x = videoDevice->getBackBuffer()->getWidth();
-                        resolution.y = videoDevice->getBackBuffer()->getHeight();
-
-                        Math::UInt2 tileSize;
-                        tileSize.x = resolution.x / 16;
-                        tileSize.y = resolution.y / 8;
-
-                        std::vector<Math::Float2> gridMinMaxZ;
-                        pointLightGrid.build(tileSize, resolution,  projectionMatrix, nearClip, gridMinMaxZ);
-                        spotLightGrid.build(tileSize, resolution,  projectionMatrix, nearClip, gridMinMaxZ);
 
                         LightConstantData lightConstants;
                         lightConstants.directionalLightCount = directionalLightList.size();

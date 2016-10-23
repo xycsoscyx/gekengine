@@ -544,6 +544,7 @@ namespace Gek
             bool engineRunning = false;
 
             int currentDisplayMode = 0;
+            Video::DisplayModeList displayModeList;
             std::vector<StringUTF8> displayModeStringList;
             bool fullScreen = false;
 
@@ -593,8 +594,6 @@ namespace Gek
                 configuration.getChild(L"display").attributes[L"cursor"] = false;
                 configuration.getChild(L"editor").attributes[L"enabled"] = false;
                 configuration.getChild(L"editor").attributes[L"show_selector"] = false;
-                auto &displayNode = configuration.getChild(L"display");
-                fullScreen = displayNode.getAttribute(L"fullscreen", L"false");
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -604,26 +603,9 @@ namespace Gek
 
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
 
-                auto &displayModeList = videoDevice->getDisplayModeList();
-                if (displayNode.attributes.count(L"mode") < 0 || currentDisplayMode >= displayModeList.size())
-                {
-                    currentDisplayMode = 0;
-                    for (auto &displayMode : displayModeList)
-                    {
-                        if (displayMode.width >= 800 && displayMode.height >= 600)
-                        {
-                            break;
-                        }
+                displayModeList = videoDevice->getDisplayModeList(Video::Format::R8G8B8A8_UNORM_SRGB);
+                videoDevice->setDisplayMode(displayModeList[0]);
 
-                        currentDisplayMode++;
-                    }
-                }
-                else
-                {
-                    currentDisplayMode = displayNode.getAttribute(L"mode", L"0");
-                }
-
-                videoDevice->setDisplayMode(currentDisplayMode);
                 for (auto &displayMode : displayModeList)
                 {
                     StringUTF8 displayModeString(StringUTF8::create("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
@@ -913,38 +895,37 @@ namespace Gek
             }
 
             // Application
-            LRESULT windowEvent(uint32_t message, WPARAM wParam, LPARAM lParam)
+            Result windowEvent(const Event &eventData)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
-                switch (message)
+                switch (eventData.message)
                 {
                 case WM_CLOSE:
                     engineRunning = false;
-                    return TRUE;
+                    return 0;
 
                 case WM_SETCURSOR:
-                    if (LOWORD(lParam) == HTCLIENT)
+                    if (LOWORD(eventData.lParam) == HTCLIENT)
                     {
-                        ShowCursor(false);
+                        //ShowCursor(false);
                         imGuiIo.MouseDrawCursor = true;
-                        return TRUE;
                     }
                     else
                     {
-                        ShowCursor(true);
+                        //ShowCursor(true);
                         imGuiIo.MouseDrawCursor = false;
                     }
 
-                    break;
+                    return 0;
 
                 case WM_ACTIVATE:
-                    if (HIWORD(wParam))
+                    if (HIWORD(eventData.wParam))
                     {
                         windowActive = false;
                     }
                     else
                     {
-                        switch (LOWORD(wParam))
+                        switch (LOWORD(eventData.wParam))
                         {
                         case WA_ACTIVE:
                         case WA_CLICKACTIVE:
@@ -958,84 +939,88 @@ namespace Gek
                     }
 
                     timer.pause(!windowActive);
-                    return TRUE;
+                    return 0;
 
                 case WM_SIZE:
-                    videoDevice->resize();
-                    return TRUE;
+                    if (eventData.wParam != SIZE_MINIMIZED)
+                    {
+                        videoDevice->handleResize();
+                    }
+
+                    return 0;
 
                 case WM_LBUTTONDOWN:
                     imGuiIo.MouseDown[0] = true;
-                    return TRUE;
+                    return 0;
 
                 case WM_LBUTTONUP:
                     imGuiIo.MouseDown[0] = false;
-                    return TRUE;
+                    return 0;
 
                 case WM_RBUTTONDOWN:
                     imGuiIo.MouseDown[1] = true;
-                    return TRUE;
+                    return 0;
 
                 case WM_RBUTTONUP:
                     imGuiIo.MouseDown[1] = false;
-                    return TRUE;
+                    return 0;
 
                 case WM_MBUTTONDOWN:
                     imGuiIo.MouseDown[2] = true;
-                    return TRUE;
+                    return 0;
 
                 case WM_MBUTTONUP:
                     imGuiIo.MouseDown[2] = false;
-                    return TRUE;
+                    return 0;
 
                 case WM_MOUSEWHEEL:
-                    imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(wParam) > 0 ? +1.0f : -1.0f;
-                    return TRUE;
+                    imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.wParam) > 0 ? +1.0f : -1.0f;
+                    return 0;
 
                 case WM_MOUSEMOVE:
-                    imGuiIo.MousePos.x = (int16_t)(lParam);
-                    imGuiIo.MousePos.y = (int16_t)(lParam >> 16);
-                    return TRUE;
+                    imGuiIo.MousePos.x = (int16_t)(eventData.lParam);
+                    imGuiIo.MousePos.y = (int16_t)(eventData.lParam >> 16);
+                    return 0;
 
                 case WM_KEYDOWN:
-                    addAction(wParam, true);
-                    if (wParam < 256)
+                    addAction(eventData.wParam, true);
+                    if (eventData.wParam < 256)
                     {
-                        imGuiIo.KeysDown[wParam] = 1;
+                        imGuiIo.KeysDown[eventData.wParam] = 1;
                     }
 
-                    return TRUE;
+                    return 0;
 
                 case WM_KEYUP:
-                    addAction(wParam, false);
-                    if (wParam == 192)
+                    addAction(eventData.wParam, false);
+                    if (eventData.wParam == 192)
                     {
                         bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
                         configuration.getChild(L"display").attributes[L"cursor"] = !showCursor;
                     }
 
-                    if (wParam < 256)
+                    if (eventData.wParam < 256)
                     {
-                        imGuiIo.KeysDown[wParam] = 0;
+                        imGuiIo.KeysDown[eventData.wParam] = 0;
                     }
 
-                    return TRUE;
+                    return 0;
 
                 case WM_CHAR:
                     // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-                    if (wParam > 0 && wParam < 0x10000)
+                    if (eventData.wParam > 0 && eventData.wParam < 0x10000)
                     {
-                        imGuiIo.AddInputCharacter((uint16_t)wParam);
+                        imGuiIo.AddInputCharacter((uint16_t)eventData.wParam);
                     }
 
-                    return TRUE;
+                    return 0;
 
                 case WM_INPUT:
                     if (true)
                     {
                         UINT inputSize = 40;
                         static BYTE rawInputBuffer[40];
-                        GetRawInputData((HRAWINPUT)lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
+                        GetRawInputData((HRAWINPUT)eventData.lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
 
                         RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
                         if (rawInput->header.dwType == RIM_TYPEMOUSE)
@@ -1046,11 +1031,11 @@ namespace Gek
                             actionQueue.push(Action(L"tilt", yMovement));
                         }
 
-                        break;
+                        return 0;
                     }
                 };
 
-                return DefWindowProc(window, message, wParam, lParam);
+                return Result();
             }
 
             bool showLoadLevel = false;
@@ -1171,9 +1156,7 @@ namespace Gek
                             return true;
                         }, this, displayModeStringList.size(), 5))
                         {
-                            videoDevice->setDisplayMode(currentDisplayMode);
-                            auto &displayNode = configuration.getChild(L"display");
-                            displayNode.attributes[L"mode"] = currentDisplayMode;
+                            videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
                             onConfigurationChanged.emit();
                             onResize.emit();
                         }
@@ -1181,9 +1164,9 @@ namespace Gek
                         ImGui::PopItemWidth();
                         if (ImGui::Checkbox("FullScreen", &fullScreen))
                         {
-                            videoDevice->setFullScreen(fullScreen);
-                            auto &displayNode = configuration.getChild(L"display");
-                            displayNode.attributes[L"fullscreen"] = fullScreen;
+                            SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
+                            videoDevice->setFullScreenState(fullScreen);
                             onConfigurationChanged.emit();
                             onResize.emit();
                         }

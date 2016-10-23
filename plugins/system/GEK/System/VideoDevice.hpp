@@ -107,6 +107,7 @@ namespace Gek
 
             uint32_t width;
             uint32_t height;
+            Format format;
             AspectRatio aspectRatio;
             struct
             {
@@ -615,10 +616,11 @@ namespace Gek
                 virtual ObjectPtr finishCommandList(void) = 0;
             };
 
-            virtual void setFullScreen(bool fullScreen) = 0;
-            virtual const DisplayModeList &getDisplayModeList(void) const = 0;
-            virtual void setDisplayMode(uint32_t displayMode) = 0;
-            virtual void resize(void) = 0;
+            virtual DisplayModeList getDisplayModeList(Video::Format format) const = 0;
+
+            virtual void setFullScreenState(bool fullScreen) = 0;
+            virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
+            virtual void handleResize(void) = 0;
 
 			virtual const char * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 
