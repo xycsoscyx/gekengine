@@ -842,27 +842,27 @@ namespace Gek
 
             ~Device(void)
             {
-                setFullScreen(false);
+                setFullScreenState(false);
 
                 backBuffer = nullptr;
                 defaultContext = nullptr;
             }
 
             // System
-            void setFullScreen(bool fullScreen)
+            Video::DisplayModeList getDisplayModeList(Video::Format format) const
+            {
+                return Video::DisplayModeList();
+            }
+
+            void setFullScreenState(bool fullScreen)
             {
             }
 
-            const Video::DisplayModeList &getDisplayModeList(void) const
-            {
-                return displayModeList;
-            }
-
-            void setDisplayMode(uint32_t displayMode)
+            void setDisplayMode(const Video::DisplayMode &displayMode)
             {
             }
 
-            void resize(void)
+            void handleResize(void)
             {
             }
 

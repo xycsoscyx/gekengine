@@ -172,7 +172,6 @@
     <ClInclude Include="GEK\Engine\Resources.hpp" />
     <ClInclude Include="GEK\Engine\Shader.hpp" />
     <ClInclude Include="GEK\Engine\Visual.hpp" />
-    <ClInclude Include="LightGrid.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="ShaderFilter.hpp" />
   </ItemGroup>

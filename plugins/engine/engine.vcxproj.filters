@@ -80,9 +80,6 @@
     <ClInclude Include="GEK\Engine\Handles.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="LightGrid.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\..\solution\gekengine.rc" />

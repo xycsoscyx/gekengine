@@ -15,35 +15,24 @@ using namespace Gek;
 
 LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM lParam)
 {
-    LRESULT resultValue = 0;
-    Application *application = reinterpret_cast<Application *>(GetWindowLongPtr(window, GWLP_USERDATA));
-    switch (message)
+    if (message == WM_DESTROY)
     {
-    case WM_CLOSE:
-    case WM_DESTROY:
-        if (application)
-        {
-            application->windowEvent(message, wParam, lParam);
-        }
-
         PostQuitMessage(0);
-        break;
-
-    default:
-        if (application)
-        {
-            resultValue = application->windowEvent(message, wParam, lParam);
-        }
-
-        break;
-    };
-
-    if (resultValue == 0)
+        return 0;
+    }
+        
+    Application::Event eventData(message, wParam, lParam);
+    Application *application = reinterpret_cast<Application *>(GetWindowLongPtr(window, GWLP_USERDATA));
+    if (application)
     {
-        resultValue = DefWindowProc(window, message, wParam, lParam);
+        auto resultValue = application->windowEvent(eventData);
+        if (resultValue.handled)
+        {
+            return resultValue.result;
+        }
     }
 
-    return resultValue;
+    return DefWindowProc(window, message, wParam, lParam);
 }
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
@@ -95,14 +84,12 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         RECT clientRectangle;
         clientRectangle.left = 0;
         clientRectangle.top = 0;
-        clientRectangle.right = 800;
-        clientRectangle.bottom = 600;
+        clientRectangle.right = 1;
+        clientRectangle.bottom = 1;
         AdjustWindowRect(&clientRectangle, WS_OVERLAPPEDWINDOW, false);
         int windowWidth = (clientRectangle.right - clientRectangle.left);
         int windowHeight = (clientRectangle.bottom - clientRectangle.top);
-        int centerPositionX = (GetSystemMetrics(SM_CXFULLSCREEN) / 2) - ((clientRectangle.right - clientRectangle.left) / 2);
-        int centerPositionY = (GetSystemMetrics(SM_CYFULLSCREEN) / 2) - ((clientRectangle.bottom - clientRectangle.top) / 2);
-        HWND window = CreateWindow(L"GEKvX_Engine_Demo", L"GEKvX Application - Demo", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, centerPositionX, centerPositionY, windowWidth, windowHeight, 0, nullptr, GetModuleHandle(nullptr), 0);
+        HWND window = CreateWindow(windowClass.lpszClassName, L"GEKvX Application - Demo", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
         if (window == nullptr)
         {
             throw std::exception("Unable to create window");
