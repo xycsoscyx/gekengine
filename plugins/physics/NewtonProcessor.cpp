@@ -24,7 +24,7 @@ namespace Gek
 {
     namespace Newton
     {
-        extern EntityPtr createPlayerBody(Plugin::Core *core, NewtonWorld *newtonWorld, Plugin::Entity *entity);
+        extern EntityPtr createPlayerBody(Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity);
         extern EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
 
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
@@ -187,7 +187,7 @@ namespace Gek
                 {
                     if (entity->hasComponent<Components::Player>())
                     {
-                        Newton::EntityPtr playerBody(createPlayerBody(core, newtonWorld, entity));
+                        Newton::EntityPtr playerBody(createPlayerBody(population, newtonWorld, entity));
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;

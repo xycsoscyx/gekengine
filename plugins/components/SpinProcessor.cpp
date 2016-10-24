@@ -89,8 +89,8 @@ namespace Gek
             population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
             {
                 Math::QuaternionFloat rotation(Math::QuaternionFloat::createEulerRotation((population->getFrameTime() * spinComponent.torque.x),
-                                                                                (population->getFrameTime() * spinComponent.torque.y),
-                                                                                (population->getFrameTime() * spinComponent.torque.z)));
+                    (population->getFrameTime() * spinComponent.torque.y),
+                    (population->getFrameTime() * spinComponent.torque.z)));
                 transformComponent.rotation *= rotation;
             });
         }

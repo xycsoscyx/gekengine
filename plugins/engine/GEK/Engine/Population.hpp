@@ -29,9 +29,32 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(EntityNameExists);
 
+            struct ActionParameter
+            {
+                union
+                {
+                    bool state;
+                    float value;
+                };
+
+                ActionParameter(void)
+                {
+                }
+
+                ActionParameter(bool state)
+                    : state(state)
+                {
+                }
+
+                ActionParameter(float value)
+                    : value(value)
+                {
+                }
+            };
+
             std::map<int32_t, Nano::Signal<void(void)>> onUpdate;
-            std::map<int32_t, Nano::Signal<void(void)>> onLoading;
-            std::map<int32_t, Nano::Signal<void(void)>> onIdle;
+            Nano::Signal<void(const wchar_t *actionName, const ActionParameter &actionParameter)> onAction;
+
             Nano::Signal<void(const String &populationName)> onLoadBegin;
             Nano::Signal<void(const String &populationName)> onLoadSucceeded;
             Nano::Signal<void(const String &populationName)> onLoadFailed;
@@ -44,6 +67,7 @@ namespace Gek
 
             virtual float getWorldTime(void) const = 0;
             virtual float getFrameTime(void) const = 0;
+            virtual bool isLoading(void) const = 0;
 
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
@@ -67,7 +91,8 @@ namespace Gek
                 });
             }
 
-            virtual void update(bool isBackgroundProcess, float frameTime = 0.0f) = 0;
+            virtual void update(float frameTime = 0.0f) = 0;
+            virtual void action(const wchar_t *actionName, const ActionParameter &actionParameter) = 0;
         };
     }; // namespace Plugin
 

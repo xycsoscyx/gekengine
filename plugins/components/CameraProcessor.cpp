@@ -179,9 +179,9 @@ namespace Gek
 
             list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent) -> void
             {
-				const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-				const float width = float(backBuffer->getWidth());
-				const float height = float(backBuffer->getHeight());
+                const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                const float width = float(backBuffer->getWidth());
+                const float height = float(backBuffer->getHeight());
                 Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
                 renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);

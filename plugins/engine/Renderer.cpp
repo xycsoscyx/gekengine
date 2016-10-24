@@ -398,10 +398,10 @@ namespace Gek
                     L"    return pixel;" \
                     L"}" \
                     L"" \
-                    L"Texture2D<float3> screenBuffer : register(t0);" \
+                    L"Texture2D<float3> inputBuffer : register(t0);" \
                     L"float4 mainPixelProgram(in Pixel inputPixel) : SV_TARGET0" \
                     L"{" \
-                    L"    return float4(screenBuffer[inputPixel.screen.xy], 1.0);" \
+                    L"    return float4(inputBuffer[inputPixel.screen.xy], 1.0);" \
                     L"}";
 
 				auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
@@ -790,24 +790,44 @@ namespace Gek
                         }
                     }
 
-                    videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
-                    resources->setResourceList(videoContext->pixelPipeline(), { resources->getResourceHandle(L"screen") }, 0);
-                    if (cameraTarget)
-                    {
-                        resources->setRenderTargetList(videoContext, { cameraTarget }, nullptr);
-                    }
-                    else
-                    {
-                        resources->setBackBuffer(videoContext, nullptr);
-                    }
-
-                    videoContext->drawPrimitive(3, 0);
-
                     videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
                     videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                     videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                     videoContext->computePipeline()->clearConstantBufferList(2, 0);
+
+                    if (cameraTarget)
+                    {
+                        renderOverlay(videoContext, resources->getResourceHandle(L"screen"), cameraTarget);
+                    }
                 }
+            }
+
+            void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)
+            {
+                videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
+                videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
+
+                resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
+
+                videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
+                if (target)
+                {
+                    resources->setRenderTargetList(videoContext, { target }, nullptr);
+                }
+                else
+                {
+                    resources->setBackBuffer(videoContext, nullptr);
+                }
+
+                videoContext->drawPrimitive(3, 0);
+
+                videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
+                videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
+                videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
+                videoContext->computePipeline()->clearConstantBufferList(2, 0);
             }
         };
 
