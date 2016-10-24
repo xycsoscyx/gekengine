@@ -4,6 +4,7 @@
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
+#include "GEK\Engine\Population.hpp"
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Newton\Base.hpp"
 #include <algorithm>
@@ -59,7 +60,7 @@ namespace Gek
 			virtual void onExit(PlayerBody *player) { };
 
 			virtual StatePtr onUpdate(PlayerBody *player, float frameTime) { return nullptr; };
-			virtual StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter) { return nullptr; };
+			virtual StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter) { return nullptr; };
 		};
 
 		class IdleState
@@ -67,7 +68,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class CrouchingState
@@ -75,7 +76,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class WalkingState
@@ -83,7 +84,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class JumpingState
@@ -117,7 +118,7 @@ namespace Gek
 			: public Newton::Entity
 		{
 		public:
-			Plugin::Core *core;
+            Plugin::Population *population;
 			Newton::World *world;
 			NewtonWorld *newtonWorld;
 
@@ -151,10 +152,10 @@ namespace Gek
 			bool falling;
 
 		public:
-			PlayerBody(Plugin::Core *core,
+			PlayerBody(Plugin::Population *population,
 				NewtonWorld *newtonWorld,
 				Plugin::Entity *entity)
-				: core(core)
+				: population(population)
 				, world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
 				, newtonWorld(newtonWorld)
 				, newtonBody(nullptr)
@@ -255,11 +256,11 @@ namespace Gek
 				NewtonDestroyCollision(newtonCastingShape);
 				NewtonDestroyCollision(newtonSupportShape);
 				NewtonDestroyCollision(newtonUpperBodyShape);
-                core->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
+                population->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
 			}
 
 			// Plugin::Core Slots
-			void onAction(const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+			void onAction(const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
 			{
 				if (_wcsicmp(actionName, L"turn") == 0)
 				{
@@ -683,7 +684,7 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr IdleState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+		StatePtr IdleState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
 		{
 			if (_wcsicmp(actionName, L"crouch") == 0 && parameter.state)
 			{
@@ -734,7 +735,7 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr CrouchingState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+		StatePtr CrouchingState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
 		{
 			return nullptr;
 		}
@@ -756,7 +757,7 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr WalkingState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+		StatePtr WalkingState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
 		{
 			if (_wcsicmp(actionName, L"jump") == 0 && parameter.state)
 			{
@@ -849,10 +850,10 @@ namespace Gek
 			return nullptr;
 		}
 
-		Newton::EntityPtr createPlayerBody(Plugin::Core *core, NewtonWorld *newtonWorld, Plugin::Entity *entity)
+		Newton::EntityPtr createPlayerBody(Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
 		{
-			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(core, newtonWorld, entity));
-            core->onAction.connect<PlayerBody, &PlayerBody::onAction>(player.get());
+			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(population, newtonWorld, entity));
+            population->onAction.connect<PlayerBody, &PlayerBody::onAction>(player.get());
 			return player;
 		}
 	}; // namespace Newton

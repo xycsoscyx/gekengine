@@ -75,11 +75,30 @@ namespace Gek
         GEK_CONTEXT_USER(Population, Plugin::Core *)
             , public Edit::Population
         {
-        private:
-            Plugin::Core *core;
+        public:
+            struct Action
+            {
+                const wchar_t *name;
+                ActionParameter parameter;
 
-            float worldTime;
-            float frameTime;
+                Action(void)
+                    : name(nullptr)
+                {
+                }
+
+                Action(const wchar_t *name, const ActionParameter &parameter)
+                    : name(name)
+                    , parameter(parameter)
+                {
+                }
+            };
+
+        private:
+            Plugin::Core *core = nullptr;
+
+            float worldTime = 0.0f;
+            float frameTime = 0.0f;
+            concurrency::concurrent_queue<Action> actionQueue;
 
             std::unordered_map<String, std::type_index> componentNamesMap;
             ComponentMap componentMap;
@@ -129,6 +148,7 @@ namespace Gek
                 loading = true;
                 try
                 {
+                    actionQueue.clear();
                     entityMap.clear();
                     entityQueue.clear();
                     onLoadBegin.emit(populationName);
@@ -230,16 +250,14 @@ namespace Gek
                 return worldTime;
             }
 
-            void update(bool isBackgroundProcess, float frameTime)
+            bool isLoading(void) const
             {
-                if (loading)
-                {
-                    for (auto &slot : onLoading)
-                    {
-                        slot.second.emit();
-                    }
-                }
-                else
+                return loading;
+            }
+
+            void update(float frameTime)
+            {
+                if (!loading)
                 {
                     String populationName;
                     if (loadQueue.try_pop(populationName))
@@ -249,15 +267,14 @@ namespace Gek
                             loadLevel(populationName);
                         });
                     }
-                    else if (isBackgroundProcess)
+                    else if (frameTime > 0.0f)
                     {
-                        for (auto &slot : onIdle)
+                        Action action;
+                        while (actionQueue.try_pop(action))
                         {
-                            slot.second.emit();
-                        }
-                    }
-                    else
-                    {
+                            onAction.emit(action.name, action.parameter);
+                        };
+
                         this->frameTime = frameTime;
                         this->worldTime += frameTime;
                         for (auto &slot : onUpdate)
@@ -271,6 +288,14 @@ namespace Gek
                             entityAction();
                         };
                     }
+                }
+            }
+
+            void action(const wchar_t *actionName, const ActionParameter &actionParameter)
+            {
+                if (!loading)
+                {
+                    actionQueue.push(Action(actionName, actionParameter));
                 }
             }
 

@@ -83,12 +83,12 @@ namespace Gek
                 population->onLoadSucceeded.connect<Editor, &Editor::onLoadSucceeded>(this);
                 population->onLoadFailed.connect<Editor, &Editor::onLoadFailed>(this);
                 population->onUpdate[10].connect<Editor, &Editor::onUpdate>(this);
-                core->onAction.connect<Editor, &Editor::onAction>(this);
+                population->onAction.connect<Editor, &Editor::onAction>(this);
             }
 
             ~Editor(void)
             {
-                core->onAction.disconnect<Editor, &Editor::onAction>(this);
+                population->onAction.disconnect<Editor, &Editor::onAction>(this);
                 population->onUpdate[10].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onLoadFailed.disconnect<Editor, &Editor::onLoadFailed>(this);
                 population->onLoadSucceeded.disconnect<Editor, &Editor::onLoadSucceeded>(this);
@@ -96,7 +96,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
-            void onAction(const wchar_t *actionName, const Plugin::ActionParameter &parameter)
+            void onAction(const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
             {
                 if (camera)
                 {
@@ -152,9 +152,8 @@ namespace Gek
 
             void onUpdate(void)
             {
-                auto changeConfiguration = core->changeConfiguration();
-                Xml::Node &configuration = *changeConfiguration;
-                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
+                auto &configuration = core->getConfiguration();
+                bool showCursor = configuration.getChild(L"display").getAttribute(L"cursor", L"false");
                 if (showCursor)
                 {
                     const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();

@@ -479,63 +479,15 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_INTERFACE(CoreConfiguration)
-        {
-            virtual void changeConfiguration(Xml::Node &&configuration) = 0;
-        };
-
-        class Configuration
-            : public Plugin::Configuration
-        {
-        private:
-            CoreConfiguration *core;
-            Xml::Node configuration;
-
-        public:
-            Configuration(CoreConfiguration *core, const Xml::Node &configuration)
-                : core(core)
-                , configuration(configuration)
-            {
-            }
-
-            ~Configuration(void)
-            {
-                core->changeConfiguration(std::move(configuration));
-            }
-
-            operator Xml::Node &()
-            {
-                return configuration;
-            }
-        };
-
         GEK_CONTEXT_USER(Core, HWND)
             , public Application
             , public Plugin::Core
-            , public CoreConfiguration
         {
         public:
             struct Command
             {
                 String function;
                 std::vector<String> parameterList;
-            };
-
-            struct Action
-            {
-                const wchar_t *name;
-                Plugin::ActionParameter parameter;
-
-                Action(void)
-                    : name(nullptr)
-                {
-                }
-
-                Action(const wchar_t *name, const Plugin::ActionParameter &parameter)
-                    : name(name)
-                    , parameter(parameter)
-                {
-                }
             };
 
         private:
@@ -559,8 +511,6 @@ namespace Gek
             std::list<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
 
-            concurrency::concurrent_queue<Action> actionQueue;
-
             Video::ObjectPtr vertexProgram;
             Video::ObjectPtr inputLayout;
             Video::BufferPtr constantBuffer;
@@ -573,6 +523,7 @@ namespace Gek
             Video::BufferPtr vertexBuffer;
             Video::BufferPtr indexBuffer;
 
+            bool showCursor = false;
             bool showOptionsMenu = false;
 
         public:
@@ -604,7 +555,8 @@ namespace Gek
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
 
                 displayModeList = videoDevice->getDisplayModeList(Video::Format::R8G8B8A8_UNORM_SRGB);
-                videoDevice->setDisplayMode(displayModeList[0]);
+                currentDisplayMode = (uint32_t(configuration.getChild(L"display").getAttribute(L"mode", L"0")) % displayModeList.size());
+                videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
 
                 for (auto &displayMode : displayModeList)
                 {
@@ -632,10 +584,6 @@ namespace Gek
                 {
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
-
-                population->onUpdate[-1000].connect<Core, &Core::onUpdateActions>(this);
-                population->onUpdate[+1000].connect<Core, &Core::onUpdateScreen>(this);
-                population->onLoading[+1000].connect<Core, &Core::onLoading>(this);
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.Fonts->AddFontDefault();
@@ -715,12 +663,12 @@ namespace Gek
                     L"    float2 texCoord  : TEXCOORD0;" \
                     L"};" \
                     L"" \
-                    L"sampler uiSampler;" \
-                    L"Texture2D uiTexture;" \
+                    L"sampler pointSampler;" \
+                    L"Texture2D<float4> uiTexture : register(t0);" \
                     L"" \
                     L"float4 main(PixelInput input) : SV_Target" \
                     L"{" \
-                    L"    return (input.color * uiTexture.Sample(uiSampler, input.texCoord));" \
+                    L"    return (input.color * uiTexture.Sample(pointSampler, input.texCoord));" \
                     L"}";
 
                 compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
@@ -806,13 +754,6 @@ namespace Gek
                 vertexBuffer = nullptr;
                 indexBuffer = nullptr;
 
-                if (population)
-                {
-                    population->onLoading[+1000].disconnect<Core, &Core::onLoading>(this);
-                    population->onUpdate[+1000].disconnect<Core, &Core::onUpdateScreen>(this);
-                    population->onUpdate[-1000].disconnect<Core, &Core::onUpdateActions>(this);
-                }
-
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -822,51 +763,10 @@ namespace Gek
                 CoUninitialize();
             }
 
-            void addAction(WPARAM wParam, bool state)
-            {
-                switch (wParam)
-                {
-                case 'W':
-                case VK_UP:
-                    actionQueue.push(Action(L"move_forward", state));
-                    break;
-
-                case 'S':
-                case VK_DOWN:
-                    actionQueue.push(Action(L"move_backward", state));
-                    break;
-
-                case 'A':
-                case VK_LEFT:
-                    actionQueue.push(Action(L"strafe_left", state));
-                    break;
-
-                case 'D':
-                case VK_RIGHT:
-                    actionQueue.push(Action(L"strafe_right", state));
-                    break;
-
-                case VK_SPACE:
-                    actionQueue.push(Action(L"jump", state));
-                    break;
-
-                case VK_LCONTROL:
-                    actionQueue.push(Action(L"crouch", state));
-                    break;
-                };
-            }
-
-            // CoreConfiguration
-            void changeConfiguration(Xml::Node &&configuration)
-            {
-                this->configuration = std::move(configuration);
-                onConfigurationChanged.emit();
-            }
-
             // Plugin::Core
-            Plugin::ConfigurationPtr changeConfiguration(void)
+            Xml::Node &getConfiguration(void)
             {
-                return std::make_shared<Configuration>(this, configuration);
+                return configuration;
             }
 
             Xml::Node const &getConfiguration(void) const
@@ -897,25 +797,13 @@ namespace Gek
             // Application
             Result windowEvent(const Event &eventData)
             {
-                ImGuiIO &imGuiIo = ImGui::GetIO();
+                GEK_REQUIRE(videoDevice);
+                GEK_REQUIRE(population);
+
                 switch (eventData.message)
                 {
                 case WM_CLOSE:
                     engineRunning = false;
-                    return 0;
-
-                case WM_SETCURSOR:
-                    if (LOWORD(eventData.lParam) == HTCLIENT)
-                    {
-                        //ShowCursor(false);
-                        imGuiIo.MouseDrawCursor = true;
-                    }
-                    else
-                    {
-                        //ShowCursor(true);
-                        imGuiIo.MouseDrawCursor = false;
-                    }
-
                     return 0;
 
                 case WM_ACTIVATE:
@@ -938,7 +826,6 @@ namespace Gek
                         };
                     }
 
-                    timer.pause(!windowActive);
                     return 0;
 
                 case WM_SIZE:
@@ -948,92 +835,166 @@ namespace Gek
                     }
 
                     return 0;
+                };
 
-                case WM_LBUTTONDOWN:
-                    imGuiIo.MouseDown[0] = true;
-                    return 0;
-
-                case WM_LBUTTONUP:
-                    imGuiIo.MouseDown[0] = false;
-                    return 0;
-
-                case WM_RBUTTONDOWN:
-                    imGuiIo.MouseDown[1] = true;
-                    return 0;
-
-                case WM_RBUTTONUP:
-                    imGuiIo.MouseDown[1] = false;
-                    return 0;
-
-                case WM_MBUTTONDOWN:
-                    imGuiIo.MouseDown[2] = true;
-                    return 0;
-
-                case WM_MBUTTONUP:
-                    imGuiIo.MouseDown[2] = false;
-                    return 0;
-
-                case WM_MOUSEWHEEL:
-                    imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.wParam) > 0 ? +1.0f : -1.0f;
-                    return 0;
-
-                case WM_MOUSEMOVE:
-                    imGuiIo.MousePos.x = (int16_t)(eventData.lParam);
-                    imGuiIo.MousePos.y = (int16_t)(eventData.lParam >> 16);
-                    return 0;
-
-                case WM_KEYDOWN:
-                    addAction(eventData.wParam, true);
-                    if (eventData.wParam < 256)
+                if (showCursor)
+                {
+                    ImGuiIO &imGuiIo = ImGui::GetIO();
+                    switch (eventData.message)
                     {
-                        imGuiIo.KeysDown[eventData.wParam] = 1;
-                    }
-
-                    return 0;
-
-                case WM_KEYUP:
-                    addAction(eventData.wParam, false);
-                    if (eventData.wParam == 192)
-                    {
-                        bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
-                        configuration.getChild(L"display").attributes[L"cursor"] = !showCursor;
-                    }
-
-                    if (eventData.wParam < 256)
-                    {
-                        imGuiIo.KeysDown[eventData.wParam] = 0;
-                    }
-
-                    return 0;
-
-                case WM_CHAR:
-                    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-                    if (eventData.wParam > 0 && eventData.wParam < 0x10000)
-                    {
-                        imGuiIo.AddInputCharacter((uint16_t)eventData.wParam);
-                    }
-
-                    return 0;
-
-                case WM_INPUT:
-                    if (true)
-                    {
-                        UINT inputSize = 40;
-                        static BYTE rawInputBuffer[40];
-                        GetRawInputData((HRAWINPUT)eventData.lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
-
-                        RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
-                        if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                    case WM_SETCURSOR:
+                        if (LOWORD(eventData.lParam) == HTCLIENT)
                         {
-                            float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
-                            float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
-                            actionQueue.push(Action(L"turn", xMovement));
-                            actionQueue.push(Action(L"tilt", yMovement));
+                            ShowCursor(false);
+                            imGuiIo.MouseDrawCursor = true;
+                        }
+                        else
+                        {
+                            ShowCursor(true);
+                            imGuiIo.MouseDrawCursor = false;
                         }
 
                         return 0;
-                    }
-                };
+
+                    case WM_LBUTTONDOWN:
+                        imGuiIo.MouseDown[0] = true;
+                        return 0;
+
+                    case WM_LBUTTONUP:
+                        imGuiIo.MouseDown[0] = false;
+                        return 0;
+
+                    case WM_RBUTTONDOWN:
+                        imGuiIo.MouseDown[1] = true;
+                        return 0;
+
+                    case WM_RBUTTONUP:
+                        imGuiIo.MouseDown[1] = false;
+                        return 0;
+
+                    case WM_MBUTTONDOWN:
+                        imGuiIo.MouseDown[2] = true;
+                        return 0;
+
+                    case WM_MBUTTONUP:
+                        imGuiIo.MouseDown[2] = false;
+                        return 0;
+
+                    case WM_MOUSEWHEEL:
+                        imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.wParam) > 0 ? +1.0f : -1.0f;
+                        return 0;
+
+                    case WM_MOUSEMOVE:
+                        imGuiIo.MousePos.x = (int16_t)(eventData.lParam);
+                        imGuiIo.MousePos.y = (int16_t)(eventData.lParam >> 16);
+                        return 0;
+
+                    case WM_KEYDOWN:
+                        if (eventData.wParam < 256)
+                        {
+                            imGuiIo.KeysDown[eventData.wParam] = 1;
+                        }
+
+                        return 0;
+
+                    case WM_KEYUP:
+                        if (eventData.wParam == VK_ESCAPE)
+                        {
+                            showCursor = false;
+                        }
+
+                        if (eventData.wParam < 256)
+                        {
+                            imGuiIo.KeysDown[eventData.wParam] = 0;
+                        }
+
+                        return 0;
+
+                    case WM_CHAR:
+                        // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
+                        if (eventData.wParam > 0 && eventData.wParam < 0x10000)
+                        {
+                            imGuiIo.AddInputCharacter((uint16_t)eventData.wParam);
+                        }
+
+                        return 0;
+                    };
+                }
+                else
+                {
+                    auto addAction = [this](WPARAM wParam, bool state) -> void
+                    {
+                        switch (wParam)
+                        {
+                        case 'W':
+                        case VK_UP:
+                            population->action(L"move_forward", state);
+                            break;
+
+                        case 'S':
+                        case VK_DOWN:
+                            population->action(L"move_backward", state);
+                            break;
+
+                        case 'A':
+                        case VK_LEFT:
+                            population->action(L"strafe_left", state);
+                            break;
+
+                        case 'D':
+                        case VK_RIGHT:
+                            population->action(L"strafe_right", state);
+                            break;
+
+                        case VK_SPACE:
+                            population->action(L"jump", state);
+                            break;
+
+                        case VK_LCONTROL:
+                            population->action(L"crouch", state);
+                            break;
+                        };
+                    };
+
+                    switch (eventData.message)
+                    {
+                    case WM_SETCURSOR:
+                        ShowCursor(false);
+                        return 0;
+
+                    case WM_KEYDOWN:
+                        addAction(eventData.wParam, true);
+                        return 0;
+
+                    case WM_KEYUP:
+                        addAction(eventData.wParam, false);
+                        if (eventData.wParam == VK_ESCAPE)
+                        {
+                            showCursor = true;
+                        }
+
+                        return 0;
+
+                    case WM_INPUT:
+                        if (population)
+                        {
+                            UINT inputSize = 40;
+                            static BYTE rawInputBuffer[40];
+                            GetRawInputData((HRAWINPUT)eventData.lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
+
+                            RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
+                            if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                            {
+                                float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
+                                float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
+                                population->action(L"turn", xMovement);
+                                population->action(L"tilt", yMovement);
+                            }
+
+                            return 0;
+                        }
+                    };
+                }
 
                 return Result();
             }
@@ -1049,6 +1010,7 @@ namespace Gek
                 uint32_t height = backBuffer->getHeight();
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
+                timer.update();
                 imGuiIo.DeltaTime = float(timer.getUpdateTime());
 
                 // Read keyboard modifiers inputs
@@ -1061,187 +1023,165 @@ namespace Gek
                 // imGuiIo.MouseDown : filled by WM_*BUTTON* events
                 // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
-                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
-                if (showCursor)
+                ImGui::NewFrame();
+
+                if (windowActive)
                 {
-                    // Start the frame
-                    ImGui::NewFrame();
-
-                    if (ImGui::BeginMainMenuBar())
+                    if (showCursor)
                     {
-                        if (ImGui::BeginMenu("File", true))
+                        // Start the frame
+                        if (ImGui::BeginMainMenuBar())
                         {
-                            ImGui::PushItemWidth(-1);
-                            if (ImGui::MenuItem("New Level", "N"))
+                            if (ImGui::BeginMenu("File", true))
                             {
-                                population->load(nullptr);
+                                ImGui::PushItemWidth(-1);
+                                if (ImGui::MenuItem("New Level", "N"))
+                                {
+                                    population->load(nullptr);
+                                }
+
+                                if (ImGui::MenuItem("Load Level", "L"))
+                                {
+                                    showLoadLevel = true;
+                                }
+
+                                if (ImGui::MenuItem("Quit", "Q"))
+                                {
+                                    engineRunning = false;
+                                }
+
+                                ImGui::PopItemWidth();
+                                ImGui::EndMenu();
                             }
 
-                            if (ImGui::MenuItem("Load Level", "L"))
+                            if (ImGui::BeginMenu("Edit"))
                             {
-                                showLoadLevel = true;
+                                ImGui::PushItemWidth(-1);
+                                if (ImGui::MenuItem("Options", "O"))
+                                {
+                                    showOptionsMenu = true;
+                                }
+
+                                if (ImGui::MenuItem("Selector", "S"))
+                                {
+                                    configuration.getChild(L"editor").attributes[L"show_selector"] = true;
+                                }
+
+                                if (ImGui::MenuItem("Editor", "E", &editorSelected))
+                                {
+                                    bool enabled = configuration.getChild(L"editor").attributes[L"enabled"];
+                                    configuration.getChild(L"editor").attributes[L"enabled"] = !enabled;
+                                }
+
+                                ImGui::PopItemWidth();
+                                ImGui::EndMenu();
                             }
 
-                            if (ImGui::MenuItem("Quit", "Q"))
+                            ImGui::EndMainMenuBar();
+                        }
+
+                        if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        {
+                            char name[256] = "";
+                            //ImGui::SetKeyboardFocusHere();
+                            if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
                             {
-                                engineRunning = false;
+                                population->load(String(name));
+                                showLoadLevel = false;
+                            }
+
+                            ImGui::SameLine();
+                            if (ImGui::Button("OK"))
+                            {
+                                population->load(String(name));
+                                showLoadLevel = false;
+                            }
+
+                            ImGui::End();
+                        }
+
+                        if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        {
+                            ImGui::Dummy(ImVec2(200, 0));
+
+                            ImGui::PushItemWidth(-1.0f);
+                            ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                            ImGui::PopItemWidth();
+
+                            ImGui::Separator();
+                            ImGui::Text("Display Mode");
+                            ImGui::PushItemWidth(-1.0f);
+                            if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
+                            {
+                                Core *core = static_cast<Core *>(data);
+                                auto &mode = core->displayModeStringList[index];
+                                (*text) = mode.c_str();
+                                return true;
+                            }, this, displayModeStringList.size(), 5))
+                            {
+                                configuration.getChild(L"display").attributes[L"mode"] = currentDisplayMode;
+                                videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
+                                onResize.emit();
                             }
 
                             ImGui::PopItemWidth();
-                            ImGui::EndMenu();
+                            if (ImGui::Checkbox("FullScreen", &fullScreen))
+                            {
+                                SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+
+                                videoDevice->setFullScreenState(fullScreen);
+                                onResize.emit();
+                            }
+
+                            ImGui::End();
                         }
-
-                        if (ImGui::BeginMenu("Edit"))
-                        {
-                            ImGui::PushItemWidth(-1);
-                            if (ImGui::MenuItem("Options", "O"))
-                            {
-                                showOptionsMenu = true;
-                            }
-
-                            if (ImGui::MenuItem("Selector", "S"))
-                            {
-                                configuration.getChild(L"editor").attributes[L"show_selector"] = true;
-                            }
-
-                            if (ImGui::MenuItem("Editor", "E", &editorSelected))
-                            {
-                                bool enabled = configuration.getChild(L"editor").attributes[L"enabled"];
-                                configuration.getChild(L"editor").attributes[L"enabled"] = !enabled;
-                            }
-
-                            ImGui::PopItemWidth();
-                            ImGui::EndMenu();
-                        }
-
-                        ImGui::EndMainMenuBar();
+                        
+                        population->update(0.0f);
                     }
-
-                    if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                    else
                     {
-                        char name[256] = "";
-                        //ImGui::SetKeyboardFocusHere();
-                        if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
-                        {
-                            population->load(String(name));
-                            showLoadLevel = false;
-                        }
-
-                        ImGui::SameLine();
-                        if (ImGui::Button("OK"))
-                        {
-                            population->load(String(name));
-                            showLoadLevel = false;
-                        }
-
-                        ImGui::End();
+                        float frameTime = float(timer.getUpdateTime());
+                        population->update(frameTime);
                     }
+                }
 
-                    if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                if (population->isLoading())
+                {
+                    bool loadingOpen = true;
+                    ImGui::SetNextWindowPosCenter();
+                    if (ImGui::Begin("GEK Engine##Loading", &loadingOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
                     {
                         ImGui::Dummy(ImVec2(200, 0));
-
-                        ImGui::PushItemWidth(-1.0f);
-                        ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                        ImGui::PopItemWidth();
-
-                        ImGui::Separator();
-                        ImGui::Text("Display Mode");
-                        ImGui::PushItemWidth(-1.0f);
-                        if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
-                        {
-                            Core *core = static_cast<Core *>(data);
-                            auto &mode = core->displayModeStringList[index];
-                            (*text) = mode.c_str();
-                            return true;
-                        }, this, displayModeStringList.size(), 5))
-                        {
-                            videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
-                            onConfigurationChanged.emit();
-                            onResize.emit();
-                        }
-
-                        ImGui::PopItemWidth();
-                        if (ImGui::Checkbox("FullScreen", &fullScreen))
-                        {
-                            SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-
-                            videoDevice->setFullScreenState(fullScreen);
-                            onConfigurationChanged.emit();
-                            onResize.emit();
-                        }
-
+                        ImGui::Text("Loading...");
                         ImGui::End();
                     }
                 }
-                else
+                else if (!windowActive)
+                {
+                    bool pausedOpen = true;
+                    ImGui::SetNextWindowPosCenter();
+                    if (ImGui::Begin("GEK Engine##Paused", &pausedOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+                    {
+                        ImGui::Dummy(ImVec2(200, 0));
+                        ImGui::Text("Paused");
+                        ImGui::End();
+                    }
+                }
+
+                if (windowActive && !showCursor)
                 {
                     RECT windowRectangle;
                     GetWindowRect(window, &windowRectangle);
                     SetCursorPos(Math::lerp(windowRectangle.left, windowRectangle.right, 0.5f), Math::lerp(windowRectangle.top, windowRectangle.bottom, 0.5f));
                 }
 
-                timer.update();
-                float frameTime = float(timer.getUpdateTime());
-                population->update(!windowActive, frameTime);
-                return engineRunning;
-            }
-
-            // Plugin::Population Slots
-            void onUpdateActions(void)
-            {
-                GEK_REQUIRE(videoDevice);
-
-                videoDevice->getDefaultContext()->clearRenderTarget(videoDevice->getBackBuffer(), Math::Color::Black);
-
-                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
-                if (showCursor)
-                {
-                    actionQueue.clear();
-                }
-                else
-                {
-                    Action action;
-                    while (actionQueue.try_pop(action))
-                    {
-                        onAction.emit(action.name, action.parameter);
-                    };
-                }
-            }
-
-            void onUpdateScreen(void)
-            {
-                GEK_REQUIRE(videoDevice);
-
-                bool showCursor = configuration.getChild(L"display").attributes[L"cursor"];
-                if (showCursor)
-                {
-                    ImGui::Render();
-                }
-
-                videoDevice->present(false);
-            }
-
-            void onLoading(void)
-            {
-                GEK_REQUIRE(videoDevice);
-
-                ImGui::NewFrame();
-
-                bool loadingOpen = true;
-                ImGui::SetNextWindowPosCenter();
-                if (ImGui::Begin("GEK Engine##Loading", &loadingOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
-                {
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Loading...");
-                    ImGui::End();
-                }
-
-                videoDevice->getDefaultContext()->clearRenderTarget(videoDevice->getBackBuffer(), Math::Color::Black);
+                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
 
                 ImGui::Render();
-
+                
                 videoDevice->present(false);
+
+                return engineRunning;
             }
 
             // ImGui
@@ -1324,11 +1264,10 @@ namespace Gek
                             std::vector<Video::ScissorBox> scissorBoxList(1);
                             scissorBoxList[0].minimum = Math::UInt2(command->ClipRect.x, command->ClipRect.y);
                             scissorBoxList[0].maximum = Math::UInt2(command->ClipRect.z, command->ClipRect.w);
+                            videoContext->setScissorList(scissorBoxList);
 
                             std::vector<Video::Object *> textureList(1);
                             textureList[0] = (Video::Object *)command->TextureId;
-
-                            videoContext->setScissorList(scissorBoxList);
                             videoContext->pixelPipeline()->setResourceList(textureList, 0);
 
                             videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
