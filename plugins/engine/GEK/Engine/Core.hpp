@@ -26,6 +26,7 @@ namespace Gek
             GEK_ADD_EXCEPTION(InitializationFailed);
 
             Nano::Signal<void(void)> onResize;
+            Nano::Signal<void(bool showCursor)> onInterface;
 
             virtual Xml::Node &getConfiguration(void) = 0;
             virtual Xml::Node const &getConfiguration(void) const = 0;

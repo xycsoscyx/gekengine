@@ -259,7 +259,7 @@ namespace Gek
                 population->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
 			}
 
-			// Plugin::Core Slots
+			// Plugin::Population Slots
 			void onAction(const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
 			{
 				if (_wcsicmp(actionName, L"turn") == 0)

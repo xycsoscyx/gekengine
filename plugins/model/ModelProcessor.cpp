@@ -340,10 +340,9 @@ namespace Gek
             resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
         }
 
-        void onRenderScene(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+        void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
         {
             GEK_REQUIRE(renderer);
-            GEK_REQUIRE(cameraEntity);
 
             visibleMap.clear();
             list([&](Plugin::Entity *entity, auto &data, auto &modelComponent, auto &transformComponent) -> void

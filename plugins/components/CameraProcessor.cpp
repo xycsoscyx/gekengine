@@ -20,14 +20,16 @@ namespace Gek
             float fieldOfView;
             float nearClip;
             float farClip;
-            String name;
+            String target;
+            std::vector<String> filterList;
 
             void save(Xml::Leaf &componentData) const
             {
                 componentData.attributes[L"field_of_view"] = Math::convertRadiansToDegrees(fieldOfView);
                 componentData.attributes[L"near_clip"] = nearClip;
                 componentData.attributes[L"far_clip"] = farClip;
-                componentData.attributes[L"name"] = name;
+                componentData.attributes[L"target"] = target;
+                componentData.text.join(filterList, L',');
             }
 
             void load(const Xml::Leaf &componentData)
@@ -35,7 +37,8 @@ namespace Gek
                 fieldOfView = Math::convertDegreesToRadians(componentData.getValue(L"field_of_view", 90.0f));
                 nearClip = componentData.getValue(L"near_clip", 1.0f);
                 farClip = componentData.getValue(L"far_clip", 100.0f);
-                name = componentData.getAttribute(L"name");
+                target = componentData.getAttribute(L"target");
+                filterList = componentData.text.split(L',');
             }
         };
     };
@@ -57,7 +60,25 @@ namespace Gek
             ImGui::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, flags);
-            ImGui::InputText("Name", firstPersonCameraComponent.name, flags);
+            ImGui::InputText("Target", firstPersonCameraComponent.target, flags);
+            if (ImGui::ListBoxHeader("Filters", firstPersonCameraComponent.filterList.size(), 5))
+            {
+                ImGuiListClipper clipper(firstPersonCameraComponent.filterList.size(), ImGui::GetTextLineHeightWithSpacing());
+                while (clipper.Step())
+                {
+                    for (int filterIndex = clipper.DisplayStart; filterIndex < clipper.DisplayEnd; ++filterIndex)
+                    {
+                        ImGui::PushID(filterIndex);
+                        ImGui::PushItemWidth(-1);
+                        ImGui::InputText("##", firstPersonCameraComponent.filterList[filterIndex], flags);
+                        ImGui::PopItemWidth();
+                        ImGui::PopID();
+                    }
+                };
+
+                ImGui::ListBoxFooter();
+            }
+
             ImGui::SetCurrentContext(nullptr);
         }
 
@@ -79,7 +100,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_USER(CameraProcessor, Plugin::Core *)
-        , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera>
+        , public Plugin::ProcessorMixin<CameraProcessor, Components::FirstPersonCamera, Components::Transform>
         , public Plugin::Processor
     {
     public:
@@ -126,14 +147,14 @@ namespace Gek
 
         void addEntity(Plugin::Entity *entity)
         {
-            ProcessorMixin::addEntity(entity, [&](auto &data, auto &cameraComponent) -> void
+            ProcessorMixin::addEntity(entity, [&](auto &data, auto &cameraComponent, auto &transformComponent) -> void
             {
-                if (!cameraComponent.name.empty())
+                if (!cameraComponent.target.empty())
                 {
                     auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                     uint32_t width = backBuffer->getWidth();
                     uint32_t height = backBuffer->getHeight();
-                    data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.name), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.target), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
                 }
             });
         }
@@ -177,14 +198,16 @@ namespace Gek
         {
             GEK_REQUIRE(renderer);
 
-            list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent) -> void
+            list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
             {
+                auto viewMatrix(transformComponent.getMatrix().getInverse());
+
                 const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                 const float width = float(backBuffer->getWidth());
                 const float height = float(backBuffer->getHeight());
                 Math::Float4x4 projectionMatrix(Math::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                renderer->render(entity, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
+                renderer->render(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
             });
         }
     };

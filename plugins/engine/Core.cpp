@@ -542,7 +542,6 @@ namespace Gek
                     configuration = Xml::Node(L"config");
                 };
 
-                configuration.getChild(L"display").attributes[L"cursor"] = false;
                 configuration.getChild(L"editor").attributes[L"enabled"] = false;
                 configuration.getChild(L"editor").attributes[L"show_selector"] = false;
 
@@ -900,6 +899,7 @@ namespace Gek
                     case WM_KEYUP:
                         if (eventData.wParam == VK_ESCAPE)
                         {
+                            imGuiIo.MouseDrawCursor = false;
                             showCursor = false;
                         }
 
@@ -959,7 +959,15 @@ namespace Gek
                     switch (eventData.message)
                     {
                     case WM_SETCURSOR:
-                        ShowCursor(false);
+                        if (LOWORD(eventData.lParam) == HTCLIENT)
+                        {
+                            ShowCursor(false);
+                        }
+                        else
+                        {
+                            ShowCursor(true);
+                        }
+
                         return 0;
 
                     case WM_KEYDOWN:
@@ -1166,6 +1174,10 @@ namespace Gek
                         ImGui::Text("Paused");
                         ImGui::End();
                     }
+                }
+                else if (showCursor)
+                {
+                    onInterface.emit(showCursor);
                 }
 
                 if (windowActive && !showCursor)

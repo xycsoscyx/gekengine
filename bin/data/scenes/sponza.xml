@@ -29,8 +29,7 @@
 
         <entity name="player_body">
             <transform position="(0, 5, 0)" rotation="(0, pi/2, 0)" />
-            <first_person_camera mode="perspective" field_of_view="70" near_clip=".5" far_clip="200" />
-            <filter>antialias, tonemap</filter>
+            <first_person_camera mode="perspective" field_of_view="70" near_clip=".5" far_clip="200" >antialias, tonemap</first_person_camera>
             <player height="6" outer_raduis="1.5" outer_radius=".5" stair_step="1.5" />
             <physical mass="250" />
         </entity>

@@ -17,7 +17,6 @@
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Components\Color.hpp"
 #include "GEK\Components\Light.hpp"
-#include "GEK\Components\Filter.hpp"
 #include "GEK\Shapes\Sphere.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -508,15 +507,10 @@ namespace Gek
                 }
             }
 
-            void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
+            void render(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
             {
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
-                GEK_REQUIRE(cameraEntity);
-
-                const auto &cameraTransform = cameraEntity->getComponent<Components::Transform>();
-                const Math::Float4x4 cameraMatrix(cameraTransform.getMatrix());
-                const Math::Float4x4 viewMatrix(cameraMatrix.getInverse());
 
                 const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
 
@@ -533,7 +527,7 @@ namespace Gek
                 cameraConstantData.projectionMatrix = projectionMatrix;
 
                 drawCallList.clear();
-                onRenderScene.emit(cameraEntity, cameraConstantData.viewMatrix, viewFrustum);
+                onRenderScene.emit(viewFrustum, viewMatrix);
                 if (!drawCallList.empty())
                 {
                     Video::Device::Context *videoContext = videoDevice->getDefaultContext();
@@ -763,11 +757,10 @@ namespace Gek
                         }
                     }
 
-                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                    if (cameraEntity->hasComponent<Components::Filter>())
+                    if (filterList)
                     {
-                        const auto &filterList = cameraEntity->getComponent<Components::Filter>().list;
-                        for (auto &filterName : filterList)
+                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                        for (auto &filterName : *filterList)
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
