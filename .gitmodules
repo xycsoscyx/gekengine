@@ -1,0 +1,21 @@
+[submodule "external/DirectXTex"]
+	path = external/DirectXTex
+	url = https://github.com/Microsoft/DirectXTex.git
+[submodule "external/assimp"]
+	path = external/assimp
+	url = https://github.com/assimp/assimp.git
+[submodule "external/imgui"]
+	path = external/imgui
+	url = https://github.com/ocornut/imgui.git
+[submodule "external/imguizmo"]
+	path = external/imguizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "external/libxml2"]
+	path = libxml2
+	url = https://github.com/GNOME/libxml2.git
+[submodule "external/nano-signal-slot"]
+	path = nano-signal-slot
+	url = https://github.com/NoAvailableAlias/nano-signal-slot.git
+[submodule "external/newton-dynamics"]
+	path = external/newton-dynamics
+	url = https://github.com/MADEAPPS/newton-dynamics.git
