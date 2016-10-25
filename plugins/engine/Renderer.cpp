@@ -13,7 +13,6 @@
 #include "GEK\Engine\Entity.hpp"
 #include "GEK\Engine\Component.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Engine\Editor.hpp"
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Components\Color.hpp"
 #include "GEK\Components\Light.hpp"

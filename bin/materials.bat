@@ -1,3 +1,0 @@
-.\release\materialcreator.exe
-
-pause

@@ -1,4 +1,6 @@
 ﻿#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Convert.hpp"
+#include "GEK\Math\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
@@ -9,53 +11,14 @@
 #include "GEK\Engine\Entity.hpp"
 #include "GEK\Engine\Component.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Engine\Editor.hpp"
 #include "GEK\Components\Transform.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
 
 namespace Gek
 {
-    namespace Private
-    {
-        void EditorCamera::save(Xml::Leaf &componentData) const
-        {
-        }
-
-        void EditorCamera::load(const Xml::Leaf &componentData)
-        {
-        }
-    }; // namespace Private
-
     namespace Implementation
     {
-        GEK_CONTEXT_USER(EditorCamera)
-            , public Plugin::ComponentMixin<Private::EditorCamera, Edit::Component>
-        {
-        public:
-            EditorCamera(Context *context)
-                : ContextRegistration(context)
-            {
-            }
-
-            // Edit::Component
-            void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
-            {
-                auto &editorCamera = *dynamic_cast<Private::EditorCamera *>(data);
-            }
-
-            void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
-            {
-                auto &editorCamera = *dynamic_cast<Private::EditorCamera *>(data);
-            }
-
-            // Plugin::Component
-            const wchar_t * const getName(void) const
-            {
-                return L"editor_camera";
-            }
-        };
-
         GEK_CONTEXT_USER(Editor, Plugin::Core *)
             , public Plugin::Processor
         {
@@ -64,7 +27,14 @@ namespace Gek
             Edit::Population *population;
             Plugin::Renderer *renderer;
 
-            Plugin::Entity *camera = nullptr;
+            float headingAngle = 0.0f;
+            float lookingAngle = 0.0f;
+            Math::Float3 position = Math::Float3::Zero;
+            Math::QuaternionFloat rotation = Math::QuaternionFloat::Identity;
+            bool moveForward = false;
+            bool moveBackward = false;
+            bool strafeLeft = false;
+            bool strafeRight = false;
 
             uint32_t selectedEntity = 0;
             uint32_t selectedComponent = 0;
@@ -81,16 +51,14 @@ namespace Gek
 
                 core->onInterface.connect<Editor, &Editor::onInterface>(this);
                 population->onLoadBegin.connect<Editor, &Editor::onLoadBegin>(this);
-                population->onLoadSucceeded.connect<Editor, &Editor::onLoadSucceeded>(this);
-                population->onLoadFailed.connect<Editor, &Editor::onLoadFailed>(this);
                 population->onAction.connect<Editor, &Editor::onAction>(this);
+                population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
             }
 
             ~Editor(void)
             {
+                population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
-                population->onLoadFailed.disconnect<Editor, &Editor::onLoadFailed>(this);
-                population->onLoadSucceeded.disconnect<Editor, &Editor::onLoadSucceeded>(this);
                 population->onLoadBegin.disconnect<Editor, &Editor::onLoadBegin>(this);
                 core->onInterface.disconnect<Editor, &Editor::onInterface>(this);
             }
@@ -98,37 +66,10 @@ namespace Gek
             // Plugin::Core Slots
             void onInterface(bool showCursor)
             {
-                if (!showCursor)
-                {
-                    return;
-                }
-
-                const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                const float width = float(backBuffer->getWidth());
-                const float height = float(backBuffer->getHeight());
-                auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
                 auto &configuration = core->getConfiguration();
                 bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
-                if (editingEnabled && camera)
-                {
-                    float frameTime = population->getFrameTime();
-
-                    auto &editorCamera = camera->getComponent<Private::EditorCamera>();
-                    float forwardSpeed = (((editorCamera.moveForward ? 1.0f : 0.0f) + (editorCamera.moveBackward ? -1.0f : 0.0f)) * 5.0f);
-                    float lateralSpeed = (((editorCamera.strafeLeft ? -1.0f : 0.0f) + (editorCamera.strafeRight ? 1.0f : 0.0f)) * 5.0f);
-
-                    auto &transformComponent = camera->getComponent<Components::Transform>();
-
-                    static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                    transformComponent.rotation = Math::QuaternionFloat::createAngularRotation(upAxis, editorCamera.headingAngle);
-                    auto cameraMatrix(Math::convert(transformComponent.rotation));
-                    transformComponent.position += (cameraMatrix.nz * forwardSpeed * frameTime);
-                    transformComponent.position += (cameraMatrix.nx * lateralSpeed * frameTime);
-                }
-
                 bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
-                if (showSelectionMenu && ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                if (showCursor && showSelectionMenu && ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                 {
                     ImGui::Dummy(ImVec2(350, 0));
                     auto &entityMap = population->getEntityMap();
@@ -153,7 +94,7 @@ namespace Gek
                         }
 
                         ImGui::PushItemWidth(-1.0f);
-                        auto entityCount = entityMap.size() - 1;
+                        auto entityCount = entityMap.size();
                         if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                         {
                             ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
@@ -161,11 +102,6 @@ namespace Gek
                             {
                                 auto entitySearch = entityMap.begin();
                                 std::advance(entitySearch, clipper.DisplayStart);
-                                if (entitySearch->second.get() == camera)
-                                {
-                                    std::advance(entitySearch, 1);
-                                }
-
                                 for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                                 {
                                     ImGui::PushID(entityIndex);
@@ -281,13 +217,20 @@ namespace Gek
                                 {
                                     Edit::Component *component = population->getComponent(entityComponentSearch->first);
                                     Plugin::Component::Data *componentData = entityComponentSearch->second.get();
-                                    if (component && componentData && camera)
+                                    if (component && componentData)
                                     {
                                         ImGui::Separator();
                                         if (editingEnabled)
                                         {
-                                            auto cameraMatrix(camera->getComponent<Components::Transform>().getMatrix());
-                                            auto viewMatrix(cameraMatrix.getInverse());
+                                            auto viewMatrix(Math::convert(rotation));
+                                            viewMatrix.translation = position;
+                                            viewMatrix.invert();
+
+                                            const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                                            const float width = float(backBuffer->getWidth());
+                                            const float height = float(backBuffer->getHeight());
+                                            auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+
                                             component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
                                         }
                                         else
@@ -304,42 +247,34 @@ namespace Gek
                 }
 
                 configuration.getChild(L"editor").attributes[L"show_selector"] = showSelectionMenu;
-                if (editingEnabled && camera)
-                {
-                    //renderer->render(camera, projectionMatrix, 1.0f, 200.0f, ResourceHandle());
-                }
             }
 
             // Plugin::Population Slots
             void onAction(const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
             {
-                if (camera)
+                if (_wcsicmp(actionName, L"turn") == 0)
                 {
-                    auto &editorCamera = camera->getComponent<Private::EditorCamera>();
-                    if (_wcsicmp(actionName, L"turn") == 0)
-                    {
-                        editorCamera.headingAngle += (parameter.value * 0.01f);
-                    }
-                    else if (_wcsicmp(actionName, L"move_forward") == 0)
-                    {
-                        editorCamera.moveForward = parameter.state;
-                    }
-                    else if (_wcsicmp(actionName, L"move_backward") == 0)
-                    {
-                        editorCamera.moveBackward = parameter.state;
-                    }
-                    else if (_wcsicmp(actionName, L"strafe_left") == 0)
-                    {
-                        editorCamera.strafeLeft = parameter.state;
-                    }
-                    else if (_wcsicmp(actionName, L"strafe_right") == 0)
-                    {
-                        editorCamera.strafeRight = parameter.state;
-                    }
-                    else if (_wcsicmp(actionName, L"crouch") == 0)
-                    {
-                        editorCamera.crouching = parameter.state;
-                    }
+                    headingAngle += (parameter.value * 0.01f);
+                }
+                else if (_wcsicmp(actionName, L"turn") == 0)
+                {
+                    headingAngle += (parameter.value * 0.01f);
+                }
+                else if (_wcsicmp(actionName, L"move_forward") == 0)
+                {
+                    moveForward = parameter.state;
+                }
+                else if (_wcsicmp(actionName, L"move_backward") == 0)
+                {
+                    moveBackward = parameter.state;
+                }
+                else if (_wcsicmp(actionName, L"strafe_left") == 0)
+                {
+                    strafeLeft = parameter.state;
+                }
+                else if (_wcsicmp(actionName, L"strafe_right") == 0)
+                {
+                    strafeRight = parameter.state;
                 }
             }
 
@@ -347,25 +282,44 @@ namespace Gek
             {
                 selectedEntity = 0;
                 selectedComponent = 0;
-                camera = nullptr;
+                headingAngle = 0.0f;
+                lookingAngle = 0.0f;
+                position = Math::Float3::Zero;
+                rotation = Math::QuaternionFloat::Identity;
+                moveForward = false;
+                moveBackward = false;
+                strafeLeft = false;
+                strafeRight = false;
             }
 
-            void onLoadSucceeded(const String &populationName)
+            void onUpdate(void)
             {
-                std::vector<Xml::Leaf> editorComponentList(3);
-                editorComponentList[0].type = L"transform";
-                editorComponentList[1].type = L"editor_camera";
-                editorComponentList[2].type = L"filter";
-                editorComponentList[2].text = L"antialias, tonemap";
-                camera = population->createEntity(L"editor_camera", editorComponentList);
-            }
+                auto &configuration = core->getConfiguration();
+                bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
+                if (editingEnabled)
+                {
+                    float frameTime = population->getFrameTime();
 
-            void onLoadFailed(const String &populationName)
-            {
+                    static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
+                    rotation = Math::QuaternionFloat::createAngularRotation(upAxis, headingAngle);
+                    auto cameraMatrix(Math::convert(rotation));
+                    position += (cameraMatrix.nz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
+                    position += (cameraMatrix.nx * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
+
+                    auto viewMatrix(Math::convert(rotation));
+                    viewMatrix.translation = position;
+                    viewMatrix.invert();
+
+                    const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                    const float width = float(backBuffer->getWidth());
+                    const float height = float(backBuffer->getHeight());
+                    auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+
+                    renderer->render(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
+                }
             }
         };
 
-        GEK_REGISTER_CONTEXT_USER(EditorCamera);
         GEK_REGISTER_CONTEXT_USER(Editor);
     }; // namespace Implementation
 }; // namespace Gek
