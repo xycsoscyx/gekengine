@@ -11,10 +11,10 @@
 	path = external/imguizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
 [submodule "external/libxml2"]
-	path = libxml2
+	path = externallibxml2
 	url = https://github.com/GNOME/libxml2.git
 [submodule "external/nano-signal-slot"]
-	path = nano-signal-slot
+	path = externalnano-signal-slot
 	url = https://github.com/NoAvailableAlias/nano-signal-slot.git
 [submodule "external/newton-dynamics"]
 	path = external/newton-dynamics
