@@ -16,8 +16,6 @@ namespace Gek
     GEK_CONTEXT_BEGIN(System);
         GEK_CONTEXT_ADD_CLASS(Components::FirstPersonCamera, FirstPersonCamera);
             GEK_CONTEXT_ADD_TYPE(ComponentType);
-        GEK_CONTEXT_ADD_CLASS(Components::Filter, Filter);
-            GEK_CONTEXT_ADD_TYPE(ComponentType);
         GEK_CONTEXT_ADD_CLASS(Components::Color, Color);
             GEK_CONTEXT_ADD_TYPE(ComponentType);
         GEK_CONTEXT_ADD_CLASS(Components::PointLight, PointLight);

@@ -65,12 +65,12 @@ namespace Gek
                 float buffer[3];
             };
 
-            Nano::Signal<void(const Plugin::Entity *cameraEntity, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)> onRenderScene;
+            Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)> onRenderScene;
 
             virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
-            virtual void render(const Plugin::Entity *cameraEntity, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget) = 0;
+            virtual void render(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList = nullptr, ResourceHandle cameraTarget = ResourceHandle()) = 0;
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
         };
     }; // namespace Engine

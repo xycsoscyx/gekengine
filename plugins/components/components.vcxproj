@@ -165,7 +165,6 @@
     <ClCompile Include="CameraProcessor.cpp" />
     <ClCompile Include="Color.cpp" />
     <ClCompile Include="entrypoints.cpp" />
-    <ClCompile Include="Filter.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="SpinProcessor.cpp" />
     <ClCompile Include="Transform.cpp" />
@@ -175,7 +174,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GEK\Components\Color.hpp" />
-    <ClInclude Include="GEK\Components\Filter.hpp" />
     <ClInclude Include="GEK\Components\Light.hpp" />
     <ClInclude Include="GEK\Components\Transform.hpp" />
   </ItemGroup>
