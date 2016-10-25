@@ -74,9 +74,6 @@
     <ClInclude Include="ShaderFilter.hpp">
       <Filter>Source Files</Filter>
     </ClInclude>
-    <ClInclude Include="GEK\Engine\Editor.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="GEK\Engine\Handles.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>

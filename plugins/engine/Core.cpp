@@ -1175,11 +1175,8 @@ namespace Gek
                         ImGui::End();
                     }
                 }
-                else if (showCursor)
-                {
-                    onInterface.emit(showCursor);
-                }
 
+                onInterface.emit(showCursor);
                 if (windowActive && !showCursor)
                 {
                     RECT windowRectangle;

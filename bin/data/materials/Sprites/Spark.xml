@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<material>
-    <shader name="Glass">
-        <transparent>
-            <albedo flags="sRGB" file="Sprites\\Spark.Albedo" />
-        </transparent>
-    </shader>
-</material>

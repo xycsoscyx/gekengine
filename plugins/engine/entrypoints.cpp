@@ -11,7 +11,6 @@ namespace Gek
         GEK_DECLARE_CONTEXT_USER(Material);
         GEK_DECLARE_CONTEXT_USER(Shader);
         GEK_DECLARE_CONTEXT_USER(Filter);
-        GEK_DECLARE_CONTEXT_USER(EditorCamera);
         GEK_DECLARE_CONTEXT_USER(Editor);
         GEK_DECLARE_CONTEXT_USER(Core);
     };
@@ -24,8 +23,6 @@ namespace Gek
         GEK_CONTEXT_ADD_CLASS(Engine::Material, Implementation::Material);
         GEK_CONTEXT_ADD_CLASS(Engine::Shader, Implementation::Shader);
         GEK_CONTEXT_ADD_CLASS(Engine::Filter, Implementation::Filter);
-        GEK_CONTEXT_ADD_CLASS(Engine::EditorCamera, Implementation::EditorCamera);
-            GEK_CONTEXT_ADD_TYPE(ComponentType);
         GEK_CONTEXT_ADD_CLASS(Engine::Editor, Implementation::Editor);
             GEK_CONTEXT_ADD_TYPE(ProcessorType);
         GEK_CONTEXT_ADD_CLASS(Engine::Core, Implementation::Core);
