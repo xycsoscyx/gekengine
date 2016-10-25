@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<shader priority="2">
+    <input>
+        <position bind="float3" semantic="POSITION" />
+        <texCoord bind="float2" semantic="TEXCOORD" />
+        <normal bind="float3" semantic="NORMAL" />
+    </input>
+
+    <material>
+        <transparent>
+            <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>
+        </transparent>
+    </material>
+
+    <textures>
+        <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
+        <modulationDiffusionBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</modulationDiffusionBuffer>
+        <refractionBuffer bind="float2" flags="target">R8G8_NORM</refractionBuffer>
+        <depthBuffer bind="float" source="Solid" />
+        <depthCopy bind="float">R32_FLOAT</depthCopy>
+    </textures>
+
+    <blocks>
+        <TransparentPass>
+            <clear>
+                <accumulationBuffer type="target">0</accumulationBuffer>
+                <modulationDiffusionBuffer type="target">(1,1,1,0)</modulationDiffusionBuffer>
+                <refractionBuffer type="target">0</refractionBuffer>
+            </clear>
+
+            <passes>
+                <Calculate forward="transparent" entry="mainPixelProgram">
+                    <blendstates unified="false">
+                        <accumulationBuffer>
+                            <color source="one" destination="one" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </accumulationBuffer>
+                        <modulationDiffusionBuffer>
+                            <color source="zero" destination="inverse_source_color" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </modulationDiffusionBuffer>
+                        <refractionBuffer>
+                            <color source="one" destination="one" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </refractionBuffer>
+                    </blendstates>
+
+                    <renderstates>
+                        <cullmode>back</cullmode>
+                    </renderstates>
+
+                    <depthstates target="depthBuffer">
+                        <comparison>less</comparison>
+                        <writemask>zero</writemask>
+                    </depthstates>
+
+                    <targets>
+                        <accumulationBuffer />
+                        <modulationDiffusionBuffer />
+                        <refractionBuffer />
+                    </targets>
+
+                    <resources>
+                        <depthCopy copy="depthBuffer" />
+                    </resources>
+                </Calculate>
+
+                <Combine entry="mainPixelProgram">
+                    <resources>
+                        <accumulationBuffer />
+                        <modulationDiffusionBuffer />
+                        <refractionBuffer />
+                        <screenBuffer copy="screen" />
+                    </resources>
+
+                    <targets>
+                        <screen />
+                    </targets>
+                </Combine>
+            </passes>
+        </TransparentPass>
+    </blocks>
+</shader>

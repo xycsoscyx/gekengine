@@ -1,0 +1,68 @@
+<?xml version="1.0"?>
+<filter>
+    <textures>
+        <luminanceBuffer bind="float" flags="target" mipmaps="0">R16_FLOAT</luminanceBuffer>
+    </textures>
+
+    <buffers>
+        <averageLuminanceBuffer size="1" flags="unorderedAccess">R32_FLOAT</averageLuminanceBuffer>
+    </buffers>
+
+    <passes>
+        <CalculateLuminance mode="deferred" entry="mainPixelProgram">
+            <resources>
+                <screen />
+            </resources>
+
+            <targets>
+                <luminanceBuffer />
+            </targets>
+        </CalculateLuminance>
+
+        <AdaptLuminance compute="(1, 1, 1)" entry="mainComputeProgram">
+            <defines>
+                <adaptionRate>1.25</adaptionRate>
+            </defines>
+
+            <resources>
+                <luminanceBuffer actions="generateMipMaps" />
+            </resources>
+
+            <unorderedaccess>
+                <averageLuminanceBuffer />
+            </unorderedaccess>
+        </AdaptLuminance>
+
+        <ToneMap entry="mainPixelProgram">
+            <defines>
+                <techniqueMode bind="int">7</techniqueMode>
+                <autoExposureMode bind="int">2</autoExposureMode>
+
+                <luminanceSaturation>1.0</luminanceSaturation>
+                <keyValue>0.18</keyValue>
+                <exposure>0.0</exposure>
+                <whiteLevel>5.0</whiteLevel>
+                <bias>0.5</bias>
+
+                <!-- Uncharted 2 Filmic ALU Defines -->
+                <shoulderStrength>0.2</shoulderStrength>
+                <linearStrength>0.5</linearStrength>
+                <linearAngle>0.42</linearAngle>
+                <toeStrength>0.64</toeStrength>
+                <toeNumerator>0.19</toeNumerator>
+                <toeDenominator>0.9</toeDenominator>
+                <linearWhite>11.2</linearWhite>
+
+            </defines>
+
+            <resources>
+                <averageLuminanceBuffer />
+                <screenBuffer copy="screen" />
+            </resources>
+
+            <targets>
+                <screen />
+            </targets>
+        </ToneMap>
+    </passes>
+</filter>

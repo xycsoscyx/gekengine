@@ -1,0 +1,77 @@
+<?xml version="1.0"?>
+<shader priority="2">
+    <input>
+        <position bind="float3" semantic="POSITION" />
+        <texCoord bind="float2" semantic="TEXCOORD" />
+        <normal bind="float3" semantic="NORMAL" />
+    </input>
+
+    <material>
+        <transparent>
+            <albedo bind="float4" pattern="color" parameters="(1,1,1,1)">Texture2D</albedo>
+        </transparent>
+    </material>
+
+    <textures>
+        <accumulationBuffer bind="float4" flags="target">R16G16B16A16_FLOAT</accumulationBuffer>
+        <revealBuffer bind="float" flags="target">R8_UNORM</revealBuffer>
+        <depthBuffer bind="float" source="Solid" />
+        <depthCopy bind="float">R32_FLOAT</depthCopy>
+    </textures>
+
+    <blocks>
+        <TransparentPass>
+            <clear>
+                <accumulationBuffer type="target">(0,0,0,0)</accumulationBuffer>
+                <revealBuffer type="target">1</revealBuffer>
+            </clear>
+
+            <passes>
+                <Calculate forward="transparent" entry="mainPixelProgram">
+                    <blendstates unified="false">
+                        <accumulationBuffer>
+                            <color source="one" destination="one" operation="add" />
+                            <alpha source="one" destination="one" operation="add" />
+                        </accumulationBuffer>
+                        <revealBuffer>
+                            <color source="zero" destination="inverse_source_color" operation="add" />
+                        </revealBuffer>
+                    </blendstates>
+
+                    <renderstates>
+                        <cullmode>back</cullmode>
+                    </renderstates>
+
+                    <depthstates target="depthBuffer">
+                        <comparison>less</comparison>
+                        <writemask>zero</writemask>
+                    </depthstates>
+
+                    <targets>
+                        <accumulationBuffer />
+                        <revealBuffer />
+                    </targets>
+
+                    <resources>
+                        <depthCopy copy="depthBuffer" />
+                    </resources>
+                </Calculate>
+
+                <Combine entry="mainPixelProgram">
+                    <blendstates>
+                        <color source="inverse_source_alpha" destination="source_alpha" operation="add" />
+                    </blendstates>
+
+                    <resources>
+                        <accumulationBuffer />
+                        <revealBuffer />
+                    </resources>
+
+                    <targets>
+                        <screen />
+                    </targets>
+                </Combine>
+            </passes>
+        </TransparentPass>
+    </blocks>
+</shader>

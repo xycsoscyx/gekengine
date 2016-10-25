@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<visual>
+    <input>
+        <position bind="float3" semantic="POSITION" source="vertex" sourceindex="0" />
+		    <texCoord bind="float2" semantic="TEXCOORD"  source="vertex" sourceindex="0" />
+        <normal bind="float3" semantic="NORMAL" source="vertex" sourceindex="0" />
+    </input>
+    <output>
+        <position bind="float3" semantic="POSITION" />
+        <texCoord bind="float2" semantic="TEXCOORD" />
+        <normal bind="float3" semantic="NORMAL" />
+    </output>
+    <vertex entry="mainVertexProgram">Basic</vertex>
+</visual>

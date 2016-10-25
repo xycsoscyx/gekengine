@@ -1,0 +1,3 @@
+.\release\texturecompressor.exe
+
+pause
