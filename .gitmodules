@@ -22,6 +22,3 @@
 [submodule "external/tinyxml2"]
 	path = external/tinyxml2
 	url = https://github.com/leethomason/tinyxml2.git
-[submodule "external/openal-soft"]
-	path = external/openal-soft
-	url = https://github.com/kcat/openal-soft.git
