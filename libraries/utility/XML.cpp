@@ -1,7 +1,6 @@
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include <libxml/tree.h>
-#include <libxml/parser.h>
+#include <TinyXML2.h>
 
 namespace Gek
 {
@@ -137,72 +136,44 @@ namespace Gek
             }
         }
 
-        void getNodeData(xmlNodePtr node, Node &nodeData)
+        void getNodeData(tinyxml2::XMLElement *node, Node &nodeData)
         {
-            for (xmlAttrPtr attribute = node->properties; attribute != nullptr; attribute = attribute->next)
+            for (auto attribute = node->FirstAttribute(); attribute; attribute = attribute->Next())
             {
-                String name(reinterpret_cast<const char *>(attribute->name));
-
-                xmlChar *valueUTF8 = xmlGetProp(node, attribute->name);
-                String value(reinterpret_cast<const char *>(valueUTF8));
-                xmlFree(valueUTF8);
-
+                String name(attribute->Name());
+                String value(attribute->Value());
                 nodeData.attributes[name] = value;
             }
 
-            uint16_t index = 0;
-            for (xmlNodePtr child = node->children; child; child = child->next)
+            for (auto child = node->FirstChildElement(); child; child = child->NextSiblingElement())
             {
-                if (child->type == XML_ELEMENT_NODE)
-                {
-                    String childName(reinterpret_cast<const char *>(child->name));
-                    nodeData.children.push_back(Node(childName));
-                    getNodeData(child, nodeData.children.back());
-                }
+                String childName(child->Name());
+                nodeData.children.push_back(Node(childName));
+                getNodeData(child, nodeData.children.back());
             }
 
             if (nodeData.children.empty())
             {
-                xmlChar *textUTF8 = xmlNodeGetContent(node);
-                nodeData.text = reinterpret_cast<const char *>(textUTF8);
-                xmlFree(textUTF8);
+                nodeData.text = node->GetText();
             }
         }
 
-        struct XmlDocument
-        {
-            xmlDocPtr document;
-            XmlDocument(xmlDocPtr document)
-                : document(document)
-            {
-            }
-
-            ~XmlDocument(void)
-            {
-                xmlFreeDoc(document);
-            }
-
-            operator xmlDocPtr ()
-            {
-                return document;
-            }
-        };
-		
         Node load(const wchar_t *fileName, const wchar_t *expectedRootType, bool validateDTD)
         {
-            XmlDocument document(xmlReadFile(StringUTF8(fileName), nullptr, (validateDTD ? XML_PARSE_DTDATTR | XML_PARSE_DTDVALID : 0) | XML_PARSE_NOENT));
-            if (document == nullptr)
+            tinyxml2::XMLDocument document;
+            auto result = document.LoadFile(StringUTF8(fileName));
+            if (result != tinyxml2::XML_SUCCESS)
             {
                 throw UnableToLoad();
             }
 
-            xmlNodePtr root = xmlDocGetRootElement(document);
+            auto root = document.RootElement();
             if (root == nullptr)
             {
                 throw InvalidRootNode();
             }
 
-            String rootType(reinterpret_cast<const char *>(root->name));
+            String rootType(root->Name());
             if (rootType.compare(expectedRootType) != 0)
             {
                 throw InvalidRootNode();
@@ -213,44 +184,44 @@ namespace Gek
             return rootData;
         }
 
-        void setNodeData(xmlNodePtr node, Node &nodeData)
+        void setNodeData(tinyxml2::XMLDocument &document, tinyxml2::XMLElement *node, Node &nodeData)
         {
             for (auto &attribute : nodeData.attributes)
             {
-                xmlNewProp(node, BAD_CAST StringUTF8(attribute.first).c_str(), BAD_CAST StringUTF8(attribute.second).c_str());
+                node->SetAttribute(StringUTF8(attribute.first), StringUTF8(attribute.second).data());
             }
 
             for (auto &childNode : nodeData.children)
             {
-                xmlNodePtr child = xmlNewChild(node, nullptr, BAD_CAST StringUTF8(childNode.type).c_str(), BAD_CAST StringUTF8(childNode.text).c_str());
+                auto child = document.NewElement(StringUTF8(childNode.type));
                 if (child == nullptr)
                 {
                     throw UnableToSave();
                 }
 
-                setNodeData(child, childNode);
+                node->InsertEndChild(child);
+                setNodeData(document, child, childNode);
             }
         }
 
         void save(Node &rootData, const wchar_t *fileName)
         {
-            XmlDocument document(xmlNewDoc(BAD_CAST "1.0"));
-            if (document == nullptr)
+            tinyxml2::XMLDocument document;
+            auto root = document.NewElement(StringUTF8(rootData.type));
+            if (root == nullptr)
             {
                 throw UnableToSave();
             }
 
-            xmlNodePtr rootNode = xmlNewNode(nullptr, BAD_CAST StringUTF8(rootData.type).c_str());
-            if (rootNode == nullptr)
+            document.InsertFirstChild(root);
+           
+            setNodeData(document, root, rootData);
+
+            auto result = document.SaveFile(StringUTF8(fileName));
+            if (result != tinyxml2::XML_SUCCESS)
             {
                 throw UnableToSave();
             }
-
-            xmlDocSetRootElement(static_cast<xmlDocPtr>(document), rootNode);
-            
-            setNodeData(rootNode, rootData);
-
-			xmlSaveFormatFileEnc(StringUTF8(fileName), document, "UTF-8", 2);
         }
     };
 }; // namespace Gek

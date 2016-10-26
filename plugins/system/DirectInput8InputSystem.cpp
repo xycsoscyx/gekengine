@@ -459,7 +459,7 @@ namespace Gek
 
             uint32_t getJoystickCount(void)
             {
-                return joystickDeviceList.size();
+                return uint32_t(joystickDeviceList.size());
             }
 
             Input::Device * const getJoystick(uint32_t deviceIndex)

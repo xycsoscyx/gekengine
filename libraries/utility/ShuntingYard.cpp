@@ -39,8 +39,8 @@ namespace Gek
     ShuntingYard::ShuntingYard(void)
         : mersineTwister(std::random_device()())
     {
-        variableMap[L"pi"] = 3.14159265358979323846;
-        variableMap[L"e"] = 2.71828182845904523536;
+        variableMap[L"pi"] = 3.14159265358979323846f;
+        variableMap[L"e"] = 2.71828182845904523536f;
 
         operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
         {

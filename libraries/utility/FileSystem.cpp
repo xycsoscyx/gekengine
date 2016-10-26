@@ -76,7 +76,7 @@ namespace Gek
 			buffer.resize(GetFileSize(file, nullptr));
 
 			DWORD bytesRead = 0;
-			ReadFile(file, buffer.data(), buffer.size(), &bytesRead, nullptr);
+			ReadFile(file, buffer.data(), DWORD(buffer.size()), &bytesRead, nullptr);
 			CloseHandle(file);
 
 			if (bytesRead != buffer.size())
@@ -121,7 +121,7 @@ namespace Gek
 			}
 
 			DWORD bytesWritten = 0;
-			WriteFile(file, buffer.data(), buffer.size(), &bytesWritten, nullptr);
+			WriteFile(file, buffer.data(), DWORD(buffer.size()), &bytesWritten, nullptr);
 			CloseHandle(file);
 
 			if (bytesWritten != buffer.size())

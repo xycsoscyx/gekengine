@@ -230,7 +230,7 @@ namespace Gek
             }
 
             bool initialDelimiter = (!empty() && back() != delimiter);
-            uint32_t size = length() + (initialDelimiter ? 1 : 0); // initial length
+            auto size = (length() + (initialDelimiter ? 1 : 0)); // initial length
             size += (list.size() - 1); // insert delimiters between list elements
             for (auto &stringSearch = list.begin(); stringSearch != list.end(); ++stringSearch)
             {
