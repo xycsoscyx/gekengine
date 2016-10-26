@@ -28,6 +28,3 @@
 [submodule "external/vorbis"]
 	path = external/vorbis
 	url = https://git.xiph.org/vorbis.git
-[submodule "external/ogg"]
-	path = external/ogg
-	url = https://git.xiph.org/ogg.git
