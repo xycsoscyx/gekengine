@@ -2,6 +2,8 @@ cmake_minimum_required(VERSION 3.6.0)
 
 project (External)
 
+set_property(GLOBAL PROPERTY FOLDER "External")
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/external")
 include(FindDirectX)
 include(FindWindowsSDK)
@@ -43,3 +45,28 @@ include_directories("${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdPar
 add_definitions(-D_NEWTON_STATIC_LIB -D_CUSTOM_JOINTS_STATIC_LIB -DPTW32_STATIC_LIB)
 SET(NEWTON_DEMOS_SANDBOX OFF CACHE BOOL "" FORCE)
 add_subdirectory("Newton-Dynamics")
+
+set_property(TARGET tinyxml2_static PROPERTY FOLDER "External/TinyXML2")
+set_property(TARGET xmltest PROPERTY FOLDER "External/TinyXML2")
+set_property(TARGET uninstall PROPERTY FOLDER "External/TinyXML2")
+set_property(TARGET DATA_COPY PROPERTY FOLDER "External/TinyXML2")
+
+set_property(TARGET assimp PROPERTY FOLDER "External/Assimp")
+set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
+set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")
+
+set_property(TARGET Newton PROPERTY FOLDER "External/Newton")
+set_property(TARGET NewtonObj PROPERTY FOLDER "External/Newton")
+set_property(TARGET NewtonStatic PROPERTY FOLDER "External/Newton")
+set_property(TARGET timeTracker PROPERTY FOLDER "External/Newton")
+
+set_property(TARGET dAnimation PROPERTY FOLDER "External/dNewton")
+set_property(TARGET dContainers PROPERTY FOLDER "External/dNewton")
+set_property(TARGET dCustomJoints PROPERTY FOLDER "External/dNewton")
+set_property(TARGET dMath PROPERTY FOLDER "External/dNewton")
+set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
+set_property(TARGET tinyxml PROPERTY FOLDER "External/dNewton")
+
+set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
+
+set_property(TARGET imgui PROPERTY FOLDER "External/ImGui")
