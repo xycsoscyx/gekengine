@@ -141,7 +141,7 @@ namespace Gek
 
         BaseString subString(size_t position = 0, size_t length = std::string::npos) const
         {
-            if (position < 0 || position >= size())
+            if (position >= size())
             {
                 throw std::out_of_range("BaseString<ELEMENT>::subString() - position out of range");
             }
@@ -164,17 +164,17 @@ namespace Gek
             return replaced;
         }
 
-        void trimLeft(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
+        void trimLeft(const std::function<bool(ELEMENT)> &checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
         {
             erase(begin(), std::find_if(begin(), end(), checkElement));
         }
 
-        void trimRight(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
+        void trimRight(const std::function<bool(ELEMENT)> &checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
         {
             erase(std::find_if(rbegin(), rend(), checkElement).base(), end());
         }
 
-        void trim(std::function<bool(ELEMENT)> checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
+        void trim(const std::function<bool(ELEMENT)> &checkElement = [](ELEMENT ch) { return !std::isspace(ch, std::locale::classic()); })
         {
             trimLeft(checkElement);
             trimRight(checkElement);

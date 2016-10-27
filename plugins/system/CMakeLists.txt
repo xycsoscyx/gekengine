@@ -12,3 +12,8 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} math utility DirectXTex)
+
+set_target_properties(${ProjectID}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
+)

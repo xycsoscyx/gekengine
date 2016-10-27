@@ -9,3 +9,8 @@ file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
 target_link_libraries(${ProjectID} math utility)
+
+set_target_properties(${ProjectID}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
+)

@@ -1,3 +1,3 @@
-.\release\texturecompressor.exe
+.\debug\texturecompressor.exe
 
 pause

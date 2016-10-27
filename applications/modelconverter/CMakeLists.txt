@@ -13,3 +13,8 @@ add_executable(${ProjectID} ${SOURCES})
 target_link_libraries(${ProjectID} math shapes utility NewtonStatic assimp)
 
 target_include_directories(${ProjectID} PUBLIC "${CMAKE_SOURCE_DIR}/external/assimp/include")
+
+set_target_properties(${ProjectID}
+    PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin"
+)

@@ -57,10 +57,10 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
 #ifdef _DEBUG
         SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Debug"));
-        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Debug\\Plugins"));
+        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Debug"));
 #else
         SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Release"));
-        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Release\\Plugins"));
+        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Release"));
 #endif
 
         WNDCLASS windowClass;
