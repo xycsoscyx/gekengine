@@ -34,6 +34,11 @@ project(nano-signal-slot)
 add_library(nano-signal-slot INTERFACE)
 target_include_directories(nano-signal-slot INTERFACE "${CMAKE_CURRENT_LIST_DIR}/nano-signal-slot")
 
+project(tinyxml)
+file(GLOB SOURCES "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml/*.cpp" "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml/*.h")
+add_library(tinyxml STATIC ${SOURCES})
+target_include_directories(tinyxml PUBLIC "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml")
+
+add_definitions(-D_NEWTON_STATIC_LIB=1)
 SET(NEWTON_DEMOS_SANDBOX OFF CACHE BOOL "" FORCE)
 add_subdirectory("Newton-Dynamics")
-set_target_properties(dAnimation dContainers dCustomJoints dMath dScene PROPERTIES EXCLUDE_FROM_ALL 1 EXCLUDE_FROM_DEFAULT_BUILD 1)

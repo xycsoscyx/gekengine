@@ -8,6 +8,6 @@ project(${ProjectID})
 file(GLOB SOURCES "*.cpp")
 add_library(${ProjectID} SHARED ${SOURCES})
 
-target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR} "${CMAKE_CURRENT_LIST_DIR}/../system" "${CMAKE_CURRENT_LIST_DIR}/../engine" "${CMAKE_CURRENT_LIST_DIR}/../components")
+target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR} "${CMAKE_CURRENT_LIST_DIR}/../system" "${CMAKE_CURRENT_LIST_DIR}/../engine" "${CMAKE_CURRENT_LIST_DIR}/../components" "${CMAKE_CURRENT_LIST_DIR}/../model" "${CMAKE_CURRENT_LIST_DIR}/../shape")
 
 target_link_libraries(${ProjectID} math utility shapes nano-signal-slot imgui NewtonStatic)

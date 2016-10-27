@@ -8,4 +8,4 @@ project(${ProjectID})
 file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
-target_link_libraries(${ProjectID} math shapes utility NewtonStatic)
+target_link_libraries(${ProjectID} math shapes utility NewtonStatic ${ASSIMP_LIBRARY})
