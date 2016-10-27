@@ -1,9 +1,11 @@
 cmake_minimum_required(VERSION 3.6.0)
 
-get_filename_component(ProjectId ${CMAKE_CURRENT_LIST_DIR} NAME)
-string(REPLACE " " "_" ProjectId ${ProjectId})
+get_filename_component(ProjectID ${CMAKE_CURRENT_LIST_DIR} NAME)
+string(REPLACE " " "_" ProjectID ${ProjectID})
 
-project(${ProjectId})
+project(${ProjectID})
 
-file(GLOB SOURCES "*.cpp")
-add_executable(${ProjectId} ${SOURCES})
+file(GLOB SOURCES "*.cpp" "*.rc")
+add_executable(${ProjectID} ${SOURCES})
+
+target_link_libraries(${ProjectID} math utility engine)

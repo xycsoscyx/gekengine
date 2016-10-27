@@ -5,10 +5,9 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
-file(GLOB SOURCES "*.[hc]pp")
-add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
+file(GLOB SOURCES "*.cpp")
+add_library(${ProjectID} SHARED ${SOURCES})
 
-target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR} "${OpenAL_SOURCE_DIR}/include")
+target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
 target_link_libraries(${ProjectID} math utility DirectXTex)

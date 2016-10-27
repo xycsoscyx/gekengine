@@ -276,7 +276,7 @@ namespace Gek
             template <typename INPUT, typename HANDLE, typename SOURCE>
             bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, SOURCE> &cache)
             {
-                uint32_t listCount = inputList.size();
+                auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
                 objectList.resize(listCount);
 
@@ -295,7 +295,7 @@ namespace Gek
             template <typename INPUT, typename HANDLE>
             bool set(const std::vector<INPUT> &inputList, ResourceCache<HANDLE, TYPE> &cache)
             {
-                uint32_t listCount = inputList.size();
+                auto listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
                 objectList.resize(listCount);
 
