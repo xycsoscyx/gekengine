@@ -10,4 +10,9 @@ add_definitions(-D_NEWTON_STATIC_LIB=1)
 file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
-target_link_libraries(${ProjectID} math shapes utility NewtonStatic ${ASSIMP_LIBRARY})
+target_link_libraries(${ProjectID} math shapes utility NewtonStatic assimp)
+
+get_property(dirs TARGET ${ProjectID} PROPERTY INCLUDE_DIRECTORIES)
+message(STATUS "dirs='${dirs}'")
+
+target_include_directories(${ProjectID} PUBLIC "${CMAKE_SOURCE_DIR}/external/assimp/include")
