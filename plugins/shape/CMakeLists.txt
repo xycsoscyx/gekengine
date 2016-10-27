@@ -5,8 +5,9 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
+file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.cpp")
-add_library(${ProjectID} SHARED ${SOURCES})
+add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR} "${CMAKE_CURRENT_LIST_DIR}/../system" "${CMAKE_CURRENT_LIST_DIR}/../engine" "${CMAKE_CURRENT_LIST_DIR}/../components")
 
