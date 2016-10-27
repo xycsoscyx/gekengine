@@ -5,7 +5,7 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-file(GLOB SOURCES "*.cpp" "*.rc")
-add_executable(${ProjectID} ${SOURCES})
+file(GLOB SOURCES "*.cpp")
+add_executable(${ProjectID} WIN32 ${SOURCES})
 
 target_link_libraries(${ProjectID} math utility engine)

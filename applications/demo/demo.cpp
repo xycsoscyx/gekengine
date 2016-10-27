@@ -9,7 +9,6 @@
 #include <experimental\filesystem>
 #include <Windows.h>
 #include <CommCtrl.h>
-#include "resource.h"
 
 using namespace Gek;
 

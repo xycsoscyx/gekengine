@@ -5,6 +5,8 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
+add_definitions(-D_NEWTON_STATIC_LIB=1)
+
 file(GLOB SOURCES "*.cpp")
 add_library(${ProjectID} SHARED ${SOURCES})
 
