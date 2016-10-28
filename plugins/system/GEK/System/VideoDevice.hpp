@@ -468,7 +468,7 @@ namespace Gek
             float mipLevelBias;
             uint32_t maximumAnisotropy;
             ComparisonFunction comparisonFunction;
-            Math::Color borderColor;
+            Math::Float4 borderColor;
             float minimumMipLevel;
             float maximumMipLevel;
 
@@ -585,9 +585,9 @@ namespace Gek
                 virtual void generateMipMaps(Texture *texture) = 0;
 
                 virtual void clearState(void) = 0;
-                virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;
+                virtual void clearUnorderedAccess(Object *object, const Math::SIMD::Float4 &value) = 0;
                 virtual void clearUnorderedAccess(Object *object, const uint32_t value[4]) = 0;
-                virtual void clearRenderTarget(Target *renderTarget, const Math::Color &clearColor) = 0;
+                virtual void clearRenderTarget(Target *renderTarget, const Math::Float4 &clearColor) = 0;
                 virtual void clearDepthStencilTarget(Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
                 virtual void clearRenderTargetList(uint32_t count, bool depthBuffer) = 0;
@@ -600,7 +600,7 @@ namespace Gek
 
                 virtual void setRenderState(Object *renderState) = 0;
                 virtual void setDepthState(Object *depthState, uint32_t stencilReference) = 0;
-                virtual void setBlendState(Object *blendState, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
+                virtual void setBlendState(Object *blendState, const Math::Float4 &blendFactor, uint32_t sampleMask) = 0;
 
                 virtual void setInputLayout(Object *inputLayout) = 0;
                 virtual void setIndexBuffer(Buffer *indexBuffer, uint32_t offset) = 0;

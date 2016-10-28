@@ -722,11 +722,11 @@ namespace Gek
             {
             }
 
-            void clearResource(Video::Object *object, const Math::Float4 &value)
+            void clearResource(Video::Object *object, const Math::SIMD::Float4 &value)
             {
             }
 
-            void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
+            void clearUnorderedAccess(Video::Object *object, const Math::SIMD::Float4 &value)
             {
             }
 
@@ -734,7 +734,7 @@ namespace Gek
             {
             }
 
-            void clearRenderTarget(Video::Target *renderTarget, const Math::Color &clearColor)
+            void clearRenderTarget(Video::Target *renderTarget, const Math::Float4 &clearColor)
             {
             }
 
@@ -774,7 +774,7 @@ namespace Gek
             {
             }
 
-            void setBlendState(Video::Object *blendState, const Math::Color &blendFactor, uint32_t mask)
+            void setBlendState(Video::Object *blendState, const Math::Float4 &blendFactor, uint32_t mask)
             {
             }
 

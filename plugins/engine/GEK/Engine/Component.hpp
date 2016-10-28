@@ -61,7 +61,7 @@ namespace Gek
             : public Plugin::Component
         {
             virtual void show(ImGuiContext *guiContext, Plugin::Component::Data *data) = 0;
-            virtual void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
+            virtual void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
         };
     }; // namespace Edit
 }; // namespace Gek

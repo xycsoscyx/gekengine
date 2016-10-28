@@ -14,7 +14,7 @@ namespace Gek
 
         void Color::load(const Xml::Leaf &componentData)
         {
-            value = loadText(componentData, Math::Color::White);
+            value = loadText(componentData, Math::Float4::White);
         }
     }; // namespace Components
 
@@ -41,7 +41,7 @@ namespace Gek
             ui(guiContext, data, 0);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ui(guiContext, data, 0);
         }

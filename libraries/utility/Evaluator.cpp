@@ -79,12 +79,12 @@ namespace Gek
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
+        void get(const wchar_t *expression, Math::SIMD::Float4 &result, const Math::SIMD::Float4 &defaultValue)
         {
             getResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Color &result, const Math::Color &defaultValue)
+        void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
         {
             try
             {

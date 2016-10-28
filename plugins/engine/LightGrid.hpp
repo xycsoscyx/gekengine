@@ -33,7 +33,7 @@ namespace Gek
         ScreenBoundsList screenBoundsList;
 
     protected:
-		void buildRects(const Math::Float4x4 &projectionMatrix, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
+		void buildRects(const Math::SIMD::Float4x4 &projectionMatrix, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
         {
             lightDataList.clear();
             screenBoundsList.clear();
@@ -61,7 +61,7 @@ namespace Gek
         {
         }
 
-        void build(const Math::Float4x4 &projectionMatrix, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
+        void build(const Math::SIMD::Float4x4 &projectionMatrix, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
         {
             auto tileSize = (resolution / Math::UInt2(GridWidth, GridHeight));
             buildRects(projectionMatrix, resolution, concurrentLightDataList);
@@ -120,32 +120,34 @@ namespace Gek
             }
         }
 
-		ScreenBounds getProjectedBounds(const Math::Float4x4 &projectionMatrix, const Math::UInt2 &resolution, const Math::Float3 &center, float radius)
+		ScreenBounds getProjectedBounds(const Math::SIMD::Float4x4 &projectionMatrix, const Math::UInt2 &resolution, const Math::Float3 &center, float radius)
 		{
 			float d2 = center.dot(center);
 			float a = std::sqrt(d2 - radius * radius);
 			Math::Float3 right = (radius / a) * Math::Float3(-center.z, 0.0f, center.x);
 			Math::Float3 up = Math::Float3(0.0f, radius, 0.0f);
 
-			Math::Float4 projectedRight = projectionMatrix.transform(Math::make(right, 0.0f));
-			Math::Float4 projectedUp = projectionMatrix.transform(Math::make(up, 0.0f));
-			Math::Float4 projectedCenter = projectionMatrix.transform(Math::make(center, 1.0f));
+			Math::SIMD::Float4 projectedRight = projectionMatrix.transform(Math::SIMD::Float4(right, 0.0f));
+			Math::SIMD::Float4 projectedUp = projectionMatrix.transform(Math::SIMD::Float4(up, 0.0f));
+			Math::SIMD::Float4 projectedCenter = projectionMatrix.transform(Math::SIMD::Float4(center, 1.0f));
 
-			Math::Float4 north = projectedCenter + projectedUp;
-			Math::Float4 east = projectedCenter + projectedRight;
-			Math::Float4 south = projectedCenter - projectedUp;
-			Math::Float4 west = projectedCenter - projectedRight;
+			Math::SIMD::Float4 north = projectedCenter + projectedUp;
+			Math::SIMD::Float4 east = projectedCenter + projectedRight;
+			Math::SIMD::Float4 south = projectedCenter - projectedUp;
+			Math::SIMD::Float4 west = projectedCenter - projectedRight;
 
 			north /= north.w;
 			east /= east.w;
 			west /= west.w;
 			south /= south.w;
-			auto minimum = std::min(std::min(std::min(east, west), north), south).xyz;
-			auto maximum = std::max(std::max(std::max(east, west), north), south).xyz;
+			auto minimum = std::min(std::min(std::min(east, west), north), south);
+			auto maximum = std::max(std::max(std::max(east, west), north), south);
 
 			ScreenBounds screenBounds;
-			screenBounds.minimum = (minimum.xy * resolution);
-			screenBounds.maximum = (maximum.xy * resolution);
+			screenBounds.minimum.x = (minimum.x * resolution.x);
+			screenBounds.minimum.y = (minimum.y * resolution.y);
+			screenBounds.maximum.x = (maximum.x * resolution.x);
+			screenBounds.maximum.y = (maximum.y * resolution.y);
 			return screenBounds;
 		}
 	};

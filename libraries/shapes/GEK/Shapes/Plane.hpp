@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4SIMD.hpp"
+#include "GEK\Math\Vector4.hpp"
 
 namespace Gek
 {

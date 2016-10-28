@@ -227,7 +227,7 @@ namespace Gek
 				return (float(volumeNumber - DSBVOLUME_MIN) / float(DSBVOLUME_MAX - DSBVOLUME_MIN));
 			}
 
-			void setListener(const Math::Float4x4 &matrix)
+			void setListener(const Math::SIMD::Float4x4 &matrix)
 			{
 				GEK_REQUIRE(directSoundListener);
 

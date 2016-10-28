@@ -74,15 +74,15 @@ struct Parameters
 	bool fullModel;
 };
 
-void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, const Math::Float4x4 &accumulatedTransform, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, const Math::SIMD::Float4x4 &accumulatedTransform, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
         throw std::exception("Invalid model node");
     }
 
-    Math::Float4x4 localTransform(&node->mTransformation.a1);
-    Math::Float4x4 nodeTransform(localTransform.getTranspose() * accumulatedTransform);
+    Math::SIMD::Float4x4 localTransform(&node->mTransformation.a1);
+    Math::SIMD::Float4x4 nodeTransform(localTransform.getTranspose() * accumulatedTransform);
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
@@ -181,7 +181,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 							mesh->mTextureCoords[0][vertexIndex].x,
 							mesh->mTextureCoords[0][vertexIndex].y);
 
-                        Math::Float4x4 basis;
+                        Math::SIMD::Float4x4 basis;
                         basis.nx.set(
 							mesh->mTangents[vertexIndex].x,
 							mesh->mTangents[vertexIndex].y,
@@ -391,7 +391,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 		Shapes::AlignedBox boundingBox;
         std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
-        getMeshes(parameters, scene, scene->mRootNode, Math::Float4x4::Identity, albedoMap, boundingBox);
+        getMeshes(parameters, scene, scene->mRootNode, Math::SIMD::Float4x4::Identity, albedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
@@ -578,7 +578,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             printf("> Num. Points: %d\r\n", pointCloudList.size());
 
             NewtonWorld *newtonWorld = NewtonCreate();
-            NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4().data);
+            NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 0, Math::SIMD::Float4x4().data);
             if (newtonCollision == nullptr)
             {
                 throw std::exception("Unable to create convex hull collision object");

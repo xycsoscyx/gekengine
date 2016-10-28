@@ -652,7 +652,7 @@ namespace Gek
                 elementList.push_back(Video::InputElement(Video::Format::R8G8B8A8_UNORM, Video::InputElement::Semantic::Color));
                 inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
 
-                constantBuffer = videoDevice->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
+                constantBuffer = videoDevice->createBuffer(sizeof(Math::SIMD::Float4x4), 1, Video::BufferType::Constant, 0);
 
                 static const wchar_t *pixelShader =
                     L"struct PixelInput" \
@@ -1237,7 +1237,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getWidth();
                 uint32_t height = backBuffer->getHeight();
-                auto orthographic = Math::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                auto orthographic = Math::SIMD::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 videoDevice->updateResource(constantBuffer.get(), &orthographic);
 
                 auto videoContext = videoDevice->getDefaultContext();
@@ -1252,7 +1252,7 @@ namespace Gek
                 videoContext->pixelPipeline()->setProgram(pixelProgram.get());
                 videoContext->pixelPipeline()->setSamplerStateList({ samplerState.get() }, 0);
 
-                videoContext->setBlendState(blendState.get(), Math::Color::Black, 0xFFFFFFFF);
+                videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
                 videoContext->setDepthState(depthState.get(), 0);
                 videoContext->setRenderState(renderState.get());
 

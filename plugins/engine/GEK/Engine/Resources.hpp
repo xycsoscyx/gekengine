@@ -91,16 +91,16 @@ namespace Gek
             virtual void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
             virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
-            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::SIMD::Float4 &value) = 0;
             virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const uint32_t value[4]) = 0;
-            virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Color &color) = 0;
+            virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
             virtual void setMaterial(Video::Device::Context *videoContext, Shader::Pass *pass, MaterialHandle handle) = 0;
             virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) = 0;
             virtual void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
             virtual void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
-            virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask) = 0;
+            virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Float4 &blendFactor, uint32_t sampleMask) = 0;
             virtual void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle) = 0;
 
             virtual void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle *depthBuffer) = 0;

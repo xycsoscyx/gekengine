@@ -473,7 +473,7 @@ namespace Gek
                         }
                         else if (colorSize == 4)
                         {
-                            Math::Float4 color;
+                            Math::SIMD::Float4 color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             colorData[0] = uint8_t(color.x * 255.0f);
                             colorData[1] = uint8_t(color.y * 255.0f);
@@ -1099,7 +1099,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value)
+            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::SIMD::Float4 &value)
             {
                 GEK_REQUIRE(videoContext);
 
@@ -1121,7 +1121,7 @@ namespace Gek
                 }
             }
 
-            void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Color &color)
+            void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &color)
             {
                 GEK_REQUIRE(videoContext);
 
@@ -1200,7 +1200,7 @@ namespace Gek
                 }
             }
 
-            void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Color &blendFactor, uint32_t sampleMask)
+            void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Float4 &blendFactor, uint32_t sampleMask)
             {
                 GEK_REQUIRE(videoContext);
 

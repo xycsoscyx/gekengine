@@ -231,7 +231,7 @@ namespace Gek
                 });
 
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
-                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+                newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::SIMD::Float4x4::Identity.data);
             }
 
             void onEntityDestroyed(Plugin::Entity *entity)
@@ -429,44 +429,44 @@ namespace Gek
                     if (shapeComponent.type.compareNoCase(L"cube") == 0)
                     {
                         Math::Float3 size(Evaluator::get<Math::Float3>(shapeComponent.parameters));
-                        newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
+                        newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"sphere") == 0)
                     {
                         float size = Evaluator::get<float>(shapeComponent.parameters);
-                        newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::Float4x4::Identity.data);
+                        newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"cone") == 0)
                     {
                         Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
-                        newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
+                        newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"capsule") == 0)
                     {
                         Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
-                        newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
+                        newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"cylinder") == 0)
                     {
                         Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
-                        newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
+                        newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     /*
                     else if (shapeComponent.type.compareNoCase(L"tapered_capsule") == 0)
                     {
                     Math::Float3 size(Evaluator::get<Math::Float3>(shapeComponent.parameters));
-                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"tapered_cylinder") == 0)
                     {
                     Math::Float3 size(Evaluator::get<Math::Float3>(shapeComponent.parameters));
-                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
+                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     */
                     else if (shapeComponent.type.compareNoCase(L"chamfer_cylinder") == 0)
                     {
                         Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
-                        newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
+                        newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
 
                     if (newtonCollision == nullptr)

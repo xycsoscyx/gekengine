@@ -53,7 +53,7 @@ namespace Gek
                 float clearDepthValue;
                 uint32_t clearStencilValue;
                 DepthStateHandle depthState;
-                Math::Color blendFactor;
+                Math::Float4 blendFactor;
                 BlendStateHandle blendState;
                 float width, height;
                 std::vector<ResourceHandle> resourceList;
@@ -231,7 +231,7 @@ namespace Gek
                     case BindType::Int4:
                         if (true)
                         {
-                            Math::Float4 vector = Evaluator::get<Math::Float4>(value);
+                            Math::SIMD::Float4 vector = Evaluator::get<Math::SIMD::Float4>(value);
                             result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
                             break;
                         }
@@ -239,13 +239,13 @@ namespace Gek
                     case BindType::UInt4:
                         if (true)
                         {
-                            Math::Float4 vector = Evaluator::get<Math::Float4>(value);
+                            Math::SIMD::Float4 vector = Evaluator::get<Math::SIMD::Float4>(value);
                             result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
                             break;
                         }
 
                     case BindType::Float4:
-                        result = Evaluator::get<Math::Float4>(value);
+                        result = Evaluator::get<Math::SIMD::Float4>(value);
                         break;
                     };
 
@@ -451,11 +451,11 @@ namespace Gek
                         switch (getClearType(clearTargetNode.getAttribute(L"type")))
                         {
                         case ClearType::Target:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Color)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
                             break;
 
                         case ClearType::Float:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::SIMD::Float4)clearTargetNode.text)));
                             break;
 
                         case ClearType::UInt:
@@ -1079,7 +1079,7 @@ namespace Gek
                 }
             };
 
-            Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+            Pass::Iterator begin(Video::Device::Context *videoContext, const Math::SIMD::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(videoContext);

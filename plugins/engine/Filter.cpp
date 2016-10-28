@@ -28,7 +28,7 @@ namespace Gek
             struct PassData
             {
                 Pass::Mode mode;
-                Math::Color blendFactor;
+                Math::Float4 blendFactor;
                 BlendStateHandle blendState;
                 float width, height;
                 std::vector<ResourceHandle> resourceList;
@@ -150,7 +150,7 @@ namespace Gek
                     case BindType::Int4:
                     case BindType::UInt4:
                     case BindType::Float4:
-                        result = Evaluator::get<Math::Float4>(value);
+                        result = Evaluator::get<Math::SIMD::Float4>(value);
                         break;
                     };
 
@@ -389,11 +389,11 @@ namespace Gek
                         switch (getClearType(clearTargetNode.getAttribute(L"type")))
                         {
                         case ClearType::Target:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Color)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
                             break;
 
                         case ClearType::Float:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::SIMD::Float4)clearTargetNode.text)));
                             break;
 
                         case ClearType::UInt:

@@ -21,14 +21,14 @@ namespace Gek
         struct OrientedBox
         {
         public:
-            Math::Float4x4 matrix;
+            Math::SIMD::Float4x4 matrix;
             Math::Float3 halfsize;
 
         public:
             OrientedBox(void);
             OrientedBox(const OrientedBox &box);
             OrientedBox(const AlignedBox &box, const Math::QuaternionFloat &rotation, const Math::Float3 &translation);
-            OrientedBox(const AlignedBox &box, const Math::Float4x4 &matrix);
+            OrientedBox(const AlignedBox &box, const Math::SIMD::Float4x4 &matrix);
 
             OrientedBox &operator = (const OrientedBox &box);
 

@@ -1,10 +1,10 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: fc6dba5a2aba4d25dcd872ccbb719e3619e40901 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
 #include "GEK\Utility\String.hpp"
@@ -74,7 +74,7 @@ namespace Gek
             virtual uint32_t getPriority(void) const = 0;
             virtual const Material *getPassMaterial(const wchar_t *materialName) const = 0;
 
-            virtual Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
+            virtual Pass::Iterator begin(Video::Device::Context *videoContext, const Math::SIMD::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

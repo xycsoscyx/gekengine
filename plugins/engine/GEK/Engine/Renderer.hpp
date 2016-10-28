@@ -1,10 +1,10 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: c85d467e8da7e856f4a8229e8bfbcc46299d722e $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Tue Oct 25 14:51:24 2016 +0000 $
 #pragma once
 
 #include "GEK\Utility\Context.hpp"
@@ -65,12 +65,12 @@ namespace Gek
                 float buffer[3];
             };
 
-            Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)> onRenderScene;
+            Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::SIMD::Float4x4 &viewMatrix)> onRenderScene;
 
             virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
-            virtual void render(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList = nullptr, ResourceHandle cameraTarget = ResourceHandle()) = 0;
+            virtual void render(const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList = nullptr, ResourceHandle cameraTarget = ResourceHandle()) = 0;
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
         };
     }; // namespace Engine

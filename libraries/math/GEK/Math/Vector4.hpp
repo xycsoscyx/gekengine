@@ -22,15 +22,18 @@ namespace Gek
         struct Vector4
         {
         public:
-            static const Vector4 Zero;
-            static const Vector4 One;
+			static const Vector4 Zero;
+			static const Vector4 One;
+			static const Vector4 Black;
+			static const Vector4 White;
 
         public:
             union
             {
-                struct { TYPE x, y, z, w; };
+				struct { TYPE x, y, z, w; };
+				struct { TYPE r, g, b, a; };
+				struct { Vector3<TYPE> rgb; TYPE a; };
 				struct { Vector3<TYPE> xyz; TYPE w; };
-				struct { Vector2<TYPE> xy; Vector2<TYPE> zw; };
                 struct { TYPE data[4]; };
             };
 
@@ -63,15 +66,31 @@ namespace Gek
 			{
             }
 
-            Vector4(const Vector4 &vector)
+			Vector4(const Vector4 &vector)
 				: x(vector.x)
 				, y(vector.y)
 				, z(vector.z)
 				, w(vector.w)
-            {
-            }
+			{
+			}
 
-            Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
+			Vector4(const Vector3<TYPE> &xyz, TYPE w)
+				: x(xyz.x)
+				, y(xyz.y)
+				, z(xyz.z)
+				, w(w)
+			{
+			}
+
+			Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
+				: x(xy.x)
+				, y(xy.y)
+				, z(zw.x)
+				, w(zw.y)
+			{
+			}
+
+			Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
 				: x(x)
 				, y(y)
 				, z(z)
@@ -204,7 +223,10 @@ namespace Gek
             // vector operations
             Vector4 &operator = (const Vector4 &vector)
             {
-                simd = vector.simd;
+				x = vector.x;
+				y = vector.y;
+				z = vector.z;
+				w = vector.w;
                 return (*this);
             }
 
@@ -401,7 +423,5 @@ namespace Gek
         using Float4 = Vector4<float>;
         using Int4 = Vector4<int32_t>;
         using UInt4 = Vector4<uint32_t>;
-		using Color = Vector4<float>;
-		using Pixel = Vector4<unsigned char>;
 	}; // namespace Math
 }; // namespace Gek

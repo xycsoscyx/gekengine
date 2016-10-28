@@ -388,14 +388,14 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString &operator = (const Math::Float4 &value)
+        BaseString &operator = (const Math::SIMD::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString &operator = (const Math::Color &value)
+        BaseString &operator = (const Math::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.r << ',' << value.g << ',' << value.b << ',' << value.a << ')';
@@ -525,14 +525,14 @@ namespace Gek
             append(stream.str());
         }
 
-        void operator += (const Math::Float4 &value)
+        void operator += (const Math::SIMD::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             append(stream.str());
         }
 
-        void operator += (const Math::Color &value)
+        void operator += (const Math::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.r << ',' << value.g << ',' << value.b << ',' << value.a << ')';
@@ -628,17 +628,17 @@ namespace Gek
             return (stream.fail() ? Math::Float3::Zero : value);
         }
 
+        operator Math::SIMD::Float4 () const
+        {
+            Math::SIMD::Float4 value;
+            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
+            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(',') >> value.w >> MustMatch(')'); // ( X , Y , Z , W )
+            return (stream.fail() ? Math::SIMD::Float4::Zero : value);
+        }
+
         operator Math::Float4 () const
         {
             Math::Float4 value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(',') >> value.w >> MustMatch(')'); // ( X , Y , Z , W )
-            return (stream.fail() ? Math::Float4::Zero : value);
-        }
-
-        operator Math::Color () const
-        {
-            Math::Color value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             if (stream.peek() == '(')
             {
@@ -661,7 +661,7 @@ namespace Gek
                 value.set(value.r);
             }
 
-            return (stream.fail() ? Math::Color::White : value);
+            return (stream.fail() ? Math::Float4::White : value);
         }
 
         operator Math::QuaternionFloat () const

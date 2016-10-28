@@ -1,10 +1,10 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: 347000ea4cf5625a5cd325614cb63ebc84e060aa $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Sat Oct 15 19:36:10 2016 +0000 $
 namespace Gek
 {
 	namespace Implementation
@@ -123,18 +123,18 @@ namespace Gek
 			ClearType type;
 			union
 			{
-				Math::Color color;
-				Math::Float4 value;
+				Math::Float4 color;
+				Math::SIMD::Float4 value;
 				uint32_t uint[4];
 			};
 
-			ClearData(const Math::Color &color)
+			ClearData(const Math::Float4 &color)
 				: type(ClearType::Target)
 				, color(color)
 			{
 			}
 
-			ClearData(const Math::Float4 &value)
+			ClearData(const Math::SIMD::Float4 &value)
 				: type(ClearType::Float)
 				, value(value)
 			{

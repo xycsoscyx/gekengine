@@ -229,7 +229,7 @@ namespace Gek
                                             const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                                             const float width = float(backBuffer->getWidth());
                                             const float height = float(backBuffer->getHeight());
-                                            auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                                            auto projectionMatrix(Math::SIMD::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                                             component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
                                         }
@@ -313,7 +313,7 @@ namespace Gek
                     const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getWidth());
                     const float height = float(backBuffer->getHeight());
-                    auto projectionMatrix(Math::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                    auto projectionMatrix(Math::SIMD::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                     renderer->render(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
                 }

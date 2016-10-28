@@ -67,6 +67,16 @@ namespace Gek
 				{
 				}
 
+				Vector4(const Vector3<TYPE> &xyz, TYPE w)
+					: simd(_mm_setr_ps(xyz.x, xyz.y, xyz.z, w))
+				{
+				}
+
+				Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
+					: simd(_mm_setr_ps(xy.x, xy.y, zw.x, zw.y))
+				{
+				}
+
 				Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
 					: simd(_mm_setr_ps(x, y, z, w))
 				{

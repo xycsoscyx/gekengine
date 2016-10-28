@@ -16,7 +16,7 @@ namespace Gek
     {
         GEK_COMPONENT(Color)
         {
-            Math::Color value;
+            Math::Float4 value;
 
             void save(Xml::Leaf &componentData) const;
             void load(const Xml::Leaf &componentData);

@@ -201,8 +201,8 @@ namespace Gek
                 Math::Float2 fieldOfView;
                 float nearClip;
                 float farClip;
-                Math::Float4x4 viewMatrix;
-                Math::Float4x4 projectionMatrix;
+                Math::SIMD::Float4x4 viewMatrix;
+                Math::SIMD::Float4x4 projectionMatrix;
             };
 
             struct LightConstantData
@@ -510,7 +510,7 @@ namespace Gek
                 }
             }
 
-            void render(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
+            void render(const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
             {
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);

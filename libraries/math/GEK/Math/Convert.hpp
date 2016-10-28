@@ -10,6 +10,7 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Vector4SIMD.hpp"
 #include "GEK\Math\Matrix4x4SIMD.hpp"
 #include "GEK\Math\Quaternion.hpp"
@@ -20,7 +21,7 @@ namespace Gek
     namespace Math
     {
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Matrix4x4<TYPE> convert(const Quaternion<TYPE> &quaternion)
+        SIMD::Matrix4x4<TYPE> convert(const Quaternion<TYPE> &quaternion)
         {
             TYPE xx(quaternion.x * quaternion.x);
             TYPE yy(quaternion.y * quaternion.y);
@@ -29,7 +30,7 @@ namespace Gek
             TYPE length(xx + yy + zz + ww);
             if (length == 0.0f)
             {
-                return Matrix4x4<TYPE>::Identity;
+                return SIMD::Matrix4x4<TYPE>::Identity;
             }
             else
             {
@@ -40,7 +41,7 @@ namespace Gek
                 TYPE yz(quaternion.y * quaternion.z);
                 TYPE yw(quaternion.y * quaternion.w);
                 TYPE zw(quaternion.z * quaternion.w);
-                return Matrix4x4<TYPE>({ ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
+                return SIMD::Matrix4x4<TYPE>({ ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
                     (2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
                     (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f,
                     0.0f, 0.0f, 0.0f, 1.0f });
@@ -48,7 +49,7 @@ namespace Gek
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Quaternion<TYPE> convert(const Matrix4x4<TYPE> &matrix)
+        Quaternion<TYPE> convert(const SIMD::Matrix4x4<TYPE> &matrix)
         {
             TYPE trace(matrix.table[0][0] + matrix.table[1][1] + matrix.table[2][2] + 1.0f);
             if (trace > Epsilon)
@@ -99,15 +100,5 @@ namespace Gek
                 }
             }
         }
-
-        inline Math::Float4 make(const Math::Float3 &xyz, float w)
-        {
-            return Math::Float4(xyz.x, xyz.y, xyz.z, w);
-        }
-
-        inline Math::Float4 make(const Math::Float2 &xy, const Math::Float2 &zw)
-        {
-            return Math::Float4(xy.x, xy.y, zw.x, zw.y);
-        }
-    }; // namespace Math
+	}; // namespace Math
 }; // namespace Gek

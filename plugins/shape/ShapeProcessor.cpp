@@ -421,7 +421,7 @@ namespace Gek
             ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ui(guiContext, data, 0);
         }
@@ -453,9 +453,9 @@ namespace Gek
 
         struct Instance
         {
-            Math::Float4x4 matrix;
+            Math::SIMD::Float4x4 matrix;
 
-            Instance(const Math::Float4x4 &matrix)
+            Instance(const Math::SIMD::Float4x4 &matrix)
                 : matrix(matrix)
             {
             }
@@ -623,14 +623,14 @@ namespace Gek
             resources->drawIndexedPrimitive(videoContext, shape->indexCount, 0, 0);
         }
 
-        void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
+        void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::SIMD::Float4x4 &viewMatrix)
         {
             GEK_REQUIRE(renderer);
 
             visibleMap.clear();
             list([&](Plugin::Entity *entity, auto &data, auto &shapeComponent, auto &transformComponent) -> void
             {
-                Math::Float4x4 matrix(transformComponent.getMatrix());
+                Math::SIMD::Float4x4 matrix(transformComponent.getMatrix());
 
                 static const Shapes::AlignedBox unitCube(1.0f);
                 Shapes::OrientedBox orientedBox(unitCube, matrix);

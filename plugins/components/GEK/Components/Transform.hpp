@@ -36,7 +36,7 @@ namespace Gek
             void save(Xml::Leaf &componentData) const;
             void load(const Xml::Leaf &componentData);
 
-            inline Math::Float4x4 getMatrix(void) const
+            inline Math::SIMD::Float4x4 getMatrix(void) const
             {
                 auto matrix(Math::convert(rotation));
                 matrix.translation = position;

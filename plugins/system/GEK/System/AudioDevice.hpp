@@ -36,7 +36,7 @@ namespace Gek
             virtual void setVolume(float volume) = 0;
             virtual float getVolume(void) = 0;
 
-            virtual void setListener(const Math::Float4x4 &matrix) = 0;
+            virtual void setListener(const Math::SIMD::Float4x4 &matrix) = 0;
 
 			virtual BufferPtr loadBuffer(const wchar_t *fileName) = 0;
 			virtual SoundPtr createSound(void) = 0;

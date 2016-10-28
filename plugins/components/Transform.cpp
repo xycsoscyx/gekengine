@@ -50,7 +50,7 @@ namespace Gek
             ImGui::SetCurrentContext(nullptr);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
