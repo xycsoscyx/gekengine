@@ -1,13 +1,13 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision: 1143 $
+/// @version $Revision: 1d50799f92d32e762c5d618bca16d2fe7fbeb872 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date: 2016-10-13 13:29:45 -0700 (Thu, 13 Oct 2016) $
+/// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\RGBA.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Engine\Component.hpp"
 
 namespace Gek

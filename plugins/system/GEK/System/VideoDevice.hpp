@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\RGBA.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector4SIMD.hpp"
 #include "GEK\Utility\Exceptions.hpp"
