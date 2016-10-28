@@ -1,5 +1,0 @@
-# .gitattributes
-# Map file extensions to git filters
-
-*.hpp filter=rcs-keywords
-*.cpp filter=rcs-keywords

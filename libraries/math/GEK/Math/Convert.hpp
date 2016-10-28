@@ -8,6 +8,9 @@
 #pragma once
 
 #include "GEK\Math\Common.hpp"
+#include "GEK\Math\Vector2.hpp"
+#include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include <type_traits>
@@ -95,6 +98,16 @@ namespace Gek
                     });
                 }
             }
+        }
+
+        inline Math::Float4 make(const Math::Float3 &xyz, float w)
+        {
+            return Math::Float4(xyz.x, xyz.y, xyz.z, w);
+        }
+
+        inline Math::Float4 make(const Math::Float2 &xy, const Math::Float2 &zw)
+        {
+            return Math::Float4(xy.x, xy.y, zw.x, zw.y);
         }
     }; // namespace Math
 }; // namespace Gek
