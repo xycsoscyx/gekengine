@@ -1,12 +1,13 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: c3a8e283af87669e3a3132e64063263f4eb7d446 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Fri Oct 21 15:54:27 2016 +0000 $
 #pragma once
 
+#include "GEK\Math\Vector2.hpp"
 #include <type_traits>
 #include <cstdint>
 #include <cmath>
@@ -26,7 +27,8 @@ namespace Gek
             union
             {
                 struct { TYPE x, y, z; };
-                struct { TYPE data[3]; };
+				struct { Vector2<TYPE> xy; TYPE z; };
+				struct { TYPE data[3]; };
             };
 
         public:

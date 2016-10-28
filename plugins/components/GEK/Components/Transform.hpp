@@ -1,14 +1,14 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: 68c94ed58445f7f7b11fb87263c60bc483158d4d $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Fri Oct 21 13:54:12 2016 +0000 $
 #pragma once
 
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4SIMD.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Math\Convert.hpp"
 #include "GEK\Engine\Component.hpp"

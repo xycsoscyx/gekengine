@@ -1,4 +1,4 @@
-#include "GEK\Math\Vector4.hpp"
+#include "GEK\Math\Vector4SIMD.hpp"
 
 namespace Gek
 {

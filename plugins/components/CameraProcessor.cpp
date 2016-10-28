@@ -7,7 +7,7 @@
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4SIMD.hpp"
 #include <unordered_map>
 #include <ppl.h>
 

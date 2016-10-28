@@ -1,14 +1,14 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: c3a8e283af87669e3a3132e64063263f4eb7d446 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Fri Oct 21 15:54:27 2016 +0000 $
 #pragma once
 
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4.hpp"
+#include "GEK\Math\Vector4SIMD.hpp"
 #include <xmmintrin.h>
 #include <type_traits>
 
@@ -469,7 +469,18 @@ namespace Gek
                     ((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + _43),
                 });
             }
-        };
+
+			Vector4<TYPE> transform(const Vector4<TYPE> &vector) const
+			{
+				return Vector4<TYPE>(
+				{
+					((vector.x * _11) + (vector.y * _21) + (vector.z * _31) + (vector.w * _41)),
+					((vector.x * _12) + (vector.y * _22) + (vector.z * _32) + (vector.w * _42)),
+					((vector.x * _13) + (vector.y * _23) + (vector.z * _33) + (vector.w * _43)),
+					((vector.x * _14) + (vector.y * _24) + (vector.z * _34) + (vector.w * _44)),
+				});
+			}
+		};
 
         using Float4x4 = Matrix4x4<float>;
     }; // namespace Math

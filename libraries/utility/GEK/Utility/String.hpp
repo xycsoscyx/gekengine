@@ -1,15 +1,15 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: 31a07b88fab4425367fa0aa67fe970fbff7dc9dc $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Thu Oct 27 08:51:53 2016 -0700 $
 #pragma once
 
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4.hpp"
+#include "GEK\Math\Vector4SIMD.hpp"
 #include "GEK\Math\RGBA.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include <functional>

@@ -7,6 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
 #include <type_traits>
@@ -28,7 +29,8 @@ namespace Gek
             union
             {
                 struct { TYPE x, y, z, w; };
-                struct { Vector3<TYPE> xyz; TYPE w; };
+				struct { Vector3<TYPE> xyz; TYPE w; };
+				struct { Vector2<TYPE> xy; Vector2<TYPE> zw; };
                 struct { TYPE data[4]; };
                 struct { __m128 simd; };
             };

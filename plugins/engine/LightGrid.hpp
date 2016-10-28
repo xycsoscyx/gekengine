@@ -2,10 +2,9 @@
 
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
+#include "GEK\Math\Vector4SIMD.hpp"
+#include "GEK\Math\Matrix4x4SIMD.hpp"
 #include "GEK\Math\Convert.hpp"
-#include "ClipRegion.hpp"
 
 namespace Gek
 {
@@ -15,8 +14,8 @@ namespace Gek
     public:
         struct ScreenBounds
         {
-            Math::UInt2 min;
-            Math::UInt2 max;
+            Math::UInt2 minimum;
+            Math::UInt2 maximum;
         };
 
         using ScreenBoundsList = std::vector<ScreenBounds>;
@@ -26,8 +25,6 @@ namespace Gek
     protected:
         Math::UInt2 gridDimensions = Math::UInt2(GridWidth, GridHeight);
 
-        bool usingDepthRangeList;
-        std::vector<Math::Float2> depthRangeList;
         uint32_t gridOffsetList[GridWidth * GridHeight];
         uint32_t gridCountList[GridWidth * GridHeight];
         std::vector<int> tileIndexList;
@@ -36,16 +33,15 @@ namespace Gek
         ScreenBoundsList screenBoundsList;
 
     protected:
-        void buildRects(const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList, const Math::Float4x4 &projectionMatrix, float nearClip)
+		void buildRects(const Math::Float4x4 &projectionMatrix, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
         {
             lightDataList.clear();
             screenBoundsList.clear();
-
             for (uint32_t lightIndex = 0; lightIndex < concurrentLightDataList.size(); ++lightIndex)
             {
                 auto &lightData = concurrentLightDataList[lightIndex];
-                ScreenBounds screenBounds = findScreenSpaceBounds(projectionMatrix, lightData.position, lightData.range, resolution.x, resolution.y, nearClip);
-                if (screenBounds.min.x < screenBounds.max.x && screenBounds.min.y < screenBounds.max.y)
+                ScreenBounds screenBounds = getProjectedBounds(projectionMatrix, resolution, lightData.position, lightData.range);
+                if (screenBounds.minimum.x < screenBounds.maximum.x && screenBounds.minimum.y < screenBounds.maximum.y)
                 {
                     screenBoundsList.push_back(screenBounds);
                     lightDataList.push_back(lightData);
@@ -65,14 +61,10 @@ namespace Gek
         {
         }
 
-        void build(const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList, const Math::Float4x4 &projectionMatrix, float nearClip, const std::vector<Math::Float2> &depthMaximumList)
+        void build(const Math::Float4x4 &projectionMatrix, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
         {
-            depthRangeList = depthMaximumList;
-            usingDepthRangeList = !depthMaximumList.empty();
-
-            auto depthRangeData = usingDepthRangeList ? depthRangeList.data() : nullptr;
             auto tileSize = (resolution / Math::UInt2(GridWidth, GridHeight));
-            buildRects(resolution, concurrentLightDataList, projectionMatrix, nearClip);
+            buildRects(projectionMatrix, resolution, concurrentLightDataList);
 
             memset(gridOffsetList, 0, sizeof(gridOffsetList));
             memset(gridCountList, 0, sizeof(gridCountList));
@@ -82,17 +74,14 @@ namespace Gek
             {
                 auto &screenBounds = screenBoundsList[lightIndex];
                 auto &lightData = lightDataList[lightIndex];
-                Math::UInt2 l = clamp(screenBounds.min / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
-                Math::UInt2 u = clamp((screenBounds.max + tileSize - 1U) / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
+                Math::UInt2 l = clamp(screenBounds.minimum / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
+                Math::UInt2 u = clamp((screenBounds.maximum + tileSize - 1U) / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
                 for (uint32_t y = l.y; y < u.y; ++y)
                 {
                     for (uint32_t x = l.x; x < u.x; ++x)
                     {
-                        if (!usingDepthRangeList || testDepthBounds(depthRangeData[y * gridDimensions.x + x], lightData))
-                        {
-                            gridCountList[x + y * GridWidth] += 1;
-                            ++totalus;
-                        }
+                        gridCountList[x + y * GridWidth] += 1;
+                        ++totalus;
                     }
                 }
             }
@@ -117,110 +106,47 @@ namespace Gek
                     uint32_t lightId = uint32_t(lightIndex);
                     auto &screenBounds = screenBoundsList[lightIndex];
                     auto &lightData = lightDataList[lightIndex];
-                    Math::UInt2 l = clamp(screenBounds.min / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
-                    Math::UInt2 u = clamp((screenBounds.max + tileSize - 1U) / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
+                    Math::UInt2 l = clamp(screenBounds.minimum / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
+                    Math::UInt2 u = clamp((screenBounds.maximum + tileSize - 1U) / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
                     for (uint32_t y = l.y; y < u.y; ++y)
                     {
                         for (uint32_t x = l.x; x < u.x; ++x)
                         {
-                            if (!usingDepthRangeList || testDepthBounds(depthRangeData[y * gridDimensions.x + x], lightData))
-                            {
-                                auto &offset = --gridOffsetList[x + y * GridWidth];
-                                data[offset] = lightId;
-                            }
+                            auto &offset = --gridOffsetList[x + y * GridWidth];
+                            data[offset] = lightId;
                         }
                     }
                 }
             }
         }
 
-        void prune(const std::vector<Math::Float2> &depthMaximumList)
-        {
-            depthRangeList = depthMaximumList;
-            usingDepthRangeList = !depthMaximumList.empty();
-            if (!usingDepthRangeList || tileIndexList.empty())
-            {
-                return;
-            }
+		ScreenBounds getProjectedBounds(const Math::Float4x4 &projectionMatrix, const Math::UInt2 &resolution, const Math::Float3 &center, float radius)
+		{
+			float d2 = center.dot(center);
+			float a = std::sqrt(d2 - radius * radius);
+			Math::Float3 right = (radius / a) * Math::Float3(-center.z, 0.0f, center.x);
+			Math::Float3 up = Math::Float3(0.0f, radius, 0.0f);
 
-            auto depthRangeData = usingDepthRangeList ? depthRangeList.data() : nullptr;
-            auto tileIndexData = tileIndexList.data();
+			Math::Float4 projectedRight = projectionMatrix.transform(Math::make(right, 0.0f));
+			Math::Float4 projectedUp = projectionMatrix.transform(Math::make(up, 0.0f));
+			Math::Float4 projectedCenter = projectionMatrix.transform(Math::make(center, 1.0f));
 
-            int totalus = 0;
-            for (uint32_t y = 0; y < gridDimensions.y; ++y)
-            {
-                for (uint32_t x = 0; x < gridDimensions.x; ++x)
-                {
-                    auto &count = gridCountList[x + y * GridWidth];
-                    auto offset = gridOffsetList[x + y * GridWidth];
-                    for (uint32_t lightIndex = 0; lightIndex < count; ++lightIndex)
-                    {
-                        auto &lightData = lightDataList[tileIndexData[offset + lightIndex]];
-                        if (!testDepthBounds(depthRangeData[y * gridDimensions.x + x], lightData))
-                        {
-                            std::swap(tileIndexData[offset + lightIndex], tileIndexData[offset + count - 1]);
-                            --count;
-                        }
-                    }
+			Math::Float4 north = projectedCenter + projectedUp;
+			Math::Float4 east = projectedCenter + projectedRight;
+			Math::Float4 south = projectedCenter - projectedUp;
+			Math::Float4 west = projectedCenter - projectedRight;
 
-                    totalus += count;
-                }
-            }
-        }
+			north /= north.w;
+			east /= east.w;
+			west /= west.w;
+			south /= south.w;
+			auto minimum = std::min(std::min(std::min(east, west), north), south).xyz;
+			auto maximum = std::max(std::max(std::max(east, west), north), south).xyz;
 
-        void pruneFarOnly(float nearClip, const std::vector<Math::Float2> &depthMaximumList)
-        {
-            depthRangeList = depthMaximumList;
-            usingDepthRangeList = !depthMaximumList.empty();
-            if (!usingDepthRangeList || tileIndexList.empty())
-            {
-                return;
-            }
-
-            for (auto &depthRange : depthRangeList)
-            {
-                depthRange -= nearClip;
-            }
-
-            auto depthRangeData = usingDepthRangeList ? depthRangeList.data() : nullptr;
-            auto tileIndexData = tileIndexList.data();
-
-            int totalus = 0;
-            for (uint32_t y = 0; y < gridDimensions.y; ++y)
-            {
-                for (uint32_t x = 0; x < gridDimensions.x; ++x)
-                {
-                    auto &count = gridCountList[x + y * GridWidth];
-                    auto offset = gridOffsetList[x + y * GridWidth];
-                    for (uint32_t lightIndex = 0; lightIndex < count; ++lightIndex)
-                    {
-                        auto &lightData = lightDataList[tileIndexData[offset + lightIndex]];
-                        if (!testDepthBounds(depthRangeData[y * gridDimensions.x + x], lightData))
-                        {
-                            std::swap(tileIndexData[offset + lightIndex], tileIndexData[offset + count - 1]);
-                            --count;
-                        }
-                    }
-
-                    totalus += count;
-                }
-            }
-        }
-
-        ScreenBounds findScreenSpaceBounds(const Math::Float4x4 &projectionMatrix, const Math::Float3 &position, float radius, int width, int height, float nearClip)
-        {
-            Math::Float4 region = -computeClipRegion(position, radius, nearClip, projectionMatrix);
-            std::swap(region.x, region.z);
-            std::swap(region.y, region.w);
-            region = ((region * 0.5f) + 0.5f);
-            region = Math::clamp(region, Math::Float4::Zero, Math::Float4::One);
-
-            ScreenBounds screenBounds;
-            screenBounds.min.x = uint32_t(region.x * float(width));
-            screenBounds.min.y = uint32_t(region.y * float(height));
-            screenBounds.max.x = uint32_t(region.z * float(width));
-            screenBounds.max.y = uint32_t(region.w * float(height));
-            return screenBounds;
-        }
-    };
+			ScreenBounds screenBounds;
+			screenBounds.minimum = (minimum.xy * resolution);
+			screenBounds.maximum = (maximum.xy * resolution);
+			return screenBounds;
+		}
+	};
 }; // namespace Gek

@@ -1,16 +1,16 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: aba582126fd326535c2ce09055b12123f07428b2 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Sun Oct 23 19:59:14 2016 +0000 $
 #pragma once
 
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\RGBA.hpp"
 #include "GEK\Math\Vector2.hpp"
-#include "GEK\Math\Vector4.hpp"
+#include "GEK\Math\Vector4SIMD.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\Context.hpp"

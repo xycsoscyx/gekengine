@@ -651,7 +651,7 @@ namespace Gek
                         {
                             auto width = videoDevice->getBackBuffer()->getWidth();
                             auto height = videoDevice->getBackBuffer()->getHeight();
-                            pointLightGrid.build(Math::UInt2(width, height), pointLightList, projectionMatrix, 0.5f, std::vector<Math::Float2>());
+                            pointLightGrid.build(projectionMatrix, Math::UInt2(width, height), pointLightList);
                               
                             if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
                             {
