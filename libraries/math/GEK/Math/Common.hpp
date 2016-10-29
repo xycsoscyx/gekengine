@@ -66,5 +66,39 @@ namespace Gek
         {
             return (value * value);
         }
+
+        template <size_t SIZE, typename TYPE>
+        void min(TYPE(&data)[SIZE], const TYPE(&left)[SIZE], const TYPE(&right)[SIZE])
+        {
+            for (size_t index = 0; index < SIZE; index++)
+            {
+                data[index] = std::min(left[size], right[size]);
+            }
+        }
+
+        template <typename VECTOR>
+        VECTOR min(const VECTOR &left, const VECTOR &right)
+        {
+            VECTOR result;
+            min(result.data, left.data, right.data);
+            return result;
+        }
+
+        template <size_t SIZE, typename TYPE>
+        void max(TYPE(&data)[SIZE], const TYPE(&left)[SIZE], const TYPE(&right)[SIZE])
+        {
+            for (size_t index = 0; index < SIZE; index++)
+            {
+                data[index] = std::max(left[size], right[size]);
+            }
+        }
+
+        template <typename VECTOR>
+        VECTOR max(const VECTOR &left, const VECTOR &right)
+        {
+            VECTOR result;
+            max(result.data, left.data, right.data);
+            return result;
+        }
     }; // namespace Math
 }; // namespace Gek
