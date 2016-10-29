@@ -20,8 +20,6 @@
 #include <concurrent_vector.h>
 #include <ppl.h>
 
-#include "LightGrid.hpp"
-
 namespace Gek
 {
 	namespace Utility
@@ -341,8 +339,6 @@ namespace Gek
             Video::BufferPtr pointLightDataBuffer;
             Video::BufferPtr spotLightDataBuffer;
 
-            LightGrid<16, 8, PointLightData> pointLightGrid;
-
             DrawCallList drawCallList;
 
         public:
@@ -661,10 +657,6 @@ namespace Gek
 
                         if (!pointLightList.empty())
                         {
-                            auto width = videoDevice->getBackBuffer()->getWidth();
-                            auto height = videoDevice->getBackBuffer()->getHeight();
-                            //pointLightGrid.build(projectionMatrix, nearClip, Math::UInt2(width, height), pointLightList);
-                              
                             if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
                             {
                                 pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
