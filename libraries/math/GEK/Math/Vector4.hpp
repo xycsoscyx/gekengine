@@ -34,7 +34,9 @@ namespace Gek
 				struct { TYPE r, g, b, a; };
 				struct { Vector3<TYPE> rgb; TYPE a; };
 				struct { Vector3<TYPE> xyz; TYPE w; };
-                struct { TYPE data[4]; };
+				struct { Vector2<TYPE> xy; Vector2<TYPE> zw; };
+				struct { Vector2<TYPE> minimum; Vector2<TYPE> maximum; };
+				struct { TYPE data[4]; };
             };
 
         public:

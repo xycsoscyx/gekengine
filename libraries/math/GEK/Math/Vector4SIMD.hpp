@@ -34,6 +34,7 @@ namespace Gek
 					struct { TYPE x, y, z, w; };
 					struct { Vector3<TYPE> xyz; TYPE w; };
 					struct { Vector2<TYPE> xy; Vector2<TYPE> zw; };
+					struct { Vector2<TYPE> minimum; Vector2<TYPE> maximum; };
 					struct { TYPE data[4]; };
 					struct { __m128 simd; };
 				};
