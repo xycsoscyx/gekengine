@@ -17,10 +17,9 @@
 #include "GEK\Components\Color.hpp"
 #include "GEK\Components\Light.hpp"
 #include "GEK\Shapes\Sphere.hpp"
+#include <concurrent_unordered_set.h>
 #include <concurrent_vector.h>
 #include <ppl.h>
-
-#include "LightGrid.hpp"
 
 namespace Gek
 {
@@ -301,16 +300,6 @@ namespace Gek
                 }
             };
 
-            template <typename COMPONENT>
-            class LightEntityMap
-                : public Plugin::ProcessorMixin<LightEntityMap<COMPONENT>, Components::Transform, Components::Color, COMPONENT>
-            {
-            public:
-                struct Data
-                {
-                };
-            };
-
         private:
             Video::Device *videoDevice;
             Plugin::Population *population;
@@ -328,9 +317,9 @@ namespace Gek
             Video::ObjectPtr renderState;
             Video::ObjectPtr depthState;
 
-            LightEntityMap<Components::DirectionalLight> directionalLightEntities;
-            LightEntityMap<Components::PointLight> pointLightEntities;
-            LightEntityMap<Components::SpotLight> spotLightEntities;
+            concurrency::concurrent_unordered_set<Plugin::Entity *> directionalLightEntities;
+            concurrency::concurrent_unordered_set<Plugin::Entity *> pointLightEntities;
+            concurrency::concurrent_unordered_set<Plugin::Entity *> spotLightEntities;
 
             concurrency::concurrent_vector<DirectionalLightData> directionalLightList;
             concurrency::concurrent_vector<PointLightData> pointLightList;
@@ -340,8 +329,6 @@ namespace Gek
             Video::BufferPtr directionalLightDataBuffer;
             Video::BufferPtr pointLightDataBuffer;
             Video::BufferPtr spotLightDataBuffer;
-
-            LightGrid<16, 8, PointLightData> pointLightGrid;
 
             DrawCallList drawCallList;
 
@@ -451,9 +438,30 @@ namespace Gek
 
             void addEntity(Plugin::Entity *entity)
             {
-                directionalLightEntities.addEntity(entity, [&](auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent) -> void {});
-                pointLightEntities.addEntity(entity, [&](auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent) -> void {});
-                spotLightEntities.addEntity(entity, [&](auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent) -> void { });
+                if (entity->hasComponent<Components::Transform>())
+                {
+                    if (entity->hasComponent<Components::DirectionalLight>())
+                    {
+                        directionalLightEntities.insert(entity);
+                    }
+
+                    if (entity->hasComponent<Components::PointLight>())
+                    {
+                        pointLightEntities.insert(entity);
+                    }
+
+                    if (entity->hasComponent<Components::SpotLight>())
+                    {
+                        spotLightEntities.insert(entity);
+                    }
+                }
+            }
+
+            void removeEntity(Plugin::Entity *entity)
+            {
+                directionalLightEntities.unsafe_erase(entity);
+                pointLightEntities.unsafe_erase(entity);
+                spotLightEntities.unsafe_erase(entity);
             }
 
             // Plugin::Population Slots
@@ -471,37 +479,27 @@ namespace Gek
                 population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {
                     addEntity(entity);
-                    addEntity(entity);
-                    addEntity(entity);
                 });
             }
 
             void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
             {
                 addEntity(entity);
-                addEntity(entity);
-                addEntity(entity);
             }
 
             void onEntityDestroyed(Plugin::Entity *entity)
             {
-                directionalLightEntities.removeEntity(entity);
-                pointLightEntities.removeEntity(entity);
-                spotLightEntities.removeEntity(entity);
+                removeEntity(entity);
             }
 
             void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
             {
                 addEntity(entity);
-                addEntity(entity);
-                addEntity(entity);
             }
 
             void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
             {
-                directionalLightEntities.removeEntity(entity);
-                pointLightEntities.removeEntity(entity);
-                spotLightEntities.removeEntity(entity);
+                removeEntity(entity);
             }
 
             // Renderer
@@ -621,8 +619,12 @@ namespace Gek
                         };
 
                         directionalLightList.clear();
-                        directionalLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
+                        concurrency::parallel_for_each(directionalLightEntities.begin(), directionalLightEntities.end(), [&](Plugin::Entity *entity) -> void
                         {
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                            auto &colorComponent = entity->getComponent<Components::Color>();
+                            auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
+
                             auto &lightData = *directionalLightList.grow_by(1);
                             lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
                             lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
@@ -645,10 +647,15 @@ namespace Gek
                         }
 
                         pointLightList.clear();
-                        pointLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
+                        concurrency::parallel_for_each(directionalLightEntities.begin(), directionalLightEntities.end(), [&](Plugin::Entity *entity) -> void
                         {
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                            auto &lightComponent = entity->getComponent<Components::PointLight>();
+
                             if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                             {
+                                auto &colorComponent = entity->getComponent<Components::Color>();
+
                                 auto &lightData = *pointLightList.grow_by(1);
                                 lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
                                 lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
@@ -661,10 +668,6 @@ namespace Gek
 
                         if (!pointLightList.empty())
                         {
-                            auto width = videoDevice->getBackBuffer()->getWidth();
-                            auto height = videoDevice->getBackBuffer()->getHeight();
-                            //pointLightGrid.build(projectionMatrix, nearClip, Math::UInt2(width, height), pointLightList);
-                              
                             if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
                             {
                                 pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
@@ -678,10 +681,15 @@ namespace Gek
                         }
 
                         spotLightList.clear();
-                        spotLightEntities.list([&](Plugin::Entity *entity, auto &data, auto &transformComponent, auto &colorComponent, auto &lightComponent)
+                        concurrency::parallel_for_each(spotLightEntities.begin(), spotLightEntities.end(), [&](Plugin::Entity *entity) -> void
                         {
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                            auto &lightComponent = entity->getComponent<Components::SpotLight>();
+
                             if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
                             {
+                                auto &colorComponent = entity->getComponent<Components::Color>();
+
                                 auto &lightData = *spotLightList.grow_by(1);
                                 lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
                                 lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
