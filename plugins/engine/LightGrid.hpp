@@ -8,16 +8,16 @@
 
 namespace Gek
 {
-	template <size_t GridWidth, size_t GridHeight, typename LightData>
+	template <uint32_t GridWidth, uint32_t GridHeight, typename LightData>
 	class LightGrid
 	{
 	public:
 		struct ScreenBounds
 		{
-			Math::UInt2 minimum;
-			Math::UInt2 maximum;
+			Math::Float2 minimum;
+			Math::Float2 maximum;
 
-			ScreenBounds(const Math::UInt2 &minimum, const Math::UInt2 &maximum)
+			ScreenBounds(const Math::Float2 &minimum, const Math::Float2 &maximum)
 				: minimum(minimum)
 				, maximum(maximum)
 			{
@@ -29,11 +29,11 @@ namespace Gek
 		using ConcurrentLightDataList = concurrency::concurrent_vector<LightData>;
 
 	protected:
-		Math::UInt2 gridDimensions = Math::UInt2(GridWidth, GridHeight);
+		const Math::UInt2 gridDimensions = Math::UInt2(GridWidth, GridHeight);
 
-		uint32_t gridOffsetList[GridWidth * GridHeight];
-		uint32_t gridCountList[GridWidth * GridHeight];
-		std::vector<int> tileIndexList;
+        uint32_t gridOffsetList[GridWidth * GridHeight];
+        uint32_t gridCountList[GridWidth * GridHeight];
+		std::vector<uint32_t> tileIndexList;
 
 		LightDataList lightDataList;
 		ScreenBoundsList screenBoundsList;
@@ -43,7 +43,7 @@ namespace Gek
 		{
 			lightDataList.clear();
 			screenBoundsList.clear();
-			for (uint32_t lightIndex = 0; lightIndex < concurrentLightDataList.size(); ++lightIndex)
+			for (size_t lightIndex = 0; lightIndex < concurrentLightDataList.size(); ++lightIndex)
 			{
 				auto &lightData = concurrentLightDataList[lightIndex];
 				ScreenBounds screenBounds = getBoundingBox(lightData.position, lightData.range, -nearClip, projectionMatrix);
@@ -69,67 +69,71 @@ namespace Gek
 
 		void build(const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, const Math::UInt2 resolution, const ConcurrentLightDataList &concurrentLightDataList)
 		{
-			auto tileSize = (resolution / Math::UInt2(GridWidth, GridHeight));
+			auto tileSize = (resolution / gridDimensions);
 			buildRects(projectionMatrix, nearClip, resolution, concurrentLightDataList);
 
 			memset(gridOffsetList, 0, sizeof(gridOffsetList));
 			memset(gridCountList, 0, sizeof(gridCountList));
 
-			int totalus = 0;
+			uint32_t totalus = 0;
 			for (size_t lightIndex = 0; lightIndex < screenBoundsList.size(); ++lightIndex)
 			{
-				auto &screenBounds = screenBoundsList[lightIndex];
-				auto &lightData = lightDataList[lightIndex];
-				Math::UInt2 l = clamp(screenBounds.minimum / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
-				Math::UInt2 u = clamp((screenBounds.maximum + tileSize - 1U) / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
-				for (uint32_t y = l.y; y < u.y; ++y)
-				{
-					for (uint32_t x = l.x; x < u.x; ++x)
-					{
-						gridCountList[x + y * GridWidth] += 1;
-						++totalus;
-					}
-				}
+                auto &screenBounds = screenBoundsList[lightIndex];
+                auto &lightData = lightDataList[lightIndex];
+
+                uint32_t minTileX = std::max(0, int32_t(screenBounds.minimum.x / tileSize.x));
+                uint32_t maxTileX = std::min(int32_t(gridDimensions.x - 1), int32_t(screenBounds.minimum.y / tileSize.x));
+
+                uint32_t minTileY = std::max(0, int32_t(screenBounds.maximum.x / tileSize.y));
+                uint32_t maxTileY = std::min(int32_t(gridDimensions.y - 1), int32_t(screenBounds.maximum.y / tileSize.y));
+
+                for (uint32_t x = minTileX; x <= maxTileX; ++x)
+                {
+                    for (uint32_t y = minTileY; y <= maxTileY; ++y)
+                    {
+                        gridCountList[x + y * gridDimensions.x] += 1;
+                        ++totalus;
+                    }
+                }
 			}
 
 			tileIndexList.resize(totalus);
-			uint32_t offset = 0;
+
+            uint32_t offset = 0;
 			for (uint32_t y = 0; y < gridDimensions.y; ++y)
 			{
 				for (uint32_t x = 0; x < gridDimensions.x; ++x)
 				{
-					auto count = gridCountList[x + y * GridWidth];
-					gridOffsetList[x + y * GridWidth] = offset + count;
+					auto count = gridCountList[x + y * gridDimensions.x];
+					gridOffsetList[x + y * gridDimensions.x] = offset + count;
 					offset += count;
 				}
 			}
 
 			if (screenBoundsList.size() && !tileIndexList.empty())
 			{
-				int *data = tileIndexList.data();
+				auto data = tileIndexList.data();
 				for (size_t lightIndex = 0; lightIndex < screenBoundsList.size(); ++lightIndex)
 				{
-					uint32_t lightId = uint32_t(lightIndex);
 					auto &screenBounds = screenBoundsList[lightIndex];
 					auto &lightData = lightDataList[lightIndex];
-					Math::UInt2 l = clamp(screenBounds.minimum / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
-					Math::UInt2 u = clamp((screenBounds.maximum + tileSize - 1U) / tileSize, Math::UInt2::Zero, gridDimensions + 1U);
-					for (uint32_t y = l.y; y < u.y; ++y)
-					{
-						for (uint32_t x = l.x; x < u.x; ++x)
-						{
-							auto &offset = --gridOffsetList[x + y * GridWidth];
-							data[offset] = lightId;
+
+                    uint32_t minTileX = std::max(0, int32_t(screenBounds.minimum.x / tileSize.x));
+                    uint32_t maxTileX = std::min(int32_t(gridDimensions.x - 1), int32_t(screenBounds.minimum.y / tileSize.x));
+
+                    uint32_t minTileY = std::max(0, int32_t(screenBounds.maximum.x / tileSize.y));
+                    uint32_t maxTileY = std::min(int32_t(gridDimensions.y - 1), int32_t(screenBounds.maximum.y / tileSize.y));
+
+                    for (uint32_t x = minTileX; x <= maxTileX; ++x)
+                    {
+                        for (uint32_t y = minTileY; y <= maxTileY; ++y)
+                        {
+                            auto &offset = --gridOffsetList[x + y * gridDimensions.x];
+							data[offset] = lightIndex;
 						}
 					}
 				}
 			}
-		}
-
-		template <typename TYPE>
-		TYPE square(TYPE value)
-		{
-			return (value * value);
 		}
 
 		void getBoundsForAxis(bool useXAxis, const Math::Float3& center, float radius, float nearClip, const Math::SIMD::Float4x4& projMatrix, Math::Float3& U, Math::Float3& L)
@@ -142,7 +146,7 @@ namespace Gek
 			// given in coordinates (a,z), where a is in the direction of the vector a, and z is in the standard z direction
 			const Math::Float2& projectedCenter = Math::Float2(a.dot(center), center.z);
 			Math::Float2 bounds_az[2];
-			float tSquared = projectedCenter.dot(projectedCenter) - square(radius);
+			float tSquared = projectedCenter.dot(projectedCenter) - Math::square(radius);
 			float t, cLength, costheta, sintheta;
 
 			if (tSquared > 0)
@@ -160,7 +164,7 @@ namespace Gek
 			float sqrtPart;
 			if (!trivialAccept)
 			{
-				sqrtPart = std::sqrt(square(radius) - square(nearClip - projectedCenter.y));
+				sqrtPart = std::sqrt(Math::square(radius) - Math::square(nearClip - projectedCenter.y));
 			}
 
 			for (int i = 0; i < 2; ++i)
@@ -198,26 +202,7 @@ namespace Gek
 			float minX = minXHomogenous.dot(projMatrix.normals[0].n) / minXHomogenous.dot(projMatrix.normals[3].n);
 			float maxY = maxYHomogenous.dot(projMatrix.normals[1].n) / maxYHomogenous.dot(projMatrix.normals[3].n);
 			float minY = minYHomogenous.dot(projMatrix.normals[1].n) / minYHomogenous.dot(projMatrix.normals[3].n);
-			return ScreenBounds(Math::UInt2(minX, minY), Math::UInt2(maxX, maxY));
-		}
-
-		/** Center is in camera space */
-		void tileClassification(int tileNumX, int tileNumY, int tileWidth, int tileHeight, const Math::Float3& center, float radius, float nearClip, const Math::SIMD::Float4x4& projMatrix)
-		{
-			Rect2D projectedBounds = getBoundingBox(center, radius, projectionMatrix);
-
-			int minTileX = max(0, (int)(projectedBox.rx.x / tileWidth));
-			int minTileY = max(0, (int)(projectedBox.ry.x / tileHeight));
-			int maxTileX = min(tileNumX - 1, (int)(projectedBox.rx.y / tileWidth));
-			int maxTileY = min(tileNumY - 1, (int)(projectedBox.ry.y / tileHeight));
-			for (int i = minTileX; i <= maxTileX; ++i)
-			{
-				for (int j = minTileY; j <= maxTileY; ++j)
-				{
-					// This tile is touched by the bounding box of the sphere
-					// Put application specific tile-classification code here.
-				}
-			}
+			return ScreenBounds(Math::Float2(minX, minY), Math::Float2(maxX, maxY));
 		}
 	};
 }; // namespace Gek

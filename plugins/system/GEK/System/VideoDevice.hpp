@@ -262,30 +262,16 @@ namespace Gek
 				Back,
 			};
 
-			FillMode fillMode;
-            CullMode cullMode;
-            bool frontCounterClockwise;
-            uint32_t depthBias;
-            float depthBiasClamp;
-            float slopeScaledDepthBias;
-            bool depthClipEnable;
-            bool scissorEnable;
-            bool multisampleEnable;
-            bool antialiasedLineEnable;
-
-            RenderStateInformation(void)
-                : fillMode(FillMode::Solid)
-                , cullMode(CullMode::Back)
-                , frontCounterClockwise(false)
-                , depthBias(0)
-                , depthBiasClamp(0.0f)
-                , slopeScaledDepthBias(0.0f)
-                , depthClipEnable(true)
-                , scissorEnable(false)
-                , multisampleEnable(false)
-                , antialiasedLineEnable(false)
-            {
-            }
+			FillMode fillMode = FillMode::Solid;
+            CullMode cullMode = CullMode::Back;
+            bool frontCounterClockwise = false;
+            uint32_t depthBias = 0;
+            float depthBiasClamp = 0.0f;
+            float slopeScaledDepthBias = 0.0f;
+            bool depthClipEnable = true;
+            bool scissorEnable = false;
+            bool multisampleEnable = false;
+            bool antialiasedLineEnable = false;
         };
 
         struct DepthStateInformation
@@ -310,38 +296,20 @@ namespace Gek
 					DecreaseSaturated,
 				};
 
-				Operation failOperation;
-                Operation depthFailOperation;
-                Operation passOperation;
-                ComparisonFunction comparisonFunction;
-
-                StencilStateInformation(void)
-                    : failOperation(Operation::Keep)
-                    , depthFailOperation(Operation::Keep)
-                    , passOperation(Operation::Keep)
-                    , comparisonFunction(ComparisonFunction::Always)
-                {
-                }
+                Operation failOperation = Operation::Keep;
+                Operation depthFailOperation = Operation::Keep;
+                Operation passOperation = Operation::Keep;
+                ComparisonFunction comparisonFunction = ComparisonFunction::Always;
             };
 
-            bool enable;
-            Write writeMask;
-            ComparisonFunction comparisonFunction;
-            bool stencilEnable;
-            uint8_t stencilReadMask;
-            uint8_t stencilWriteMask;
+            bool enable = false;
+            Write writeMask = Write::All;
+            ComparisonFunction comparisonFunction = ComparisonFunction::Always;
+            bool stencilEnable = false;
+            uint8_t stencilReadMask = 0xFF;
+            uint8_t stencilWriteMask = 0xFF;
             StencilStateInformation stencilFrontState;
             StencilStateInformation stencilBackState;
-
-            DepthStateInformation(void)
-                : enable(false)
-                , writeMask(Write::All)
-                , comparisonFunction(ComparisonFunction::Always)
-                , stencilEnable(false)
-                , stencilReadMask(0xFF)
-                , stencilWriteMask(0xFF)
-            {
-            }
         };
 
         struct BlendStateInformation
@@ -392,49 +360,26 @@ namespace Gek
 				};
 			}; // struct Mask
 
-			bool enable;
-            Source colorSource;
-            Source colorDestination;
-            Operation colorOperation;
-            Source alphaSource;
-            Source alphaDestination;
-            Operation alphaOperation;
-            uint8_t writeMask;
-
-        private:
-            BlendStateInformation(void)
-                : enable(false)
-                , colorSource(Source::One)
-                , colorDestination(Source::One)
-                , colorOperation(Operation::Add)
-                , alphaSource(Source::One)
-                , alphaDestination(Source::One)
-                , alphaOperation(Operation::Add)
-                , writeMask(Mask::RGBA)
-            {
-            }
+			bool enable = false;
+            Source colorSource = Source::One;
+            Source colorDestination = Source::One;
+            Operation colorOperation = Operation::Add;
+            Source alphaSource = Source::One;
+            Source alphaDestination = Source::One;
+            Operation alphaOperation = Operation::Add;
+            uint8_t writeMask = Mask::RGBA;
         };
 
         struct UnifiedBlendStateInformation
             : public BlendStateInformation
         {
-            bool alphaToCoverage;
-
-            UnifiedBlendStateInformation(void)
-                : alphaToCoverage(false)
-            {
-            }
+            bool alphaToCoverage = false;
         };
 
         struct IndependentBlendStateInformation
         {
-            bool alphaToCoverage;
+            bool alphaToCoverage = false;
             BlendStateInformation targetStates[8];
-
-            IndependentBlendStateInformation(void)
-                : alphaToCoverage(false)
-            {
-            }
         };
 
         struct SamplerStateInformation
@@ -461,30 +406,16 @@ namespace Gek
 				Border,
 			};
 
-			FilterMode filterMode;
-            AddressMode addressModeU;
-            AddressMode addressModeV;
-            AddressMode addressModeW;
-            float mipLevelBias;
-            uint32_t maximumAnisotropy;
-            ComparisonFunction comparisonFunction;
-            Math::Float4 borderColor;
-            float minimumMipLevel;
-            float maximumMipLevel;
-
-            SamplerStateInformation(void)
-                : filterMode(FilterMode::AllPoint)
-                , addressModeU(AddressMode::Clamp)
-                , addressModeV(AddressMode::Clamp)
-                , addressModeW(AddressMode::Clamp)
-                , mipLevelBias(0.0f)
-                , maximumAnisotropy(1)
-                , comparisonFunction(ComparisonFunction::Never)
-                , borderColor(0.0f, 0.0f, 0.0f, 1.0f)
-                , minimumMipLevel(0.0f)
-                , maximumMipLevel(Math::Infinity)
-            {
-            }
+			FilterMode filterMode = FilterMode::AllPoint;
+            AddressMode addressModeU = AddressMode::Clamp;
+            AddressMode addressModeV = AddressMode::Clamp;
+            AddressMode addressModeW = AddressMode::Clamp;
+            float mipLevelBias = 0.0f;
+            uint32_t maximumAnisotropy = 1;
+            ComparisonFunction comparisonFunction = ComparisonFunction::Never;
+            Math::Float4 borderColor = Math::Float4(0.0f, 0.0f, 0.0f, 1.0f);
+            float minimumMipLevel = 0.0f;
+            float maximumMipLevel = Math::Infinity;
         };
 
         struct InputElement

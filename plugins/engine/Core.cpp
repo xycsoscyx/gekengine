@@ -556,7 +556,6 @@ namespace Gek
                 displayModeList = videoDevice->getDisplayModeList(Video::Format::R8G8B8A8_UNORM_SRGB);
                 currentDisplayMode = (uint32_t(configuration.getChild(L"display").getAttribute(L"mode", L"0")) % displayModeList.size());
                 videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
-
                 for (auto &displayMode : displayModeList)
                 {
                     StringUTF8 displayModeString(StringUTF8::create("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
@@ -831,6 +830,7 @@ namespace Gek
                     if (eventData.wParam != SIZE_MINIMIZED)
                     {
                         videoDevice->handleResize();
+                        onResize.emit();
                     }
 
                     return 0;

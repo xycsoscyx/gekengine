@@ -60,5 +60,11 @@ namespace Gek
         {
             return clamp(value, DATA(0.0), DATA(1.0));
         }
+
+        template <typename TYPE>
+        TYPE square(TYPE value)
+        {
+            return (value * value);
+        }
     }; // namespace Math
 }; // namespace Gek

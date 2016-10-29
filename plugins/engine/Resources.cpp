@@ -368,6 +368,9 @@ namespace Gek
             Validate drawPrimitiveValid;
             Validate dispatchValid;
 
+            Video::TargetPtr screen;
+            Video::TargetPtr screenBuffer;
+
         public:
             Resources(Context *context, Plugin::Core *core, Video::Device *videoDevice)
                 : ContextRegistration(context)
@@ -386,6 +389,7 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(videoDevice);
+
                 core->onResize.connect<Resources, &Resources::onResize>(this);
             }
 

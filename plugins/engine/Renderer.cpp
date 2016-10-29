@@ -324,6 +324,9 @@ namespace Gek
 
             Video::ObjectPtr deferredVertexProgram;
             Video::ObjectPtr deferredPixelProgram;
+            Video::ObjectPtr blendState;
+            Video::ObjectPtr renderState;
+            Video::ObjectPtr depthState;
 
             LightEntityMap<Components::DirectionalLight> directionalLightEntities;
             LightEntityMap<Components::PointLight> pointLightEntities;
@@ -376,6 +379,15 @@ namespace Gek
                 linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
 
+                Video::UnifiedBlendStateInformation blendStateInformation;
+                blendState = videoDevice->createBlendState(blendStateInformation);
+
+                Video::RenderStateInformation renderStateInformation;
+                renderState = videoDevice->createRenderState(renderStateInformation);
+
+                Video::DepthStateInformation depthStateInformation;
+                depthState = videoDevice->createDepthState(depthStateInformation);
+
                 engineConstantBuffer = videoDevice->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
                 engineConstantBuffer->setName(L"engineConstantBuffer");
 
@@ -401,9 +413,9 @@ namespace Gek
                     L"}" \
                     L"" \
                     L"Texture2D<float3> inputBuffer : register(t0);" \
-                    L"float4 mainPixelProgram(in Pixel inputPixel) : SV_TARGET0" \
+                    L"float3 mainPixelProgram(in Pixel inputPixel) : SV_TARGET0" \
                     L"{" \
-                    L"    return float4(inputBuffer[inputPixel.screen.xy], 1.0);" \
+                    L"    return inputBuffer[inputPixel.screen.xy];" \
                     L"}";
 
 				auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
@@ -651,7 +663,7 @@ namespace Gek
                         {
                             auto width = videoDevice->getBackBuffer()->getWidth();
                             auto height = videoDevice->getBackBuffer()->getHeight();
-                            pointLightGrid.build(projectionMatrix, nearClip, Math::UInt2(width, height), pointLightList);
+                            //pointLightGrid.build(projectionMatrix, nearClip, Math::UInt2(width, height), pointLightList);
                               
                             if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
                             {
@@ -804,11 +816,13 @@ namespace Gek
 
             void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)
             {
+                videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
+                videoContext->setDepthState(depthState.get(), 0);
+                videoContext->setRenderState(renderState.get());
+
                 videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
 
-                std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
-                videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
-
+                resources->startResourceBlock();
                 resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
 
                 videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
@@ -823,11 +837,6 @@ namespace Gek
                 }
 
                 videoContext->drawPrimitive(3, 0);
-
-                videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
-                videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
-                videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
-                videoContext->computePipeline()->clearConstantBufferList(2, 0);
             }
         };
 
