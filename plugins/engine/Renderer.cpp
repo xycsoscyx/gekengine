@@ -23,166 +23,166 @@
 
 namespace Gek
 {
-	namespace Utility
-	{
-		Video::Format getFormat(const wchar_t *formatString)
-		{
-			if (wcsicmp(formatString, L"Unknown") == 0) return Video::Format::Unknown;
-			else if (wcsicmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Video::Format::R32G32B32A32_FLOAT;
-			else if (wcsicmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Video::Format::R16G16B16A16_FLOAT;
-			else if (wcsicmp(formatString, L"R32G32B32_FLOAT") == 0) return Video::Format::R32G32B32_FLOAT;
-			else if (wcsicmp(formatString, L"R11G11B10_FLOAT") == 0) return Video::Format::R11G11B10_FLOAT;
-			else if (wcsicmp(formatString, L"R32G32_FLOAT") == 0) return Video::Format::R32G32_FLOAT;
-			else if (wcsicmp(formatString, L"R16G16_FLOAT") == 0) return Video::Format::R16G16_FLOAT;
-			else if (wcsicmp(formatString, L"R32_FLOAT") == 0) return Video::Format::R32_FLOAT;
-			else if (wcsicmp(formatString, L"R16_FLOAT") == 0) return Video::Format::R16_FLOAT;
+    namespace Utility
+    {
+        Video::Format getFormat(const wchar_t *formatString)
+        {
+            if (wcsicmp(formatString, L"Unknown") == 0) return Video::Format::Unknown;
+            else if (wcsicmp(formatString, L"R32G32B32A32_FLOAT") == 0) return Video::Format::R32G32B32A32_FLOAT;
+            else if (wcsicmp(formatString, L"R16G16B16A16_FLOAT") == 0) return Video::Format::R16G16B16A16_FLOAT;
+            else if (wcsicmp(formatString, L"R32G32B32_FLOAT") == 0) return Video::Format::R32G32B32_FLOAT;
+            else if (wcsicmp(formatString, L"R11G11B10_FLOAT") == 0) return Video::Format::R11G11B10_FLOAT;
+            else if (wcsicmp(formatString, L"R32G32_FLOAT") == 0) return Video::Format::R32G32_FLOAT;
+            else if (wcsicmp(formatString, L"R16G16_FLOAT") == 0) return Video::Format::R16G16_FLOAT;
+            else if (wcsicmp(formatString, L"R32_FLOAT") == 0) return Video::Format::R32_FLOAT;
+            else if (wcsicmp(formatString, L"R16_FLOAT") == 0) return Video::Format::R16_FLOAT;
 
-			else if (wcsicmp(formatString, L"R32G32B32A32_UINT") == 0) return Video::Format::R32G32B32A32_UINT;
-			else if (wcsicmp(formatString, L"R16G16B16A16_UINT") == 0) return Video::Format::R16G16B16A16_UINT;
-			else if (wcsicmp(formatString, L"R10G10B10A2_UINT") == 0) return Video::Format::R10G10B10A2_UINT;
-			else if (wcsicmp(formatString, L"R8G8B8A8_UINT") == 0) return Video::Format::R8G8B8A8_UINT;
-			else if (wcsicmp(formatString, L"R32G32B32_UINT") == 0) return Video::Format::R32G32B32_UINT;
-			else if (wcsicmp(formatString, L"R32G32_UINT") == 0) return Video::Format::R32G32_UINT;
-			else if (wcsicmp(formatString, L"R16G16_UINT") == 0) return Video::Format::R16G16_UINT;
-			else if (wcsicmp(formatString, L"R8G8_UINT") == 0) return Video::Format::R8G8_UINT;
-			else if (wcsicmp(formatString, L"R32_UINT") == 0) return Video::Format::R32_UINT;
-			else if (wcsicmp(formatString, L"R16_UINT") == 0) return Video::Format::R16_UINT;
-			else if (wcsicmp(formatString, L"R8_UINT") == 0) return Video::Format::R8_UINT;
+            else if (wcsicmp(formatString, L"R32G32B32A32_UINT") == 0) return Video::Format::R32G32B32A32_UINT;
+            else if (wcsicmp(formatString, L"R16G16B16A16_UINT") == 0) return Video::Format::R16G16B16A16_UINT;
+            else if (wcsicmp(formatString, L"R10G10B10A2_UINT") == 0) return Video::Format::R10G10B10A2_UINT;
+            else if (wcsicmp(formatString, L"R8G8B8A8_UINT") == 0) return Video::Format::R8G8B8A8_UINT;
+            else if (wcsicmp(formatString, L"R32G32B32_UINT") == 0) return Video::Format::R32G32B32_UINT;
+            else if (wcsicmp(formatString, L"R32G32_UINT") == 0) return Video::Format::R32G32_UINT;
+            else if (wcsicmp(formatString, L"R16G16_UINT") == 0) return Video::Format::R16G16_UINT;
+            else if (wcsicmp(formatString, L"R8G8_UINT") == 0) return Video::Format::R8G8_UINT;
+            else if (wcsicmp(formatString, L"R32_UINT") == 0) return Video::Format::R32_UINT;
+            else if (wcsicmp(formatString, L"R16_UINT") == 0) return Video::Format::R16_UINT;
+            else if (wcsicmp(formatString, L"R8_UINT") == 0) return Video::Format::R8_UINT;
 
-			else if (wcsicmp(formatString, L"R32G32B32A32_INT") == 0) return Video::Format::R32G32B32A32_INT;
-			else if (wcsicmp(formatString, L"R16G16B16A16_INT") == 0) return Video::Format::R16G16B16A16_INT;
-			else if (wcsicmp(formatString, L"R8G8B8A8_INT") == 0) return Video::Format::R8G8B8A8_INT;
-			else if (wcsicmp(formatString, L"R32G32B32_INT") == 0) return Video::Format::R32G32B32_INT;
-			else if (wcsicmp(formatString, L"R32G32_INT") == 0) return Video::Format::R32G32_INT;
-			else if (wcsicmp(formatString, L"R16G16_INT") == 0) return Video::Format::R16G16_INT;
-			else if (wcsicmp(formatString, L"R8G8_INT") == 0) return Video::Format::R8G8_INT;
-			else if (wcsicmp(formatString, L"R32_INT") == 0) return Video::Format::R32_INT;
-			else if (wcsicmp(formatString, L"R16_INT") == 0) return Video::Format::R16_INT;
-			else if (wcsicmp(formatString, L"R8_INT") == 0) return Video::Format::R8_INT;
+            else if (wcsicmp(formatString, L"R32G32B32A32_INT") == 0) return Video::Format::R32G32B32A32_INT;
+            else if (wcsicmp(formatString, L"R16G16B16A16_INT") == 0) return Video::Format::R16G16B16A16_INT;
+            else if (wcsicmp(formatString, L"R8G8B8A8_INT") == 0) return Video::Format::R8G8B8A8_INT;
+            else if (wcsicmp(formatString, L"R32G32B32_INT") == 0) return Video::Format::R32G32B32_INT;
+            else if (wcsicmp(formatString, L"R32G32_INT") == 0) return Video::Format::R32G32_INT;
+            else if (wcsicmp(formatString, L"R16G16_INT") == 0) return Video::Format::R16G16_INT;
+            else if (wcsicmp(formatString, L"R8G8_INT") == 0) return Video::Format::R8G8_INT;
+            else if (wcsicmp(formatString, L"R32_INT") == 0) return Video::Format::R32_INT;
+            else if (wcsicmp(formatString, L"R16_INT") == 0) return Video::Format::R16_INT;
+            else if (wcsicmp(formatString, L"R8_INT") == 0) return Video::Format::R8_INT;
 
-			else if (wcsicmp(formatString, L"R16G16B16A16_UNORM") == 0) return Video::Format::R16G16B16A16_UNORM;
-			else if (wcsicmp(formatString, L"R10G10B10A2_UNORM") == 0) return Video::Format::R10G10B10A2_UNORM;
-			else if (wcsicmp(formatString, L"R8G8B8A8_UNORM") == 0) return Video::Format::R8G8B8A8_UNORM;
-			else if (wcsicmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Video::Format::R8G8B8A8_UNORM_SRGB;
-			else if (wcsicmp(formatString, L"R16G16_UNORM") == 0) return Video::Format::R16G16_UNORM;
-			else if (wcsicmp(formatString, L"R8G8_UNORM") == 0) return Video::Format::R8G8_UNORM;
-			else if (wcsicmp(formatString, L"R16_UNORM") == 0) return Video::Format::R16_UNORM;
-			else if (wcsicmp(formatString, L"R8_UNORM") == 0) return Video::Format::R8_UNORM;
+            else if (wcsicmp(formatString, L"R16G16B16A16_UNORM") == 0) return Video::Format::R16G16B16A16_UNORM;
+            else if (wcsicmp(formatString, L"R10G10B10A2_UNORM") == 0) return Video::Format::R10G10B10A2_UNORM;
+            else if (wcsicmp(formatString, L"R8G8B8A8_UNORM") == 0) return Video::Format::R8G8B8A8_UNORM;
+            else if (wcsicmp(formatString, L"R8G8B8A8_UNORM_SRGB") == 0) return Video::Format::R8G8B8A8_UNORM_SRGB;
+            else if (wcsicmp(formatString, L"R16G16_UNORM") == 0) return Video::Format::R16G16_UNORM;
+            else if (wcsicmp(formatString, L"R8G8_UNORM") == 0) return Video::Format::R8G8_UNORM;
+            else if (wcsicmp(formatString, L"R16_UNORM") == 0) return Video::Format::R16_UNORM;
+            else if (wcsicmp(formatString, L"R8_UNORM") == 0) return Video::Format::R8_UNORM;
 
-			else if (wcsicmp(formatString, L"R16G16B16A16_NORM") == 0) return Video::Format::R16G16B16A16_NORM;
-			else if (wcsicmp(formatString, L"R8G8B8A8_NORM") == 0) return Video::Format::R8G8B8A8_NORM;
-			else if (wcsicmp(formatString, L"R16G16_NORM") == 0) return Video::Format::R16G16_NORM;
-			else if (wcsicmp(formatString, L"R8G8_NORM") == 0) return Video::Format::R8G8_NORM;
-			else if (wcsicmp(formatString, L"R16_NORM") == 0) return Video::Format::R16_NORM;
-			else if (wcsicmp(formatString, L"R8_NORM") == 0) return Video::Format::R8_NORM;
+            else if (wcsicmp(formatString, L"R16G16B16A16_NORM") == 0) return Video::Format::R16G16B16A16_NORM;
+            else if (wcsicmp(formatString, L"R8G8B8A8_NORM") == 0) return Video::Format::R8G8B8A8_NORM;
+            else if (wcsicmp(formatString, L"R16G16_NORM") == 0) return Video::Format::R16G16_NORM;
+            else if (wcsicmp(formatString, L"R8G8_NORM") == 0) return Video::Format::R8G8_NORM;
+            else if (wcsicmp(formatString, L"R16_NORM") == 0) return Video::Format::R16_NORM;
+            else if (wcsicmp(formatString, L"R8_NORM") == 0) return Video::Format::R8_NORM;
 
-			else if (wcsicmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Video::Format::D32_FLOAT_S8X24_UINT;
-			else if (wcsicmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Video::Format::D24_UNORM_S8_UINT;
+            else if (wcsicmp(formatString, L"D32_FLOAT_S8X24_UINT") == 0) return Video::Format::D32_FLOAT_S8X24_UINT;
+            else if (wcsicmp(formatString, L"D24_UNORM_S8_UINT") == 0) return Video::Format::D24_UNORM_S8_UINT;
 
-			else if (wcsicmp(formatString, L"D32_FLOAT") == 0) return Video::Format::D32_FLOAT;
-			else if (wcsicmp(formatString, L"D16_UNORM") == 0) return Video::Format::D16_UNORM;
+            else if (wcsicmp(formatString, L"D32_FLOAT") == 0) return Video::Format::D32_FLOAT;
+            else if (wcsicmp(formatString, L"D16_UNORM") == 0) return Video::Format::D16_UNORM;
 
-			return Video::Format::Unknown;
-		}
+            return Video::Format::Unknown;
+        }
 
-		Video::DepthStateInformation::Write getDepthWriteMask(const wchar_t *depthWrite)
-		{
-			if (wcsicmp(depthWrite, L"zero") == 0) return Video::DepthStateInformation::Write::Zero;
-			else if (wcsicmp(depthWrite, L"all") == 0) return Video::DepthStateInformation::Write::All;
-			else return Video::DepthStateInformation::Write::Zero;
-		}
+        Video::DepthStateInformation::Write getDepthWriteMask(const wchar_t *depthWrite)
+        {
+            if (wcsicmp(depthWrite, L"zero") == 0) return Video::DepthStateInformation::Write::Zero;
+            else if (wcsicmp(depthWrite, L"all") == 0) return Video::DepthStateInformation::Write::All;
+            else return Video::DepthStateInformation::Write::Zero;
+        }
 
-		Video::ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
-		{
-			if (wcsicmp(comparisonFunction, L"always") == 0) return Video::ComparisonFunction::Always;
-			else if (wcsicmp(comparisonFunction, L"never") == 0) return Video::ComparisonFunction::Never;
-			else if (wcsicmp(comparisonFunction, L"equal") == 0) return Video::ComparisonFunction::Equal;
-			else if (wcsicmp(comparisonFunction, L"not_equal") == 0) return Video::ComparisonFunction::NotEqual;
-			else if (wcsicmp(comparisonFunction, L"less") == 0) return Video::ComparisonFunction::Less;
-			else if (wcsicmp(comparisonFunction, L"less_equal") == 0) return Video::ComparisonFunction::LessEqual;
-			else if (wcsicmp(comparisonFunction, L"greater") == 0) return Video::ComparisonFunction::Greater;
-			else if (wcsicmp(comparisonFunction, L"greater_equal") == 0) return Video::ComparisonFunction::GreaterEqual;
-			else return Video::ComparisonFunction::Always;
-		}
+        Video::ComparisonFunction getComparisonFunction(const wchar_t *comparisonFunction)
+        {
+            if (wcsicmp(comparisonFunction, L"always") == 0) return Video::ComparisonFunction::Always;
+            else if (wcsicmp(comparisonFunction, L"never") == 0) return Video::ComparisonFunction::Never;
+            else if (wcsicmp(comparisonFunction, L"equal") == 0) return Video::ComparisonFunction::Equal;
+            else if (wcsicmp(comparisonFunction, L"not_equal") == 0) return Video::ComparisonFunction::NotEqual;
+            else if (wcsicmp(comparisonFunction, L"less") == 0) return Video::ComparisonFunction::Less;
+            else if (wcsicmp(comparisonFunction, L"less_equal") == 0) return Video::ComparisonFunction::LessEqual;
+            else if (wcsicmp(comparisonFunction, L"greater") == 0) return Video::ComparisonFunction::Greater;
+            else if (wcsicmp(comparisonFunction, L"greater_equal") == 0) return Video::ComparisonFunction::GreaterEqual;
+            else return Video::ComparisonFunction::Always;
+        }
 
-		Video::DepthStateInformation::StencilStateInformation::Operation getStencilOperation(const wchar_t *stencilOperation)
-		{
-			if (wcsicmp(stencilOperation, L"zero") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Zero;
-			else if (wcsicmp(stencilOperation, L"keep") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Keep;
-			else if (wcsicmp(stencilOperation, L"replace") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Replace;
-			else if (wcsicmp(stencilOperation, L"invert") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Invert;
-			else if (wcsicmp(stencilOperation, L"increase") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Increase;
-			else if (wcsicmp(stencilOperation, L"increase_saturated") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::IncreaseSaturated;
-			else if (wcsicmp(stencilOperation, L"decrease") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Decrease;
-			else if (wcsicmp(stencilOperation, L"decrease_saturated") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::DecreaseSaturated;
-			else return Video::DepthStateInformation::StencilStateInformation::Operation::Keep;
-		}
+        Video::DepthStateInformation::StencilStateInformation::Operation getStencilOperation(const wchar_t *stencilOperation)
+        {
+            if (wcsicmp(stencilOperation, L"zero") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Zero;
+            else if (wcsicmp(stencilOperation, L"keep") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Keep;
+            else if (wcsicmp(stencilOperation, L"replace") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Replace;
+            else if (wcsicmp(stencilOperation, L"invert") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Invert;
+            else if (wcsicmp(stencilOperation, L"increase") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Increase;
+            else if (wcsicmp(stencilOperation, L"increase_saturated") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::IncreaseSaturated;
+            else if (wcsicmp(stencilOperation, L"decrease") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::Decrease;
+            else if (wcsicmp(stencilOperation, L"decrease_saturated") == 0) return Video::DepthStateInformation::StencilStateInformation::Operation::DecreaseSaturated;
+            else return Video::DepthStateInformation::StencilStateInformation::Operation::Keep;
+        }
 
-		Video::RenderStateInformation::FillMode getFillMode(const wchar_t *fillMode)
-		{
-			if (wcsicmp(fillMode, L"solid") == 0) return Video::RenderStateInformation::FillMode::Solid;
-			else if (wcsicmp(fillMode, L"wire") == 0) return Video::RenderStateInformation::FillMode::WireFrame;
-			else return Video::RenderStateInformation::FillMode::Solid;
-		}
+        Video::RenderStateInformation::FillMode getFillMode(const wchar_t *fillMode)
+        {
+            if (wcsicmp(fillMode, L"solid") == 0) return Video::RenderStateInformation::FillMode::Solid;
+            else if (wcsicmp(fillMode, L"wire") == 0) return Video::RenderStateInformation::FillMode::WireFrame;
+            else return Video::RenderStateInformation::FillMode::Solid;
+        }
 
-		Video::RenderStateInformation::CullMode getCullMode(const wchar_t *cullMode)
-		{
-			if (wcsicmp(cullMode, L"none") == 0) return Video::RenderStateInformation::CullMode::None;
-			else if (wcsicmp(cullMode, L"front") == 0) return Video::RenderStateInformation::CullMode::Front;
-			else if (wcsicmp(cullMode, L"back") == 0) return Video::RenderStateInformation::CullMode::Back;
-			else return Video::RenderStateInformation::CullMode::None;
-		}
+        Video::RenderStateInformation::CullMode getCullMode(const wchar_t *cullMode)
+        {
+            if (wcsicmp(cullMode, L"none") == 0) return Video::RenderStateInformation::CullMode::None;
+            else if (wcsicmp(cullMode, L"front") == 0) return Video::RenderStateInformation::CullMode::Front;
+            else if (wcsicmp(cullMode, L"back") == 0) return Video::RenderStateInformation::CullMode::Back;
+            else return Video::RenderStateInformation::CullMode::None;
+        }
 
-		Video::BlendStateInformation::Source getBlendSource(const wchar_t *blendSource)
-		{
-			if (wcsicmp(blendSource, L"zero") == 0) return Video::BlendStateInformation::Source::Zero;
-			else if (wcsicmp(blendSource, L"one") == 0) return Video::BlendStateInformation::Source::One;
-			else if (wcsicmp(blendSource, L"blend_factor") == 0) return Video::BlendStateInformation::Source::BlendFactor;
-			else if (wcsicmp(blendSource, L"inverse_blend_factor") == 0) return Video::BlendStateInformation::Source::InverseBlendFactor;
-			else if (wcsicmp(blendSource, L"source_color") == 0) return Video::BlendStateInformation::Source::SourceColor;
-			else if (wcsicmp(blendSource, L"inverse_source_color") == 0) return Video::BlendStateInformation::Source::InverseSourceColor;
-			else if (wcsicmp(blendSource, L"source_alpha") == 0) return Video::BlendStateInformation::Source::SourceAlpha;
-			else if (wcsicmp(blendSource, L"inverse_source_alpha") == 0) return Video::BlendStateInformation::Source::InverseSourceAlpha;
-			else if (wcsicmp(blendSource, L"source_alpha_saturate") == 0) return Video::BlendStateInformation::Source::SourceAlphaSaturated;
-			else if (wcsicmp(blendSource, L"destination_color") == 0) return Video::BlendStateInformation::Source::DestinationColor;
-			else if (wcsicmp(blendSource, L"inverse_destination_color") == 0) return Video::BlendStateInformation::Source::InverseDestinationColor;
-			else if (wcsicmp(blendSource, L"destination_alpha") == 0) return Video::BlendStateInformation::Source::DestinationAlpha;
-			else if (wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return Video::BlendStateInformation::Source::InverseDestinationAlpha;
-			else if (wcsicmp(blendSource, L"secondary_source_color") == 0) return Video::BlendStateInformation::Source::SecondarySourceColor;
-			else if (wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return Video::BlendStateInformation::Source::InverseSecondarySourceColor;
-			else if (wcsicmp(blendSource, L"secondary_source_alpha") == 0) return Video::BlendStateInformation::Source::SecondarySourceAlpha;
-			else if (wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video::BlendStateInformation::Source::InverseSecondarySourceAlpha;
-			else return Video::BlendStateInformation::Source::One;
-		}
+        Video::BlendStateInformation::Source getBlendSource(const wchar_t *blendSource)
+        {
+            if (wcsicmp(blendSource, L"zero") == 0) return Video::BlendStateInformation::Source::Zero;
+            else if (wcsicmp(blendSource, L"one") == 0) return Video::BlendStateInformation::Source::One;
+            else if (wcsicmp(blendSource, L"blend_factor") == 0) return Video::BlendStateInformation::Source::BlendFactor;
+            else if (wcsicmp(blendSource, L"inverse_blend_factor") == 0) return Video::BlendStateInformation::Source::InverseBlendFactor;
+            else if (wcsicmp(blendSource, L"source_color") == 0) return Video::BlendStateInformation::Source::SourceColor;
+            else if (wcsicmp(blendSource, L"inverse_source_color") == 0) return Video::BlendStateInformation::Source::InverseSourceColor;
+            else if (wcsicmp(blendSource, L"source_alpha") == 0) return Video::BlendStateInformation::Source::SourceAlpha;
+            else if (wcsicmp(blendSource, L"inverse_source_alpha") == 0) return Video::BlendStateInformation::Source::InverseSourceAlpha;
+            else if (wcsicmp(blendSource, L"source_alpha_saturate") == 0) return Video::BlendStateInformation::Source::SourceAlphaSaturated;
+            else if (wcsicmp(blendSource, L"destination_color") == 0) return Video::BlendStateInformation::Source::DestinationColor;
+            else if (wcsicmp(blendSource, L"inverse_destination_color") == 0) return Video::BlendStateInformation::Source::InverseDestinationColor;
+            else if (wcsicmp(blendSource, L"destination_alpha") == 0) return Video::BlendStateInformation::Source::DestinationAlpha;
+            else if (wcsicmp(blendSource, L"inverse_destination_alpha") == 0) return Video::BlendStateInformation::Source::InverseDestinationAlpha;
+            else if (wcsicmp(blendSource, L"secondary_source_color") == 0) return Video::BlendStateInformation::Source::SecondarySourceColor;
+            else if (wcsicmp(blendSource, L"inverse_secondary_source_color") == 0) return Video::BlendStateInformation::Source::InverseSecondarySourceColor;
+            else if (wcsicmp(blendSource, L"secondary_source_alpha") == 0) return Video::BlendStateInformation::Source::SecondarySourceAlpha;
+            else if (wcsicmp(blendSource, L"inverse_secondary_source_alpha") == 0) return Video::BlendStateInformation::Source::InverseSecondarySourceAlpha;
+            else return Video::BlendStateInformation::Source::One;
+        }
 
-		Video::BlendStateInformation::Operation getBlendOperation(const wchar_t *blendOperation)
-		{
-			if (wcsicmp(blendOperation, L"add") == 0) return Video::BlendStateInformation::Operation::Add;
-			else if (wcsicmp(blendOperation, L"subtract") == 0) return Video::BlendStateInformation::Operation::Subtract;
-			else if (wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video::BlendStateInformation::Operation::ReverseSubtract;
-			else if (wcsicmp(blendOperation, L"minimum") == 0) return Video::BlendStateInformation::Operation::Minimum;
-			else if (wcsicmp(blendOperation, L"maximum") == 0) return Video::BlendStateInformation::Operation::Maximum;
-			else return Video::BlendStateInformation::Operation::Add;
-		}
+        Video::BlendStateInformation::Operation getBlendOperation(const wchar_t *blendOperation)
+        {
+            if (wcsicmp(blendOperation, L"add") == 0) return Video::BlendStateInformation::Operation::Add;
+            else if (wcsicmp(blendOperation, L"subtract") == 0) return Video::BlendStateInformation::Operation::Subtract;
+            else if (wcsicmp(blendOperation, L"reverse_subtract") == 0) return Video::BlendStateInformation::Operation::ReverseSubtract;
+            else if (wcsicmp(blendOperation, L"minimum") == 0) return Video::BlendStateInformation::Operation::Minimum;
+            else if (wcsicmp(blendOperation, L"maximum") == 0) return Video::BlendStateInformation::Operation::Maximum;
+            else return Video::BlendStateInformation::Operation::Add;
+        }
 
-		Video::InputElement::Source getElementSource(const wchar_t *elementSourceString)
-		{
-			if (wcsicmp(elementSourceString, L"instance") == 0) return Video::InputElement::Source::Instance;
-			else return Video::InputElement::Source::Vertex;
-		}
+        Video::InputElement::Source getElementSource(const wchar_t *elementSourceString)
+        {
+            if (wcsicmp(elementSourceString, L"instance") == 0) return Video::InputElement::Source::Instance;
+            else return Video::InputElement::Source::Vertex;
+        }
 
-		Video::InputElement::Semantic getElementSemantic(const wchar_t *semanticString)
-		{
-			if (wcsicmp(semanticString, L"Position") == 0) return Video::InputElement::Semantic::Position;
-			else if (wcsicmp(semanticString, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
-			else if (wcsicmp(semanticString, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
-			else if (wcsicmp(semanticString, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
-			else if (wcsicmp(semanticString, L"Color") == 0) return Video::InputElement::Semantic::Color;
-			else return Video::InputElement::Semantic::TexCoord;
-		}
-	}; // namespace Utility
-	
-	namespace Implementation
+        Video::InputElement::Semantic getElementSemantic(const wchar_t *semanticString)
+        {
+            if (wcsicmp(semanticString, L"Position") == 0) return Video::InputElement::Semantic::Position;
+            else if (wcsicmp(semanticString, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
+            else if (wcsicmp(semanticString, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
+            else if (wcsicmp(semanticString, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
+            else if (wcsicmp(semanticString, L"Color") == 0) return Video::InputElement::Semantic::Color;
+            else return Video::InputElement::Semantic::TexCoord;
+        }
+    }; // namespace Utility
+
+    namespace Implementation
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::Renderer
@@ -210,6 +210,13 @@ namespace Gek
                 uint32_t pointLightCount;
                 uint32_t spotLightCount;
                 uint32_t padding;
+            };
+
+            struct LightGridData
+            {
+                uint16_t offset;
+                uint16_t pointLightCount;
+                uint16_t spotLightCount;
             };
 
             struct DrawCallValue
@@ -332,6 +339,13 @@ namespace Gek
 
             DrawCallList drawCallList;
 
+            const Math::SIMD::Float4 displaySize;
+            const Shapes::Frustum viewFrustum;
+            const Math::SIMD::Float4x4 viewMatrix;
+            const Math::SIMD::Float4x4 projectionMatrix;
+            const float nearClip = 0.0f;
+            const float farClip = 0.0f;
+
         public:
             Renderer(Context *context, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
                 : ContextRegistration(context)
@@ -405,12 +419,12 @@ namespace Gek
                     L"    return inputBuffer[inputPixel.screen.xy];" \
                     L"}";
 
-				auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
-				deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
+                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
+                deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
                 deferredVertexProgram->setName(L"deferredVertexProgram");
 
-				auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
-				deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
+                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
+                deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"deferredPixelProgram");
 
                 directionalLightList.reserve(10);
@@ -462,6 +476,148 @@ namespace Gek
                 directionalLightEntities.unsafe_erase(entity);
                 pointLightEntities.unsafe_erase(entity);
                 spotLightEntities.unsafe_erase(entity);
+            }
+
+            // Clustered Lighting
+            Math::Float3 getLightDirection(const Math::QuaternionFloat &quaternion)
+            {
+                float xx(quaternion.x * quaternion.x);
+                float yy(quaternion.y * quaternion.y);
+                float zz(quaternion.z * quaternion.z);
+                float ww(quaternion.w * quaternion.w);
+                float length(xx + yy + zz + ww);
+                if (length == 0.0f)
+                {
+                    return Math::Float3(0.0f, 1.0f, 0.0f);
+                }
+                else
+                {
+                    float determinant(1.0f / length);
+                    float xy(quaternion.x * quaternion.y);
+                    float xw(quaternion.x * quaternion.w);
+                    float yz(quaternion.y * quaternion.z);
+                    float zw(quaternion.z * quaternion.w);
+                    return -Math::Float3((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant));
+                }
+            }
+
+            void updateClipRegionRoot(
+                float tangentCoordinate,          // Tangent plane x/y normal coordinate (view space)
+                float lightCoordinate,          // Light x/y coordinate (view space)
+                float lightDepth,          // Light z coordinate (view space)
+                float radius,
+                float cameraScale, // Project scale for coordinate (r0.x or r1.y for x/y respectively)
+                float& minimum,
+                float& maximum)
+            {
+                float nz = ((radius - tangentCoordinate * lightCoordinate) / lightDepth);
+                float pz = ((lightCoordinate * lightCoordinate + lightDepth * lightDepth - radius * radius) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
+                if (pz > 0.0f)
+                {
+                    float clip = (-nz * cameraScale / tangentCoordinate);
+                    if (tangentCoordinate > 0.0f)
+                    {
+                        // Left side boundary
+                        minimum = std::max(minimum, clip);
+                    }
+                    else
+                    {
+                        // Right side boundary
+                        maximum = std::min(maximum, clip);
+                    }
+                }
+            }
+
+            void updateClipRegion(
+                float lightCoordinate,          // Light x/y coordinate (view space)
+                float lightDepth,          // Light z coordinate (view space)
+                float radius,
+                float cameraScale, // Project scale for coordinate (r0.x or r1.y for x/y respectively)
+                float& minimum,
+                float& maximum)
+            {
+                float radiusSquared = (radius * radius);
+                float lcSqPluslzSq = ((lightCoordinate * lightCoordinate) + (lightDepth * lightDepth));
+                float distanceSquared = ((radiusSquared * lightCoordinate * lightCoordinate) - (lcSqPluslzSq * (radiusSquared - lightDepth * lightDepth)));
+                if (distanceSquared > 0)
+                {
+                    float projectedRadius = (radius * lightCoordinate);
+                    float distance = std::sqrt(distanceSquared);
+                    float positiveTangent = ((projectedRadius + distance) / lcSqPluslzSq);
+                    float negativeTangent = ((projectedRadius - distance) / lcSqPluslzSq);
+                    updateClipRegionRoot(positiveTangent, lightCoordinate, lightDepth, radius, cameraScale, minimum, maximum);
+                    updateClipRegionRoot(negativeTangent, lightCoordinate, lightDepth, radius, cameraScale, minimum, maximum);
+                }
+            }
+
+            // Returns bounding box [min.xy, max.xy] in clip [-1, 1] space.
+            Math::SIMD::Float4 getClipRegion(const Math::Float3 &position, float radius)
+            {
+                // Early out with empty rectangle if the light is too far behind the view frustum
+                Math::SIMD::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
+                if (position.z + radius >= nearClip)
+                {
+                    Math::Float2 minimum(-1.0f, -1.0f);
+                    Math::Float2 maximum(1.0f, 1.0f);
+                    updateClipRegion(position.x, position.z, radius, projectionMatrix.rx.x, minimum.x, maximum.x);
+                    updateClipRegion(position.y, position.z, radius, projectionMatrix.ry.y, minimum.y, maximum.y);
+                    clipRegion = Math::SIMD::Float4(minimum.x, minimum.y, maximum.x, maximum.y);
+                }
+
+                return clipRegion;
+            }
+
+            void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
+            {
+                auto &transformComponent = entity->getComponent<Components::Transform>();
+                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
+                {
+                    auto &colorComponent = entity->getComponent<Components::Color>();
+
+                    auto &lightData = *pointLightList.grow_by(1);
+                    lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
+                    lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
+                    lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+                    lightData.position = viewMatrix.transform(transformComponent.position);
+                    lightData.radius = lightComponent.radius;
+                    lightData.range = lightComponent.range;
+
+                    auto clip = ((getClipRegion(lightData.position, lightData.range + lightData.radius) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half);
+                    Math::UInt4 screen(
+                        (clip.x * displaySize.x),
+                        (clip.y * displaySize.y),
+                        (clip.z * displaySize.z),
+                        (clip.w * displaySize.w));
+                    OutputDebugString(String::create(L"Point Clip Region: %v\r\n", screen));
+                }
+            }
+
+            void addLight(Plugin::Entity *entity, const Components::SpotLight &lightComponent)
+            {
+                auto &transformComponent = entity->getComponent<Components::Transform>();
+                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
+                {
+                    auto &colorComponent = entity->getComponent<Components::Color>();
+
+                    auto &lightData = *spotLightList.grow_by(1);
+                    lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
+                    lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
+                    lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+                    lightData.position = viewMatrix.transform(transformComponent.position);
+                    lightData.radius = lightComponent.radius;
+                    lightData.range = lightComponent.range;
+                    lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                    lightData.innerAngle = lightComponent.innerAngle;
+                    lightData.outerAngle = lightComponent.outerAngle;
+
+                    auto clip = ((getClipRegion(lightData.position, lightData.range + lightData.radius) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half);
+                    Math::UInt4 screen(
+                        (clip.x * displaySize.x),
+                        (clip.y * displaySize.y),
+                        (clip.z * displaySize.z),
+                        (clip.w * displaySize.w));
+                    OutputDebugString(String::create(L"Spot Screen Space Region: %v\r\n", screen));
+                }
             }
 
             // Plugin::Population Slots
@@ -525,7 +681,15 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                const Shapes::Frustum viewFrustum(viewMatrix * projectionMatrix);
+                auto backBuffer = videoDevice->getBackBuffer();
+                auto width = backBuffer->getWidth();
+                auto height = backBuffer->getHeight();
+                *const_cast<Math::SIMD::Float4 *>(&displaySize) = Math::SIMD::Float4(width, height, width, height);
+                *const_cast<Shapes::Frustum *>(&this->viewFrustum) = Shapes::Frustum(viewMatrix * projectionMatrix);
+                *const_cast<Math::SIMD::Float4x4 *>(&this->viewMatrix) = viewMatrix;
+                *const_cast<Math::SIMD::Float4x4 *>(&this->projectionMatrix) = projectionMatrix;
+                *const_cast<float *>(&this->nearClip) = nearClip;
+                *const_cast<float *>(&this->farClip) = farClip;
 
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = population->getFrameTime();
@@ -596,28 +760,6 @@ namespace Gek
 
                     if (isLightingRequired)
                     {
-                        auto getLightDirection = [](const Math::QuaternionFloat &quaternion) -> Math::Float3
-                        {
-                            float xx(quaternion.x * quaternion.x);
-                            float yy(quaternion.y * quaternion.y);
-                            float zz(quaternion.z * quaternion.z);
-                            float ww(quaternion.w * quaternion.w);
-                            float length(xx + yy + zz + ww);
-                            if (length == 0.0f)
-                            {
-                                return Math::Float3(0.0f, 1.0f, 0.0f);
-                            }
-                            else
-                            {
-                                float determinant(1.0f / length);
-                                float xy(quaternion.x * quaternion.y);
-                                float xw(quaternion.x * quaternion.w);
-                                float yz(quaternion.y * quaternion.z);
-                                float zw(quaternion.z * quaternion.w);
-                                return -Math::Float3((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant));
-                            }
-                        };
-
                         directionalLightList.clear();
                         concurrency::parallel_for_each(directionalLightEntities.begin(), directionalLightEntities.end(), [&](Plugin::Entity *entity) -> void
                         {
@@ -630,6 +772,20 @@ namespace Gek
                             lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
                             lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
                             lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                        });
+
+                        pointLightList.clear();
+                        concurrency::parallel_for_each(pointLightEntities.begin(), pointLightEntities.end(), [&](Plugin::Entity *entity) -> void
+                        {
+                            auto &lightComponent = entity->getComponent<Components::PointLight>();
+                            addLight(entity, lightComponent);
+                        });
+
+                        spotLightList.clear();
+                        concurrency::parallel_for_each(spotLightEntities.begin(), spotLightEntities.end(), [&](Plugin::Entity *entity) -> void
+                        {
+                            auto &lightComponent = entity->getComponent<Components::SpotLight>();
+                            addLight(entity, lightComponent);
                         });
 
                         if (!directionalLightList.empty())
@@ -646,26 +802,6 @@ namespace Gek
                             videoDevice->unmapBuffer(directionalLightDataBuffer.get());
                         }
 
-                        pointLightList.clear();
-                        concurrency::parallel_for_each(directionalLightEntities.begin(), directionalLightEntities.end(), [&](Plugin::Entity *entity) -> void
-                        {
-                            auto &transformComponent = entity->getComponent<Components::Transform>();
-                            auto &lightComponent = entity->getComponent<Components::PointLight>();
-
-                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
-                            {
-                                auto &colorComponent = entity->getComponent<Components::Color>();
-
-                                auto &lightData = *pointLightList.grow_by(1);
-                                lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
-                                lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
-                                lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
-                                lightData.position = viewMatrix.transform(transformComponent.position);
-                                lightData.radius = lightComponent.radius;
-                                lightData.range = lightComponent.range;
-                            }
-                        });
-
                         if (!pointLightList.empty())
                         {
                             if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
@@ -679,29 +815,6 @@ namespace Gek
                             std::copy(pointLightList.begin(), pointLightList.end(), pointLightData);
                             videoDevice->unmapBuffer(pointLightDataBuffer.get());
                         }
-
-                        spotLightList.clear();
-                        concurrency::parallel_for_each(spotLightEntities.begin(), spotLightEntities.end(), [&](Plugin::Entity *entity) -> void
-                        {
-                            auto &transformComponent = entity->getComponent<Components::Transform>();
-                            auto &lightComponent = entity->getComponent<Components::SpotLight>();
-
-                            if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
-                            {
-                                auto &colorComponent = entity->getComponent<Components::Color>();
-
-                                auto &lightData = *spotLightList.grow_by(1);
-                                lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
-                                lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
-                                lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
-                                lightData.position = viewMatrix.transform(transformComponent.position);
-                                lightData.radius = lightComponent.radius;
-                                lightData.range = lightComponent.range;
-                                lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
-                                lightData.innerAngle = lightComponent.innerAngle;
-                                lightData.outerAngle = lightComponent.outerAngle;
-                            }
-                        });
 
                         if (!spotLightList.empty())
                         {
@@ -726,7 +839,7 @@ namespace Gek
 
                     for (auto &shaderDrawCallList : drawCallSetMap)
                     {
-                        for(auto &shaderDrawCall : shaderDrawCallList.second)
+                        for (auto &shaderDrawCall : shaderDrawCallList.second)
                         {
                             auto &shader = shaderDrawCall.shader;
                             for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); pass; pass = pass->next())

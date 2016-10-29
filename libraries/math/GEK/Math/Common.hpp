@@ -61,12 +61,6 @@ namespace Gek
             return clamp(value, DATA(0.0), DATA(1.0));
         }
 
-        template <typename TYPE>
-        TYPE square(TYPE value)
-        {
-            return (value * value);
-        }
-
         template <size_t SIZE, typename TYPE>
         void min(TYPE(&data)[SIZE], const TYPE(&left)[SIZE], const TYPE(&right)[SIZE])
         {

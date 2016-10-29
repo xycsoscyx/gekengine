@@ -25,7 +25,8 @@ namespace Gek
 			{
 			public:
 				static const Vector4 Zero;
-				static const Vector4 One;
+                static const Vector4 Half;
+                static const Vector4 One;
 
 			public:
 				union
