@@ -100,7 +100,39 @@ namespace Gek
                 return ((*this) / getLength());
             }
 
-            TYPE dot(const Vector3 &vector) const
+			Vector3 getMinimum(const Vector3 &vector) const
+			{
+				return Vector3(
+					std::min(x, vector.x),
+					std::min(y, vector.y),
+					std::min(z, vector.z)
+				);
+			}
+
+			Vector3 getMaximum(const Vector3 &vector) const
+			{
+				return Vector3(
+					std::max(x, vector.x),
+					std::max(y, vector.y),
+					std::max(z, vector.z)
+				);
+			}
+
+			Vector3 getClamped(const Vector3 &min, const Vector3 &max) const
+			{
+				return Vector3(
+					std::min(std::max(x, min.x), max.x),
+					std::min(std::max(y, min.y), max.y),
+					std::min(std::max(z, min.z), max.z)
+				);
+			}
+
+			Vector3 getSaturated(void) const
+			{
+				return getClamped(Zero, One);
+			}
+
+			TYPE dot(const Vector3 &vector) const
             {
                 return ((x * vector.x) + (y * vector.y) + (z * vector.z));
             }

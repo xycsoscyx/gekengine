@@ -19,6 +19,7 @@
 #include "GEK\Shapes\Sphere.hpp"
 #include <concurrent_unordered_set.h>
 #include <concurrent_vector.h>
+#include <algorithm>
 #include <ppl.h>
 
 namespace Gek
@@ -569,22 +570,30 @@ namespace Gek
 			static const uint32_t GridWidth = 16;
 			static const uint32_t GridHeight = 8;
 			static const uint32_t GridDepth = 24;
+			struct GridData
+			{
+				uint32_t offset;
+				uint32_t pointLightCount;
+				uint32_t spotLightCount;
+			};
+
+			GridData grid[GridDepth][GridHeight][GridWidth];
 
 			bool isInsideGrid(int x, int y, int z, const Math::Float3 &position, float range)
 			{
 				// sub-frustrum bounds in view space        
-				float minZ = (z - 0) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
-				float maxZ = (z + 1) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
+				float minZ = ((z - 0.0f) * 1.0f / GridDepth * (farClip - nearClip) + nearClip);
+				float maxZ = ((z + 1.0f) * 1.0f / GridDepth * (farClip - nearClip) + nearClip);
 
-				float minZminX = -(1 - 2.0f / GridWidth * (x - 0)) * minZ / projectionMatrix.rx.x;
-				float minZmaxX = -(1 - 2.0f / GridWidth * (x + 1)) * minZ / projectionMatrix.rx.x;
-				float minZminY = +(1 - 2.0f / GridHeight * (y - 0)) * minZ / projectionMatrix.ry.y;
-				float minZmaxY = +(1 - 2.0f / GridHeight * (y + 1)) * minZ / projectionMatrix.ry.y;
+				float minZminX = -((1.0f - 2.0f / GridWidth * (x - 0.0f)) * minZ / projectionMatrix.rx.x);
+				float minZmaxX = -((1.0f - 2.0f / GridWidth * (x + 1.0f)) * minZ / projectionMatrix.rx.x);
+				float minZminY = +((1.0f - 2.0f / GridHeight * (y - 0.0f)) * minZ / projectionMatrix.ry.y);
+				float minZmaxY = +((1.0f - 2.0f / GridHeight * (y + 1.0f)) * minZ / projectionMatrix.ry.y);
 
-				float maxZminX = -(1 - 2.0f / GridWidth * (x - 0)) * maxZ / projectionMatrix.rx.x;
-				float maxZmaxX = -(1 - 2.0f / GridWidth * (x + 1)) * maxZ / projectionMatrix.rx.x;
-				float maxZminY = +(1 - 2.0f / GridHeight * (y - 0)) * maxZ / projectionMatrix.ry.y;
-				float maxZmaxY = +(1 - 2.0f / GridHeight * (y + 1)) * maxZ / projectionMatrix.ry.y;
+				float maxZminX = -((1.0f - 2.0f / GridWidth * (x - 0.0f)) * maxZ / projectionMatrix.rx.x);
+				float maxZmaxX = -((1.0f - 2.0f / GridWidth * (x + 1.0f)) * maxZ / projectionMatrix.rx.x);
+				float maxZminY = +((1.0f - 2.0f / GridHeight * (y - 0.0f)) * maxZ / projectionMatrix.ry.y);
+				float maxZmaxY = +((1.0f - 2.0f / GridHeight * (y + 1.0f)) * maxZ / projectionMatrix.ry.y);
 
 				// heuristic plane separation test - works pretty well in practice
 				Math::Float3 minZcenter((minZminX + minZmaxX) * 0.5f, (minZminY + minZmaxY) * 0.5f, minZ);
@@ -605,24 +614,24 @@ namespace Gek
 				return min_d > range;
 			}
 
-			void addLightCluster(const Math::Float3 &position, float range)
+			void addLightCluster(const Math::Float3 &position, float range, bool pointLight)
 			{
-				auto clipBounds = ((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half);
+				auto clipBounds(((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half).getSaturated());
 
 				// meh, this is upside-down
 				clipBounds.y = (1.0f - clipBounds.y);
 				clipBounds.w = (1.0f - clipBounds.w);
 				std::swap(clipBounds.y, clipBounds.w);
 
-				static const Math::Int3 GridSize(GridWidth, GridHeight, GridDepth);
-				Math::Int4 gridBounds((clipBounds.xy * GridSize.xy), (clipBounds.zw * GridSize.xy));
+				static const Math::UInt3 GridSize(GridWidth, GridHeight, GridDepth);
+				Math::UInt4 gridBounds((clipBounds.xy * GridSize.xy), (clipBounds.zw * GridSize.xy));
 
 				float centerDepth = (position.z - nearClip) / (farClip - nearClip);
 				float distance = range / (farClip - nearClip);
 
-				Math::Int2 depthBounds;
-				depthBounds.minimum = int32_t(Math::saturate(centerDepth - distance) * GridDepth);
-				depthBounds.maximum = int32_t(Math::saturate(centerDepth + distance) * GridDepth);
+				Math::UInt2 depthBounds;
+				depthBounds.minimum = uint32_t(std::min(std::max((centerDepth - distance), 0.0f), 1.0f) * GridDepth);
+				depthBounds.maximum = uint32_t(std::min(std::max((centerDepth + distance), 0.0f), 1.0f) * GridDepth);
 
 				for (auto z = depthBounds.minimum; z < depthBounds.maximum; z++)
 				{
@@ -632,6 +641,15 @@ namespace Gek
 						{
 							if (isInsideGrid(x, y, z, position, range))
 							{
+								auto &gridData = grid[z][y][x];
+								if (pointLight)
+								{
+									InterlockedIncrement(&gridData.pointLightCount);
+								}
+								else
+								{
+									InterlockedIncrement(&gridData.spotLightCount);
+								}
 							}
 						}
 					}
@@ -652,7 +670,7 @@ namespace Gek
 					lightData.position = viewMatrix.transform(transformComponent.position);
 					lightData.radius = lightComponent.radius;
 					lightData.range = lightComponent.range;
-					addLightCluster(lightData.position, (lightData.radius + lightData.range));
+					addLightCluster(lightData.position, (lightData.radius + lightData.range), true);
 				}
 			}
 
@@ -673,7 +691,7 @@ namespace Gek
 					lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
 					lightData.innerAngle = lightComponent.innerAngle;
 					lightData.outerAngle = lightComponent.outerAngle;
-					addLightCluster(lightData.position, (lightData.radius + lightData.range));
+					addLightCluster(lightData.position, (lightData.radius + lightData.range), false);
 				}
 			}
 
@@ -829,6 +847,8 @@ namespace Gek
 							lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
 							lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
 						});
+
+						memset(grid, 0, sizeof(grid));
 
 						pointLightList.clear();
 						concurrency::parallel_for_each(pointLightEntities.begin(), pointLightEntities.end(), [&](Plugin::Entity *entity) -> void

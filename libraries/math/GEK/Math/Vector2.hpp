@@ -99,10 +99,34 @@ namespace Gek
                 return ((*this) / getLength());
             }
 
-            void normalize(void)
-            {
-                (*this) = getNormal();
-            }
+			Vector2 getMinimum(const Vector2 &vector) const
+			{
+				return Vector2(
+					std::min(x, vector.x),
+					std::min(y, vector.y)
+				);
+			}
+
+			Vector2 getMaximum(const Vector2 &vector) const
+			{
+				return Vector2(
+					std::max(x, vector.x),
+					std::max(y, vector.y)
+				);
+			}
+
+			Vector2 getClamped(const Vector2 &min, const Vector2 &max) const
+			{
+				return Vector2(
+					std::min(std::max(x, min.x), max.x),
+					std::min(std::max(y, min.y), max.y)
+				);
+			}
+
+			Vector2 getSaturated(void) const
+			{
+				return getClamped(Zero, One);
+			}
 
             TYPE dot(const Vector2 &vector) const
             {
@@ -114,7 +138,12 @@ namespace Gek
                 return Math::lerp((*this), vector, factor);
             }
 
-            bool operator < (const Vector2 &vector) const
+			void normalize(void)
+			{
+				(*this) = getNormal();
+			}
+
+			bool operator < (const Vector2 &vector) const
             {
                 if (x >= vector.x) return false;
                 if (y >= vector.y) return false;

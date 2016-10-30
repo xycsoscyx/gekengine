@@ -133,7 +133,42 @@ namespace Gek
 				return ((*this) / getLength());
             }
 
-            TYPE dot(const Vector4 &vector) const
+			Vector4 getMinimum(const Vector4 &vector) const
+			{
+				return Vector4(
+					std::min(x, vector.x),
+					std::min(y, vector.y),
+					std::min(z, vector.z),
+					std::min(w, vector.w)
+				);
+			}
+
+			Vector4 getMaximum(const Vector4 &vector) const
+			{
+				return Vector4(
+					std::max(x, vector.x),
+					std::max(y, vector.y),
+					std::max(z, vector.z),
+					std::max(w, vector.w)
+				);
+			}
+
+			Vector4 getClamped(const Vector4 &min, const Vector4 &max) const
+			{
+				return Vector3(
+					std::min(std::max(x, min.x), max.x),
+					std::min(std::max(y, min.y), max.y),
+					std::min(std::max(z, min.z), max.z),
+					std::min(std::max(w, min.w), max.w)
+				);
+			}
+
+			Vector4 getSaturated(void) const
+			{
+				return getClamped(Zero, One);
+			}
+
+			TYPE dot(const Vector4 &vector) const
             {
                 return ((x * vector.x) + (y * vector.y) + (z * vector.z) + (w * vector.w));
             }
@@ -143,12 +178,12 @@ namespace Gek
                 return Math::lerp((*this), vector, factor);
             }
 
-            void normalize(void)
-            {
-                (*this) = getNormal();
-            }
+			void normalize(void)
+			{
+				(*this) = getNormal();
+			}
 
-            bool operator < (const Vector4 &vector) const
+			bool operator < (const Vector4 &vector) const
             {
                 if (x >= vector.x) return false;
                 if (y >= vector.y) return false;

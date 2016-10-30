@@ -959,15 +959,7 @@ namespace Gek
                     switch (eventData.message)
                     {
                     case WM_SETCURSOR:
-                        if (LOWORD(eventData.lParam) == HTCLIENT)
-                        {
-                            ShowCursor(false);
-                        }
-                        else
-                        {
-                            ShowCursor(true);
-                        }
-
+                        ShowCursor(false);
                         return 0;
 
                     case WM_KEYDOWN:
