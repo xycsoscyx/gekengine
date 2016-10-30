@@ -165,7 +165,7 @@ namespace Lighting
 
         // see http://seblagarde.wordpress.com/2012/01/08/pi-or-not-to-pi-in-game-lighting-equation/
         lambert /= Math::Pi;
-        half3 diffuseColor = (lerp(materialAlbedo, 0.0, materialMetallic) * lightProperties.radiance * lambert);
+        half3 diffuseColor = saturate(lerp(materialAlbedo, 0.0, materialMetallic) * lightProperties.radiance * lambert);
 
         /* Maintain energy conservation
             Energy conservation is a restriction on the reflection model
