@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-float getBlurredDepth(in float2 texCoord) // blurring depth
+float getBlurredDepth(float2 texCoord) // blurring depth
 {
     static const float2 blurOffset = (Shader::pixelSize * Defines::depthBlurSize);
     static const float2 offset[9] =
@@ -31,7 +31,7 @@ float getBlurredDepth(in float2 texCoord) // blurring depth
     return blurredDepth;
 }
 
-float getDepth(im float2 texCoord)
+float getDepth(float2 texCoord)
 {
     if (Defines::enableDepthBlur)
     {
@@ -43,7 +43,7 @@ float getDepth(im float2 texCoord)
     }
 }
 
-OutputPixel mainPixelProgram(im InputPixel inputPixel)
+OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
 	static const float reciprocalFocalRange = (1.0 / Defines::focalRange);
 

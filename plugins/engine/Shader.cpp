@@ -299,47 +299,49 @@ namespace Gek
                     }
                 }
 
-                static const wchar_t lightingData[] = 
-                    L"namespace Lighting\r\n" \
-                    L"{\r\n" \
-                    L"    cbuffer Parameters : register(b3)\r\n" \
-                    L"    {\r\n" \
-                    L"        uint directionalCount;\r\n" \
-                    L"        uint pointCount;\r\n" \
-                    L"        uint spotCount;\r\n" \
-                    L"        uint padding;\r\n" \
-                    L"    };\r\n" \
-                    L"\r\n" \
-                    L"    struct DirectionalData\r\n" \
-                    L"    {\r\n" \
-                    L"        float3 color;\r\n" \
-                    L"        float3 direction;\r\n" \
-                    L"        float buffer[2];\r\n" \
-                    L"    };\r\n" \
-                    L"\r\n" \
-                    L"    struct PointData\r\n" \
-                    L"    {\r\n" \
-                    L"        float3 color;\r\n" \
-                    L"        float3 position;\r\n" \
-                    L"        float radius;\r\n" \
-                    L"        float range;\r\n" \
-                    L"    };\r\n" \
-                    L"\r\n" \
-                    L"    struct SpotData\r\n" \
-                    L"    {\r\n" \
-                    L"        float3 color;\r\n" \
-                    L"        float3 position;\r\n" \
-                    L"        float radius;\r\n" \
-                    L"        float range;\r\n" \
-                    L"        float3 direction;\r\n" \
-                    L"        float innerAngle;\r\n" \
-                    L"        float outerAngle;\r\n" \
-                    L"        float buffer[3];\r\n" \
-                    L"    };\r\n" \
-                    L"\r\n" \
-                    L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
-                    L"    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
-                    L"    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
+				static const wchar_t lightingData[] =
+					L"namespace Lighting\r\n" \
+					L"{\r\n" \
+					L"    cbuffer Parameters : register(b3)\r\n" \
+					L"    {\r\n" \
+					L"        uint directionalCount;\r\n" \
+					L"        uint pointCount;\r\n" \
+					L"        uint spotCount;\r\n" \
+					L"        uint padding;\r\n" \
+					L"    };\r\n" \
+					L"\r\n" \
+					L"    struct DirectionalData\r\n" \
+					L"    {\r\n" \
+					L"        float3 color;\r\n" \
+					L"        float3 direction;\r\n" \
+					L"        float buffer[2];\r\n" \
+					L"    };\r\n" \
+					L"\r\n" \
+					L"    struct PointData\r\n" \
+					L"    {\r\n" \
+					L"        float3 color;\r\n" \
+					L"        float3 position;\r\n" \
+					L"        float radius;\r\n" \
+					L"        float range;\r\n" \
+					L"    };\r\n" \
+					L"\r\n" \
+					L"    struct SpotData\r\n" \
+					L"    {\r\n" \
+					L"        float3 color;\r\n" \
+					L"        float3 position;\r\n" \
+					L"        float radius;\r\n" \
+					L"        float range;\r\n" \
+					L"        float3 direction;\r\n" \
+					L"        float innerAngle;\r\n" \
+					L"        float outerAngle;\r\n" \
+					L"        float buffer[3];\r\n" \
+					L"    };\r\n" \
+					L"\r\n" \
+					L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
+					L"    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
+					L"    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
+					L"    Buffer<uint> gridDataList : register(t3);\r\n" \
+					L"    Buffer<uint> gridIndexList : register(t4);\r\n" \
                     L"};\r\n" \
                     L"\r\n";
 
@@ -696,7 +698,7 @@ namespace Gek
                     }
 
                     String resourceData;
-                    uint32_t nextResourceStage(pass.lighting ? 3 : 0);
+                    uint32_t nextResourceStage(pass.lighting ? 5 : 0);
                     if (pass.mode == Pass::Mode::Forward)
                     {
                         String passMaterial(passNode.getAttribute(L"forward"));
@@ -931,7 +933,7 @@ namespace Gek
                     uint32_t firstResourceStage = 0;
                     if (pass.lighting)
                     {
-                        firstResourceStage = 3;
+                        firstResourceStage = 5;
                     }
 
                     if (pass.mode == Pass::Mode::Forward)
@@ -997,7 +999,7 @@ namespace Gek
                     uint32_t firstResourceStage = 0;
                     if (pass.lighting)
                     {
-                        firstResourceStage = 3;
+                        firstResourceStage = 5;
                     }
 
                     if (pass.mode == Pass::Mode::Forward)
@@ -1070,7 +1072,7 @@ namespace Gek
 
                 uint32_t getFirstResourceStage(void) const
                 {
-                    return ((*current).lighting ? 3 : 0);
+                    return ((*current).lighting ? 5 : 0);
                 }
 
                 bool isLightingRequired(void) const

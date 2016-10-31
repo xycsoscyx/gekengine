@@ -19,7 +19,7 @@ namespace Defines
 };
 
 /** Returns a unit vector and a screen-space Defines::radius for the tap on a unit disk (the caller should scale by the actual disk Defines::radius) */
-float2 getTapLocation(in int tapIndex, in float spinAngle, out float tapRadius)
+float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)
 {
     // Radius relative to tapRadius
     const float alpha = float(tapIndex + 0.5) * Defines::inverseTapCount;
@@ -33,14 +33,14 @@ float2 getTapLocation(in int tapIndex, in float spinAngle, out float tapRadius)
 }
 
 /** Read the camera-space position of the point at screen-space pixel ssP */
-float3 getPosition(in float2 ssP)
+float3 getPosition(float2 ssP)
 {
     const float depth = Resources::depthBuffer.SampleLevel(Global::pointSampler, ssP, 0);
     return getPositionFromSample(ssP, depth);
 }
 
 /** Read the camera-space position of the point at screen-space pixel ssP + tapOffset * tapRadius.  Assumes length(tapOffset) == 1 */
-float3 getOffsetPosition(in float2 texCoord, in float2 tapOffset, in float tapRadius)
+float3 getOffsetPosition(float2 texCoord, float2 tapOffset, float tapRadius)
 {
     const float2 tapCoord = tapRadius*tapOffset + texCoord;
     return getPosition(tapCoord);
@@ -49,18 +49,18 @@ float3 getOffsetPosition(in float2 texCoord, in float2 tapOffset, in float tapRa
 /**
 Compute the occlusion due to sample with index \a i about the pixel at \a texCoord that corresponds to camera-space point \a surfacePosition with unit normal \a surfaceNormal, using maximum screen-space sampling Defines::radius \a diskRadius
 
-Note that units of H() in the HPG12 paper are meters, not unitless.  The whole falloff/sampling function is therefore unitless.  In this implementation, we factor out (9 / Defines::radius).
+Note that units of H() the HPG12 paper are meters, not unitless.  The whole falloff/sampling function is therefore unitless.  this implementation, we factor out (9 / Defines::radius).
 
 Four versions of the falloff function are implemented below
 */
-float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in float3 surfaceNormal, in float diskRadius, in int tapIndex, in float randomPatternRotationAngle)
+float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfaceNormal, float diskRadius, int tapIndex, float randomPatternRotationAngle)
 {
     // Offset on the unit disk, spun for this pixel
     float tapRadius;
     const float2 tapOffset = getTapLocation(tapIndex, randomPatternRotationAngle, tapRadius);
     tapRadius *= diskRadius;
 
-    // The occluding point in camera space
+    // The occluding point camera space
     const float3 tapPosition = getOffsetPosition(texCoord, tapOffset, tapRadius);
 
     const float3 deltaVector = tapPosition - surfacePosition;
@@ -83,7 +83,7 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
 
     case FalloffHPG12:
         // A: From the HPG12 paper
-        // Note large Defines::epsilon to avoid overdarkening within cracks
+        // Note large Defines::epsilon to avoid overdarkening withcracks
         return (float(deltaAngle < Defines::radiusSquared) * max((normalAngle - Defines::bias) * rcp(Defines::epsilon + deltaAngle), 0.0) * Defines::radiusSquared * 0.6);
 
     case FalloffSmooth:
@@ -97,7 +97,7 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
 
     case FalloffMedium:
         // surfacePosition: Medium contrast (which looks better at high radii), no division.  Note that the 
-        // contribution still falls off with Defines::radius^2, but we've adjusted the rate in a way that is
+        // contribution still falls off with Defines::radius^2, but we've adjusted the rate a way that is
         // more computationally efficient and happens to be aesthetically pleasing.
         return (4.0 * max(1.0 - deltaAngle * 1.0 / Defines::radiusSquared, 0.0) * max(normalAngle - Defines::bias, 0.0));
 
@@ -113,13 +113,13 @@ float getAmbientObscurance(in float2 texCoord, in float3 surfacePosition, in flo
 // Scalable Ambient Obscurance
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 // https://github.com/PeterTh/gedosato/blob/master/pack/assets/dx9/SAO.fx
-float mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
+float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float3 surfacePosition = getPosition(inputPixel.texCoord);
     const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
 
     // McGuire noise function
-    // Hash function used in the HPG12 AlchemyAO paper
+    // Hash function used the HPG12 AlchemyAO paper
     const float randomPatternRotationAngle = (getNoise(inputPixel.screen.xy) * 10.0);
     const float diskRadius = (-1.0 *  Defines::radius / max(surfacePosition.z, 0.1f));
     float totalOcclusion = 0.0;

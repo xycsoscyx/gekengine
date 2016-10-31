@@ -22,7 +22,7 @@
         <tileSize>32</tileSize>
         <dispatchWidth>ceil(displayWidth / tileSize)</dispatchWidth>
         <dispatchHeight>ceil(displayHeight / tileSize)</dispatchHeight>
-        <gaussianRadius bind="int">2</gaussianRadius>
+        <gaussianRadius bind="int">3</gaussianRadius>
         <gaussianSigma>2.3</gaussianSigma>
         <edgeSharpness>0.1</edgeSharpness>
     </defines>
@@ -78,7 +78,7 @@
 
         <AmbientBlur entry="mainPixelProgram">
             <defines>
-                <blurAxis bind="int2">(1,0)</blurAxis>
+                <blurAxis bind="int2">(2,0)</blurAxis>
             </defines>
 
             <resources>
@@ -93,7 +93,7 @@
 
         <AmbientBlur entry="mainPixelProgram">
             <defines>
-                <blurAxis bind="int2">(1,0)</blurAxis>
+                <blurAxis bind="int2">(0,2)</blurAxis>
             </defines>
 
             <resources>
@@ -108,7 +108,7 @@
 
         <AmbientBlur entry="mainPixelProgram">
             <defines>
-                <blurAxis bind="int2">(0,1)</blurAxis>
+                <blurAxis bind="int2">(1,0)</blurAxis>
             </defines>
 
             <resources>

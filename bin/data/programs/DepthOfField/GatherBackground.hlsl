@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-float2 getNoise(in float2 coord)
+float2 getNoise(float2 coord)
 {
     if (Defines::enableDithering)
     {
@@ -17,7 +17,7 @@ float2 getNoise(in float2 coord)
     }
 }
 
-float3 getChromaticAberation(in float2 texCoord, in float blur)
+float3 getChromaticAberation(float2 texCoord, float blur)
 {
     const float2 offset = (Shader::pixelSize * Defines::bokehChromaticAberation * blur);
     return float3(
@@ -26,7 +26,7 @@ float3 getChromaticAberation(in float2 texCoord, in float blur)
         Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(0.866, -0.5) * offset, 0).b);
 }
 
-float3 getColor(in float2 texCoord, in float blur)
+float3 getColor(float2 texCoord, float blur)
 {
     if (Defines::enableChromaticAberation)
     {
@@ -38,7 +38,7 @@ float3 getColor(in float2 texCoord, in float blur)
     }
 }
 
-float3 getCorrectedColor(in float2 texCoord, in float blur)
+float3 getCorrectedColor(float2 texCoord, float blur)
 {
     const float3 color = getColor(texCoord, blur);
     const float luminance = getLuminance(color);
@@ -46,7 +46,7 @@ float3 getCorrectedColor(in float2 texCoord, in float blur)
     return (color + lerp(0.0, color, (thresh * blur)));
 }
 
-float getPentagonalShape(in float2 texCoord)
+float getPentagonalShape(float2 texCoord)
 {
     static const float scale = float(Defines::ringCount) - 1.3;
     static const float4  HS0 = float4(1.0, 0.0, 0.0, 1.0);
@@ -75,7 +75,7 @@ float getPentagonalShape(in float2 texCoord)
     return saturate(inOrOut);
 }
 
-float getModifier(in float2 offset)
+float getModifier(float2 offset)
 {
     if (Defines::enablePentagon)
     {
@@ -87,9 +87,9 @@ float getModifier(in float2 offset)
     }
 }
 
-float3 mainPixelProgram(in InputPixel inputPixel) : SV_TARGET0
+float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const float blurDistance = abs(Resources::circleOfConfusion.Load(inputPixel.screen.xy));
+	const float blurDistance = abs(Resources::circleOfConfusion.Load(int3(inputPixel.screen.xy, 0)));
     const float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
 
     float totalWeight = 1.0;

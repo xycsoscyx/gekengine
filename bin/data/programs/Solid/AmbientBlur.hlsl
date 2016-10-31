@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-float calculateGaussianWeight(in float offset)
+float calculateGaussianWeight(float offset)
 {
     static const float gaussian = (1.0f / (sqrt(Math::Tau) * Defines::gaussianSigma));
     static const float denominator = rcp(2.0 * pow(Defines::gaussianSigma, 2.0));
@@ -32,7 +32,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
             // spatial domain: offset gaussian tap
             float tapWeight = 0.3 + calculateGaussianWeight(abs(tapIndex));
 
-            // range domain (the "bilateral" tapWeight). As depth difference increases, decrease tapWeight.
+            // range doma(the "bilateral" tapWeight). As depth difference increases, decrease tapWeight.
             tapWeight *= rcp(Math::Epsilon + Defines::edgeSharpness * abs(tapDepth - surfaceDepth));
             //tapWeight *= max(0.0, 1.0 - (800.0 * Defines::edgeSharpness) * abs(tapDepth - surfaceDepth));
 

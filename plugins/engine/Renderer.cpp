@@ -460,6 +460,10 @@ namespace Gek
 
 				gridDataBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, (GridWidth * GridHeight * GridDepth * 3), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
 				gridDataBuffer->setName(L"gridDataBuffer");
+
+				gridIndexList.reserve(GridWidth * GridHeight * GridDepth * 10);
+				gridIndexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, gridIndexList.capacity(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+				gridIndexBuffer->setName(L"gridIndexBuffer");
 			}
 
 			~Renderer(void)
@@ -629,7 +633,8 @@ namespace Gek
 				return ((z * GridWidth * GridHeight) + (y * GridWidth) + x);
 			}
 
-			void addLightCluster(const Math::Float3 &position, float range, int32_t lightIndex)
+			uint32_t lightIndexCount = 0;
+			void addLightCluster(const Math::Float3 &position, float range, uint16_t lightIndex, bool pointLight)
 			{
 				auto clipBounds(((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half).getSaturated());
 
@@ -657,16 +662,18 @@ namespace Gek
 							if (isInsideGrid(x, y, z, position, range))
 							{
 								auto &gridData = gridArray[getGridCell(x, y, z)];
-								if (lightIndex >= 0)
+								if (pointLight)
 								{
 									concurrency::critical_section::scoped_lock lock(pointLightCriticalSection);
-									gridData.pointLightList.push_back(lightIndex & 0xFFFF);
+									gridData.pointLightList.push_back(lightIndex);
 								}
 								else
 								{
 									concurrency::critical_section::scoped_lock lock(spotLightCriticalSection);
-									gridData.spotLightList.push_back((-lightIndex - 1) & 0xFFFF);
+									gridData.spotLightList.push_back(lightIndex);
 								}
+
+								InterlockedIncrement(&lightIndexCount);
 							}
 						}
 					}
@@ -689,11 +696,11 @@ namespace Gek
 					lightData.range = lightComponent.range;
 
 					pointLightCriticalSection.lock();
-					int32_t lightIndex = pointLightList.size();
+					uint16_t lightIndex = pointLightList.size() & 0xFFFF;
 					pointLightList.push_back(lightData);
 					pointLightCriticalSection.unlock();
 
-					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex);
+					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
 				}
 			}
 
@@ -716,11 +723,11 @@ namespace Gek
 					lightData.outerAngle = lightComponent.outerAngle;
 
 					spotLightCriticalSection.lock();
+					uint16_t lightIndex = spotLightList.size() & 0xFFFF;
 					spotLightList.push_back(lightData);
-					int32_t lightIndex = spotLightList.size();
 					spotLightCriticalSection.unlock();
 
-					addLightCluster(lightData.position, (lightData.radius + lightData.range), -lightIndex);
+					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
 				}
 			}
 
@@ -863,6 +870,7 @@ namespace Gek
 
 					if (isLightingRequired)
 					{
+						lightIndexCount = 0;
 						concurrency::parallel_for_each(std::begin(gridArray), std::end(gridArray), [&](auto &gridData) -> void
 						{
 							gridData.pointLightList.clear();
@@ -963,12 +971,13 @@ namespace Gek
 						}
 
 						gridIndexList.clear();
+						gridIndexList.reserve(lightIndexCount);
 						auto gridDataPointer = &gridDataList[0];
 						for (auto &gridData : gridArray)
 						{
 							*gridDataPointer++ = gridIndexList.size() & 0xFFFF;
-							*gridDataPointer++ = pointLightList.size() & 0xFFFF;
-							*gridDataPointer++ = spotLightList.size() & 0xFFFF;
+							*gridDataPointer++ = gridData.pointLightList.size() & 0xFFFF;
+							*gridDataPointer++ = gridData.spotLightList.size() & 0xFFFF;
 							gridIndexList.insert(gridIndexList.end(), gridData.pointLightList.begin(), gridData.pointLightList.end());
 							gridIndexList.insert(gridIndexList.end(), gridData.spotLightList.begin(), gridData.spotLightList.end());
 						}
@@ -1009,8 +1018,15 @@ namespace Gek
 								resources->startResourceBlock();
 								if (pass->isLightingRequired())
 								{
-									videoContext->pixelPipeline()->setResourceList({ directionalLightDataBuffer.get(), pointLightDataBuffer.get(), spotLightDataBuffer.get() }, 0);
 									videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
+									videoContext->pixelPipeline()->setResourceList(
+									{
+										directionalLightDataBuffer.get(),
+										pointLightDataBuffer.get(),
+										spotLightDataBuffer.get(),
+										gridDataBuffer.get(),
+										gridIndexBuffer.get()
+									}, 0);
 								}
 
 								switch (pass->prepare())
@@ -1052,7 +1068,7 @@ namespace Gek
 								pass->clear();
 								if (pass->isLightingRequired())
 								{
-									videoContext->pixelPipeline()->clearResourceList(3, 0);
+									videoContext->pixelPipeline()->clearResourceList(5, 0);
 									videoContext->pixelPipeline()->clearConstantBufferList(1, 3);
 								}
 							}

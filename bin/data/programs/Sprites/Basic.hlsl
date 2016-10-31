@@ -27,7 +27,7 @@ static const uint indexBuffer[6] =
     1, 3, 2,
 };
 
-OutputVertex mainVertexProgram(in InputVertex inputVertex)
+OutputVertex mainVertexProgram(InputVertex inputVertex)
 {
     const uint spriteIndex = (inputVertex.vertexIndex / 6);
     const uint cornerIndex = indexBuffer[inputVertex.vertexIndex % 6];
