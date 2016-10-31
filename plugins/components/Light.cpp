@@ -18,7 +18,6 @@ namespace Gek
         {
             range = loadAttribute(componentData, L"range", 0.0f);
             radius = loadAttribute(componentData, L"radius", 0.0f);
-            xintensity = loadAttribute(componentData, L"intensity", 0.0f);
         }
 
         void SpotLight::save(Xml::Leaf &componentData) const

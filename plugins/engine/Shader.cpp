@@ -45,45 +45,34 @@ namespace Gek
         public:
             struct PassData : public Material
             {
-                Pass::Mode mode;
-                bool lighting;
-                bool enableDepth;
+				Pass::Mode mode = Pass::Mode::Forward;
+				bool lighting = false;
+                bool enableDepth = false;
                 ResourceHandle depthBuffer;
-                uint32_t clearDepthFlags;
-                float clearDepthValue;
-                uint32_t clearStencilValue;
+                uint32_t clearDepthFlags = 0;
+                float clearDepthValue = 1.0f;
+                uint32_t clearStencilValue = 0;
                 DepthStateHandle depthState;
-                Math::Float4 blendFactor;
+                Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
-                float width, height;
+				float width = 0.0f;
+				float height = 0.0f;
                 std::vector<ResourceHandle> resourceList;
                 std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
                 ProgramHandle program;
-                uint32_t dispatchWidth;
-                uint32_t dispatchHeight;
-                uint32_t dispatchDepth;
+                uint32_t dispatchWidth = 0;
+                uint32_t dispatchHeight = 0;
+                uint32_t dispatchDepth = 0;
 
                 std::vector<ResourceHandle> generateMipMapsList;
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
 
-                PassData(uint8_t identifier)
-                    : Material(identifier)
-                    , mode(Pass::Mode::Forward)
-                    , lighting(false)
-                    , enableDepth(false)
-                    , clearDepthFlags(0)
-                    , clearDepthValue(1.0f)
-                    , clearStencilValue(0)
-                    , width(0.0f)
-                    , height(0.0f)
-                    , blendFactor(1.0f)
-                    , dispatchWidth(0)
-                    , dispatchHeight(0)
-                    , dispatchDepth(0)
-                {
-                }
+				PassData(uint32_t identifier)
+					: Material(identifier)
+				{
+				}
             };
 
             __declspec(align(16))
@@ -104,9 +93,9 @@ namespace Gek
             };
 
         private:
-            Video::Device *videoDevice;
-            Engine::Resources *resources;
-            Plugin::Population *population;
+            Video::Device *videoDevice = nullptr;
+            Engine::Resources *resources = nullptr;
+            Plugin::Population *population = nullptr;
 
             String shaderName;
             uint32_t priority = 0;
@@ -136,7 +125,7 @@ namespace Gek
 
             void reload(void)
             {
-                uint8_t passIndex = 0;
+                uint32_t passIndex = 0;
                 forwardPassMap.clear();
                 
                 auto backBuffer = videoDevice->getBackBuffer();
@@ -299,8 +288,8 @@ namespace Gek
                     }
                 }
 
-				static const wchar_t lightingData[] =
-					L"namespace Lighting\r\n" \
+				static const wchar_t lightsData[] =
+					L"namespace Lights\r\n" \
 					L"{\r\n" \
 					L"    cbuffer Parameters : register(b3)\r\n" \
 					L"    {\r\n" \
@@ -313,35 +302,38 @@ namespace Gek
 					L"    struct DirectionalData\r\n" \
 					L"    {\r\n" \
 					L"        float3 color;\r\n" \
+					L"        float buffer1;\r\n" \
 					L"        float3 direction;\r\n" \
-					L"        float buffer[2];\r\n" \
+					L"        float buffer2;\r\n" \
 					L"    };\r\n" \
 					L"\r\n" \
 					L"    struct PointData\r\n" \
 					L"    {\r\n" \
 					L"        float3 color;\r\n" \
-					L"        float3 position;\r\n" \
 					L"        float radius;\r\n" \
+					L"        float3 position;\r\n" \
 					L"        float range;\r\n" \
 					L"    };\r\n" \
 					L"\r\n" \
 					L"    struct SpotData\r\n" \
 					L"    {\r\n" \
 					L"        float3 color;\r\n" \
-					L"        float3 position;\r\n" \
 					L"        float radius;\r\n" \
+					L"        float3 position;\r\n" \
 					L"        float range;\r\n" \
 					L"        float3 direction;\r\n" \
+					L"        float buffer1;\r\n" \
 					L"        float innerAngle;\r\n" \
 					L"        float outerAngle;\r\n" \
-					L"        float buffer[3];\r\n" \
+					L"        float coneFalloff;\r\n" \
+					L"        float buffer2;\r\n" \
 					L"    };\r\n" \
 					L"\r\n" \
 					L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
 					L"    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
 					L"    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
-					L"    Buffer<uint> gridDataList : register(t3);\r\n" \
-					L"    Buffer<uint> gridIndexList : register(t4);\r\n" \
+					L"    Buffer<uint> clusterDataList : register(t3);\r\n" \
+					L"    Buffer<uint> clusterIndexList : register(t4);\r\n" \
                     L"};\r\n" \
                     L"\r\n";
 
@@ -438,7 +430,7 @@ namespace Gek
                 auto &materialNode = shaderNode.getChild(L"material");
                 for (auto &passNode : shaderNode.getChild(L"passes").children)
                 {
-                    passList.push_back(PassData(passIndex++));
+					passList.push_back(PassData(passIndex++));
                     PassData &pass = passList.back();
 
                     pass.lighting = passNode.getAttribute(L"lighting", L"false");
@@ -694,7 +686,7 @@ namespace Gek
 
                     if (pass.lighting)
                     {
-                        engineData += lightingData;
+                        engineData += lightsData;
                     }
 
                     String resourceData;

@@ -1,10 +1,10 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: 895bd642687b9b4b70b544b22192a2aa11a6e721 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Thu Oct 13 20:39:05 2016 +0000 $
 #pragma once
 
 #include "GEK\Utility\Exceptions.hpp"
@@ -24,7 +24,7 @@ namespace Gek
 
         struct Leaf
         {
-            const bool valid;
+            const bool valid = false;
 
             String type;
             String text;

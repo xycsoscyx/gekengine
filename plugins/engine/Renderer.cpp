@@ -192,6 +192,7 @@ namespace Gek
 			static const uint32_t GridWidth = 16;
 			static const uint32_t GridHeight = 8;
 			static const uint32_t GridDepth = 24;
+			static const uint32_t GridSize = (GridWidth * GridHeight * GridDepth);
 
 		public:
 			struct EngineConstantData
@@ -271,7 +272,7 @@ namespace Gek
 
 			struct DrawCallSet
 			{
-				Engine::Shader *shader;
+				Engine::Shader *shader = nullptr;
 				DrawCallList::iterator begin;
 				DrawCallList::iterator end;
 
@@ -313,16 +314,23 @@ namespace Gek
 				}
 			};
 
-			struct GridData
+			struct ClusterTile
 			{
 				std::vector<uint16_t> pointLightList;
 				std::vector<uint16_t> spotLightList;
 			};
 
+			struct ClusterData
+			{
+				uint16_t indexOffset;
+				uint16_t pointLightCount;
+				uint16_t spotLightCount;
+			};
+
 		private:
-			Video::Device *videoDevice;
-			Plugin::Population *population;
-			Engine::Resources *resources;
+			Video::Device *videoDevice = nullptr;
+			Plugin::Population *population = nullptr;
+			Engine::Resources *resources = nullptr;
 
 			Video::ObjectPtr pointSamplerState;
 			Video::ObjectPtr linearClampSamplerState;
@@ -346,16 +354,16 @@ namespace Gek
 			std::vector<DirectionalLightData> directionalLightList;
 			std::vector<PointLightData> pointLightList;
 			std::vector<SpotLightData> spotLightList;
-			GridData gridArray[GridDepth * GridHeight * GridWidth];
-			uint16_t gridDataList[GridDepth * GridHeight * GridWidth * 3];
-			std::vector<uint16_t> gridIndexList;
+			ClusterTile clusterLightsList[GridSize];
+			ClusterData clusterDataList[GridSize];
+			std::vector<uint16_t> clusterIndexList;
 
 			Video::BufferPtr lightConstantBuffer;
 			Video::BufferPtr directionalLightDataBuffer;
 			Video::BufferPtr pointLightDataBuffer;
 			Video::BufferPtr spotLightDataBuffer;
-			Video::BufferPtr gridDataBuffer;
-			Video::BufferPtr gridIndexBuffer;
+			Video::BufferPtr clusterDataBuffer;
+			Video::BufferPtr clusterIndexBuffer;
 
 			DrawCallList drawCallList;
 
@@ -458,12 +466,12 @@ namespace Gek
 				spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
 				spotLightDataBuffer->setName(L"spotLightDataBuffer");
 
-				gridDataBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, (GridWidth * GridHeight * GridDepth * 3), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-				gridDataBuffer->setName(L"gridDataBuffer");
+				clusterDataBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, (GridSize * 3), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+				clusterDataBuffer->setName(L"clusterDataBuffer");
 
-				gridIndexList.reserve(GridWidth * GridHeight * GridDepth * 10);
-				gridIndexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, gridIndexList.capacity(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-				gridIndexBuffer->setName(L"gridIndexBuffer");
+				clusterIndexList.reserve(GridSize * 10);
+				clusterIndexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, clusterIndexList.capacity(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+				clusterIndexBuffer->setName(L"clusterIndexBuffer");
 			}
 
 			~Renderer(void)
@@ -630,7 +638,7 @@ namespace Gek
 
 			inline uint32_t getGridCell(uint32_t x, uint32_t y, uint32_t z)
 			{
-				return ((z * GridWidth * GridHeight) + (y * GridWidth) + x);
+				return ((((z * GridHeight) + y) * GridWidth) + x);
 			}
 
 			uint32_t lightIndexCount = 0;
@@ -661,7 +669,7 @@ namespace Gek
 						{
 							if (isInsideGrid(x, y, z, position, range))
 							{
-								auto &gridData = gridArray[getGridCell(x, y, z)];
+								auto &gridData = clusterLightsList[getGridCell(x, y, z)];
 								if (pointLight)
 								{
 									concurrency::critical_section::scoped_lock lock(pointLightCriticalSection);
@@ -717,6 +725,7 @@ namespace Gek
 					lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
 					lightData.innerAngle = lightComponent.innerAngle;
 					lightData.outerAngle = lightComponent.outerAngle;
+					lightData.coneFalloff = lightComponent.coneFalloff;
 
 					spotLightCriticalSection.lock();
 					uint16_t lightIndex = spotLightList.size() & 0xFFFF;
@@ -867,7 +876,7 @@ namespace Gek
 					if (isLightingRequired)
 					{
 						lightIndexCount = 0;
-						concurrency::parallel_for_each(std::begin(gridArray), std::end(gridArray), [&](auto &gridData) -> void
+						concurrency::parallel_for_each(std::begin(clusterLightsList), std::end(clusterLightsList), [&](auto &gridData) -> void
 						{
 							gridData.pointLightList.clear();
 							gridData.spotLightList.clear();
@@ -964,35 +973,36 @@ namespace Gek
 							videoDevice->unmapBuffer(spotLightDataBuffer.get());
 						}
 
-						gridIndexList.clear();
-						gridIndexList.reserve(lightIndexCount);
-						auto gridDataPointer = &gridDataList[0];
-						for (auto &gridData : gridArray)
+						clusterIndexList.clear();
+						clusterIndexList.reserve(lightIndexCount);
+						for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
 						{
-							*gridDataPointer++ = gridIndexList.size() & 0xFFFF;
-							*gridDataPointer++ = gridData.pointLightList.size() & 0xFFFF;
-							*gridDataPointer++ = gridData.spotLightList.size() & 0xFFFF;
-							gridIndexList.insert(gridIndexList.end(), gridData.pointLightList.begin(), gridData.pointLightList.end());
-							gridIndexList.insert(gridIndexList.end(), gridData.spotLightList.begin(), gridData.spotLightList.end());
+							auto &clusterData = clusterDataList[tileIndex];
+							auto &clusterLights = clusterLightsList[tileIndex];
+							clusterData.indexOffset = clusterIndexList.size() & 0xFFFF;
+							clusterData.pointLightCount = clusterLights.pointLightList.size() & 0xFFFF;
+							clusterData.spotLightCount = clusterLights.spotLightList.size() & 0xFFFF;
+							clusterIndexList.insert(clusterIndexList.end(), clusterLights.pointLightList.begin(), clusterLights.pointLightList.end());
+							clusterIndexList.insert(clusterIndexList.end(), clusterLights.spotLightList.begin(), clusterLights.spotLightList.end());
 						}
 
-						uint16_t *gridDataData = nullptr;
-						videoDevice->mapBuffer(gridDataBuffer.get(), gridDataData);
-						std::copy(std::begin(gridDataList), std::end(gridDataList), gridDataData);
-						videoDevice->unmapBuffer(gridDataBuffer.get());
+						ClusterData *clusterDataData = nullptr;
+						videoDevice->mapBuffer(clusterDataBuffer.get(), clusterDataData);
+						std::copy(std::begin(clusterDataList), std::end(clusterDataList), clusterDataData);
+						videoDevice->unmapBuffer(clusterDataBuffer.get());
 
-						if (!gridIndexList.empty())
+						if (!clusterIndexList.empty())
 						{
-							if (!gridIndexBuffer || gridIndexBuffer->getCount() < gridIndexList.size())
+							if (!clusterIndexBuffer || clusterIndexBuffer->getCount() < clusterIndexList.size())
 							{
-								gridIndexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, gridIndexList.size(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-								gridIndexBuffer->setName(L"gridIndexBuffer");
+								clusterIndexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, clusterIndexList.size(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+								clusterIndexBuffer->setName(L"clusterIndexBuffer");
 							}
 
-							uint16_t *gridIndexData = nullptr;
-							videoDevice->mapBuffer(gridIndexBuffer.get(), gridIndexData);
-							std::copy(gridIndexList.begin(), gridIndexList.end(), gridIndexData);
-							videoDevice->unmapBuffer(gridIndexBuffer.get());
+							uint16_t *clusterIndexData = nullptr;
+							videoDevice->mapBuffer(clusterIndexBuffer.get(), clusterIndexData);
+							std::copy(clusterIndexList.begin(), clusterIndexList.end(), clusterIndexData);
+							videoDevice->unmapBuffer(clusterIndexBuffer.get());
 						}
 
 						LightConstantData lightConstants;
@@ -1018,8 +1028,8 @@ namespace Gek
 										directionalLightDataBuffer.get(),
 										pointLightDataBuffer.get(),
 										spotLightDataBuffer.get(),
-										gridDataBuffer.get(),
-										gridIndexBuffer.get()
+										clusterDataBuffer.get(),
+										clusterIndexBuffer.get()
 									}, 0);
 								}
 

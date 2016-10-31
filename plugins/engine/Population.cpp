@@ -78,11 +78,10 @@ namespace Gek
         public:
             struct Action
             {
-                const wchar_t *name;
+                const wchar_t *name = nullptr;
                 ActionParameter parameter;
 
                 Action(void)
-                    : name(nullptr)
                 {
                 }
 

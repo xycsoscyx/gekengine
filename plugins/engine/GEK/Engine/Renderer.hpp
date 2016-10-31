@@ -41,28 +41,31 @@ namespace Gek
             struct DirectionalLightData
             {
                 Math::Float3 color;
-                Math::Float3 direction;
-                float buffer[2];
-            };
+				float buffer1;
+				Math::Float3 direction;
+				float buffer2;
+			};
 
             struct PointLightData
             {
                 Math::Float3 color;
-                Math::Float3 position;
-                float radius;
+				float radius;
+				Math::Float3 position;
                 float range;
             };
 
             struct SpotLightData
             {
                 Math::Float3 color;
-                Math::Float3 position;
-                float radius;
+				float radius;
+				Math::Float3 position;
                 float range;
                 Math::Float3 direction;
+				float buffer1;
                 float innerAngle;
                 float outerAngle;
-                float buffer[3];
+				float coneFalloff;
+				float buffer2;
             };
 
             Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::SIMD::Float4x4 &viewMatrix)> onRenderScene;

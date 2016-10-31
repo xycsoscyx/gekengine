@@ -134,7 +134,7 @@ namespace Gek
         std::vector<Triangle> newTriangles;
 
         std::vector <uint16_t> indices;
-        float inscriptionRadiusMultiplier;
+        float inscriptionRadiusMultiplier = 0.0f;
 
         void splitEdge(Edge & e)
         {
@@ -442,18 +442,18 @@ namespace Gek
         {
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
-            uint32_t indexCount;
+            uint32_t indexCount = 0;
         };
 
         struct Data
         {
-            Shape *shape;
+            Shape *shape = nullptr;
             MaterialHandle skin;
         };
 
         struct Instance
         {
-            Math::SIMD::Float4x4 matrix;
+			Math::SIMD::Float4x4 matrix = Math::SIMD::Float4x4::Identity;
 
             Instance(const Math::SIMD::Float4x4 &matrix)
                 : matrix(matrix)
@@ -462,9 +462,9 @@ namespace Gek
         };
 
     private:
-        Plugin::Population *population;
-        Plugin::Resources *resources;
-        Plugin::Renderer *renderer;
+        Plugin::Population *population = nullptr;
+        Plugin::Resources *resources = nullptr;
+        Plugin::Renderer *renderer = nullptr;
 
         VisualHandle visual;
         Video::BufferPtr constantBuffer;

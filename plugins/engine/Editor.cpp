@@ -23,9 +23,9 @@ namespace Gek
             , public Plugin::Processor
         {
         private:
-            Plugin::Core *core;
-            Edit::Population *population;
-            Plugin::Renderer *renderer;
+            Plugin::Core *core = nullptr;
+            Edit::Population *population = nullptr;
+            Plugin::Renderer *renderer = nullptr;
 
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;

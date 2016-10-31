@@ -96,17 +96,17 @@ namespace Gek
             struct Material
             {
                 wchar_t name[64];
-                uint32_t vertexCount;
-                uint32_t indexCount;
+                uint32_t vertexCount = 0;
+                uint32_t indexCount = 0;
             };
 
-            uint32_t identifier;
-            uint16_t type;
-            uint16_t version;
+            uint32_t identifier = 0;
+            uint16_t type = 0;
+            uint16_t version = 0;
 
             Shapes::AlignedBox boundingBox;
 
-            uint32_t materialCount;
+            uint32_t materialCount = 0;
             Material materialList[1];
         };
 
@@ -121,26 +121,11 @@ namespace Gek
 
         struct Material
         {
-            bool skin;
+            bool skin = false;
             MaterialHandle material;
             ResourceHandle vertexBuffer;
             ResourceHandle indexBuffer;
-            uint32_t indexCount;
-
-            Material(void)
-                : skin(false)
-                , indexCount(0)
-            {
-            }
-
-            Material(const Material &material)
-                : skin(material.skin)
-                , material(material.material)
-                , vertexBuffer(material.vertexBuffer)
-                , indexBuffer(material.indexBuffer)
-                , indexCount(material.indexCount)
-            {
-            }
+            uint32_t indexCount = 0;
         };
 
         struct Model
@@ -151,7 +136,7 @@ namespace Gek
 
         struct Data
         {
-            Model *model;
+            Model *model = nullptr;
             MaterialHandle skin;
         };
 
@@ -166,9 +151,9 @@ namespace Gek
         };
 
     private:
-        Plugin::Population *population;
-        Plugin::Resources *resources;
-        Plugin::Renderer *renderer;
+        Plugin::Population *population = nullptr;
+        Plugin::Resources *resources = nullptr;
+        Plugin::Renderer *renderer = nullptr;
 
         VisualHandle visual;
         Video::BufferPtr constantBuffer;

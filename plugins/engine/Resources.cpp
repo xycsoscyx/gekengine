@@ -327,8 +327,8 @@ namespace Gek
             , public ResourceRequester
         {
         private:
-            Plugin::Core *core;
-            Video::Device *videoDevice;
+            Plugin::Core *core = nullptr;
+            Video::Device *videoDevice = nullptr;
 
             ThreadPool loadPool;
             std::recursive_mutex shaderMutex;

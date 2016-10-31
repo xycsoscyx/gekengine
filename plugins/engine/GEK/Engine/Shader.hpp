@@ -59,7 +59,7 @@ namespace Gek
                     String parameters;
                 };
 
-                uint32_t identifier;
+                uint32_t identifier = 0;
                 RenderStateHandle renderState;
                 std::vector<Resource> resourceList;
 

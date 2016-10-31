@@ -18,7 +18,7 @@ namespace Gek
             , public Engine::Material
         {
         private:
-            Engine::Resources *resources;
+            Engine::Resources *resources = nullptr;
 			RenderStateHandle renderState;
             std::unordered_map<uint32_t, std::vector<ResourceHandle>> passDataMap;
 

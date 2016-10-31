@@ -43,13 +43,13 @@ namespace Gek
         {
         protected:
             CComPtr<IDirectInputDevice8> device;
-            uint32_t buttonCount;
+            uint32_t buttonCount = 0;
 
             std::vector<uint8_t> buttonStateList;
 
-            Math::Float3 axisValues;
-            Math::Float3 rotationValues;
-            float pointOfView;
+            Math::Float3 axisValues = Math::Float3::Zero;
+            Math::Float3 rotationValues = Math::Float3::Zero;
+            float pointOfView = 0.0f;
 
         public:
             Device(void)
@@ -389,7 +389,7 @@ namespace Gek
             , public Input::System
         {
         private:
-            HWND window;
+            HWND window = nullptr;
             CComPtr<IDirectInput8> directInput;
             Input::DevicePtr mouseDevice;
             Input::DevicePtr keyboardDevice;

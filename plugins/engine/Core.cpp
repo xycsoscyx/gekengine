@@ -1262,7 +1262,7 @@ namespace Gek
                         }
                         else
                         {
-                            std::vector<Video::ScissorBox> scissorBoxList(1);
+                            std::vector<Math::UInt4> scissorBoxList(1);
                             scissorBoxList[0].minimum = Math::UInt2(command->ClipRect.x, command->ClipRect.y);
                             scissorBoxList[0].maximum = Math::UInt2(command->ClipRect.z, command->ClipRect.w);
                             videoContext->setScissorList(scissorBoxList);

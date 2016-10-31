@@ -8,8 +8,8 @@
 #pragma once
 
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Vector2.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Vector4SIMD.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
@@ -105,14 +105,14 @@ namespace Gek
                 _16x10,
             };
 
-            uint32_t width;
-            uint32_t height;
-            Format format;
-            AspectRatio aspectRatio;
+            uint32_t width = 0;
+            uint32_t height = 0;
+            Format format = Video::Format::Unknown;
+            AspectRatio aspectRatio = AspectRatio::Unknown;
             struct
             {
-                uint32_t numerator;
-                uint32_t denominator;
+                uint32_t numerator = 0;
+                uint32_t denominator = 0;
             } refreshRate;
         };
 
@@ -205,46 +205,22 @@ namespace Gek
             };
         }; // ClearFlags
 
-        struct ScissorBox
-        {
-            Math::UInt2 minimum;
-            Math::UInt2 maximum;
-
-            ScissorBox(void)
-            {
-            }
-
-            ScissorBox(const Math::UInt2 &minimum, const Math::UInt2 &maximum)
-                : minimum(minimum)
-                , maximum(maximum)
-            {
-            }
-
-            ScissorBox(uint32_t left, uint32_t top, uint32_t right, uint32_t bottom)
-                : minimum(left, top)
-                , maximum(right, bottom)
-            {
-            }
-        };
-
         struct ViewPort
         {
-            Math::Float2 position;
-            Math::Float2 size;
-            float nearClip;
-            float farClip;
+            Math::Float2 position = Math::Float2::Zero;
+            Math::Float2 size = Math::Float2::Zero;
+            float nearClip = 0.0f;
+            float farClip = 0.0f;
 
-            ViewPort(void)
-            {
-            }
+			ViewPort(void) = default;
 
-            ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearClip, float farClip)
-                : position(position)
-                , size(size)
-                , nearClip(nearClip)
-                , farClip(farClip)
-            {
-            }
+			ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearClip, float farClip)
+				: position(position)
+				, size(size)
+				, nearClip(nearClip)
+				, farClip(farClip)
+			{
+			}
         };
 
         struct RenderStateInformation
@@ -526,7 +502,7 @@ namespace Gek
                 virtual void clearVertexBufferList(uint32_t count, uint32_t firstSlot) = 0;
 
                 virtual void setViewportList(const std::vector<Video::ViewPort> &viewPortList) = 0;
-                virtual void setScissorList(const std::vector<Video::ScissorBox> &rectangleList) = 0;
+                virtual void setScissorList(const std::vector<Math::UInt4> &rectangleList) = 0;
                 virtual void setRenderTargetList(const std::vector<Target *> &renderTargetList, Object *depthBuffer) = 0;
 
                 virtual void setRenderState(Object *renderState) = 0;

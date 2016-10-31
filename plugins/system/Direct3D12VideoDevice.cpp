@@ -347,8 +347,8 @@ namespace Gek
                 , width(width)
                 , height(height)
                 , depth(depth)
-                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
-            {
+				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+			{
             }
 
             virtual ~Target(void) = default;
@@ -758,7 +758,7 @@ namespace Gek
             {
             }
 
-            void setScissorList(const std::vector<Video::ScissorBox> &rectangleList)
+            void setScissorList(const std::vector<Math::UInt4> &rectangleList)
             {
             }
 

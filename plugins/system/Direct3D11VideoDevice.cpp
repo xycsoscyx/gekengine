@@ -654,9 +654,9 @@ namespace Gek
         {
         public:
             CComPtr<ID3D11Buffer> d3dObject;
-            Video::Format format;
-            uint32_t stride;
-            uint32_t count;
+            Video::Format format = Video::Format::Unknown;
+            uint32_t stride = 0;
+            uint32_t count = 0;
 
         public:
             Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t stride, uint32_t count)
@@ -700,10 +700,10 @@ namespace Gek
         class BaseTexture
         {
         public:
-            Video::Format format;
-            uint32_t width;
-            uint32_t height;
-            uint32_t depth;
+			Video::Format format = Video::Format::Unknown;
+            uint32_t width = 0;
+            uint32_t height = 0;
+            uint32_t depth = 0;
 
         public:
             BaseTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
@@ -782,8 +782,8 @@ namespace Gek
         public:
             Target(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
                 : BaseTexture(format, width, height, depth)
-                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
-            {
+				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+			{
             }
 
             virtual ~Target(void) = default;
@@ -902,7 +902,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext;
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
                 public:
                     ComputePipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -997,7 +997,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext;
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
                 public:
                     VertexPipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1085,7 +1085,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext;
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
                 public:
                     GeometryPipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1173,7 +1173,7 @@ namespace Gek
                     : public Video::Device::Context::Pipeline
                 {
                 private:
-                    ID3D11DeviceContext *d3dDeviceContext;
+                    ID3D11DeviceContext *d3dDeviceContext = nullptr;
 
                 public:
                     PixelPipeline(ID3D11DeviceContext *d3dDeviceContext)
@@ -1337,7 +1337,7 @@ namespace Gek
                     d3dDeviceContext->RSSetViewports(UINT(viewPortList.size()), (D3D11_VIEWPORT *)viewPortList.data());
                 }
 
-                void setScissorList(const std::vector<Video::ScissorBox> &rectangleList)
+                void setScissorList(const std::vector<Math::UInt4> &rectangleList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
@@ -1537,8 +1537,8 @@ namespace Gek
             };
 
         public:
-            HWND window;
-            bool isChildWindow;
+            HWND window = nullptr;
+            bool isChildWindow = false;
 
             CComPtr<ID3D11Device> d3dDevice;
             CComPtr<ID3D11DeviceContext> d3dDeviceContext;
@@ -2321,9 +2321,11 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS | D3DCOMPILE_OPTIMIZATION_LEVEL3;
+				uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
+#else
+				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
                 CComPtr<ID3DBlob> d3dShaderBlob;

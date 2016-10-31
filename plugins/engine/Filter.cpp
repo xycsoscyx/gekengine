@@ -27,32 +27,22 @@ namespace Gek
         public:
             struct PassData
             {
-                Pass::Mode mode;
-                Math::Float4 blendFactor;
+                Pass::Mode mode = Pass::Mode::Deferred;
+                Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
-                float width, height;
+				float width = 0.0f;
+				float height = 0.0f;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
                 ProgramHandle program;
-                uint32_t dispatchWidth;
-                uint32_t dispatchHeight;
-                uint32_t dispatchDepth;
+                uint32_t dispatchWidth = 0;
+                uint32_t dispatchHeight = 0;
+                uint32_t dispatchDepth = 0;
 
                 std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::vector<ResourceHandle> generateMipMapsList;
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
-
-                PassData(void)
-                    : mode(Pass::Mode::Deferred)
-                    , width(0.0f)
-                    , height(0.0f)
-                    , blendFactor(1.0f)
-                    , dispatchWidth(0)
-                    , dispatchHeight(0)
-                    , dispatchDepth(0)
-                {
-                }
             };
 
             struct FilterConstantData
@@ -62,8 +52,8 @@ namespace Gek
             };
 
         private:
-            Video::Device *videoDevice;
-            Engine::Resources *resources;
+            Video::Device *videoDevice = nullptr;
+            Engine::Resources *resources = nullptr;
 
             String filterName;
 
