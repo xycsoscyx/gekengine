@@ -688,9 +688,7 @@ namespace Gek
 					auto &colorComponent = entity->getComponent<Components::Color>();
 
 					PointLightData lightData;
-					lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
-					lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
-					lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+					lightData.color = colorComponent.value.xyz;
 					lightData.position = viewMatrix.transform(transformComponent.position);
 					lightData.radius = lightComponent.radius;
 					lightData.range = lightComponent.range;
@@ -712,9 +710,7 @@ namespace Gek
 					auto &colorComponent = entity->getComponent<Components::Color>();
 
 					SpotLightData lightData;
-					lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
-					lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
-					lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+					lightData.color = colorComponent.value.xyz;
 					lightData.position = viewMatrix.transform(transformComponent.position);
 					lightData.radius = lightComponent.radius;
 					lightData.range = lightComponent.range;
@@ -888,9 +884,7 @@ namespace Gek
 								auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
 
 								DirectionalLightData lightData;
-								lightData.color.x = (colorComponent.value.r * lightComponent.intensity);
-								lightData.color.y = (colorComponent.value.g * lightComponent.intensity);
-								lightData.color.z = (colorComponent.value.b * lightComponent.intensity);
+								lightData.color = colorComponent.value.xyz;
 								lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
 								directionalLightList.push_back(lightData);
 							}

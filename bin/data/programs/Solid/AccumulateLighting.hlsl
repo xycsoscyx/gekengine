@@ -229,13 +229,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 	uint pointLightCount = Lighting::gridDataList[clusterOffset + 1];
 	uint spotLightCount = Lighting::gridDataList[clusterOffset + 2];
 
-	float3 surfaceIrradiance = (materialAlbedo * surfaceAmbient * 500.0);
+	float3 surfaceIrradiance = 0.0;
 
     [loop]
     for (uint directionalIndex = 0; directionalIndex < Lighting::directionalCount; directionalIndex++)
     {
-		Lighting::DirectionalData light = Lighting::directionalList.Load(directionalIndex);
-		Lighting::Properties lightProperties = Lighting::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+		const Lighting::DirectionalData light = Lighting::directionalList.Load(directionalIndex);
+		const Lighting::Properties lightProperties = Lighting::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
         surfaceIrradiance += Lighting::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, clampedAlpha);
     }
 
@@ -243,8 +243,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     for (uint pointIndex = 0; pointIndex < pointLightCount; pointIndex++)
     {
 		uint dataIndex = Lighting::gridIndexList.Load(indexOffset + pointIndex);
-		Lighting::PointData light = Lighting::pointList.Load(dataIndex);
-		Lighting::Properties lightProperties = Lighting::Area::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+		const Lighting::PointData light = Lighting::pointList.Load(dataIndex);
+		const Lighting::Properties lightProperties = Lighting::Area::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
         surfaceIrradiance += Lighting::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, clampedAlpha);
     }
 
@@ -252,10 +252,10 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     for (uint spotIndex = 0; spotIndex < spotLightCount; spotIndex++)
     {
 		uint dataIndex = Lighting::gridIndexList.Load(indexOffset + pointLightCount + spotIndex);
-		Lighting::SpotData light = Lighting::spotList.Load(dataIndex);
-		Lighting::Properties lightProperties = Lighting::Punctual::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
+		const Lighting::SpotData light = Lighting::spotList.Load(dataIndex);
+		const Lighting::Properties lightProperties = Lighting::Punctual::getProperties(light, surfacePosition, surfaceNormal, reflectNormal);
         surfaceIrradiance += Lighting::getContribution(lightProperties, surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, alpha, clampedAlpha);
 	}
 
-    return surfaceIrradiance;
+    return surfaceIrradiance + (materialAlbedo * surfaceAmbient * 0.005);
 }
