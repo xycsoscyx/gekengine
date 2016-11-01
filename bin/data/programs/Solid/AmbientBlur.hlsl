@@ -25,7 +25,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         [branch]
         if (tapIndex != 0)
         {
-            const float2 tapCoord = inputPixel.screen.xy + Defines::blurAxis * tapIndex;
+            const int2 tapCoord = inputPixel.screen.xy + Defines::blurAxis * tapIndex;
             const float tapDepth = getLinearDepthFromSample(Resources::depthBuffer[tapCoord]);
             const float tapOcclusion = Resources::inputBuffer[tapCoord];
 

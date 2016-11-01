@@ -89,7 +89,7 @@ float getModifier(float2 offset)
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-	const float blurDistance = abs(Resources::circleOfConfusion.Load(int3(inputPixel.screen.xy, 0)));
+	const float blurDistance = abs(Resources::circleOfConfusion[inputPixel.screen.xy]);
     const float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
 
     float totalWeight = 1.0;

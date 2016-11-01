@@ -239,7 +239,7 @@ namespace Gek
                 GEK_REQUIRE(entity);
 
                 auto entitySearch = entityMap.find(entity);
-                if (entitySearch != entityMap.end())
+                if (entitySearch != std::end(entityMap))
                 {
                     entityMap.unsafe_erase(entitySearch);
                 }
@@ -266,7 +266,7 @@ namespace Gek
 
                 auto hash = getHash(surfaceName);
                 auto surfaceSearch = surfaceIndexMap.find(hash);
-                if (surfaceSearch != surfaceIndexMap.end())
+                if (surfaceSearch != std::end(surfaceIndexMap))
                 {
                     surfaceIndex = surfaceSearch->second;
                 }
@@ -415,7 +415,7 @@ namespace Gek
 
                 auto hash = getHash(shapeComponent.type, shapeComponent.parameters);
                 auto collisionSearch = collisionMap.find(hash);
-                if (collisionSearch != collisionMap.end())
+                if (collisionSearch != std::end(collisionMap))
                 {
                     if (collisionSearch->second)
                     {
@@ -486,7 +486,7 @@ namespace Gek
 
                 auto hash = getHash(modelComponent.name);
                 auto collisionSearch = collisionMap.find(hash);
-                if (collisionSearch != collisionMap.end())
+                if (collisionSearch != std::end(collisionMap))
                 {
                     if (collisionSearch->second)
                     {

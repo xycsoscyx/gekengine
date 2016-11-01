@@ -1,10 +1,10 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: 895bd642687b9b4b70b544b22192a2aa11a6e721 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Thu Oct 13 20:39:05 2016 +0000 $
 #pragma once
 
 #include "GEK\Utility\Context.hpp"
@@ -36,7 +36,7 @@ namespace Gek
             bool hasComponents(void) const
             {
 				std::vector<bool> hasComponentList({ hasComponent<PARAMETERS>()... });
-				return (std::accumulate(hasComponentList.begin(), hasComponentList.end(), 0U) == hasComponentList.size());
+				return (std::accumulate(std::begin(hasComponentList), std::end(hasComponentList), 0U) == hasComponentList.size());
             }
 
 			template <typename CLASS>

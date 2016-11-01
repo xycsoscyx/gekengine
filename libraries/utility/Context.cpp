@@ -87,7 +87,7 @@ namespace Gek
         ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
-            if (classSearch == classMap.end())
+            if (classSearch == std::end(classMap))
             {
                 throw ClassNotFound();
             }

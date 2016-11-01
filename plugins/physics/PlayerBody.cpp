@@ -475,7 +475,7 @@ namespace Gek
 						}
 
 						previousContactCount = contactCount;
-                        std::copy(currentInfoList.begin(), currentInfoList.end(), previousInfoList);
+                        std::copy(std::begin(currentInfoList), std::end(currentInfoList), previousInfoList);
                     }
 					else
 					{

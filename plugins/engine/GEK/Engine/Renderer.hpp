@@ -40,7 +40,7 @@ namespace Gek
 
             struct DirectionalLightData
             {
-                Math::Float3 color;
+                Math::Float3 radiance;
 				float buffer1;
 				Math::Float3 direction;
 				float buffer2;
@@ -48,7 +48,7 @@ namespace Gek
 
             struct PointLightData
             {
-                Math::Float3 color;
+                Math::Float3 radiance;
 				float radius;
 				Math::Float3 position;
                 float range;
@@ -56,7 +56,7 @@ namespace Gek
 
             struct SpotLightData
             {
-                Math::Float3 color;
+                Math::Float3 radiance;
 				float radius;
 				Math::Float3 position;
                 float range;

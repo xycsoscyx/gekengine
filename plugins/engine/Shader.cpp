@@ -258,15 +258,15 @@ namespace Gek
 								{
 									inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
 								}
-								else if (format.compareNoCase(L"uint") == 0)
-								{
-									inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
-								}
-								else if (format.compareNoCase(L"bool") == 0)
-								{
-									inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
-								}
-								else
+                                else if (format.compareNoCase(L"uint") == 0)
+                                {
+                                    inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                }
+                                else if (format.compareNoCase(L"bool") == 0)
+                                {
+                                    inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                }
+                                else
 								{
 									throw InvalidParameters();
 								}
@@ -288,20 +288,21 @@ namespace Gek
                     }
                 }
 
-				static const wchar_t lightsData[] =
-					L"namespace Lights\r\n" \
-					L"{\r\n" \
-					L"    cbuffer Parameters : register(b3)\r\n" \
-					L"    {\r\n" \
-					L"        uint directionalCount;\r\n" \
-					L"        uint pointCount;\r\n" \
-					L"        uint spotCount;\r\n" \
-					L"        uint padding;\r\n" \
+                static const wchar_t lightsData[] =
+                    L"namespace Lights\r\n" \
+                    L"{\r\n" \
+                    L"    cbuffer Parameters : register(b3)\r\n" \
+                    L"    {\r\n" \
+                    L"        uint directionalCount;\r\n" \
+                    L"        uint pointCount;\r\n" \
+                    L"        uint spotCount;\r\n" \
+                    L"        uint3 gridSize;\r\n" \
+					L"        uint padding[2];\r\n" \
 					L"    };\r\n" \
 					L"\r\n" \
 					L"    struct DirectionalData\r\n" \
 					L"    {\r\n" \
-					L"        float3 color;\r\n" \
+					L"        float3 radiance;\r\n" \
 					L"        float buffer1;\r\n" \
 					L"        float3 direction;\r\n" \
 					L"        float buffer2;\r\n" \
@@ -309,7 +310,7 @@ namespace Gek
 					L"\r\n" \
 					L"    struct PointData\r\n" \
 					L"    {\r\n" \
-					L"        float3 color;\r\n" \
+					L"        float3 radiance;\r\n" \
 					L"        float radius;\r\n" \
 					L"        float3 position;\r\n" \
 					L"        float range;\r\n" \
@@ -317,7 +318,7 @@ namespace Gek
 					L"\r\n" \
 					L"    struct SpotData\r\n" \
 					L"    {\r\n" \
-					L"        float3 color;\r\n" \
+					L"        float3 radiance;\r\n" \
 					L"        float radius;\r\n" \
 					L"        float3 position;\r\n" \
 					L"        float range;\r\n" \
@@ -332,7 +333,7 @@ namespace Gek
 					L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
 					L"    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
 					L"    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
-					L"    Buffer<uint> clusterDataList : register(t3);\r\n" \
+					L"    Buffer<uint3> clusterDataList : register(t3);\r\n" \
 					L"    Buffer<uint> clusterIndexList : register(t4);\r\n" \
                     L"};\r\n" \
                     L"\r\n";
@@ -437,7 +438,7 @@ namespace Gek
                     for (auto &clearTargetNode : passNode.getChild(L"clear").children)
                     {
                         auto resourceSearch = resourceMap.find(clearTargetNode.type);
-                        if (resourceSearch == resourceMap.end())
+                        if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
@@ -546,8 +547,8 @@ namespace Gek
                             }
                             else
                             {
-                                auto resourceSearch = resourceSizeMap.find(renderTargetsMap.begin()->first);
-                                if (resourceSearch != resourceSizeMap.end())
+                                auto resourceSearch = resourceSizeMap.find(std::begin(renderTargetsMap)->first);
+                                if (resourceSearch != std::end(resourceSizeMap))
                                 {
                                     pass.width = float(resourceSearch->second.first);
                                     pass.height = float(resourceSearch->second.second);
@@ -556,7 +557,7 @@ namespace Gek
                                 for (auto &renderTarget : renderTargetsMap)
                                 {
                                     auto resourceSearch = resourceMap.find(renderTarget.first);
-                                    if (resourceSearch == resourceMap.end())
+                                    if (resourceSearch == std::end(resourceMap))
                                     {
                                         throw UnlistedRenderTarget();
                                     }
@@ -575,7 +576,7 @@ namespace Gek
                         for (auto &resourcePair : renderTargetsMap)
                         {
                             auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                            if (resourceSearch == resourceMappingsMap.end())
+                            if (resourceSearch == std::end(resourceMappingsMap))
                             {
                                 throw UnlistedRenderTarget();
                             }
@@ -603,7 +604,7 @@ namespace Gek
                             }
 
                             auto resourceSearch = resourceMap.find(depthNode.getAttribute(L"target"));
-                            if (resourceSearch == resourceMap.end())
+                            if (resourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
                             }
@@ -657,7 +658,7 @@ namespace Gek
                     for(auto &resourceNode : passNode.getChild(L"resources").children)
                     {
                         auto resourceSearch = resourceMap.find(resourceNode.type);
-                        if (resourceSearch == resourceMap.end())
+                        if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
@@ -675,7 +676,7 @@ namespace Gek
                         if (resourceNode.attributes.count(L"copy"))
                         {
                             auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
-                            if (sourceResourceSearch == resourceMap.end())
+                            if (sourceResourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
                             }
@@ -754,7 +755,7 @@ namespace Gek
                                     if (true)
                                     {
                                         auto resourceSearch = resourceMappingsMap.find(resourceName);
-                                        if (resourceSearch != resourceMappingsMap.end())
+                                        if (resourceSearch != std::end(resourceMappingsMap))
                                         {
                                             auto &resource = resourceSearch->second;
                                             resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
@@ -774,14 +775,14 @@ namespace Gek
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
-                        if (resourceSearch != resourceMap.end())
+                        if (resourceSearch != std::end(resourceMap))
                         {
                             pass.resourceList.push_back(resourceSearch->second);
                         }
 
                         uint32_t currentStage = nextResourceStage++;
                         auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != resourceMappingsMap.end())
+                        if (resourceMapSearch != std::end(resourceMappingsMap))
                         {
                             auto &resource = resourceMapSearch->second;
                             if (resource.first == MapType::ByteAddressBuffer)
@@ -797,7 +798,7 @@ namespace Gek
                         }
 
                         auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                        if (structureSearch != resourceStructuresMap.end())
+                        if (structureSearch != std::end(resourceStructuresMap))
                         {
                             auto &structure = structureSearch->second;
                             resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
@@ -825,14 +826,14 @@ namespace Gek
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
-                        if (resourceSearch != resourceMap.end())
+                        if (resourceSearch != std::end(resourceMap))
                         {
                             pass.unorderedAccessList.push_back(resourceSearch->second);
                         }
 
                         uint32_t currentStage = nextUnorderedStage++;
                         auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != resourceMappingsMap.end())
+                        if (resourceMapSearch != std::end(resourceMappingsMap))
                         {
                             auto &resource = resourceMapSearch->second;
                             if (resource.first == MapType::ByteAddressBuffer)
@@ -848,7 +849,7 @@ namespace Gek
                         }
 
                         auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                        if (structureSearch != resourceStructuresMap.end())
+                        if (structureSearch != std::end(resourceStructuresMap))
                         {
                             auto &structure = structureSearch->second;
                             unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
@@ -881,7 +882,7 @@ namespace Gek
             const Material *getPassMaterial(const wchar_t *passName) const
             {
                 auto passSearch = forwardPassMap.find(passName);
-                if (passSearch != forwardPassMap.end())
+                if (passSearch != std::end(forwardPassMap))
                 {
                     return passSearch->second;
                 }
@@ -1078,7 +1079,7 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(videoContext);
 
-                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, passList.begin(), passList.end()));
+                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, std::begin(passList), std::end(passList)));
             }
         };
 

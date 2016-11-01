@@ -107,7 +107,7 @@ namespace Gek
             const std::vector<ResourceHandle> *getResourceList(uint32_t passIdentifier)
             {
                 auto passDataSearch = passDataMap.find(passIdentifier);
-                if (passDataSearch != passDataMap.end())
+                if (passDataSearch != std::end(passDataMap))
                 {
                     return &passDataSearch->second;
                 }

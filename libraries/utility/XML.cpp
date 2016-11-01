@@ -56,7 +56,7 @@ namespace Gek
         String Leaf::getAttribute(const wchar_t *name, const wchar_t *defaultValue) const
         {
             auto &attributeSearch = attributes.find(name);
-            if (attributeSearch == attributes.end())
+            if (attributeSearch == std::end(attributes))
             {
                 return defaultValue;
             }
@@ -103,12 +103,12 @@ namespace Gek
 
         const Node & Node::getChild(const wchar_t *type) const
         {
-            auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
+            auto childSearch = std::find_if(std::begin(children), std::end(children), [type](const Node &node) -> bool
             {
                 return (node.type.compare(type) == 0);
             });
 
-            if (childSearch == children.end())
+            if (childSearch == std::end(children))
             {
                 return nullNode;
             }
@@ -120,12 +120,12 @@ namespace Gek
 
         Node & Node::getChild(const wchar_t *type)
         {
-            auto childSearch = std::find_if(children.begin(), children.end(), [type](const Node &node) -> bool
+            auto childSearch = std::find_if(std::begin(children), std::end(children), [type](const Node &node) -> bool
             {
                 return (node.type.compare(type) == 0);
             });
 
-            if (childSearch == children.end())
+            if (childSearch == std::end(children))
             {
                 children.push_back(Node(type));
                 return children.back();

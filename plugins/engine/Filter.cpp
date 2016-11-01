@@ -318,8 +318,8 @@ namespace Gek
                             }
                             else
                             {
-                                auto resourceSearch = resourceSizeMap.find(renderTargetsMap.begin()->first);
-                                if (resourceSearch != resourceSizeMap.end())
+                                auto resourceSearch = resourceSizeMap.find(std::begin(renderTargetsMap)->first);
+                                if (resourceSearch != std::end(resourceSizeMap))
                                 {
                                     pass.width = float(resourceSearch->second.first);
                                     pass.height = float(resourceSearch->second.second);
@@ -328,7 +328,7 @@ namespace Gek
                                 for (auto &renderTarget : renderTargetsMap)
                                 {
                                     auto resourceSearch = resourceMap.find(renderTarget.first);
-                                    if (resourceSearch == resourceMap.end())
+                                    if (resourceSearch == std::end(resourceMap))
                                     {
                                         throw UnlistedRenderTarget();
                                     }
@@ -347,7 +347,7 @@ namespace Gek
                         for (auto &resourcePair : renderTargetsMap)
                         {
                             auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                            if (resourceSearch == resourceMappingsMap.end())
+                            if (resourceSearch == std::end(resourceMappingsMap))
                             {
                                 throw UnlistedRenderTarget();
                             }
@@ -371,7 +371,7 @@ namespace Gek
                     for (auto &clearTargetNode : passNode.getChild(L"clear").children)
                     {
                         auto resourceSearch = resourceMap.find(clearTargetNode.type);
-                        if (resourceSearch == resourceMap.end())
+                        if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
@@ -397,7 +397,7 @@ namespace Gek
                     for (auto &resourceNode : passNode.getChild(L"resources").children)
                     {
                         auto resourceSearch = resourceMap.find(resourceNode.type);
-                        if (resourceSearch == resourceMap.end())
+                        if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
@@ -415,7 +415,7 @@ namespace Gek
                         if (resourceNode.attributes.count(L"copy"))
                         {
                             auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
-                            if (sourceResourceSearch == resourceMap.end())
+                            if (sourceResourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
                             }
@@ -429,14 +429,14 @@ namespace Gek
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
-                        if (resourceSearch != resourceMap.end())
+                        if (resourceSearch != std::end(resourceMap))
                         {
                             pass.resourceList.push_back(resourceSearch->second);
                         }
 
                         uint32_t currentStage = nextResourceStage++;
                         auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != resourceMappingsMap.end())
+                        if (resourceMapSearch != std::end(resourceMappingsMap))
                         {
                             auto &resource = resourceMapSearch->second;
                             if (resource.first == MapType::ByteAddressBuffer)
@@ -452,7 +452,7 @@ namespace Gek
                         }
 
                         auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                        if (structureSearch != resourceStructuresMap.end())
+                        if (structureSearch != std::end(resourceStructuresMap))
                         {
                             auto &structure = structureSearch->second;
                             resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
@@ -480,14 +480,14 @@ namespace Gek
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
-                        if (resourceSearch != resourceMap.end())
+                        if (resourceSearch != std::end(resourceMap))
                         {
                             pass.unorderedAccessList.push_back(resourceSearch->second);
                         }
 
                         uint32_t currentStage = nextUnorderedStage++;
                         auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != resourceMappingsMap.end())
+                        if (resourceMapSearch != std::end(resourceMappingsMap))
                         {
                             auto &resource = resourceMapSearch->second;
                             if (resource.first == MapType::ByteAddressBuffer)
@@ -503,7 +503,7 @@ namespace Gek
                         }
 
                         auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                        if (structureSearch != resourceStructuresMap.end())
+                        if (structureSearch != std::end(resourceStructuresMap))
                         {
                             auto &structure = structureSearch->second;
                             unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
@@ -679,7 +679,7 @@ namespace Gek
             Pass::Iterator begin(Video::Device::Context *videoContext)
             {
                 GEK_REQUIRE(videoContext);
-                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, passList.begin(), passList.end()));
+                return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, std::begin(passList), std::end(passList)));
             }
         };
 

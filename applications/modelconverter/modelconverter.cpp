@@ -493,7 +493,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			//printf("Albedo: %S\r\n", albedoName.c_str());
 
 			auto materialAlebedoSearch = materialAlbedoMap.find(albedoName);
-			if (materialAlebedoSearch == materialAlbedoMap.end())
+			if (materialAlebedoSearch == std::end(materialAlbedoMap))
 			{
 				printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
 			}
@@ -515,7 +515,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 					material.indexList.push_back(uint16_t(index + material.vertexList.size()));
 				}
 
-				material.vertexList.insert(material.vertexList.end(), instance.vertexList.begin(), instance.vertexList.end());
+				material.vertexList.insert(std::end(material.vertexList), std::begin(instance.vertexList), std::end(instance.vertexList));
 			}
 		}
 

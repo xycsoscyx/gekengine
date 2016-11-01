@@ -333,21 +333,21 @@ namespace Gek
 
     void ShuntingYard::parseSubTokens(TokenList &infixTokenList, const String &token)
     {
-        for (std::wsregex_iterator tokenSearch(token.begin(), token.end(), SearchWord), end; tokenSearch != end; ++tokenSearch)
+        for (std::wsregex_iterator tokenSearch(std::begin(token), std::end(token), SearchWord), end; tokenSearch != end; ++tokenSearch)
         {
             auto match = *tokenSearch;
             if (match[1].matched) // variable
             {
                 String value(match.str(1));
                 auto variableSearch = variableMap.find(value);
-                if (variableSearch != variableMap.end())
+                if (variableSearch != std::end(variableMap))
                 {
                     insertToken(infixTokenList, Token(variableSearch->second));
                     continue;
                 }
 
                 auto functionSearch = functionsMap.find(value);
-                if (functionSearch != functionsMap.end())
+                if (functionSearch != std::end(functionsMap))
                 {
                     insertToken(infixTokenList, Token(TokenType::Function, functionSearch->first));
                     continue;
@@ -585,7 +585,7 @@ namespace Gek
                 if (true)
                 {
                     auto &operationSearch = operationsMap.find(token.string);
-                    if (operationSearch == operationsMap.end())
+                    if (operationSearch == std::end(operationsMap))
                     {
                         throw InvalidOperator();
                     }
@@ -616,7 +616,7 @@ namespace Gek
                 if (true)
                 {
                     auto &operationSearch = operationsMap.find(token.string);
-                    if (operationSearch == operationsMap.end())
+                    if (operationSearch == std::end(operationsMap))
                     {
                         throw InvalidOperator();
                     }
@@ -657,7 +657,7 @@ namespace Gek
                 if (true)
                 {
                     auto &functionSearch = functionsMap.find(token.string);
-                    if (functionSearch == functionsMap.end())
+                    if (functionSearch == std::end(functionsMap))
                     {
                         throw InvalidFunction();
                     }

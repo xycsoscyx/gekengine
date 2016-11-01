@@ -100,7 +100,7 @@ namespace Gek
                             ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
                             while (clipper.Step())
                             {
-                                auto entitySearch = entityMap.begin();
+                                auto entitySearch = std::begin(entityMap);
                                 std::advance(entitySearch, clipper.DisplayStart);
                                 for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                                 {
@@ -128,7 +128,7 @@ namespace Gek
 
                         ImGui::PopItemWidth();
 
-                        auto entitySearch = entityMap.begin();
+                        auto entitySearch = std::begin(entityMap);
                         std::advance(entitySearch, selectedEntity);
                         Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
                         if (entity)
@@ -151,7 +151,7 @@ namespace Gek
                                     {
                                         for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                         {
-                                            auto componentSearch = componentMap.begin();
+                                            auto componentSearch = std::begin(componentMap);
                                             std::advance(componentSearch, componentIndex);
                                             if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
                                             {
@@ -181,7 +181,7 @@ namespace Gek
                                     {
                                         for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                         {
-                                            auto entityComponentSearch = entityComponentMap.begin();
+                                            auto entityComponentSearch = std::begin(entityComponentMap);
                                             std::advance(entityComponentSearch, componentIndex);
 
                                             ImGui::PushID(componentIndex);
@@ -211,9 +211,9 @@ namespace Gek
 
                                 ImGui::PopItemWidth();
 
-                                auto entityComponentSearch = entityComponentMap.begin();
+                                auto entityComponentSearch = std::begin(entityComponentMap);
                                 std::advance(entityComponentSearch, selectedComponent);
-                                if (entityComponentSearch != entityComponentMap.end())
+                                if (entityComponentSearch != std::end(entityComponentMap))
                                 {
                                     Edit::Component *component = population->getComponent(entityComponentSearch->first);
                                     Plugin::Component::Data *componentData = entityComponentSearch->second.get();

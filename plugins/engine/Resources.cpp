@@ -69,7 +69,7 @@ namespace Gek
             virtual TYPE * const getResource(HANDLE handle) const
             {
                 auto resourceSearch = resourceMap.find(handle);
-                if (resourceSearch != resourceMap.end())
+                if (resourceSearch != std::end(resourceMap))
                 {
                     return resourceSearch->second.get();
                 }
@@ -105,11 +105,11 @@ namespace Gek
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != resourceHandleMap.end())
+                    if (resourceSearch != std::end(resourceHandleMap))
                     {
                         handle = resourceSearch->second;
                         auto loadParametersSearch = loadParameters.find(handle);
-                        if (loadParametersSearch == loadParameters.end() || loadParametersSearch->second != parameters)
+                        if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                         {
                             loadParameters[handle] = parameters;
                             resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
@@ -140,7 +140,7 @@ namespace Gek
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != resourceHandleMap.end())
+                    if (resourceSearch != std::end(resourceHandleMap))
                     {
                         handle = resourceSearch->second;
                         loadParameters[handle] = 0;
@@ -166,7 +166,7 @@ namespace Gek
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != resourceHandleMap.end())
+                    if (resourceSearch != std::end(resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -236,7 +236,7 @@ namespace Gek
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != resourceHandleMap.end())
+                    if (resourceSearch != std::end(resourceHandleMap))
                     {
                         handle = resourceSearch->second;
                     }
@@ -258,7 +258,7 @@ namespace Gek
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
-                    if (resourceSearch != resourceHandleMap.end())
+                    if (resourceSearch != std::end(resourceHandleMap))
                     {
                         return resourceSearch->second;
                     }
@@ -911,7 +911,7 @@ namespace Gek
             ShaderHandle getMaterialShader(MaterialHandle material) const
             {
                 auto shaderSearch = materialShaderMap.find(material);
-                if (shaderSearch != materialShaderMap.end())
+                if (shaderSearch != std::end(materialShaderMap))
                 {
                     return shaderSearch->second;
                 }

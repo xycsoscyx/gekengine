@@ -61,11 +61,11 @@ namespace Gek
                             String system(elementNode.getAttribute(L"system"));
 							if (system.compareNoCase(L"InstanceID") == 0)
 							{
-								inputVertexData.format(L"    uint %v : SV_InstanceId;\r\n", elementNode.type);
+								inputVertexData.format(L"    int %v : SV_InstanceId;\r\n", elementNode.type);
 							}
 							else if (system.compareNoCase(L"VertexID") == 0)
 							{
-								inputVertexData.format(L"    uint %v : SV_VertexId;\r\n", elementNode.type);
+								inputVertexData.format(L"    int %v : SV_VertexId;\r\n", elementNode.type);
 							}
 							else if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
@@ -74,15 +74,19 @@ namespace Gek
 								{
 									inputVertexData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
 								}
-								else if (format.compareNoCase(L"uint") == 0)
-								{
-									inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
-								}
-								else
-								{
-									inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
-								}
-							}
+                                else if (format.compareNoCase(L"uint") == 0)
+                                {
+                                    inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                }
+                                else if (format.compareNoCase(L"bool") == 0)
+                                {
+                                    inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                }
+                                else
+                                {
+                                    throw InvalidElementType();
+                                }
+                            }
 						}
 						else
 						{

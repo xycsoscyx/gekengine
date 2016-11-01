@@ -31,7 +31,7 @@ namespace Gek
             void removeComponent(const std::type_index &type)
             {
                 auto componentSearch = componentMap.find(type);
-                if (componentSearch != componentMap.end())
+                if (componentSearch != std::end(componentMap))
                 {
                     componentMap.erase(componentSearch);
                 }
@@ -52,7 +52,7 @@ namespace Gek
 			Plugin::Component::Data *getComponent(const std::type_index &type)
 			{
 				auto componentSearch = componentMap.find(type);
-				if (componentSearch == componentMap.end())
+				if (componentSearch == std::end(componentMap))
 				{
 					throw ComponentNotFound();
 				}
@@ -63,7 +63,7 @@ namespace Gek
 			const Plugin::Component::Data *getComponent(const std::type_index &type) const
 			{
 				auto componentSearch = componentMap.find(type);
-				if (componentSearch == componentMap.end())
+				if (componentSearch == std::end(componentMap))
 				{
 					throw ComponentNotFound();
 				}
@@ -230,7 +230,7 @@ namespace Gek
             Edit::Component *getComponent(const std::type_index &type)
             {
                 auto componentsSearch = componentMap.find(type);
-                if (componentsSearch != componentMap.end())
+                if (componentsSearch != std::end(componentMap))
                 {
                     return dynamic_cast<Edit::Component *>(componentsSearch->second.get());
                 }
@@ -330,12 +330,12 @@ namespace Gek
                 onEntityDestroyed.emit(entity);
                 entityQueue.push([this, entity](void) -> void
                 {
-                    auto entitySearch = std::find_if(entityMap.begin(), entityMap.end(), [entity](const EntityMap::value_type &entitySearch) -> bool
+                    auto entitySearch = std::find_if(std::begin(entityMap), std::end(entityMap), [entity](const EntityMap::value_type &entitySearch) -> bool
                     {
                         return (entitySearch.second.get() == entity);
                     });
 
-                    if (entitySearch != entityMap.end())
+                    if (entitySearch != std::end(entityMap))
                     {
                         entityMap.erase(entitySearch);
                     }
@@ -347,10 +347,10 @@ namespace Gek
                 GEK_REQUIRE(entity);
 
                 auto componentNameSearch = componentNamesMap.find(componentData.type);
-                if (componentNameSearch != componentNamesMap.end())
+                if (componentNameSearch != std::end(componentNamesMap))
                 {
                     auto componentSearch = componentMap.find(componentNameSearch->second);
-                    if (componentSearch != componentMap.end())
+                    if (componentSearch != std::end(componentMap))
                     {
                         Plugin::Component *componentManager = componentSearch->second.get();
                         auto component(componentManager->create());
@@ -387,7 +387,7 @@ namespace Gek
 
             void listEntities(std::function<void(Plugin::Entity *, const wchar_t *)> onEntity) const
             {
-                concurrency::parallel_for_each(entityMap.begin(), entityMap.end(), [&](auto &entity) -> void
+                concurrency::parallel_for_each(std::begin(entityMap), std::end(entityMap), [&](auto &entity) -> void
                 {
                     onEntity(entity.second.get(), entity.first);
                 });

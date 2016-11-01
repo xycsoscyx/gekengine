@@ -232,7 +232,7 @@ namespace Gek
             bool initialDelimiter = (!empty() && back() != delimiter);
             auto size = (length() + (initialDelimiter ? 1 : 0)); // initial length
             size += (list.size() - 1); // insert delimiters between list elements
-            for (auto &stringSearch = list.begin(); stringSearch != list.end(); ++stringSearch)
+            for (auto &stringSearch = std::begin(list); stringSearch != std::end(list); ++stringSearch)
             {
                 size += (*stringSearch).length();
             }
@@ -244,7 +244,7 @@ namespace Gek
             }
 
             append(list.front());
-            for (auto &stringSearch = (list.begin() + 1); stringSearch != list.end(); ++stringSearch)
+            for (auto &stringSearch = std::next(std::begin(list), 1); stringSearch != std::end(list); ++stringSearch)
             {
                 append(1U, delimiter);
                 append(*stringSearch);
@@ -273,7 +273,7 @@ namespace Gek
                 return 1;
             }
 
-            return std::equal(begin(), end(), string.begin(), [](const ELEMENT &left, const ELEMENT &right) -> bool
+            return std::equal(std::begin(*this), std::end(*this), std::begin(string), [](const ELEMENT &left, const ELEMENT &right) -> bool
             {
                 return (std::tolower(left) == std::tolower(right));
             }) ? 0 : 1;

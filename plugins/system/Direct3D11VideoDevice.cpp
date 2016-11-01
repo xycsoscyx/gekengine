@@ -1688,7 +1688,7 @@ namespace Gek
                         }
                     }
 
-                    concurrency::parallel_sort(displayModeList.begin(), displayModeList.end(), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool
+                    concurrency::parallel_sort(std::begin(displayModeList), std::end(displayModeList), [](const Video::DisplayMode &left, const Video::DisplayMode &right) -> bool
                     {
                         if (left.width < right.width)
                         {
@@ -1752,6 +1752,12 @@ namespace Gek
                 {
                     throw Video::OperationFailed();
                 }
+
+                RECT clientRectangle;
+                GetWindowRect(window, &clientRectangle);
+                int xPosition = (GetSystemMetrics(SM_CXSCREEN) - clientRectangle.right) / 2;
+                int yPosition = (GetSystemMetrics(SM_CYSCREEN) - clientRectangle.bottom) / 2;
+                SetWindowPos(window, nullptr, xPosition, yPosition, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
 
             void handleResize(void)
@@ -2324,7 +2330,10 @@ namespace Gek
 				uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
+				flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+				flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #else
+				flags |= D3DCOMPILE_SKIP_VALIDATION;
 				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 

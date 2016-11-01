@@ -132,7 +132,6 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     totalOcclusion /= pow(Defines::radiusCubed, 2.0);
 
-    [branch]
     if (Defines::falloffFunction == HighQuality)
     {
         // Addition from http://graphics.cs.williams.edu/papers/DeepGBuffer13/

@@ -133,7 +133,7 @@ namespace Gek
         void save(const wchar_t *fileName, const StringUTF8 &string)
         {
             std::vector<uint8_t> buffer(string.length());
-            std::copy(string.begin(), string.end(), buffer.begin());
+            std::copy(std::begin(string), std::end(string), std::begin(buffer));
             save(fileName, buffer);
         }
 

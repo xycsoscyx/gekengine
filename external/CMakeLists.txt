@@ -67,6 +67,8 @@ set_property(TARGET dMath PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
 set_property(TARGET tinyxml PROPERTY FOLDER "External/dNewton")
 
-set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
+if(WIN32)
+    set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
+endif()
 
 set_property(TARGET imgui PROPERTY FOLDER "External/ImGui")

@@ -1,10 +1,10 @@
 /// @file
 /// @author Todd Zupan <toddzupan@gmail.com>
-/// @version $Revision$
+/// @version $Revision: fc6dba5a2aba4d25dcd872ccbb719e3619e40901 $
 /// @section LICENSE
 /// https://en.wikipedia.org/wiki/MIT_License
 /// @section DESCRIPTION
-/// Last Changed: $Date$
+/// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
 #include "GEK\Utility\Evaluator.hpp"
@@ -33,7 +33,7 @@ namespace Gek
         TYPE loadAttribute(const Xml::Leaf &componentData, const wchar_t *name, const TYPE &defaultValue)
         {
             auto attributeSearch = componentData.attributes.find(name);
-            if (attributeSearch == componentData.attributes.end())
+            if (attributeSearch == std::end(componentData.attributes))
             {
                 return defaultValue;
             }
@@ -130,7 +130,7 @@ namespace Gek
                 GEK_REQUIRE(entity);
 
                 auto entitySearch = entityDataMap.find(entity);
-                if (entitySearch != entityDataMap.end())
+                if (entitySearch != std::end(entityDataMap))
                 {
                     entityDataMap.unsafe_erase(entitySearch);
                 }
@@ -145,7 +145,7 @@ namespace Gek
             {
                 GEK_REQUIRE(onEntity);
 
-                concurrency::parallel_for_each(entityDataMap.begin(), entityDataMap.end(), [&](auto &entitySearch) -> void
+                concurrency::parallel_for_each(std::begin(entityDataMap), std::end(entityDataMap), [&](auto &entitySearch) -> void
                 {
                     onEntity(entitySearch.first, entitySearch.second, entitySearch.first->getComponent<REQUIRED>()...);
                 });

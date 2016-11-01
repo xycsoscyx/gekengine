@@ -346,16 +346,16 @@ namespace Gek
                 }
             });
 
-            concurrency::parallel_for_each(visibleMap.begin(), visibleMap.end(), [&](auto &visibleMap) -> void
+            concurrency::parallel_for_each(std::begin(visibleMap), std::end(visibleMap), [&](auto &visibleMap) -> void
             {
                 auto model = visibleMap.first;
                 if (!model->materialList.empty())
                 {
-                    concurrency::parallel_for_each(visibleMap.second.begin(), visibleMap.second.end(), [&](auto &materialMap) -> void
+                    concurrency::parallel_for_each(std::begin(visibleMap.second), std::end(visibleMap.second), [&](auto &materialMap) -> void
                     {
-                        concurrency::parallel_for_each(materialMap.second.begin(), materialMap.second.end(), [&](auto &instanceList) -> void
+                        concurrency::parallel_for_each(std::begin(materialMap.second), std::end(materialMap.second), [&](auto &instanceList) -> void
                         {
-                            concurrency::parallel_for_each(model->materialList.begin(), model->materialList.end(), [&](const Material &material) -> void
+                            concurrency::parallel_for_each(std::begin(model->materialList), std::end(model->materialList), [&](const Material &material) -> void
                             {
                                 renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, renderer->getVideoDevice(), std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
                             });

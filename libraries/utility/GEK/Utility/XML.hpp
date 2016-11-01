@@ -44,7 +44,7 @@ namespace Gek
             TYPE getValue(const wchar_t *name, const TYPE &defaultValue) const
             {
                 auto attributeSearch = attributes.find(name);
-                if (attributeSearch != attributes.end())
+                if (attributeSearch != std::end(attributes))
                 {
                     return attributeSearch->second;
                 }
