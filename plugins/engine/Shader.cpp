@@ -296,16 +296,17 @@ namespace Gek
                     L"        uint directionalCount;\r\n" \
                     L"        uint pointCount;\r\n" \
                     L"        uint spotCount;\r\n" \
+                    L"        uint padding1;\r\n" \
                     L"        uint3 gridSize;\r\n" \
-					L"        uint padding[2];\r\n" \
-					L"    };\r\n" \
+                    L"        uint padding2;\r\n" \
+                    L"    };\r\n" \
 					L"\r\n" \
 					L"    struct DirectionalData\r\n" \
 					L"    {\r\n" \
 					L"        float3 radiance;\r\n" \
-					L"        float buffer1;\r\n" \
+					L"        float padding1;\r\n" \
 					L"        float3 direction;\r\n" \
-					L"        float buffer2;\r\n" \
+					L"        float padding2;\r\n" \
 					L"    };\r\n" \
 					L"\r\n" \
 					L"    struct PointData\r\n" \
@@ -323,11 +324,11 @@ namespace Gek
 					L"        float3 position;\r\n" \
 					L"        float range;\r\n" \
 					L"        float3 direction;\r\n" \
-					L"        float buffer1;\r\n" \
+					L"        float padding1;\r\n" \
 					L"        float innerAngle;\r\n" \
 					L"        float outerAngle;\r\n" \
 					L"        float coneFalloff;\r\n" \
-					L"        float buffer2;\r\n" \
+					L"        float padding2;\r\n" \
 					L"    };\r\n" \
 					L"\r\n" \
 					L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \

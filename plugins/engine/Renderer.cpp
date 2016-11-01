@@ -216,8 +216,9 @@ namespace Gek
 				uint32_t directionalLightCount;
 				uint32_t pointLightCount;
 				uint32_t spotLightCount;
+                uint32_t padding1;
                 Math::UInt3 gridSize;
-				uint32_t padding[2];
+				uint32_t padding2;
 			};
 
 			struct ClusterTile

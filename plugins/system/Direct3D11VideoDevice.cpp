@@ -1469,7 +1469,7 @@ namespace Gek
                     uint32_t vertexBufferCount = UINT(vertexBufferList.size());
                     vertexBufferStrideCache.resize(vertexBufferCount);
                     vertexBufferOffsetsCache.resize(vertexBufferCount);
-                    for (uint32_t buffer = 0; buffer < vertexBufferCount; buffer++)
+                    for (uint32_t buffer = 0; buffer < vertexBufferCount; ++buffer)
                     {
                         vertexBufferStrideCache[buffer] = vertexBufferList[buffer]->getStride();
                         vertexBufferOffsetsCache[buffer] = (offsetList ? offsetList[buffer] : 0);

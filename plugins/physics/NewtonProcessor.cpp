@@ -539,7 +539,7 @@ namespace Gek
                     else if (header->type == 2)
                     {
                         TreeHeader *treeHeader = (TreeHeader *)header;
-                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; materialIndex++)
+                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
                         {
                             TreeHeader::Material &materialHeader = treeHeader->materialList[materialIndex];
                             staticSurfaceMap[materialIndex] = loadSurface(materialHeader.name);

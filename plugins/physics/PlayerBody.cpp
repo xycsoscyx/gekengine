@@ -193,7 +193,7 @@ namespace Gek
 				// create an inner thin cylinder
 				Math::Float3 point0(0.0f, player.innerRadius, 0.0f);
 				Math::Float3 point1(halfHeight, player.innerRadius, 0.0f);
-				for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
+				for (int currentPoint = 0; currentPoint < numberOfSteps; ++currentPoint)
 				{
 					Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createPitchRotation(currentPoint * 2.0f * 3.141592f / numberOfSteps));
 					convexPoints[0][currentPoint] = rotation.rotate(point0);
@@ -235,7 +235,7 @@ namespace Gek
 
 				point0.set(0.0f, castRadius, 0.0f);
 				point1.set(castHeight, castRadius, 0.0f);
-				for (int currentPoint = 0; currentPoint < numberOfSteps; currentPoint++)
+				for (int currentPoint = 0; currentPoint < numberOfSteps; ++currentPoint)
 				{
 					Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createPitchRotation(currentPoint * 2.0f * Math::Pi / numberOfSteps));
 					convexPoints[0][currentPoint] = rotation.rotate(point0);
@@ -372,7 +372,7 @@ namespace Gek
 				upConstraint.m_normal[1] = -gravity.y;
 				upConstraint.m_normal[2] = -gravity.z;
 
-				for (int currentStep = 0; ((currentStep < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > PLAYER_EPSILON)); currentStep++)
+				for (int currentStep = 0; ((currentStep < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > PLAYER_EPSILON)); ++currentStep)
 				{
 					if (velocity.getLengthSquared() < PLAYER_EPSILON)
 					{
@@ -396,10 +396,10 @@ namespace Gek
 						float speedDeltaList[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
 						float bounceSpeedList[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
 						Math::Float3 bounceNormalList[D_PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-						for (int currentContact = 1; currentContact < contactCount; currentContact++)
+						for (int currentContact = 1; currentContact < contactCount; ++currentContact)
 						{
 							Math::Float3 normal0(currentInfoList[currentContact - 1].m_normal);
-							for (int previousContact = 0; previousContact < currentContact; previousContact++)
+							for (int previousContact = 0; previousContact < currentContact; ++previousContact)
 							{
 								Math::Float3 normal1(currentInfoList[previousContact].m_normal);
 								if (normal0.dot(normal1) > 0.9999f)
@@ -426,22 +426,22 @@ namespace Gek
 						upConstraint.m_point[2] = matrix.translation.z;
 						setBounceData(upConstraint);
 
-						for (int currentContact = 0; currentContact < contactCount; currentContact++)
+						for (int currentContact = 0; currentContact < contactCount; ++currentContact)
 						{
 							setBounceData(currentInfoList[currentContact]);
 						}
 
-						for (int currentContact = 0; currentContact < previousContactCount; currentContact++)
+						for (int currentContact = 0; currentContact < previousContactCount; ++currentContact)
 						{
 							setBounceData(previousInfoList[currentContact]);
 						}
 
 						float residualSpeed = 10.0f;
 						Math::Float3 auxiliaryBounceVelocity(0.0f);
-						for (int currentContact = 0; ((currentContact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residualSpeed > PLAYER_EPSILON)); currentContact++)
+						for (int currentContact = 0; ((currentContact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residualSpeed > PLAYER_EPSILON)); ++currentContact)
 						{
 							residualSpeed = 0.0f;
-							for (int currentBound = 0; currentBound < bounceCount; currentBound++)
+							for (int currentBound = 0; currentBound < bounceCount; ++currentBound)
 							{
 								Math::Float3 normal(bounceNormalList[currentBound]);
 								float currentSpeed = (bounceSpeedList[currentBound] - normal.dot(auxiliaryBounceVelocity));
@@ -459,7 +459,7 @@ namespace Gek
 						}
 
 						Math::Float3 velocityStep(0.0f);
-						for (int currentContact = 0; currentContact < bounceCount; currentContact++)
+						for (int currentContact = 0; currentContact < bounceCount; ++currentContact)
 						{
 							Math::Float3 normal(bounceNormalList[currentContact]);
 							velocityStep += (normal * speedDeltaList[currentContact]);

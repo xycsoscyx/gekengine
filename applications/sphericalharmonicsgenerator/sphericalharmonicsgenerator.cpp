@@ -326,9 +326,9 @@ SH9Color ProjectOntoSH9Color(const Math::Float3& direction, const Math::SIMD::Fl
     SH9 sh = ProjectOntoSH9(direction);
 
     SH9Color shColor;
-    for (int i = 0; i < 9; ++i)
+    for (int axis = 0; axis < 9; ++axis)
     {
-        shColor[i] = color * sh[i];
+        shColor[axis] = color * sh[axis];
     }
 
     return shColor;
@@ -348,9 +348,9 @@ Math::SIMD::Float4 EvalSH9Cosine(const Math::Float3& direction, const SH9Color& 
     dirSH[8] *= CosineA2;
 
     Math::SIMD::Float4 result(0.0f);
-    for (int i = 0; i < 9; ++i)
+    for (int axis = 0; axis < 9; ++axis)
     {
-        result += sh[i] * dirSH[i];
+        result += sh[axis] * dirSH[axis];
     }
 
     return result;
@@ -435,7 +435,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     {
         String fileNameInput;
         String fileNameOutput;
-        for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
+        for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
         {
             String argument(argumentList[argumentIndex]);
             if (argument.compareNoCase(L"-input") == 0 && ++argumentIndex < argumentCount)
@@ -467,9 +467,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         SH9Color sphericalHarmonics = ProjectCubeMapToSH(image);
 
         StringUTF8 output;
-        for (int i = 0; i < 9; i++)
+        for (int axis = 0; axis < 9; ++axis)
         {
-            output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", i, sphericalHarmonics[i].x, sphericalHarmonics[i].y, sphericalHarmonics[i].z);
+            output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", axis, sphericalHarmonics[axis].x, sphericalHarmonics[axis].y, sphericalHarmonics[axis].z);
         }
 
         FileSystem::save(L"..//data//programs//Standard//radiance.hpp", output);

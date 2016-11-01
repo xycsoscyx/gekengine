@@ -38,10 +38,6 @@ namespace Gek
             virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
             virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
 
-            virtual void setConstantBuffer(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage) = delete;
-            virtual void setResource(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage) = delete;
-            virtual void setUnorderedAccess(Video::Device::Context::Pipeline *videoPipeline, ResourceHandle resourceHandle, uint32_t stage) = delete;
-
             virtual void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
             virtual void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;
             virtual void setConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstStage) = 0;

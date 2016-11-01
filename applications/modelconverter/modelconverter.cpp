@@ -249,7 +249,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         bool flipCoords = false;
         bool flipWinding = false;
         float smoothingAngle = 80.0f;
-        for (int argumentIndex = 1; argumentIndex < argumentCount; argumentIndex++)
+        for (int argumentIndex = 1; argumentIndex < argumentCount; ++argumentIndex)
         {
             String argument(argumentList[argumentIndex]);
             std::vector<String> arguments(argument.split(L':'));

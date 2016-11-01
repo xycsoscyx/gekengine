@@ -120,10 +120,10 @@ float3 getSurfaceIrradiance(
     return (diffuseIrradiance + specularIrradiance);
 }
 
-uint3 getClusterLocation(uint2 screenPosition, float surfaceDepth)
+uint3 getClusterLocation(float2 screenPosition, float surfaceDepth)
 {
-    static const uint2 tileSize = (Shader::targetSize / Lights::gridSize.xy);
-    uint2 gridLocation = (screenPosition / tileSize);
+    static const float2 tileSize = (Shader::targetSize / Lights::gridSize.xy);
+    uint2 gridLocation = floor(screenPosition / tileSize);
 
 	float depth = (surfaceDepth - Camera::nearClip) / (Camera::farClip - Camera::nearClip);
 	uint gridDepth = floor(depth * Lights::gridSize.z);
@@ -185,14 +185,14 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		uint lightIndex = Lights::clusterIndexList[indexOffset++];
 		Lights::PointData lightData = Lights::pointList[lightIndex];
 
-		float3 lightRay = (lightData.position.xyz - surfacePosition);
+		float3 lightRay = (lightData.position - surfacePosition);
 		float3 centerToRay = (lightRay - (dot(lightRay, reflectNormal) * reflectNormal));
 		float3 closestPoint = (lightRay + (centerToRay * saturate(lightData.radius / length(centerToRay))));
 		float lightDistance = length(closestPoint);
 		float3 lightDirection = normalize(closestPoint);
 		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range));
 
-        surfaceIrradiance += lightRadiance;// getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
 	};
 
 	while (spotLightCount-- > 0)
@@ -200,14 +200,14 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		uint lightIndex = Lights::clusterIndexList[indexOffset++];
 		Lights::SpotData lightData = Lights::spotList[lightIndex];
 
-		float3 lightRay = (lightData.position.xyz - surfacePosition);
+		float3 lightRay = (lightData.position - surfacePosition);
 		float lightDistance = length(lightRay);
 		float3 lightDirection = (lightRay / lightDistance);
 		float rho = saturate(dot(lightData.direction, -lightDirection));
 		float spotFactor = pow(saturate(rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle), lightData.coneFalloff);
 		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range) * spotFactor);
 
-		surfaceIrradiance += lightRadiance;// getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
 	};
 
 	return (surfaceIrradiance + (materialAlbedo * surfaceAmbient * 0.005));
