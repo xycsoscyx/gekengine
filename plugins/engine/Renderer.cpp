@@ -686,13 +686,14 @@ namespace Gek
 				{
 					auto &colorComponent = entity->getComponent<Components::Color>();
 
-					PointLightData lightData;
+                    auto lightIterator = pointLightList.grow_by(1);
+                    PointLightData &lightData = (*lightIterator);
 					lightData.radiance = colorComponent.value.xyz;
 					lightData.position = viewMatrix.transform(transformComponent.position);
 					lightData.radius = lightComponent.radius;
 					lightData.range = lightComponent.range;
 
-                    auto lightIndex = std::distance(pointLightList.begin(), pointLightList.push_back(lightData));
+                    auto lightIndex = std::distance(pointLightList.begin(), lightIterator);
 					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
 				}
 			}
@@ -704,7 +705,8 @@ namespace Gek
 				{
 					auto &colorComponent = entity->getComponent<Components::Color>();
 
-					SpotLightData lightData;
+                    auto lightIterator = spotLightList.grow_by(1);
+                    SpotLightData &lightData = (*lightIterator);
 					lightData.radiance = colorComponent.value.xyz;
 					lightData.position = viewMatrix.transform(transformComponent.position);
 					lightData.radius = lightComponent.radius;
@@ -714,7 +716,7 @@ namespace Gek
 					lightData.outerAngle = lightComponent.outerAngle;
 					lightData.coneFalloff = lightComponent.coneFalloff;
 
-                    auto lightIndex = std::distance(spotLightList.begin(), spotLightList.push_back(lightData));
+                    auto lightIndex = std::distance(spotLightList.begin(), lightIterator);
 					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
 				}
 			}
