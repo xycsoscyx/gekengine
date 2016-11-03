@@ -589,37 +589,35 @@ namespace Gek
                 return clipRegion;
             }
 
-            bool isSeparated(uint32_t x, uint32_t y, uint32_t z, const Math::Float3 &position, float range)
+            bool isSeparated(float x, float y, float z, const Math::Float3 &position, float range)
             {
                 // sub-frustrum bounds in view space       
                 float minimumZ = (z - 0) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
                 float maximumZ = (z + 1) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
 
-                float minimumZminimumX = -(1 - 2.0f / GridWidth * (x - 0)) * minimumZ / projectionMatrix.rx.x;
-                float minimumZmaximumX = -(1 - 2.0f / GridWidth * (x + 1)) * minimumZ / projectionMatrix.rx.x;
-                float minimumZminimumY = (1 - 2.0f / GridHeight * (y - 0)) * minimumZ / projectionMatrix.ry.y;
-                float minimumZmaximumY = (1 - 2.0f / GridHeight * (y + 1)) * minimumZ / projectionMatrix.ry.y;
+                static const Math::SIMD::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
+                static const Math::SIMD::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
-                float maximumZminimumX = -(1 - 2.0f / GridWidth * (x - 0)) * maximumZ / projectionMatrix.rx.x;
-                float maximumZmaximumX = -(1 - 2.0f / GridWidth * (x + 1)) * maximumZ / projectionMatrix.rx.x;
-                float maximumZminimumY = (1 - 2.0f / GridHeight * (y - 0)) * maximumZ / projectionMatrix.ry.y;
-                float maximumZmaximumY = (1 - 2.0f / GridHeight * (y + 1)) * maximumZ / projectionMatrix.ry.y;
+                Math::SIMD::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
+                Math::SIMD::Float4 projectionScale(Math::Float2(projectionMatrix.rx.x), Math::Float2(projectionMatrix.ry.y));
+                auto minimum = Negate * (Math::SIMD::Float4::One - Math::SIMD::Float4::Two / GridDimensions * tileBounds) * minimumZ / projectionScale;
+                auto maximum = Negate * (Math::SIMD::Float4::One - Math::SIMD::Float4::Two / GridDimensions * tileBounds) * maximumZ / projectionScale;
 
                 // heuristic plane separation test - works pretty well in practice
-                Math::Float3 minimumZcenter((minimumZminimumX + minimumZmaximumX) * 0.5f, (minimumZminimumY + minimumZmaximumY) * 0.5f, minimumZ);
-                Math::Float3 maximumZcenter((maximumZminimumX + maximumZmaximumX) * 0.5f, (maximumZminimumY + maximumZmaximumY) * 0.5f, maximumZ);
+                Math::Float3 minimumZcenter((minimum.x + minimum.y) * 0.5f, (minimum.z + minimum.w) * 0.5f, minimumZ);
+                Math::Float3 maximumZcenter((maximum.x + maximum.y) * 0.5f, (maximum.z + maximum.w) * 0.5f, maximumZ);
                 Math::Float3 center((minimumZcenter + maximumZcenter) * 0.5f);
                 Math::Float3 normal((center - position).getNormal());
 
                 // compute distance of all corners to the tangent plane, with a few shortcuts (saves 14 muls)
-                Math::Float2 bounds(-normal.dot(position));
-                bounds.minimum += std::min(normal.x * minimumZminimumX, normal.x * minimumZmaximumX);
-                bounds.minimum += std::min(normal.y * minimumZminimumY, normal.y * minimumZmaximumY);
-                bounds.minimum += normal.z * minimumZ;
-                bounds.maximum += std::min(normal.x * maximumZminimumX, normal.x * maximumZmaximumX);
-                bounds.maximum += std::min(normal.y * maximumZminimumY, normal.y * maximumZmaximumY);
-                bounds.maximum += normal.z * maximumZ;
-                return (std::min(bounds.minimum, bounds.maximum) > range);
+                Math::Float2 tileCorners(-normal.dot(position));
+                tileCorners.minimum += std::min(normal.x * minimum.x, normal.x * minimum.y);
+                tileCorners.minimum += std::min(normal.y * minimum.z, normal.y * minimum.w);
+                tileCorners.minimum += normal.z * minimumZ;
+                tileCorners.maximum += std::min(normal.x * maximum.x, normal.x * maximum.y);
+                tileCorners.maximum += std::min(normal.y * maximum.z, normal.y * maximum.w);
+                tileCorners.maximum += normal.z * maximumZ;
+                return (std::min(tileCorners.minimum, tileCorners.maximum) > range);
             }
 
             void addLightCluster(const Math::Float3 &position, float range, uint32_t lightIndex, bool pointLight)
