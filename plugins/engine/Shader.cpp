@@ -293,12 +293,11 @@ namespace Gek
                     L"{\r\n" \
                     L"    cbuffer Parameters : register(b3)\r\n" \
                     L"    {\r\n" \
-                    L"        uint directionalCount;\r\n" \
+					L"        uint3 gridSize;\r\n" \
+					L"        uint directionalCount;\r\n" \
+					L"        uint2 tileSize;\r\n" \
                     L"        uint pointCount;\r\n" \
                     L"        uint spotCount;\r\n" \
-                    L"        uint padding1;\r\n" \
-                    L"        uint3 gridSize;\r\n" \
-                    L"        uint padding2;\r\n" \
                     L"    };\r\n" \
 					L"\r\n" \
 					L"    struct DirectionalData\r\n" \

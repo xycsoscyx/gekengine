@@ -570,7 +570,7 @@ namespace Gek
                     baseProgram.replace(L"\r\n", L"\r");
                     baseProgram.replace(L"\n\r", L"\r");
                     baseProgram.replace(L"\n", L"\r");
-                    auto programLines = baseProgram.split(L'\r');
+                    auto programLines = baseProgram.split(L'\r', false);
 
                     String uncompiledProgram;
                     for (auto &line : programLines)
@@ -967,14 +967,19 @@ namespace Gek
                 auto cache = String::create(L".%v.bin", hash);
                 String cacheFileName(FileSystem::replaceExtension(getContext()->getFileName(L"data\\cache", name), cache));
 
-                std::vector<uint8_t> compiledProgram;
+				std::vector<uint8_t> compiledProgram;
                 if (FileSystem::isFile(cacheFileName))
                 {
                     FileSystem::load(cacheFileName, compiledProgram);
                 }
                 else
                 {
-                    compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
+#ifdef _DEBUG
+					auto debug = String::create(L".%v.hlsl", hash);
+					String debugFileName(FileSystem::replaceExtension(getContext()->getFileName(L"data\\cache", name), debug));
+					FileSystem::save(debugFileName, uncompiledProgram);
+#endif
+					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
                     FileSystem::save(cacheFileName, compiledProgram);
                 }
 

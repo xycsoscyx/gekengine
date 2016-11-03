@@ -120,25 +120,14 @@ float3 getSurfaceIrradiance(
     return (diffuseIrradiance + specularIrradiance);
 }
 
-uint3 getClusterLocation(float2 screenPosition, float surfaceDepth)
-{
-    static const float2 tileSize = (Shader::targetSize / Lights::gridSize.xy);
-    uint2 gridLocation = floor(screenPosition / tileSize);
-
-	float depth = (surfaceDepth - Camera::nearClip) / (Camera::farClip - Camera::nearClip);
-	uint gridDepth = floor(depth * Lights::gridSize.z);
-
-	return uint3(gridLocation, gridDepth);
-}
-
-uint getClusterOffset(uint3 clusterLocation)
-{
-	return ((((clusterLocation.z * Lights::gridSize.y) + clusterLocation.y) * Lights::gridSize.x) + clusterLocation.x);
-}
-
 uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 {
-	return getClusterOffset(getClusterLocation(screenPosition, surfaceDepth));
+	uint2 gridLocation = floor(screenPosition / Lights::tileSize.xy);
+
+	float depth = (surfaceDepth - Camera::nearClip) / (Camera::farClip - Camera::nearClip);
+	uint gridSlice = floor(depth * Lights::gridSize.z);
+
+	return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
@@ -148,7 +137,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float materialRoughness = materialInfo.x;
     float materialMetallic = materialInfo.y;
 
-    float surfaceAmbient = Resources::ambientBuffer[inputPixel.screen.xy];
     float surfaceDepth = Resources::depthBuffer[inputPixel.screen.xy];
     float3 surfacePosition = getPositionFromSample(inputPixel.texCoord, surfaceDepth);
     float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
@@ -164,12 +152,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     // reduce roughness range from [0 .. 1] to [0.5 .. 1]
     float materialDisneyAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
 
-	uint clusterOffset = getClusterOffset(inputPixel.screen.xy, surfacePosition.z);
-	uint3 clusterData = Lights::clusterDataList[clusterOffset];
-	uint indexOffset = clusterData.x;
-	uint pointLightCount = clusterData.y;
-	uint spotLightCount = clusterData.z;
-
 	float3 surfaceIrradiance = 0.0;
 
     for (uint directionalIndex = 0; directionalIndex < Lights::directionalCount; directionalIndex++)
@@ -179,6 +161,12 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
 		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
 	}
+
+	uint clusterOffset = getClusterOffset(inputPixel.screen.xy, surfacePosition.z);
+	uint3 clusterData = Lights::clusterDataList[clusterOffset];
+	uint indexOffset = clusterData.x;
+	uint pointLightCount = clusterData.y;
+	uint spotLightCount = clusterData.z;
 
 	while (pointLightCount-- > 0)
 	{
@@ -193,6 +181,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range));
 
         surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+		//surfaceIrradiance.x += 0.1;
 	};
 
 	while (spotLightCount-- > 0)
@@ -208,7 +197,9 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range) * spotFactor);
 
 		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+		//surfaceIrradiance.b += 0.1;
 	};
 
+	float surfaceAmbient = Resources::ambientBuffer[inputPixel.screen.xy];
 	return (surfaceIrradiance + (materialAlbedo * surfaceAmbient * 0.005));
 }

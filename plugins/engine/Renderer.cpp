@@ -2,6 +2,7 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\ContextUser.hpp"
+#include "GEK\Utility\ThreadPool.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Resources.hpp"
@@ -213,12 +214,11 @@ namespace Gek
 
 			struct LightConstantData
 			{
+				Math::UInt3 gridSize;
 				uint32_t directionalLightCount;
+				Math::UInt2 tileSize;
 				uint32_t pointLightCount;
 				uint32_t spotLightCount;
-                uint32_t padding1;
-                Math::UInt3 gridSize;
-				uint32_t padding2;
 			};
 
 			struct ClusterTile
@@ -339,6 +339,7 @@ namespace Gek
 			Video::ObjectPtr renderState;
 			Video::ObjectPtr depthState;
 
+			ThreadPool threadPool;
 			concurrency::concurrent_unordered_set<Plugin::Entity *> directionalLightEntities;
 			concurrency::concurrent_unordered_set<Plugin::Entity *> pointLightEntities;
 			concurrency::concurrent_unordered_set<Plugin::Entity *> spotLightEntities;
@@ -374,6 +375,7 @@ namespace Gek
 				, videoDevice(videoDevice)
 				, population(population)
 				, resources(resources)
+				, threadPool(3)
 			{
 				population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
 				population->onLoadSucceeded.connect<Renderer, &Renderer::onLoadSucceeded>(this);
@@ -596,27 +598,27 @@ namespace Gek
 					Math::Float2 maximum(1.0f, 1.0f);
 					updateClipRegion(position.x, position.z, radius, projectionMatrix.rx.x, minimum.x, maximum.x);
 					updateClipRegion(position.y, position.z, radius, projectionMatrix.ry.y, minimum.y, maximum.y);
-					clipRegion = Math::SIMD::Float4(minimum.x, minimum.y, maximum.x, maximum.y);
+					clipRegion = Math::SIMD::Float4(minimum, maximum);
 				}
 
 				return clipRegion;
 			}
 
-			bool isInsideGrid(uint32_t x, uint32_t y, uint32_t z, const Math::Float3 &position, float range)
+			bool isSeparated(uint32_t x, uint32_t y, uint32_t z, const Math::Float3 &position, float range)
 			{
-				// sub-frustrum bounds in view space        
-				float minZ = ((z - 0.0f) * 1.0f / GridDepth * (farClip - nearClip) + nearClip);
-				float maxZ = ((z + 1.0f) * 1.0f / GridDepth * (farClip - nearClip) + nearClip);
+				// sub-frustrum bounds in view space       
+				float minZ = (z - 0) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
+				float maxZ = (z + 1) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
 
-				float minZminX = -((1.0f - 2.0f / GridWidth * (x - 0.0f)) * minZ / projectionMatrix.rx.x);
-				float minZmaxX = -((1.0f - 2.0f / GridWidth * (x + 1.0f)) * minZ / projectionMatrix.rx.x);
-				float minZminY = +((1.0f - 2.0f / GridHeight * (y - 0.0f)) * minZ / projectionMatrix.ry.y);
-				float minZmaxY = +((1.0f - 2.0f / GridHeight * (y + 1.0f)) * minZ / projectionMatrix.ry.y);
+				float minZminX = -(1 - 2.0f / GridWidth * (x - 0)) * minZ / projectionMatrix.rx.x;
+				float minZmaxX = -(1 - 2.0f / GridWidth * (x + 1)) * minZ / projectionMatrix.rx.x;
+				float minZminY = (1 - 2.0f / GridHeight * (y - 0)) * minZ / projectionMatrix.ry.y;
+				float minZmaxY = (1 - 2.0f / GridHeight * (y + 1)) * minZ / projectionMatrix.ry.y;
 
-				float maxZminX = -((1.0f - 2.0f / GridWidth * (x - 0.0f)) * maxZ / projectionMatrix.rx.x);
-				float maxZmaxX = -((1.0f - 2.0f / GridWidth * (x + 1.0f)) * maxZ / projectionMatrix.rx.x);
-				float maxZminY = +((1.0f - 2.0f / GridHeight * (y - 0.0f)) * maxZ / projectionMatrix.ry.y);
-				float maxZmaxY = +((1.0f - 2.0f / GridHeight * (y + 1.0f)) * maxZ / projectionMatrix.ry.y);
+				float maxZminX = -(1 - 2.0f / GridWidth * (x - 0)) * maxZ / projectionMatrix.rx.x;
+				float maxZmaxX = -(1 - 2.0f / GridWidth * (x + 1)) * maxZ / projectionMatrix.rx.x;
+				float maxZminY = (1 - 2.0f / GridHeight * (y - 0)) * maxZ / projectionMatrix.ry.y;
+				float maxZmaxY = (1 - 2.0f / GridHeight * (y + 1)) * maxZ / projectionMatrix.ry.y;
 
 				// heuristic plane separation test - works pretty well in practice
 				Math::Float3 minZcenter((minZminX + minZmaxX) * 0.5f, (minZminY + minZmaxY) * 0.5f, minZ);
@@ -645,30 +647,33 @@ namespace Gek
 			uint32_t lightIndexCount = 0;
 			void addLightCluster(const Math::Float3 &position, float range, uint32_t lightIndex, bool pointLight)
 			{
-				auto clipBounds(((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half).getSaturated());
+				auto flipBounds((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half);
+				Math::SIMD::Float4 clipBounds(flipBounds.x, (1.0f - flipBounds.w), flipBounds.z, (1.0f - flipBounds.y));
 
-				// meh, this is upside-down
-				clipBounds.y = (1.0f - clipBounds.y);
-				clipBounds.w = (1.0f - clipBounds.w);
-				std::swap(clipBounds.y, clipBounds.w);
+				static const Math::Int2 GridDimensions(GridWidth, GridHeight);
+				Math::Int4 gridBounds(clipBounds.xy * GridDimensions, clipBounds.zw * GridDimensions);
 
-				static const Math::UInt3 GridSize(GridWidth, GridHeight, GridDepth);
-				Math::UInt4 gridBounds((clipBounds.xy * GridSize.xy), (clipBounds.zw * GridSize.xy));
+				if (gridBounds[0] < 0) gridBounds[0] = 0;
+				if (gridBounds[1] < 0) gridBounds[1] = 0;
+				if (gridBounds[2] >= GridWidth) gridBounds[2] = GridWidth - 1;
+				if (gridBounds[3] >= GridHeight) gridBounds[3] = GridHeight - 1;
 
-				float centerDepth = (position.z - nearClip) / (farClip - nearClip);
-				float distance = range / (farClip - nearClip);
+				float center_z = (position.z - nearClip) / (farClip - nearClip);
+				float dist_z = range / (farClip - nearClip);
 
-				Math::UInt2 depthBounds;
-				depthBounds.minimum = uint32_t(std::min(std::max((centerDepth - distance), 0.0f), 1.0f) * GridDepth);
-				depthBounds.maximum = uint32_t(std::min(std::max((centerDepth + distance), 0.0f), 1.0f) * GridDepth);
+				Math::Int2 depthBounds;
+				depthBounds[0] = (int)((center_z - dist_z) * GridDepth);
+				depthBounds[1] = (int)((center_z + dist_z) * GridDepth);
+				if (depthBounds[0] < 0) depthBounds[0] = 0;
+				if (depthBounds[1] >= GridDepth) depthBounds[1] = GridDepth - 1;
 
-				for (auto z = depthBounds.minimum; z < depthBounds.maximum; z++)
+				for (auto z = depthBounds.minimum; z <= depthBounds.maximum; z++)
 				{
-					for (auto y = gridBounds.minimum.y; y < gridBounds.maximum.y; y++)
+					for (auto y = gridBounds.minimum.y; y <= gridBounds.maximum.y; y++)
 					{
-						for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; x++)
+						for (auto x = gridBounds.minimum.x; x <= gridBounds.maximum.x; x++)
 						{
-							if (isInsideGrid(x, y, z, position, range))
+							if (!isSeparated(x, y, z, position, range))
 							{
 								auto &gridData = clusterLightsList[getGridCell(x, y, z)];
 								if (pointLight)
@@ -692,7 +697,7 @@ namespace Gek
 			void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
 			{
 				auto &transformComponent = entity->getComponent<Components::Transform>();
-				if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
+				//if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
 				{
 					auto &colorComponent = entity->getComponent<Components::Color>();
 
@@ -714,7 +719,7 @@ namespace Gek
 			void addLight(Plugin::Entity *entity, const Components::SpotLight &lightComponent)
 			{
 				auto &transformComponent = entity->getComponent<Components::Transform>();
-				if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
+				//if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
 				{
 					auto &colorComponent = entity->getComponent<Components::Color>();
 
@@ -801,6 +806,7 @@ namespace Gek
 				auto backBuffer = videoDevice->getBackBuffer();
 				auto width = backBuffer->getWidth();
 				auto height = backBuffer->getHeight();
+
 				*const_cast<Shapes::Frustum *>(&this->viewFrustum) = Shapes::Frustum(viewMatrix * projectionMatrix);
 				*const_cast<Math::SIMD::Float4x4 *>(&this->viewMatrix) = viewMatrix;
 				*const_cast<Math::SIMD::Float4x4 *>(&this->projectionMatrix) = projectionMatrix;
@@ -883,7 +889,7 @@ namespace Gek
 							gridData.spotLightList.clear();
 						});
 
-						auto directionalLightThread = std::thread([&](void) -> void
+						auto directionalLightsDone = threadPool.enqueue([&](void) -> bool
 						{
 							directionalLightList.clear();
 							directionalLightList.reserve(directionalLightEntities.size());
@@ -907,9 +913,11 @@ namespace Gek
 									directionalLightDataBuffer->setName(L"directionalLightDataBuffer");
 								}
 							}
+
+							return true;
 						});
 
-						auto pointLightThread = std::thread([&](void) -> void
+						auto pointLightsDone = threadPool.enqueue([&](void) -> bool
 						{
 							pointLightList.clear();
 							concurrency::parallel_for_each(std::begin(pointLightEntities), std::end(pointLightEntities), [&](Plugin::Entity *entity) -> void
@@ -926,9 +934,11 @@ namespace Gek
 									pointLightDataBuffer->setName(L"pointLightDataBuffer");
 								}
 							}
+
+							return true;
 						});
 
-						auto spotLightThread = std::thread([&](void) -> void
+						auto spotLightsDone = threadPool.enqueue([&](void) -> bool
 						{
 							spotLightList.clear();
 							concurrency::parallel_for_each(std::begin(spotLightEntities), std::end(spotLightEntities), [&](Plugin::Entity *entity) -> void
@@ -945,11 +955,26 @@ namespace Gek
                                     spotLightDataBuffer->setName(L"spotLightDataBuffer");
                                 }
                             }
+
+							return true;
                         });
 
-						directionalLightThread.join();
-						pointLightThread.join();
-						spotLightThread.join();
+						directionalLightsDone.get();
+						pointLightsDone.get();
+						spotLightsDone.get();
+
+						clusterIndexList.clear();
+						clusterIndexList.reserve(lightIndexCount);
+						for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
+						{
+							auto &clusterData = clusterDataList[tileIndex];
+							auto &clusterLights = clusterLightsList[tileIndex];
+							clusterData.indexOffset = clusterIndexList.size();
+							clusterData.pointLightCount = clusterLights.pointLightList.size();
+							clusterData.spotLightCount = clusterLights.spotLightList.size();
+							clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.pointLightList), std::end(clusterLights.pointLightList));
+							clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.spotLightList), std::end(clusterLights.spotLightList));
+						}
 
 						if (!directionalLightList.empty())
 						{
@@ -973,19 +998,6 @@ namespace Gek
 							videoDevice->mapBuffer(spotLightDataBuffer.get(), spotLightData);
 							std::copy(std::begin(spotLightList), std::end(spotLightList), spotLightData);
 							videoDevice->unmapBuffer(spotLightDataBuffer.get());
-						}
-
-						clusterIndexList.clear();
-						clusterIndexList.reserve(lightIndexCount);
-						for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
-						{
-							auto &clusterData = clusterDataList[tileIndex];
-							auto &clusterLights = clusterLightsList[tileIndex];
-							clusterData.indexOffset = clusterIndexList.size();
-							clusterData.pointLightCount = clusterLights.pointLightList.size();
-							clusterData.spotLightCount = clusterLights.spotLightList.size();
-							clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.pointLightList), std::end(clusterLights.pointLightList));
-							clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.spotLightList), std::end(clusterLights.spotLightList));
 						}
 
 						ClusterData *clusterDataData = nullptr;
@@ -1014,6 +1026,8 @@ namespace Gek
                         lightConstants.gridSize.x = GridWidth;
                         lightConstants.gridSize.y = GridHeight;
                         lightConstants.gridSize.z = GridDepth;
+						lightConstants.tileSize.x = (width / GridWidth);
+						lightConstants.tileSize.y = (height / GridHeight);
 						videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
 					}
 
