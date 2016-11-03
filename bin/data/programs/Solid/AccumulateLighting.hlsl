@@ -181,7 +181,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range));
 
         surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
-		//surfaceIrradiance.x += 0.1;
 	};
 
 	while (spotLightCount-- > 0)
@@ -197,7 +196,6 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range) * spotFactor);
 
 		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
-		//surfaceIrradiance.b += 0.1;
 	};
 
 	float surfaceAmbient = Resources::ambientBuffer[inputPixel.screen.xy];
