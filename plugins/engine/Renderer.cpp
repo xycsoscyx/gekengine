@@ -223,8 +223,8 @@ namespace Gek
 
 			struct ClusterTile
 			{
-				std::vector<uint32_t> pointLightList;
-				std::vector<uint32_t> spotLightList;
+				concurrency::concurrent_vector<uint32_t> pointLightList;
+                concurrency::concurrent_vector<uint32_t> spotLightList;
 			};
 
 			struct ClusterData
@@ -344,15 +344,13 @@ namespace Gek
 			concurrency::concurrent_unordered_set<Plugin::Entity *> pointLightEntities;
 			concurrency::concurrent_unordered_set<Plugin::Entity *> spotLightEntities;
 
-			concurrency::critical_section pointLightCriticalSection;
-			concurrency::critical_section spotLightCriticalSection;
-
-			std::vector<DirectionalLightData> directionalLightList;
-			std::vector<PointLightData> pointLightList;
-			std::vector<SpotLightData> spotLightList;
+			concurrency::concurrent_vector<DirectionalLightData> directionalLightList;
+            concurrency::concurrent_vector<PointLightData> pointLightList;
+            concurrency::concurrent_vector<SpotLightData> spotLightList;
 			ClusterTile clusterLightsList[GridSize];
 			ClusterData clusterDataList[GridSize];
 			std::vector<uint32_t> clusterIndexList;
+            uint32_t lightIndexCount = 0;
 
 			Video::BufferPtr lightConstantBuffer;
 			Video::BufferPtr directionalLightDataBuffer;
@@ -516,7 +514,7 @@ namespace Gek
 			}
 
 			// Clustered Lighting
-			Math::Float3 getLightDirection(const Math::QuaternionFloat &quaternion)
+            inline Math::Float3 getLightDirection(const Math::QuaternionFloat &quaternion)
 			{
 				float xx(quaternion.x * quaternion.x);
 				float yy(quaternion.y * quaternion.y);
@@ -538,17 +536,10 @@ namespace Gek
 				}
 			}
 
-			void updateClipRegionRoot(
-				float tangentCoordinate,          // Tangent plane x/y normal coordinate (view space)
-				float lightCoordinate,          // Light x/y coordinate (view space)
-				float lightDepth,          // Light z coordinate (view space)
-				float radius,
-				float cameraScale, // Project scale for coordinate (r0.x or r1.y for x/y respectively)
-				float& minimum,
-				float& maximum)
+			inline void updateClipRegionRoot(float tangentCoordinate, float lightCoordinate, float lightDepth, float radius, float radiusSquared, float lightRangeSquared, float cameraScale, float& minimum, float& maximum)
 			{
 				float nz = ((radius - tangentCoordinate * lightCoordinate) / lightDepth);
-				float pz = ((lightCoordinate * lightCoordinate + lightDepth * lightDepth - radius * radius) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
+				float pz = ((lightRangeSquared - radiusSquared) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
 				if (pz > 0.0f)
 				{
 					float clip = (-nz * cameraScale / tangentCoordinate);
@@ -565,40 +556,34 @@ namespace Gek
 				}
 			}
 
-			void updateClipRegion(
-				float lightCoordinate,          // Light x/y coordinate (view space)
-				float lightDepth,          // Light z coordinate (view space)
-				float radius,
-				float cameraScale, // Project scale for coordinate (r0.x or r1.y for x/y respectively)
-				float& minimum,
-				float& maximum)
+            inline void updateClipRegion(float lightCoordinate, float lightDepth, float radius, float cameraScale, float& minimum, float& maximum)
 			{
 				float radiusSquared = (radius * radius);
-				float lcSqPluslzSq = ((lightCoordinate * lightCoordinate) + (lightDepth * lightDepth));
-				float distanceSquared = ((radiusSquared * lightCoordinate * lightCoordinate) - (lcSqPluslzSq * (radiusSquared - lightDepth * lightDepth)));
-				if (distanceSquared > 0)
+                float lightDepthSquared = (lightDepth * lightDepth);
+                float lightCoordinateSquared = (lightCoordinate * lightCoordinate);
+				float lightRangeSquared = (lightCoordinateSquared + lightDepthSquared);
+				float distanceSquared = ((radiusSquared * lightCoordinateSquared) - (lightRangeSquared * (radiusSquared - lightDepthSquared)));
+				if (distanceSquared > 0.0f)
 				{
 					float projectedRadius = (radius * lightCoordinate);
 					float distance = std::sqrt(distanceSquared);
-					float positiveTangent = ((projectedRadius + distance) / lcSqPluslzSq);
-					float negativeTangent = ((projectedRadius - distance) / lcSqPluslzSq);
-					updateClipRegionRoot(positiveTangent, lightCoordinate, lightDepth, radius, cameraScale, minimum, maximum);
-					updateClipRegionRoot(negativeTangent, lightCoordinate, lightDepth, radius, cameraScale, minimum, maximum);
+					float positiveTangent = ((projectedRadius + distance) / lightRangeSquared);
+					float negativeTangent = ((projectedRadius - distance) / lightRangeSquared);
+					updateClipRegionRoot(positiveTangent, lightCoordinate, lightDepth, radius, radiusSquared, lightRangeSquared, cameraScale, minimum, maximum);
+					updateClipRegionRoot(negativeTangent, lightCoordinate, lightDepth, radius, radiusSquared, lightRangeSquared, cameraScale, minimum, maximum);
 				}
 			}
 
 			// Returns bounding box [min.xy, max.xy] in clip [-1, 1] space.
-			Math::SIMD::Float4 getClipBounds(const Math::Float3 &position, float radius)
+            inline Math::SIMD::Float4 getClipBounds(const Math::Float3 &position, float radius)
 			{
 				// Early out with empty rectangle if the light is too far behind the view frustum
 				Math::SIMD::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
-				if (position.z + radius >= nearClip)
+				if ((position.z + radius) >= nearClip)
 				{
-					Math::Float2 minimum(-1.0f, -1.0f);
-					Math::Float2 maximum(1.0f, 1.0f);
-					updateClipRegion(position.x, position.z, radius, projectionMatrix.rx.x, minimum.x, maximum.x);
-					updateClipRegion(position.y, position.z, radius, projectionMatrix.ry.y, minimum.y, maximum.y);
-					clipRegion = Math::SIMD::Float4(minimum, maximum);
+					clipRegion.set(-1.0f, -1.0f, 1.0f, 1.0f);
+					updateClipRegion(position.x, position.z, radius, projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
+					updateClipRegion(position.y, position.z, radius, projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
 				}
 
 				return clipRegion;
@@ -639,51 +624,51 @@ namespace Gek
 				return min_d > range;
 			}
 
-			inline uint32_t getGridCell(uint32_t x, uint32_t y, uint32_t z)
-			{
-				return ((((z * GridHeight) + y) * GridWidth) + x);
-			}
-
-			uint32_t lightIndexCount = 0;
 			void addLightCluster(const Math::Float3 &position, float range, uint32_t lightIndex, bool pointLight)
 			{
 				auto flipBounds((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half);
 				Math::SIMD::Float4 clipBounds(flipBounds.x, (1.0f - flipBounds.w), flipBounds.z, (1.0f - flipBounds.y));
 
 				static const Math::Int2 GridDimensions(GridWidth, GridHeight);
-				Math::Int4 gridBounds(clipBounds.xy * GridDimensions, clipBounds.zw * GridDimensions);
+                Math::Int4 gridBounds(
+                    std::floor(clipBounds.x * GridWidth),
+                    std::floor(clipBounds.y * GridHeight),
+                    std::ceil(clipBounds.z * GridWidth),
+                    std::ceil(clipBounds.w * GridHeight)
+                );
 
 				if (gridBounds[0] < 0) gridBounds[0] = 0;
 				if (gridBounds[1] < 0) gridBounds[1] = 0;
-				if (gridBounds[2] >= GridWidth) gridBounds[2] = GridWidth - 1;
-				if (gridBounds[3] >= GridHeight) gridBounds[3] = GridHeight - 1;
+                if (gridBounds[2] > GridWidth) gridBounds[2] = GridWidth;
+                if (gridBounds[3] > GridHeight) gridBounds[3] = GridHeight;
 
 				float center_z = (position.z - nearClip) / (farClip - nearClip);
 				float dist_z = range / (farClip - nearClip);
 
 				Math::Int2 depthBounds;
-				depthBounds[0] = (int)((center_z - dist_z) * GridDepth);
-				depthBounds[1] = (int)((center_z + dist_z) * GridDepth);
+				depthBounds[0] = std::floor((center_z - dist_z) * GridDepth);
+				depthBounds[1] = std::ceil((center_z + dist_z) * GridDepth);
 				if (depthBounds[0] < 0) depthBounds[0] = 0;
-				if (depthBounds[1] >= GridDepth) depthBounds[1] = GridDepth - 1;
+				if (depthBounds[1] > GridDepth) depthBounds[1] = GridDepth;
 
-				for (auto z = depthBounds.minimum; z <= depthBounds.maximum; z++)
+                concurrency::parallel_for(depthBounds.minimum, depthBounds.maximum, [&](auto z) -> void
 				{
-					for (auto y = gridBounds.minimum.y; y <= gridBounds.maximum.y; y++)
+                    uint32_t zSlice = (z * GridHeight);
+                    for (auto y = gridBounds.minimum.y; y < gridBounds.maximum.y; y++)
 					{
-						for (auto x = gridBounds.minimum.x; x <= gridBounds.maximum.x; x++)
+                        uint32_t ySlize = ((zSlice + y) * GridWidth);
+						for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; x++)
 						{
 							if (!isSeparated(x, y, z, position, range))
 							{
-								auto &gridData = clusterLightsList[getGridCell(x, y, z)];
+                                uint32_t gridIndex = (ySlize + x);
+                                auto &gridData = clusterLightsList[gridIndex];
 								if (pointLight)
 								{
-									concurrency::critical_section::scoped_lock lock(pointLightCriticalSection);
 									gridData.pointLightList.push_back(lightIndex);
 								}
 								else
 								{
-									concurrency::critical_section::scoped_lock lock(spotLightCriticalSection);
 									gridData.spotLightList.push_back(lightIndex);
 								}
 
@@ -691,7 +676,7 @@ namespace Gek
 							}
 						}
 					}
-				}
+                });
 			}
 
 			void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
@@ -707,11 +692,7 @@ namespace Gek
 					lightData.radius = lightComponent.radius;
 					lightData.range = lightComponent.range;
 
-					pointLightCriticalSection.lock();
-					uint32_t lightIndex = pointLightList.size();
-					pointLightList.push_back(lightData);
-					pointLightCriticalSection.unlock();
-
+                    auto lightIndex = std::distance(pointLightList.begin(), pointLightList.push_back(lightData));
 					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
 				}
 			}
@@ -733,11 +714,7 @@ namespace Gek
 					lightData.outerAngle = lightComponent.outerAngle;
 					lightData.coneFalloff = lightComponent.coneFalloff;
 
-					spotLightCriticalSection.lock();
-					uint32_t lightIndex = spotLightList.size();
-					spotLightList.push_back(lightData);
-					spotLightCriticalSection.unlock();
-
+                    auto lightIndex = std::distance(spotLightList.begin(), spotLightList.push_back(lightData));
 					addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
 				}
 			}

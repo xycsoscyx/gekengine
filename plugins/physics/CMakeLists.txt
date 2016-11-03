@@ -7,7 +7,7 @@ project(${ProjectID})
 
 add_definitions(-D_NEWTON_STATIC_LIB=1)
 
-file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
+file(GLOB HEADERS "GEK/Newton/*.hpp")
 file(GLOB SOURCES "*.cpp")
 add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
