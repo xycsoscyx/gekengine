@@ -16,9 +16,6 @@
 [submodule "external/nano-signal-slot"]
 	path = external/nano-signal-slot
 	url = https://github.com/NoAvailableAlias/nano-signal-slot.git
-[submodule "external/tinyxml2"]
-	path = external/tinyxml2
-	url = https://github.com/leethomason/tinyxml2.git
 [submodule "external/json"]
 	path = external/json
 	url = https://github.com/nlohmann/json.git
