@@ -44,10 +44,6 @@ add_definitions(-D_NEWTON_STATIC_LIB -D_CUSTOM_JOINTS_STATIC_LIB -DPTW32_STATIC_
 SET(NEWTON_DEMOS_SANDBOX OFF CACHE BOOL "" FORCE)
 add_subdirectory("Newton-Dynamics")
 
-project(json)
-add_library(json INTERFACE)
-target_include_directories(json INTERFACE "${CMAKE_CURRENT_LIST_DIR}/json/src")
-
 project(jsoncons)
 add_library(jsoncons INTERFACE)
 target_include_directories(jsoncons INTERFACE "${CMAKE_CURRENT_LIST_DIR}/jsoncons/src")
