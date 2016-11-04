@@ -496,6 +496,7 @@ namespace Gek
             bool engineRunning = false;
 
             int currentDisplayMode = 0;
+			int previousDisplayMode = 0;
             Video::DisplayModeList displayModeList;
             std::vector<StringUTF8> displayModeStringList;
             bool fullScreen = false;
@@ -525,6 +526,8 @@ namespace Gek
 
             bool showCursor = false;
             bool showOptionsMenu = false;
+			bool showModeChange = false;
+			float modeChangeTimer = 0.0f;
 
         public:
             Core(Context *context, HWND window)
@@ -554,7 +557,7 @@ namespace Gek
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
 
                 displayModeList = videoDevice->getDisplayModeList(Video::Format::R8G8B8A8_UNORM_SRGB);
-                currentDisplayMode = (uint32_t(configuration.getChild(L"display").getAttribute(L"mode", L"0")) % displayModeList.size());
+                previousDisplayMode = currentDisplayMode = (uint32_t(configuration.getChild(L"display").getAttribute(L"mode", L"0")) % displayModeList.size());
                 videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
                 for (auto &displayMode : displayModeList)
                 {
@@ -574,6 +577,12 @@ namespace Gek
 
                     displayModeStringList.push_back(displayModeString);
                 }
+
+				RECT clientRectangle;
+				GetWindowRect(window, &clientRectangle);
+				int xPosition = ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2);
+				int yPosition = ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2);
+				SetWindowPos(window, nullptr, xPosition, yPosition, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
 
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, videoDevice.get());
@@ -1104,11 +1113,6 @@ namespace Gek
                         {
                             ImGui::Dummy(ImVec2(200, 0));
 
-                            ImGui::PushItemWidth(-1.0f);
-                            ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                            ImGui::PopItemWidth();
-
-                            ImGui::Separator();
                             ImGui::Text("Display Mode");
                             ImGui::PushItemWidth(-1.0f);
                             if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
@@ -1122,19 +1126,63 @@ namespace Gek
                                 configuration.getChild(L"display").attributes[L"mode"] = currentDisplayMode;
                                 videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
                                 onResize.emit();
-                            }
+
+								showModeChange = true;
+								modeChangeTimer = 5.0f;
+
+								RECT clientRectangle;
+								GetWindowRect(window, &clientRectangle);
+								int xPosition = ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2);
+								int yPosition = ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2);
+								SetWindowPos(window, nullptr, xPosition, yPosition, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+							}
 
                             ImGui::PopItemWidth();
                             if (ImGui::Checkbox("FullScreen", &fullScreen))
                             {
                                 SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-
                                 videoDevice->setFullScreenState(fullScreen);
                                 onResize.emit();
                             }
 
+							ImGui::Separator();
+							ImGui::PushItemWidth(-1.0f);
+							ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+							ImGui::PopItemWidth();
+
                             ImGui::End();
                         }
+
+						if (showModeChange && ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+						{
+							ImGui::Text("Keep Display Mode?");
+
+							if (ImGui::Button("Yes"))
+							{
+								showModeChange = false;
+								previousDisplayMode = currentDisplayMode;
+							}
+
+							ImGui::SameLine();
+							modeChangeTimer -= timer.getUpdateTime();
+							if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+							{
+								showModeChange = false;
+								currentDisplayMode = previousDisplayMode;
+								videoDevice->setDisplayMode(displayModeList[currentDisplayMode]);
+								onResize.emit();
+
+								RECT clientRectangle;
+								GetWindowRect(window, &clientRectangle);
+								int xPosition = ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2);
+								int yPosition = ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2);
+								SetWindowPos(window, nullptr, xPosition, yPosition, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+							}
+
+							ImGui::Text(StringUTF8::create("(Revert in %vs seconds", uint32_t(modeChangeTimer)));
+
+							ImGui::End();
+						}
                         
                         population->update(0.0f);
                     }
@@ -1173,7 +1221,8 @@ namespace Gek
                 {
                     RECT windowRectangle;
                     GetWindowRect(window, &windowRectangle);
-                    SetCursorPos(Math::lerp(windowRectangle.left, windowRectangle.right, 0.5f), Math::lerp(windowRectangle.top, windowRectangle.bottom, 0.5f));
+					SetCursorPos(int(Math::lerp(float(windowRectangle.left), float(windowRectangle.right), 0.5f)), 
+						int(Math::lerp(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
                 }
 
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
