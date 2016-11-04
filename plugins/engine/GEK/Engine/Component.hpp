@@ -8,8 +8,8 @@
 #pragma once
 
 #include "GEK\Math\Matrix4x4SIMD.hpp"
-#include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Context.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include <typeindex>
 #include <imgui.h>
 
@@ -50,8 +50,8 @@ namespace Gek
             virtual std::type_index getIdentifier(void) const = 0;
 
             virtual std::unique_ptr<Data> create(void) = 0;
-            virtual void save(Data *data, Xml::Leaf &componentData) const = 0;
-            virtual void load(Data *data, const Xml::Leaf &componentData) = 0;
+            virtual void save(Data *data, JSON::Object &componentData) const = 0;
+            virtual void load(Data *data, const JSON::Object &componentData) = 0;
         };
     }; // namespace Plugin
 

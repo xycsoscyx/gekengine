@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK\Utility\Context.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include <nano_signal_slot.hpp>
 #include <Windows.h>
 
@@ -24,12 +24,13 @@ namespace Gek
         {
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InitializationFailed);
+            GEK_ADD_EXCEPTION(InvalidDisplayMode);
 
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(bool showCursor)> onInterface;
 
-            virtual Xml::Node &getConfiguration(void) = 0;
-            virtual Xml::Node const &getConfiguration(void) const = 0;
+            virtual JSON::Object &getConfiguration(void) = 0;
+            virtual JSON::Object const &getConfiguration(void) const = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;

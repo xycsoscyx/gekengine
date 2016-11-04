@@ -4,7 +4,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ThreadPool.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\Allocator.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
@@ -32,13 +32,13 @@ namespace Gek
 {
     namespace Components
     {
-        void Model::save(Xml::Leaf &componentData) const
+        void Model::save(JSON::Object &componentData) const
         {
             componentData.text = name;
             componentData.attributes[L"skin"] = skin;
         }
 
-        void Model::load(const Xml::Leaf &componentData)
+        void Model::load(const JSON::Object &componentData)
         {
             name = componentData.text;
             skin = componentData.getAttribute(L"skin");

@@ -1,7 +1,7 @@
 ﻿#include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ThreadPool.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Population.hpp"
@@ -153,12 +153,12 @@ namespace Gek
                     onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
-                        const Xml::Node worldNode(Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world"));
+                        const JSON::Object worldNode(Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world"));
 
                         auto &prefabsNode = worldNode.getChild(L"prefabs");
                         for (auto &entityNode : worldNode.getChild(L"population").children)
                         {
-                            std::unordered_map<String, Xml::Leaf> entityComponentMap;
+                            std::unordered_map<String, JSON::Object> entityComponentMap;
                             auto &prefabNode = prefabsNode.getChild(entityNode.getAttribute(L"prefab"));
                             if (prefabNode.valid)
                             {
@@ -308,7 +308,7 @@ namespace Gek
                 GEK_REQUIRE(populationName);
             }
 
-            Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<Xml::Leaf> &componentList)
+            Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Object> &componentList)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentData : componentList)
@@ -342,7 +342,7 @@ namespace Gek
                 });
             }
 
-            bool addComponent(Entity *entity, const Xml::Leaf &componentData, std::type_index *componentIdentifier = nullptr)
+            bool addComponent(Entity *entity, const JSON::Object &componentData, std::type_index *componentIdentifier = nullptr)
             {
                 GEK_REQUIRE(entity);
 
@@ -369,7 +369,7 @@ namespace Gek
                 return false;
             }
 
-            void addComponent(Plugin::Entity *entity, const Xml::Leaf &componentData)
+            void addComponent(Plugin::Entity *entity, const JSON::Object &componentData)
             {
                 std::type_index componentIdentifier(typeid(nullptr));
                 if (addComponent(static_cast<Entity *>(entity), componentData, &componentIdentifier))

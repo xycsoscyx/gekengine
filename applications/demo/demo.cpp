@@ -1,7 +1,6 @@
 ﻿#include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Context.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Application.hpp"
@@ -19,7 +18,7 @@ LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM
         PostQuitMessage(0);
         return 0;
     }
-        
+
     Application::Event eventData(message, wParam, lParam);
     Application *application = reinterpret_cast<Application *>(GetWindowLongPtr(window, GWLP_USERDATA));
     if (application)

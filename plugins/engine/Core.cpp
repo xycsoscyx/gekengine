@@ -1,7 +1,6 @@
 ﻿#include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Timer.hpp"
 #include "GEK\System\AudioDevice.hpp"
 #include "GEK\Engine\Application.hpp"
@@ -34,7 +33,7 @@ namespace ImGui
 
     void ChangeStyleColors(ImGuiStyle& style, float satThresholdForInvertingLuminance, float shiftHue)
     {
-        if (satThresholdForInvertingLuminance >= 1.f && shiftHue == 0.f)
+        if (satThresholdForInvertingLuminance >= 1.0f && shiftHue == 0.0f)
         {
             return;
         }
@@ -47,14 +46,14 @@ namespace ImGui
             ImGui::ColorConvertRGBtoHSV(col.x, col.y, col.z, H, S, V);
             if (S <= satThresholdForInvertingLuminance)
             {
-                V = 1.0 - V;
+                V = 1.0f - V;
             }
 
             if (shiftHue)
             {
                 H += shiftHue;
-                if (H>1) H -= 1.f;
-                else if (H<0) H += 1.f;
+                if (H>1) H -= 1.0f;
+                else if (H<0) H += 1.0f;
             }
 
             ImGui::ColorConvertHSVtoRGB(H, S, V, col.x, col.y, col.z);
@@ -63,12 +62,12 @@ namespace ImGui
 
     static inline void InvertStyleColors(ImGuiStyle& style)
     {
-        ChangeStyleColors(style, .1f, 0.f);
+        ChangeStyleColors(style, 0.1f, 0.0f);
     }
 
-    static inline void ChangeStyleColorsHue(ImGuiStyle& style, float shiftHue = 0.f)
+    static inline void ChangeStyleColorsHue(ImGuiStyle& style, float shiftHue = 0.0f)
     {
-        ChangeStyleColors(style, 0.f, shiftHue);
+        ChangeStyleColors(style, 0.0f, shiftHue);
     }
 
     static inline ImVec4 ConvertTitleBgColFromPrevVersion(const ImVec4& win_bg_col, const ImVec4& title_bg_col)
@@ -86,7 +85,7 @@ namespace ImGui
             style.AntiAliasedLines = true;
             style.AntiAliasedShapes = true;
             style.CurveTessellationTol = 1.25f;
-            style.Alpha = 1.f;
+            style.Alpha = 1.0f;
             //style.WindowFillAlphaDefault = .7f;
 
             style.WindowPadding = ImVec2(8, 8);
@@ -152,7 +151,7 @@ namespace ImGui
             style.AntiAliasedLines = true;
             style.AntiAliasedShapes = true;
             style.CurveTessellationTol = 1.25f;
-            style.Alpha = 1.f;
+            style.Alpha = 1.0f;
             //style.WindowFillAlphaDefault = .7f;
 
             style.WindowPadding = ImVec2(8, 8);
@@ -274,7 +273,7 @@ namespace ImGui
             style.AntiAliasedLines = true;
             style.AntiAliasedShapes = true;
             style.CurveTessellationTol = 1.25f;
-            style.Alpha = 1.f;
+            style.Alpha = 1.0f;
             //style.WindowFillAlphaDefault = .7f;
 
             style.WindowPadding = ImVec2(8, 8);
@@ -501,7 +500,7 @@ namespace Gek
             std::vector<StringUTF8> displayModeStringList;
             bool fullScreen = false;
 
-            Xml::Node configuration;
+            JSON::Object configuration;
 
             Timer timer;
             float mouseSensitivity = 0.5f;
@@ -538,15 +537,16 @@ namespace Gek
 
                 try
                 {
-                    configuration = Xml::load(getContext()->getFileName(L"config.xml"), L"config");
+                    String configurationData;
+                    FileSystem::load(getContext()->getFileName(L"config.json"), configurationData);
+                    configuration = JSON::Object::parse(configurationData);
                 }
-                catch (const Xml::Exception &)
+                catch (const FileSystem::Exception &)
                 {
-                    configuration = Xml::Node(L"config");
                 };
 
-                configuration.getChild(L"editor").attributes[L"enabled"] = false;
-                configuration.getChild(L"editor").attributes[L"show_selector"] = false;
+                configuration[L"editor"][L"enabled"] = false;
+                configuration[L"editor"][L"show_selector"] = false;
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -575,9 +575,12 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-				setDisplayMode(configuration.getChild(L"display").getAttribute(L"mode", L"0"));
-				previousDisplayMode = currentDisplayMode;
+                if (configuration[L"display"].count(L"mode") > 0)
+                {
+                    previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
+                }
 
+                setDisplayMode(currentDisplayMode);
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, videoDevice.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", videoDevice.get(), getPopulation(), resources.get());
@@ -639,7 +642,7 @@ namespace Gek
                     L"PixelOutput main(in VertexInput input)" \
                     L"{" \
                     L"    PixelOutput output;" \
-                    L"    output.position = mul( ProjectionMatrix, float4(input.position.xy, 0.f, 1.f));" \
+                    L"    output.position = mul( ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
                     L"    output.color = input.color;" \
                     L"    output.texCoord  = input.texCoord;" \
                     L"    return output;" \
@@ -760,7 +763,7 @@ namespace Gek
                 resources = nullptr;
                 population = nullptr;
                 videoDevice = nullptr;
-                Xml::save(configuration, getContext()->getFileName(L"config.xml"));
+                //FileSystem::save(getContext()->getFileName(L"config.json"), configuration.dump(4));
                 CoUninitialize();
             }
 
@@ -775,6 +778,11 @@ namespace Gek
 
 			void setDisplayMode(uint32_t displayMode)
 			{
+                if (displayMode >= displayModeList.size())
+                {
+                    throw InvalidDisplayMode();
+                }
+
 				currentDisplayMode = displayMode;
 				videoDevice->setDisplayMode(displayModeList[displayMode]);
 				centerWindow();
@@ -782,12 +790,12 @@ namespace Gek
 			}
 
             // Plugin::Core
-            Xml::Node &getConfiguration(void)
+            JSON::Object &getConfiguration(void)
             {
                 return configuration;
             }
 
-            Xml::Node const &getConfiguration(void) const
+            JSON::Object const &getConfiguration(void) const
             {
                 return configuration;
             }
@@ -1084,13 +1092,13 @@ namespace Gek
 
                                 if (ImGui::MenuItem("Selector", "S"))
                                 {
-                                    configuration.getChild(L"editor").attributes[L"show_selector"] = true;
+                                    configuration[L"editor"][L"show_selector"] = true;
                                 }
 
                                 if (ImGui::MenuItem("Editor", "E", &editorSelected))
                                 {
-                                    bool enabled = configuration.getChild(L"editor").attributes[L"enabled"];
-                                    configuration.getChild(L"editor").attributes[L"enabled"] = !enabled;
+                                    bool enabled = configuration[L"editor"][L"enabled"].as_bool();
+                                    configuration[L"editor"][L"enabled"] = !enabled;
                                 }
 
                                 ImGui::PopItemWidth();
@@ -1100,7 +1108,8 @@ namespace Gek
                             ImGui::EndMainMenuBar();
                         }
 
-                        if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        ImGui::SetNextWindowPosCenter();
+                        if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                         {
                             char name[256] = "";
                             //ImGui::SetKeyboardFocusHere();
@@ -1120,7 +1129,8 @@ namespace Gek
                             ImGui::End();
                         }
 
-                        if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        ImGui::SetNextWindowPos(ImVec2(0.0f, 20.0f));
+                        if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                         {
                             ImGui::Dummy(ImVec2(200, 0));
 
@@ -1134,7 +1144,7 @@ namespace Gek
                                 return true;
                             }, this, displayModeStringList.size(), 5))
                             {
-                                configuration.getChild(L"display").attributes[L"mode"] = currentDisplayMode;
+                                configuration[L"display"][L"mode"] = currentDisplayMode;
                                 setDisplayMode(currentDisplayMode);
 								showModeChange = true;
 								modeChangeTimer = 5.0f;
@@ -1164,7 +1174,8 @@ namespace Gek
                             ImGui::End();
                         }
 
-						if (showModeChange && ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        ImGui::SetNextWindowPosCenter();
+						if (showModeChange && ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
 						{
 							ImGui::Text("Keep Display Mode?");
 
@@ -1175,14 +1186,14 @@ namespace Gek
 							}
 
 							ImGui::SameLine();
-							modeChangeTimer -= timer.getUpdateTime();
+                            modeChangeTimer -= float(timer.getUpdateTime());
 							if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
 							{
 								showModeChange = false;
 								setDisplayMode(previousDisplayMode);
 							}
 
-							ImGui::Text(StringUTF8::create("(Revert in %vs seconds", uint32_t(modeChangeTimer)));
+							ImGui::Text(StringUTF8::create("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
 
 							ImGui::End();
 						}
@@ -1200,7 +1211,7 @@ namespace Gek
                 {
                     bool loadingOpen = true;
                     ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("GEK Engine##Loading", &loadingOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+                    if (ImGui::Begin("GEK Engine##Loading", &loadingOpen, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
                     {
                         ImGui::Dummy(ImVec2(200, 0));
                         ImGui::Text("Loading...");
@@ -1211,7 +1222,7 @@ namespace Gek
                 {
                     bool pausedOpen = true;
                     ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("GEK Engine##Paused", &pausedOpen, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
+                    if (ImGui::Begin("GEK Engine##Paused", &pausedOpen, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
                     {
                         ImGui::Dummy(ImVec2(200, 0));
                         ImGui::Text("Paused");

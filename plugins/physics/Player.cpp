@@ -15,7 +15,7 @@ namespace Gek
 {
     namespace Components
     {
-        void Player::save(Xml::Leaf &componentData) const
+        void Player::save(JSON::Object &componentData) const
         {
 			componentData.attributes[L"height"] = height;
             componentData.attributes[L"outer_radius"] = outerRadius;
@@ -23,7 +23,7 @@ namespace Gek
             componentData.attributes[L"stair_step"] = stairStep;
         }
 
-        void Player::load(const Xml::Leaf &componentData)
+        void Player::load(const JSON::Object &componentData)
         {
 			height = loadAttribute(componentData, L"height", 6.0f);
             outerRadius = loadAttribute(componentData, L"outer_radius", 1.5f);

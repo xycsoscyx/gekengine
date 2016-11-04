@@ -4,7 +4,7 @@
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include <Windows.h>
 #include <experimental\filesystem>
 
@@ -47,10 +47,10 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 						materialName.replace((texturesPath + L"\\"), L"");
 						printf("> Material Found: %S\r\n", materialName.c_str());
 
-						Xml::Node materialNode = Xml::Node(L"material");
-						Xml::Node &shaderNode = materialNode.getChild(L"shader");
+						JSON::Object materialNode = JSON::Object(L"material");
+						JSON::Object &shaderNode = materialNode.getChild(L"shader");
 						shaderNode.attributes[L"name"] = L"solid";
-						Xml::Node &solidNode = shaderNode.getChild(L"solid");
+						JSON::Object &solidNode = shaderNode.getChild(L"solid");
 
 						FileSystem::find(setTexturePath, [&](const wchar_t *textureFileName) -> bool
 						{
@@ -58,7 +58,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							textureName.replace((texturesPath + L"\\"), L"");
 							textureName.toLower();
 
-							Xml::Node *node = nullptr;
+							JSON::Object *node = nullptr;
 							if (textureName.endsWith(L"basecolor") ||
 								textureName.endsWith(L"base_color") ||
 								textureName.endsWith(L"diffuse") ||

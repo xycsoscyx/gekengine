@@ -1,6 +1,6 @@
 ﻿#include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Shader.hpp"
@@ -29,7 +29,7 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                const Xml::Node materialNode(Xml::load(getContext()->getFileName(L"data\\materials", materialName).append(L".xml"), L"material"));
+                const JSON::Object materialNode(Xml::load(getContext()->getFileName(L"data\\materials", materialName).append(L".xml"), L"material"));
                 auto &shaderNode = materialNode.getChild(L"shader");
                 if (shaderNode.valid)
                 {

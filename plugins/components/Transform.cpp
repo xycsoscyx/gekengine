@@ -8,14 +8,14 @@ namespace Gek
 {
     namespace Components
     {
-        void Transform::save(Xml::Leaf &componentData) const
+        void Transform::save(JSON::Object &componentData) const
         {
             componentData.attributes[L"position"] = position;
             componentData.attributes[L"rotation"] = rotation;
             componentData.attributes[L"scale"] = scale;
         }
 
-        void Transform::load(const Xml::Leaf &componentData)
+        void Transform::load(const JSON::Object &componentData)
         {
             position = loadAttribute(componentData, L"position", Math::Float3::Zero);
             rotation = loadAttribute(componentData, L"rotation", Math::QuaternionFloat::Identity);

@@ -19,8 +19,8 @@ namespace Gek
             String name;
             String skin;
 
-            void save(Xml::Leaf &componentData) const;
-            void load(const Xml::Leaf &componentData);
+            void save(JSON::Object &componentData) const;
+            void load(const JSON::Object &componentData);
         };
     }; // namespace Components
 }; // namespace Gek

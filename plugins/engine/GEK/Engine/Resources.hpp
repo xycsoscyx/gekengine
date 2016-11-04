@@ -8,7 +8,6 @@
 #pragma once
 
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Utility\XML.hpp"
 #include "GEK\Utility\Context.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Shader.hpp"

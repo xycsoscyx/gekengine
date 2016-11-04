@@ -463,69 +463,71 @@ namespace Gek
 			return (flags | Video::BufferFlags::Resource);
 		}
 
-		__forceinline void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, const Xml::Node &stencilStateNode)
+		__forceinline void loadStencilState(Video::DepthStateInformation::StencilStateInformation &stencilState, const JSON::Object &stencilStateNode)
 		{
-			stencilState.passOperation = Utility::getStencilOperation(stencilStateNode.getChild(L"pass").text);
-			stencilState.failOperation = Utility::getStencilOperation(stencilStateNode.getChild(L"fail").text);
-			stencilState.depthFailOperation = Utility::getStencilOperation(stencilStateNode.getChild(L"depthfail").text);
-			stencilState.comparisonFunction = Utility::getComparisonFunction(stencilStateNode.getChild(L"comparison").text);
+            stencilState.passOperation = Utility::getStencilOperation(stencilStateNode[L"pass"].as_cstring());
+			stencilState.failOperation = Utility::getStencilOperation(stencilStateNode[L"fail"].as_cstring());
+			stencilState.depthFailOperation = Utility::getStencilOperation(stencilStateNode[L"depthfail"].as_cstring());
+			stencilState.comparisonFunction = Utility::getComparisonFunction(stencilStateNode[L"comparison"].as_cstring());
 		}
 
-		__forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, const Xml::Node &renderStateNode)
+		__forceinline RenderStateHandle loadRenderState(Engine::Resources *resources, const JSON::Object &renderStateNode)
 		{
 			Video::RenderStateInformation renderState;
-			renderState.fillMode = Utility::getFillMode(renderStateNode.getChild(L"fillmode").text);
-			renderState.cullMode = Utility::getCullMode(renderStateNode.getChild(L"cullmode").text);
-			renderState.frontCounterClockwise = renderStateNode.getChild(L"frontcounterclockwise").text;
+			renderState.fillMode = Utility::getFillMode(renderStateNode[L"fillmode"].as_cstring());
+			renderState.cullMode = Utility::getCullMode(renderStateNode[L"cullmode"].as_cstring());
+            renderState.frontCounterClockwise = renderStateNode[L"frontcounterclockwise"].as_bool();
 
-			renderState.depthBias = renderStateNode.getChild(L"depthbias").text;
-			renderState.depthBiasClamp = renderStateNode.getChild(L"depthbiasclamp").text;
-			renderState.slopeScaledDepthBias = renderStateNode.getChild(L"slopescaleddepthbias").text;
-			renderState.depthClipEnable = renderStateNode.getChild(L"depthclip").text;
-			renderState.multisampleEnable = renderStateNode.getChild(L"multisample").text;
+            renderState.depthBias = renderStateNode[L"depthbias"].as_uint();
+            renderState.depthBiasClamp = renderStateNode[L"depthbiasclamp"].as_double();
+            renderState.slopeScaledDepthBias = renderStateNode[L"slopescaleddepthbias"].as_double();
+			renderState.depthClipEnable = renderStateNode[L"depthclip"].as_bool();
+			renderState.multisampleEnable = renderStateNode[L"multisample"].as_bool();
 			return resources->createRenderState(renderState);
 		}
 
-		__forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, const Xml::Node &blendStateNode)
+		__forceinline void loadBlendTargetState(Video::BlendStateInformation &blendState, const JSON::Object &blendStateNode)
 		{
-            blendState.enable = blendStateNode.valid;
-            auto &writeMaskNode = blendStateNode.getChild(L"writemask");
-            if(writeMaskNode.valid)
+            blendState.enable = !blendStateNode.is_null();
+            auto &writeMaskNode = blendStateNode[L"writemask"];
+            if(writeMaskNode.is_null())
 			{
-				String writeMask(writeMaskNode.text.getLower());
-				if (writeMask.compare(L"all") == 0)
-				{
-					blendState.writeMask = Video::BlendStateInformation::Mask::RGBA;
-				}
-				else
-				{
-					blendState.writeMask = 0;
-					if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::R;
-					if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::G;
-					if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::B;
-					if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::A;
-				}
+                blendState.writeMask = Video::BlendStateInformation::Mask::RGBA;
 			}
             else
 			{
-				blendState.writeMask = Video::BlendStateInformation::Mask::RGBA;
-			}
+                String writeMask(writeMaskNode.as_cstring());
+                writeMask.toLower();
 
-			auto &colorNode = blendStateNode.getChild(L"color");
-			blendState.colorSource = Utility::getBlendSource(colorNode.getAttribute(L"source"));
-			blendState.colorDestination = Utility::getBlendSource(colorNode.getAttribute(L"destination"));
-			blendState.colorOperation = Utility::getBlendOperation(colorNode.getAttribute(L"operation"));
+                if (writeMask.compare(L"all") == 0)
+                {
+                    blendState.writeMask = Video::BlendStateInformation::Mask::RGBA;
+                }
+                else
+                {
+                    blendState.writeMask = 0;
+                    if (writeMask.find(L"r") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::R;
+                    if (writeMask.find(L"g") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::G;
+                    if (writeMask.find(L"b") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::B;
+                    if (writeMask.find(L"a") != std::string::npos) blendState.writeMask |= Video::BlendStateInformation::Mask::A;
+                }
+            }
 
-			auto &alphaNode = blendStateNode.getChild(L"alpha");
-			blendState.alphaSource = Utility::getBlendSource(alphaNode.getAttribute(L"source"));
-			blendState.alphaDestination = Utility::getBlendSource(alphaNode.getAttribute(L"destination"));
-			blendState.alphaOperation = Utility::getBlendOperation(alphaNode.getAttribute(L"operation"));
+			auto &colorNode = blendStateNode[L"color"];
+			blendState.colorSource = Utility::getBlendSource(colorNode[L"source"].as_cstring());
+			blendState.colorDestination = Utility::getBlendSource(colorNode[L"destination"].as_cstring());
+			blendState.colorOperation = Utility::getBlendOperation(colorNode[L"operation"].as_cstring());
+
+			auto &alphaNode = blendStateNode[L"alpha"];
+			blendState.alphaSource = Utility::getBlendSource(alphaNode[L"source"].as_cstring());
+			blendState.alphaDestination = Utility::getBlendSource(alphaNode[L"destination"].as_cstring());
+			blendState.alphaOperation = Utility::getBlendOperation(alphaNode[L"operation"].as_cstring());
 		}
 
-		__forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, const Xml::Node &blendStateNode, std::unordered_map<String, String> &renderTargetsMap)
+		__forceinline BlendStateHandle loadBlendState(Engine::Resources *resources, const JSON::Object &blendStateNode, std::unordered_map<String, String> &renderTargetsMap)
 		{
-			bool alphaToCoverage = blendStateNode.getChild(L"alphatocoverage").text;
-			bool unifiedStates = blendStateNode.getAttribute(L"unified", L"true");
+            bool alphaToCoverage = blendStateNode[L"alphatocoverage"].as_bool();
+            bool unifiedStates = blendStateNode[L"unified"].as_bool();
 			if (unifiedStates)
 			{
 				Video::UnifiedBlendStateInformation blendState;
@@ -540,29 +542,13 @@ namespace Gek
 				Video::BlendStateInformation *targetStatesList = blendState.targetStates;
 				for (auto &target : renderTargetsMap)
 				{
-					auto &targetNode = blendStateNode.getChild(target.first);
+					auto &targetNode = blendStateNode[target.first];
 					loadBlendTargetState(*targetStatesList++, targetNode);
 				}
 
 				blendState.alphaToCoverage = alphaToCoverage;
 				return resources->createBlendState(blendState);
 			}
-		}
-
-		__forceinline std::unordered_map<String, String> loadChildrenMap(const Xml::Node &parentNode)
-		{
-			std::unordered_map<String, String> childMap;
-			for (auto &childNode : parentNode.children)
-			{
-				childMap.insert(std::make_pair(childNode.type, childNode.text.empty() ? childNode.type : childNode.text));
-			}
-
-			return childMap;
-		}
-
-		__forceinline std::unordered_map<String, String> loadNodeChildren(const Xml::Node &rootNode, const wchar_t *childName)
-		{
-            return loadChildrenMap(rootNode.getChild(childName));
 		}
 	}; // namespace Implementation
 }; // namespace Gek

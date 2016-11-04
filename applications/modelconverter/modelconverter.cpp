@@ -5,7 +5,7 @@
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include <Windows.h>
 #include <experimental\filesystem>
 #include <unordered_map>
@@ -430,7 +430,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 				try
 				{
 					//printf("Material: %S\r\n", fileName);
-                    const Xml::Node materialNode(Xml::load(fileName, L"material"));
+                    const JSON::Object materialNode(Xml::load(fileName, L"material"));
                     auto &shaderNode = materialNode.getChild(L"shader");
                     if (shaderNode.valid)
 					{

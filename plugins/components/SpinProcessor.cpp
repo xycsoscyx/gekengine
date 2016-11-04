@@ -22,11 +22,11 @@ namespace Gek
         {
             Math::Float3 torque;
 
-            void save(Xml::Leaf &componentData) const
+            void save(JSON::Object &componentData) const
             {
             }
 
-            void load(const Xml::Leaf &componentData)
+            void load(const JSON::Object &componentData)
             {
                 torque.x = random(mersineTwister);
                 torque.y = random(mersineTwister);

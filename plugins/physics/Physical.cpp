@@ -8,12 +8,12 @@ namespace Gek
 {
     namespace Components
     {
-        void Physical::save(Xml::Leaf &componentData) const
+        void Physical::save(JSON::Object &componentData) const
         {
             componentData.text = mass;
         }
 
-        void Physical::load(const Xml::Leaf &componentData)
+        void Physical::load(const JSON::Object &componentData)
         {
             mass = loadText(componentData, 0.0f);
         }

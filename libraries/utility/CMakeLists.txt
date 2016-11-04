@@ -11,4 +11,4 @@ add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} math tinyxml2_static)
+target_link_libraries(${ProjectID} math jsoncons)

@@ -1,5 +1,5 @@
 #include "GEK\Utility\String.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
@@ -46,7 +46,7 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
 
-                const Xml::Node visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual"));
+                const JSON::Object visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual"));
 
 				String inputVertexData;
 				std::vector<Video::InputElement> elementList;

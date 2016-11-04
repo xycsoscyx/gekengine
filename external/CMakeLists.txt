@@ -11,8 +11,6 @@ include(FindWindowsSDK)
 SET(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 SET(BUILD_STATIC_LIBS ON CACHE BOOL "" FORCE)
 
-add_subdirectory("TinyXML2")
-
 SET(ASSIMP_BUILD_IFC_IMPORTER OFF CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_VIEW OFF CACHE BOOL "" FORCE)
@@ -46,26 +44,30 @@ add_definitions(-D_NEWTON_STATIC_LIB -D_CUSTOM_JOINTS_STATIC_LIB -DPTW32_STATIC_
 SET(NEWTON_DEMOS_SANDBOX OFF CACHE BOOL "" FORCE)
 add_subdirectory("Newton-Dynamics")
 
-set_property(TARGET tinyxml2_static PROPERTY FOLDER "External/TinyXML2")
-set_property(TARGET xmltest PROPERTY FOLDER "External/TinyXML2")
-set_property(TARGET uninstall PROPERTY FOLDER "External/TinyXML2")
-set_property(TARGET DATA_COPY PROPERTY FOLDER "External/TinyXML2")
+project(json)
+add_library(json INTERFACE)
+target_include_directories(json INTERFACE "${CMAKE_CURRENT_LIST_DIR}/json/src")
 
+project(jsoncons)
+add_library(jsoncons INTERFACE)
+target_include_directories(jsoncons INTERFACE "${CMAKE_CURRENT_LIST_DIR}/jsoncons/src")
+
+set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")
 set_property(TARGET assimp PROPERTY FOLDER "External/Assimp")
 set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
-set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")
+set_property(TARGET uninstall PROPERTY FOLDER "External/Assimp")
 
+set_property(TARGET timeTracker PROPERTY FOLDER "External/Newton")
 set_property(TARGET Newton PROPERTY FOLDER "External/Newton")
 set_property(TARGET NewtonObj PROPERTY FOLDER "External/Newton")
 set_property(TARGET NewtonStatic PROPERTY FOLDER "External/Newton")
-set_property(TARGET timeTracker PROPERTY FOLDER "External/Newton")
 
+set_property(TARGET tinyxml PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dAnimation PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dContainers PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dCustomJoints PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dMath PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
-set_property(TARGET tinyxml PROPERTY FOLDER "External/dNewton")
 
 if(WIN32)
     set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")

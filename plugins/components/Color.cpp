@@ -7,14 +7,14 @@ namespace Gek
 {
     namespace Components
     {
-        void Color::save(Xml::Leaf &componentData) const
+        void Color::save(JSON::Object &componentData) const
         {
-            componentData.text = value;
+            componentData = String::create(L"%v", value);
         }
 
-        void Color::load(const Xml::Leaf &componentData)
+        void Color::load(const JSON::Object &componentData)
         {
-            value = loadText(componentData, Math::Float4::White);
+            value = JSON::getValue(componentData, Math::Float4::White);
         }
     }; // namespace Components
 

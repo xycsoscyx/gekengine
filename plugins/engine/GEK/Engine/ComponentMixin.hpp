@@ -14,37 +14,6 @@
 
 namespace Gek
 {
-    namespace Components
-    {
-        template <typename TYPE>
-        TYPE loadText(const Xml::Leaf &componentData, const TYPE &defaultValue)
-        {
-            if (componentData.text.empty())
-            {
-                return defaultValue;
-            }
-            else
-            {
-                return Evaluator::get<TYPE>(componentData.text);
-            }
-        }
-
-        template <typename TYPE>
-        TYPE loadAttribute(const Xml::Leaf &componentData, const wchar_t *name, const TYPE &defaultValue)
-        {
-            auto attributeSearch = componentData.attributes.find(name);
-            if (attributeSearch == std::end(componentData.attributes))
-            {
-                return defaultValue;
-            }
-            else
-            {
-                return Evaluator::get<TYPE>(attributeSearch->second);
-            }
-
-        }
-    }; // namespace Components
-
     namespace Plugin
     {
         GEK_PREDECLARE(Entity);
@@ -73,12 +42,12 @@ namespace Gek
                 return std::make_unique<COMPONENT>();
             }
 
-            void save(Plugin::Component::Data *component, Xml::Leaf &componentData) const
+            void save(Plugin::Component::Data *component, JSON::Object &componentData) const
             {
                 static_cast<COMPONENT *>(component)->save(componentData);
             }
 
-            void load(Plugin::Component::Data *component, const Xml::Leaf &componentData)
+            void load(Plugin::Component::Data *component, const JSON::Object &componentData)
             {
                 static_cast<COMPONENT *>(component)->load(componentData);
             }

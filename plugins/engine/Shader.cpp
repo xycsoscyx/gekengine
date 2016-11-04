@@ -2,7 +2,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\Evaluator.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Shapes\Sphere.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
@@ -130,7 +130,7 @@ namespace Gek
                 
                 auto backBuffer = videoDevice->getBackBuffer();
 
-                const Xml::Node shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader"));
+                const JSON::Object shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader"));
 
                 priority = shaderNode.getValue(L"priority", 0);
 

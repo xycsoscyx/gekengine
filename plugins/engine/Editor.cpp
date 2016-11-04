@@ -3,7 +3,7 @@
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Renderer.hpp"
@@ -66,9 +66,14 @@ namespace Gek
             // Plugin::Core Slots
             void onInterface(bool showCursor)
             {
+                if (population->isLoading())
+                {
+                    return;
+                }
+
                 auto &configuration = core->getConfiguration();
-                bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
-                bool showSelectionMenu = configuration.getChild(L"editor").getAttribute(L"show_selector", L"false");
+                bool editingEnabled = configuration[L"editor"][L"enabled"].as_bool();
+                bool showSelectionMenu = configuration[L"editor"][L"show_selector"].as_bool();
                 if (showCursor && showSelectionMenu && ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                 {
                     ImGui::Dummy(ImVec2(350, 0));
@@ -155,8 +160,8 @@ namespace Gek
                                             std::advance(componentSearch, componentIndex);
                                             if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
                                             {
-                                                Xml::Leaf componentData;
-                                                componentData.type = componentSearch->second->getName();
+                                                JSON::Object componentData;
+//                                                componentData.set(componentSearch->second->getName(), {});
                                                 population->addComponent(entity, componentData);
                                                 ImGui::CloseCurrentPopup();
                                             }
@@ -246,7 +251,7 @@ namespace Gek
                     ImGui::End();
                 }
 
-                configuration.getChild(L"editor").attributes[L"show_selector"] = showSelectionMenu;
+                configuration[L"editor"][L"show_selector"] = showSelectionMenu;
             }
 
             // Plugin::Population Slots
@@ -295,7 +300,7 @@ namespace Gek
             void onUpdate(void)
             {
                 auto &configuration = core->getConfiguration();
-                bool editingEnabled = configuration.getChild(L"editor").getAttribute(L"enabled", L"false");
+                bool editingEnabled = configuration[L"editor"][L"enabled"].as_bool();
                 if (editingEnabled)
                 {
                     float frameTime = population->getFrameTime();

@@ -8,19 +8,19 @@ namespace Gek
 {
     namespace Components
     {
-        void PointLight::save(Xml::Leaf &componentData) const
+        void PointLight::save(JSON::Object &componentData) const
         {
             componentData.attributes[L"range"] = range;
             componentData.attributes[L"radius"] = radius;
         }
 
-        void PointLight::load(const Xml::Leaf &componentData)
+        void PointLight::load(const JSON::Object &componentData)
         {
             range = loadAttribute(componentData, L"range", 0.0f);
             radius = loadAttribute(componentData, L"radius", 0.0f);
         }
 
-        void SpotLight::save(Xml::Leaf &componentData) const
+        void SpotLight::save(JSON::Object &componentData) const
         {
             componentData.attributes[L"range"] = range;
             componentData.attributes[L"radius"] = radius;
@@ -29,7 +29,7 @@ namespace Gek
             componentData.attributes[L"cone_falloff"] = coneFalloff;
         }
 
-        void SpotLight::load(const Xml::Leaf &componentData)
+        void SpotLight::load(const JSON::Object &componentData)
         {
             range = loadAttribute(componentData, L"range", 0.0f);
             radius = loadAttribute(componentData, L"radius", 0.0f);
@@ -38,11 +38,11 @@ namespace Gek
             coneFalloff = loadAttribute(componentData, L"cone_falloff", 0.0f);
         }
 
-        void DirectionalLight::save(Xml::Leaf &componentData) const
+        void DirectionalLight::save(JSON::Object &componentData) const
         {
         }
 
-        void DirectionalLight::load(const Xml::Leaf &componentData)
+        void DirectionalLight::load(const JSON::Object &componentData)
         {
         }
     }; // namespace Components

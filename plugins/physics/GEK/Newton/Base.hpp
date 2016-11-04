@@ -21,8 +21,8 @@ namespace Gek
         {
             float mass;
 
-            void save(Xml::Leaf &componentData) const;
-            void load(const Xml::Leaf &componentData);
+            void save(JSON::Object &componentData) const;
+            void load(const JSON::Object &componentData);
         };
 
         GEK_COMPONENT(Player)
@@ -32,8 +32,8 @@ namespace Gek
             float innerRadius;
             float stairStep;
 
-            void save(Xml::Leaf &componentData) const;
-            void load(const Xml::Leaf &componentData);
+            void save(JSON::Object &componentData) const;
+            void load(const JSON::Object &componentData);
         };
     };
 

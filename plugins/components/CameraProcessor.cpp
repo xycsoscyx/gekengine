@@ -23,22 +23,22 @@ namespace Gek
             String target;
             std::vector<String> filterList;
 
-            void save(Xml::Leaf &componentData) const
+            void save(JSON::Object &componentData) const
             {
-                componentData.attributes[L"field_of_view"] = Math::convertRadiansToDegrees(fieldOfView);
-                componentData.attributes[L"near_clip"] = nearClip;
-                componentData.attributes[L"far_clip"] = farClip;
-                componentData.attributes[L"target"] = target;
-                componentData.text.join(filterList, L',');
+                componentData[L"field_of_view"] = Math::convertRadiansToDegrees(fieldOfView);
+                componentData[L"near_clip"] = nearClip;
+                componentData[L"far_clip"] = farClip;
+                componentData[L"target"] = target;
+                componentData[L"value"] = String::create(filterList, L',');
             }
 
-            void load(const Xml::Leaf &componentData)
+            void load(const JSON::Object &componentData)
             {
-                fieldOfView = Math::convertDegreesToRadians(componentData.getValue(L"field_of_view", 90.0f));
-                nearClip = componentData.getValue(L"near_clip", 1.0f);
-                farClip = componentData.getValue(L"far_clip", 100.0f);
-                target = componentData.getAttribute(L"target");
-                filterList = componentData.text.split(L',');
+                fieldOfView = Math::convertDegreesToRadians(JSON::getMember(componentData, L"field_of_view", 90.0f));
+                nearClip = JSON::getMember(componentData, L"near_clip", 1.0f);
+                farClip = JSON::getMember(componentData, L"far_clip", 100.0f);
+                target = componentData[L"target"].as_cstring();;
+                filterList = String(componentData[L"filters"].as_cstring()).split(L',');
             }
         };
     };

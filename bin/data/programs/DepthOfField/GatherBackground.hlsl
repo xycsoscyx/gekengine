@@ -3,7 +3,7 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
-float2 getNoise(float2 coord)
+float2 getDitherableNoise(float2 coord)
 {
     if (Defines::enableDithering)
     {
@@ -90,7 +90,7 @@ float getModifier(float2 offset)
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
 	const float blurDistance = abs(Resources::circleOfConfusion[inputPixel.screen.xy]);
-    const float2 noise = ((getNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
+    const float2 noise = ((getDitherableNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
 
     float totalWeight = 1.0;
     float3 finalColor = Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);

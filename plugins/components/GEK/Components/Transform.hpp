@@ -33,8 +33,8 @@ namespace Gek
             Math::QuaternionFloat rotation;
             Math::Float3 scale;
 
-            void save(Xml::Leaf &componentData) const;
-            void load(const Xml::Leaf &componentData);
+            void save(JSON::Object &componentData) const;
+            void load(const JSON::Object &componentData);
 
             inline Math::SIMD::Float4x4 getMatrix(void) const
             {

@@ -4,7 +4,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ThreadPool.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\XML.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\Allocator.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
@@ -381,14 +381,14 @@ namespace Gek
 
     namespace Components
     {
-        void Shape::save(Xml::Leaf &componentData) const
+        void Shape::save(JSON::Object &componentData) const
         {
             componentData.text = type;
             componentData.attributes[L"parameters"] = parameters;
             componentData.attributes[L"skin"] = skin;
         }
 
-        void Shape::load(const Xml::Leaf &componentData)
+        void Shape::load(const JSON::Object &componentData)
         {
             type = componentData.text;
             parameters = componentData.getAttribute(L"parameters");

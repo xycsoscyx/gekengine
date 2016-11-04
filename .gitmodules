@@ -19,3 +19,9 @@
 [submodule "external/tinyxml2"]
 	path = external/tinyxml2
 	url = https://github.com/leethomason/tinyxml2.git
+[submodule "external/json"]
+	path = external/json
+	url = https://github.com/nlohmann/json.git
+[submodule "external/jsoncons"]
+	path = external/jsoncons
+	url = https://github.com/danielaparker/jsoncons.git
