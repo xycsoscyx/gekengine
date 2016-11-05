@@ -13,6 +13,7 @@
 #include "GEK\Math\Vector4SIMD.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
+#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\Context.hpp"
 #include <unordered_map>
 #include <functional>
@@ -94,6 +95,8 @@ namespace Gek
 
             Count,
         };
+
+        Format getFormat(String format);
 
         struct DisplayMode
         {
@@ -248,6 +251,8 @@ namespace Gek
             bool scissorEnable = false;
             bool multisampleEnable = false;
             bool antialiasedLineEnable = false;
+
+            void load(const JSON::Object &object);
         };
 
         struct DepthStateInformation
@@ -276,6 +281,8 @@ namespace Gek
                 Operation depthFailOperation = Operation::Keep;
                 Operation passOperation = Operation::Keep;
                 ComparisonFunction comparisonFunction = ComparisonFunction::Always;
+
+                void load(const JSON::Object &object);
             };
 
             bool enable = false;
@@ -286,6 +293,8 @@ namespace Gek
             uint8_t stencilWriteMask = 0xFF;
             StencilStateInformation stencilFrontState;
             StencilStateInformation stencilBackState;
+
+            void load(const JSON::Object &object);
         };
 
         struct BlendStateInformation
@@ -344,18 +353,24 @@ namespace Gek
             Source alphaDestination = Source::One;
             Operation alphaOperation = Operation::Add;
             uint8_t writeMask = Mask::RGBA;
+
+            void load(const JSON::Object &object);
         };
 
         struct UnifiedBlendStateInformation
             : public BlendStateInformation
         {
             bool alphaToCoverage = false;
+
+            void load(const JSON::Object &object);
         };
 
         struct IndependentBlendStateInformation
         {
             bool alphaToCoverage = false;
             BlendStateInformation targetStates[8];
+
+            void load(const JSON::Object &object);
         };
 
         struct SamplerStateInformation
@@ -392,6 +407,8 @@ namespace Gek
             Math::Float4 borderColor = Math::Float4(0.0f, 0.0f, 0.0f, 1.0f);
             float minimumMipLevel = 0.0f;
             float maximumMipLevel = Math::Infinity;
+
+            void load(const JSON::Object &object);
         };
 
         struct InputElement

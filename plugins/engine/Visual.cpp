@@ -5,7 +5,6 @@
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Visual.hpp"
-#include "ShaderFilter.hpp"
 #include <ppl.h>
 
 namespace Gek
@@ -46,7 +45,7 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
 
-                const JSON::Object visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".xml"), L"visual"));
+                const JSON::Object visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".json"), L"visual"));
 
 				String inputVertexData;
 				std::vector<Video::InputElement> elementList;

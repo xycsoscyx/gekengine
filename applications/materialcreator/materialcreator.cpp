@@ -47,18 +47,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 						materialName.replace((texturesPath + L"\\"), L"");
 						printf("> Material Found: %S\r\n", materialName.c_str());
 
-						JSON::Object materialNode = JSON::Object(L"material");
-						JSON::Object &shaderNode = materialNode.getChild(L"shader");
-						shaderNode.attributes[L"name"] = L"solid";
-						JSON::Object &solidNode = shaderNode.getChild(L"solid");
-
+						JSON::Object solidNode;
 						FileSystem::find(setTexturePath, [&](const wchar_t *textureFileName) -> bool
 						{
 							String textureName(FileSystem::replaceExtension(textureFileName).getLower());
 							textureName.replace((texturesPath + L"\\"), L"");
 							textureName.toLower();
 
-							JSON::Object *node = nullptr;
+							String mapType;
+							JSON::Object node;
 							if (textureName.endsWith(L"basecolor") ||
 								textureName.endsWith(L"base_color") ||
 								textureName.endsWith(L"diffuse") ||
@@ -66,39 +63,39 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 								textureName.endsWith(L"alb") ||
 								textureName.endsWith(L"_d"))
 							{
-								node = &solidNode.getChild(L"albedo");
-								node->attributes[L"flags"] = L"sRGB";
+								mapType = L"albedo";
+								node[L"flags"] = L"sRGB";
 							}
 							else if (textureName.endsWith(L"normal") ||
 								textureName.endsWith(L"_n"))
 							{
-								node = &solidNode.getChild(L"normal");
+								mapType = L"normal";
 							}
 							else if (textureName.endsWith(L"roughness") ||
 								textureName.endsWith(L"rough") ||
 								textureName.endsWith(L"_r"))
 							{
-								node = &solidNode.getChild(L"roughness");
+								mapType = L"roughness";
 							}
 							else if (textureName.endsWith(L"metalness") ||
 								textureName.endsWith(L"metallic") ||
 								textureName.endsWith(L"metal") ||
 								textureName.endsWith(L"_m"))
 							{
-								node = &solidNode.getChild(L"metallic");
+								mapType = L"metallic";
 							}
 
-							if (node)
+							if (!mapType.empty())
 							{
-								printf("--> %S: %S\r\n", node->type.c_str(), textureName.c_str());
-								node->attributes[L"file"] = textureName;
+								node[L"file"] = textureName;
+								solidNode.set(mapType, node);
 							}
 
 							return true;
 						});
 
-						if (solidNode.getChild(L"albedo").valid &&
-							solidNode.getChild(L"normal").valid)
+						if (!solidNode[L"albedo"].is_null() &&
+							!solidNode[L"normal"].is_null())
 						{
 							std::function<void(const wchar_t *)> createParent;
 							createParent = [&](const wchar_t *directory) -> void
@@ -110,9 +107,16 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 								}
 							};
 
-							String materialPath(FileSystem::getFileName(materialsPath, materialName).append(L".xml"));
+							String materialPath(FileSystem::getFileName(materialsPath, materialName).append(L".json"));
 							createParent(FileSystem::getDirectory(materialPath));
-							Xml::save(materialNode, materialPath);
+
+							JSON::Object shaderNode;
+							shaderNode.set(L"solid", solidNode);
+
+							JSON::Object materialNode;
+							materialNode.set(L"shader", shaderNode);
+							//FileSystem::save(materialPath, String(jsoncons::pretty_print(materialNode)
+							//Xml::save(materialNode, materialPath);
 						}
 					}
 

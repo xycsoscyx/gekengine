@@ -426,29 +426,9 @@ SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
     return result;
 }
 
-#include "GEK\Utility\JSON.hpp"
 int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *environmentVariableList)
 {
     printf("GEK Spherical Harmonics Generator\r\n");
-
-    Gek::JSON::Object json = Gek::JSON::Object::parse(
-        L"{\r\n" \
-        L"    \"defines\": {\r\n" \
-        L"        \"gaussianRadius\": {\r\n" \
-        L"            \"@bind\": \"int\",\r\n" \
-        L"            \"@value\" : \"3\"\r\n" \
-        L"        },\r\n" \
-        L"        \"gaussianSigma\" : \"2.3\",\r\n" \
-        L"        \"edgeSharpness\" : \"0.1\"\r\n" \
-        L"    }\r\n" \
-        L"}");
-
-    for (auto &member : json.members())
-    {
-        auto name = member.name();
-        auto value = member.value();
-    }
-
     CoInitialize(nullptr);
     try
     {

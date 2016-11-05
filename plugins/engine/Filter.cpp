@@ -14,7 +14,7 @@
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Components\Light.hpp"
 #include "GEK\Components\Color.hpp"
-#include "ShaderFilter.hpp"
+#include "Passes.hpp"
 #include <ppl.h>
 
 namespace Gek
@@ -87,7 +87,7 @@ namespace Gek
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
                 String filterData;
-                FileSystem::load(getContext()->getFileName(L"data\\filters", filterName).append(L".xml"), filterData);
+                FileSystem::load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"), filterData);
                 const JSON::Object filterNode = JSON::Object::parse(filterData);
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
@@ -187,7 +187,7 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Utility::getFormat(textureValue[L"format"].as_cstring());
+                        Video::Format format = Video::getFormat(textureValue[L"format"].as_cstring());
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -232,7 +232,7 @@ namespace Gek
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Utility::getFormat(bufferValue[L"format"].as_cstring());
+                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_cstring());
                         if (bufferValue.count(L"bind"))
                         {
                             bindType = getBindType(bufferValue[L"bind"].as_cstring());
@@ -338,7 +338,7 @@ namespace Gek
                         }
                         else
                         {
-                            renderTargetsMap = loadChildrenMap(targetsNode);
+                            renderTargetsMap = getAliasedMap(targetsNode);
                             if (renderTargetsMap.empty())
                             {
                                 pass.width = 0.0f;
@@ -389,7 +389,9 @@ namespace Gek
                                 L"\r\n", outputData);
                         }
 
-                        pass.blendState = loadBlendState(resources, passNode[L"blendstates"], renderTargetsMap);
+                        Video::UnifiedBlendStateInformation blendStateInformation;
+                        blendStateInformation.load(passNode[L"blendstate"]);
+                        pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
                     for (auto &clearTargetNode : passNode[L"clear"].members())
@@ -419,40 +421,45 @@ namespace Gek
                         };
                     }
 
-                    std::unordered_map<String, String> resourceAliasMap;
-                    std::unordered_map<String, String> unorderedAccessAliasMap = loadNodeChildren(passNode, L"unorderedaccess");
-                    for (auto &resourceNode : passNode[L"resources"].elements())
+                    auto &generateMipMapsNode = passNode[L"generatemipmaps"];
+                    if (generateMipMapsNode.is_array())
                     {
-                        auto resourceSearch = resourceMap.find(resourceNode.type);
-                        if (resourceSearch == std::end(resourceMap))
+                        for (auto &generateMipMaps : generateMipMapsNode.elements())
                         {
-                            throw InvalidParameters();
-                        }
-
-                        resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
-                        std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
-                        for (auto &action : actionList)
-                        {
-                            if (action.compareNoCase(L"generatemipmaps") == 0)
-                            {
-                                pass.generateMipMapsList.push_back(resourceSearch->second);
-                            }
-                        }
-
-                        if (resourceNode.attributes.count(L"copy"))
-                        {
-                            auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
-                            if (sourceResourceSearch == std::end(resourceMap))
+                            auto resourceSearch = resourceMap.find(generateMipMaps.as_cstring());
+                            if (resourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
                             }
 
-                            pass.copyResourceMap[resourceSearch->second] = sourceResourceSearch->second;
+                            pass.generateMipMapsList.push_back(resourceSearch->second);
+                        }
+                    }
+
+                    auto &copyNode = passNode[L"copy"];
+                    if (copyNode.is_object())
+                    {
+                        for (auto &copy : copyNode.members())
+                        {
+                            auto nameSearch = resourceMap.find(copy.name());
+                            if (nameSearch == std::end(resourceMap))
+                            {
+                                throw InvalidParameters();
+                            }
+
+                            auto valueSearch = resourceMap.find(copy.value().as_cstring());
+                            if (valueSearch == std::end(resourceMap))
+                            {
+                                throw InvalidParameters();
+                            }
+
+                            pass.copyResourceMap[nameSearch->second] = valueSearch->second;
                         }
                     }
 
                     String resourceData;
                     uint32_t nextResourceStage = 0;
+                    std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode[L"resources"]);
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -504,6 +511,7 @@ namespace Gek
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
+                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode[L"unorderedaccess"]);
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);

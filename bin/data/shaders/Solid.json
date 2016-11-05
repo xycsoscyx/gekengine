@@ -34,28 +34,28 @@
     "material": {
         "solid": [
             {
-                "bname": "albedo",
+                "name": "albedo",
                 "bind": "float4",
                 "pattern": "system",
                 "parameters": "debug",
                 "type": "Texture2D"
             },
             {
-                "bname": "normal",
+                "name": "normal",
                 "bind": "float2",
                 "pattern": "system",
                 "parameters": "flat",
                 "type": "Texture2D"
             },
             {
-                "bname": "v",
+                "name": "v",
                 "bind": "float",
                 "pattern": "color",
                 "parameters": ".5",
                 "type": "Texture2D"
             },
             {
-                "bname": "metallic",
+                "name": "metallic",
                 "bind": "float",
                 "pattern": "color",
                 "parameters": "0",
@@ -108,13 +108,13 @@
             "name": "StoreDeferred",
             "forward": "solid",
             "entry": "mainPixelProgram",
-            "depthstates": {
+            "depthstate": {
                 "target": "depthBuffer",
                 "comparison": "less_equal",
                 "writemask": "all",
                 "clear": "1"
             },
-            "renderstates": {
+            "renderstate": {
                 "cullmode": "back"
             },
             "targets": [
@@ -158,12 +158,9 @@
                     "value": "(2,0)"
                 }
             },
-            "alias": {
-                "ambientBuffer": "inputBuffer"
-            },
             "resources": [
                 "depthBuffer",
-                "ambientBuffer"
+                { "ambientBuffer": "inputBuffer" }
             ],
             "targets": [
                 "gaussianBuffer"
@@ -178,15 +175,12 @@
                     "value": "(0,2)"
                 }
             },
-            "alias": {
-                "ambientBuffer": "inputBuffer"
-            },
             "resources": [
                 "depthBuffer",
-                "ambientBuffer"
+                { "gaussianBuffer": "inputBuffer" }
             ],
             "targets": [
-                "gaussianBuffer"
+                "ambientBuffer"
             ]
         },
         {
@@ -198,12 +192,9 @@
                     "value": "(1,0)"
                 }
             },
-            "alias": {
-                "ambientBuffer": "inputBuffer"
-            },
             "resources": [
                 "depthBuffer",
-                "ambientBuffer"
+                { "ambientBuffer": "inputBuffer" }
             ],
             "targets": [
                 "gaussianBuffer"
@@ -218,15 +209,12 @@
                     "value": "(0,1)"
                 }
             },
-            "alias": {
-                "ambientBuffer": "inputBuffer"
-            },
             "resources": [
                 "depthBuffer",
-                "ambientBuffer"
+                { "gaussianBuffer": "inputBuffer" }
             ],
             "targets": [
-                "gaussianBuffer"
+                "ambientBuffer"
             ]
         },
         {

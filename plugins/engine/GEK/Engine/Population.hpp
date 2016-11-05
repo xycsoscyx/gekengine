@@ -27,6 +27,9 @@ namespace Gek
         GEK_INTERFACE(Population)
         {
             GEK_START_EXCEPTIONS();
+            GEK_ADD_EXCEPTION(InvalidPrefabsBlock);
+            GEK_ADD_EXCEPTION(InvalidPopulationBlock);
+            GEK_ADD_EXCEPTION(InvalidEntityBlock);
             GEK_ADD_EXCEPTION(EntityNameExists);
 
             struct ActionParameter
@@ -72,9 +75,9 @@ namespace Gek
             virtual void load(const wchar_t *populationName) = 0;
             virtual void save(const wchar_t *populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Object> &componentList = std::vector<JSON::Object>()) = 0;
+            virtual Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
             virtual void killEntity(Plugin::Entity *entity) = 0;
-            virtual void addComponent(Plugin::Entity *entity, const JSON::Object &componentData) = 0;
+            virtual void addComponent(Plugin::Entity *entity, const JSON::Member &componentData) = 0;
             virtual void removeComponent(Plugin::Entity *entity, const std::type_index &type) = 0;
 
             virtual void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const = 0;

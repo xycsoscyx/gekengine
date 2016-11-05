@@ -25,11 +25,11 @@ namespace Gek
 
             void save(JSON::Object &componentData) const
             {
-                componentData[L"field_of_view"] = Math::convertRadiansToDegrees(fieldOfView);
-                componentData[L"near_clip"] = nearClip;
-                componentData[L"far_clip"] = farClip;
-                componentData[L"target"] = target;
-                componentData[L"value"] = String::create(filterList, L',');
+                JSON::setMember(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
+				JSON::setMember(componentData, L"near_clip", nearClip);
+				JSON::setMember(componentData, L"far_clip", farClip);
+				JSON::setMember(componentData, L"target", target);
+				JSON::setMember(componentData, L"value", String::create(filterList, L','));
             }
 
             void load(const JSON::Object &componentData)

@@ -7,7 +7,7 @@
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Material.hpp"
-#include "ShaderFilter.hpp"
+#include "Passes.hpp"
 #include <ppl.h>
 
 namespace Gek
@@ -29,31 +29,37 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                const JSON::Object materialNode(Xml::load(getContext()->getFileName(L"data\\materials", materialName).append(L".xml"), L"material"));
-                auto &shaderNode = materialNode.getChild(L"shader");
-                if (shaderNode.valid)
+                String materialData;
+                FileSystem::load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"), materialData);
+                const JSON::Object materialNode = JSON::Object::parse(materialData);
+
+                auto &shaderNode = materialNode[L"shader"];
+                if (!shaderNode.is_object())
                 {
-                    if (!shaderNode.attributes.count(L"name"))
+                    if (!shaderNode.count(L"name"))
                     {
                         throw MissingParameters();
                     }
 
-                    Engine::Shader *shader = resources->getShader(shaderNode.getAttribute(L"name"), materialHandle);
+                    Engine::Shader *shader = resources->getShader(shaderNode[L"name"].as_cstring(), materialHandle);
                     if (!shader)
                     {
                         throw MissingParameters();
                     }
 
-                    for (auto &passNode : shaderNode.children)
+                    for (auto &passNode : shaderNode.members())
                     {
-                        auto passMaterial = shader->getPassMaterial(passNode.type);
+                        String passName(passNode.name());
+                        auto &passValue = passNode.value();
+                        auto passMaterial = shader->getPassMaterial(passName);
                         if (passMaterial)
                         {
                             auto &passData = passDataMap[passMaterial->identifier];
-                            auto &renderStateNode = materialNode.getChild(L"renderstate");
-                            if (renderStateNode.valid)
+                            if (materialNode.has_member(L"renderState"))
                             {
-                                renderState = loadRenderState(resources, renderStateNode);
+                                Video::RenderStateInformation renderStateInformation;
+                                renderStateInformation.load(materialNode[L"renderState"]);
+                                renderState = resources->createRenderState(renderStateInformation);
                             }
                             else
                             {
@@ -63,22 +69,22 @@ namespace Gek
                             for (auto &resource : passMaterial->resourceList)
                             {
                                 ResourceHandle resourceHandle;
-                                auto &resourceNode = passNode.getChild(resource.name);
-                                if (resourceNode.valid)
+                                auto &resourceNode = passValue[resource.name];
+                                if (!resourceNode.is_null())
                                 {
-                                    if (resourceNode.attributes.count(L"file"))
+                                    if (resourceNode.count(L"file"))
                                     {
-                                        String resourceFileName(resourceNode.getAttribute(L"file"));
-                                        uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags", L"0"));
+                                        String resourceFileName(resourceNode[L"file"].as_cstring());
+                                        uint32_t flags = getTextureLoadFlags(JSON::getMember(resourceNode, L"flags", L"0"));
                                         resourceHandle = resources->loadTexture(resourceFileName, flags);
                                     }
-                                    else if (resourceNode.attributes.count(L"pattern"))
+                                    else if (resourceNode.count(L"pattern"))
                                     {
-                                        resourceHandle = resources->createTexture(resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"));
+                                        resourceHandle = resources->createTexture(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
                                     }
-                                    else if (resourceNode.attributes.count(L"name"))
+                                    else if (resourceNode.count(L"name"))
                                     {
-                                        resourceHandle = resources->getResourceHandle(resourceNode.getAttribute(L"name"));
+                                        resourceHandle = resources->getResourceHandle(resourceNode[L"name"].as_cstring());
                                     }
                                 }
                                 

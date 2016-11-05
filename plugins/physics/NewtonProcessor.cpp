@@ -275,23 +275,25 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        const JSON::Object materialNode(Xml::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".xml"), L"material"));
-                        auto &surfaceNode = materialNode.getChild(L"surface");
-                        if (surfaceNode.valid)
+						String materialData;
+						FileSystem::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"), materialData);
+						const JSON::Object materialNode = JSON::Object::parse(materialData);
+                        auto &surfaceNode = materialNode[L"surface"];
+                        if (!surfaceNode.is_null())
                         {
                             Surface surface;
-                            surface.ghost = surfaceNode.getValue(L"ghost", surface.ghost);
-                            surface.staticFriction = surfaceNode.getValue(L"static_friction", surface.staticFriction);
-                            surface.kineticFriction = surfaceNode.getValue(L"kinetic_friction", surface.kineticFriction);
-                            surface.elasticity = surfaceNode.getValue(L"elasticity", surface.elasticity);
-                            surface.softness = surfaceNode.getValue(L"softness", surface.softness);
+                            surface.ghost = JSON::getMember(surfaceNode, L"ghost", surface.ghost);
+                            surface.staticFriction = JSON::getMember(surfaceNode, L"static_friction", surface.staticFriction);
+                            surface.kineticFriction = JSON::getMember(surfaceNode, L"kinetic_friction", surface.kineticFriction);
+                            surface.elasticity = JSON::getMember(surfaceNode, L"elasticity", surface.elasticity);
+                            surface.softness = JSON::getMember(surfaceNode, L"softness", surface.softness);
 
                             surfaceIndex = surfaceList.size();
                             surfaceList.push_back(surface);
                             surfaceIndexMap[hash] = surfaceIndex;
                         }
                     }
-                    catch (const Xml::Exception &)
+                    catch (const std::exception &)
                     {
                     };
                 }

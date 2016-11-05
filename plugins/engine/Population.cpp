@@ -153,48 +153,68 @@ namespace Gek
                     onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
-                        const JSON::Object worldNode(Xml::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".xml"), L"world"));
+                        String worldData;
+                        FileSystem::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"), worldData);
+                        const JSON::Object worldNode = JSON::Object::parse(worldData);
 
-                        auto &prefabsNode = worldNode.getChild(L"prefabs");
-                        for (auto &entityNode : worldNode.getChild(L"population").children)
+                        auto &prefabsNode = worldNode[L"prefabs"];
+                        if (!prefabsNode.is_null() && !prefabsNode.is_object())
                         {
-                            std::unordered_map<String, JSON::Object> entityComponentMap;
-                            auto &prefabNode = prefabsNode.getChild(entityNode.getAttribute(L"prefab"));
-                            if (prefabNode.valid)
+                            throw InvalidPrefabsBlock();
+                        }
+
+                        auto &populationNode = worldNode[L"population"];
+                        if (!populationNode.is_null() && !populationNode.is_array())
+                        {
+                            throw InvalidPopulationBlock();
+                        }
+
+                        for (auto &entityNode : populationNode.elements())
+                        {
+                            if (!entityNode.is_object())
                             {
-                                for (auto &prefabComponentNode : prefabNode.children)
+                                throw InvalidEntityBlock();
+                            }
+
+                            std::vector<JSON::Member> entityComponentList;
+                            auto &prefabNode = prefabsNode[entityNode[L"prefab"].as_cstring()];
+                            if (!prefabNode.is_null())
+                            {
+                                for (auto &prefabComponentNode : prefabNode.members())
                                 {
-                                    entityComponentMap[prefabComponentNode.type] = prefabComponentNode;
+                                    entityComponentList.push_back(prefabComponentNode);
                                 }
                             }
 
-                            for (auto &componentNode : entityNode.children)
+                            for (auto &componentNode : entityNode.members())
                             {
-                                auto insertSearch = entityComponentMap.insert(std::make_pair(componentNode.type, componentNode));
-                                if (!insertSearch.second)
+                                auto componentSearch = std::find_if(entityComponentList.begin(), entityComponentList.end(), [&](const JSON::Member &componentData) -> bool
                                 {
-                                    auto &entityComponentData = insertSearch.first->second;
-                                    if (!componentNode.text.empty())
-                                    {
-                                        entityComponentData.text = componentNode.text;
-                                    }
+                                });
 
-                                    for (auto &attribute : componentNode.attributes)
+                                if (componentSearch == entityComponentList.end())
+                                {
+                                    entityComponentList.push_back(componentNode);
+                                }
+                                else
+                                {
+                                    auto &componentData = (*componentSearch);
+                                    for (auto &attribute : componentNode.value().members())
                                     {
-                                        entityComponentData.attributes[attribute.first] = attribute.second;
+                                        componentData.value.set(attribute.name(), attribute.value());
                                     }
                                 }
                             }
 
                             auto entity(std::make_shared<Entity>());
-                            for (auto &entityComponentData : entityComponentMap)
+                            for (auto &componentData : entityComponentList)
                             {
-                                addComponent(entity.get(), entityComponentData.second);
+                                addComponent(entity.get(), componentData);
                             }
 
-                            if (entityNode.attributes.count(L"name") > 0)
+                            if (entityNode.count(L"name") > 0)
                             {
-                                entityMap[entityNode.getAttribute(L"name")] = std::move(entity);
+                                entityMap[entityNode[L"name"].as_cstring()] = std::move(entity);
                             }
                             else
                             {
@@ -308,7 +328,7 @@ namespace Gek
                 GEK_REQUIRE(populationName);
             }
 
-            Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Object> &componentList)
+            Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Member> &componentList)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentData : componentList)
@@ -342,11 +362,11 @@ namespace Gek
                 });
             }
 
-            bool addComponent(Entity *entity, const JSON::Object &componentData, std::type_index *componentIdentifier = nullptr)
+            bool addComponent(Entity *entity, const JSON::Member &componentData, std::type_index *componentIdentifier = nullptr)
             {
                 GEK_REQUIRE(entity);
 
-                auto componentNameSearch = componentNamesMap.find(componentData.type);
+                auto componentNameSearch = componentNamesMap.find(componentData.name());
                 if (componentNameSearch != std::end(componentNamesMap))
                 {
                     auto componentSearch = componentMap.find(componentNameSearch->second);
@@ -354,7 +374,7 @@ namespace Gek
                     {
                         Plugin::Component *componentManager = componentSearch->second.get();
                         auto component(componentManager->create());
-                        componentManager->load(component.get(), componentData);
+                        componentManager->load(component.get(), componentData.value());
 
                         entity->addComponent(componentManager, std::move(component));
                         if (componentIdentifier)
@@ -369,7 +389,7 @@ namespace Gek
                 return false;
             }
 
-            void addComponent(Plugin::Entity *entity, const JSON::Object &componentData)
+            void addComponent(Plugin::Entity *entity, const JSON::Member &componentData)
             {
                 std::type_index componentIdentifier(typeid(nullptr));
                 if (addComponent(static_cast<Entity *>(entity), componentData, &componentIdentifier))

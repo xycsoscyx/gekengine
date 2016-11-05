@@ -9,6 +9,7 @@
 
 #include "GEK\Utility\Context.hpp"
 #include "GEK\Engine\Component.hpp"
+#include <unordered_map>
 #include <typeindex>
 #include <algorithm>
 

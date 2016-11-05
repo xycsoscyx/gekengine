@@ -14,7 +14,7 @@
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Components\Light.hpp"
 #include "GEK\Components\Color.hpp"
-#include "ShaderFilter.hpp"
+#include "Passes.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
 
@@ -22,23 +22,6 @@ namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getElementSource(const wchar_t *type)
-        {
-            if (wcsicmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
-            else if (wcsicmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
-            else if (wcsicmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-            else if (wcsicmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-            else if (wcsicmp(type, L"int") == 0) return Video::Format::R32_INT;
-            else if (wcsicmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
-            else if (wcsicmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
-            else if (wcsicmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-            else if (wcsicmp(type, L"uint") == 0) return Video::Format::R32_UINT;
-            else if (wcsicmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
-            else if (wcsicmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-            else if (wcsicmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
-            return Video::Format::Unknown;
-        }
-
         GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, String)
             , public Engine::Shader
         {
@@ -130,7 +113,7 @@ namespace Gek
                 
                 auto backBuffer = videoDevice->getBackBuffer();
 
-                const JSON::Object shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".xml"), L"shader"));
+                const JSON::Object shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"), L"shader"));
 
                 priority = shaderNode.getValue(L"priority", 0);
 
@@ -364,7 +347,7 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Utility::getFormat(textureNode.text);
+                        Video::Format format = Video::getFormat(textureNode.text);
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -407,7 +390,7 @@ namespace Gek
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Utility::getFormat(bufferNode.text);
+                        Video::Format format = Video::getFormat(bufferNode.text);
                         if (bufferNode.attributes.count(L"bind"))
                         {
                             bindType = getBindType(bufferNode.getAttribute(L"bind"));

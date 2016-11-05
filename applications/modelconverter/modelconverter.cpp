@@ -413,9 +413,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		String texturesPath(FileSystem::getFileName(rootPath, L"Textures").getLower());
 		String materialsPath(FileSystem::getFileName(rootPath, L"Materials").getLower());
 
-		//printf("Textures: %S\r\n", texturesPath.c_str());
-		//printf("Materials: %S\r\n", materialsPath.c_str());
-
 		std::map<String, String> materialAlbedoMap;
 
 		std::function<bool(const wchar_t *)> findMaterials;
@@ -429,7 +426,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			{
 				try
 				{
-					//printf("Material: %S\r\n", fileName);
                     const JSON::Object materialNode(Xml::load(fileName, L"material"));
                     auto &shaderNode = materialNode.getChild(L"shader");
                     if (shaderNode.valid)
@@ -444,7 +440,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 									String materialName(FileSystem::replaceExtension(fileName).getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
 									materialAlbedoMap[albedoNode.getAttribute(L"file")] = materialName;
-									//printf("Mapping: %S: %S\r\n", albedoNode.attributes[L"file"].c_str(), materialName.c_str());
 								}
 							}
 						}

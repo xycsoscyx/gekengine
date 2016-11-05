@@ -10,16 +10,16 @@ namespace Gek
     {
         void Transform::save(JSON::Object &componentData) const
         {
-            componentData.attributes[L"position"] = position;
-            componentData.attributes[L"rotation"] = rotation;
-            componentData.attributes[L"scale"] = scale;
+            JSON::setMember(componentData, L"position", position);
+			JSON::setMember(componentData, L"rotation", rotation);
+			JSON::setMember(componentData, L"scale", scale);
         }
 
         void Transform::load(const JSON::Object &componentData)
         {
-            position = loadAttribute(componentData, L"position", Math::Float3::Zero);
-            rotation = loadAttribute(componentData, L"rotation", Math::QuaternionFloat::Identity);
-            scale = loadAttribute(componentData, L"scale", Math::Float3::One);
+            position = JSON::getMember(componentData, L"position", Math::Float3::Zero);
+            rotation = JSON::getMember(componentData, L"rotation", Math::QuaternionFloat::Identity);
+            scale = JSON::getMember(componentData, L"scale", Math::Float3::One);
         }
     }; // namespace Components
 

@@ -17,18 +17,18 @@ namespace Gek
     {
         void Player::save(JSON::Object &componentData) const
         {
-			componentData.attributes[L"height"] = height;
-            componentData.attributes[L"outer_radius"] = outerRadius;
-            componentData.attributes[L"inner_radius"] = innerRadius;
-            componentData.attributes[L"stair_step"] = stairStep;
+			JSON::setMember(componentData, L"height", height);
+			JSON::setMember(componentData, L"outer_radius", outerRadius);
+			JSON::setMember(componentData, L"inner_radius", innerRadius);
+			JSON::setMember(componentData, L"stair_step", stairStep);
         }
 
         void Player::load(const JSON::Object &componentData)
         {
-			height = loadAttribute(componentData, L"height", 6.0f);
-            outerRadius = loadAttribute(componentData, L"outer_radius", 1.5f);
-            innerRadius = loadAttribute(componentData, L"inner_radius", 0.5f);
-            stairStep = loadAttribute(componentData, L"stair_step", 1.5f);
+			height = JSON::getMember(componentData, L"height", 6.0f);
+            outerRadius = JSON::getMember(componentData, L"outer_radius", 1.5f);
+            innerRadius = JSON::getMember(componentData, L"inner_radius", 0.5f);
+            stairStep = JSON::getMember(componentData, L"stair_step", 1.5f);
         }
     }; // namespace Components
 

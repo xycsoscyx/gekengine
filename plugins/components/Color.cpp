@@ -9,7 +9,7 @@ namespace Gek
     {
         void Color::save(JSON::Object &componentData) const
         {
-            componentData = String::create(L"%v", value);
+			JSON::setValue(componentData, value);
         }
 
         void Color::load(const JSON::Object &componentData)
