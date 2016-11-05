@@ -1,0 +1,83 @@
+{
+    "textures": {
+        "luminanceBuffer": {
+            "bind": "float",
+            "flags": "target",
+            "mipmaps": "0",
+            "format": "R16_FLOAT"
+        }
+    },
+    "buffers": {
+        "averageLuminanceBuffer": {
+            "size": "1",
+            "flags": "unorderedAccess",
+            "format": "R32_FLOAT"
+        }
+    },
+    "passes": [
+        {
+            "name": "CalculateLuminance",
+            "mode": "deferred",
+            "entry": "mainPixelProgram",
+            "resources": [
+                "screen"
+            ],
+            "targets": [
+                "luminanceBuffer"
+            ]
+        },
+        {
+            "name": "AdaptLuminance",
+            "compute": "(1, 1, 1)",
+            "entry": "mainComputeProgram",
+            "defines": {
+                "adaptionRate": "1.25"
+            },
+            "generateMipMaps": [
+                "luminanceBuffer"
+            ],
+            "resources": [
+                "luminanceBuffer"
+            ],
+            "unorderedaccess": [
+                "averageLuminanceBuffer"
+            ]
+        },
+        {
+            "name": "ToneMap",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "techniqueMode": {
+                    "bind": "int",
+                    "value": "7"
+                },
+                "autoExposureMode": {
+                    "bind": "int",
+                    "value": "2"
+                },
+                "luminanceSaturation": "1.0",
+                "keyValue": "0.18",
+                "exposure": "0.0",
+                "whiteLevel": "5.0",
+                "bias": "0.5",
+                "shoulderStrength": "0.2",
+                "linearStrength": "0.5",
+                "linearAngle": "0.42",
+                "toeStrength": "0.64",
+                "toeNumerator": "0.19",
+                "toeDenominator": "0.9",
+                "linearWhite": "11.2"
+            },
+            "copy": {
+                "screen":  "screenBuffer"
+            },
+            "resources": [
+                "averageLuminanceBuffer",
+                "screenBuffer"
+            ],
+            "targets": [
+                "screen"
+            ]
+        }
+    ]
+}
