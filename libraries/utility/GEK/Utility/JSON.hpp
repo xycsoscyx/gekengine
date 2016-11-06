@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GEK\Utility\String.hpp"
+#include "GEK\Utility\FileSystem.hpp"
 #include <jsoncons/json.hpp>
 
 namespace Gek
@@ -16,6 +17,8 @@ namespace Gek
     {
         using Object = jsoncons::wjson;
         using Member = Object::member_type;
+
+        Object load(const wchar_t *fileName);
 
 		template <typename ELEMENT>
 		BaseString<ELEMENT> getValue(const Object &object, const ELEMENT *defaultValue)

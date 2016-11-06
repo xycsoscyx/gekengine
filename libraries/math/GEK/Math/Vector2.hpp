@@ -36,21 +36,18 @@ namespace Gek
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2(const OTHER(&data)[2])
-                : data{ TYPE(data[0]), TYPE(data[1]) }
-            {
-            }
-
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2(const OTHER *data)
-                : data{ TYPE(data[0]), TYPE(data[1]) }
-            {
-            }
-
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2(OTHER scalar)
+            Vector2(TYPE scalar)
                 : data{ TYPE(scalar), TYPE(scalar) }
+            {
+            }
+
+            Vector2(TYPE x, TYPE y)
+                : data{ TYPE(x), TYPE(y) }
+            {
+            }
+
+            Vector2(const TYPE *data)
+                : data{ TYPE(data[0]), TYPE(data[1]) }
             {
             }
 
@@ -60,23 +57,15 @@ namespace Gek
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2(OTHER x, OTHER y)
-                : data{ TYPE(x), TYPE(y) }
+            void set(TYPE value)
             {
+                this->x = this->y = TYPE(value);
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            void set(OTHER x, OTHER y)
+            void set(TYPE x, TYPE y)
             {
                 this->x = TYPE(x);
                 this->y = TYPE(y);
-            }
-
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            void set(OTHER value)
-            {
-                this->x = this->y = TYPE(value);
             }
 
             TYPE getLengthSquared(void) const
@@ -259,13 +248,6 @@ namespace Gek
             }
 
             // scalar operations
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector2 &operator = (OTHER scalar)
-            {
-                x = y = TYPE(scalar);
-                return (*this);
-            }
-
             void operator -= (TYPE scalar)
             {
                 x -= scalar;

@@ -53,22 +53,23 @@ namespace Gek
         return *this;
     }
 
-    ClearData::ClearData(const Math::Float4 &color)
-        : type(ClearType::Target)
-        , color(color)
+    ClearData::ClearData(ClearType type, const String &data)
+        : type(type)
     {
-    }
+        switch (type)
+        {
+        case ClearType::Float:
+            color = data;
+            break;
 
-    ClearData::ClearData(const Math::SIMD::Float4 &value)
-        : type(ClearType::Float)
-        , value(value)
-    {
-    }
-
-    ClearData::ClearData(uint32_t uint)
-        : type(ClearType::UInt)
-        , uint{ uint, uint , uint , uint }
-    {
+        case ClearType::Target:
+            value = data;
+            break;
+            
+        case ClearType::UInt:
+            uint[0] = uint[1] = uint[2] = uint[3] = data;
+            break;
+        };
     }
 
     ClearData::ClearData(const ClearData &clearData)

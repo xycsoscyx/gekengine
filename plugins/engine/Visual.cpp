@@ -97,8 +97,8 @@ namespace Gek
 								throw InvalidElementType();
 							}
 
-							element.semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
-							element.source = Utility::getElementSource(elementNode.getAttribute(L"source"));
+							element.semantic = getElementSemantic(elementNode.getAttribute(L"semantic"));
+							element.source = getElementSource(elementNode.getAttribute(L"source"));
 							element.sourceIndex = elementNode.getAttribute(L"sourceIndex");
 
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;

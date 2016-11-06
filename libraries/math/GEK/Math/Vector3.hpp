@@ -36,21 +36,18 @@ namespace Gek
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3(const OTHER(&data)[3])
-                : data{ TYPE(data[0]), TYPE(data[1]), TYPE(data[2]) }
+            Vector3(TYPE scalar)
+                : data{ scalar, scalar, scalar }
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3(const OTHER *data)
-                : data{ TYPE(data[0]), TYPE(data[1]), TYPE(data[2]) }
+            Vector3(TYPE x, TYPE y, TYPE z)
+                : data{ x, y, z }
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3(OTHER scalar)
-                : data{ TYPE(scalar), TYPE(scalar), TYPE(scalar) }
+            Vector3(const TYPE *data)
+                : data{ data[0], data[1], data[2] }
             {
             }
 
@@ -60,24 +57,16 @@ namespace Gek
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3(OTHER x, OTHER y, OTHER z)
-                : data{ TYPE(x), TYPE(y), TYPE(z) }
+            void set(TYPE value)
             {
+                this->x = this->y = this->z = TYPE(value);
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            void set(OTHER x, OTHER y, OTHER z)
+            void set(TYPE x, TYPE y, TYPE z)
             {
                 this->x = TYPE(x);
                 this->y = TYPE(y);
                 this->z = TYPE(z);
-            }
-
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            void set(OTHER value)
-            {
-                this->x = this->y = this->z = TYPE(value);
             }
 
             TYPE getLengthSquared(void) const
@@ -281,13 +270,6 @@ namespace Gek
             }
 
             // scalar operations
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3 &operator = (OTHER scalar)
-            {
-                x = y = z = TYPE(scalar);
-                return (*this);
-            }
-
             void operator -= (TYPE scalar)
             {
                 x -= scalar;

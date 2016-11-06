@@ -397,7 +397,7 @@ SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
     float imageSizeFloat = float(imageSize);
 
     SH9Color result;
-    float weightSum = 0.0f;
+    Math::SIMD::Float4 weightSum(0.0f);
     for (int face = 0; face < 6; ++face)
     {
         ::DirectX::Image imageFace(image.GetImages()[face]);
@@ -413,11 +413,11 @@ SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
                 Math::SIMD::Float4 sample(&pixels[x * 4]);
 
                 const float temp = 1.0f + u * u + v * v;
-                const float weight = 4.0f / (std::sqrt(temp) * temp);
+                Math::SIMD::Float4 weight(4.0f / (std::sqrt(temp) * temp));
 
                 Math::Float3 direction(MapXYSToDirection(face, u, v));
                 result += ProjectOntoSH9Color(direction, sample) * weight;
-                weightSum += weight;
+                weightSum += weight.x;
             }
         }
     }

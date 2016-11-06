@@ -22,6 +22,21 @@ namespace Gek
 {
     namespace Implementation
     {
+        Video::InputElement::Source getElementSource(const wchar_t *elementSourceString)
+        {
+            if (wcsicmp(elementSourceString, L"instance") == 0) return Video::InputElement::Source::Instance;
+            else return Video::InputElement::Source::Vertex;
+        }
+
+        Video::InputElement::Semantic getElementSemantic(const wchar_t *semanticString)
+        {
+            if (wcsicmp(semanticString, L"Position") == 0) return Video::InputElement::Semantic::Position;
+            else if (wcsicmp(semanticString, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
+            else if (wcsicmp(semanticString, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
+            else if (wcsicmp(semanticString, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
+            else if (wcsicmp(semanticString, L"Color") == 0) return Video::InputElement::Semantic::Color;
+            else return Video::InputElement::Semantic::TexCoord;
+        }
         GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, String)
             , public Engine::Shader
         {
@@ -113,9 +128,9 @@ namespace Gek
                 
                 auto backBuffer = videoDevice->getBackBuffer();
 
-                const JSON::Object shaderNode(Xml::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"), L"shader"));
+                const JSON::Object shaderNode = JSON::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
 
-                priority = shaderNode.getValue(L"priority", 0);
+                priority = JSON::getMember(shaderNode, L"priority", 0);
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = backBuffer->getWidth();
@@ -123,10 +138,19 @@ namespace Gek
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(float(displayWidth), float(displayHeight)));
-                for (auto &defineNode : shaderNode.getChild(L"defines").children)
+                for (auto &defineNode : shaderNode[L"defines"].members())
                 {
-                    BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
-                    globalDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
+                    auto &defineName = defineNode.name();
+                    auto &defineValue = defineNode.value();
+                    if (defineValue.is_object())
+                    {
+                        BindType bindType = getBindType(defineValue[L"bind"].as_cstring());
+                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_cstring());
+                    }
+                    else
+                    {
+                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_cstring());
+                    }
                 }
 
                 auto evaluate = [](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
@@ -225,29 +249,30 @@ namespace Gek
                 };
 
                 String inputData;
-                auto &inputNode = shaderNode.getChild(L"input");
-                if (inputNode.valid)
+                auto &inputNode = shaderNode[L"input"];
+                if (!inputNode.is_null())
                 {
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-					for (auto &elementNode : inputNode.children)
+					for (auto &elementNode : inputNode.elements())
                     {
-						if (elementNode.attributes.count(L"system"))
+                        String name(elementNode[L"name"].as_cstring());
+						if (elementNode.count(L"system"))
 						{
-                            String system(elementNode.getAttribute(L"system"));
+                            String system(elementNode[L"system"].as_cstring());
 							if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
-								String format(elementNode.getAttribute(L"format", L"bool"));
+								String format(JSON::getMember(elementNode, L"format", L"bool"));
 								if (format.compareNoCase(L"int") == 0)
 								{
-									inputData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+									inputData.format(L"    int %v : SV_IsFrontFace;\r\n", name);
 								}
                                 else if (format.compareNoCase(L"uint") == 0)
                                 {
-                                    inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                    inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", name);
                                 }
                                 else if (format.compareNoCase(L"bool") == 0)
                                 {
-                                    inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                    inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", name);
                                 }
                                 else
 								{
@@ -257,16 +282,16 @@ namespace Gek
 						}
                         else
                         {
-							String bindType(elementNode.getAttribute(L"bind"));
+							String bindType(elementNode[L"bind"].as_cstring());
 							auto bindFormat = getBindFormat(getBindType(bindType));
 							if (bindFormat == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							auto semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
+							auto semantic = getElementSemantic(elementNode[L"semantic"].as_cstring());
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-							inputData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+							inputData.format(L"    %v %v : %v%v;\r\n", bindType, name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                         }
                     }
                 }
@@ -333,21 +358,24 @@ namespace Gek
 
                 std::unordered_map<String, String> resourceStructuresMap;
 
-                for(auto &textureNode : shaderNode.getChild(L"textures").children)
+                for(auto &textureNode : shaderNode[L"textures"].members())
                 {
-                    if (resourceMap.count(textureNode.type) > 0)
+                    String textureName(textureNode.name());
+                    auto &textureValue = textureNode.value();
+                    if (resourceMap.count(textureName) > 0)
                     {
                         throw ResourceAlreadyListed();
                     }
 
-                    if (textureNode.attributes.count(L"source"))
+                    if (textureValue.count(L"source"))
                     {
-                        resources->getShader(textureNode.getAttribute(L"source"), MaterialHandle());
-                        resourceMap[textureNode.type] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureNode.type, textureNode.getAttribute(L"source")));
+                        String textureSource(textureValue[L"source"].as_cstring());
+                        resources->getShader(textureSource, MaterialHandle());
+                        resourceMap[textureName] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureName, textureSource));
                     }
                     else
                     {
-                        Video::Format format = Video::getFormat(textureNode.text);
+                        Video::Format format = Video::getFormat(textureValue[L"format"].as_cstring());
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -355,45 +383,47 @@ namespace Gek
 
                         uint32_t textureWidth = displayWidth;
                         uint32_t textureHeight = displayHeight;
-                        if (textureNode.attributes.count(L"size"))
+                        if (textureValue.count(L"size"))
                         {
-                            Math::Float2 size = evaluate(globalDefinesMap, textureNode.getAttribute(L"size"), BindType::UInt2);
+                            Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_cstring(), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t flags = getTextureFlags(textureNode.getAttribute(L"flags", L"0"));
-                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureNode.getAttribute(L"mipmaps", L"1"), BindType::UInt);
-                        resourceMap[textureNode.type] = resources->createTexture(String::create(L"%v:%v:resource", textureNode.type, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
-                        resourceSizeMap.insert(std::make_pair(textureNode.type, std::make_pair(textureWidth, textureHeight)));
+                        uint32_t flags = getTextureFlags(JSON::getMember(textureValue, L"flags", L"0"));
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, JSON::getMember(textureValue, L"mipmaps", L"1"), BindType::UInt);
+                        resourceMap[textureName] = resources->createTexture(String::create(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
+                        resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
 
-                    BindType bindType = getBindType(textureNode.getAttribute(L"bind"));
-                    resourceMappingsMap[textureNode.type] = std::make_pair(MapType::Texture2D, bindType);
+                    BindType bindType = getBindType(textureValue[L"bind"].as_cstring());
+                    resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
-                for (auto &bufferNode : shaderNode.getChild(L"buffers").children)
+                for (auto &bufferNode : shaderNode[L"buffers"].members())
                 {
-                    if (resourceMap.count(bufferNode.type) > 0)
+                    String bufferName(bufferNode.name());
+                    auto &bufferValue = bufferNode.value();
+                    if (resourceMap.count(bufferName) > 0)
                     {
                         throw ResourceAlreadyListed();
                     }
 
-                    uint32_t size = evaluate(globalDefinesMap, bufferNode.getAttribute(L"size"), BindType::UInt);
-                    uint32_t flags = getBufferFlags(bufferNode.getAttribute(L"flags"));
-                    if (bufferNode.attributes.count(L"stride"))
+                    uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_cstring(), BindType::UInt);
+                    uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_cstring());
+                    if (bufferValue.count(L"stride"))
                     {
-                        uint32_t stride = evaluate(globalDefinesMap, bufferNode.getAttribute(L"stride"), BindType::UInt);
-                        resourceMap[bufferNode.type] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferNode.type, shaderName), stride, size, Video::BufferType::Structured, flags);
-                        resourceStructuresMap[bufferNode.type] = bufferNode.text;
+                        uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_cstring(), BindType::UInt);
+                        resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
+                        resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_cstring();
                     }
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Video::getFormat(bufferNode.text);
-                        if (bufferNode.attributes.count(L"bind"))
+                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_cstring());
+                        if (bufferValue.count(L"bind"))
                         {
-                            bindType = getBindType(bufferNode.getAttribute(L"bind"));
+                            bindType = getBindType(bufferValue[L"bind"].as_cstring());
                         }
                         else
                         {
@@ -401,49 +431,40 @@ namespace Gek
                         }
 
                         MapType mapType = MapType::Buffer;
-                        if ((bool)bufferNode.getAttribute(L"byteaddress", L"false"))
+                        if (JSON::getMember(bufferValue, L"byteaddress", false))
                         {
                             mapType = MapType::ByteAddressBuffer;
                         }
 
-                        resourceMappingsMap[bufferNode.type] = std::make_pair(mapType, bindType);
-                        resourceMap[bufferNode.type] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferNode.type, shaderName), format, size, Video::BufferType::Raw, flags);
+                        resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
+                        resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
                     }
                 }
 
-                auto &materialNode = shaderNode.getChild(L"material");
-                for (auto &passNode : shaderNode.getChild(L"passes").children)
+                auto &materialNode = shaderNode[L"material"];
+                for (auto &passNode : shaderNode[L"passes"].members())
                 {
+                    String passName(passNode.name());
+                    auto &passValue = passNode.value();
 					passList.push_back(PassData(passIndex++));
                     PassData &pass = passList.back();
 
-                    pass.lighting = passNode.getAttribute(L"lighting", L"false");
-                    for (auto &clearTargetNode : passNode.getChild(L"clear").children)
+                    pass.lighting = JSON::getMember(passNode, L"lighting", L"false");
+                    for (auto &clearTargetNode : passValue[L"clear"].members())
                     {
-                        auto resourceSearch = resourceMap.find(clearTargetNode.type);
+                        String clearTargetName(clearTargetNode.name());
+                        auto resourceSearch = resourceMap.find(clearTargetName);
                         if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
 
-                        switch (getClearType(clearTargetNode.getAttribute(L"type")))
-                        {
-                        case ClearType::Target:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)clearTargetNode.text)));
-                            break;
-
-                        case ClearType::Float:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::SIMD::Float4)clearTargetNode.text)));
-                            break;
-
-                        case ClearType::UInt:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((uint32_t)clearTargetNode.text)));
-                            break;
-                        };
+                        auto &clearTargetValue = clearTargetNode.value();
+                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_cstring()), clearTargetValue[L"value"].as_cstring())));
                     }
 
                     std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
-                    for (auto &defineNode : passNode.getChild(L"defines").children)
+                    for (auto &defineNode : passValue[L"defines"].members())
                     {
                         BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
                         localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
@@ -862,7 +883,7 @@ namespace Gek
                 return priority;
             }
 
-            const Material *getPassMaterial(const wchar_t *passName) const
+            const Material *getMaterial(const wchar_t *passName) const
             {
                 auto passSearch = forwardPassMap.find(passName);
                 if (passSearch != std::end(forwardPassMap))

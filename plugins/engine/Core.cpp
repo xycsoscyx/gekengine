@@ -537,9 +537,7 @@ namespace Gek
 
                 try
                 {
-                    String configurationData;
-                    FileSystem::load(getContext()->getFileName(L"config.json"), configurationData);
-                    configuration = JSON::Object::parse(configurationData);
+                    configuration = JSON::load(getContext()->getFileName(L"config.json"));
                 }
                 catch (const std::exception &)
                 {

@@ -275,9 +275,8 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-						String materialData;
-						FileSystem::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"), materialData);
-						const JSON::Object materialNode = JSON::Object::parse(materialData);
+                        const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"));
+
                         auto &surfaceNode = materialNode[L"surface"];
                         if (!surfaceNode.is_null())
                         {

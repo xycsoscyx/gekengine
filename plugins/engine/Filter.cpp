@@ -86,9 +86,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                String filterData;
-                FileSystem::load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"), filterData);
-                const JSON::Object filterNode = JSON::Object::parse(filterData);
+                const JSON::Object filterNode = JSON::load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"));
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = videoDevice->getBackBuffer()->getWidth();
@@ -397,28 +395,14 @@ namespace Gek
                     for (auto &clearTargetNode : passNode[L"clear"].members())
                     {
                         auto &clearTargetName = clearTargetNode.name();
-                        auto &clearTargetValue = clearTargetNode.value();
                         auto resourceSearch = resourceMap.find(clearTargetName);
                         if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
 
-                        String value(clearTargetValue[L"value"].as_cstring());
-                        switch (getClearType(clearTargetValue[L"type"].as_cstring()))
-                        {
-                        case ClearType::Target:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::Float4)value)));
-                            break;
-
-                        case ClearType::Float:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((Math::SIMD::Float4)value)));
-                            break;
-
-                        case ClearType::UInt:
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData((uint32_t)value)));
-                            break;
-                        };
+                        auto &clearTargetValue = clearTargetNode.value();
+                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_cstring()), clearTargetValue[L"value"].as_cstring())));
                     }
 
                     auto &generateMipMapsNode = passNode[L"generatemipmaps"];

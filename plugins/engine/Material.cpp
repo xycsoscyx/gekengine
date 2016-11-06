@@ -29,9 +29,7 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                String materialData;
-                FileSystem::load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"), materialData);
-                const JSON::Object materialNode = JSON::Object::parse(materialData);
+                const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"));
 
                 auto &shaderNode = materialNode[L"shader"];
                 if (!shaderNode.is_object())
@@ -51,10 +49,10 @@ namespace Gek
                     {
                         String passName(passNode.name());
                         auto &passValue = passNode.value();
-                        auto passMaterial = shader->getPassMaterial(passName);
-                        if (passMaterial)
+                        auto shaderMaterial = shader->getMaterial(passName);
+                        if (shaderMaterial)
                         {
-                            auto &passData = passDataMap[passMaterial->identifier];
+                            auto &passData = passDataMap[shaderMaterial->identifier];
                             if (materialNode.has_member(L"renderState"))
                             {
                                 Video::RenderStateInformation renderStateInformation;
@@ -63,10 +61,10 @@ namespace Gek
                             }
                             else
                             {
-                                renderState = passMaterial->renderState;
+                                renderState = shaderMaterial->renderState;
                             }
 
-                            for (auto &resource : passMaterial->resourceList)
+                            for (auto &resource : shaderMaterial->resourceList)
                             {
                                 ResourceHandle resourceHandle;
                                 auto &resourceNode = passValue[resource.name];

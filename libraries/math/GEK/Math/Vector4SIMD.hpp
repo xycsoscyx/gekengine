@@ -45,57 +45,49 @@ namespace Gek
 				{
 				}
 
-				Vector4(TYPE value)
+                Vector4(TYPE value)
 					: simd(_mm_set1_ps(value))
 				{
 				}
 
-				Vector4(__m128 simd)
-					: simd(simd)
-				{
-				}
+                Vector4(__m128 simd)
+                    : simd(simd)
+                {
+                }
 
-				Vector4(const TYPE(&data)[4])
-					: simd(_mm_loadu_ps(data))
-				{
-				}
-
-				Vector4(const TYPE *data)
-					: simd(_mm_loadu_ps(data))
-				{
-				}
-
-				Vector4(const Vector4 &vector)
-					: simd(vector.simd)
-				{
-				}
-
-				Vector4(const Vector3<TYPE> &xyz, TYPE w)
-					: simd(_mm_setr_ps(xyz.x, xyz.y, xyz.z, w))
-				{
-				}
-
-				Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
-					: simd(_mm_setr_ps(xy.x, xy.y, zw.x, zw.y))
-				{
-				}
-
-				Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
+                Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
 					: simd(_mm_setr_ps(x, y, z, w))
 				{
 				}
 
-				void set(TYPE x, TYPE y, TYPE z, TYPE w)
+                Vector4(const TYPE *data)
+					: simd(_mm_loadu_ps(data))
 				{
-					simd = _mm_setr_ps(x, y, z, w);
 				}
 
-				void set(TYPE value)
+                Vector4(const Vector4 &vector)
+					: simd(vector.simd)
 				{
-					this->x = value;
-					this->y = value;
-					this->z = value;
-					this->w = value;
+				}
+
+                Vector4(const Vector3<TYPE> &xyz, TYPE w)
+					: simd(_mm_setr_ps(xyz.x, xyz.y, xyz.z, w))
+				{
+				}
+
+                Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
+					: simd(_mm_setr_ps(xy.x, xy.y, zw.x, zw.y))
+				{
+				}
+
+                void set(TYPE value)
+                {
+                    simd = _mm_set1_ps(value);
+                }
+
+                void set(TYPE x, TYPE y, TYPE z, TYPE w)
+				{
+					simd = _mm_setr_ps(x, y, z, w);
 				}
 
 				TYPE getLengthSquared(void) const
@@ -290,12 +282,6 @@ namespace Gek
 				}
 
 				// scalar operations
-				Vector4 &operator = (TYPE scalar)
-				{
-					simd = _mm_set1_ps(scalar);
-					return (*this);
-				}
-
 				void operator -= (TYPE scalar)
 				{
 					simd = _mm_sub_ps(simd, _mm_set1_ps(scalar));

@@ -25,25 +25,6 @@
 
 namespace Gek
 {
-    namespace Utility
-    {
-        Video::InputElement::Source getElementSource(const wchar_t *elementSourceString)
-        {
-            if (wcsicmp(elementSourceString, L"instance") == 0) return Video::InputElement::Source::Instance;
-            else return Video::InputElement::Source::Vertex;
-        }
-
-        Video::InputElement::Semantic getElementSemantic(const wchar_t *semanticString)
-        {
-            if (wcsicmp(semanticString, L"Position") == 0) return Video::InputElement::Semantic::Position;
-            else if (wcsicmp(semanticString, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
-            else if (wcsicmp(semanticString, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
-            else if (wcsicmp(semanticString, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
-            else if (wcsicmp(semanticString, L"Color") == 0) return Video::InputElement::Semantic::Color;
-            else return Video::InputElement::Semantic::TexCoord;
-        }
-    }; // namespace Utility
-
     namespace Implementation
     {
         GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)

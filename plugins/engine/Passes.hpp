@@ -86,9 +86,7 @@ namespace Gek
             uint32_t uint[4];
         };
 
-        ClearData(const Math::Float4 &color);
-        ClearData(const Math::SIMD::Float4 &value);
-        ClearData(uint32_t uint);
+        ClearData(ClearType type, const String &data);
         ClearData(const ClearData &clearData);
         ~ClearData(void);
 

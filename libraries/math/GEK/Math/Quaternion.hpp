@@ -40,8 +40,8 @@ namespace Gek
             {
             }
 
-            Quaternion(const TYPE(&data)[4])
-                : simd(_mm_loadu_ps(data))
+            Quaternion(TYPE x, TYPE y, TYPE z, TYPE w)
+                : simd(_mm_setr_ps(x, y, x, y))
             {
             }
 
@@ -52,11 +52,6 @@ namespace Gek
 
             Quaternion(const Quaternion &vector)
                 : simd(vector.simd)
-            {
-            }
-
-            Quaternion(TYPE x, TYPE y, TYPE z, TYPE w)
-                : data{ x, y, z, w }
             {
             }
 
@@ -75,12 +70,10 @@ namespace Gek
                 TYPE cosYaw(std::cos(yaw * 0.5f));
                 TYPE cosRoll(std::cos(roll * 0.5f));
                 return Quaternion(
-                {
                     ((sinPitch * cosYaw * cosRoll) - (cosPitch * sinYaw * sinRoll)),
                     ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll)),
                     ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll)),
-                    ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)),
-                });
+                    ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
             }
 
             static Quaternion createAngularRotation(const Vector3<TYPE> &axis, TYPE radians)
@@ -89,12 +82,10 @@ namespace Gek
                 Vector3<TYPE> normal(axis.getNormal());
                 TYPE sinAngle(std::sin(halfRadians));
                 return Quaternion(
-                {
                     (normal.x * sinAngle),
                     (normal.y * sinAngle),
                     (normal.z * sinAngle),
-                    std::cos(halfRadians),
-                });
+                    std::cos(halfRadians));
             }
 
             TYPE getLengthSquared(void) const
@@ -184,7 +175,8 @@ namespace Gek
 
             Quaternion operator * (const Quaternion &rotation) const
             {
-                return Quaternion(((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
+                return Quaternion(
+                    ((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
                     ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
                     ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
                     ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z))).getNormal();

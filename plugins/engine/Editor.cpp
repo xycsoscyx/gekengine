@@ -160,8 +160,7 @@ namespace Gek
                                             std::advance(componentSearch, componentIndex);
                                             if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
                                             {
-                                                JSON::Object componentData;
-//                                                componentData.set(componentSearch->second->getName(), {});
+                                                JSON::Member componentData(componentSearch->second->getName());
                                                 population->addComponent(entity, componentData);
                                                 ImGui::CloseCurrentPopup();
                                             }

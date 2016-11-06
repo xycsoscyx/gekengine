@@ -426,20 +426,20 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			{
 				try
 				{
-                    const JSON::Object materialNode(Xml::load(fileName, L"material"));
-                    auto &shaderNode = materialNode.getChild(L"shader");
-                    if (shaderNode.valid)
+                    const JSON::Object materialNode = JSON::load(fileName);
+                    auto &shaderNode = materialNode[L"shader"];
+                    if (!shaderNode.is_null() && shaderNode.is_object() && !shaderNode.empty())
 					{
-						for (auto &shaderPassNode : shaderNode.children)
+						for (auto &shaderPassNode : shaderNode.members())
 						{
-                            auto &albedoNode = shaderPassNode.getChild(L"albedo");
-                            if (albedoNode.valid)
+                            auto &albedoNode = shaderPassNode.value()[L"albedo"];
+                            if (!albedoNode.is_null())
 							{
-								if (albedoNode.attributes.count(L"file"))
+								if (albedoNode.count(L"file"))
 								{
 									String materialName(FileSystem::replaceExtension(fileName).getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
-									materialAlbedoMap[albedoNode.getAttribute(L"file")] = materialName;
+									materialAlbedoMap[albedoNode[L"file"].as_cstring()] = materialName;
 								}
 							}
 						}

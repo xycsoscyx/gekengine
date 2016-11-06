@@ -52,12 +52,12 @@ namespace Gek
             {
             }
 
-            Vector4(const TYPE(&data)[4])
-				: x(data[0])
-				, y(data[1])
-				, z(data[2])
-				, w(data[3])
-            {
+            Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
+				: x(x)
+				, y(y)
+				, z(z)
+				, w(w)
+			{
             }
 
             Vector4(const TYPE *data)
@@ -68,36 +68,36 @@ namespace Gek
 			{
             }
 
-			Vector4(const Vector4 &vector)
-				: x(vector.x)
-				, y(vector.y)
-				, z(vector.z)
-				, w(vector.w)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector4(const Vector4<OTHER> &vector)
+				: x(TYPE(vector.x))
+				, y(TYPE(vector.y))
+				, z(TYPE(vector.z))
+				, w(TYPE(vector.w))
 			{
 			}
 
-			Vector4(const Vector3<TYPE> &xyz, TYPE w)
-				: x(xyz.x)
-				, y(xyz.y)
-				, z(xyz.z)
-				, w(w)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector4(const Vector3<OTHER> &xyz, OTHER w)
+				: x(TYPE(xyz.x))
+				, y(TYPE(xyz.y))
+				, z(TYPE(xyz.z))
+				, w(TYPE(w))
 			{
 			}
 
-			Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
-				: x(xy.x)
-				, y(xy.y)
-				, z(zw.x)
-				, w(zw.y)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector4(const Vector2<OTHER> &xy, const Vector2<OTHER> &zw)
+				: x(TYPE(xy.x))
+				, y(TYPE(xy.y))
+				, z(TYPE(zw.x))
+				, w(TYPE(zw.y))
 			{
 			}
 
-			Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
-				: x(x)
-				, y(y)
-				, z(z)
-				, w(w)
-			{
+            void set(TYPE value)
+            {
+                x = y = z = w = value;
             }
 
             void set(TYPE x, TYPE y, TYPE z, TYPE w)
@@ -106,11 +106,6 @@ namespace Gek
 				this->y = y;
 				this->z = z;
 				this->w = w;
-            }
-
-            void set(TYPE value)
-            {
-				x = y = z = w = value;
             }
 
             TYPE getLengthSquared(void) const
@@ -258,12 +253,13 @@ namespace Gek
             }
 
             // vector operations
-            Vector4 &operator = (const Vector4 &vector)
+            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
+            Vector4 &operator = (const Vector4<OTHER> &vector)
             {
-				x = vector.x;
-				y = vector.y;
-				z = vector.z;
-				w = vector.w;
+                x = TYPE(vector.x);
+                y = TYPE(vector.y);
+                z = TYPE(vector.z);
+                w = TYPE(vector.w);
                 return (*this);
             }
 
@@ -336,12 +332,6 @@ namespace Gek
 			}
 
             // scalar operations
-            Vector4 &operator = (TYPE scalar)
-            {
-				x = y = z = w = scalar;
-                return (*this);
-            }
-
             void operator -= (TYPE scalar)
             {
 				x += scalar;

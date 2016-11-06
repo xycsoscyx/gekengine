@@ -153,9 +153,7 @@ namespace Gek
                     onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
-                        String worldData;
-                        FileSystem::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"), worldData);
-                        const JSON::Object worldNode = JSON::Object::parse(worldData);
+                        const JSON::Object worldNode = JSON::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"));
 
                         auto &prefabsNode = worldNode[L"prefabs"];
                         if (!prefabsNode.is_null() && !prefabsNode.is_object())
@@ -201,7 +199,7 @@ namespace Gek
                                     auto &componentData = (*componentSearch);
                                     for (auto &attribute : componentNode.value().members())
                                     {
-                                        componentData.value.set(attribute.name(), attribute.value());
+                                        componentData.value().set(attribute.name(), attribute.value());
                                     }
                                 }
                             }
