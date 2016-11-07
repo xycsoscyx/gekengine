@@ -69,7 +69,7 @@ namespace Gek
 			HANDLE file = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if(file == INVALID_HANDLE_VALUE)
             {
-                throw FileNotFound();
+                throw FileNotFound("Unable to open file for reading");
             }
 
 			buffer.resize(GetFileSize(file, nullptr));
@@ -80,7 +80,7 @@ namespace Gek
 
 			if (bytesRead != buffer.size())
 			{
-				throw FileReadError();
+				throw FileReadError("Unable to read file contents");
 			}
 		}
 
@@ -116,7 +116,7 @@ namespace Gek
             HANDLE file = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if (file == INVALID_HANDLE_VALUE)
 			{
-				throw FileNotFound();
+				throw FileNotFound("Unable to open file for writing");
 			}
 
 			DWORD bytesWritten = 0;
@@ -125,7 +125,7 @@ namespace Gek
 
 			if (bytesWritten != buffer.size())
 			{
-				throw FileWriteError();
+				throw FileWriteError("Unable to write contents to file");
 			}
         }
 

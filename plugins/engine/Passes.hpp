@@ -107,7 +107,7 @@ namespace Gek
     uint32_t getTextureFlags(const String &createFlags);
     uint32_t getBufferFlags(const String &createFlags);
 
-    std::unordered_map<String, String> getAliasedMap(const JSON::Object &object);
+    std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, const wchar_t *name);
 
     Video::Format getElementFormat(const String &format);
     Video::InputElement::Source getElementSource(const String &elementSource);

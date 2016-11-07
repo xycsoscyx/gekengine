@@ -49,7 +49,6 @@ namespace Gek
 
     GEK_INTERFACE(ContextUser)
     {
-        GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(InvalidParameterCount);
         GEK_ADD_EXCEPTION(InvalidParameterType);
 
@@ -88,13 +87,13 @@ namespace Gek
             auto argumentCount = sequence.size();
             if (argumentTypes.size() != argumentCount)
             {
-                throw ContextUser::InvalidParameterCount();
+                throw ContextUser::InvalidParameterCount("Invalid number of arguments passed to constructor");
             }
 
             std::vector<std::type_index> expectedTypes = { typeid(PARAMETERS)... };
             if (expectedTypes != argumentTypes)
             {
-                throw ContextUser::InvalidParameterType();
+                throw ContextUser::InvalidParameterType("Mismatched types passed to constructor");
             }
 
             return createBase(context, std::get<SIZE>(packedArguments)...);

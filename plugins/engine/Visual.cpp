@@ -68,7 +68,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    throw InvalidElementType();
+                                    throw InvalidElementType("Invalid system format encountered");
                                 }
                             }
 						}
@@ -79,7 +79,7 @@ namespace Gek
 							element.format = getBindFormat(getBindType(bindType));
 							if (element.format == Video::Format::Unknown)
 							{
-								throw InvalidElementType();
+								throw InvalidElementType("Invalid vertex data format encountered");
 							}
 
 							element.semantic = getElementSemantic(elementNode[L"semantic"].as_string());
@@ -105,8 +105,8 @@ namespace Gek
 						auto bindFormat = getBindFormat(getBindType(bindType));
 						if (bindFormat == Video::Format::Unknown)
 						{
-							throw InvalidElementType();
-						}
+                            throw InvalidElementType("Invalid vertex data format encountered");
+                        }
 
 						auto semantic = getElementSemantic(elementNode[L"semantic"].as_string());
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
@@ -148,7 +148,7 @@ namespace Gek
 				}
                 else
 				{
-					throw MissingParameters();
+					throw MissingParameters("Visual vertex data must be an object");
 				}
 
                 auto geometryNode = visualNode.get(L"geometry");

@@ -43,7 +43,7 @@ namespace Gek
 									}
 									else
 									{
-										throw DuplicateClass();
+                                        throw DuplicateClass("Duplicate class found in plugin library");
 									}
 								}, [this](const wchar_t *typeName, const wchar_t *className) -> void
 								{
@@ -59,7 +59,7 @@ namespace Gek
 						}
 						else
 						{
-							throw InvalidPlugin();
+							throw InvalidPlugin("Unable to load plugin");
 						}
 					}
 
@@ -89,7 +89,7 @@ namespace Gek
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
             {
-                throw ClassNotFound();
+                throw ClassNotFound("Unable to locate class in plugin library");
             }
 
             return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);

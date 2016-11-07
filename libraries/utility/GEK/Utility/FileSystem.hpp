@@ -16,7 +16,6 @@ namespace Gek
 {
     namespace FileSystem
     {
-        GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(FileNotFound);
         GEK_ADD_EXCEPTION(FileReadError);
         GEK_ADD_EXCEPTION(FileWriteError);

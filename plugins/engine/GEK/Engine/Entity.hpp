@@ -19,7 +19,6 @@ namespace Gek
     {
         GEK_INTERFACE(Entity)
         {
-            GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(ComponentNotFound);
 
             virtual ~Entity(void) = default;

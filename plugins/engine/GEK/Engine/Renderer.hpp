@@ -21,7 +21,6 @@ namespace Gek
 
         GEK_INTERFACE(Renderer)
         {
-            GEK_START_EXCEPTIONS();
 
             struct DirectionalLightData
             {

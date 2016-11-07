@@ -179,7 +179,7 @@ namespace Gek
                 newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
                 if (newtonStaticScene == nullptr)
                 {
-                    throw Newton::UnableToCreateCollision();
+                    throw Newton::UnableToCreateCollision("Unable to create scene collision");
                 }
 
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
@@ -472,7 +472,7 @@ namespace Gek
 
                     if (newtonCollision == nullptr)
                     {
-                        throw Newton::UnableToCreateCollision();
+                        throw Newton::UnableToCreateCollision("Unable to create shape collision object");
                     }
 
                     collisionMap[hash] = newtonCollision;
@@ -504,12 +504,12 @@ namespace Gek
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")
                     {
-                        throw InvalidModelIdentifier();
+                        throw Newton::InvalidModelIdentifier("Unknown model file identifier encountered");
                     }
 
 					if (header->version != 1)
                     {
-                        throw Newton::InvalidModelVersion();
+                        throw Newton::InvalidModelVersion("Unsupported model version encountered");
                     }
 
 					struct DeSerializationData
@@ -551,12 +551,12 @@ namespace Gek
                     }
                     else
                     {
-                        throw Newton::InvalidModelType();
+                        throw Newton::InvalidModelType("Unsupported model type encountered");
                     }
 
                     if (newtonCollision == nullptr)
                     {
-                        throw Newton::UnableToCreateCollision();
+                        throw Newton::UnableToCreateCollision("Unable to create model collision object");
                     }
 
                     collisionMap[hash] = newtonCollision;

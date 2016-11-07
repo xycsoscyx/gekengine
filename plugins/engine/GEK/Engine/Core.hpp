@@ -22,9 +22,9 @@ namespace Gek
 
         GEK_INTERFACE(Core)
         {
-            GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InitializationFailed);
             GEK_ADD_EXCEPTION(InvalidDisplayMode);
+            GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(bool showCursor)> onInterface;

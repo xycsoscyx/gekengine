@@ -123,18 +123,29 @@ namespace Gek
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(float(displayWidth), float(displayHeight)));
-                for (auto &defineNode : shaderNode[L"defines"].members())
+                if (shaderNode.has_member(L"defines"))
                 {
-                    auto &defineName = defineNode.name();
-                    auto &defineValue = defineNode.value();
-                    if (defineValue.is_object())
+                    auto &definesNode = shaderNode.get(L"defines");
+                    if (definesNode.is_object())
                     {
-                        BindType bindType = getBindType(defineValue[L"bind"].as_string());
-                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
+                        for (auto &defineNode : definesNode.members())
+                        {
+                            auto &defineName = defineNode.name();
+                            auto &defineValue = defineNode.value();
+                            if (defineValue.is_object())
+                            {
+                                BindType bindType = getBindType(defineValue.get(L"bind", L"").as_string());
+                                globalDefinesMap[defineName] = std::make_pair(bindType, defineValue.get(L"value", L"").as_string());
+                            }
+                            else
+                            {
+                                globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                            }
+                        }
                     }
                     else
                     {
-                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                        throw InvalidParameterType("Shader global defines must be an object");
                     }
                 }
 
@@ -261,7 +272,7 @@ namespace Gek
                                 }
                                 else
 								{
-									throw InvalidParameters();
+									throw InvalidElementType("Invalid system format encountered");
 								}
 							}
 						}
@@ -271,7 +282,7 @@ namespace Gek
 							auto bindFormat = getBindFormat(getBindType(bindType));
 							if (bindFormat == Video::Format::Unknown)
 							{
-								throw InvalidElementType();
+								throw InvalidElementType("Invalid vertex data format encountered");
 							}
 
 							auto semantic = getElementSemantic(elementNode[L"semantic"].as_string());
@@ -349,7 +360,7 @@ namespace Gek
                     auto &textureValue = textureNode.value();
                     if (resourceMap.count(textureName) > 0)
                     {
-                        throw ResourceAlreadyListed();
+                        throw ResourceAlreadyListed("Texture name same as already listed resource");
                     }
 
                     if (textureValue.has_member(L"source"))
@@ -363,7 +374,7 @@ namespace Gek
                         Video::Format format = Video::getFormat(textureValue[L"format"].as_string());
                         if (format == Video::Format::Unknown)
                         {
-                            throw InvalidParameters();
+                            throw InvalidParameters("Invalid texture format specified");
                         }
 
                         uint32_t textureWidth = displayWidth;
@@ -385,157 +396,164 @@ namespace Gek
                     resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
-                for (auto &bufferNode : shaderNode[L"buffers"].members())
+                auto &buffersNode = shaderNode.get(L"buffers");
+                if (buffersNode.is_object())
                 {
-                    String bufferName(bufferNode.name());
-                    auto &bufferValue = bufferNode.value();
-                    if (resourceMap.count(bufferName) > 0)
+                    for (auto &bufferNode : buffersNode.members())
                     {
-                        throw ResourceAlreadyListed();
-                    }
-
-                    uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
-                    uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
-                    if (bufferValue.has_member(L"stride"))
-                    {
-                        uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
-                        resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
-                        resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_string();
-                    }
-                    else
-                    {
-                        BindType bindType;
-                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_string());
-                        if (bufferValue.has_member(L"bind"))
+                        String bufferName(bufferNode.name());
+                        auto &bufferValue = bufferNode.value();
+                        if (resourceMap.count(bufferName) > 0)
                         {
-                            bindType = getBindType(bufferValue[L"bind"].as_string());
+                            throw ResourceAlreadyListed("Buffer name same as already listed resource");
+                        }
+
+                        uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
+                        uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
+                        if (bufferValue.has_member(L"stride"))
+                        {
+                            uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
+                            resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
+                            resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_string();
                         }
                         else
                         {
-                            bindType = getBindType(format);
-                        }
+                            BindType bindType;
+                            Video::Format format = Video::getFormat(bufferValue[L"format"].as_string());
+                            if (bufferValue.has_member(L"bind"))
+                            {
+                                bindType = getBindType(bufferValue[L"bind"].as_string());
+                            }
+                            else
+                            {
+                                bindType = getBindType(format);
+                            }
 
-                        MapType mapType = MapType::Buffer;
-                        if (bufferValue.get(L"byteaddress", false).as_bool())
-                        {
-                            mapType = MapType::ByteAddressBuffer;
-                        }
+                            MapType mapType = MapType::Buffer;
+                            if (bufferValue.get(L"byteaddress", false).as_bool())
+                            {
+                                mapType = MapType::ByteAddressBuffer;
+                            }
 
-                        resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
-                        resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
+                            resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
+                            resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
+                        }
                     }
                 }
 
-                auto &materialNode = shaderNode[L"material"];
-                for (auto &passNode : shaderNode[L"passes"].elements())
+                auto &passesNode = shaderNode.get(L"passes");
+                if (passesNode.is_array())
                 {
-					passList.push_back(PassData(passIndex++));
-                    PassData &pass = passList.back();
-
-                    pass.lighting = passNode.get(L"lighting", false).as_bool();
-                    for (auto &clearTargetNode : passNode[L"clear"].members())
+                    auto &materialNode = shaderNode.get(L"material");
+                    if (!materialNode.is_null() && !materialNode.is_object())
                     {
-                        String clearTargetName(clearTargetNode.name());
-                        auto resourceSearch = resourceMap.find(clearTargetName);
-                        if (resourceSearch == std::end(resourceMap))
+                        throw InvalidParameters("Shader material must be an object");
+                    }
+
+                    for (auto &passNode : passesNode.elements())
+                    {
+                        passList.push_back(PassData(passIndex++));
+                        PassData &pass = passList.back();
+
+                        pass.lighting = passNode.get(L"lighting", false).as_bool();
+
+                        std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
+                        if (shaderNode.has_member(L"defines"))
                         {
-                            throw InvalidParameters();
+                            auto &definesNode = shaderNode.get(L"defines");
+                            if (definesNode.is_object())
+                            {
+                                for (auto &defineNode : definesNode.members())
+                                {
+                                    auto &defineName = defineNode.name();
+                                    auto &defineValue = defineNode.value();
+                                    if (defineValue.is_object())
+                                    {
+                                        BindType bindType = getBindType(defineValue.get(L"bind", L"").as_string());
+                                        localDefinesMap[defineName] = std::make_pair(bindType, defineValue.get(L"value", L"").as_string());
+                                    }
+                                    else
+                                    {
+                                        localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                throw InvalidParameterType("Shader local defines must be an object");
+                            }
                         }
 
-                        auto &clearTargetValue = clearTargetNode.value();
-                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
-                    }
-
-                    std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
-                    for (auto &defineNode : passNode[L"defines"].members())
-                    {
-                        auto &defineName = defineNode.name();
-                        auto &defineValue = defineNode.value();
-                        if (defineValue.is_object())
+                        String definesData;
+                        for (auto &define : localDefinesMap)
                         {
-                            BindType bindType = getBindType(defineValue[L"bind"].as_string());
-                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
+                            String value(evaluate(localDefinesMap, define.second.second, define.second.first));
+                            String bindType(getBindType(define.second.first));
+                            switch (define.second.first)
+                            {
+                            case BindType::Bool:
+                            case BindType::Int:
+                            case BindType::UInt:
+                            case BindType::Half:
+                            case BindType::Float:
+                                definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
+                                break;
+
+                            default:
+                                definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                                break;
+                            };
                         }
-                        else
+
+                        String engineData;
+                        if (!definesData.empty())
                         {
-                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
-                        }
-                    }
-
-                    String definesData;
-                    for (auto &define : localDefinesMap)
-                    {
-                        String value(evaluate(localDefinesMap, define.second.second, define.second.first));
-                        String bindType(getBindType(define.second.first));
-                        switch (define.second.first)
-                        {
-                        case BindType::Bool:
-                        case BindType::Int:
-                        case BindType::UInt:
-                        case BindType::Half:
-                        case BindType::Float:
-                            definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
-                            break;
-
-                        default:
-                            definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
-                            break;
-                        };
-                    }
-
-                    String engineData;
-                    if (!definesData.empty())
-                    {
-                        engineData.format(
-                            L"namespace Defines\r\n" \
-                            L"{\r\n" \
-                            L"%v" \
-                            L"};\r\n" \
-                            L"\r\n", definesData);
-                    }
-
-                    if (passNode.has_member(L"compute"))
-                    {
-                        pass.mode = Pass::Mode::Compute;
-
-                        pass.width = float(displayWidth);
-                        pass.height = float(displayHeight);
-
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_string(), BindType::UInt3);
-                        pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
-                        pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
-                        pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
-                    }
-                    else
-                    {
-                        if (passNode.has_member(L"forward"))
-                        {
-                            pass.mode = Pass::Mode::Forward;
                             engineData.format(
-                                L"struct InputPixel\r\n" \
+                                L"namespace Defines\r\n" \
                                 L"{\r\n" \
-                                L"    float4 screen : SV_POSITION;\r\n" \
                                 L"%v" \
                                 L"};\r\n" \
-                                L"\r\n", inputData);
+                                L"\r\n", definesData);
+                        }
+
+                        if (passNode.has_member(L"compute"))
+                        {
+                            pass.mode = Pass::Mode::Compute;
+
+                            pass.width = float(displayWidth);
+                            pass.height = float(displayHeight);
+
+                            Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_string(), BindType::UInt3);
+                            pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
+                            pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
+                            pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
                         }
                         else
                         {
-                            pass.mode = Pass::Mode::Deferred;
-                            engineData +=
-                                L"struct InputPixel\r\n" \
-                                L"{\r\n" \
-                                L"    float4 screen : SV_POSITION;\r\n" \
-                                L"    float2 texCoord : TEXCOORD0;\r\n" \
-                                L"};\r\n" \
-                                L"\r\n";
-                        }
+                            if (passNode.has_member(L"forward"))
+                            {
+                                pass.mode = Pass::Mode::Forward;
+                                engineData.format(
+                                    L"struct InputPixel\r\n" \
+                                    L"{\r\n" \
+                                    L"    float4 screen : SV_POSITION;\r\n" \
+                                    L"%v" \
+                                    L"};\r\n" \
+                                    L"\r\n", inputData);
+                            }
+                            else
+                            {
+                                pass.mode = Pass::Mode::Deferred;
+                                engineData +=
+                                    L"struct InputPixel\r\n" \
+                                    L"{\r\n" \
+                                    L"    float4 screen : SV_POSITION;\r\n" \
+                                    L"    float2 texCoord : TEXCOORD0;\r\n" \
+                                    L"};\r\n" \
+                                    L"\r\n";
+                            }
 
-                        std::unordered_map<String, String> renderTargetsMap;
-                        auto &targetsNode = passNode[L"targets"];
-                        if (targetsNode.is_array())
-                        {
-                            renderTargetsMap = getAliasedMap(targetsNode);
+                            std::unordered_map<String, String> renderTargetsMap = getAliasedMap(passNode, L"targets");
                             if (renderTargetsMap.empty())
                             {
                                 pass.width = float(backBuffer->getWidth());
@@ -555,187 +573,207 @@ namespace Gek
                                     auto resourceSearch = resourceMap.find(renderTarget.first);
                                     if (resourceSearch == std::end(resourceMap))
                                     {
-                                        throw UnlistedRenderTarget();
+                                        throw UnlistedRenderTarget("Missing render target encountered");
                                     }
 
                                     pass.renderTargetList.push_back(resourceSearch->second);
                                 }
                             }
-                        }
-                        else
-                        {
-                            throw MissingParameters();
-                        }
 
-                        uint32_t currentStage = 0;
-                        String outputData;
-                        for (auto &resourcePair : renderTargetsMap)
-                        {
-                            auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                            if (resourceSearch == std::end(resourceMappingsMap))
+                            uint32_t currentStage = 0;
+                            String outputData;
+                            for (auto &resourcePair : renderTargetsMap)
                             {
-                                throw UnlistedRenderTarget();
-                            }
-
-                            outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
-                        }
-
-                        if (!outputData.empty())
-                        {
-                            engineData.format(
-                                L"struct OutputPixel\r\n" \
-                                L"{\r\n" \
-                                L"%v" \
-                                L"};\r\n" \
-                                L"\r\n", outputData);
-                        }
-
-                        Video::DepthStateInformation depthStateInformation;
-                        depthStateInformation.load(passNode[L"depthstates"]);
-                        pass.depthState = resources->createDepthState(depthStateInformation);
-
-                        Video::UnifiedBlendStateInformation blendStateInformation;
-                        blendStateInformation.load(passNode[L"blendstate"]);
-                        pass.blendState = resources->createBlendState(blendStateInformation);
-
-                        Video::RenderStateInformation renderStateInformation;
-                        renderStateInformation.load(passNode[L"renderState"]);
-                        pass.renderState = resources->createRenderState(renderStateInformation);
-                    }
-
-                    for (auto &clearTargetNode : passNode[L"clear"].members())
-                    {
-                        auto &clearTargetName = clearTargetNode.name();
-                        auto resourceSearch = resourceMap.find(clearTargetName);
-                        if (resourceSearch == std::end(resourceMap))
-                        {
-                            throw InvalidParameters();
-                        }
-
-                        auto &clearTargetValue = clearTargetNode.value();
-                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
-                    }
-
-                    auto &generateMipMapsNode = passNode[L"generatemipmaps"];
-                    if (generateMipMapsNode.is_array())
-                    {
-                        for (auto &generateMipMaps : generateMipMapsNode.elements())
-                        {
-                            auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
-                            if (resourceSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameters();
-                            }
-
-                            pass.generateMipMapsList.push_back(resourceSearch->second);
-                        }
-                    }
-
-                    auto &copyNode = passNode[L"copy"];
-                    if (copyNode.is_object())
-                    {
-                        for (auto &copy : copyNode.members())
-                        {
-                            auto nameSearch = resourceMap.find(copy.name());
-                            if (nameSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameters();
-                            }
-
-                            auto valueSearch = resourceMap.find(copy.value().as_string());
-                            if (valueSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameters();
-                            }
-
-                            pass.copyResourceMap[nameSearch->second] = valueSearch->second;
-                        }
-                    }
-
-                    if (pass.lighting)
-                    {
-                        engineData += lightsData;
-                    }
-
-                    String resourceData;
-                    uint32_t nextResourceStage(pass.lighting ? 5 : 0);
-                    std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode[L"resources"]);
-                    if (pass.mode == Pass::Mode::Forward)
-                    {
-                        String passMaterial(passNode[L"forward"].as_string());
-                        auto &namedMaterialNode = materialNode[passMaterial];
-                        if (namedMaterialNode.is_array())
-                        {
-                            forwardPassMap[passMaterial] = &pass;
-
-                            std::unordered_map<String, Map> materialMap;
-                            for (auto &resourceNode : namedMaterialNode.elements())
-                            {
-                                String resourceName(resourceNode[L"name"].as_string());
-                                MapType mapType = getMapType(resourceNode[L"type"].as_string());
-                                BindType bindType = getBindType(resourceNode[L"bind"].as_string());
-                                uint32_t flags = getTextureLoadFlags(resourceNode[L"flags"].as_string());
-                                if (resourceNode.has_member(L"file"))
+                                auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
+                                if (resourceSearch == std::end(resourceMappingsMap))
                                 {
-                                    materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"file"].as_cstring())));
+                                    throw UnlistedRenderTarget("Missing render target encountered");
                                 }
-                                else if (resourceNode.has_member(L"pattern"))
-                                {
-                                    materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring())));
-                                }
-                                else
-                                {
-                                    throw UnknownMaterialType();
-                                }
+
+                                outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                             }
 
-                            pass.Material::resourceList.reserve(materialMap.size());
-                            for (auto &resourcePair : materialMap)
+                            if (!outputData.empty())
                             {
-                                auto &resourceName = resourcePair.first;
-                                auto &map = resourcePair.second;
-								if (map.source != MapSource::Pattern)
-								{
-									throw MissingParameters();
-								}
+                                engineData.format(
+                                    L"struct OutputPixel\r\n" \
+                                    L"{\r\n" \
+                                    L"%v" \
+                                    L"};\r\n" \
+                                    L"\r\n", outputData);
+                            }
 
-								Material::Resource resource;
-								resource.name = resourceName;
-								resource.pattern = map.pattern;
-								resource.parameters = map.parameters;
-								pass.Material::resourceList.push_back(resource);
+                            Video::DepthStateInformation depthStateInformation;
+                            depthStateInformation.load(passNode[L"depthstates"]);
+                            pass.depthState = resources->createDepthState(depthStateInformation);
 
-								uint32_t currentStage = nextResourceStage++;
-                                switch (map.source)
+                            Video::UnifiedBlendStateInformation blendStateInformation;
+                            blendStateInformation.load(passNode[L"blendstate"]);
+                            pass.blendState = resources->createBlendState(blendStateInformation);
+
+                            Video::RenderStateInformation renderStateInformation;
+                            renderStateInformation.load(passNode[L"renderState"]);
+                            pass.renderState = resources->createRenderState(renderStateInformation);
+                        }
+
+                        if (passNode.has_member(L"clear"))
+                        {
+                            auto &clearNode = passNode.get(L"clear");
+                            if (clearNode.is_object())
+                            {
+                                for (auto &clearTargetNode : clearNode.members())
                                 {
-                                case MapSource::File:
-                                case MapSource::Pattern:
-                                    resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
-                                    break;
-
-                                case MapSource::Resource:
-                                    if (true)
+                                    auto &clearTargetName = clearTargetNode.name();
+                                    auto resourceSearch = resourceMap.find(clearTargetName);
+                                    if (resourceSearch == std::end(resourceMap))
                                     {
-                                        auto resourceSearch = resourceMappingsMap.find(resourceName);
-                                        if (resourceSearch != std::end(resourceMappingsMap))
-                                        {
-                                            auto &resource = resourceSearch->second;
-                                            resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
-                                        }
+                                        throw MissingParameters("Missing clear target encountered");
                                     }
 
-                                    break;
-                                };
+                                    auto &clearTargetValue = clearTargetNode.value();
+                                    pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
+                                }
+                            }
+                            else
+                            {
+                                throw InvalidParameters("Shader clear list must be an object");
                             }
                         }
-                        else
-                        {
-                            throw MissingParameters();
-                        }
-                    }
 
-                    for (auto &resourcePair : resourceAliasMap)
-                    {
+                        if (passNode.has_member(L"generatemipmaps"))
+                        {
+                            auto &generateMipMapsNode = passNode.get(L"generatemipmaps");
+                            if (generateMipMapsNode.is_array())
+                            {
+                                for (auto &generateMipMaps : generateMipMapsNode.elements())
+                                {
+                                    auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
+                                    if (resourceSearch == std::end(resourceMap))
+                                    {
+                                        throw InvalidParameters("Missing mipmap generation target encountered");
+                                    }
+
+                                    pass.generateMipMapsList.push_back(resourceSearch->second);
+                                }
+                            }
+                            else
+                            {
+                                throw InvalidParameters("Shader mipmap generation list must be an object");
+                            }
+                        }
+
+                        if (passNode.has_member(L"copy"))
+                        {
+                            auto &copyNode = passNode[L"copy"];
+                            if (copyNode.is_object())
+                            {
+                                for (auto &copy : copyNode.members())
+                                {
+                                    auto nameSearch = resourceMap.find(copy.name());
+                                    if (nameSearch == std::end(resourceMap))
+                                    {
+                                        throw InvalidParameters("Missing copy target encountered");
+                                    }
+
+                                    auto valueSearch = resourceMap.find(copy.value().as_string());
+                                    if (valueSearch == std::end(resourceMap))
+                                    {
+                                        throw InvalidParameters("Missing copy source encountered");
+                                    }
+
+                                    pass.copyResourceMap[nameSearch->second] = valueSearch->second;
+                                }
+                            }
+                            else
+                            {
+                                throw InvalidParameters("Shader copy list must be an object");
+                            }
+                        }
+
+                        if (pass.lighting)
+                        {
+                            engineData += lightsData;
+                        }
+
+                        String resourceData;
+                        uint32_t nextResourceStage(pass.lighting ? 5 : 0);
+                        std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode, L"resources");
+                        if (pass.mode == Pass::Mode::Forward)
+                        {
+                            String passMaterial(passNode[L"forward"].as_string());
+                            auto &namedMaterialNode = materialNode[passMaterial];
+                            if (namedMaterialNode.is_array())
+                            {
+                                forwardPassMap[passMaterial] = &pass;
+
+                                std::unordered_map<String, Map> materialMap;
+                                for (auto &resourceNode : namedMaterialNode.elements())
+                                {
+                                    String resourceName(resourceNode[L"name"].as_string());
+                                    MapType mapType = getMapType(resourceNode[L"type"].as_string());
+                                    BindType bindType = getBindType(resourceNode[L"bind"].as_string());
+                                    uint32_t flags = getTextureLoadFlags(resourceNode[L"flags"].as_string());
+                                    if (resourceNode.has_member(L"file"))
+                                    {
+                                        materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"file"].as_cstring())));
+                                    }
+                                    else if (resourceNode.has_member(L"pattern"))
+                                    {
+                                        materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring())));
+                                    }
+                                    else
+                                    {
+                                        throw UnknownMaterialType("Shader material must be either a file or a pattern");
+                                    }
+                                }
+
+                                pass.Material::resourceList.reserve(materialMap.size());
+                                for (auto &resourcePair : materialMap)
+                                {
+                                    auto &resourceName = resourcePair.first;
+                                    auto &map = resourcePair.second;
+                                    if (map.source != MapSource::Pattern)
+                                    {
+                                        throw MissingParameters("Shader material must be a pattern");
+                                    }
+
+                                    Material::Resource resource;
+                                    resource.name = resourceName;
+                                    resource.pattern = map.pattern;
+                                    resource.parameters = map.parameters;
+                                    pass.Material::resourceList.push_back(resource);
+
+                                    uint32_t currentStage = nextResourceStage++;
+                                    switch (map.source)
+                                    {
+                                    case MapSource::File:
+                                    case MapSource::Pattern:
+                                        resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
+                                        break;
+
+                                    case MapSource::Resource:
+                                        if (true)
+                                        {
+                                            auto resourceSearch = resourceMappingsMap.find(resourceName);
+                                            if (resourceSearch != std::end(resourceMappingsMap))
+                                            {
+                                                auto &resource = resourceSearch->second;
+                                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourceName, currentStage);
+                                            }
+                                        }
+
+                                        break;
+                                    };
+                                }
+                            }
+                            else
+                            {
+                                throw MissingParameters("Shader material list must be an array");
+                            }
+                        }
+
+                        for (auto &resourcePair : resourceAliasMap)
+                        {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
                         if (resourceSearch != std::end(resourceMap))
                         {
@@ -766,73 +804,78 @@ namespace Gek
                             resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
                             continue;
                         }
-                    }
-
-                    if (!resourceData.empty())
-                    {
-                        engineData.format(
-                            L"namespace Resources\r\n" \
-                            L"{\r\n" \
-                            L"%v" \
-                            L"};\r\n" \
-                            L"\r\n", resourceData);
-                    }
-
-                    String unorderedAccessData;
-                    uint32_t nextUnorderedStage = 0;
-                    if (pass.mode != Pass::Mode::Compute)
-                    {
-                        nextUnorderedStage = pass.renderTargetList.size();
-                    }
-
-                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode[L"unorderedaccess"]);
-                    for (auto &resourcePair : unorderedAccessAliasMap)
-                    {
-                        auto resourceSearch = resourceMap.find(resourcePair.first);
-                        if (resourceSearch != std::end(resourceMap))
-                        {
-                            pass.unorderedAccessList.push_back(resourceSearch->second);
                         }
 
-                        uint32_t currentStage = nextUnorderedStage++;
-                        auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != std::end(resourceMappingsMap))
+                        if (!resourceData.empty())
                         {
-                            auto &resource = resourceMapSearch->second;
-                            if (resource.first == MapType::ByteAddressBuffer)
+                            engineData.format(
+                                L"namespace Resources\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", resourceData);
+                        }
+
+                        String unorderedAccessData;
+                        uint32_t nextUnorderedStage = 0;
+                        if (pass.mode != Pass::Mode::Compute)
+                        {
+                            nextUnorderedStage = pass.renderTargetList.size();
+                        }
+
+                        std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedaccess");
+                        for (auto &resourcePair : unorderedAccessAliasMap)
+                        {
+                            auto resourceSearch = resourceMap.find(resourcePair.first);
+                            if (resourceSearch != std::end(resourceMap))
                             {
-                                unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
-                            }
-                            else
-                            {
-                                unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                pass.unorderedAccessList.push_back(resourceSearch->second);
                             }
 
-                            continue;
+                            uint32_t currentStage = nextUnorderedStage++;
+                            auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
+                            if (resourceMapSearch != std::end(resourceMappingsMap))
+                            {
+                                auto &resource = resourceMapSearch->second;
+                                if (resource.first == MapType::ByteAddressBuffer)
+                                {
+                                    unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
+                                }
+                                else
+                                {
+                                    unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
+                                }
+
+                                continue;
+                            }
+
+                            auto structureSearch = resourceStructuresMap.find(resourcePair.first);
+                            if (structureSearch != std::end(resourceStructuresMap))
+                            {
+                                auto &structure = structureSearch->second;
+                                unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
+                                continue;
+                            }
                         }
 
-                        auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                        if (structureSearch != std::end(resourceStructuresMap))
+                        if (!unorderedAccessData.empty())
                         {
-                            auto &structure = structureSearch->second;
-                            unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
-                            continue;
+                            engineData.format(
+                                L"namespace UnorderedAccess\r\n" \
+                                L"{\r\n" \
+                                L"%v" \
+                                L"};\r\n" \
+                                L"\r\n", unorderedAccessData);
                         }
-                    }
 
-                    if (!unorderedAccessData.empty())
-                    {
-                        engineData.format(
-                            L"namespace UnorderedAccess\r\n" \
-                            L"{\r\n" \
-                            L"%v" \
-                            L"};\r\n" \
-                            L"\r\n", unorderedAccessData);
+                        String entryPoint(passNode[L"entry"].as_string());
+                        String name(FileSystem::getFileName(shaderName, passNode[L"program"].as_cstring()).append(L".hlsl"));
+                        pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                     }
-
-                    String entryPoint(passNode[L"entry"].as_string());
-                    String name(FileSystem::getFileName(shaderName, passNode[L"program"].as_cstring()).append(L".hlsl"));
-                    pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
+                }
+                else
+                {
+                    throw InvalidParameters("Shader pass list must be an array");
                 }
 			}
 

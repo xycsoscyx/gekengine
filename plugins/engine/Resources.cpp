@@ -494,7 +494,7 @@ namespace Gek
 
                     if (format == Video::Format::Unknown)
                     {
-                        throw InvalidParameter();
+                        throw InvalidParameter("Invalid color format encountered");
                     }
 
                     texture = videoDevice->createTexture(format, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
@@ -547,12 +547,12 @@ namespace Gek
                     }
                     else
                     {
-                        throw InvalidParameter();
+                        throw InvalidParameter("Unknown system pattern encountered");
                     }
                 }
                 else
                 {
-                    throw InvalidParameter();
+                    throw InvalidParameter("Unknown texture pattern encountered");
                 }
 
                 texture->setName(String::create(L"%v:%v", pattern, parameters));
@@ -591,7 +591,7 @@ namespace Gek
 
                             if (includeName.empty())
                             {
-                                throw InvalidIncludeName();
+                                throw InvalidIncludeName("Empty include encountered");
                             }
                             else
                             {
@@ -622,7 +622,7 @@ namespace Gek
                                     }
                                     else
                                     {
-                                        throw InvalidIncludeType();
+                                        throw InvalidIncludeType("Invalid include definition encountered");
                                     }
                                 }
 

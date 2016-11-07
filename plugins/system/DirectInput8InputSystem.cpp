@@ -100,26 +100,26 @@ namespace Gek
                 HRESULT resultValue = directInput->CreateDevice(GUID_SysKeyboard, &device, nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw Input::CreationFailed();
+                    throw Input::CreationFailed("Unable to create keyboard device");
                 }
 
                 resultValue = device->SetDataFormat(&c_dfDIKeyboard);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to set keyboard data format");
                 }
 
                 DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
                 resultValue = device->SetCooperativeLevel(window, flags);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to set keyboard cooperative level");
                 }
 
                 resultValue = device->Acquire();
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to acquire keyboard device");
                 }
             }
 
@@ -179,20 +179,20 @@ namespace Gek
                 HRESULT resultValue = directInput->CreateDevice(GUID_SysMouse, &device, nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw Input::CreationFailed();
+                    throw Input::CreationFailed("Unable to create mouse device");
                 }
 
                 resultValue = device->SetDataFormat(&c_dfDIMouse2);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to set mouse data format");
                 }
 
                 DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
                 resultValue = device->SetCooperativeLevel(window, flags);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to set mouse cooperative level");
                 }
 
                 DIDEVCAPS deviceCaps = { 0 };
@@ -200,13 +200,13 @@ namespace Gek
                 resultValue = device->GetCapabilities(&deviceCaps);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to get mouse capabilities");
                 }
 
                 resultValue = device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to enumerate mouse axis");
                 }
 
                 buttonCount = deviceCaps.dwButtons;
@@ -215,7 +215,7 @@ namespace Gek
                 resultValue = device->Acquire();
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to mouse keyboard device");
                 }
             }
 
@@ -278,20 +278,20 @@ namespace Gek
                 HRESULT resultValue = directInput->CreateDevice(deviceID, &device, nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw Input::CreationFailed();
+                    throw Input::CreationFailed("Unable to create joystick device");
                 }
 
                 resultValue = device->SetDataFormat(&c_dfDIJoystick2);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to set joystick data format");
                 }
 
                 DWORD flags = DISCL_NONEXCLUSIVE | DISCL_BACKGROUND;
                 resultValue = device->SetCooperativeLevel(window, flags);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to set joystick cooperative level");
                 }
 
                 DIDEVCAPS deviceCaps = { 0 };
@@ -299,13 +299,13 @@ namespace Gek
                 resultValue = device->GetCapabilities(&deviceCaps);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to get joystick capabilities");
                 }
 
                 resultValue = device->EnumObjects(setDeviceAxisInfo, (void *)device, DIDFT_AXIS);
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to enumerate joystick axis");
                 }
 
                 buttonCount = deviceCaps.dwButtons;
@@ -314,7 +314,7 @@ namespace Gek
                 resultValue = device->Acquire();
                 if (FAILED(resultValue))
                 {
-                    throw Input::InitializationFailed();
+                    throw Input::InitializationFailed("Unable to joystick keyboard device");
                 }
             }
 
@@ -431,7 +431,7 @@ namespace Gek
                 HRESULT resultValue = DirectInput8Create(GetModuleHandle(nullptr), DIRECTINPUT_VERSION, IID_IDirectInput8, (void **)&directInput, nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw Input::CreationFailed();
+                    throw Input::CreationFailed("Unable to create input system controller");
                 }
 
                 keyboardDevice = std::make_shared<Keyboard>(directInput, window);

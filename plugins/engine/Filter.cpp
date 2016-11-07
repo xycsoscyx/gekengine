@@ -94,18 +94,29 @@ namespace Gek
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
-                for (auto &defineNode : filterNode[L"defines"].members())
+                if (filterNode.has_member(L"defines"))
                 {
-                    auto &defineName = defineNode.name();
-                    auto &defineValue = defineNode.value();
-                    if (defineValue.is_object())
+                    auto &definesNode = filterNode.get(L"defines");
+                    if (definesNode.is_object())
                     {
-                        BindType bindType = getBindType(defineValue[L"bind"].as_string());
-                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
+                        for (auto &defineNode : definesNode.members())
+                        {
+                            auto &defineName = defineNode.name();
+                            auto &defineValue = defineNode.value();
+                            if (defineValue.is_object())
+                            {
+                                BindType bindType = getBindType(defineValue.get(L"bind", L"").as_string());
+                                globalDefinesMap[defineName] = std::make_pair(bindType, defineValue.get(L"value", L"").as_string());
+                            }
+                            else
+                            {
+                                globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                            }
+                        }
                     }
                     else
                     {
-                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                        throw InvalidParameterType("Filter global defines must be an object");
                     }
                 }
 
@@ -174,7 +185,7 @@ namespace Gek
                     auto &textureValue = textureNode.value();
                     if (resourceMap.count(textureName) > 0)
                     {
-                        throw ResourceAlreadyListed();
+                        throw ResourceAlreadyListed("Texture name same as already listed resource");
                     }
 
                     if (textureValue.has_member(L"source"))
@@ -188,12 +199,12 @@ namespace Gek
                         Video::Format format = Video::getFormat(textureValue[L"format"].as_string());
                         if (format == Video::Format::Unknown)
                         {
-                            throw InvalidParameters();
+                            throw InvalidParameters("Invalid texture format specified");
                         }
 
                         uint32_t textureWidth = videoDevice->getBackBuffer()->getWidth();
                         uint32_t textureHeight = videoDevice->getBackBuffer()->getHeight();
-                        if (textureValue.has_member(L"size") > 0)
+                        if (textureValue.has_member(L"size"))
                         {
                             Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_string(), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
@@ -216,12 +227,12 @@ namespace Gek
                     auto &bufferValue = bufferNode.value();
                     if (resourceMap.count(bufferName) > 0)
                     {
-                        throw ResourceAlreadyListed();
+                        throw ResourceAlreadyListed("Buffer name same as already listed resource");
                     }
 
                     uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
                     uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
-                    if (bufferValue.has_member(L"stride") > 0)
+                    if (bufferValue.has_member(L"stride"))
                     {
                         uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
                         resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, filterName), stride, size, Video::BufferType::Structured, flags);
@@ -257,18 +268,29 @@ namespace Gek
                     PassData &pass = passList.back();
 
                     std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
-                    for (auto &defineNode : passNode[L"defines"].members())
+                    if (passNode.has_member(L"defines"))
                     {
-                        auto &defineName = defineNode.name();
-                        auto &defineValue = defineNode.value();
-                        if (defineValue.is_object())
+                        auto &definesNode = passNode.get(L"defines");
+                        if (definesNode.is_object())
                         {
-                            BindType bindType = getBindType(defineValue[L"bind"].as_string());
-                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
+                            for (auto &defineNode : definesNode.members())
+                            {
+                                auto &defineName = defineNode.name();
+                                auto &defineValue = defineNode.value();
+                                if (defineValue.is_object())
+                                {
+                                    BindType bindType = getBindType(defineValue.get(L"bind", L"").as_string());
+                                    localDefinesMap[defineName] = std::make_pair(bindType, defineValue.get(L"value", L"").as_string());
+                                }
+                                else
+                                {
+                                    localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                                }
+                            }
                         }
                         else
                         {
-                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
+                            throw InvalidParameterType("Filter local defines must be an object");
                         }
                     }
 
@@ -328,40 +350,31 @@ namespace Gek
                             L"};\r\n" \
                             L"\r\n";
 
-                        std::unordered_map<String, String> renderTargetsMap;
-                        auto &targetsNode = passNode[L"targets"];
-                        if (targetsNode.is_array())
+                        std::unordered_map<String, String> renderTargetsMap = getAliasedMap(passNode, L"targets");
+                        if (renderTargetsMap.empty())
                         {
-                            renderTargetsMap = getAliasedMap(targetsNode);
-                            if (renderTargetsMap.empty())
-                            {
-                                pass.width = 0.0f;
-                                pass.height = 0.0f;
-                            }
-                            else
-                            {
-                                auto resourceSearch = resourceSizeMap.find(std::begin(renderTargetsMap)->first);
-                                if (resourceSearch != std::end(resourceSizeMap))
-                                {
-                                    pass.width = float(resourceSearch->second.first);
-                                    pass.height = float(resourceSearch->second.second);
-                                }
-                            
-                                for (auto &renderTarget : renderTargetsMap)
-                                {
-                                    auto resourceSearch = resourceMap.find(renderTarget.first);
-                                    if (resourceSearch == std::end(resourceMap))
-                                    {
-                                        throw UnlistedRenderTarget();
-                                    }
-
-                                    pass.renderTargetList.push_back(resourceSearch->second);
-                                }
-                            }
+                            pass.width = 0.0f;
+                            pass.height = 0.0f;
                         }
                         else
                         {
-                            throw MissingParameters();
+                            auto resourceSearch = resourceSizeMap.find(std::begin(renderTargetsMap)->first);
+                            if (resourceSearch != std::end(resourceSizeMap))
+                            {
+                                pass.width = float(resourceSearch->second.first);
+                                pass.height = float(resourceSearch->second.second);
+                            }
+
+                            for (auto &renderTarget : renderTargetsMap)
+                            {
+                                auto resourceSearch = resourceMap.find(renderTarget.first);
+                                if (resourceSearch == std::end(resourceMap))
+                                {
+                                    throw UnlistedRenderTarget("Missing render target encountered");
+                                }
+
+                                pass.renderTargetList.push_back(resourceSearch->second);
+                            }
                         }
 
                         uint32_t currentStage = 0;
@@ -371,7 +384,7 @@ namespace Gek
                             auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
                             if (resourceSearch == std::end(resourceMappingsMap))
                             {
-                                throw UnlistedRenderTarget();
+                                throw UnlistedRenderTarget("Missing render target encountered");
                             }
 
                             outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
@@ -392,58 +405,83 @@ namespace Gek
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
-                    for (auto &clearTargetNode : passNode[L"clear"].members())
+                    if (passNode.has_member(L"clear"))
                     {
-                        auto &clearTargetName = clearTargetNode.name();
-                        auto resourceSearch = resourceMap.find(clearTargetName);
-                        if (resourceSearch == std::end(resourceMap))
+                        auto &clearNode = passNode.get(L"clear");
+                        if (clearNode.is_object())
                         {
-                            throw InvalidParameters();
-                        }
-
-                        auto &clearTargetValue = clearTargetNode.value();
-                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
-                    }
-
-                    auto &generateMipMapsNode = passNode[L"generatemipmaps"];
-                    if (generateMipMapsNode.is_array())
-                    {
-                        for (auto &generateMipMaps : generateMipMapsNode.elements())
-                        {
-                            auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
-                            if (resourceSearch == std::end(resourceMap))
+                            for (auto &clearTargetNode : clearNode.members())
                             {
-                                throw InvalidParameters();
-                            }
+                                auto &clearTargetName = clearTargetNode.name();
+                                auto resourceSearch = resourceMap.find(clearTargetName);
+                                if (resourceSearch == std::end(resourceMap))
+                                {
+                                    throw MissingParameters("Missing clear target encountered");
+                                }
 
-                            pass.generateMipMapsList.push_back(resourceSearch->second);
+                                auto &clearTargetValue = clearTargetNode.value();
+                                pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
+                            }
+                        }
+                        else
+                        {
+                            throw InvalidParameters("Shader clear list must be an object");
                         }
                     }
 
-                    auto &copyNode = passNode[L"copy"];
-                    if (copyNode.is_object())
+                    if(passNode.has_member(L"generatemipmaps"))
                     {
-                        for (auto &copy : copyNode.members())
+                        auto &generateMipMapsNode = passNode.get(L"generatemipmaps");
+                        if (generateMipMapsNode.is_array())
                         {
-                            auto nameSearch = resourceMap.find(copy.name());
-                            if (nameSearch == std::end(resourceMap))
+                            for (auto &generateMipMaps : generateMipMapsNode.elements())
                             {
-                                throw InvalidParameters();
-                            }
+                                auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
+                                if (resourceSearch == std::end(resourceMap))
+                                {
+                                    throw InvalidParameters("Missing mipmap generation target encountered");
+                                }
 
-                            auto valueSearch = resourceMap.find(copy.value().as_string());
-                            if (valueSearch == std::end(resourceMap))
+                                pass.generateMipMapsList.push_back(resourceSearch->second);
+                            }
+                        }
+                        else
+                        {
+                            throw InvalidParameters("Shader mipmap generation list must be an object");
+                        }
+                    }
+
+                    if (passNode.has_member(L"copy"))
+                    {
+                        auto &copyNode = passNode[L"copy"];
+                        if (copyNode.is_object())
+                        {
+                            for (auto &copy : copyNode.members())
                             {
-                                throw InvalidParameters();
-                            }
+                                auto nameSearch = resourceMap.find(copy.name());
+                                if (nameSearch == std::end(resourceMap))
+                                {
+                                    throw InvalidParameters("Missing copy target encountered");
+                                }
 
-                            pass.copyResourceMap[nameSearch->second] = valueSearch->second;
+                                auto valueSearch = resourceMap.find(copy.value().as_string());
+                                if (valueSearch == std::end(resourceMap))
+                                {
+                                    throw InvalidParameters("Missing copy source encountered");
+                                }
+
+                                pass.copyResourceMap[nameSearch->second] = valueSearch->second;
+                            }
+                        }
+                        else
+                        {
+                            throw InvalidParameters("Shader copy list must be an object");
                         }
                     }
 
                     String resourceData;
                     uint32_t nextResourceStage = 0;
-                    std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode[L"resources"]);
+                    std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode, L"resources");
                     for (auto &resourcePair : resourceAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -495,7 +533,7 @@ namespace Gek
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
-                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode[L"unorderedaccess"]);
+                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedaccess");
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);

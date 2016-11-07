@@ -26,7 +26,6 @@ namespace Gek
 
         GEK_INTERFACE(Population)
         {
-            GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InvalidPrefabsBlock);
             GEK_ADD_EXCEPTION(InvalidPopulationBlock);
             GEK_ADD_EXCEPTION(InvalidEntityBlock);

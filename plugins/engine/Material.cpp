@@ -35,13 +35,13 @@ namespace Gek
                 {
                     if (!shaderNode.has_member(L"name"))
                     {
-                        throw MissingParameters();
+                        throw MissingParameters("Missing shader name encountered");
                     }
 
                     Engine::Shader *shader = resources->getShader(shaderNode[L"name"].as_cstring(), materialHandle);
                     if (!shader)
                     {
-                        throw MissingParameters();
+                        throw MissingParameters("Missing shader encountered");
                     }
 
                     auto &passesNode = shaderNode[L"passes"];
@@ -98,7 +98,7 @@ namespace Gek
 				}
                 else
                 {
-                    throw MissingParameters();
+                    throw MissingParameters("Missing shader object encountered");
                 }
             }
 

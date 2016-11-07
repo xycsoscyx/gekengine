@@ -353,7 +353,7 @@ namespace Gek
                     continue;
                 }
 
-                throw UnknownTokenType();
+                throw UnknownTokenType("Unlisted variable/function name encountered");
             }
             else if(match[2].matched) // number
             {
@@ -463,7 +463,7 @@ namespace Gek
             case TokenType::RightParenthesis:
                 if (stack.empty())
                 {
-                    throw UnbalancedParenthesis();
+                    throw UnbalancedParenthesis("Unmatched right parenthesis found");
                 }
 
                 while (stack.top().type != TokenType::LeftParenthesis)
@@ -471,7 +471,7 @@ namespace Gek
                     rpnTokenList.push_back(stack.popTop());
                     if (stack.empty())
                     {
-                        throw UnbalancedParenthesis();
+                        throw UnbalancedParenthesis("Unmatched right parenthesis found");
                     }
                 };
 
@@ -480,7 +480,7 @@ namespace Gek
                 {
                     if (hasVector)
                     {
-                        throw VectorUsedAsParameter();
+                        throw VectorUsedAsParameter("Vectors can only be used as a final result");
                     }
 
                     hasVector = true;
@@ -515,12 +515,12 @@ namespace Gek
             case TokenType::Separator:
                 if (stack.empty())
                 {
-                    throw MisplacedSeparator();
+                    throw MisplacedSeparator("Separator encountered outside of parenthesis block");
                 }
 
                 if (parameterExistsStack.empty())
                 {
-                    throw MisplacedSeparator();
+                    throw MisplacedSeparator("Separator encountered at start of parenthesis block");
                 }
 
                 while (stack.top().type != TokenType::LeftParenthesis)
@@ -528,7 +528,7 @@ namespace Gek
                     rpnTokenList.push_back(stack.popTop());
                     if (stack.empty())
                     {
-                        throw MisplacedSeparator();
+                        throw MisplacedSeparator("Separator encountered without leading left parenthesis");
                     }
                 };
 
@@ -546,7 +546,7 @@ namespace Gek
                 break;
 
             default:
-                throw UnknownTokenType();
+                throw UnknownTokenType("Unknown token type encountered");
             };
         }
 
@@ -554,7 +554,7 @@ namespace Gek
         {
             if (stack.top().type == TokenType::LeftParenthesis || stack.top().type == TokenType::RightParenthesis)
             {
-                throw UnbalancedParenthesis();
+                throw UnbalancedParenthesis("Invalid surrounding parenthesis encountered");
             }
 
             rpnTokenList.push_back(stack.popTop());
@@ -562,7 +562,7 @@ namespace Gek
 
         if (rpnTokenList.empty())
         {
-            throw InvalidEquation();
+            throw InvalidEquation("Empty equation encountered");
         }
 
         return rpnTokenList;
@@ -587,23 +587,23 @@ namespace Gek
                     auto &operationSearch = operationsMap.find(token.string);
                     if (operationSearch == std::end(operationsMap))
                     {
-                        throw InvalidOperator();
+                        throw InvalidOperator("Unlisted unary operation encountered");
                     }
 
                     auto &operation = operationSearch->second;
                     if (!operation.unaryFunction)
                     {
-                        throw InvalidOperator();
+                        throw InvalidOperator("Missing unary function encountered");
                     }
 
                     if (stack.empty())
                     {
-                        throw InvalidOperand();
+                        throw InvalidOperand("Unary function encountered without parameter");
                     }
 
                     if (stack.top().type != TokenType::Number)
                     {
-                        throw InvalidOperand();
+                        throw InvalidOperand("Unary function requires numeric parameter");
                     }
 
                     float functionValue = stack.popTop().value;
@@ -618,34 +618,34 @@ namespace Gek
                     auto &operationSearch = operationsMap.find(token.string);
                     if (operationSearch == std::end(operationsMap))
                     {
-                        throw InvalidOperator();
+                        throw InvalidOperator("Unlisted binary operation encounterd");
                     }
 
                     auto &operation = operationSearch->second;
                     if (!operation.binaryFunction)
                     {
-                        throw InvalidOperator();
+                        throw InvalidOperator("Missing binary function encountered");
                     }
 
                     if (stack.empty())
                     {
-                        throw InvalidOperand();
+                        throw InvalidOperand("Binary function used without first parameter");
                     }
 
                     if (stack.top().type != TokenType::Number)
                     {
-                        throw InvalidOperand();
+                        throw InvalidOperand("Binary function requires numeric first parameter");
                     }
 
                     float functionValueRight = stack.popTop().value;
                     if (stack.empty())
                     {
-                        throw InvalidOperand();
+                        throw InvalidOperand("Binary function used without second parameter");
                     }
 
                     if (stack.top().type != TokenType::Number)
                     {
-                        throw InvalidOperand();
+                        throw InvalidOperand("Binary function requires numeric second parameter");
                     }
 
                     float functionValueLeft = stack.popTop().value;
@@ -659,18 +659,18 @@ namespace Gek
                     auto &functionSearch = functionsMap.find(token.string);
                     if (functionSearch == std::end(functionsMap))
                     {
-                        throw InvalidFunction();
+                        throw InvalidFunction("Unlisted function encountered");
                     }
 
                     auto &function = functionSearch->second;
                     if (function.parameterCount != token.parameterCount)
                     {
-                        throw InvalidFunctionParameters();
+                        throw InvalidFunctionParameters("Expected different number of parameters for function");
                     }
 
                     if (stack.size() < function.parameterCount)
                     {
-                        throw NotEnoughFunctionParameters();
+                        throw NotEnoughFunctionParameters("Not enough parameters passed to function");
                     }
 
                     stack.push(Token(function.function(stack)));
@@ -680,25 +680,25 @@ namespace Gek
             case TokenType::Vector:
                 if (hasVector)
                 {
-                    throw VectorUsedAsParameter();
+                    throw VectorUsedAsParameter("Vectors can only be used as a final result");
                 }
 
                 hasVector = true;
                 break;
 
             default:
-                throw UnknownTokenType();
+                throw UnknownTokenType("Unknown token type encountered");
             };
         }
 
         if (rpnTokenList.empty())
         {
-            throw InvalidEquation();
+            throw InvalidEquation("Empty equation encountered");
         }
 
         if (stack.size() != valueSize)
         {
-            throw InvalidVector();
+            throw InvalidVector("Resulting vector size doesn't match requested size");
         }
 
         for (uint32_t axis = valueSize; axis > 0; axis--)

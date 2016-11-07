@@ -253,12 +253,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 	}
     catch (const std::exception &exception)
     {
-        printf("[error] Exception occurred: %s", exception.what());
+        printf("\r\n\r\nGEK Engine - Error\r\n");
+        printf(StringUTF8::create("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {
-        printf("\r\n[error] Unhandled Exception Occurred!");
-    }
+        printf("\r\n\r\nGEK Engine - Error\r\n");
+        printf("Caught: Non-standard exception\r\n");
+    };
 
     printf("\r\n");
     return 0;

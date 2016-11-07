@@ -16,7 +16,6 @@ namespace Gek
 {
     namespace Audio
     {
-        GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(CreationFailed);
         GEK_ADD_EXCEPTION(InitailizeDeviceFailed);
         GEK_ADD_EXCEPTION(LoadFileFailed);

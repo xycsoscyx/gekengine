@@ -134,8 +134,6 @@ namespace Gek
 			Device(Context *context, HWND window, String device)
 				: ContextRegistration(context)
 			{
-                throw Exception("TODO: Finish DirectSound8 Audio Device");
-
 				GEK_REQUIRE(window);
 
 				GUID deviceGUID = DSDEVID_DefaultPlayback;
@@ -162,13 +160,13 @@ namespace Gek
 				HRESULT resultValue = DirectSoundCreate8(&deviceGUID, &directSound, nullptr);
 				if (FAILED(resultValue))
 				{
-					throw Audio::CreationFailed();
+					throw Audio::CreationFailed("Unable to create sound controller");
 				}
 
 				resultValue = directSound->SetCooperativeLevel(window, DSSCL_PRIORITY);
 				if (FAILED(resultValue))
 				{
-					throw Audio::InitailizeDeviceFailed();
+					throw Audio::InitailizeDeviceFailed("Unable to set cooperative level");
 				}
 
 				DSBUFFERDESC primaryBufferDescription = { 0 };
@@ -177,7 +175,7 @@ namespace Gek
 				resultValue = directSound->CreateSoundBuffer(&primaryBufferDescription, &primarySoundBuffer, nullptr);
 				if (FAILED(resultValue))
 				{
-					throw Audio::InitailizeDeviceFailed();
+					throw Audio::InitailizeDeviceFailed("Unable to create primary sound buffer");
 				}
 
 				WAVEFORMATEX primaryBufferFormat;
@@ -191,13 +189,13 @@ namespace Gek
 				resultValue = primarySoundBuffer->SetFormat(&primaryBufferFormat);
 				if (FAILED(resultValue))
 				{
-					throw Audio::InitailizeDeviceFailed();
+					throw Audio::InitailizeDeviceFailed("Unable to set primary buffer format");
 				}
 
 				directSoundListener = primarySoundBuffer;
 				if (!directSoundListener)
 				{
-					throw Audio::InitailizeDeviceFailed();
+					throw Audio::InitailizeDeviceFailed("Unable to create primary 3D listener");
 				}
 
 				setVolume(1.0f);

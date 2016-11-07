@@ -24,7 +24,6 @@ namespace Gek
 
     GEK_INTERFACE(Context)
     {
-        GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(DuplicateClass);
         GEK_ADD_EXCEPTION(InvalidPlugin);
         GEK_ADD_EXCEPTION(ClassNotFound);

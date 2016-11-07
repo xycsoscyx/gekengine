@@ -1048,7 +1048,7 @@ namespace Gek
 
                     void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
-                        throw Video::UnsupportedOperation();
+                        throw Video::UnsupportedOperation("Vertex pipeline does not supported unordered access");
                     }
 
                     void clearSamplerStateList(uint32_t count, uint32_t firstStage)
@@ -1077,7 +1077,7 @@ namespace Gek
 
                     void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                     {
-                        throw Video::UnsupportedOperation();
+                        throw Video::UnsupportedOperation("Vertex pipeline does not supported unordered access");
                     }
                 };
 
@@ -1136,7 +1136,7 @@ namespace Gek
 
                     void setUnorderedAccessList(const std::vector<Video::Object *> &list, uint32_t firstStage, uint32_t *countList)
                     {
-                        throw Video::UnsupportedOperation();
+                        throw Video::UnsupportedOperation("Geometry pipeline does not supported unordered access");
                     }
 
                     void clearSamplerStateList(uint32_t count, uint32_t firstStage)
@@ -1165,7 +1165,7 @@ namespace Gek
 
                     void clearUnorderedAccessList(uint32_t count, uint32_t firstStage)
                     {
-                        throw Video::UnsupportedOperation();
+                        throw Video::UnsupportedOperation("Geometry pipeline does not supported unordered access");
                     }
                 };
 
@@ -1529,7 +1529,7 @@ namespace Gek
                     HRESULT resultValue = d3dDeviceContext->FinishCommandList(FALSE, &d3dCommandList);
                     if (FAILED(resultValue) || !d3dCommandList)
                     {
-                        throw Video::OperationFailed();
+                        throw Video::OperationFailed("Unable to finish command list compilation");
                     }
 
                     return std::make_shared<CommandList>(d3dCommandList.p);
@@ -1569,19 +1569,19 @@ namespace Gek
                 HRESULT resultValue = D3D11CreateDevice(nullptr, D3D_DRIVER_TYPE_HARDWARE, nullptr, flags, featureLevelList, 1, D3D11_SDK_VERSION, &d3dDevice, &featureLevel, &d3dDeviceContext);
                 if (featureLevel != featureLevelList[0])
                 {
-                    throw Video::FeatureLevelNotSupported();
+                    throw Video::FeatureLevelNotSupported("Direct3D 11.0 feature level required");
                 }
 
                 if (FAILED(resultValue) || !d3dDevice || !d3dDeviceContext)
                 {
-                    throw Video::InitializationFailed();
+                    throw Video::InitializationFailed("Unable to create rendering device and context");
                 }
 
                 CComPtr<IDXGIFactory2> dxgiFactory;
                 resultValue = CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory));
                 if (FAILED(resultValue) || !dxgiFactory)
                 {
-                    throw Video::InitializationFailed();
+                    throw Video::InitializationFailed("Unable to get graphics factory");
                 }
 
                 DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
@@ -1600,7 +1600,7 @@ namespace Gek
                 resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, window, &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
-                    throw Video::InitializationFailed();
+                    throw Video::InitializationFailed("Unable to create swap chain for window");
                 }
 
                 dxgiFactory->MakeWindowAssociation(window, 0);
@@ -1728,7 +1728,14 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->SetFullscreenState(fullScreen, nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw Video::OperationFailed();
+                    if (fullScreen)
+                    {
+                        throw Video::OperationFailed("Unablet to set fullscreen state");
+                    }
+                    else
+                    {
+                        throw Video::OperationFailed("Unablet to set windowed state");
+                    }
                 }
             }
 
@@ -1750,7 +1757,7 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->ResizeTarget(&description);
                 if (FAILED(resultValue))
                 {
-                    throw Video::OperationFailed();
+                    throw Video::OperationFailed("Unable to set display mode");
                 }
             }
 
@@ -1764,7 +1771,7 @@ namespace Gek
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
                 if (FAILED(resultValue))
                 {
-                    throw Video::OperationFailed();
+                    throw Video::OperationFailed("Unable to resize swap chain buffers to window size");
                 }
             }
 
@@ -1781,14 +1788,14 @@ namespace Gek
                     HRESULT resultValue = dxgiSwapChain->GetBuffer(0, IID_PPV_ARGS(&d3dRenderTarget));
                     if (FAILED(resultValue) || !d3dRenderTarget)
                     {
-                        throw Video::OperationFailed();
+                        throw Video::OperationFailed("Unable to get swap chain primary buffer");
                     }
 
                     CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
                     resultValue = d3dDevice->CreateRenderTargetView(d3dRenderTarget, nullptr, &d3dRenderTargetView);
                     if (FAILED(resultValue) || !d3dRenderTargetView)
                     {
-                        throw Video::OperationFailed();
+                        throw Video::OperationFailed("Unable to create render target view for back buffer");
                     }
 
                     D3D11_TEXTURE2D_DESC description;
@@ -1815,7 +1822,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeferredDeviceContext);
                 if (FAILED(resultValue) || !d3dDeferredDeviceContext)
                 {
-                    throw Video::OperationFailed();
+                    throw Video::OperationFailed("Unable to create deferred context");
                 }
 
                 return std::make_shared<Context>(d3dDeferredDeviceContext.p);
@@ -1833,7 +1840,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateQuery(&description, &d3dQuery);
                 if (FAILED(resultValue) || !d3dQuery)
                 {
-                    throw Video::OperationFailed();
+                    throw Video::OperationFailed("Unable to create event");
                 }
 
                 return std::make_shared<Event>(d3dQuery);
@@ -1881,7 +1888,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateRasterizerState(&rasterizerDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create rasterizer state");
                 }
 
                 return std::make_shared<RenderState>(d3dStates);
@@ -1911,7 +1918,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateDepthStencilState(&depthStencilDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create depth stencil state");
                 }
 
                 return std::make_shared<DepthState>(d3dStates);
@@ -1956,7 +1963,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create unified blend state");
                 }
 
                 return std::make_shared<BlendState>(d3dStates);
@@ -2004,7 +2011,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateBlendState(&blendDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create independent blend state");
                 }
 
                 return std::make_shared<BlendState>(d3dStates);
@@ -2033,7 +2040,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateSamplerState(&samplerDescription, &d3dStates);
                 if (FAILED(resultValue) || !d3dStates)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create sampler state");
                 }
 
                 return std::make_shared<SamplerState>(d3dStates);
@@ -2115,7 +2122,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
                     if (FAILED(resultValue) || !d3dBuffer)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to dynamic buffer");
                     }
                 }
                 else
@@ -2127,7 +2134,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
                     if (FAILED(resultValue) || !d3dBuffer)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create static buffer");
                     }
                 }
 
@@ -2142,7 +2149,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create buffer shader resource view");
                     }
                 }
 
@@ -2159,7 +2166,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create buffer unordered access view");
                     }
                 }
 
@@ -2191,7 +2198,7 @@ namespace Gek
                 HRESULT resultValue = d3dDeviceContext->Map(getObject<Buffer>(buffer), 0, d3dMapping, 0, &mappedSubResource);
                 if (FAILED(resultValue))
                 {
-                    throw Video::OperationFailed();
+                    throw Video::OperationFailed("Unable to map buffer to system memory");
                 }
 
                 data = mappedSubResource.pData;
@@ -2278,7 +2285,7 @@ namespace Gek
                 HRESULT resultValue = d3dDevice->CreateInputLayout(d3dElementList.data(), UINT(d3dElementList.size()), compiledData, compiledSize, &d3dInputLayout);
                 if (FAILED(resultValue) || !d3dInputLayout)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create input vertex layout");
                 }
 
                 return std::make_shared<InputLayout>(d3dInputLayout);
@@ -2291,7 +2298,7 @@ namespace Gek
                 HRESULT resultValue = (d3dDevice->*function)(compiledData, compiledSize, nullptr, &d3dShader);
                 if (FAILED(resultValue) || !d3dShader)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create program from compiled data");
                 }
 
                 return std::make_shared<PROGRAM>(d3dShader);
@@ -2314,7 +2321,7 @@ namespace Gek
                     return createProgram<ID3D11PixelShader, PixelProgram>(compiledData, compiledSize, &ID3D11Device::CreatePixelShader);
                 };
 
-                throw Video::CreateObjectFailed();
+                throw Video::CreateObjectFailed("Unknown program pipline encountered");
             }
 
             std::vector<uint8_t> compileProgram(const StringUTF8 &name, const StringUTF8 &type, const StringUTF8 &uncompiledProgram, const StringUTF8 &entryFunction)
@@ -2337,7 +2344,7 @@ namespace Gek
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
                     OutputDebugStringW(String::create(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (const char *)d3dCompilerErrors->GetBufferPointer()));
-                    throw Video::ProgramCompilationFailed();
+                    throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 
                 uint8_t *data = (uint8_t *)d3dShaderBlob->GetBufferPointer();
@@ -2361,7 +2368,7 @@ namespace Gek
                     return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
                 };
 
-                throw Video::ProgramCompilationFailed();
+                throw Video::CreateObjectFailed("Unknown program pipline encountered");
             }
 
             Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
@@ -2377,7 +2384,7 @@ namespace Gek
                 {
                     if (flags & Video::TextureFlags::DepthTarget)
                     {
-                        throw Video::InvalidParameters();
+                        throw Video::InvalidParameters("Cannot create render target when depth target flag also specified");
                     }
 
                     bindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -2385,9 +2392,9 @@ namespace Gek
 
                 if (flags & Video::TextureFlags::DepthTarget)
                 {
-                    if (flags & Video::TextureFlags::RenderTarget || depth > 1)
+                    if (depth > 1)
                     {
-                        throw Video::InvalidParameters();
+                        throw Video::InvalidParameters("Depth target must have depth of one");
                     }
 
                     bindFlags |= D3D11_BIND_DEPTH_STENCIL;
@@ -2435,7 +2442,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
                     if (FAILED(resultValue) || !texture2D)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create 2D texture");
                     }
 
                     d3dResource = texture2D;
@@ -2464,7 +2471,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
                     if (FAILED(resultValue) || !texture3D)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create 3D texture");
                     }
 
                     d3dResource = texture3D;
@@ -2472,7 +2479,7 @@ namespace Gek
 
                 if (!d3dResource)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to get texture resource");
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
@@ -2496,7 +2503,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create texture shader resource view");
                     }
                 }
 
@@ -2521,7 +2528,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create texture unordered access view");
                     }
                 }
 
@@ -2546,7 +2553,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
                     if (FAILED(resultValue) || !d3dRenderTargetView)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create render target view");
                     }
 
                     return std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
@@ -2563,7 +2570,7 @@ namespace Gek
                     HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
                     if (FAILED(resultValue) || !d3dDepthStencilView)
                     {
-                        throw Video::CreateObjectFailed();
+                        throw Video::CreateObjectFailed("Unable to create depth stencil view");
                     }
 
                     return std::make_shared<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, format, width, height, depth);
@@ -2607,28 +2614,28 @@ namespace Gek
 
                 if (!load)
                 {
-                    throw Video::InvalidFileType();
+                    throw Video::InvalidFileType("Unknown texture extension encountered");
                 }
 
                 ::DirectX::ScratchImage image;
                 HRESULT resultValue = load(buffer, image);
                 if (FAILED(resultValue))
                 {
-                    throw Video::LoadFileFailed();
+                    throw Video::LoadFileFailed("Unable to load texture from file");
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
                 resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Video::TextureLoadFlags::sRGB), &d3dShaderResourceView);
                 if (FAILED(resultValue) || !d3dShaderResourceView)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to create texture shader resource view");
                 }
 
                 CComPtr<ID3D11Resource> d3dResource;
                 d3dShaderResourceView->GetResource(&d3dResource);
                 if (FAILED(resultValue) || !d3dResource)
                 {
-                    throw Video::CreateObjectFailed();
+                    throw Video::CreateObjectFailed("Unable to get texture resource");
                 }
 
                 return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, uint32_t(image.GetMetadata().width), uint32_t(image.GetMetadata().height), uint32_t(image.GetMetadata().depth));

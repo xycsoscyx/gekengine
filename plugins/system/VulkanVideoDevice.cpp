@@ -833,8 +833,6 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(window)
             {
-                throw Exception("TODO: Finish OpenGL Video Device");
-
                 GEK_REQUIRE(window);
 
                 defaultContext = std::make_shared<Context>(this);

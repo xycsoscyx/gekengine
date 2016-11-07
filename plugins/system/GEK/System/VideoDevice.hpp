@@ -23,7 +23,6 @@ namespace Gek
 {
     namespace Video
     {
-        GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(CreationFailed);
         GEK_ADD_EXCEPTION(InitializationFailed);
         GEK_ADD_EXCEPTION(FeatureLevelNotSupported);
@@ -96,7 +95,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(String format);
+        Format getFormat(const String &format);
 
         struct DisplayMode
         {

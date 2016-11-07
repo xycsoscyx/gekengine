@@ -22,7 +22,6 @@ namespace Gek
 
         GEK_INTERFACE(Resources)
         {
-            GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InvalidParameter);
             GEK_ADD_EXCEPTION(InvalidIncludeType);
             GEK_ADD_EXCEPTION(InvalidIncludeName);

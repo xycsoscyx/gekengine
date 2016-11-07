@@ -20,7 +20,6 @@ namespace Gek
     {
         GEK_INTERFACE(Filter)
         {
-            GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(ResourceAlreadyListed);
             GEK_ADD_EXCEPTION(InvalidParameters);
             GEK_ADD_EXCEPTION(MissingParameters);

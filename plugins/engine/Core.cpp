@@ -550,7 +550,7 @@ namespace Gek
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
                 {
-                    throw InitializationFailed();
+                    throw InitializationFailed("Failed call to CoInitialize");
                 }
 
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
@@ -574,7 +574,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                if (configuration[L"display"].has_member(L"mode") > 0)
+                if (configuration[L"display"].has_member(L"mode"))
                 {
                     previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
                 }
@@ -780,7 +780,7 @@ namespace Gek
 			{
                 if (displayMode >= displayModeList.size())
                 {
-                    throw InvalidDisplayMode();
+                    throw InvalidDisplayMode("Invalid display mode encountered");
                 }
 
 				currentDisplayMode = displayMode;
@@ -1269,7 +1269,7 @@ namespace Gek
                         break;
 
                     default:
-                        throw std::exception();
+                        throw InvalidIndexBufferFormat("Index buffer can only be 16bit or 32bit");
                     };
                 }
 

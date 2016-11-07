@@ -221,7 +221,7 @@
         {
             "program": "AccumulateLighting",
             "entry": "mainPixelProgram",
-            "lighting": "true",
+            "lighting": true,
             "defines": {
                 "useHalfLambert": {
                     "bind": "bool",

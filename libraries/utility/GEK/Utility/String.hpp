@@ -187,7 +187,7 @@ namespace Gek
 
         void toUpper(void)
         {
-            std::transform(begin(), end(), begin(), ::tolower);
+            std::transform(begin(), end(), begin(), ::toupper);
         }
 
         BaseString getLower(void) const

@@ -37,7 +37,7 @@ namespace Gek
                 newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
                 if (newtonBody == nullptr)
                 {
-                    throw Newton::UnableToCreateCollision();
+                    throw Newton::UnableToCreateBody("Unable to create rigid body");
                 }
 
                 NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));

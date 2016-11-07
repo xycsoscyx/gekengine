@@ -19,20 +19,20 @@ namespace Gek
     class ShuntingYard
     {
     public:
-        GEK_START_EXCEPTIONS();
-        GEK_ADD_EXCEPTION(UnknownTokenType);
-        GEK_ADD_EXCEPTION(UnbalancedParenthesis);
-        GEK_ADD_EXCEPTION(InvalidReturnType);
-        GEK_ADD_EXCEPTION(InvalidVector);
-        GEK_ADD_EXCEPTION(InvalidEquation);
-        GEK_ADD_EXCEPTION(InvalidOperator);
-        GEK_ADD_EXCEPTION(InvalidOperand);
-        GEK_ADD_EXCEPTION(InvalidFunction);
-        GEK_ADD_EXCEPTION(InvalidFunctionParameters);
-        GEK_ADD_EXCEPTION(NotEnoughFunctionParameters);
-        GEK_ADD_EXCEPTION(MissingFunctionParenthesis);
-        GEK_ADD_EXCEPTION(MisplacedSeparator);
-        GEK_ADD_EXCEPTION(VectorUsedAsParameter);
+        GEK_ADD_EXCEPTION();
+        GEK_ADD_EXCEPTION(UnknownTokenType, Exception);
+        GEK_ADD_EXCEPTION(UnbalancedParenthesis, Exception);
+        GEK_ADD_EXCEPTION(InvalidReturnType, Exception);
+        GEK_ADD_EXCEPTION(InvalidVector, Exception);
+        GEK_ADD_EXCEPTION(InvalidEquation, Exception);
+        GEK_ADD_EXCEPTION(InvalidOperator, Exception);
+        GEK_ADD_EXCEPTION(InvalidOperand, Exception);
+        GEK_ADD_EXCEPTION(InvalidFunction, Exception);
+        GEK_ADD_EXCEPTION(InvalidFunctionParameters, Exception);
+        GEK_ADD_EXCEPTION(NotEnoughFunctionParameters, Exception);
+        GEK_ADD_EXCEPTION(MissingFunctionParenthesis, Exception);
+        GEK_ADD_EXCEPTION(MisplacedSeparator, Exception);
+        GEK_ADD_EXCEPTION(VectorUsedAsParameter, Exception);
 
     public:
         enum class Associations : uint8_t

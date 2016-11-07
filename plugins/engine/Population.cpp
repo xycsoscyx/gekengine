@@ -54,7 +54,7 @@ namespace Gek
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
 				{
-					throw ComponentNotFound();
+					throw ComponentNotFound("Entity does not contain requested component");
 				}
 
 				return componentSearch->second.get();
@@ -65,8 +65,8 @@ namespace Gek
 				auto componentSearch = componentMap.find(type);
 				if (componentSearch == std::end(componentMap))
 				{
-					throw ComponentNotFound();
-				}
+                    throw ComponentNotFound("Entity does not contain requested component");
+                }
 
 				return componentSearch->second.get();
 			}
@@ -158,20 +158,20 @@ namespace Gek
                         auto &prefabsNode = worldNode[L"prefabs"];
                         if (!prefabsNode.is_object())
                         {
-                            throw InvalidPrefabsBlock();
+                            throw InvalidPrefabsBlock("Scene prefabs must be an object");
                         }
 
                         auto &populationNode = worldNode[L"population"];
                         if (!populationNode.is_array())
                         {
-                            throw InvalidPopulationBlock();
+                            throw InvalidPopulationBlock("Scene population must be an array");
                         }
 
                         for (auto &entityNode : populationNode.elements())
                         {
                             if (!entityNode.is_object())
                             {
-                                throw InvalidEntityBlock();
+                                throw InvalidEntityBlock("Scene entity must be an object");
                             }
 
                             std::vector<JSON::Member> entityComponentList;
@@ -211,7 +211,7 @@ namespace Gek
                                 addComponent(entity.get(), componentData);
                             }
 
-                            if (entityNode.has_member(L"name") > 0)
+                            if (entityNode.has_member(L"name"))
                             {
                                 entityMap[entityNode[L"name"].as_string()] = std::move(entity);
                             }

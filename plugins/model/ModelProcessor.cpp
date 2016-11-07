@@ -92,7 +92,6 @@ namespace Gek
         , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
         , public Plugin::Processor
     {
-        GEK_START_EXCEPTIONS();
         GEK_ADD_EXCEPTION(InvalidModelIdentifier);
         GEK_ADD_EXCEPTION(InvalidModelType);
         GEK_ADD_EXCEPTION(InvalidModelVersion);
@@ -234,17 +233,17 @@ namespace Gek
                         Header *header = (Header *)buffer.data();
                         if (header->identifier != *(uint32_t *)"GEKX")
                         {
-                            throw InvalidModelIdentifier();
+                            throw InvalidModelIdentifier("Unknown model file identifier encountered");
                         }
 
                         if (header->type != 0)
                         {
-                            throw InvalidModelType();
+                            throw InvalidModelType("Unsupported model type encountered");
                         }
 
                         if (header->version != 5)
                         {
-                            throw InvalidModelVersion();
+                            throw InvalidModelVersion("Unsupported model version encountered");
                         }
 
                         model.alignedBox = header->boundingBox;

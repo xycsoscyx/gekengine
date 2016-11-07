@@ -4,94 +4,92 @@ namespace Gek
 {
     namespace Video
     {
-        Format getFormat(String format)
+        Format getFormat(const String &format)
         {
-            format.toUpper();
-            if (format.compare(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
-            else if (format.compare(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
-            else if (format.compare(L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
-            else if (format.compare(L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
-            else if (format.compare(L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
-            else if (format.compare(L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
-            else if (format.compare(L"R32_FLOAT") == 0) return Format::R32_FLOAT;
-            else if (format.compare(L"R16_FLOAT") == 0) return Format::R16_FLOAT;
+            if (format.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
+            else if (format.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
+            else if (format.compareNoCase(L"R32G32B32_FLOAT") == 0) return Format::R32G32B32_FLOAT;
+            else if (format.compareNoCase(L"R11G11B10_FLOAT") == 0) return Format::R11G11B10_FLOAT;
+            else if (format.compareNoCase(L"R32G32_FLOAT") == 0) return Format::R32G32_FLOAT;
+            else if (format.compareNoCase(L"R16G16_FLOAT") == 0) return Format::R16G16_FLOAT;
+            else if (format.compareNoCase(L"R32_FLOAT") == 0) return Format::R32_FLOAT;
+            else if (format.compareNoCase(L"R16_FLOAT") == 0) return Format::R16_FLOAT;
 
-            else if (format.compare(L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
-            else if (format.compare(L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
-            else if (format.compare(L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
-            else if (format.compare(L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
-            else if (format.compare(L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
-            else if (format.compare(L"R32G32_UINT") == 0) return Format::R32G32_UINT;
-            else if (format.compare(L"R16G16_UINT") == 0) return Format::R16G16_UINT;
-            else if (format.compare(L"R8G8_UINT") == 0) return Format::R8G8_UINT;
-            else if (format.compare(L"R32_UINT") == 0) return Format::R32_UINT;
-            else if (format.compare(L"R16_UINT") == 0) return Format::R16_UINT;
-            else if (format.compare(L"R8_UINT") == 0) return Format::R8_UINT;
+            else if (format.compareNoCase(L"R32G32B32A32_UINT") == 0) return Format::R32G32B32A32_UINT;
+            else if (format.compareNoCase(L"R16G16B16A16_UINT") == 0) return Format::R16G16B16A16_UINT;
+            else if (format.compareNoCase(L"R10G10B10A2_UINT") == 0) return Format::R10G10B10A2_UINT;
+            else if (format.compareNoCase(L"R8G8B8A8_UINT") == 0) return Format::R8G8B8A8_UINT;
+            else if (format.compareNoCase(L"R32G32B32_UINT") == 0) return Format::R32G32B32_UINT;
+            else if (format.compareNoCase(L"R32G32_UINT") == 0) return Format::R32G32_UINT;
+            else if (format.compareNoCase(L"R16G16_UINT") == 0) return Format::R16G16_UINT;
+            else if (format.compareNoCase(L"R8G8_UINT") == 0) return Format::R8G8_UINT;
+            else if (format.compareNoCase(L"R32_UINT") == 0) return Format::R32_UINT;
+            else if (format.compareNoCase(L"R16_UINT") == 0) return Format::R16_UINT;
+            else if (format.compareNoCase(L"R8_UINT") == 0) return Format::R8_UINT;
 
-            else if (format.compare(L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
-            else if (format.compare(L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
-            else if (format.compare(L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
-            else if (format.compare(L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
-            else if (format.compare(L"R32G32_INT") == 0) return Format::R32G32_INT;
-            else if (format.compare(L"R16G16_INT") == 0) return Format::R16G16_INT;
-            else if (format.compare(L"R8G8_INT") == 0) return Format::R8G8_INT;
-            else if (format.compare(L"R32_INT") == 0) return Format::R32_INT;
-            else if (format.compare(L"R16_INT") == 0) return Format::R16_INT;
-            else if (format.compare(L"R8_INT") == 0) return Format::R8_INT;
+            else if (format.compareNoCase(L"R32G32B32A32_INT") == 0) return Format::R32G32B32A32_INT;
+            else if (format.compareNoCase(L"R16G16B16A16_INT") == 0) return Format::R16G16B16A16_INT;
+            else if (format.compareNoCase(L"R8G8B8A8_INT") == 0) return Format::R8G8B8A8_INT;
+            else if (format.compareNoCase(L"R32G32B32_INT") == 0) return Format::R32G32B32_INT;
+            else if (format.compareNoCase(L"R32G32_INT") == 0) return Format::R32G32_INT;
+            else if (format.compareNoCase(L"R16G16_INT") == 0) return Format::R16G16_INT;
+            else if (format.compareNoCase(L"R8G8_INT") == 0) return Format::R8G8_INT;
+            else if (format.compareNoCase(L"R32_INT") == 0) return Format::R32_INT;
+            else if (format.compareNoCase(L"R16_INT") == 0) return Format::R16_INT;
+            else if (format.compareNoCase(L"R8_INT") == 0) return Format::R8_INT;
 
-            else if (format.compare(L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
-            else if (format.compare(L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
-            else if (format.compare(L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
-            else if (format.compare(L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
-            else if (format.compare(L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
-            else if (format.compare(L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
-            else if (format.compare(L"R16_UNORM") == 0) return Format::R16_UNORM;
-            else if (format.compare(L"R8_UNORM") == 0) return Format::R8_UNORM;
+            else if (format.compareNoCase(L"R16G16B16A16_UNORM") == 0) return Format::R16G16B16A16_UNORM;
+            else if (format.compareNoCase(L"R10G10B10A2_UNORM") == 0) return Format::R10G10B10A2_UNORM;
+            else if (format.compareNoCase(L"R8G8B8A8_UNORM") == 0) return Format::R8G8B8A8_UNORM;
+            else if (format.compareNoCase(L"R8G8B8A8_UNORM_SRGB") == 0) return Format::R8G8B8A8_UNORM_SRGB;
+            else if (format.compareNoCase(L"R16G16_UNORM") == 0) return Format::R16G16_UNORM;
+            else if (format.compareNoCase(L"R8G8_UNORM") == 0) return Format::R8G8_UNORM;
+            else if (format.compareNoCase(L"R16_UNORM") == 0) return Format::R16_UNORM;
+            else if (format.compareNoCase(L"R8_UNORM") == 0) return Format::R8_UNORM;
 
-            else if (format.compare(L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
-            else if (format.compare(L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
-            else if (format.compare(L"R16G16_NORM") == 0) return Format::R16G16_NORM;
-            else if (format.compare(L"R8G8_NORM") == 0) return Format::R8G8_NORM;
-            else if (format.compare(L"R16_NORM") == 0) return Format::R16_NORM;
-            else if (format.compare(L"R8_NORM") == 0) return Format::R8_NORM;
+            else if (format.compareNoCase(L"R16G16B16A16_NORM") == 0) return Format::R16G16B16A16_NORM;
+            else if (format.compareNoCase(L"R8G8B8A8_NORM") == 0) return Format::R8G8B8A8_NORM;
+            else if (format.compareNoCase(L"R16G16_NORM") == 0) return Format::R16G16_NORM;
+            else if (format.compareNoCase(L"R8G8_NORM") == 0) return Format::R8G8_NORM;
+            else if (format.compareNoCase(L"R16_NORM") == 0) return Format::R16_NORM;
+            else if (format.compareNoCase(L"R8_NORM") == 0) return Format::R8_NORM;
 
-            else if (format.compare(L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
-            else if (format.compare(L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
+            else if (format.compareNoCase(L"D32_FLOAT_S8X24_UINT") == 0) return Format::D32_FLOAT_S8X24_UINT;
+            else if (format.compareNoCase(L"D24_UNORM_S8_UINT") == 0) return Format::D24_UNORM_S8_UINT;
 
-            else if (format.compare(L"D32_FLOAT") == 0) return Format::D32_FLOAT;
-            else if (format.compare(L"D16_UNORM") == 0) return Format::D16_UNORM;
+            else if (format.compareNoCase(L"D32_FLOAT") == 0) return Format::D32_FLOAT;
+            else if (format.compareNoCase(L"D16_UNORM") == 0) return Format::D16_UNORM;
 
             return Format::Unknown;
         }
 
-        ComparisonFunction getComparisonFunction(String comparisonFunction)
+        ComparisonFunction getComparisonFunction(const String &comparisonFunction)
         {
-            comparisonFunction.toLower();
-            if (comparisonFunction.compare(L"never") == 0)
+            if (comparisonFunction.compareNoCase(L"never") == 0)
             {
                 return ComparisonFunction::Never;
             }
-            else if (comparisonFunction.compare(L"equal") == 0)
+            else if (comparisonFunction.compareNoCase(L"equal") == 0)
             {
                 return ComparisonFunction::Equal;
             }
-            else if (comparisonFunction.compare(L"notequal") == 0)
+            else if (comparisonFunction.compareNoCase(L"notequal") == 0)
             {
                 return ComparisonFunction::NotEqual;
             }
-            else if (comparisonFunction.compare(L"less") == 0)
+            else if (comparisonFunction.compareNoCase(L"less") == 0)
             {
                 return ComparisonFunction::Less;
             }
-            else if (comparisonFunction.compare(L"lessequal") == 0)
+            else if (comparisonFunction.compareNoCase(L"lessequal") == 0)
             {
                 return ComparisonFunction::LessEqual;
             }
-            else if (comparisonFunction.compare(L"greater") == 0)
+            else if (comparisonFunction.compareNoCase(L"greater") == 0)
             {
                 return ComparisonFunction::Greater;
             }
-            else if (comparisonFunction.compare(L"greaterequal") == 0)
+            else if (comparisonFunction.compareNoCase(L"greaterequal") == 0)
             {
                 return ComparisonFunction::GreaterEqual;
             }
@@ -114,12 +112,11 @@ namespace Gek
             }
 
             String cullMode(object[L"cullMode"].as_string());
-            cullMode.toLower();
-            if (cullMode.compare(L"none") == 0)
+            if (cullMode.compareNoCase(L"none") == 0)
             {
                 this->cullMode = CullMode::None;
             }
-            else if (cullMode.compare(L"front") == 0)
+            else if (cullMode.compareNoCase(L"front") == 0)
             {
                 this->cullMode = CullMode::Front;
             }
@@ -140,34 +137,33 @@ namespace Gek
 
         void DepthStateInformation::StencilStateInformation::load(const JSON::Object &object)
         {
-            auto getOperation = [](String operation) -> Operation
+            auto getOperation = [](const String &operation) -> Operation
             {
-                operation.toLower();
-                if (operation.compare(L"zero") == 0)
+                if (operation.compareNoCase(L"zero") == 0)
                 {
                     return Operation::Zero;
                 }
-                else if (operation.compare(L"replace") == 0)
+                else if (operation.compareNoCase(L"replace") == 0)
                 {
                     return Operation::Replace;
                 }
-                else if (operation.compare(L"invert") == 0)
+                else if (operation.compareNoCase(L"invert") == 0)
                 {
                     return Operation::Invert;
                 }
-                else if (operation.compare(L"increase") == 0)
+                else if (operation.compareNoCase(L"increase") == 0)
                 {
                     return Operation::Increase;
                 }
-                else if (operation.compare(L"increasesaturated") == 0)
+                else if (operation.compareNoCase(L"increasesaturated") == 0)
                 {
                     return Operation::IncreaseSaturated;
                 }
-                else if (operation.compare(L"decrease") == 0)
+                else if (operation.compareNoCase(L"decrease") == 0)
                 {
                     return Operation::Decrease;
                 }
-                else if (operation.compare(L"decreasesaturated") == 0)
+                else if (operation.compareNoCase(L"decreasesaturated") == 0)
                 {
                     return Operation::DecreaseSaturated;
                 }
@@ -206,70 +202,69 @@ namespace Gek
 
         void BlendStateInformation::load(const JSON::Object &object)
         {
-            auto getSource = [](String source) -> Source
+            auto getSource = [](const String &source) -> Source
             {
-                source.toLower();
-                if (source.compare(L"Zero") == 0)
+                if (source.compareNoCase(L"Zero") == 0)
                 {
                     return Source::Zero;
                 }
-                else if (source.compare(L"BlendFactor") == 0)
+                else if (source.compareNoCase(L"BlendFactor") == 0)
                 {
                     return Source::BlendFactor;
                 }
-                else if (source.compare(L"InverseBlendFactor") == 0)
+                else if (source.compareNoCase(L"InverseBlendFactor") == 0)
                 {
                     return Source::InverseBlendFactor;
                 }
-                else if (source.compare(L"SourceColor") == 0)
+                else if (source.compareNoCase(L"SourceColor") == 0)
                 {
                     return Source::SourceColor;
                 }
-                else if (source.compare(L"InverseSourceColor") == 0)
+                else if (source.compareNoCase(L"InverseSourceColor") == 0)
                 {
                     return Source::InverseSourceColor;
                 }
-                else if (source.compare(L"SourceAlpha") == 0)
+                else if (source.compareNoCase(L"SourceAlpha") == 0)
                 {
                     return Source::SourceAlpha;
                 }
-                else if (source.compare(L"InverseSourceAlpha") == 0)
+                else if (source.compareNoCase(L"InverseSourceAlpha") == 0)
                 {
                     return Source::InverseSourceAlpha;
                 }
-                else if (source.compare(L"SourceAlphaSaturated") == 0)
+                else if (source.compareNoCase(L"SourceAlphaSaturated") == 0)
                 {
                     return Source::SourceAlphaSaturated;
                 }
-                else if (source.compare(L"DestinationColor") == 0)
+                else if (source.compareNoCase(L"DestinationColor") == 0)
                 {
                     return Source::DestinationColor;
                 }
-                else if (source.compare(L"InverseDestinationColor") == 0)
+                else if (source.compareNoCase(L"InverseDestinationColor") == 0)
                 {
                     return Source::InverseDestinationColor;
                 }
-                else if (source.compare(L"DestinationAlpha") == 0)
+                else if (source.compareNoCase(L"DestinationAlpha") == 0)
                 {
                     return Source::DestinationAlpha;
                 }
-                else if (source.compare(L"InverseDestinationAlpha") == 0)
+                else if (source.compareNoCase(L"InverseDestinationAlpha") == 0)
                 {
                     return Source::InverseDestinationAlpha;
                 }
-                else if (source.compare(L"SecondarySourceColor") == 0)
+                else if (source.compareNoCase(L"SecondarySourceColor") == 0)
                 {
                     return Source::SecondarySourceColor;
                 }
-                else if (source.compare(L"InverseSecondarySourceColor") == 0)
+                else if (source.compareNoCase(L"InverseSecondarySourceColor") == 0)
                 {
                     return Source::InverseSecondarySourceColor;
                 }
-                else if (source.compare(L"SecondarySourceAlpha") == 0)
+                else if (source.compareNoCase(L"SecondarySourceAlpha") == 0)
                 {
                     return Source::SecondarySourceAlpha;
                 }
-                else if (source.compare(L"InverseSecondarySourceAlpha") == 0)
+                else if (source.compareNoCase(L"InverseSecondarySourceAlpha") == 0)
                 {
                     return Source::InverseSecondarySourceAlpha;
                 }
@@ -279,22 +274,21 @@ namespace Gek
                 }
             };
 
-            auto getOperation = [](String operation) -> Operation
+            auto getOperation = [](const String &operation) -> Operation
             {
-                operation.toLower();
-                if (operation.compare(L"subtract") == 0)
+                if (operation.compareNoCase(L"subtract") == 0)
                 {
                     return Operation::Subtract;
                 }
-                else if (operation.compare(L"reversesubtract") == 0)
+                else if (operation.compareNoCase(L"reversesubtract") == 0)
                 {
                     return Operation::ReverseSubtract;
                 }
-                else if (operation.compare(L"minimum") == 0)
+                else if (operation.compareNoCase(L"minimum") == 0)
                 {
                     return Operation::Minimum;
                 }
-                else if (operation.compare(L"maximum") == 0)
+                else if (operation.compareNoCase(L"maximum") == 0)
                 {
                     return Operation::Maximum;
                 }
@@ -366,38 +360,37 @@ namespace Gek
 
         void SamplerStateInformation::load(const JSON::Object &object)
         {
-            auto getFilterMode = [](String filterMode) -> FilterMode
+            auto getFilterMode = [](const String &filterMode) -> FilterMode
             {
-                filterMode.toLower();
-                if (filterMode.compare(L"MinMagPointMipLinear") == 0)
+                if (filterMode.compareNoCase(L"MinMagPointMipLinear") == 0)
                 {
                     return FilterMode::MinMagPointMipLinear;
                 }
-                else if (filterMode.compare(L"MinPointMAgLinearMipPoint") == 0)
+                else if (filterMode.compareNoCase(L"MinPointMAgLinearMipPoint") == 0)
                 {
                     return FilterMode::MinPointMAgLinearMipPoint;
                 }
-                else if (filterMode.compare(L"MinPointMagMipLinear") == 0)
+                else if (filterMode.compareNoCase(L"MinPointMagMipLinear") == 0)
                 {
                     return FilterMode::MinPointMagMipLinear;
                 }
-                else if (filterMode.compare(L"MinLinearMagMipPoint") == 0)
+                else if (filterMode.compareNoCase(L"MinLinearMagMipPoint") == 0)
                 {
                     return FilterMode::MinLinearMagMipPoint;
                 }
-                else if (filterMode.compare(L"MinLinearMagPointMipLinear") == 0)
+                else if (filterMode.compareNoCase(L"MinLinearMagPointMipLinear") == 0)
                 {
                     return FilterMode::MinLinearMagPointMipLinear;
                 }
-                else if (filterMode.compare(L"MinMagLinearMipPoint") == 0)
+                else if (filterMode.compareNoCase(L"MinMagLinearMipPoint") == 0)
                 {
                     return FilterMode::MinMagLinearMipPoint;
                 }
-                else if (filterMode.compare(L"AllLinear") == 0)
+                else if (filterMode.compareNoCase(L"AllLinear") == 0)
                 {
                     return FilterMode::AllLinear;
                 }
-                else if (filterMode.compare(L"Anisotropic") == 0)
+                else if (filterMode.compareNoCase(L"Anisotropic") == 0)
                 {
                     return FilterMode::Anisotropic;
                 }
@@ -407,22 +400,21 @@ namespace Gek
                 }
             };
 
-            auto getAddressMode = [](String addressMode) -> AddressMode
+            auto getAddressMode = [](const String &addressMode) -> AddressMode
             {
-                addressMode.toLower();
-                if (addressMode.compare(L"wrap") == 0)
+                if (addressMode.compareNoCase(L"wrap") == 0)
                 {
                     return AddressMode::Wrap;
                 }
-                else if (addressMode.compare(L"mirror") == 0)
+                else if (addressMode.compareNoCase(L"mirror") == 0)
                 {
                     return AddressMode::Mirror;
                 }
-                else if (addressMode.compare(L"mirroronce") == 0)
+                else if (addressMode.compareNoCase(L"mirroronce") == 0)
                 {
                     return AddressMode::MirrorOnce;
                 }
-                else if (addressMode.compare(L"border") == 0)
+                else if (addressMode.compareNoCase(L"border") == 0)
                 {
                     return AddressMode::Border;
                 }
