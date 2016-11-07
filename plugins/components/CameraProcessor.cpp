@@ -17,9 +17,9 @@ namespace Gek
     {
         GEK_COMPONENT(FirstPersonCamera)
         {
-            float fieldOfView;
-            float nearClip;
-            float farClip;
+            float fieldOfView = 90.0f;
+            float nearClip = 1.0f;
+            float farClip = 100.0f;
             String target;
             std::vector<String> filterList;
 
@@ -34,11 +34,14 @@ namespace Gek
 
             void load(const JSON::Object &componentData)
             {
-                fieldOfView = Math::convertDegreesToRadians(componentData.get(L"field_of_view", 90.0f).as<float>());
-                nearClip = componentData.get(L"near_clip", 1.0f).as<float>();
-                farClip = componentData.get(L"far_clip", 100.0f).as<float>();
-                target = componentData[L"target"].as_cstring();;
-                filterList = String(componentData[L"filters"].as_cstring()).split(L',');
+                if (componentData.is_object())
+                {
+                    fieldOfView = Math::convertDegreesToRadians(componentData.get(L"field_of_view", 90.0f).as<float>());
+                    nearClip = componentData.get(L"near_clip", 1.0f).as<float>();
+                    farClip = componentData.get(L"far_clip", 100.0f).as<float>();
+                    target = componentData.get(L"target").as_cstring();;
+                    filterList = String(componentData.get(L"filters").as_cstring()).split(L',');
+                }
             }
         };
     };

@@ -1159,11 +1159,11 @@ namespace Gek
                     auto material = materialCache.getResource(handle);
                     if (drawPrimitiveValid =( material != nullptr))
                     {
-                        auto resourceList = material->getResourceList(pass->getIdentifier());
-                        if (drawPrimitiveValid = (resourceList != nullptr))
+                        auto passData = material->getPassData(pass->getIdentifier());
+                        if (drawPrimitiveValid = (passData != nullptr))
                         {
-                            setRenderState(videoContext, material->getRenderState());
-                            setResourceList(videoContext->pixelPipeline(), (*resourceList), pass->getFirstResourceStage());
+                            setRenderState(videoContext, passData->renderState);
+                            setResourceList(videoContext->pixelPipeline(), passData->resourceList, pass->getFirstResourceStage());
                         }
                     }
                 }

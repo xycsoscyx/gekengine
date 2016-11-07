@@ -17,9 +17,12 @@ namespace Gek
 
         void Transform::load(const JSON::Object &componentData)
         {
-            position = componentData.get(L"position", Math::Float3::Zero).as<Math::Float3>();
-            rotation = componentData.get(L"rotation", Math::QuaternionFloat::Identity).as<Math::QuaternionFloat>();
-            scale = componentData.get(L"scale", Math::Float3::One).as<Math::Float3>();
+            if (componentData.is_object())
+            {
+                position = componentData.get(L"position", Math::Float3::Zero).as<Math::Float3>();
+                rotation = componentData.get(L"rotation", Math::QuaternionFloat::Identity).as<Math::QuaternionFloat>();
+                scale = componentData.get(L"scale", Math::Float3::One).as<Math::Float3>();
+            }
         }
     }; // namespace Components
 

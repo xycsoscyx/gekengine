@@ -16,9 +16,9 @@ namespace Gek
     {
         GEK_COMPONENT(PointLight)
         {
-            float range;
-            float radius;
-            float intensity;
+            float range = 0.0f;
+            float radius = 0.0f;
+            float intensity = 0.0f;
 
             void save(JSON::Object &componentData) const;
             void load(const JSON::Object &componentData);
@@ -26,12 +26,12 @@ namespace Gek
 
         GEK_COMPONENT(SpotLight)
         {
-            float range;
-            float radius;
-            float intensity;
-            float innerAngle;
-            float outerAngle;
-            float coneFalloff;
+            float range = 0.0f;
+            float radius = 0.0f;
+            float intensity = 0.0f;
+            float innerAngle = 0.0f;
+            float outerAngle = 0.0f;
+            float coneFalloff = 0.0f;
 
             void save(JSON::Object &componentData) const;
             void load(const JSON::Object &componentData);

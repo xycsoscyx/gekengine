@@ -94,8 +94,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							return true;
 						});
 
-						if (!solidNode[L"albedo"].is_null() &&
-							!solidNode[L"normal"].is_null())
+						if (solidNode.get(L"albedo").is_object() &&
+							solidNode.get(L"normal").is_object())
 						{
 							std::function<void(const wchar_t *)> createParent;
 							createParent = [&](const wchar_t *directory) -> void
@@ -113,8 +113,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							JSON::Object shaderNode;
 							shaderNode.set(L"solid", solidNode);
 
+                            JSON::Object passesNode;
+                            passesNode.set(L"passes", shaderNode);
+                            passesNode.set(L"name", L"solid");
+
 							JSON::Object materialNode;
-							materialNode.set(L"shader", shaderNode);
+							materialNode.set(L"shader", passesNode);
                             JSON::save(materialPath, materialNode);
 						}
 					}

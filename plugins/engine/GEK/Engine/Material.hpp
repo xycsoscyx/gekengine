@@ -17,13 +17,18 @@ namespace Gek
     {
         GEK_INTERFACE(Material)
         {
+            struct PassData
+            {
+                RenderStateHandle renderState;
+                std::vector<ResourceHandle> resourceList;
+            };
+
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(MissingParameters);
 
             virtual ~Material(void) = default;
 
-			virtual RenderStateHandle getRenderState(void) const = 0;
-            virtual const std::vector<ResourceHandle> *getResourceList(uint32_t passIdentifier) = 0;
+            virtual const PassData *getPassData(uint32_t passIdentifier) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

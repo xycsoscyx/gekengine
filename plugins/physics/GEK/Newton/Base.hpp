@@ -19,7 +19,7 @@ namespace Gek
     {
         GEK_COMPONENT(Physical)
         {
-            float mass;
+            float mass = 0.0f;
 
             void save(JSON::Object &componentData) const;
             void load(const JSON::Object &componentData);
@@ -27,10 +27,10 @@ namespace Gek
 
         GEK_COMPONENT(Player)
         {
-			float height;
-            float outerRadius;
-            float innerRadius;
-            float stairStep;
+            float height = 6.0f;
+            float outerRadius = 1.5f;
+            float innerRadius = 0.5f;
+            float stairStep = 1.0f;
 
             void save(JSON::Object &componentData) const;
             void load(const JSON::Object &componentData);

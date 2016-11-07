@@ -14,13 +14,13 @@ namespace Gek
 
         void Color::load(const JSON::Object &componentData)
         {
-            if (componentData.is_null())
+            if(componentData.is_string())
             {
-                value = Math::Float4::White;
+                value = componentData.as<Math::Float4>();
             }
             else
             {
-                value = componentData.as<Math::Float4>();
+                value = Math::Float4::White;
             }
         }
     }; // namespace Components

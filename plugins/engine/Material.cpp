@@ -19,8 +19,7 @@ namespace Gek
         {
         private:
             Engine::Resources *resources = nullptr;
-			RenderStateHandle renderState;
-            std::unordered_map<uint32_t, std::vector<ResourceHandle>> passDataMap;
+            std::unordered_map<uint32_t, PassData> passDataMap;
 
         public:
             Material(Context *context, Engine::Resources *resources, String materialName, MaterialHandle materialHandle)
@@ -45,7 +44,8 @@ namespace Gek
                         throw MissingParameters();
                     }
 
-                    for (auto &passNode : shaderNode.members())
+                    auto &passesNode = shaderNode[L"passes"];
+                    for (auto &passNode : passesNode.members())
                     {
                         String passName(passNode.name());
                         auto &passValue = passNode.value();
@@ -57,11 +57,11 @@ namespace Gek
                             {
                                 Video::RenderStateInformation renderStateInformation;
                                 renderStateInformation.load(materialNode[L"renderState"]);
-                                renderState = resources->createRenderState(renderStateInformation);
+                                passData.renderState = resources->createRenderState(renderStateInformation);
                             }
                             else
                             {
-                                renderState = shaderMaterial->renderState;
+                                passData.renderState = shaderMaterial->renderState;
                             }
 
                             for (auto &resource : shaderMaterial->resourceList)
@@ -91,7 +91,7 @@ namespace Gek
                                     resourceHandle = resources->createTexture(resource.pattern, resource.parameters);
                                 }
 
-                                passData.push_back(resourceHandle);
+                                passData.resourceList.push_back(resourceHandle);
                             }
                         }
                     }
@@ -103,12 +103,7 @@ namespace Gek
             }
 
             // Material
-			RenderStateHandle getRenderState(void) const
-			{
-				return renderState;
-			}
-
-            const std::vector<ResourceHandle> *getResourceList(uint32_t passIdentifier)
+            const PassData *getPassData(uint32_t passIdentifier)
             {
                 auto passDataSearch = passDataMap.find(passIdentifier);
                 if (passDataSearch != std::end(passDataMap))

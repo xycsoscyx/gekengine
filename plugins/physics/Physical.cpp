@@ -10,13 +10,15 @@ namespace Gek
     {
         void Physical::save(JSON::Object &componentData) const
         {
-            componentData[L"mass"] = mass;
+            componentData.set(L"mass", mass);
         }
 
         void Physical::load(const JSON::Object &componentData)
         {
-
-            mass = componentData.get(L"mass", 0.0f).as<float>();
+            if (componentData.is_object())
+            {
+                mass = componentData.get(L"mass", 0.0f).as<float>();
+            }
         }
     }; // namespace Components
 

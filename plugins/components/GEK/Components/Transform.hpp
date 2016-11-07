@@ -29,9 +29,9 @@ namespace Gek
                 _mm_free(data);
             }
 
-            Math::Float3 position;
-            Math::QuaternionFloat rotation;
-            Math::Float3 scale;
+            Math::Float3 position = Math::Float3::Zero;
+            Math::QuaternionFloat rotation = Math::QuaternionFloat::Identity;
+            Math::Float3 scale = Math::Float3::One;
 
             void save(JSON::Object &componentData) const;
             void load(const JSON::Object &componentData);

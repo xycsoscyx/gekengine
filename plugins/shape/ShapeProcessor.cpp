@@ -390,9 +390,12 @@ namespace Gek
 
         void Shape::load(const JSON::Object &componentData)
         {
-			type = componentData.get(L"type", String());
-			parameters = componentData.get(L"parameters", String());
-			skin = componentData.get(L"skin", String());
+            if (componentData.is_object())
+            {
+                type = componentData.get(L"type", String());
+                parameters = componentData.get(L"parameters", String());
+                skin = componentData.get(L"skin", String());
+            }
         }
     }; // namespace Components
 

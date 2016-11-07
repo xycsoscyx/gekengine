@@ -34,14 +34,21 @@ namespace Gek
     {
         void Model::save(JSON::Object &componentData) const
         {
-			componentData.set(L"name", name);
-			componentData.set(L"skin", skin);
+            componentData.set(L"name", name);
+            componentData.set(L"skin", skin);
         }
 
         void Model::load(const JSON::Object &componentData)
         {
-			name = componentData.get(L"name", String());
-			skin = componentData.get(L"skin", String());
+            if (componentData.is_object())
+            {
+                name = componentData.get(L"name", String());
+                skin = componentData.get(L"skin", String());
+            }
+            else
+            {
+                name = componentData.as_cstring();
+            }
         }
     }; // namespace Components
 

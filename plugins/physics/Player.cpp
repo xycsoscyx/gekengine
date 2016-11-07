@@ -25,10 +25,13 @@ namespace Gek
 
         void Player::load(const JSON::Object &componentData)
         {
-            height = componentData.get(L"height", 6.0f).as<float>();
-            outerRadius = componentData.get(L"outer_radius", 1.5f).as<float>();
-            innerRadius = componentData.get(L"inner_radius", 0.5f).as<float>();
-            stairStep = componentData.get(L"stair_step", 1.5f).as<float>();
+            if (componentData.is_object())
+            {
+                height = componentData.get(L"height", 6.0f).as<float>();
+                outerRadius = componentData.get(L"outer_radius", 1.5f).as<float>();
+                innerRadius = componentData.get(L"inner_radius", 0.5f).as<float>();
+                stairStep = componentData.get(L"stair_step", 1.0f).as<float>();
+            }
         }
     }; // namespace Components
 
