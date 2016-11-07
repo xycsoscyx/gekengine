@@ -1,0 +1,29 @@
+{
+    "input": [
+        {
+            "name": "vertexIndex",
+            "system": "vertexid"
+        }
+    ],
+    "output": [
+        {
+            "name": "position",
+            "bind": "float3",
+            "semantic": "POSITION"
+        },
+        {
+            "name": "texCoord",
+            "bind": "float2",
+            "semantic": "TEXCOORD"
+        },
+        {
+            "name": "normal",
+            "bind": "float3",
+            "semantic": "NORMAL"
+        }
+    ],
+    "vertex": {
+        "program": "Basic",
+        "entry": "mainVertexProgram"
+    }
+}

@@ -23,13 +23,7 @@ namespace Gek
             : public BASE
         {
         public:
-            ComponentMixin(void)
-            {
-            }
-
-            virtual ~ComponentMixin(void)
-            {
-            }
+            virtual ~ComponentMixin(void) = default;
 
             // Plugin::Component
             std::type_index getIdentifier(void) const
@@ -66,13 +60,7 @@ namespace Gek
             EntityDataMap entityDataMap;
 
         public:
-            ProcessorMixin(void)
-            {
-            }
-
-            virtual ~ProcessorMixin(void)
-            {
-            }
+            virtual ~ProcessorMixin(void) = default;
 
             // ProcessorMixin
             void clear(void)

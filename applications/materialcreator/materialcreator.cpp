@@ -115,8 +115,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 							JSON::Object materialNode;
 							materialNode.set(L"shader", shaderNode);
-							//FileSystem::save(materialPath, String(jsoncons::pretty_print(materialNode)
-							//Xml::save(materialNode, materialPath);
+                            JSON::save(materialPath, materialNode);
 						}
 					}
 

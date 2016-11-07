@@ -19,6 +19,8 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(InvalidElementType);
             GEK_ADD_EXCEPTION(MissingParameters);
+            
+            virtual ~Visual(void) = default;
 
             virtual void enable(Video::Device::Context *context) = 0;
         };

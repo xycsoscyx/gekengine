@@ -16,9 +16,9 @@
     },
     "passes": [
         {
-            "name": "CalculateLuminance",
-            "mode": "deferred",
+            "program": "CalculateLuminance",
             "entry": "mainPixelProgram",
+            "mode": "deferred",
             "resources": [
                 "screen"
             ],
@@ -27,9 +27,10 @@
             ]
         },
         {
-            "name": "AdaptLuminance",
-            "compute": "(1, 1, 1)",
+            "program": "AdaptLuminance",
             "entry": "mainComputeProgram",
+            "mode": "deferred",
+            "dispatch": "(1, 1, 1)",
             "defines": {
                 "adaptionRate": "1.25"
             },
@@ -44,7 +45,7 @@
             ]
         },
         {
-            "name": "ToneMap",
+            "program": "ToneMap",
             "entry": "mainPixelProgram",
             "defines": {
                 "techniqueMode": {
@@ -69,7 +70,7 @@
                 "linearWhite": "11.2"
             },
             "copy": {
-                "screen":  "screenBuffer"
+                "screen": "screenBuffer"
             },
             "resources": [
                 "averageLuminanceBuffer",

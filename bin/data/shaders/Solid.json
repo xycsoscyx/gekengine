@@ -105,9 +105,10 @@
     },
     "passes": [
         {
-            "name": "StoreDeferred",
-            "forward": "solid",
+            "program": "StoreDeferred",
             "entry": "mainPixelProgram",
+            "mode": "forward",
+            "material": "solid",
             "depthstate": {
                 "target": "depthBuffer",
                 "comparison": "less_equal",
@@ -124,7 +125,7 @@
             ]
         },
         {
-            "name": "AmbientCalculation",
+            "program": "AmbientCalculation",
             "entry": "mainPixelProgram",
             "defines": {
                 "radius": "2",
@@ -150,7 +151,7 @@
             ]
         },
         {
-            "name": "AmbientBlur",
+            "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "defines": {
                 "blurAxis": {
@@ -167,7 +168,7 @@
             ]
         },
         {
-            "name": "AmbientBlur",
+            "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "defines": {
                 "blurAxis": {
@@ -184,7 +185,7 @@
             ]
         },
         {
-            "name": "AmbientBlur",
+            "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "defines": {
                 "blurAxis": {
@@ -201,7 +202,7 @@
             ]
         },
         {
-            "name": "AmbientBlur",
+            "program": "AmbientBlur",
             "entry": "mainPixelProgram",
             "defines": {
                 "blurAxis": {
@@ -218,7 +219,7 @@
             ]
         },
         {
-            "name": "AccumulateLighting",
+            "program": "AccumulateLighting",
             "entry": "mainPixelProgram",
             "lighting": "true",
             "defines": {

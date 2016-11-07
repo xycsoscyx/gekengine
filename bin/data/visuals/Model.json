@@ -1,0 +1,70 @@
+{
+    "input": [
+        {
+            "name": "position",
+            "bind": "float3",
+            "semantic": "POSITION",
+            "source": "vertex",
+            "sourceindex": "0"
+        },
+        {
+            "name": "texCoord",
+            "bind": "float2",
+            "semantic": "TEXCOORD",
+            "source": "vertex",
+            "sourceindex": "0"
+        },
+        {
+            "name": "tangent",
+            "bind": "float3",
+            "semantic": "TANGENT",
+            "source": "vertex",
+            "sourceindex": "0"
+        },
+        {
+            "name": "biTangent",
+            "bind": "float3",
+            "semantic": "BITANGENT",
+            "source": "vertex",
+            "sourceindex": "0"
+        },
+        {
+            "name": "normal",
+            "bind": "float3",
+            "semantic": "NORMAL",
+            "source": "vertex",
+            "sourceindex": "0"
+        }
+    ],
+    "output": [
+        {
+            "name": "position",
+            "bind": "float3",
+            "semantic": "POSITION"
+        },
+        {
+            "name": "texCoord",
+            "bind": "float2",
+            "semantic": "TEXCOORD"
+        },
+        {
+            "name": "tangent",
+            "bind": "float3",
+            "semantic": "TANGENT"
+        },
+        {
+            "name": "biTangent",
+            "bind": "float3",
+            "semantic": "BITANGENT"
+        },
+        {
+            "name": "normal",
+            "bind": "float3",
+            "semantic": "NORMAL"
+        }
+    ],
+    "vertex": {
+        "program": "Basic",
+        "entry": "mainVertexProgram"
+    }
+}

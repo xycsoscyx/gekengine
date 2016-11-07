@@ -22,21 +22,6 @@ namespace Gek
 {
     namespace Implementation
     {
-        Video::InputElement::Source getElementSource(const wchar_t *elementSourceString)
-        {
-            if (wcsicmp(elementSourceString, L"instance") == 0) return Video::InputElement::Source::Instance;
-            else return Video::InputElement::Source::Vertex;
-        }
-
-        Video::InputElement::Semantic getElementSemantic(const wchar_t *semanticString)
-        {
-            if (wcsicmp(semanticString, L"Position") == 0) return Video::InputElement::Semantic::Position;
-            else if (wcsicmp(semanticString, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
-            else if (wcsicmp(semanticString, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
-            else if (wcsicmp(semanticString, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
-            else if (wcsicmp(semanticString, L"Color") == 0) return Video::InputElement::Semantic::Color;
-            else return Video::InputElement::Semantic::TexCoord;
-        }
         GEK_CONTEXT_USER(Shader, Video::Device *, Engine::Resources *, Plugin::Population *, String)
             , public Engine::Shader
         {
@@ -130,7 +115,7 @@ namespace Gek
 
                 const JSON::Object shaderNode = JSON::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
 
-                priority = JSON::getMember(shaderNode, L"priority", 0);
+                priority = shaderNode.get(L"priority", 0).as_uint();
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = backBuffer->getWidth();
@@ -250,7 +235,7 @@ namespace Gek
 
                 String inputData;
                 auto &inputNode = shaderNode[L"input"];
-                if (!inputNode.is_null())
+                if (inputNode.is_array())
                 {
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.elements())
@@ -261,7 +246,7 @@ namespace Gek
                             String system(elementNode[L"system"].as_cstring());
 							if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
-								String format(JSON::getMember(elementNode, L"format", L"bool"));
+                                String format(elementNode.get(L"format", L"bool").as_cstring());
 								if (format.compareNoCase(L"int") == 0)
 								{
 									inputData.format(L"    int %v : SV_IsFrontFace;\r\n", name);
@@ -390,8 +375,8 @@ namespace Gek
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t flags = getTextureFlags(JSON::getMember(textureValue, L"flags", L"0"));
-                        uint32_t textureMipMaps = evaluate(globalDefinesMap, JSON::getMember(textureValue, L"mipmaps", L"1"), BindType::UInt);
+                        uint32_t flags = getTextureFlags(textureValue.get(L"flags", L"0").as_cstring());
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_cstring(), BindType::UInt);
                         resourceMap[textureName] = resources->createTexture(String::create(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
@@ -431,7 +416,7 @@ namespace Gek
                         }
 
                         MapType mapType = MapType::Buffer;
-                        if (JSON::getMember(bufferValue, L"byteaddress", false))
+                        if (bufferValue.get(L"byteaddress", false).as_bool())
                         {
                             mapType = MapType::ByteAddressBuffer;
                         }
@@ -442,15 +427,13 @@ namespace Gek
                 }
 
                 auto &materialNode = shaderNode[L"material"];
-                for (auto &passNode : shaderNode[L"passes"].members())
+                for (auto &passNode : shaderNode[L"passes"].elements())
                 {
-                    String passName(passNode.name());
-                    auto &passValue = passNode.value();
 					passList.push_back(PassData(passIndex++));
                     PassData &pass = passList.back();
 
-                    pass.lighting = JSON::getMember(passNode, L"lighting", L"false");
-                    for (auto &clearTargetNode : passValue[L"clear"].members())
+                    pass.lighting = passNode.get(L"lighting", false).as_bool();
+                    for (auto &clearTargetNode : passNode[L"clear"].members())
                     {
                         String clearTargetName(clearTargetNode.name());
                         auto resourceSearch = resourceMap.find(clearTargetName);
@@ -464,10 +447,19 @@ namespace Gek
                     }
 
                     std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
-                    for (auto &defineNode : passValue[L"defines"].members())
+                    for (auto &defineNode : passNode[L"defines"].members())
                     {
-                        BindType bindType = getBindType(defineNode.getAttribute(L"bind", L"float"));
-                        localDefinesMap[defineNode.type] = std::make_pair(bindType, defineNode.text);
+                        auto &defineName = defineNode.name();
+                        auto &defineValue = defineNode.value();
+                        if (defineValue.is_object())
+                        {
+                            BindType bindType = getBindType(defineValue[L"bind"].as_cstring());
+                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_cstring());
+                        }
+                        else
+                        {
+                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_cstring());
+                        }
                     }
 
                     String definesData;
@@ -502,21 +494,21 @@ namespace Gek
                             L"\r\n", definesData);
                     }
 
-                    if (passNode.attributes.count(L"compute"))
+                    if (passNode.count(L"compute"))
                     {
                         pass.mode = Pass::Mode::Compute;
 
                         pass.width = float(displayWidth);
                         pass.height = float(displayHeight);
 
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.getAttribute(L"compute"), BindType::UInt3);
+                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_cstring(), BindType::UInt3);
                         pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
                         pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
                         pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
                     }
                     else
                     {
-                        if (passNode.attributes.count("forward"))
+                        if (passNode.count(L"forward"))
                         {
                             pass.mode = Pass::Mode::Forward;
                             engineData.format(
@@ -540,10 +532,10 @@ namespace Gek
                         }
 
                         std::unordered_map<String, String> renderTargetsMap;
-                        auto &targetsNode = passNode.getChild(L"targets");
-                        if (targetsNode.valid)
+                        auto &targetsNode = passNode[L"targets"];
+                        if (targetsNode.is_array())
                         {
-                            renderTargetsMap = loadChildrenMap(targetsNode);
+                            renderTargetsMap = getAliasedMap(targetsNode);
                             if (renderTargetsMap.empty())
                             {
                                 pass.width = float(backBuffer->getWidth());
@@ -598,94 +590,65 @@ namespace Gek
                                 L"\r\n", outputData);
                         }
 
-                        Video::DepthStateInformation depthState;
-                        auto &depthNode = passNode.getChild(L"depthstates");
-                        if (depthNode.valid)
-                        {
-                            if (depthNode.attributes.count(L"target") == 0)
-                            {
-                                throw MissingParameters();
-                            }
+                        Video::DepthStateInformation depthStateInformation;
+                        depthStateInformation.load(passNode[L"depthstates"]);
+                        pass.depthState = resources->createDepthState(depthStateInformation);
 
-                            auto resourceSearch = resourceMap.find(depthNode.getAttribute(L"target"));
-                            if (resourceSearch == std::end(resourceMap))
-                            {
-                                throw InvalidParameters();
-                            }
+                        Video::UnifiedBlendStateInformation blendStateInformation;
+                        blendStateInformation.load(passNode[L"blendstate"]);
+                        pass.blendState = resources->createBlendState(blendStateInformation);
 
-                            pass.depthBuffer = resourceSearch->second;
-                            depthState.enable = true;
-                            pass.enableDepth = true;
-
-                            auto clearNode = depthNode.getChild(L"clear");
-                            if (clearNode.valid)
-                            {
-                                pass.clearDepthFlags |= Video::ClearFlags::Depth;
-                                pass.clearDepthValue = clearNode.text;
-                            }
-
-                            auto comparisonNode = depthNode.getChild(L"comparison");
-                            if (comparisonNode.valid)
-                            {
-                                depthState.comparisonFunction = Utility::getComparisonFunction(comparisonNode.text);
-                            }
-
-                            auto writeMaskNode = depthNode.getChild(L"writemask");
-                            if (writeMaskNode.valid)
-                            {
-                                depthState.writeMask = Utility::getDepthWriteMask(writeMaskNode.text);
-                            }
-
-                            auto stencilNode = depthNode.getChild(L"stencil");
-                            if (stencilNode.valid)
-                            {
-                                depthState.stencilEnable = true;
-                                auto clearStencilNode = stencilNode.getChild(L"clear");
-                                if (clearStencilNode.valid)
-                                {
-                                    pass.clearDepthFlags |= Video::ClearFlags::Stencil;
-                                    pass.clearStencilValue = clearStencilNode.text;
-                                }
-
-                                loadStencilState(depthState.stencilFrontState, stencilNode.getChild(L"front"));
-                                loadStencilState(depthState.stencilBackState, stencilNode.getChild(L"back"));
-                            }
-                        }
-
-                        pass.depthState = resources->createDepthState(depthState);
-                        pass.blendState = loadBlendState(resources, passNode.getChild(L"blendstates"), renderTargetsMap);
-                        pass.renderState = loadRenderState(resources, passNode.getChild(L"renderstate"));
+                        Video::RenderStateInformation renderStateInformation;
+                        renderStateInformation.load(passNode[L"renderState"]);
+                        pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
-                    std::unordered_map<String, String> resourceAliasMap;
-                    std::unordered_map<String, String> unorderedAccessAliasMap = loadNodeChildren(passNode, L"unorderedaccess");
-                    for(auto &resourceNode : passNode.getChild(L"resources").children)
+                    for (auto &clearTargetNode : passNode[L"clear"].members())
                     {
-                        auto resourceSearch = resourceMap.find(resourceNode.type);
+                        auto &clearTargetName = clearTargetNode.name();
+                        auto resourceSearch = resourceMap.find(clearTargetName);
                         if (resourceSearch == std::end(resourceMap))
                         {
                             throw InvalidParameters();
                         }
 
-                        resourceAliasMap.insert(std::make_pair(resourceNode.type, resourceNode.text.empty() ? resourceNode.type : resourceNode.text));
-                        std::vector<String> actionList(resourceNode.getAttribute(L"actions").split(L','));
-                        for (auto &action : actionList)
-                        {
-                            if (action.compareNoCase(L"generatemipmaps") == 0)
-                            {
-                                pass.generateMipMapsList.push_back(resourceSearch->second);
-                            }
-                        }
+                        auto &clearTargetValue = clearTargetNode.value();
+                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_cstring()), clearTargetValue[L"value"].as_cstring())));
+                    }
 
-                        if (resourceNode.attributes.count(L"copy"))
+                    auto &generateMipMapsNode = passNode[L"generatemipmaps"];
+                    if (generateMipMapsNode.is_array())
+                    {
+                        for (auto &generateMipMaps : generateMipMapsNode.elements())
                         {
-                            auto sourceResourceSearch = resourceMap.find(resourceNode.getAttribute(L"copy"));
-                            if (sourceResourceSearch == std::end(resourceMap))
+                            auto resourceSearch = resourceMap.find(generateMipMaps.as_cstring());
+                            if (resourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
                             }
 
-                            pass.copyResourceMap[resourceSearch->second] = sourceResourceSearch->second;
+                            pass.generateMipMapsList.push_back(resourceSearch->second);
+                        }
+                    }
+
+                    auto &copyNode = passNode[L"copy"];
+                    if (copyNode.is_object())
+                    {
+                        for (auto &copy : copyNode.members())
+                        {
+                            auto nameSearch = resourceMap.find(copy.name());
+                            if (nameSearch == std::end(resourceMap))
+                            {
+                                throw InvalidParameters();
+                            }
+
+                            auto valueSearch = resourceMap.find(copy.value().as_cstring());
+                            if (valueSearch == std::end(resourceMap))
+                            {
+                                throw InvalidParameters();
+                            }
+
+                            pass.copyResourceMap[nameSearch->second] = valueSearch->second;
                         }
                     }
 
@@ -696,38 +659,33 @@ namespace Gek
 
                     String resourceData;
                     uint32_t nextResourceStage(pass.lighting ? 5 : 0);
+                    std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode[L"resources"]);
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        String passMaterial(passNode.getAttribute(L"forward"));
-                        auto &namedMaterialNode = materialNode.getChild(passMaterial);
-                        if (namedMaterialNode.valid)
+                        String passMaterial(passNode[L"forward"].as_cstring());
+                        auto &namedMaterialNode = materialNode[passMaterial];
+                        if (namedMaterialNode.is_array())
                         {
                             forwardPassMap[passMaterial] = &pass;
 
                             std::unordered_map<String, Map> materialMap;
-                            for (auto &resourceNode : namedMaterialNode.children)
+                            for (auto &resourceNode : namedMaterialNode.elements())
                             {
-                                if (resourceNode.attributes.count(L"name"))
+                                String resourceName(resourceNode[L"name"].as_cstring());
+                                MapType mapType = getMapType(resourceNode[L"type"].as_cstring());
+                                BindType bindType = getBindType(resourceNode[L"bind"].as_cstring());
+                                uint32_t flags = getTextureLoadFlags(resourceNode[L"flags"].as_cstring());
+                                if (resourceNode.count(L"file"))
                                 {
-                                    materialMap.insert(std::make_pair(resourceNode.type, Map(resourceNode.getAttribute(L"name"))));
+                                    materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"file"].as_cstring())));
+                                }
+                                else if (resourceNode.count(L"pattern"))
+                                {
+                                    materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring())));
                                 }
                                 else
                                 {
-                                    MapType mapType = getMapType(resourceNode.text);
-                                    BindType bindType = getBindType(resourceNode.getAttribute(L"bind"));
-                                    uint32_t flags = getTextureLoadFlags(resourceNode.getAttribute(L"flags"));
-                                    if (resourceNode.attributes.count(L"file"))
-                                    {
-                                        materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"file"))));
-                                    }
-                                    else if (resourceNode.attributes.count(L"pattern"))
-                                    {
-                                        materialMap.insert(std::make_pair(resourceNode.type, Map(mapType, bindType, flags, resourceNode.getAttribute(L"pattern"), resourceNode.getAttribute(L"parameters"))));
-                                    }
-                                    else
-                                    {
-                                        throw UnknownMaterialType();
-                                    }
+                                    throw UnknownMaterialType();
                                 }
                             }
 
@@ -827,6 +785,7 @@ namespace Gek
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
+                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode[L"unorderedaccess"]);
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);
@@ -871,8 +830,8 @@ namespace Gek
                             L"\r\n", unorderedAccessData);
                     }
 
-                    String entryPoint(passNode.getAttribute(L"entry"));
-                    String name(FileSystem::getFileName(shaderName, passNode.type).append(L".hlsl"));
+                    String entryPoint(passNode[L"entry"].as_cstring());
+                    String name(FileSystem::getFileName(shaderName, passNode[L"program"].as_cstring()).append(L".hlsl"));
                     pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                 }
 			}

@@ -55,6 +55,8 @@ namespace Gek
 
             Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::SIMD::Float4x4 &viewMatrix)> onRenderScene;
 
+            virtual ~Renderer(void) = default;
+
             virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;

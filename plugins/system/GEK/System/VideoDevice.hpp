@@ -454,12 +454,16 @@ namespace Gek
 
         GEK_INTERFACE(Object)
         {
+            virtual ~Object(void) = default;
+
             virtual void setName(const wchar_t *name) = 0;
         };
 
         GEK_INTERFACE(Buffer)
             : virtual public Object
         {
+            virtual ~Buffer(void) = default;
+        
             virtual Video::Format getFormat(void) = 0;
             virtual uint32_t getStride(void) = 0;
             virtual uint32_t getCount(void) = 0;
@@ -468,6 +472,8 @@ namespace Gek
         GEK_INTERFACE(Texture)
             : virtual public Object
         {
+            virtual ~Texture(void) = default;
+        
             virtual Video::Format getFormat(void) = 0;
             virtual uint32_t getWidth(void) = 0;
             virtual uint32_t getHeight(void) = 0;
@@ -477,6 +483,8 @@ namespace Gek
         GEK_INTERFACE(Target)
             : virtual public Texture
         {
+            virtual ~Target(void) = default;
+            
             virtual const Video::ViewPort &getViewPort(void) = 0;
         };
 
@@ -486,6 +494,8 @@ namespace Gek
             {
                 GEK_INTERFACE(Pipeline)
                 {
+                    virtual ~Pipeline(void) = default;
+
                     virtual Video::PipelineType getType(void) const = 0;
 
 					virtual void setProgram(Object *program) = 0;
@@ -500,6 +510,8 @@ namespace Gek
                     virtual void clearResourceList(uint32_t count, uint32_t firstStage) = 0;
                     virtual void clearUnorderedAccessList(uint32_t count, uint32_t firstStage) = 0;
                 };
+
+                virtual ~Context(void) = default;
 
                 virtual Pipeline * const computePipeline(void) = 0;
                 virtual Pipeline * const vertexPipeline(void) = 0;
@@ -539,6 +551,8 @@ namespace Gek
 
                 virtual ObjectPtr finishCommandList(void) = 0;
             };
+
+            virtual ~Device(void) = default;
 
             virtual DisplayModeList getDisplayModeList(Video::Format format) const = 0;
 

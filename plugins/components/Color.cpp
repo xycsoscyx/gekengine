@@ -9,12 +9,19 @@ namespace Gek
     {
         void Color::save(JSON::Object &componentData) const
         {
-			JSON::setValue(componentData, value);
+			componentData = value;
         }
 
         void Color::load(const JSON::Object &componentData)
         {
-            value = JSON::getValue(componentData, Math::Float4::White);
+            if (componentData.is_null())
+            {
+                value = Math::Float4::White;
+            }
+            else
+            {
+                value = componentData.as<Math::Float4>();
+            }
         }
     }; // namespace Components
 

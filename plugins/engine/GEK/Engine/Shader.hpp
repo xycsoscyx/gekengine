@@ -40,6 +40,8 @@ namespace Gek
 
                 using Iterator = std::unique_ptr<Pass>;
 
+                virtual ~Pass(void) = default;
+
                 virtual Iterator next(void) = 0;
 
                 virtual Mode prepare(void) = 0;
@@ -68,6 +70,8 @@ namespace Gek
                 {
                 }
             };
+
+            virtual ~Shader(void) = default;
 
             virtual void reload(void) = 0;
 

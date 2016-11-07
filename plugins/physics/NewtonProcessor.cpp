@@ -278,14 +278,14 @@ namespace Gek
                         const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"));
 
                         auto &surfaceNode = materialNode[L"surface"];
-                        if (!surfaceNode.is_null())
+                        if (surfaceNode.is_object())
                         {
                             Surface surface;
-                            surface.ghost = JSON::getMember(surfaceNode, L"ghost", surface.ghost);
-                            surface.staticFriction = JSON::getMember(surfaceNode, L"static_friction", surface.staticFriction);
-                            surface.kineticFriction = JSON::getMember(surfaceNode, L"kinetic_friction", surface.kineticFriction);
-                            surface.elasticity = JSON::getMember(surfaceNode, L"elasticity", surface.elasticity);
-                            surface.softness = JSON::getMember(surfaceNode, L"softness", surface.softness);
+                            surface.ghost = surfaceNode.get(L"ghost", surface.ghost).as_bool();
+                            surface.staticFriction = surfaceNode.get(L"static_friction", surface.staticFriction).as<float>();
+                            surface.kineticFriction = surfaceNode.get(L"kinetic_friction", surface.kineticFriction).as<float>();
+                            surface.elasticity = surfaceNode.get(L"elasticity", surface.elasticity).as<float>();
+                            surface.softness = surfaceNode.get(L"softness", surface.softness).as<float>();
 
                             surfaceIndex = surfaceList.size();
                             surfaceList.push_back(surface);

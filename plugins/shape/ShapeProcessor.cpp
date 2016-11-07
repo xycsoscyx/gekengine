@@ -383,16 +383,16 @@ namespace Gek
     {
         void Shape::save(JSON::Object &componentData) const
         {
-			JSON::setMember(componentData, L"type", type);
-			JSON::setMember(componentData, L"parameters", parameters);
-			JSON::setMember(componentData, L"skin", skin);
+			componentData.set(L"type", type);
+			componentData.set(L"parameters", parameters);
+			componentData.set(L"skin", skin);
         }
 
         void Shape::load(const JSON::Object &componentData)
         {
-			type = JSON::getMember(componentData, L"type", String());
-			parameters = JSON::getMember(componentData, L"parameters", String());
-			skin = JSON::getMember(componentData, L"skin", String());
+			type = componentData.get(L"type", String());
+			parameters = componentData.get(L"parameters", String());
+			skin = componentData.get(L"skin", String());
         }
     }; // namespace Components
 

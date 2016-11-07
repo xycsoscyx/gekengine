@@ -10,14 +10,14 @@ namespace Gek
     {
         void PointLight::save(JSON::Object &componentData) const
         {
-            JSON::setMember(componentData, L"range", range);
-			JSON::setMember(componentData, L"radius", radius);
+            componentData.set(L"range", range);
+			componentData.set(L"radius", radius);
         }
 
         void PointLight::load(const JSON::Object &componentData)
         {
-            range = JSON::getMember(componentData, L"range", 0.0f);
-            radius = JSON::getMember(componentData, L"radius", 0.0f);
+            range = componentData.get(L"range", 0.0f).as<float>();
+            radius = componentData.get(L"radius", 0.0f).as<float>();
         }
 
         void SpotLight::save(JSON::Object &componentData) const
@@ -31,11 +31,11 @@ namespace Gek
 
         void SpotLight::load(const JSON::Object &componentData)
         {
-            range = JSON::getMember(componentData, L"range", 0.0f);
-            radius = JSON::getMember(componentData, L"radius", 0.0f);
-            innerAngle = std::cos(Math::convertDegreesToRadians(JSON::getMember(componentData, L"inner_angle", 0.0f) * 0.5f));
-            outerAngle = std::cos(Math::convertDegreesToRadians(JSON::getMember(componentData, L"outer_angle", 0.0f) * 0.5f));
-            coneFalloff = JSON::getMember(componentData, L"cone_falloff", 0.0f);
+            range = componentData.get(L"range", 0.0f).as<float>();
+            radius = componentData.get(L"radius", 0.0f).as<float>();
+            innerAngle = std::cos(Math::convertDegreesToRadians(componentData.get(L"inner_angle", 0.0f).as<float>() * 0.5f));
+            outerAngle = std::cos(Math::convertDegreesToRadians(componentData.get(L"outer_angle", 0.0f).as<float>() * 0.5f));
+            coneFalloff = componentData.get(L"cone_falloff", 0.0f).as<float>();
         }
 
         void DirectionalLight::save(JSON::Object &componentData) const

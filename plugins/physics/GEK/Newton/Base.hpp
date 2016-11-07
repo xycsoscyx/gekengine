@@ -47,6 +47,8 @@ namespace Gek
 
         GEK_INTERFACE(Entity)
         {
+            virtual ~Entity(void) = default;
+
             virtual Plugin::Entity * const getEntity(void) const = 0;
 
             virtual NewtonBody * const getNewtonBody(void) const = 0;
@@ -70,23 +72,16 @@ namespace Gek
         {
             struct Surface
             {
-                bool ghost;
-                float staticFriction;
-                float kineticFriction;
-                float elasticity;
-                float softness;
-
-                Surface(void)
-                    : ghost(false)
-                    , staticFriction(0.9f)
-                    , kineticFriction(0.5f)
-                    , elasticity(0.4f)
-                    , softness(1.0f)
-                {
-                }
+                bool ghost = false;
+                float staticFriction = 0.9f;
+                float kineticFriction = 0.5f;
+                float elasticity = 0.4f;
+                float softness = 1.0f;
             };
             
             Nano::Signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal)> onCollision;
+
+            virtual ~World(void) = default;
 
             virtual Math::Float3 getGravity(const Math::Float3 &position) = 0;
 

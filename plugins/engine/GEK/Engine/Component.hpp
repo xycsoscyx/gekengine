@@ -46,6 +46,8 @@ namespace Gek
                 virtual ~Data(void) = default;
             };
 
+            virtual ~Component(void) = default;
+
             virtual const wchar_t * const getName(void) const = 0;
             virtual std::type_index getIdentifier(void) const = 0;
 
@@ -60,6 +62,8 @@ namespace Gek
         GEK_INTERFACE(Component)
             : public Plugin::Component
         {
+            virtual ~Component(void) = default;
+            
             virtual void show(ImGuiContext *guiContext, Plugin::Component::Data *data) = 0;
             virtual void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
         };

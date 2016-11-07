@@ -72,7 +72,6 @@ namespace Gek
                 throw FileNotFound();
             }
 
-
 			buffer.resize(GetFileSize(file, nullptr));
 
 			DWORD bytesRead = 0;

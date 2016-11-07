@@ -58,9 +58,10 @@
     },
     "passes": [
         {
-            "name": "AdaptFocalDepth",
-            "compute": "(1, 1, 1)",
+            "program": "AdaptFocalDepth",
             "entry": "mainComputeProgram",
+            "mode": "compute",
+            "dispatch": "(1, 1, 1)",
             "defines": {
                 "adaptionRate": "5.0"
             },
@@ -72,20 +73,20 @@
             ]
         },
         {
-            "name": "SeparateLayers",
+            "program": "SeparateLayers",
             "entry": "mainPixelProgram",
-            "resources": {
-                "averageFocalDepth": [ ],
-                "depthBuffer": [ ],
-                "screen": [ ]
-            },
-            "targets": {
-                "circleOfConfusion": [ ],
-                "screenBuffer": [ ]
-            }
+            "resources": [
+                "averageFocalDepth",
+                "depthBuffer",
+                "screen"
+            ]
+            "targets": [
+                "circleOfConfusion",
+                "screenBuffer"
+            ]
         },
         {
-            "name": "GatherBackground",
+            "program": "GatherBackground",
             "entry": "mainPixelProgram",
             "resources": [
                 "circleOfConfusion",

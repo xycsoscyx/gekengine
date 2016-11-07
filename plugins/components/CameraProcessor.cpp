@@ -25,18 +25,18 @@ namespace Gek
 
             void save(JSON::Object &componentData) const
             {
-                JSON::setMember(componentData, L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
-				JSON::setMember(componentData, L"near_clip", nearClip);
-				JSON::setMember(componentData, L"far_clip", farClip);
-				JSON::setMember(componentData, L"target", target);
-				JSON::setMember(componentData, L"value", String::create(filterList, L','));
+                componentData.set(L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
+				componentData.set(L"near_clip", nearClip);
+				componentData.set(L"far_clip", farClip);
+				componentData.set(L"target", target);
+				componentData.set(L"value", String::create(filterList, L','));
             }
 
             void load(const JSON::Object &componentData)
             {
-                fieldOfView = Math::convertDegreesToRadians(JSON::getMember(componentData, L"field_of_view", 90.0f));
-                nearClip = JSON::getMember(componentData, L"near_clip", 1.0f);
-                farClip = JSON::getMember(componentData, L"far_clip", 100.0f);
+                fieldOfView = Math::convertDegreesToRadians(componentData.get(L"field_of_view", 90.0f).as<float>());
+                nearClip = componentData.get(L"near_clip", 1.0f).as<float>();
+                farClip = componentData.get(L"far_clip", 100.0f).as<float>();
                 target = componentData[L"target"].as_cstring();;
                 filterList = String(componentData[L"filters"].as_cstring()).split(L',');
             }

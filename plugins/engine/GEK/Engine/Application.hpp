@@ -44,6 +44,8 @@ namespace Gek
             }
         };
 
+        virtual ~Application(void) = default;
+
         virtual Result windowEvent(const Event &eventData) = 0;
 
         virtual bool update(void) = 0;

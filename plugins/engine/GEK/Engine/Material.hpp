@@ -20,6 +20,8 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(MissingParameters);
 
+            virtual ~Material(void) = default;
+
 			virtual RenderStateHandle getRenderState(void) const = 0;
             virtual const std::vector<ResourceHandle> *getResourceList(uint32_t passIdentifier) = 0;
         };

@@ -12,17 +12,15 @@
     },
     "passes": [
         {
-            "name": "AntiAlias",
+            "program": "AntiAlias",
             "mode": "deferred",
             "entry": "mainPixelProgram",
+            "copy": {
+                "screenBuffer": "screen"
+            }
             "resources": [
-                {
-                    "name": "screenBuffer",
-                    "copy": "screen"
-                },
-                {
-                    "name": "depthBuffer"
-                }
+                "screenBuffer",
+                "depthBuffer"
             ],
             "targets": [
                 "screen"

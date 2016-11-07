@@ -122,23 +122,6 @@ namespace Gek
         return *this;
     }
 
-    Video::Format getElementSource(const wchar_t *type)
-    {
-        if (wcsicmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
-        else if (wcsicmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
-        else if (wcsicmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-        else if (wcsicmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-        else if (wcsicmp(type, L"int") == 0) return Video::Format::R32_INT;
-        else if (wcsicmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
-        else if (wcsicmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
-        else if (wcsicmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-        else if (wcsicmp(type, L"uint") == 0) return Video::Format::R32_UINT;
-        else if (wcsicmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
-        else if (wcsicmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-        else if (wcsicmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
-        return Video::Format::Unknown;
-    }
-
     ClearType getClearType(const String &clearType)
     {
         if (clearType.compareNoCase(L"Target") == 0) return ClearType::Target;
@@ -420,7 +403,7 @@ namespace Gek
                 }
                 else if(element.is_object() && !element.empty())
                 {
-                    auto member = element.begin_members();
+                    auto &member = element.begin_members();
                     String name(member->name());
                     String value(member->value().as_cstring());
                     aliasedMap[name] = value;
@@ -432,5 +415,38 @@ namespace Gek
         }
 
         return aliasedMap;
+    }
+
+    Video::Format getElementFormat(const wchar_t *format)
+    {
+        if (wcsicmp(format, L"float") == 0) return Video::Format::R32_FLOAT;
+        else if (wcsicmp(format, L"float2") == 0) return Video::Format::R32G32_FLOAT;
+        else if (wcsicmp(format, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
+        else if (wcsicmp(format, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
+        else if (wcsicmp(format, L"int") == 0) return Video::Format::R32_INT;
+        else if (wcsicmp(format, L"int2") == 0) return Video::Format::R32G32_INT;
+        else if (wcsicmp(format, L"int3") == 0) return Video::Format::R32G32B32_INT;
+        else if (wcsicmp(format, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
+        else if (wcsicmp(format, L"uint") == 0) return Video::Format::R32_UINT;
+        else if (wcsicmp(format, L"uint2") == 0) return Video::Format::R32G32_UINT;
+        else if (wcsicmp(format, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
+        else if (wcsicmp(format, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
+        return Video::Format::Unknown;
+    }
+
+    Video::InputElement::Source getElementSource(const wchar_t *elementSource)
+    {
+        if (wcsicmp(elementSource, L"instance") == 0) return Video::InputElement::Source::Instance;
+        else return Video::InputElement::Source::Vertex;
+    }
+
+    Video::InputElement::Semantic getElementSemantic(const wchar_t *semantic)
+    {
+        if (wcsicmp(semantic, L"Position") == 0) return Video::InputElement::Semantic::Position;
+        else if (wcsicmp(semantic, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
+        else if (wcsicmp(semantic, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
+        else if (wcsicmp(semantic, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
+        else if (wcsicmp(semantic, L"Color") == 0) return Video::InputElement::Semantic::Color;
+        else return Video::InputElement::Semantic::TexCoord;
     }
 }; // namespace Gek

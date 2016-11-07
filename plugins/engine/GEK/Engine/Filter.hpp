@@ -37,11 +37,15 @@ namespace Gek
 
                 using Iterator = std::unique_ptr<Pass>;
 
+                virtual ~Pass(void) = default;
+
                 virtual Iterator next(void) = 0;
 
                 virtual Mode prepare(void) = 0;
                 virtual void clear(void) = 0;
             };
+
+            virtual ~Filter(void) = default;
 
             virtual void reload(void) = 0;
 

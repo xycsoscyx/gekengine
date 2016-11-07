@@ -11,7 +11,7 @@ add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR} "${CMAKE_CURRENT_LIST_DIR}/../system" "${CMAKE_CURRENT_LIST_DIR}/../components")
 
-target_link_libraries(${ProjectID} math utility shapes nano-signal-slot imgui)
+target_link_libraries(${ProjectID} math utility shapes nano-signal-slot imgui system)
 
 set_target_properties(${ProjectID}
     PROPERTIES

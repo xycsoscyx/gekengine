@@ -93,8 +93,6 @@ namespace Gek
         ClearData & operator = (const ClearData &clearData);
     };
 
-    Video::Format getElementSource(const wchar_t *type);
-
     BindType getBindType(const String &bindType);
     String getBindType(BindType bindType);
     const BindType getBindType(Video::Format format);
@@ -110,4 +108,8 @@ namespace Gek
     uint32_t getBufferFlags(const String &createFlags);
 
     std::unordered_map<String, String> getAliasedMap(const JSON::Object &object);
+
+    Video::Format getElementFormat(const wchar_t *format);
+    Video::InputElement::Source getElementSource(const wchar_t *elementSource);
+    Video::InputElement::Semantic getElementSemantic(const wchar_t *semantic);
 }; // namespace Gek

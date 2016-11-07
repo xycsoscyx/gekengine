@@ -156,13 +156,13 @@ namespace Gek
                         const JSON::Object worldNode = JSON::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"));
 
                         auto &prefabsNode = worldNode[L"prefabs"];
-                        if (!prefabsNode.is_null() && !prefabsNode.is_object())
+                        if (!prefabsNode.is_object())
                         {
                             throw InvalidPrefabsBlock();
                         }
 
                         auto &populationNode = worldNode[L"population"];
-                        if (!populationNode.is_null() && !populationNode.is_array())
+                        if (!populationNode.is_array())
                         {
                             throw InvalidPopulationBlock();
                         }
@@ -175,9 +175,9 @@ namespace Gek
                             }
 
                             std::vector<JSON::Member> entityComponentList;
-                            auto &prefabNode = prefabsNode[entityNode[L"prefab"].as_cstring()];
-                            if (!prefabNode.is_null())
+                            if (entityNode.has_member(L"prefab"))
                             {
+                                auto &prefabNode = prefabsNode.get(entityNode[L"prefab"].as_cstring());
                                 for (auto &prefabComponentNode : prefabNode.members())
                                 {
                                     entityComponentList.push_back(prefabComponentNode);
@@ -188,6 +188,7 @@ namespace Gek
                             {
                                 auto componentSearch = std::find_if(entityComponentList.begin(), entityComponentList.end(), [&](const JSON::Member &componentData) -> bool
                                 {
+                                    return (componentData.name() == componentNode.name());
                                 });
 
                                 if (componentSearch == entityComponentList.end())

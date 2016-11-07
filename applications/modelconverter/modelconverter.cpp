@@ -428,12 +428,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 				{
                     const JSON::Object materialNode = JSON::load(fileName);
                     auto &shaderNode = materialNode[L"shader"];
-                    if (!shaderNode.is_null() && shaderNode.is_object() && !shaderNode.empty())
+                    if (shaderNode.is_object() && !shaderNode.empty())
 					{
 						for (auto &shaderPassNode : shaderNode.members())
 						{
                             auto &albedoNode = shaderPassNode.value()[L"albedo"];
-                            if (!albedoNode.is_null())
+                            if (albedoNode.is_object())
 							{
 								if (albedoNode.count(L"file"))
 								{

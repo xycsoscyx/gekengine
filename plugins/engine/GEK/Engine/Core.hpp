@@ -29,6 +29,8 @@ namespace Gek
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(bool showCursor)> onInterface;
 
+            virtual ~Core(void) = default;
+
             virtual JSON::Object &getConfiguration(void) = 0;
             virtual JSON::Object const &getConfiguration(void) const = 0;
 

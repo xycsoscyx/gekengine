@@ -27,6 +27,8 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidIncludeType);
             GEK_ADD_EXCEPTION(InvalidIncludeName);
 
+            virtual ~Resources(void) = default;
+
             virtual VisualHandle loadVisual(const wchar_t *pluginName) = 0;
             virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
 

@@ -541,6 +541,7 @@ namespace Gek
                 }
                 catch (const std::exception &)
                 {
+                    configuration[L"display"][L"mode"] = 0;
                 };
 
                 configuration[L"editor"][L"enabled"] = false;
@@ -761,7 +762,8 @@ namespace Gek
                 resources = nullptr;
                 population = nullptr;
                 videoDevice = nullptr;
-                //FileSystem::save(getContext()->getFileName(L"config.json"), configuration.dump(4));
+                configuration.erase(L"editor");
+                JSON::save(getContext()->getFileName(L"config.json"), configuration);
                 CoUninitialize();
             }
 

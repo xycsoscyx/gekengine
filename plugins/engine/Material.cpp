@@ -68,12 +68,12 @@ namespace Gek
                             {
                                 ResourceHandle resourceHandle;
                                 auto &resourceNode = passValue[resource.name];
-                                if (!resourceNode.is_null())
+                                if (resourceNode.is_object())
                                 {
                                     if (resourceNode.count(L"file"))
                                     {
                                         String resourceFileName(resourceNode[L"file"].as_cstring());
-                                        uint32_t flags = getTextureLoadFlags(JSON::getMember(resourceNode, L"flags", L"0"));
+                                        uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_cstring());
                                         resourceHandle = resources->loadTexture(resourceFileName, flags);
                                     }
                                     else if (resourceNode.count(L"pattern"))

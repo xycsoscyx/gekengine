@@ -128,14 +128,14 @@ namespace Gek
                 this->cullMode = CullMode::Back;
             }
 
-            frontCounterClockwise = JSON::getMember(object, L"frontCounterClockwise", false);
-            depthBias = JSON::getMember(object, L"depthBias", 0);
-            depthBiasClamp = JSON::getMember(object, L"depthBiasClamp", 0.0f);
-            slopeScaledDepthBias = JSON::getMember(object, L"slopeScaledDepthBias", 0.0f);
-            depthClipEnable = JSON::getMember(object, L"depthClipEnable", true);
-            scissorEnable = JSON::getMember(object, L"scissorEnable", false);
-            multisampleEnable = JSON::getMember(object, L"multisampleEnable", false);
-            antialiasedLineEnable = JSON::getMember(object, L"antialiasedLineEnable", false);
+            frontCounterClockwise = object.get(L"frontCounterClockwise", false).as_bool();
+            depthBias = object.get(L"depthBias", 0).as_uint();
+            depthBiasClamp = object.get(L"depthBiasClamp", 0.0f).as<float>();
+            slopeScaledDepthBias = object.get(L"slopeScaledDepthBias", 0.0f).as<float>();
+            depthClipEnable = object.get(L"depthClipEnable", true).as_bool();
+            scissorEnable = object.get(L"scissorEnable", false).as_bool();
+            multisampleEnable = object.get(L"multisampleEnable", false).as_bool();
+            antialiasedLineEnable = object.get(L"antialiasedLineEnable", false).as_bool();
         }
 
         void DepthStateInformation::StencilStateInformation::load(const JSON::Object &object)
@@ -185,7 +185,7 @@ namespace Gek
 
         void DepthStateInformation::load(const JSON::Object &object)
         {
-            enable = JSON::getMember(object, L"enable", false);
+            enable = object.get(L"enable", false).as_bool();
             String writeMask(object[L"writeMask"].as_cstring());
             if (writeMask.compareNoCase(L"Zero") == 0)
             {
@@ -197,9 +197,9 @@ namespace Gek
             }
 
             comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_cstring());
-            stencilEnable = JSON::getMember(object, L"stencilEnable", false);
-            stencilReadMask = JSON::getMember(object, L"stencilReadMask", 0);
-            stencilWriteMask = JSON::getMember(object, L"stencilWriteMask", 0);
+            stencilEnable = object.get(L"stencilEnable", false).as_bool();
+            stencilReadMask = object.get(L"stencilReadMask", 0).as_uint();
+            stencilWriteMask = object.get(L"stencilWriteMask", 0).as_uint();
             stencilFrontState.load(object[L"stencilFrontState"]);
             stencilBackState.load(object[L"stencilBackState"]);
         }
@@ -304,7 +304,7 @@ namespace Gek
                 }
             };
 
-            enable = JSON::getMember(object, L"enable", false);
+            enable = object.get(L"enable", false).as_bool();
             colorSource = getSource(object[L"colorSource"].as_cstring());
             colorDestination = getSource(object[L"colorDestination"].as_cstring());
             colorOperation = getOperation(object[L"colorOperation"].as_cstring());
@@ -345,13 +345,13 @@ namespace Gek
 
         void UnifiedBlendStateInformation::load(const JSON::Object &object)
         {
-            alphaToCoverage = JSON::getMember(object, L"alphaToCoverage", false);
+            alphaToCoverage = object.get(L"alphaToCoverage", false).as_bool();
             BlendStateInformation::load(object);
         }
 
         void IndependentBlendStateInformation::load(const JSON::Object &object)
         {
-            alphaToCoverage = JSON::getMember(object, L"alphaToCoverage", false);
+            alphaToCoverage = object.get(L"alphaToCoverage", false).as_bool();
 
             auto &targetStates = object[L"targetStates"];
             if (targetStates.is_array())
@@ -436,12 +436,12 @@ namespace Gek
             addressModeU = getAddressMode(object[L"addressModeU"].as_cstring());
             addressModeV = getAddressMode(object[L"addressModeV"].as_cstring());
             addressModeW = getAddressMode(object[L"addressModeW"].as_cstring());
-            mipLevelBias = JSON::getMember(object, L"mipLevelBias", 0.0f);
-            maximumAnisotropy = JSON::getMember(object, L"maximumAnisotropy", 1);
+            mipLevelBias = object.get(L"mipLevelBias", 0.0f).as<float>();
+            maximumAnisotropy = object.get(L"maximumAnisotropy", 1).as_uint();
             comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_cstring());
-            borderColor = JSON::getMember(object, L"borderColor", Math::Float4::Black);
-            minimumMipLevel = JSON::getMember(object, L"minimumMipLevel", 0.0f);
-            maximumMipLevel = JSON::getMember(object, L"maximumMipLevel", Math::Infinity);
+            borderColor = object.get(L"borderColor", Math::Float4::Black).as<Math::Float4>();
+            minimumMipLevel = object.get(L"minimumMipLevel", 0.0f).as<float>();
+            maximumMipLevel = object.get(L"maximumMipLevel", Math::Infinity).as<float>();
         }
     }; // namespace Video
 }; // namespace Gek

@@ -11,6 +11,93 @@
 #include "GEK\Utility\FileSystem.hpp"
 #include <jsoncons/json.hpp>
 
+namespace jsoncons
+{
+    template<class Json>
+    struct json_type_traits<Json, float>
+    {
+        static float as(const Json &object)
+        {
+            return float(object.as_double());
+        }
+
+        static Json to_json(const float &value)
+        {
+            return double(value);
+        }
+    };
+
+    template<typename TYPE, class Json>
+    struct json_type_traits<Json, Gek::Math::Vector2<TYPE>>
+    {
+        static Gek::Math::Vector2<TYPE> as(const Json &object)
+        {
+            return Gek::String(object.as_cstring());
+        }
+
+        static Json to_json(const Gek::Math::Vector2<TYPE> &value)
+        {
+            return Gek::String::create(L"%v", value);
+        }
+    };
+
+    template<typename TYPE, class Json>
+    struct json_type_traits<Json, Gek::Math::Vector3<TYPE>>
+    {
+        static Gek::Math::Vector3<TYPE> as(const Json &object)
+        {
+            return Gek::String(object.as_cstring());
+        }
+
+        static Json to_json(const Gek::Math::Vector3<TYPE> &value)
+        {
+            return Gek::String::create(L"%v", value);
+        }
+    };
+
+    template<typename TYPE, class Json>
+    struct json_type_traits<Json, Gek::Math::Vector4<TYPE>>
+    {
+        static Gek::Math::Vector4<TYPE> as(const Json &object)
+        {
+            return Gek::String(object.as_cstring());
+        }
+
+        static Json to_json(const Gek::Math::Vector4<TYPE> &value)
+        {
+            return Gek::String::create(L"%v", value);
+        }
+    };
+
+    template<typename TYPE, class Json>
+    struct json_type_traits<Json, Gek::Math::SIMD::Vector4<TYPE>>
+    {
+        static Gek::Math::SIMD::Vector4<TYPE> as(const Json &object)
+        {
+            return Gek::String(object.as_cstring());
+        }
+
+        static Json to_json(const Gek::Math::SIMD::Vector4<TYPE> &value)
+        {
+            return Gek::String::create(L"%v", value);
+        }
+    };
+
+    template<typename TYPE, class Json>
+    struct json_type_traits<Json, Gek::Math::Quaternion<TYPE>>
+    {
+        static Gek::Math::Quaternion<TYPE> as(const Json &object)
+        {
+            return Gek::String(object.as_cstring());
+        }
+
+        static Json to_json(const Gek::Math::Quaternion<TYPE> &value)
+        {
+            return Gek::String::create(L"%v", value);
+        }
+    };
+};
+
 namespace Gek
 {
     namespace JSON
@@ -19,80 +106,6 @@ namespace Gek
         using Member = Object::member_type;
 
         Object load(const wchar_t *fileName);
-
-		template <typename ELEMENT>
-		BaseString<ELEMENT> getValue(const Object &object, const ELEMENT *defaultValue)
-		{
-			return (object.is_null() ? defaultValue : object.as_cstring());
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-		TYPE getValue(const Object &object, TYPE defaultValue)
-		{
-			return (object.is_null() ? defaultValue : object.as<TYPE>());
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<!std::is_arithmetic<TYPE>::value, TYPE>::type>
-		TYPE getValue(const Object &object, const TYPE &defaultValue)
-		{
-			return (object.is_null() ? defaultValue : String(object.as_cstring()));
-		}
-
-		template <typename ELEMENT>
-		BaseString<ELEMENT> getMember(const Object &object, const wchar_t *name, const ELEMENT *defaultValue)
-		{
-			auto &member = object[name];
-			return (member.is_null() ? defaultValue : member.as_cstring());
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-		TYPE getMember(const Object &object, const wchar_t *name, TYPE defaultValue)
-		{
-			auto &member = object[name];
-			return (member.is_null() ? defaultValue : member.as<TYPE>());
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<!std::is_arithmetic<TYPE>::value, TYPE>::type>
-		TYPE getMember(const Object &object, const wchar_t *name, const TYPE &defaultValue)
-		{
-			auto &member = object[name];
-			return (member.is_null() ? defaultValue : String(member.as_cstring()));
-		}
-
-		template <typename ELEMENT>
-		void setValue(Object &object, const ELEMENT *value)
-		{
-			object = value;
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-		void setValue(Object &object, TYPE value)
-		{
-			object = value;
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<!std::is_arithmetic<TYPE>::value, TYPE>::type>
-		void setValue(Object &object, const TYPE &value)
-		{
-			object = String::create(L"%v", value);
-		}
-
-		template <typename ELEMENT>
-		void setMember(Object &object, const wchar_t *name, const ELEMENT *value)
-		{
-			object.set(name, value);
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-		void setMember(Object &object, const wchar_t *name, TYPE value)
-		{
-			object.set(name, value);
-		}
-
-		template <typename TYPE, typename = typename std::enable_if<!std::is_arithmetic<TYPE>::value, TYPE>::type>
-		void setMember(Object &object, const wchar_t *name, const TYPE &value)
-		{
-			object.set(name, String::create(L"%v", value));
-		}
+        void save(const wchar_t *fileName, const Object &object);
 	}; // namespace JSON
 }; // namespace Gek

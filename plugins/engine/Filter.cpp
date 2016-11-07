@@ -330,11 +330,7 @@ namespace Gek
 
                         std::unordered_map<String, String> renderTargetsMap;
                         auto &targetsNode = passNode[L"targets"];
-                        if (targetsNode.is_null())
-                        {
-                            throw MissingParameters();
-                        }
-                        else
+                        if (targetsNode.is_array())
                         {
                             renderTargetsMap = getAliasedMap(targetsNode);
                             if (renderTargetsMap.empty())
@@ -362,6 +358,10 @@ namespace Gek
                                     pass.renderTargetList.push_back(resourceSearch->second);
                                 }
                             }
+                        }
+                        else
+                        {
+                            throw MissingParameters();
                         }
 
                         uint32_t currentStage = 0;

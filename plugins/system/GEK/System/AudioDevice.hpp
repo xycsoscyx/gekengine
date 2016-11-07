@@ -25,14 +25,18 @@ namespace Gek
 
 		GEK_INTERFACE(Buffer)
 		{
-		};
+            virtual ~Buffer(void) = default;
+        };
 
 		GEK_INTERFACE(Sound)
 		{
-		};
+            virtual ~Sound(void) = default;
+        };
 
         GEK_INTERFACE(Device)
         {
+            virtual ~Device(void) = default;
+
             virtual void setVolume(float volume) = 0;
             virtual float getVolume(void) = 0;
 

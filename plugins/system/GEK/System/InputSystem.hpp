@@ -180,6 +180,8 @@ namespace Gek
 
         GEK_INTERFACE(Device)
         {
+            virtual ~Device(void) = default;
+
             virtual void poll(void) = 0;
 
             virtual uint32_t getButtonCount(void) const = 0;
@@ -192,6 +194,8 @@ namespace Gek
 
         GEK_INTERFACE(System)
         {
+            virtual ~System(void) = default;
+
             virtual Device * const getKeyboard(void) = 0;
             virtual Device * const getMouse(void) = 0;
 

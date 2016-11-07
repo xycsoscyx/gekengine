@@ -22,6 +22,8 @@ namespace Gek
             GEK_START_EXCEPTIONS();
             GEK_ADD_EXCEPTION(ComponentNotFound);
 
+            virtual ~Entity(void) = default;
+
             virtual bool hasComponent(const std::type_index &type) const = 0;
 
 			virtual Plugin::Component::Data *getComponent(const std::type_index &type) = 0;
@@ -59,6 +61,8 @@ namespace Gek
         GEK_INTERFACE(Entity)
             : public Plugin::Entity
         {
+            virtual ~Entity(void) = default;
+
             using ComponentMap = std::unordered_map<std::type_index, std::unique_ptr<Plugin::Component::Data>>;
             virtual ComponentMap &getComponentMap(void) = 0;
         };

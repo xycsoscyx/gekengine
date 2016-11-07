@@ -5,29 +5,13 @@
 #include "GEK\System\VideoDevice.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Visual.hpp"
+#include "Passes.hpp"
 #include <ppl.h>
 
 namespace Gek
 {
     namespace Implementation
     {
-        static Video::Format getElementSource(const wchar_t *type)
-        {
-            if (wcsicmp(type, L"float") == 0) return Video::Format::R32_FLOAT;
-            else if (wcsicmp(type, L"float2") == 0) return Video::Format::R32G32_FLOAT;
-            else if (wcsicmp(type, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-            else if (wcsicmp(type, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-            else if (wcsicmp(type, L"int") == 0) return Video::Format::R32_INT;
-            else if (wcsicmp(type, L"int2") == 0) return Video::Format::R32G32_INT;
-            else if (wcsicmp(type, L"int3") == 0) return Video::Format::R32G32B32_INT;
-            else if (wcsicmp(type, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-            else if (wcsicmp(type, L"uint") == 0) return Video::Format::R32_UINT;
-            else if (wcsicmp(type, L"uint2") == 0) return Video::Format::R32G32_UINT;
-            else if (wcsicmp(type, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-            else if (wcsicmp(type, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
-            return Video::Format::Unknown;
-        }
-
         GEK_CONTEXT_USER(Visual, Video::Device *, Engine::Resources *, String)
             , public Plugin::Visual
         {
@@ -45,41 +29,42 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
 
-                const JSON::Object visualNode(Xml::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".json"), L"visual"));
+                const JSON::Object visualNode = JSON::load(getContext()->getFileName(L"data\\visuals", visualName).append(L".json"));
 
 				String inputVertexData;
 				std::vector<Video::InputElement> elementList;
-                auto inputNode = visualNode.getChild(L"input");
-                if (inputNode.valid)
+                auto inputNode = visualNode[L"input"];
+                if (inputNode.is_array())
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-					for (auto &elementNode : inputNode.children)
+					for (auto &elementNode : inputNode.elements())
 					{
-						if (elementNode.attributes.count(L"system"))
+                        String elementName(elementNode[L"name"].as_cstring());
+						if (elementNode.count(L"system"))
 						{
-                            String system(elementNode.getAttribute(L"system"));
+                            String system(elementNode[L"system"].as_cstring());
 							if (system.compareNoCase(L"InstanceID") == 0)
 							{
-								inputVertexData.format(L"    int %v : SV_InstanceId;\r\n", elementNode.type);
+								inputVertexData.format(L"    int %v : SV_InstanceId;\r\n", elementName);
 							}
 							else if (system.compareNoCase(L"VertexID") == 0)
 							{
-								inputVertexData.format(L"    int %v : SV_VertexId;\r\n", elementNode.type);
+								inputVertexData.format(L"    int %v : SV_VertexId;\r\n", elementName);
 							}
 							else if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
-								String format(elementNode.getAttribute(L"format", L"bool"));
+								String format(elementNode.get(L"format", L"bool").as_cstring());
 								if (format.compareNoCase(L"int") == 0)
 								{
-									inputVertexData.format(L"    int %v : SV_IsFrontFace;\r\n", elementNode.type);
+									inputVertexData.format(L"    int %v : SV_IsFrontFace;\r\n", elementName);
 								}
                                 else if (format.compareNoCase(L"uint") == 0)
                                 {
-                                    inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                    inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementName);
                                 }
                                 else if (format.compareNoCase(L"bool") == 0)
                                 {
-                                    inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementNode.type);
+                                    inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementName);
                                 }
                                 else
                                 {
@@ -90,46 +75,47 @@ namespace Gek
 						else
 						{
 							Video::InputElement element;
-                            String bindType(elementNode.getAttribute(L"bind"));
+                            String bindType(elementNode[L"bind"].as_cstring());
 							element.format = getBindFormat(getBindType(bindType));
 							if (element.format == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							element.semantic = getElementSemantic(elementNode.getAttribute(L"semantic"));
-							element.source = getElementSource(elementNode.getAttribute(L"source"));
-							element.sourceIndex = elementNode.getAttribute(L"sourceIndex");
+							element.semantic = getElementSemantic(elementNode[L"semantic"].as_cstring());
+							element.source = getElementSource(elementNode[L"source"].as_cstring());
+                            element.sourceIndex = elementNode.get(L"sourceIndex", 0).as_uint();
 
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
-							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
+							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
 							elementList.push_back(element);
 						}
 					}
 				}
 
 				String outputVertexData;
-                auto outputNode = visualNode.getChild(L"output");
-                if (outputNode.valid)
+                auto outputNode = visualNode[L"output"];
+                if (outputNode.is_array())
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
-					for (auto &elementNode : outputNode.children)
+					for (auto &elementNode : outputNode.elements())
 					{
-						String bindType(elementNode.getAttribute(L"bind"));
+                        String elementName(elementNode[L"name"].as_cstring());
+                        String bindType(elementNode[L"bind"].as_cstring());
 						auto bindFormat = getBindFormat(getBindType(bindType));
 						if (bindFormat == Video::Format::Unknown)
 						{
 							throw InvalidElementType();
 						}
 
-						auto semantic = Utility::getElementSemantic(elementNode.getAttribute(L"semantic"));
+						auto semantic = getElementSemantic(elementNode[L"semantic"].as_cstring());
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementNode.type, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 					}
 				}
 
-                auto vertexNode = visualNode.getChild(L"vertex");
-                if (vertexNode.valid)
+                auto vertexNode = visualNode[L"vertex"];
+                if (vertexNode.is_object())
                 {
 					String engineData;
 					engineData.format(
@@ -150,8 +136,8 @@ namespace Gek
 						L"    return outputVertex;\r\n" \
 						L"}\r\n", inputVertexData, outputVertexData);
 
-                    String entryFunction(vertexNode.getAttribute(L"entry"));
-                    String name(FileSystem::getFileName(visualName, vertexNode.text).append(L".hlsl"));
+                    String entryFunction(vertexNode[L"entry"].as_cstring());
+                    String name(FileSystem::getFileName(visualName, vertexNode[L"program"].as_cstring()).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::PipelineType::Vertex, name, entryFunction, engineData);
 					vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledProgram.data(), compiledProgram.size());
                     vertexProgram->setName(String::create(L"%v:%v", name, entryFunction));
@@ -165,11 +151,11 @@ namespace Gek
 					throw MissingParameters();
 				}
 
-                auto geometryNode = visualNode.getChild(L"geometry");
-                if (geometryNode.valid)
+                auto geometryNode = visualNode.get(L"geometry");
+                if (geometryNode.is_object())
 				{
-                    String entryFunction(geometryNode.getAttribute(L"entry"));
-                    String name(FileSystem::getFileName(visualName, geometryNode.text).append(L".hlsl"));
+                    String entryFunction(geometryNode[L"entry"].as_cstring());
+                    String name(FileSystem::getFileName(visualName, geometryNode[L"program"].as_cstring()).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::PipelineType::Geometry, name, entryFunction);
                     geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledProgram.data(), compiledProgram.size());
                     geometryProgram->setName(String::create(L"%v:%v", name, entryFunction));

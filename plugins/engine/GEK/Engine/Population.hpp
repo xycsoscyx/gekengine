@@ -55,6 +55,8 @@ namespace Gek
                 }
             };
 
+            virtual ~Population(void) = default;
+
             std::map<int32_t, Nano::Signal<void(void)>> onUpdate;
             Nano::Signal<void(const wchar_t *actionName, const ActionParameter &actionParameter)> onAction;
 
@@ -111,6 +113,8 @@ namespace Gek
 
             using EntityMap = std::unordered_map<String, Plugin::EntityPtr>;
             virtual EntityMap &getEntityMap(void) = 0;
+
+            virtual ~Population(void) = default;
 
             virtual Edit::Component *getComponent(const std::type_index &type) = 0;
         };
