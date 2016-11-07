@@ -39,10 +39,10 @@ namespace Gek
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.elements())
 					{
-                        String elementName(elementNode[L"name"].as_cstring());
+                        String elementName(elementNode[L"name"].as_string());
 						if (elementNode.count(L"system"))
 						{
-                            String system(elementNode[L"system"].as_cstring());
+                            String system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"InstanceID") == 0)
 							{
 								inputVertexData.format(L"    int %v : SV_InstanceId;\r\n", elementName);
@@ -53,7 +53,7 @@ namespace Gek
 							}
 							else if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
-								String format(elementNode.get(L"format", L"bool").as_cstring());
+								String format(elementNode.get(L"format", L"bool").as_string());
 								if (format.compareNoCase(L"int") == 0)
 								{
 									inputVertexData.format(L"    int %v : SV_IsFrontFace;\r\n", elementName);
@@ -75,15 +75,15 @@ namespace Gek
 						else
 						{
 							Video::InputElement element;
-                            String bindType(elementNode[L"bind"].as_cstring());
+                            String bindType(elementNode[L"bind"].as_string());
 							element.format = getBindFormat(getBindType(bindType));
 							if (element.format == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							element.semantic = getElementSemantic(elementNode[L"semantic"].as_cstring());
-							element.source = getElementSource(elementNode[L"source"].as_cstring());
+							element.semantic = getElementSemantic(elementNode[L"semantic"].as_string());
+							element.source = getElementSource(elementNode[L"source"].as_string());
                             element.sourceIndex = elementNode.get(L"sourceIndex", 0).as_uint();
 
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
@@ -100,15 +100,15 @@ namespace Gek
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : outputNode.elements())
 					{
-                        String elementName(elementNode[L"name"].as_cstring());
-                        String bindType(elementNode[L"bind"].as_cstring());
+                        String elementName(elementNode[L"name"].as_string());
+                        String bindType(elementNode[L"bind"].as_string());
 						auto bindFormat = getBindFormat(getBindType(bindType));
 						if (bindFormat == Video::Format::Unknown)
 						{
 							throw InvalidElementType();
 						}
 
-						auto semantic = getElementSemantic(elementNode[L"semantic"].as_cstring());
+						auto semantic = getElementSemantic(elementNode[L"semantic"].as_string());
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
 						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 					}
@@ -136,7 +136,7 @@ namespace Gek
 						L"    return outputVertex;\r\n" \
 						L"}\r\n", inputVertexData, outputVertexData);
 
-                    String entryFunction(vertexNode[L"entry"].as_cstring());
+                    String entryFunction(vertexNode[L"entry"].as_string());
                     String name(FileSystem::getFileName(visualName, vertexNode[L"program"].as_cstring()).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::PipelineType::Vertex, name, entryFunction, engineData);
 					vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledProgram.data(), compiledProgram.size());
@@ -154,7 +154,7 @@ namespace Gek
                 auto geometryNode = visualNode.get(L"geometry");
                 if (geometryNode.is_object())
 				{
-                    String entryFunction(geometryNode[L"entry"].as_cstring());
+                    String entryFunction(geometryNode[L"entry"].as_string());
                     String name(FileSystem::getFileName(visualName, geometryNode[L"program"].as_cstring()).append(L".hlsl"));
                     auto compiledProgram = resources->compileProgram(Video::PipelineType::Geometry, name, entryFunction);
                     geometryProgram = videoDevice->createProgram(Video::PipelineType::Geometry, compiledProgram.data(), compiledProgram.size());

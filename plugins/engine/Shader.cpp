@@ -129,12 +129,12 @@ namespace Gek
                     auto &defineValue = defineNode.value();
                     if (defineValue.is_object())
                     {
-                        BindType bindType = getBindType(defineValue[L"bind"].as_cstring());
-                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_cstring());
+                        BindType bindType = getBindType(defineValue[L"bind"].as_string());
+                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
                     }
                     else
                     {
-                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_cstring());
+                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
                     }
                 }
 
@@ -240,13 +240,13 @@ namespace Gek
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.elements())
                     {
-                        String name(elementNode[L"name"].as_cstring());
+                        String name(elementNode[L"name"].as_string());
 						if (elementNode.count(L"system"))
 						{
-                            String system(elementNode[L"system"].as_cstring());
+                            String system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"isFrontFacing") == 0)
 							{
-                                String format(elementNode.get(L"format", L"bool").as_cstring());
+                                String format(elementNode.get(L"format", L"bool").as_string());
 								if (format.compareNoCase(L"int") == 0)
 								{
 									inputData.format(L"    int %v : SV_IsFrontFace;\r\n", name);
@@ -267,14 +267,14 @@ namespace Gek
 						}
                         else
                         {
-							String bindType(elementNode[L"bind"].as_cstring());
+							String bindType(elementNode[L"bind"].as_string());
 							auto bindFormat = getBindFormat(getBindType(bindType));
 							if (bindFormat == Video::Format::Unknown)
 							{
 								throw InvalidElementType();
 							}
 
-							auto semantic = getElementSemantic(elementNode[L"semantic"].as_cstring());
+							auto semantic = getElementSemantic(elementNode[L"semantic"].as_string());
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
 							inputData.format(L"    %v %v : %v%v;\r\n", bindType, name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                         }
@@ -354,13 +354,13 @@ namespace Gek
 
                     if (textureValue.count(L"source"))
                     {
-                        String textureSource(textureValue[L"source"].as_cstring());
+                        String textureSource(textureValue[L"source"].as_string());
                         resources->getShader(textureSource, MaterialHandle());
                         resourceMap[textureName] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureName, textureSource));
                     }
                     else
                     {
-                        Video::Format format = Video::getFormat(textureValue[L"format"].as_cstring());
+                        Video::Format format = Video::getFormat(textureValue[L"format"].as_string());
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -370,18 +370,18 @@ namespace Gek
                         uint32_t textureHeight = displayHeight;
                         if (textureValue.count(L"size"))
                         {
-                            Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_cstring(), BindType::UInt2);
+                            Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_string(), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t flags = getTextureFlags(textureValue.get(L"flags", L"0").as_cstring());
-                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_cstring(), BindType::UInt);
+                        uint32_t flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
                         resourceMap[textureName] = resources->createTexture(String::create(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
 
-                    BindType bindType = getBindType(textureValue[L"bind"].as_cstring());
+                    BindType bindType = getBindType(textureValue[L"bind"].as_string());
                     resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
@@ -394,21 +394,21 @@ namespace Gek
                         throw ResourceAlreadyListed();
                     }
 
-                    uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_cstring(), BindType::UInt);
-                    uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_cstring());
+                    uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
+                    uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
                     if (bufferValue.count(L"stride"))
                     {
-                        uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_cstring(), BindType::UInt);
+                        uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
                         resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
-                        resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_cstring();
+                        resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_string();
                     }
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_cstring());
+                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_string());
                         if (bufferValue.count(L"bind"))
                         {
-                            bindType = getBindType(bufferValue[L"bind"].as_cstring());
+                            bindType = getBindType(bufferValue[L"bind"].as_string());
                         }
                         else
                         {
@@ -443,7 +443,7 @@ namespace Gek
                         }
 
                         auto &clearTargetValue = clearTargetNode.value();
-                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_cstring()), clearTargetValue[L"value"].as_cstring())));
+                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
                     }
 
                     std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
@@ -453,12 +453,12 @@ namespace Gek
                         auto &defineValue = defineNode.value();
                         if (defineValue.is_object())
                         {
-                            BindType bindType = getBindType(defineValue[L"bind"].as_cstring());
-                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_cstring());
+                            BindType bindType = getBindType(defineValue[L"bind"].as_string());
+                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
                         }
                         else
                         {
-                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_cstring());
+                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
                         }
                     }
 
@@ -501,7 +501,7 @@ namespace Gek
                         pass.width = float(displayWidth);
                         pass.height = float(displayHeight);
 
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_cstring(), BindType::UInt3);
+                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_string(), BindType::UInt3);
                         pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
                         pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
                         pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
@@ -613,7 +613,7 @@ namespace Gek
                         }
 
                         auto &clearTargetValue = clearTargetNode.value();
-                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_cstring()), clearTargetValue[L"value"].as_cstring())));
+                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
                     }
 
                     auto &generateMipMapsNode = passNode[L"generatemipmaps"];
@@ -621,7 +621,7 @@ namespace Gek
                     {
                         for (auto &generateMipMaps : generateMipMapsNode.elements())
                         {
-                            auto resourceSearch = resourceMap.find(generateMipMaps.as_cstring());
+                            auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
                             if (resourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
@@ -642,7 +642,7 @@ namespace Gek
                                 throw InvalidParameters();
                             }
 
-                            auto valueSearch = resourceMap.find(copy.value().as_cstring());
+                            auto valueSearch = resourceMap.find(copy.value().as_string());
                             if (valueSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
@@ -662,7 +662,7 @@ namespace Gek
                     std::unordered_map<String, String> resourceAliasMap = getAliasedMap(passNode[L"resources"]);
                     if (pass.mode == Pass::Mode::Forward)
                     {
-                        String passMaterial(passNode[L"forward"].as_cstring());
+                        String passMaterial(passNode[L"forward"].as_string());
                         auto &namedMaterialNode = materialNode[passMaterial];
                         if (namedMaterialNode.is_array())
                         {
@@ -671,10 +671,10 @@ namespace Gek
                             std::unordered_map<String, Map> materialMap;
                             for (auto &resourceNode : namedMaterialNode.elements())
                             {
-                                String resourceName(resourceNode[L"name"].as_cstring());
-                                MapType mapType = getMapType(resourceNode[L"type"].as_cstring());
-                                BindType bindType = getBindType(resourceNode[L"bind"].as_cstring());
-                                uint32_t flags = getTextureLoadFlags(resourceNode[L"flags"].as_cstring());
+                                String resourceName(resourceNode[L"name"].as_string());
+                                MapType mapType = getMapType(resourceNode[L"type"].as_string());
+                                BindType bindType = getBindType(resourceNode[L"bind"].as_string());
+                                uint32_t flags = getTextureLoadFlags(resourceNode[L"flags"].as_string());
                                 if (resourceNode.count(L"file"))
                                 {
                                     materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"file"].as_cstring())));
@@ -830,7 +830,7 @@ namespace Gek
                             L"\r\n", unorderedAccessData);
                     }
 
-                    String entryPoint(passNode[L"entry"].as_cstring());
+                    String entryPoint(passNode[L"entry"].as_string());
                     String name(FileSystem::getFileName(shaderName, passNode[L"program"].as_cstring()).append(L".hlsl"));
                     pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                 }

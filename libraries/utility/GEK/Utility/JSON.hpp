@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK\Utility\String.hpp"
-#include "GEK\Utility\FileSystem.hpp"
+#include "GEK\Utility\Evaluator.hpp"
 #include <jsoncons/json.hpp>
 
 namespace jsoncons
@@ -18,7 +18,14 @@ namespace jsoncons
     {
         static float as(const Json &object)
         {
-            return float(object.as_double());
+            if (object.is_string())
+            {
+                return Gek::Evaluator::get<float>(object.as_cstring());
+            }
+            else
+            {
+                return float(object.as_double());
+            }
         }
 
         static Json to_json(const float &value)
@@ -32,7 +39,12 @@ namespace jsoncons
     {
         static Gek::Math::Vector2<TYPE> as(const Json &object)
         {
-            return Gek::String(object.as_cstring());
+            if (object.is_string())
+            {
+                return Gek::Evaluator::get<Gek::Math::Vector2<TYPE>>(object.as_cstring());
+            }
+
+            return Gek::Math::Vector2<TYPE>::Zero;
         }
 
         static Json to_json(const Gek::Math::Vector2<TYPE> &value)
@@ -46,7 +58,12 @@ namespace jsoncons
     {
         static Gek::Math::Vector3<TYPE> as(const Json &object)
         {
-            return Gek::String(object.as_cstring());
+            if (object.is_string())
+            {
+                return Gek::Evaluator::get<Gek::Math::Vector3<TYPE>>(object.as_cstring());
+            }
+
+            return Gek::Math::Vector3<TYPE>::Zero;
         }
 
         static Json to_json(const Gek::Math::Vector3<TYPE> &value)
@@ -60,7 +77,12 @@ namespace jsoncons
     {
         static Gek::Math::Vector4<TYPE> as(const Json &object)
         {
-            return Gek::String(object.as_cstring());
+            if (object.is_string())
+            {
+                return Gek::Evaluator::get<Gek::Math::Vector4<TYPE>>(object.as_cstring());
+            }
+
+            return Gek::Math::Vector4<TYPE>::Zero;
         }
 
         static Json to_json(const Gek::Math::Vector4<TYPE> &value)
@@ -74,7 +96,12 @@ namespace jsoncons
     {
         static Gek::Math::SIMD::Vector4<TYPE> as(const Json &object)
         {
-            return Gek::String(object.as_cstring());
+            if (object.is_string())
+            {
+                return Gek::Evaluator::get<Gek::Math::SIMD::Vector4<TYPE>>(object.as_cstring());
+            }
+
+            return Gek::Math::SIMD::Vector4<TYPE>::Zero;
         }
 
         static Json to_json(const Gek::Math::SIMD::Vector4<TYPE> &value)
@@ -88,7 +115,12 @@ namespace jsoncons
     {
         static Gek::Math::Quaternion<TYPE> as(const Json &object)
         {
-            return Gek::String(object.as_cstring());
+            if (object.is_string())
+            {
+                return Gek::Evaluator::get<Gek::Math::Quaternion<TYPE>>(object.as_cstring());
+            }
+
+            return Gek::Math::Quaternion<TYPE>::Identity;
         }
 
         static Json to_json(const Gek::Math::Quaternion<TYPE> &value)

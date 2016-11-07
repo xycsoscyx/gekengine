@@ -72,8 +72,8 @@ namespace Gek
                                 {
                                     if (resourceNode.count(L"file"))
                                     {
-                                        String resourceFileName(resourceNode[L"file"].as_cstring());
-                                        uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_cstring());
+                                        String resourceFileName(resourceNode[L"file"].as_string());
+                                        uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
                                         resourceHandle = resources->loadTexture(resourceFileName, flags);
                                     }
                                     else if (resourceNode.count(L"pattern"))

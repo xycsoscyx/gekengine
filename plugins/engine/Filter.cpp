@@ -100,12 +100,12 @@ namespace Gek
                     auto &defineValue = defineNode.value();
                     if (defineValue.is_object())
                     {
-                        BindType bindType = getBindType(defineValue[L"bind"].as_cstring());
-                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_cstring());
+                        BindType bindType = getBindType(defineValue[L"bind"].as_string());
+                        globalDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
                     }
                     else
                     {
-                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_cstring());
+                        globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
                     }
                 }
 
@@ -185,7 +185,7 @@ namespace Gek
                     }
                     else
                     {
-                        Video::Format format = Video::getFormat(textureValue[L"format"].as_cstring());
+                        Video::Format format = Video::getFormat(textureValue[L"format"].as_string());
                         if (format == Video::Format::Unknown)
                         {
                             throw InvalidParameters();
@@ -195,18 +195,18 @@ namespace Gek
                         uint32_t textureHeight = videoDevice->getBackBuffer()->getHeight();
                         if (textureValue.count(L"size") > 0)
                         {
-                            Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_cstring(), BindType::UInt2);
+                            Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_string(), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
                             textureHeight = uint32_t(size.y);
                         }
 
-                        uint32_t flags = getTextureFlags(textureValue[L"flags"].as_cstring());
-                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue[L"mipmaps"].as_cstring(), BindType::UInt);
+                        uint32_t flags = getTextureFlags(textureValue[L"flags"].as_string());
+                        uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue[L"mipmaps"].as_string(), BindType::UInt);
                         resourceMap[textureName] = resources->createTexture(String::create(L"%v:%v:resource", textureName, filterName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                         resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                     }
 
-                    BindType bindType = getBindType(textureValue[L"bind"].as_cstring());
+                    BindType bindType = getBindType(textureValue[L"bind"].as_string());
                     resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
                 }
 
@@ -219,21 +219,21 @@ namespace Gek
                         throw ResourceAlreadyListed();
                     }
 
-                    uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_cstring(), BindType::UInt);
-                    uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_cstring());
+                    uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
+                    uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
                     if (bufferValue.count(L"stride") > 0)
                     {
-                        uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_cstring(), BindType::UInt);
+                        uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
                         resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, filterName), stride, size, Video::BufferType::Structured, flags);
-                        resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_cstring();
+                        resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_string();
                     }
                     else
                     {
                         BindType bindType;
-                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_cstring());
+                        Video::Format format = Video::getFormat(bufferValue[L"format"].as_string());
                         if (bufferValue.count(L"bind"))
                         {
-                            bindType = getBindType(bufferValue[L"bind"].as_cstring());
+                            bindType = getBindType(bufferValue[L"bind"].as_string());
                         }
                         else
                         {
@@ -263,12 +263,12 @@ namespace Gek
                         auto &defineValue = defineNode.value();
                         if (defineValue.is_object())
                         {
-                            BindType bindType = getBindType(defineValue[L"bind"].as_cstring());
-                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_cstring());
+                            BindType bindType = getBindType(defineValue[L"bind"].as_string());
+                            localDefinesMap[defineName] = std::make_pair(bindType, defineValue[L"value"].as_string());
                         }
                         else
                         {
-                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_cstring());
+                            localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue.as_string());
                         }
                     }
 
@@ -311,7 +311,7 @@ namespace Gek
                         pass.width = float(videoDevice->getBackBuffer()->getWidth());
                         pass.height = float(videoDevice->getBackBuffer()->getHeight());
 
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_cstring(), BindType::UInt3);
+                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_string(), BindType::UInt3);
                         pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
                         pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
                         pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
@@ -402,7 +402,7 @@ namespace Gek
                         }
 
                         auto &clearTargetValue = clearTargetNode.value();
-                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_cstring()), clearTargetValue[L"value"].as_cstring())));
+                        pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
                     }
 
                     auto &generateMipMapsNode = passNode[L"generatemipmaps"];
@@ -410,7 +410,7 @@ namespace Gek
                     {
                         for (auto &generateMipMaps : generateMipMapsNode.elements())
                         {
-                            auto resourceSearch = resourceMap.find(generateMipMaps.as_cstring());
+                            auto resourceSearch = resourceMap.find(generateMipMaps.as_string());
                             if (resourceSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
@@ -431,7 +431,7 @@ namespace Gek
                                 throw InvalidParameters();
                             }
 
-                            auto valueSearch = resourceMap.find(copy.value().as_cstring());
+                            auto valueSearch = resourceMap.find(copy.value().as_string());
                             if (valueSearch == std::end(resourceMap))
                             {
                                 throw InvalidParameters();
@@ -540,7 +540,7 @@ namespace Gek
                             L"\r\n", unorderedAccessData);
                     }
 
-                    String entryPoint(passNode[L"entry"].as_cstring());
+                    String entryPoint(passNode[L"entry"].as_string());
                     String name(FileSystem::getFileName(filterName, passNode[L"name"].as_cstring()).append(L".hlsl"));
                     pass.program = resources->loadProgram((pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel), name, entryPoint, engineData);
                 }

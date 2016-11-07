@@ -39,8 +39,8 @@ namespace Gek
                     fieldOfView = Math::convertDegreesToRadians(componentData.get(L"field_of_view", 90.0f).as<float>());
                     nearClip = componentData.get(L"near_clip", 1.0f).as<float>();
                     farClip = componentData.get(L"far_clip", 100.0f).as<float>();
-                    target = componentData.get(L"target", L"").as_cstring();;
-                    filterList = String(componentData.get(L"filters", L"").as_cstring()).split(L',');
+                    target = componentData.get(L"target", L"").as_string();
+                    filterList = String(componentData.get(L"filters", L"").as_string()).split(L',');
                 }
             }
         };

@@ -42,12 +42,12 @@ namespace Gek
         {
             if (componentData.is_object())
             {
-                name = componentData.get(L"name", String());
-                skin = componentData.get(L"skin", String());
+                name = componentData.get(L"name", String()).as_string();
+                skin = componentData.get(L"skin", String()).as_string();
             }
             else
             {
-                name = componentData.as_cstring();
+                name = componentData.as_string();
             }
         }
     }; // namespace Components

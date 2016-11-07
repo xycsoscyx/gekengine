@@ -3,7 +3,7 @@
 
 namespace Gek
 {
-    Map::Map(MapType type, BindType binding, uint32_t flags, const wchar_t *fileName)
+    Map::Map(MapType type, BindType binding, uint32_t flags, const String &fileName)
         : source(MapSource::File)
         , type(type)
         , binding(binding)
@@ -12,7 +12,7 @@ namespace Gek
     {
     }
 
-    Map::Map(MapType type, BindType binding, uint32_t flags, const wchar_t *pattern, const wchar_t *parameters)
+    Map::Map(MapType type, BindType binding, uint32_t flags, const String &pattern, const String &parameters)
         : source(MapSource::Pattern)
         , type(type)
         , binding(binding)
@@ -22,7 +22,7 @@ namespace Gek
     {
     }
 
-    Map::Map(const wchar_t *resourceName)
+    Map::Map(const String &resourceName)
         : source(MapSource::Resource)
         , resourceName(resourceName)
     {
@@ -398,14 +398,14 @@ namespace Gek
             {
                 if (element.is_string())
                 {
-                    String name(element.as_cstring());
+                    String name(element.as_string());
                     aliasedMap[name] = name;
                 }
                 else if(element.is_object() && !element.empty())
                 {
                     auto &member = element.begin_members();
                     String name(member->name());
-                    String value(member->value().as_cstring());
+                    String value(member->value().as_string());
                     aliasedMap[name] = value;
                 }
                 else
@@ -417,36 +417,36 @@ namespace Gek
         return aliasedMap;
     }
 
-    Video::Format getElementFormat(const wchar_t *format)
+    Video::Format getElementFormat(const String &format)
     {
-        if (wcsicmp(format, L"float") == 0) return Video::Format::R32_FLOAT;
-        else if (wcsicmp(format, L"float2") == 0) return Video::Format::R32G32_FLOAT;
-        else if (wcsicmp(format, L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
-        else if (wcsicmp(format, L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
-        else if (wcsicmp(format, L"int") == 0) return Video::Format::R32_INT;
-        else if (wcsicmp(format, L"int2") == 0) return Video::Format::R32G32_INT;
-        else if (wcsicmp(format, L"int3") == 0) return Video::Format::R32G32B32_INT;
-        else if (wcsicmp(format, L"int4") == 0) return Video::Format::R32G32B32A32_INT;
-        else if (wcsicmp(format, L"uint") == 0) return Video::Format::R32_UINT;
-        else if (wcsicmp(format, L"uint2") == 0) return Video::Format::R32G32_UINT;
-        else if (wcsicmp(format, L"uint3") == 0) return Video::Format::R32G32B32_UINT;
-        else if (wcsicmp(format, L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
+        if (format.compareNoCase(L"float") == 0) return Video::Format::R32_FLOAT;
+        else if (format.compareNoCase(L"float2") == 0) return Video::Format::R32G32_FLOAT;
+        else if (format.compareNoCase(L"float3") == 0) return Video::Format::R32G32B32_FLOAT;
+        else if (format.compareNoCase(L"float4") == 0) return Video::Format::R32G32B32A32_FLOAT;
+        else if (format.compareNoCase(L"int") == 0) return Video::Format::R32_INT;
+        else if (format.compareNoCase(L"int2") == 0) return Video::Format::R32G32_INT;
+        else if (format.compareNoCase(L"int3") == 0) return Video::Format::R32G32B32_INT;
+        else if (format.compareNoCase(L"int4") == 0) return Video::Format::R32G32B32A32_INT;
+        else if (format.compareNoCase(L"uint") == 0) return Video::Format::R32_UINT;
+        else if (format.compareNoCase(L"uint2") == 0) return Video::Format::R32G32_UINT;
+        else if (format.compareNoCase(L"uint3") == 0) return Video::Format::R32G32B32_UINT;
+        else if (format.compareNoCase(L"uint4") == 0) return Video::Format::R32G32B32A32_UINT;
         return Video::Format::Unknown;
     }
 
-    Video::InputElement::Source getElementSource(const wchar_t *elementSource)
+    Video::InputElement::Source getElementSource(const String &elementSource)
     {
-        if (wcsicmp(elementSource, L"instance") == 0) return Video::InputElement::Source::Instance;
+        if (elementSource.compareNoCase(L"instance") == 0) return Video::InputElement::Source::Instance;
         else return Video::InputElement::Source::Vertex;
     }
 
-    Video::InputElement::Semantic getElementSemantic(const wchar_t *semantic)
+    Video::InputElement::Semantic getElementSemantic(const String &semantic)
     {
-        if (wcsicmp(semantic, L"Position") == 0) return Video::InputElement::Semantic::Position;
-        else if (wcsicmp(semantic, L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
-        else if (wcsicmp(semantic, L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
-        else if (wcsicmp(semantic, L"Normal") == 0) return Video::InputElement::Semantic::Normal;
-        else if (wcsicmp(semantic, L"Color") == 0) return Video::InputElement::Semantic::Color;
+        if (semantic.compareNoCase(L"Position") == 0) return Video::InputElement::Semantic::Position;
+        else if (semantic.compareNoCase(L"Tangent") == 0) return Video::InputElement::Semantic::Tangent;
+        else if (semantic.compareNoCase(L"BiTangent") == 0) return Video::InputElement::Semantic::BiTangent;
+        else if (semantic.compareNoCase(L"Normal") == 0) return Video::InputElement::Semantic::Normal;
+        else if (semantic.compareNoCase(L"Color") == 0) return Video::InputElement::Semantic::Color;
         else return Video::InputElement::Semantic::TexCoord;
     }
 }; // namespace Gek

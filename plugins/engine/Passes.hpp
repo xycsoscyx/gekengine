@@ -59,9 +59,9 @@ namespace Gek
 
         String parameters;
 
-        Map(MapType type, BindType binding, uint32_t flags, const wchar_t *fileName);
-        Map(MapType type, BindType binding, uint32_t flags, const wchar_t *pattern, const wchar_t *parameters);
-        Map(const wchar_t *resourceName);
+        Map(MapType type, BindType binding, uint32_t flags, const String &fileName);
+        Map(MapType type, BindType binding, uint32_t flags, const String &pattern, const String &parameters);
+        Map(const String &resourceName);
         Map(const Map &map);
         ~Map(void);
 
@@ -109,7 +109,7 @@ namespace Gek
 
     std::unordered_map<String, String> getAliasedMap(const JSON::Object &object);
 
-    Video::Format getElementFormat(const wchar_t *format);
-    Video::InputElement::Source getElementSource(const wchar_t *elementSource);
-    Video::InputElement::Semantic getElementSemantic(const wchar_t *semantic);
+    Video::Format getElementFormat(const String &format);
+    Video::InputElement::Source getElementSource(const String &elementSource);
+    Video::InputElement::Semantic getElementSemantic(const String &semantic);
 }; // namespace Gek

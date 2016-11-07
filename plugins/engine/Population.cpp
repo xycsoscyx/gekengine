@@ -177,7 +177,7 @@ namespace Gek
                             std::vector<JSON::Member> entityComponentList;
                             if (entityNode.has_member(L"prefab"))
                             {
-                                auto &prefabNode = prefabsNode.get(entityNode[L"prefab"].as_cstring());
+                                auto &prefabNode = prefabsNode.get(entityNode[L"prefab"].as_string());
                                 for (auto &prefabComponentNode : prefabNode.members())
                                 {
                                     entityComponentList.push_back(prefabComponentNode);
@@ -213,7 +213,7 @@ namespace Gek
 
                             if (entityNode.count(L"name") > 0)
                             {
-                                entityMap[entityNode[L"name"].as_cstring()] = std::move(entity);
+                                entityMap[entityNode[L"name"].as_string()] = std::move(entity);
                             }
                             else
                             {

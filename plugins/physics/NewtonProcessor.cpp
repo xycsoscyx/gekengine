@@ -277,7 +277,7 @@ namespace Gek
                     {
                         const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"));
 
-                        auto &surfaceNode = materialNode[L"surface"];
+                        auto &surfaceNode = materialNode.get(L"surface");
                         if (surfaceNode.is_object())
                         {
                             Surface surface;

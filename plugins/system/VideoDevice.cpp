@@ -103,7 +103,7 @@ namespace Gek
 
         void RenderStateInformation::load(const JSON::Object &object)
         {
-            String fillMode(object[L"fillMode"].as_cstring());
+            String fillMode(object[L"fillMode"].as_string());
             if (fillMode.compareNoCase(L"wireframe") == 0)
             {
                 this->fillMode = FillMode::WireFrame;
@@ -113,7 +113,7 @@ namespace Gek
                 this->fillMode = FillMode::Solid;
             }
 
-            String cullMode(object[L"cullMode"].as_cstring());
+            String cullMode(object[L"cullMode"].as_string());
             cullMode.toLower();
             if (cullMode.compare(L"none") == 0)
             {
@@ -177,16 +177,16 @@ namespace Gek
                 }
             };
 
-            failOperation = getOperation(object[L"failOperation"].as_cstring());
-            depthFailOperation = getOperation(object[L"depthFailOperation"].as_cstring());
-            passOperation = getOperation(object[L"passOperation"].as_cstring());
-            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_cstring());
+            failOperation = getOperation(object[L"failOperation"].as_string());
+            depthFailOperation = getOperation(object[L"depthFailOperation"].as_string());
+            passOperation = getOperation(object[L"passOperation"].as_string());
+            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_string());
         }
 
         void DepthStateInformation::load(const JSON::Object &object)
         {
             enable = object.get(L"enable", false).as_bool();
-            String writeMask(object[L"writeMask"].as_cstring());
+            String writeMask(object[L"writeMask"].as_string());
             if (writeMask.compareNoCase(L"Zero") == 0)
             {
                 this->writeMask = Write::Zero;
@@ -196,7 +196,7 @@ namespace Gek
                 this->writeMask = Write::All;
             }
 
-            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_cstring());
+            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_string());
             stencilEnable = object.get(L"stencilEnable", false).as_bool();
             stencilReadMask = object.get(L"stencilReadMask", 0).as_uint();
             stencilWriteMask = object.get(L"stencilWriteMask", 0).as_uint();
@@ -305,12 +305,12 @@ namespace Gek
             };
 
             enable = object.get(L"enable", false).as_bool();
-            colorSource = getSource(object[L"colorSource"].as_cstring());
-            colorDestination = getSource(object[L"colorDestination"].as_cstring());
-            colorOperation = getOperation(object[L"colorOperation"].as_cstring());
-            alphaSource = getSource(object[L"alphaSource"].as_cstring());
-            alphaDestination = getSource(object[L"alphaDestination"].as_cstring());
-            alphaOperation = getOperation(object[L"alphaOperation"].as_cstring());
+            colorSource = getSource(object[L"colorSource"].as_string());
+            colorDestination = getSource(object[L"colorDestination"].as_string());
+            colorOperation = getOperation(object[L"colorOperation"].as_string());
+            alphaSource = getSource(object[L"alphaSource"].as_string());
+            alphaDestination = getSource(object[L"alphaDestination"].as_string());
+            alphaOperation = getOperation(object[L"alphaOperation"].as_string());
 
             String writeMask(object[L"writeMask"].as_string());
             if (writeMask.empty())
@@ -432,13 +432,13 @@ namespace Gek
                 }
             };
 
-            filterMode = getFilterMode(object[L"filterMode"].as_cstring());
-            addressModeU = getAddressMode(object[L"addressModeU"].as_cstring());
-            addressModeV = getAddressMode(object[L"addressModeV"].as_cstring());
-            addressModeW = getAddressMode(object[L"addressModeW"].as_cstring());
+            filterMode = getFilterMode(object[L"filterMode"].as_string());
+            addressModeU = getAddressMode(object[L"addressModeU"].as_string());
+            addressModeV = getAddressMode(object[L"addressModeV"].as_string());
+            addressModeW = getAddressMode(object[L"addressModeW"].as_string());
             mipLevelBias = object.get(L"mipLevelBias", 0.0f).as<float>();
             maximumAnisotropy = object.get(L"maximumAnisotropy", 1).as_uint();
-            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_cstring());
+            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_string());
             borderColor = object.get(L"borderColor", Math::Float4::Black).as<Math::Float4>();
             minimumMipLevel = object.get(L"minimumMipLevel", 0.0f).as<float>();
             maximumMipLevel = object.get(L"maximumMipLevel", Math::Infinity).as<float>();

@@ -439,7 +439,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 								{
 									String materialName(FileSystem::replaceExtension(fileName).getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
-									materialAlbedoMap[albedoNode[L"file"].as_cstring()] = materialName;
+									materialAlbedoMap[albedoNode[L"file"].as_string()] = materialName;
 								}
 							}
 						}
