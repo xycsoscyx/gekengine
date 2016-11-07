@@ -211,7 +211,7 @@ namespace Gek
                                 addComponent(entity.get(), componentData);
                             }
 
-                            if (entityNode.count(L"name") > 0)
+                            if (entityNode.has_member(L"name") > 0)
                             {
                                 entityMap[entityNode[L"name"].as_string()] = std::move(entity);
                             }

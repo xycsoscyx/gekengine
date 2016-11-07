@@ -31,9 +31,9 @@ namespace Gek
                 const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"));
 
                 auto &shaderNode = materialNode[L"shader"];
-                if (!shaderNode.is_object())
+                if (shaderNode.is_object())
                 {
-                    if (!shaderNode.count(L"name"))
+                    if (!shaderNode.has_member(L"name"))
                     {
                         throw MissingParameters();
                     }
@@ -70,17 +70,17 @@ namespace Gek
                                 auto &resourceNode = passValue[resource.name];
                                 if (resourceNode.is_object())
                                 {
-                                    if (resourceNode.count(L"file"))
+                                    if (resourceNode.has_member(L"file"))
                                     {
                                         String resourceFileName(resourceNode[L"file"].as_string());
                                         uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
                                         resourceHandle = resources->loadTexture(resourceFileName, flags);
                                     }
-                                    else if (resourceNode.count(L"pattern"))
+                                    else if (resourceNode.has_member(L"pattern"))
                                     {
                                         resourceHandle = resources->createTexture(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
                                     }
-                                    else if (resourceNode.count(L"name"))
+                                    else if (resourceNode.has_member(L"name"))
                                     {
                                         resourceHandle = resources->getResourceHandle(resourceNode[L"name"].as_cstring());
                                     }

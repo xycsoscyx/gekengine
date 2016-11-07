@@ -193,7 +193,7 @@ namespace Gek
 
                         uint32_t textureWidth = videoDevice->getBackBuffer()->getWidth();
                         uint32_t textureHeight = videoDevice->getBackBuffer()->getHeight();
-                        if (textureValue.count(L"size") > 0)
+                        if (textureValue.has_member(L"size") > 0)
                         {
                             Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_string(), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
@@ -221,7 +221,7 @@ namespace Gek
 
                     uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
                     uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
-                    if (bufferValue.count(L"stride") > 0)
+                    if (bufferValue.has_member(L"stride") > 0)
                     {
                         uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
                         resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, filterName), stride, size, Video::BufferType::Structured, flags);
@@ -231,7 +231,7 @@ namespace Gek
                     {
                         BindType bindType;
                         Video::Format format = Video::getFormat(bufferValue[L"format"].as_string());
-                        if (bufferValue.count(L"bind"))
+                        if (bufferValue.has_member(L"bind"))
                         {
                             bindType = getBindType(bufferValue[L"bind"].as_string());
                         }
@@ -304,7 +304,7 @@ namespace Gek
                             L"\r\n", definesData);
                     }
 
-                    if (passNode.count(L"compute"))
+                    if (passNode.has_member(L"compute"))
                     {
                         pass.mode = Pass::Mode::Compute;
 

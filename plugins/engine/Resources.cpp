@@ -409,6 +409,8 @@ namespace Gek
 
             Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
             {
+                GEK_REQUIRE(textureName);
+
                 // iterate over formats in case the texture name has no extension
                 static const String formatList[] =
                 {
@@ -559,6 +561,9 @@ namespace Gek
 
             String getFullProgram(const wchar_t *name, const wchar_t *engineData)
             {
+                GEK_REQUIRE(name);
+                GEK_REQUIRE(engineData);
+
                 String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
                 String fileName(FileSystem::getFileName(rootProgramsDirectory, name));
                 if (FileSystem::isFile(fileName))
@@ -663,6 +668,8 @@ namespace Gek
             // Plugin::Resources
             VisualHandle loadVisual(const wchar_t *visualName)
             {
+                GEK_REQUIRE(visualName);
+
                 auto load = [this, visualName = String(visualName)](VisualHandle)->Plugin::VisualPtr
                 {
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
@@ -674,6 +681,8 @@ namespace Gek
 
             MaterialHandle loadMaterial(const wchar_t *materialName)
             {
+                GEK_REQUIRE(materialName);
+
                 auto load = [this, materialName = String(materialName)](MaterialHandle handle)->Engine::MaterialPtr
                 {
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName, handle);
@@ -685,6 +694,8 @@ namespace Gek
 
             ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
             {
+                GEK_REQUIRE(textureName);
+
                 auto load = [this, textureName = String(textureName), flags](ResourceHandle)->Video::TexturePtr
                 {
                     return loadTextureData(textureName, flags);
@@ -696,6 +707,9 @@ namespace Gek
 
             ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
             {
+                GEK_REQUIRE(pattern);
+                GEK_REQUIRE(parameters);
+
                 auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle)->Video::TexturePtr
                 {
                     return createTextureData(pattern, parameters);
@@ -707,6 +721,8 @@ namespace Gek
 
             ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
             {
+                GEK_REQUIRE(textureName);
+
                 auto load = [this, textureName = String(textureName), format, width, height, depth, mipmaps, flags](ResourceHandle)->Video::TexturePtr
                 {
                     auto texture = videoDevice->createTexture(format, width, height, depth, mipmaps, flags);
@@ -721,6 +737,8 @@ namespace Gek
 
             ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
             {
+                GEK_REQUIRE(bufferName);
+                
                 auto load = [this, bufferName = String(bufferName), stride, count, type, flags, staticData](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(stride, count, type, flags, (void *)staticData.data());
@@ -742,6 +760,8 @@ namespace Gek
 
             ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
             {
+                GEK_REQUIRE(bufferName);
+
                 auto load = [this, bufferName = String(bufferName), format, count, type, flags, staticData](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(format, count, type, flags, (void *)staticData.data());
@@ -824,31 +844,43 @@ namespace Gek
 
             void clearIndexBuffer(Video::Device::Context *videoContext)
             {
+                GEK_REQUIRE(videoContext);
+
                 videoContext->clearIndexBuffer();
             }
 
             void clearVertexBufferList(Video::Device::Context *videoContext, uint32_t count, uint32_t firstSlot)
             {
+                GEK_REQUIRE(videoContext);
+
                 videoContext->clearVertexBufferList(count, firstSlot);
             }
 
             void clearConstantBufferList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
             {
+                GEK_REQUIRE(videoPipeline);
+
                 videoPipeline->clearConstantBufferList(count, firstStage);
             }
 
             void clearResourceList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
             {
+                GEK_REQUIRE(videoPipeline);
+
                 videoPipeline->clearResourceList(count, firstStage);
             }
 
             void clearUnorderedAccessList(Video::Device::Context::Pipeline *videoPipeline, uint32_t count, uint32_t firstStage)
             {
+                GEK_REQUIRE(videoPipeline);
+
                 videoPipeline->clearUnorderedAccessList(count, firstStage);
             }
 
             void drawPrimitive(Video::Device::Context *videoContext, uint32_t vertexCount, uint32_t firstVertex)
             {
+                GEK_REQUIRE(videoContext);
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawPrimitive(vertexCount, firstVertex);
@@ -865,6 +897,10 @@ namespace Gek
 
             void drawIndexedPrimitive(Video::Device::Context *videoContext, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
+                GEK_REQUIRE(videoContext);
+
+                GEK_REQUIRE(videoContext);
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
@@ -873,6 +909,8 @@ namespace Gek
 
             void drawInstancedIndexedPrimitive(Video::Device::Context *videoContext, uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex)
             {
+                GEK_REQUIRE(videoContext);
+
                 if (drawPrimitiveValid)
                 {
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
@@ -881,6 +919,8 @@ namespace Gek
 
             void dispatch(Video::Device::Context *videoContext, uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ)
             {
+                GEK_REQUIRE(videoContext);
+
                 if (dispatchValid)
                 {
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
@@ -921,7 +961,9 @@ namespace Gek
 
             ResourceHandle getResourceHandle(const wchar_t *resourceName) const
             {
-				return generalCache.getHandle(getHash(resourceName));
+                GEK_REQUIRE(resourceName);
+
+                return generalCache.getHandle(getHash(resourceName));
             }
 
             Engine::Shader * const getShader(ShaderHandle handle) const
@@ -931,6 +973,8 @@ namespace Gek
 
             Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
             {
+                GEK_REQUIRE(shaderName);
+
                 std::unique_lock<std::recursive_mutex> lock(shaderMutex);
                 auto load = [this, shaderName = String(shaderName)](ShaderHandle) mutable -> Engine::ShaderPtr
                 {
@@ -949,6 +993,8 @@ namespace Gek
 
             Engine::Filter * const getFilter(const wchar_t *filterName)
             {
+                GEK_REQUIRE(filterName);
+
                 auto load = [this, filterName = String(filterName)](ResourceHandle)->Engine::FilterPtr
                 {
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", videoDevice, (Engine::Resources *)this, filterName);
@@ -961,6 +1007,10 @@ namespace Gek
 
             std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
             {
+                GEK_REQUIRE(name);
+                GEK_REQUIRE(entryFunction);
+                GEK_REQUIRE(engineData);
+
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = getHash(uncompiledProgram);
@@ -988,6 +1038,10 @@ namespace Gek
 
             ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
             {
+                GEK_REQUIRE(name);
+                GEK_REQUIRE(entryFunction);
+                GEK_REQUIRE(engineData);
+
                 auto load = [this, pipelineType, name = String(name), entryFunction = String(entryFunction), engineData = String(engineData)](ProgramHandle)->Video::ObjectPtr
                 {
                     auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
@@ -1154,6 +1208,9 @@ namespace Gek
 
             void setMaterial(Video::Device::Context *videoContext, Engine::Shader::Pass *pass, MaterialHandle handle)
             {
+                GEK_REQUIRE(videoContext);
+                GEK_REQUIRE(pass);
+
                 if (drawPrimitiveValid)
                 {
                     auto material = materialCache.getResource(handle);
@@ -1171,6 +1228,8 @@ namespace Gek
 
             void setVisual(Video::Device::Context *videoContext, VisualHandle handle)
             {
+                GEK_REQUIRE(videoContext);
+
                 if (drawPrimitiveValid)
                 {
                     auto visual = visualCache.getResource(handle);

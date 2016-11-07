@@ -241,7 +241,7 @@ namespace Gek
 					for (auto &elementNode : inputNode.elements())
                     {
                         String name(elementNode[L"name"].as_string());
-						if (elementNode.count(L"system"))
+						if (elementNode.has_member(L"system"))
 						{
                             String system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"isFrontFacing") == 0)
@@ -352,7 +352,7 @@ namespace Gek
                         throw ResourceAlreadyListed();
                     }
 
-                    if (textureValue.count(L"source"))
+                    if (textureValue.has_member(L"source"))
                     {
                         String textureSource(textureValue[L"source"].as_string());
                         resources->getShader(textureSource, MaterialHandle());
@@ -368,7 +368,7 @@ namespace Gek
 
                         uint32_t textureWidth = displayWidth;
                         uint32_t textureHeight = displayHeight;
-                        if (textureValue.count(L"size"))
+                        if (textureValue.has_member(L"size"))
                         {
                             Math::Float2 size = evaluate(globalDefinesMap, textureValue[L"size"].as_string(), BindType::UInt2);
                             textureWidth = uint32_t(size.x);
@@ -396,7 +396,7 @@ namespace Gek
 
                     uint32_t size = evaluate(globalDefinesMap, bufferValue[L"size"].as_string(), BindType::UInt);
                     uint32_t flags = getBufferFlags(bufferValue[L"flags"].as_string());
-                    if (bufferValue.count(L"stride"))
+                    if (bufferValue.has_member(L"stride"))
                     {
                         uint32_t stride = evaluate(globalDefinesMap, bufferValue[L"stride"].as_string(), BindType::UInt);
                         resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
@@ -406,7 +406,7 @@ namespace Gek
                     {
                         BindType bindType;
                         Video::Format format = Video::getFormat(bufferValue[L"format"].as_string());
-                        if (bufferValue.count(L"bind"))
+                        if (bufferValue.has_member(L"bind"))
                         {
                             bindType = getBindType(bufferValue[L"bind"].as_string());
                         }
@@ -494,7 +494,7 @@ namespace Gek
                             L"\r\n", definesData);
                     }
 
-                    if (passNode.count(L"compute"))
+                    if (passNode.has_member(L"compute"))
                     {
                         pass.mode = Pass::Mode::Compute;
 
@@ -508,7 +508,7 @@ namespace Gek
                     }
                     else
                     {
-                        if (passNode.count(L"forward"))
+                        if (passNode.has_member(L"forward"))
                         {
                             pass.mode = Pass::Mode::Forward;
                             engineData.format(
@@ -675,11 +675,11 @@ namespace Gek
                                 MapType mapType = getMapType(resourceNode[L"type"].as_string());
                                 BindType bindType = getBindType(resourceNode[L"bind"].as_string());
                                 uint32_t flags = getTextureLoadFlags(resourceNode[L"flags"].as_string());
-                                if (resourceNode.count(L"file"))
+                                if (resourceNode.has_member(L"file"))
                                 {
                                     materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"file"].as_cstring())));
                                 }
-                                else if (resourceNode.count(L"pattern"))
+                                else if (resourceNode.has_member(L"pattern"))
                                 {
                                     materialMap.insert(std::make_pair(resourceName, Map(mapType, bindType, flags, resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring())));
                                 }

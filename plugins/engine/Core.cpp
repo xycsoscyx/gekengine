@@ -574,7 +574,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                if (configuration[L"display"].count(L"mode") > 0)
+                if (configuration[L"display"].has_member(L"mode") > 0)
                 {
                     previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
                 }

@@ -40,7 +40,7 @@ namespace Gek
 					for (auto &elementNode : inputNode.elements())
 					{
                         String elementName(elementNode[L"name"].as_string());
-						if (elementNode.count(L"system"))
+						if (elementNode.has_member(L"system"))
 						{
                             String system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"InstanceID") == 0)

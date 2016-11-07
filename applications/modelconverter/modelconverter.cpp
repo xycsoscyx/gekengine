@@ -435,7 +435,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                             auto &albedoNode = shaderPassNode.value()[L"albedo"];
                             if (albedoNode.is_object())
 							{
-								if (albedoNode.count(L"file"))
+								if (albedoNode.has_member(L"file"))
 								{
 									String materialName(FileSystem::replaceExtension(fileName).getLower());
 									materialName.replace((materialsPath + L"\\"), L"");
