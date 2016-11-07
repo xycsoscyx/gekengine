@@ -56,7 +56,7 @@ namespace Gek
                             if (materialNode.has_member(L"renderState"))
                             {
                                 Video::RenderStateInformation renderStateInformation;
-                                renderStateInformation.load(materialNode[L"renderState"]);
+                                renderStateInformation.load(materialNode.get(L"renderState"));
                                 passData.renderState = resources->createRenderState(renderStateInformation);
                             }
                             else

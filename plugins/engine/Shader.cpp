@@ -604,15 +604,27 @@ namespace Gek
                             }
 
                             Video::DepthStateInformation depthStateInformation;
-                            depthStateInformation.load(passNode[L"depthstates"]);
+                            if (passNode.has_member(L"depthState"))
+                            {
+                                depthStateInformation.load(passNode.get(L"depthstate"));
+                            }
+
                             pass.depthState = resources->createDepthState(depthStateInformation);
 
                             Video::UnifiedBlendStateInformation blendStateInformation;
-                            blendStateInformation.load(passNode[L"blendstate"]);
+                            if (passNode.has_member(L"blendState"))
+                            {
+                                blendStateInformation.load(passNode.get(L"blendState"));
+                            }
+
                             pass.blendState = resources->createBlendState(blendStateInformation);
 
                             Video::RenderStateInformation renderStateInformation;
-                            renderStateInformation.load(passNode[L"renderState"]);
+                            if (passNode.has_member(L"renderState"))
+                            {
+                                renderStateInformation.load(passNode.get(L"renderState"));
+                            }
+
                             pass.renderState = resources->createRenderState(renderStateInformation);
                         }
 

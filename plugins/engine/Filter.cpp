@@ -401,7 +401,11 @@ namespace Gek
                         }
 
                         Video::UnifiedBlendStateInformation blendStateInformation;
-                        blendStateInformation.load(passNode[L"blendstate"]);
+                        if (passNode.has_member(L"blendState"))
+                        {
+                            blendStateInformation.load(passNode.get(L"blendState"));
+                        }
+
                         pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
