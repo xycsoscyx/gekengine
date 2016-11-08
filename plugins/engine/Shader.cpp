@@ -708,15 +708,11 @@ namespace Gek
                             }
                         }
 
-                        pass.depthState = resources->createDepthState(depthStateInformation);
-
                         Video::UnifiedBlendStateInformation blendStateInformation;
                         if (passNode.has_member(L"blendState"))
                         {
                             blendStateInformation.load(passNode.get(L"blendState"));
                         }
-
-                        pass.blendState = resources->createBlendState(blendStateInformation);
 
                         Video::RenderStateInformation renderStateInformation;
                         if (passNode.has_member(L"renderState"))
@@ -724,6 +720,8 @@ namespace Gek
                             renderStateInformation.load(passNode.get(L"renderState"));
                         }
 
+                        pass.depthState = resources->createDepthState(depthStateInformation);
+                        pass.blendState = resources->createBlendState(blendStateInformation);
                         pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
