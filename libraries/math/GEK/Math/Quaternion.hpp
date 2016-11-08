@@ -41,7 +41,7 @@ namespace Gek
             }
 
             Quaternion(TYPE x, TYPE y, TYPE z, TYPE w)
-                : simd(_mm_setr_ps(x, y, x, y))
+                : simd(_mm_setr_ps(x, y, z, w))
             {
             }
 

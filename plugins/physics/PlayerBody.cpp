@@ -200,6 +200,7 @@ namespace Gek
                 // create the kinematic body
                 Math::SIMD::Float4x4 locationMatrix(Math::SIMD::Float4x4::Identity);
                 newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, locationMatrix.data);
+                NewtonBodySetUserData(newtonBody, (Newton::Entity *)this);
 
                 // players must have weight, otherwise they are infinitely strong when they collide
                 NewtonCollision* const shape = NewtonBodyGetCollision(newtonBody);
@@ -289,8 +290,9 @@ namespace Gek
 
             Math::Float3 calculateDesiredOmega(float headingAngle, float frameTime) const
             {
-                Math::FloatQuat playerRotation;
-                NewtonBodyGetRotation(newtonBody, playerRotation.data);
+                float newtonRotation[4];
+                NewtonBodyGetRotation(newtonBody, newtonRotation);
+                Math::FloatQuat playerRotation(newtonRotation[1], newtonRotation[2], newtonRotation[3], newtonRotation[0]);
 
                 Math::FloatQuat targetRotation(Math::FloatQuat::createAngularRotation(Math::Float3(0.0f, 1.0f, 0.0f), headingAngle));
                 return playerRotation.calculateAverageOmega(targetRotation, 0.5f / frameTime);
@@ -380,7 +382,7 @@ namespace Gek
                 ConvexCastPreFilter filter(newtonBody);
 
                 float param = 10.0f;
-                int count = NewtonWorldConvexCast(newtonWorld, &castMatrix[0][0], distance.data, newtonCastingShape, &param, &filter, ConvexCastPreFilter::preFilter, &info, 1, threadHandle);
+                int count = NewtonWorldConvexCast(newtonWorld, castMatrix.data, distance.data, newtonCastingShape, &param, &filter, ConvexCastPreFilter::preFilter, &info, 1, threadHandle);
 
                 groundNormal = Math::Float3::Zero;
                 groundVelocity = Math::Float3::Zero;
@@ -427,12 +429,14 @@ namespace Gek
                 Math::Float3 omega(Math::Float3::Zero);
 
                 // get the body motion state 
-                NewtonBodyGetMatrix(newtonBody, &matrix[0][0]);
-                NewtonBodyGetVelocity(newtonBody, &veloc[0]);
-                NewtonBodyGetOmega(newtonBody, &omega[0]);
+                NewtonBodyGetMatrix(newtonBody, matrix.data);
+                NewtonBodyGetVelocity(newtonBody, veloc.data);
+                NewtonBodyGetOmega(newtonBody, omega.data);
 
                 // integrate body angular velocity
+                float newtonRotation[4];
                 NewtonBodyGetRotation(newtonBody, bodyRotation.data);
+                bodyRotation.set(newtonRotation[1], newtonRotation[2], newtonRotation[3], newtonRotation[0]);
                 bodyRotation = bodyRotation.integrateOmega(omega, frameTime);
                 matrix = Math::convert(bodyRotation, matrix.translation);
 
@@ -468,7 +472,7 @@ namespace Gek
                     float timetoImpact;
                     NewtonWorldConvexCastReturnInfo info[PLAYER_CONTROLLER_MAX_CONTACTS];
                     Math::Float3 destPosit(matrix.translation + (veloc * frameTime));
-                    int contactCount = NewtonWorldConvexCast(newtonWorld, &matrix[0][0], &destPosit[0], newtonUpperBodyShape, &timetoImpact, &castFilterData, ConvexCastPreFilter::preFilter , info, sizeof(info) / sizeof(info[0]), threadHandle);
+                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destPosit.data, newtonUpperBodyShape, &timetoImpact, &castFilterData, ConvexCastPreFilter::preFilter , info, sizeof(info) / sizeof(info[0]), threadHandle);
                     if (contactCount)
                     {
                         //contactCount = manager->ProcessContacts(this, info, contactCount);
@@ -535,7 +539,7 @@ namespace Gek
                         }
 
                         float residual = 10.0f;
-                        Math::Float3 auxBounceVeloc(0.0f, 0.0f, 0.0f);
+                        Math::Float3 auxBounceVeloc(Math::Float3::Zero);
                         for (int i = 0; (i < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > 1.0e-3f); i++)
                         {
                             residual = 0.0f;
@@ -560,7 +564,7 @@ namespace Gek
                             }
                         }
 
-                        Math::Float3 velocStep(0.0f);
+                        Math::Float3 velocStep(Math::Float3::Zero);
                         for (int i = 0; i < count; i++)
                         {
                             Math::Float3 normal(bounceNormal[i]);
