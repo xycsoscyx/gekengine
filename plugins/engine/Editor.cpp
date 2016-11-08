@@ -30,7 +30,7 @@ namespace Gek
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;
             Math::Float3 position = Math::Float3::Zero;
-            Math::QuaternionFloat rotation = Math::QuaternionFloat::Identity;
+            Math::FloatQuat rotation = Math::FloatQuat::Identity;
             bool moveForward = false;
             bool moveBackward = false;
             bool strafeLeft = false;
@@ -289,7 +289,7 @@ namespace Gek
                 headingAngle = 0.0f;
                 lookingAngle = 0.0f;
                 position = Math::Float3::Zero;
-                rotation = Math::QuaternionFloat::Identity;
+                rotation = Math::FloatQuat::Identity;
                 moveForward = false;
                 moveBackward = false;
                 strafeLeft = false;
@@ -305,7 +305,7 @@ namespace Gek
                     float frameTime = population->getFrameTime();
 
                     static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                    rotation = Math::QuaternionFloat::createAngularRotation(upAxis, headingAngle);
+                    rotation = Math::FloatQuat::createAngularRotation(upAxis, headingAngle);
                     auto cameraMatrix(Math::convert(rotation));
                     position += (cameraMatrix.nz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
                     position += (cameraMatrix.nx * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);

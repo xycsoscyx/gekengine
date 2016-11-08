@@ -17,7 +17,7 @@ namespace Gek
         {
         }
 
-        OrientedBox::OrientedBox(const AlignedBox &box, const Math::QuaternionFloat &rotation, const Math::Float3 &translation)
+        OrientedBox::OrientedBox(const AlignedBox &box, const Math::FloatQuat &rotation, const Math::Float3 &translation)
             : matrix(Math::convert(rotation))
             , halfsize(box.getSize() * 0.5f)
         {

@@ -100,13 +100,59 @@ namespace Gek
 
             Quaternion getNormal(void) const
             {
-                return _mm_mul_ps(simd, _mm_rcp_ps(_mm_set1_ps(getLength())));
+                auto length = _mm_set1_ps(getLength());
+                return _mm_mul_ps(simd, _mm_rcp_ps(length));
             }
 
             Quaternion getInverse(void) const
             {
                 return Quaternion(-x, -y, -z, w);
             }
+
+            Quaternion integrateOmega(const Vector3<TYPE> &omega, TYPE deltaTime) const
+            {
+                // this is correct
+                Quaternion rotation(*this);
+                TYPE omegaMagnitudeSquared = omega.dot(omega);
+                const TYPE errorAngle = convertDegreesToRadians(TYPE(0.0125));
+                const TYPE errorAngleSquared = (errorAngle * errorAngle);
+                if (omegaMagnitudeSquared > errorAngleSquared)
+                {
+                    TYPE inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
+                    Vector3<TYPE> omegaAxis(omega * inverseOmegaMagnitude);
+                    TYPE omegaAngle = inverseOmegaMagnitude * omegaMagnitudeSquared * deltaTime;
+                    Quaternion deltaRotation(createAngularRotation(omegaAxis, omegaAngle));
+                    rotation = rotation * deltaRotation;
+                    rotation *= (TYPE(1) / std::sqrt(rotation.dot(rotation)));
+                }
+
+                return rotation;
+            }
+
+            Vector3<TYPE> calculateAverageOmega(const Quaternion &rotationTarget, TYPE inverseDeltaTime) const
+            {
+                Quaternion rotationSource(*this);
+                if (rotationSource.dot(rotationTarget) < 0.0f)
+                {
+                    rotationSource *= -1.0f;
+                }
+
+                Quaternion deltaRotation(rotationSource.getInverse() * rotationTarget);
+                Vector3<TYPE> omegaDirection(deltaRotation.vector);
+
+                TYPE omegaMagnitudeSquared = omegaDirection.dot(omegaDirection);
+                if (omegaMagnitudeSquared	< TYPE(TYPE(1.0e-5f) * TYPE(1.0e-5f)))
+                {
+                    return Vector3<TYPE>::Zero;
+                }
+
+                TYPE inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
+                TYPE directionMagnitude = omegaMagnitudeSquared * inverseOmegaMagnitude;
+
+                TYPE omegaMagnitude = TYPE(2.0f) * std::atan2(directionMagnitude, deltaRotation.w) * inverseDeltaTime;
+                return omegaDirection * (inverseOmegaMagnitude * omegaMagnitude);
+            }
+
 
             void invert(void)
             {
@@ -224,6 +270,6 @@ namespace Gek
             }
         };
 
-        using QuaternionFloat = Quaternion<float>;
+        using FloatQuat = Quaternion<float>;
     }; // namespace Math
 }; // namespace Gek

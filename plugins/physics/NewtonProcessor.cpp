@@ -241,6 +241,7 @@ namespace Gek
                 auto entitySearch = entityMap.find(entity);
                 if (entitySearch != std::end(entityMap))
                 {
+                    NewtonDestroyBody(entitySearch->second->getNewtonBody());
                     entityMap.unsafe_erase(entitySearch);
                 }
             }

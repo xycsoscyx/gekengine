@@ -20,7 +20,7 @@ namespace Gek
             if (componentData.is_object())
             {
                 position = componentData.get(L"position", Math::Float3::Zero).as<Math::Float3>();
-                rotation = componentData.get(L"rotation", Math::QuaternionFloat::Identity).as<Math::QuaternionFloat>();
+                rotation = componentData.get(L"rotation", Math::FloatQuat::Identity).as<Math::FloatQuat>();
                 scale = componentData.get(L"scale", Math::Float3::One).as<Math::Float3>();
             }
         }

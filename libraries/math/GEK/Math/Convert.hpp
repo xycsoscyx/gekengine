@@ -21,7 +21,7 @@ namespace Gek
     namespace Math
     {
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        SIMD::Matrix4x4<TYPE> convert(const Quaternion<TYPE> &quaternion)
+        SIMD::Matrix4x4<TYPE> convert(const Quaternion<TYPE> &quaternion, const Vector3<TYPE> &translation = Math::Vector3<TYPE>::Zero)
         {
             TYPE xx(quaternion.x * quaternion.x);
             TYPE yy(quaternion.y * quaternion.y);
@@ -30,7 +30,11 @@ namespace Gek
             TYPE length(xx + yy + zz + ww);
             if (length == 0.0f)
             {
-                return SIMD::Matrix4x4<TYPE>::Identity;
+                return SIMD::Matrix4x4<TYPE>(
+                    1.0f, 0.0f, 0.0f, 0.0f,
+                    0.0f, 1.0f, 0.0f, 0.0f,
+                    0.0f, 0.0f, 1.0f, 0.0f,
+                    translation.x, translation.y, translation.z, 1.0f);
             }
             else
             {
@@ -45,7 +49,7 @@ namespace Gek
                     ((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f,
                     (2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f,
                     (2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f,
-                    0.0f, 0.0f, 0.0f, 1.0f);
+                    translation.x, translation.y, translation.z, 1.0f);
             }
         }
 

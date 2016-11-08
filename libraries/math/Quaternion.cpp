@@ -7,6 +7,6 @@ namespace Gek
 {
     namespace Math
     {
-        const QuaternionFloat QuaternionFloat::Identity(0.0f, 0.0f, 0.0f, 1.0f);
+        const FloatQuat FloatQuat::Identity(0.0f, 0.0f, 0.0f, 1.0f);
     }; // namespace Math
 }; // namespace Gek

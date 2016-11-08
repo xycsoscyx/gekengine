@@ -30,7 +30,7 @@ namespace Gek
             }
 
             Math::Float3 position = Math::Float3::Zero;
-            Math::QuaternionFloat rotation = Math::QuaternionFloat::Identity;
+            Math::FloatQuat rotation = Math::FloatQuat::Identity;
             Math::Float3 scale = Math::Float3::One;
 
             void save(JSON::Object &componentData) const;
