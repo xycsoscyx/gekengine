@@ -27,7 +27,7 @@ namespace Gek
         public:
             OrientedBox(void);
             OrientedBox(const OrientedBox &box);
-            OrientedBox(const AlignedBox &box, const Math::FloatQuat &rotation, const Math::Float3 &translation);
+            OrientedBox(const AlignedBox &box, const Math::Quaternion &rotation, const Math::Float3 &translation);
             OrientedBox(const AlignedBox &box, const Math::SIMD::Float4x4 &matrix);
 
             OrientedBox &operator = (const OrientedBox &box);

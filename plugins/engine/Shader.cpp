@@ -699,7 +699,13 @@ namespace Gek
                         Video::DepthStateInformation depthStateInformation;
                         if (passNode.has_member(L"depthState"))
                         {
-                            depthStateInformation.load(passNode.get(L"depthstate"));
+                            auto &depthStateNode = passNode.get(L"depthState");
+                            depthStateInformation.load(depthStateNode);
+                            if (depthStateNode.is_object() && depthStateNode.has_member(L"clear"))
+                            {
+                                pass.clearDepthValue = depthStateNode.get(L"clear", 1.0f).as<float>();
+                                pass.clearDepthFlags |= Video::ClearFlags::Depth;
+                            }
                         }
 
                         pass.depthState = resources->createDepthState(depthStateInformation);

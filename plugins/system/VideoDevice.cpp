@@ -65,31 +65,31 @@ namespace Gek
 
         ComparisonFunction getComparisonFunction(const String &comparisonFunction)
         {
-            if (comparisonFunction.compareNoCase(L"never") == 0)
+            if (comparisonFunction.compareNoCase(L"Never") == 0)
             {
                 return ComparisonFunction::Never;
             }
-            else if (comparisonFunction.compareNoCase(L"equal") == 0)
+            else if (comparisonFunction.compareNoCase(L"Equal") == 0)
             {
                 return ComparisonFunction::Equal;
             }
-            else if (comparisonFunction.compareNoCase(L"notequal") == 0)
+            else if (comparisonFunction.compareNoCase(L"NotEqual") == 0)
             {
                 return ComparisonFunction::NotEqual;
             }
-            else if (comparisonFunction.compareNoCase(L"less") == 0)
+            else if (comparisonFunction.compareNoCase(L"Less") == 0)
             {
                 return ComparisonFunction::Less;
             }
-            else if (comparisonFunction.compareNoCase(L"lessequal") == 0)
+            else if (comparisonFunction.compareNoCase(L"LessEqual") == 0)
             {
                 return ComparisonFunction::LessEqual;
             }
-            else if (comparisonFunction.compareNoCase(L"greater") == 0)
+            else if (comparisonFunction.compareNoCase(L"Greater") == 0)
             {
                 return ComparisonFunction::Greater;
             }
-            else if (comparisonFunction.compareNoCase(L"greaterequal") == 0)
+            else if (comparisonFunction.compareNoCase(L"GreaterEqual") == 0)
             {
                 return ComparisonFunction::GreaterEqual;
             }
@@ -101,8 +101,13 @@ namespace Gek
 
         void RenderStateInformation::load(const JSON::Object &object)
         {
-            String fillMode(object[L"fillMode"].as_string());
-            if (fillMode.compareNoCase(L"wireframe") == 0)
+            if (!object.is_object())
+            {
+                return;
+            }
+
+            String fillMode(object.get(L"fillMode", L"Solid").as_string());
+            if (fillMode.compareNoCase(L"WireFrame") == 0)
             {
                 this->fillMode = FillMode::WireFrame;
             }
@@ -111,12 +116,12 @@ namespace Gek
                 this->fillMode = FillMode::Solid;
             }
 
-            String cullMode(object[L"cullMode"].as_string());
-            if (cullMode.compareNoCase(L"none") == 0)
+            String cullMode(object.get(L"cullMode", L"Back").as_string());
+            if (cullMode.compareNoCase(L"None") == 0)
             {
                 this->cullMode = CullMode::None;
             }
-            else if (cullMode.compareNoCase(L"front") == 0)
+            else if (cullMode.compareNoCase(L"Front") == 0)
             {
                 this->cullMode = CullMode::Front;
             }
@@ -137,33 +142,38 @@ namespace Gek
 
         void DepthStateInformation::StencilStateInformation::load(const JSON::Object &object)
         {
+            if (!object.is_object())
+            {
+                return;
+            }
+
             auto getOperation = [](const String &operation) -> Operation
             {
-                if (operation.compareNoCase(L"zero") == 0)
+                if (operation.compareNoCase(L"Zero") == 0)
                 {
                     return Operation::Zero;
                 }
-                else if (operation.compareNoCase(L"replace") == 0)
+                else if (operation.compareNoCase(L"Replace") == 0)
                 {
                     return Operation::Replace;
                 }
-                else if (operation.compareNoCase(L"invert") == 0)
+                else if (operation.compareNoCase(L"Invert") == 0)
                 {
                     return Operation::Invert;
                 }
-                else if (operation.compareNoCase(L"increase") == 0)
+                else if (operation.compareNoCase(L"Increase") == 0)
                 {
                     return Operation::Increase;
                 }
-                else if (operation.compareNoCase(L"increasesaturated") == 0)
+                else if (operation.compareNoCase(L"IncreaseSaturated") == 0)
                 {
                     return Operation::IncreaseSaturated;
                 }
-                else if (operation.compareNoCase(L"decrease") == 0)
+                else if (operation.compareNoCase(L"Decrease") == 0)
                 {
                     return Operation::Decrease;
                 }
-                else if (operation.compareNoCase(L"decreasesaturated") == 0)
+                else if (operation.compareNoCase(L"DecreaseSaturated") == 0)
                 {
                     return Operation::DecreaseSaturated;
                 }
@@ -173,16 +183,21 @@ namespace Gek
                 }
             };
 
-            failOperation = getOperation(object[L"failOperation"].as_string());
-            depthFailOperation = getOperation(object[L"depthFailOperation"].as_string());
-            passOperation = getOperation(object[L"passOperation"].as_string());
-            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_string());
+            failOperation = getOperation(object.get(L"failOperation", L"Keep").as_string());
+            depthFailOperation = getOperation(object.get(L"depthFailOperation", L"Keep").as_string());
+            passOperation = getOperation(object.get(L"passOperation", L"Keep").as_string());
+            comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Always").as_string());
         }
 
         void DepthStateInformation::load(const JSON::Object &object)
         {
+            if (!object.is_object())
+            {
+                return;
+            }
+
             enable = object.get(L"enable", false).as_bool();
-            String writeMask(object[L"writeMask"].as_string());
+            String writeMask(object.get(L"writeMask", L"All").as_string());
             if (writeMask.compareNoCase(L"Zero") == 0)
             {
                 this->writeMask = Write::Zero;
@@ -192,16 +207,28 @@ namespace Gek
                 this->writeMask = Write::All;
             }
 
-            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_string());
+            comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Always").as_string());
             stencilEnable = object.get(L"stencilEnable", false).as_bool();
             stencilReadMask = object.get(L"stencilReadMask", 0).as_uint();
             stencilWriteMask = object.get(L"stencilWriteMask", 0).as_uint();
-            stencilFrontState.load(object[L"stencilFrontState"]);
-            stencilBackState.load(object[L"stencilBackState"]);
+            if (object.has_member(L"stencilFrontState"))
+            {
+                stencilFrontState.load(object.get(L"stencilFrontState"));
+            }
+
+            if (object.has_member(L"stencilBackState"))
+            {
+                stencilBackState.load(object.get(L"stencilBackState"));
+            }
         }
 
         void BlendStateInformation::load(const JSON::Object &object)
         {
+            if (!object.is_object())
+            {
+                return;
+            }
+
             auto getSource = [](const String &source) -> Source
             {
                 if (source.compareNoCase(L"Zero") == 0)
@@ -276,19 +303,19 @@ namespace Gek
 
             auto getOperation = [](const String &operation) -> Operation
             {
-                if (operation.compareNoCase(L"subtract") == 0)
+                if (operation.compareNoCase(L"Subtract") == 0)
                 {
                     return Operation::Subtract;
                 }
-                else if (operation.compareNoCase(L"reversesubtract") == 0)
+                else if (operation.compareNoCase(L"ReverseSubtract") == 0)
                 {
                     return Operation::ReverseSubtract;
                 }
-                else if (operation.compareNoCase(L"minimum") == 0)
+                else if (operation.compareNoCase(L"Minimum") == 0)
                 {
                     return Operation::Minimum;
                 }
-                else if (operation.compareNoCase(L"maximum") == 0)
+                else if (operation.compareNoCase(L"Maximum") == 0)
                 {
                     return Operation::Maximum;
                 }
@@ -299,14 +326,14 @@ namespace Gek
             };
 
             enable = object.get(L"enable", false).as_bool();
-            colorSource = getSource(object[L"colorSource"].as_string());
-            colorDestination = getSource(object[L"colorDestination"].as_string());
-            colorOperation = getOperation(object[L"colorOperation"].as_string());
-            alphaSource = getSource(object[L"alphaSource"].as_string());
-            alphaDestination = getSource(object[L"alphaDestination"].as_string());
-            alphaOperation = getOperation(object[L"alphaOperation"].as_string());
+            colorSource = getSource(object.get(L"colorSource", L"One").as_string());
+            colorDestination = getSource(object.get(L"colorDestination", L"One").as_string());
+            colorOperation = getOperation(object.get(L"colorOperation", L"Add").as_string());
+            alphaSource = getSource(object.get(L"alphaSource", L"One").as_string());
+            alphaDestination = getSource(object.get(L"alphaDestination", L"One").as_string());
+            alphaOperation = getOperation(object.get(L"alphaOperation", L"Add").as_string());
 
-            String writeMask(object[L"writeMask"].as_string());
+            String writeMask(object.get(L"writeMask", L"RGBA").as_string());
             if (writeMask.empty())
             {
                 this->writeMask = Mask::RGBA;
@@ -339,27 +366,45 @@ namespace Gek
 
         void UnifiedBlendStateInformation::load(const JSON::Object &object)
         {
+            if (!object.is_object())
+            {
+                return;
+            }
+
             alphaToCoverage = object.get(L"alphaToCoverage", false).as_bool();
             BlendStateInformation::load(object);
         }
 
         void IndependentBlendStateInformation::load(const JSON::Object &object)
         {
+            if (!object.is_object())
+            {
+                return;
+            }
+
             alphaToCoverage = object.get(L"alphaToCoverage", false).as_bool();
 
-            auto &targetStates = object[L"targetStates"];
-            if (targetStates.is_array())
+            if (object.has_member(L"targetStates"))
             {
-                uint32_t targetCount = std::min(8U, targetStates.size());
-                for (uint32_t target = 0; target < targetCount; target++)
+                auto &targetStates = object.get(L"targetStates");
+                if (targetStates.is_array())
                 {
-                    this->targetStates[target].load(targetStates[target]);
+                    uint32_t targetCount = std::min(8U, targetStates.size());
+                    for (uint32_t target = 0; target < targetCount; target++)
+                    {
+                        this->targetStates[target].load(targetStates[target]);
+                    }
                 }
             }
         }
 
         void SamplerStateInformation::load(const JSON::Object &object)
         {
+            if (!object.is_object())
+            {
+                return;
+            }
+
             auto getFilterMode = [](const String &filterMode) -> FilterMode
             {
                 if (filterMode.compareNoCase(L"MinMagPointMipLinear") == 0)
@@ -402,19 +447,19 @@ namespace Gek
 
             auto getAddressMode = [](const String &addressMode) -> AddressMode
             {
-                if (addressMode.compareNoCase(L"wrap") == 0)
+                if (addressMode.compareNoCase(L"Wrap") == 0)
                 {
                     return AddressMode::Wrap;
                 }
-                else if (addressMode.compareNoCase(L"mirror") == 0)
+                else if (addressMode.compareNoCase(L"Mirror") == 0)
                 {
                     return AddressMode::Mirror;
                 }
-                else if (addressMode.compareNoCase(L"mirroronce") == 0)
+                else if (addressMode.compareNoCase(L"MirrorOnce") == 0)
                 {
                     return AddressMode::MirrorOnce;
                 }
-                else if (addressMode.compareNoCase(L"border") == 0)
+                else if (addressMode.compareNoCase(L"Border") == 0)
                 {
                     return AddressMode::Border;
                 }
@@ -424,13 +469,13 @@ namespace Gek
                 }
             };
 
-            filterMode = getFilterMode(object[L"filterMode"].as_string());
-            addressModeU = getAddressMode(object[L"addressModeU"].as_string());
-            addressModeV = getAddressMode(object[L"addressModeV"].as_string());
-            addressModeW = getAddressMode(object[L"addressModeW"].as_string());
+            filterMode = getFilterMode(object.get(L"filterMode", L"AllPoint").as_string());
+            addressModeU = getAddressMode(object.get(L"addressModeU", L"Clamp").as_string());
+            addressModeV = getAddressMode(object.get(L"addressModeV", L"Clamp").as_string());
+            addressModeW = getAddressMode(object.get(L"addressModeW", L"Clamp").as_string());
             mipLevelBias = object.get(L"mipLevelBias", 0.0f).as<float>();
             maximumAnisotropy = object.get(L"maximumAnisotropy", 1).as_uint();
-            comparisonFunction = getComparisonFunction(object[L"comparisonFunction"].as_string());
+            comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Never").as_string());
             borderColor = object.get(L"borderColor", Math::Float4::Black).as<Math::Float4>();
             minimumMipLevel = object.get(L"minimumMipLevel", 0.0f).as<float>();
             maximumMipLevel = object.get(L"maximumMipLevel", Math::Infinity).as<float>();

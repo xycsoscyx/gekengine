@@ -407,7 +407,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        BaseString &operator = (const Math::Quaternion<TYPE> &value)
+        BaseString &operator = (const Math::BaseQuaternion<TYPE> &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -549,7 +549,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        void operator += (const Math::Quaternion<TYPE> &value)
+        void operator += (const Math::BaseQuaternion<TYPE> &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -679,15 +679,15 @@ namespace Gek
         }
 
 		template <typename TYPE>
-		operator Math::Quaternion<TYPE> () const
+		operator Math::BaseQuaternion<TYPE> () const
         {
-            Math::Quaternion<TYPE> value;
+            Math::BaseQuaternion<TYPE> value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z;
             switch (stream.peek())
             {
             case ')':
-                value = Math::Quaternion<TYPE>::createEulerRotation(value.x, value.y, value.z);
+                value = Math::BaseQuaternion<TYPE>::createEulerRotation(value.x, value.y, value.z);
                 stream >> MustMatch(')');
                 break;
 
@@ -696,7 +696,7 @@ namespace Gek
                 break;
             };
 
-            return (stream.fail() ? Math::Quaternion<TYPE>::Identity : value);
+            return (stream.fail() ? Math::BaseQuaternion<TYPE>::Identity : value);
         }
 
         operator const ELEMENT * () const

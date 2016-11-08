@@ -16,7 +16,7 @@
             "entry": "mainPixelProgram",
             "copy": {
                 "screenBuffer": "screen"
-            }
+            },
             "resources": [
                 "screenBuffer",
                 "depthBuffer"

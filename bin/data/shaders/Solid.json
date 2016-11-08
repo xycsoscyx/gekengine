@@ -109,14 +109,14 @@
             "entry": "mainPixelProgram",
             "mode": "forward",
             "material": "solid",
-            "depthstate": {
-                "target": "depthBuffer",
-                "comparison": "less_equal",
-                "writemask": "all",
-                "clear": "1"
+            "depthState": {
+                "enable":  true,
+                "comparisonFunction": "LessEqual",
+                "writeMask": "All",
+                "clear": 1
             },
-            "renderstate": {
-                "cullmode": "back"
+            "renderState": {
+                "cullMode": "back"
             },
             "targets": [
                 "albedoBuffer",

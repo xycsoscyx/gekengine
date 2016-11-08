@@ -111,19 +111,19 @@ namespace jsoncons
     };
 
     template<typename TYPE, class Json>
-    struct json_type_traits<Json, Gek::Math::Quaternion<TYPE>>
+    struct json_type_traits<Json, Gek::Math::BaseQuaternion<TYPE>>
     {
-        static Gek::Math::Quaternion<TYPE> as(const Json &object)
+        static Gek::Math::BaseQuaternion<TYPE> as(const Json &object)
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::Quaternion<TYPE>>(object.as_cstring());
+                return Gek::Evaluator::get<Gek::Math::BaseQuaternion<TYPE>>(object.as_cstring());
             }
 
-            return Gek::Math::Quaternion<TYPE>::Identity;
+            return Gek::Math::BaseQuaternion<TYPE>::Identity;
         }
 
-        static Json to_json(const Gek::Math::Quaternion<TYPE> &value)
+        static Json to_json(const Gek::Math::BaseQuaternion<TYPE> &value)
         {
             return Gek::String::create(L"%v", value);
         }

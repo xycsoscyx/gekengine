@@ -21,7 +21,7 @@ namespace Gek
     namespace Math
     {
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        SIMD::Matrix4x4<TYPE> convert(const Quaternion<TYPE> &quaternion, const Vector3<TYPE> &translation = Math::Vector3<TYPE>::Zero)
+        SIMD::Matrix4x4<TYPE> convert(const BaseQuaternion<TYPE> &quaternion, const Vector3<TYPE> &translation = Math::Vector3<TYPE>::Zero)
         {
             TYPE xx(quaternion.x * quaternion.x);
             TYPE yy(quaternion.y * quaternion.y);
@@ -54,13 +54,13 @@ namespace Gek
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        Quaternion<TYPE> convert(const SIMD::Matrix4x4<TYPE> &matrix)
+        BaseQuaternion<TYPE> convert(const SIMD::Matrix4x4<TYPE> &matrix)
         {
             TYPE trace(matrix.table[0][0] + matrix.table[1][1] + matrix.table[2][2] + 1.0f);
             if (trace > Epsilon)
             {
                 TYPE denominator(0.5f / std::sqrt(trace));
-                return Quaternion<TYPE>(
+                return BaseQuaternion<TYPE>(
                     ((matrix.table[1][2] - matrix.table[2][1]) * denominator),
                     ((matrix.table[2][0] - matrix.table[0][2]) * denominator),
                     ((matrix.table[0][1] - matrix.table[1][0]) * denominator),
@@ -71,7 +71,7 @@ namespace Gek
                 if ((matrix.table[0][0] > matrix.table[1][1]) && (matrix.table[0][0] > matrix.table[2][2]))
                 {
                     TYPE denominator(2.0f * std::sqrt(1.0f + matrix.table[0][0] - matrix.table[1][1] - matrix.table[2][2]));
-                    return Quaternion<TYPE>(
+                    return BaseQuaternion<TYPE>(
                         (0.25f * denominator),
                         ((matrix.table[1][0] + matrix.table[0][1]) / denominator),
                         ((matrix.table[2][0] + matrix.table[0][2]) / denominator),
@@ -80,7 +80,7 @@ namespace Gek
                 else if (matrix.table[1][1] > matrix.table[2][2])
                 {
                     TYPE denominator(2.0f * (std::sqrt(1.0f + matrix.table[1][1] - matrix.table[0][0] - matrix.table[2][2])));
-                    return Quaternion<TYPE>(
+                    return BaseQuaternion<TYPE>(
                         ((matrix.table[1][0] + matrix.table[0][1]) / denominator),
                         (0.25f * denominator),
                         ((matrix.table[2][1] + matrix.table[1][2]) / denominator),
@@ -89,7 +89,7 @@ namespace Gek
                 else
                 {
                     TYPE denominator(2.0f * (std::sqrt(1.0f + matrix.table[2][2] - matrix.table[0][0] - matrix.table[1][1])));
-                    return Quaternion<TYPE>(
+                    return BaseQuaternion<TYPE>(
                         ((matrix.table[2][0] + matrix.table[0][2]) / denominator),
                         ((matrix.table[2][1] + matrix.table[1][2]) / denominator),
                         (0.25f * denominator),

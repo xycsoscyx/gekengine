@@ -24,31 +24,33 @@ namespace Gek
         static const int D_PLAYER_MAX_SOLVER_ITERATIONS = 16;
         static const float D_PLAYER_CONTACT_SKIN_THICKNESS = 0.025f;
 
-		class ConvexCastPreFilter
-		{
-		protected:
-			const NewtonBody* sourceBody;
+        class ConvexCastPreFilter
+        {
+        protected:
+            const NewtonBody *newtonBody;
 
-		public:
-			ConvexCastPreFilter(const NewtonBody *sourceBody = nullptr)
-				:sourceBody(sourceBody)
-			{
-			}
+        public:
+            ConvexCastPreFilter(void)
+                : newtonBody(nullptr)
+            {
+            }
 
-			static unsigned preFilter(const NewtonBody* const hitBody, const NewtonCollision* const, void* const userData)
-			{
-				ConvexCastPreFilter* const filterData = (ConvexCastPreFilter*)userData;
-				if (hitBody == filterData->sourceBody)
-				{
-					return 0;
-				}
-				else
-				{
-					const NewtonCollision* const collision = NewtonBodyGetCollision(hitBody);
-					return NewtonCollisionGetMode(collision);
-				}
-			}
-		};
+            ConvexCastPreFilter(const NewtonBody* const newtonBody)
+                :newtonBody(newtonBody)
+            {
+            }
+
+            virtual unsigned preFilter(const NewtonBody* const newtonBody, const NewtonCollision* const myCollision)
+            {
+                return NewtonCollisionGetMode(myCollision);
+            }
+
+            static unsigned preFilter(const NewtonBody* const newtonBody, const NewtonCollision* const myCollision, void* const userData)
+            {
+                ConvexCastPreFilter* const filter = static_cast<ConvexCastPreFilter *>(userData);
+                return (newtonBody != filter->newtonBody) ? filter->preFilter(newtonBody, myCollision) : 0;
+            }
+        };
 
 		class PlayerBody;
 
@@ -121,7 +123,6 @@ namespace Gek
 			NewtonWorld *newtonWorld = nullptr;
 
             Plugin::Entity *entity = nullptr;
-            float halfHeight = 0.0f;
 			float maximumSlope = 0.0f;
 			float restrainingDistance = 0.0f;
 			float sphereCastOrigin = 0.0f;
@@ -162,33 +163,34 @@ namespace Gek
 				const auto &physicalComponent = entity->getComponent<Components::Physical>();
 				const auto &transformComponent = entity->getComponent<Components::Transform>();
 				const auto &playerComponent = entity->getComponent<Components::Player>();
+                float halfHeight = (playerComponent.height * 0.5f);
 
                 setRestrainingDistance(0.0f);
-                setClimbSlope(45.0f * 3.1416f / 180.0f);
+                setClimbSlope(Math::convertDegreesToRadians(45.0f));
 
                 const int stepCount = 12;
                 Math::Float3 convexPoints[2][stepCount];
 
                 // create an inner thin cylinder
-                Math::Float3 p0(0.0f, playerComponent.innerRadius, 0.0f);
-                Math::Float3 p1(playerComponent.height, playerComponent.innerRadius, 0.0f);
+                Math::Float3 p0(playerComponent.innerRadius, 0.0f, 0.0f);
+                Math::Float3 p1(playerComponent.innerRadius, halfHeight, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createPitchRotation(step * 2.0f * 3.141592f / stepCount));
+                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createYawRotation(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(p0);
                     convexPoints[1][step] = rotation.rotate(p1);
                 }
 
-                NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, stepCount * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
+                NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, stepCount * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
 
                 // create the outer thick cylinder
                 Math::SIMD::Float4x4 outerShapeMatrix(Math::SIMD::Float4x4::Identity);
-                float capsuleHigh = playerComponent.height - playerComponent.stairStep;
+                float capsuleHigh = halfHeight - playerComponent.stairStep;
                 outerShapeMatrix.translation = outerShapeMatrix.ny * (capsuleHigh * 0.5f + playerComponent.stairStep);
                 outerShapeMatrix.tw = 1.0f;
 
                 NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.25f, 0.5f, 0, outerShapeMatrix.data);
-                NewtonCollisionSetScale(bodyCapsule, capsuleHigh, playerComponent.outerRadius * 4.0f, playerComponent.outerRadius * 4.0f);
+                NewtonCollisionSetScale(bodyCapsule, playerComponent.outerRadius * 4.0f, capsuleHigh, playerComponent.outerRadius * 4.0f);
 
                 // compound collision player controller
                 NewtonCollision* const playerShape = NewtonCreateCompoundCollision(newtonWorld, 0);
@@ -198,8 +200,7 @@ namespace Gek
                 NewtonCompoundCollisionEndAddRemove(playerShape);
 
                 // create the kinematic body
-                Math::SIMD::Float4x4 locationMatrix(Math::SIMD::Float4x4::Identity);
-                newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, locationMatrix.data);
+                newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, Math::SIMD::Float4x4::Identity.data);
                 NewtonBodySetUserData(newtonBody, (Newton::Entity *)this);
 
                 // players must have weight, otherwise they are infinitely strong when they collide
@@ -211,16 +212,16 @@ namespace Gek
 
                 float castHeight = capsuleHigh * 0.4f;
                 float castRadius = (playerComponent.innerRadius * 0.5f > 0.05f) ? playerComponent.innerRadius * 0.5f : 0.05f;
-                Math::Float3 q0(0.0f, castRadius, 0.0f);
-                Math::Float3 q1(castHeight, castRadius, 0.0f);
+                Math::Float3 q0(castRadius, 0.0f, 0.0f);
+                Math::Float3 q1(castRadius, castHeight, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createPitchRotation(step * 2.0f * 3.141592f / stepCount));
+                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createYawRotation(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(q0);
                     convexPoints[1][step] = rotation.rotate(q1);
                 }
 
-                newtonCastingShape = NewtonCreateConvexHull(newtonWorld, stepCount * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
+                newtonCastingShape = NewtonCreateConvexHull(newtonWorld, stepCount * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
                 newtonSupportShape = NewtonCompoundCollisionGetCollisionFromNode(shape, NewtonCompoundCollisionGetNodeByIndex(shape, 0));
                 newtonUpperBodyShape = NewtonCompoundCollisionGetCollisionFromNode(shape, NewtonCompoundCollisionGetNodeByIndex(shape, 1));
 
@@ -292,9 +293,10 @@ namespace Gek
             {
                 float newtonRotation[4];
                 NewtonBodyGetRotation(newtonBody, newtonRotation);
-                Math::FloatQuat playerRotation(newtonRotation[1], newtonRotation[2], newtonRotation[3], newtonRotation[0]);
+                Math::Quaternion playerRotation(newtonRotation[1], newtonRotation[2], newtonRotation[3], newtonRotation[0]);
 
-                Math::FloatQuat targetRotation(Math::FloatQuat::createAngularRotation(Math::Float3(0.0f, 1.0f, 0.0f), headingAngle));
+                static const Math::Float3 UpDirection(0.0f, 1.0f, 0.0f);
+                Math::Quaternion targetRotation(Math::Quaternion::createAngularRotation(UpDirection, headingAngle));
                 return playerRotation.calculateAverageOmega(targetRotation, 0.5f / frameTime);
             }
             
@@ -302,57 +304,49 @@ namespace Gek
             {
                 Math::SIMD::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
-                Math::Float3 updir(matrix.ny);
-                Math::Float3 frontDir(matrix.nz);
-                Math::Float3 rightDir(matrix.nx);
 
-                Math::Float3 veloc;
+                Math::Float3 velocity;
                 if ((verticalSpeed <= 0.0f) && (groundNormal.dot(groundNormal)) > 0.0f)
                 {
                     // plane is supported by a ground plane, apply the player input velocity
-                    if (groundNormal.dot(updir) >= maximumSlope)
+                    if (groundNormal.dot(matrix.ny) >= maximumSlope)
                     {
                         // player is in a legal slope, he is in full control of his movement
-                        Math::Float3 bodyVeloc;
-                        NewtonBodyGetVelocity(newtonBody, bodyVeloc.data);
-                        veloc = updir * bodyVeloc.dot(updir) + (gravity * frameTime) + (frontDir * forwardSpeed) + (rightDir * lateralSpeed) +( updir * verticalSpeed);
-                        veloc += (groundVelocity - updir * updir.dot(groundVelocity));
+                        Math::Float3 currentVelocity;
+                        NewtonBodyGetVelocity(newtonBody, currentVelocity.data);
+                        velocity = matrix.ny * currentVelocity.dot(matrix.ny) + (gravity * frameTime) + (matrix.nz * forwardSpeed) + (matrix.nx * lateralSpeed) + (matrix.ny * verticalSpeed);
+                        velocity += (groundVelocity - matrix.ny * matrix.ny.dot(groundVelocity));
 
-                        float speedLimitMag2 = forwardSpeed * forwardSpeed + lateralSpeed * lateralSpeed + verticalSpeed * verticalSpeed + groundVelocity.dot(groundVelocity) + 0.1f;
-                        float speedMag2 = veloc.dot(veloc);
-                        if (speedMag2 > speedLimitMag2)
+                        float speedLimit = (forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.dot(groundVelocity) + 0.1f;
+                        float speedMagnitude = velocity.dot(velocity);
+                        if (speedMagnitude > speedLimit)
                         {
-                            veloc = veloc * std::sqrt(speedLimitMag2 / speedMag2);
-                        }
-
-                        float normalVeloc = groundNormal.dot(veloc - groundVelocity);
-                        if (normalVeloc < 0.0f)
-                        {
-                            veloc -= groundNormal * normalVeloc;
+                            velocity = velocity * std::sqrt(speedLimit / speedMagnitude);
                         }
                     }
                     else
                     {
                         // player is in an illegal ramp, he slides down hill an loses control of his movement 
-                        NewtonBodyGetVelocity(newtonBody, veloc.data);
-                        veloc += updir * verticalSpeed;
-                        veloc += gravity * frameTime;
-                        float normalVeloc = groundNormal.dot(veloc - groundVelocity);
-                        if (normalVeloc < 0.0f)
-                        {
-                            veloc -= groundNormal * normalVeloc;
-                        }
+                        NewtonBodyGetVelocity(newtonBody, velocity.data);
+                        velocity += matrix.ny * verticalSpeed;
+                        velocity += gravity * frameTime;
+                    }
+
+                    float velocityAngle = groundNormal.dot(velocity - groundVelocity);
+                    if (velocityAngle < 0.0f)
+                    {
+                        velocity -= groundNormal * velocityAngle;
                     }
                 }
                 else
                 {
                     // player is on free fall, only apply the gravity
-                    NewtonBodyGetVelocity(newtonBody, veloc.data);
-                    veloc += updir * verticalSpeed;
-                    veloc += gravity * frameTime;
+                    NewtonBodyGetVelocity(newtonBody, velocity.data);
+                    velocity += matrix.ny * verticalSpeed;
+                    velocity += gravity * frameTime;
                 }
 
-                return veloc;
+                return velocity;
             }
 
             void onPreUpdate(float frameTime, int threadHandle)
@@ -372,26 +366,26 @@ namespace Gek
                 NewtonBodyGetPosition(newtonBody, position.data);
                 Math::Float3 gravity(world->getGravity(position));
 
-                Math::Float3 veloc(calculateDesiredVelocity(forwardSpeed, lateralSpeed, verticalSpeed, gravity, frameTime));
-                NewtonBodySetVelocity(newtonBody, veloc.data);
+                Math::Float3 velocity(calculateDesiredVelocity(forwardSpeed, lateralSpeed, verticalSpeed, gravity, frameTime));
+                NewtonBodySetVelocity(newtonBody, velocity.data);
 			}
 
             void updateGroundPlane(Math::SIMD::Float4x4& matrix, const Math::SIMD::Float4x4& castMatrix, const Math::Float3& distance, int threadHandle)
             {
-                NewtonWorldConvexCastReturnInfo info;
+                NewtonWorldConvexCastReturnInfo information;
                 ConvexCastPreFilter filter(newtonBody);
 
-                float param = 10.0f;
-                int count = NewtonWorldConvexCast(newtonWorld, castMatrix.data, distance.data, newtonCastingShape, &param, &filter, ConvexCastPreFilter::preFilter, &info, 1, threadHandle);
+                float castDistance = 10.0f;
+                int castCount = NewtonWorldConvexCast(newtonWorld, castMatrix.data, distance.data, newtonCastingShape, &castDistance, &filter, ConvexCastPreFilter::preFilter, &information, 1, threadHandle);
 
                 groundNormal = Math::Float3::Zero;
                 groundVelocity = Math::Float3::Zero;
-                if (count && (param <= 1.0f))
+                if (castCount && (castDistance <= 1.0f))
                 {
                     touchingSurface = true;
-                    Math::Float3 supportPoint(castMatrix.translation + (distance - castMatrix.translation) * param);
-                    groundNormal = Math::Float3(info.m_normal);
-                    NewtonBodyGetPointVelocity(info.m_hitBody, supportPoint.data, groundVelocity.data);
+                    Math::Float3 supportPoint(castMatrix.translation + (distance - castMatrix.translation) * castDistance);
+                    groundNormal = Math::Float3(information.m_normal);
+                    NewtonBodyGetPointVelocity(information.m_hitBody, supportPoint.data, groundVelocity.data);
                     matrix.translation = supportPoint;
                     matrix.tw = 1.0f;
                 }
@@ -401,59 +395,57 @@ namespace Gek
                 }
             }
             
-            float calculateContactKinematics(const Math::Float3& veloc, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
+            float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
             {
-                Math::Float3 contactVeloc;
+                Math::Float3 contactVelocity;
                 if (contactInfo->m_hitBody)
                 {
-                    NewtonBodyGetPointVelocity(contactInfo->m_hitBody, contactInfo->m_point, contactVeloc.data);
+                    NewtonBodyGetPointVelocity(contactInfo->m_hitBody, contactInfo->m_point, contactVelocity.data);
                 }
                 else
                 {
-                    contactVeloc = Math::Float3::Zero;
+                    contactVelocity = Math::Float3::Zero;
                 }
 
                 const float restitution = 0.0f;
                 Math::Float3 normal(contactInfo->m_normal);
-                float reboundVelocMag = -(veloc - contactVeloc).dot(normal) * (1.0f + restitution);
+                float reboundVelocMag = -(velocity - contactVelocity).dot(normal) * (1.0f + restitution);
                 return (reboundVelocMag > 0.0f) ? reboundVelocMag : 0.0f;
             }
 
             void onPostUpdate(float frameTime, int threadHandle)
 			{
+                // get the body motion state 
                 const auto &playerComponent = entity->getComponent<Components::Player>();
+                float halfHeight = (playerComponent.height * 0.5f);
 
                 Math::SIMD::Float4x4 matrix;
-                Math::FloatQuat bodyRotation;
-                Math::Float3 veloc(Math::Float3::Zero);
-                Math::Float3 omega(Math::Float3::Zero);
-
-                // get the body motion state 
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
-                NewtonBodyGetVelocity(newtonBody, veloc.data);
+
+                Math::Float3 velocity;
+                NewtonBodyGetVelocity(newtonBody, velocity.data);
+
+                Math::Float3 omega;
                 NewtonBodyGetOmega(newtonBody, omega.data);
 
                 // integrate body angular velocity
                 float newtonRotation[4];
-                NewtonBodyGetRotation(newtonBody, bodyRotation.data);
-                bodyRotation.set(newtonRotation[1], newtonRotation[2], newtonRotation[3], newtonRotation[0]);
+                NewtonBodyGetRotation(newtonBody, newtonRotation);
+                Math::Quaternion bodyRotation(newtonRotation[1], newtonRotation[2], newtonRotation[3], newtonRotation[0]);
                 bodyRotation = bodyRotation.integrateOmega(omega, frameTime);
                 matrix = Math::convert(bodyRotation, matrix.translation);
 
                 // integrate linear velocity
-                float normalizedTimeLeft = 1.0f;
-                float step = frameTime * std::sqrt(veloc.dot(veloc));
+                float normalizedRemainingTime = 1.0f;
                 float descreteTimeStep = frameTime * (1.0f / D_DESCRETE_MOTION_STEPS);
-                int prevContactCount = 0;
+                int previousContactCount = 0;
                 ConvexCastPreFilter castFilterData(newtonBody);
-                NewtonWorldConvexCastReturnInfo prevInfo[PLAYER_CONTROLLER_MAX_CONTACTS];
-
-                Math::Float3 updir(matrix.ny);
+                NewtonWorldConvexCastReturnInfo previousContactInformation[PLAYER_CONTROLLER_MAX_CONTACTS];
 
                 Math::Float3 scale;
                 NewtonCollisionGetScale(newtonUpperBodyShape, &scale.x, &scale.y, &scale.z);
-                const float radio = (playerComponent.outerRadius + restrainingDistance) * 4.0f;
-                NewtonCollisionSetScale(newtonUpperBodyShape, playerComponent.height - playerComponent.stairStep, radio, radio);
+                const float radius = (playerComponent.outerRadius + restrainingDistance) * 4.0f;
+                NewtonCollisionSetScale(newtonUpperBodyShape, radius, halfHeight - playerComponent.stairStep, radius);
 
                 NewtonWorldConvexCastReturnInfo upConstratint;
                 memset(&upConstratint, 0, sizeof(upConstratint));
@@ -462,53 +454,51 @@ namespace Gek
                 upConstratint.m_normal[2] = 0.0f;
                 upConstratint.m_normal[3] = 0.0f;
 
-                for (int j = 0; (j < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > 1.0e-5f); j++)
+                for (int integration = 0; (integration < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedRemainingTime > 1.0e-5f); integration++)
                 {
-                    if (veloc.dot(veloc) < 1.0e-6f)
+                    if (velocity.dot(velocity) < 1.0e-6f)
                     {
                         break;
                     }
 
-                    float timetoImpact;
-                    NewtonWorldConvexCastReturnInfo info[PLAYER_CONTROLLER_MAX_CONTACTS];
-                    Math::Float3 destPosit(matrix.translation + (veloc * frameTime));
-                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, destPosit.data, newtonUpperBodyShape, &timetoImpact, &castFilterData, ConvexCastPreFilter::preFilter , info, sizeof(info) / sizeof(info[0]), threadHandle);
+                    float timeToImpact;
+                    NewtonWorldConvexCastReturnInfo currentContactInformation[PLAYER_CONTROLLER_MAX_CONTACTS];
+                    Math::Float3 targetPosition(matrix.translation + (velocity * frameTime));
+                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, targetPosition.data, newtonUpperBodyShape, &timeToImpact, &castFilterData, ConvexCastPreFilter::preFilter , currentContactInformation, sizeof(currentContactInformation) / sizeof(currentContactInformation[0]), threadHandle);
                     if (contactCount)
                     {
-                        //contactCount = manager->ProcessContacts(this, info, contactCount);
+                        //contactCount = manager->ProcessContacts(this, currentContactInformation, contactCount);
                     }
 
                     if (contactCount)
                     {
-                        matrix.translation += veloc * (timetoImpact * frameTime);
-                        if (timetoImpact > 0.0f)
+                        matrix.translation += velocity * (timeToImpact * frameTime);
+                        if (timeToImpact > 0.0f)
                         {
-                            matrix.translation -= veloc * (D_PLAYER_CONTACT_SKIN_THICKNESS / std::sqrt(veloc.dot(veloc)));
+                            matrix.translation -= velocity * (D_PLAYER_CONTACT_SKIN_THICKNESS / std::sqrt(velocity.dot(velocity)));
                         }
 
-                        normalizedTimeLeft -= timetoImpact;
-
+                        normalizedRemainingTime -= timeToImpact;
                         float speed[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                         float bounceSpeed[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                         Math::Float3 bounceNormal[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-
-                        for (int i = 1; i < contactCount; i++)
+                        for (int contact = 1; contact < contactCount; contact++)
                         {
-                            Math::Float3 n0(info[i - 1].m_normal);
-                            for (int k = 0; k < i; k++)
+                            Math::Float3 normal0(currentContactInformation[contact - 1].m_normal);
+                            for (int cast = 0; cast < contact; cast++)
                             {
-                                Math::Float3 n1(info[k].m_normal);
-                                if (n0.dot(n1) > 0.9999f)
+                                Math::Float3 normal1(currentContactInformation[cast].m_normal);
+                                if (normal0.dot(normal1) > 0.9999f)
                                 {
-                                    info[i] = info[contactCount - 1];
-                                    i--;
+                                    currentContactInformation[contact] = currentContactInformation[contactCount - 1];
+                                    contact--;
                                     contactCount--;
                                     break;
                                 }
                             }
                         }
 
-                        int count = 0;
+                        int castCount = 0;
                         if (touchingSurface)
                         {
                             upConstratint.m_point[0] = matrix.translation.x;
@@ -516,77 +506,76 @@ namespace Gek
                             upConstratint.m_point[2] = matrix.translation.z;
                             upConstratint.m_point[3] = 0.0f;
 
-                            speed[count] = 0.0f;
-                            bounceNormal[count] = Math::Float3(upConstratint.m_normal);
-                            bounceSpeed[count] = calculateContactKinematics(veloc, &upConstratint);
-                            count++;
+                            speed[castCount] = 0.0f;
+                            bounceNormal[castCount] = Math::Float3(upConstratint.m_normal);
+                            bounceSpeed[castCount] = calculateContactKinematics(velocity, &upConstratint);
+                            castCount++;
                         }
 
-                        for (int i = 0; i < contactCount; i++)
+                        for (int contact = 0; contact < contactCount; contact++)
                         {
-                            speed[count] = 0.0f;
-                            bounceNormal[count] = Math::Float3(info[i].m_normal);
-                            bounceSpeed[count] = calculateContactKinematics(veloc, &info[i]);
-                            count++;
+                            speed[castCount] = 0.0f;
+                            bounceNormal[castCount] = Math::Float3(currentContactInformation[contact].m_normal);
+                            bounceSpeed[castCount] = calculateContactKinematics(velocity, &currentContactInformation[contact]);
+                            castCount++;
                         }
 
-                        for (int i = 0; i < prevContactCount; i++)
+                        for (int contact = 0; contact < previousContactCount; contact++)
                         {
-                            speed[count] = 0.0f;
-                            bounceNormal[count] = Math::Float3(prevInfo[i].m_normal);
-                            bounceSpeed[count] = calculateContactKinematics(veloc, &prevInfo[i]);
-                            count++;
+                            speed[castCount] = 0.0f;
+                            bounceNormal[castCount] = Math::Float3(previousContactInformation[contact].m_normal);
+                            bounceSpeed[castCount] = calculateContactKinematics(velocity, &previousContactInformation[contact]);
+                            castCount++;
                         }
 
-                        float residual = 10.0f;
-                        Math::Float3 auxBounceVeloc(Math::Float3::Zero);
-                        for (int i = 0; (i < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > 1.0e-3f); i++)
+                        float redisualVelocity = 10.0f;
+                        Math::Float3 auxiliaryBounceVelocity(Math::Float3::Zero);
+                        for (int step = 0; (step < D_PLAYER_MAX_SOLVER_ITERATIONS) && (redisualVelocity > 1.0e-3f); step++)
                         {
-                            residual = 0.0f;
-                            for (int k = 0; k < count; k++)
+                            redisualVelocity = 0.0f;
+                            for (int cast = 0; cast < castCount; cast++)
                             {
-                                Math::Float3 normal(bounceNormal[k]);
-                                float v = bounceSpeed[k] - normal.dot(auxBounceVeloc);
-                                float x = speed[k] + v;
+                                Math::Float3 normal(bounceNormal[cast]);
+                                float v = bounceSpeed[cast] - normal.dot(auxiliaryBounceVelocity);
+                                float x = speed[cast] + v;
                                 if (x < 0.0f)
                                 {
                                     v = 0.0f;
                                     x = 0.0f;
                                 }
 
-                                if (std::abs(v) > residual)
+                                if (std::abs(v) > redisualVelocity)
                                 {
-                                    residual = std::abs(v);
+                                    redisualVelocity = std::abs(v);
                                 }
 
-                                auxBounceVeloc += normal * (x - speed[k]);
-                                speed[k] = x;
+                                auxiliaryBounceVelocity += normal * (x - speed[cast]);
+                                speed[cast] = x;
                             }
                         }
 
-                        Math::Float3 velocStep(Math::Float3::Zero);
-                        for (int i = 0; i < count; i++)
+                        Math::Float3 frameVelocity(Math::Float3::Zero);
+                        for (int cast = 0; cast < castCount; cast++)
                         {
-                            Math::Float3 normal(bounceNormal[i]);
-                            velocStep += normal * speed[i];
+                            Math::Float3 normal(bounceNormal[cast]);
+                            frameVelocity += normal * speed[cast];
                         }
 
-                        veloc += velocStep;
-                        float velocMag2 = velocStep.dot(velocStep);
-                        if (velocMag2 < 1.0e-6f)
+                        velocity += frameVelocity;
+                        float velocityMagnitude = frameVelocity.dot(frameVelocity);
+                        if (velocityMagnitude < 1.0e-6f)
                         {
-                            float advanceTime = std::min(descreteTimeStep, normalizedTimeLeft * frameTime);
-                            matrix.translation += veloc * advanceTime;
-                            normalizedTimeLeft -= advanceTime / frameTime;
+                            float advanceTime = std::min(descreteTimeStep, normalizedRemainingTime * frameTime);
+                            matrix.translation += velocity * advanceTime;
+                            normalizedRemainingTime -= advanceTime / frameTime;
                         }
 
-                        prevContactCount = contactCount;
-                        memcpy(prevInfo, info, prevContactCount * sizeof(NewtonWorldConvexCastReturnInfo));
-
+                        previousContactCount = contactCount;
+                        memcpy(previousContactInformation, currentContactInformation, previousContactCount * sizeof(NewtonWorldConvexCastReturnInfo));
                     }
                     else
                     {
-                        matrix.translation = destPosit;
+                        matrix.translation = targetPosition;
                         matrix.tw = 1.0f;
                         break;
                     }
@@ -596,12 +585,12 @@ namespace Gek
 
                 // determine if player is standing on some plane
                 Math::SIMD::Float4x4 supportMatrix(matrix);
-                supportMatrix.translation += updir * sphereCastOrigin;
+                supportMatrix.translation += matrix.ny * sphereCastOrigin;
                 if (touchingSurface)
                 {
-                    step = std::abs(updir.dot(veloc * frameTime));
-                    float castDist = (groundNormal.dot(groundNormal) > 0.0f) ? playerComponent.stairStep : step;
-                    Math::Float3 distance(matrix.translation - updir * (castDist * 2.0f));
+                    float step = std::abs(matrix.ny.dot(velocity * frameTime));
+                    float castDistance = (groundNormal.dot(groundNormal) > 0.0f) ? playerComponent.stairStep : step;
+                    Math::Float3 distance(matrix.translation - matrix.ny * (castDistance * 2.0f));
                     updateGroundPlane(matrix, supportMatrix, distance, threadHandle);
                 }
                 else
@@ -611,7 +600,7 @@ namespace Gek
                 }
 
                 // set player velocity, position and orientation
-                NewtonBodySetVelocity(newtonBody, veloc.data);
+                NewtonBodySetVelocity(newtonBody, velocity.data);
                 NewtonBodySetMatrix(newtonBody, matrix.data);
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
