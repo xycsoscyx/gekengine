@@ -148,7 +148,7 @@ namespace Gek
 				}
                 else
 				{
-					throw MissingParameters("Visual vertex data must be an object");
+					throw MissingParameter("Visual vertex data must be an object");
 				}
 
                 auto geometryNode = visualNode.get(L"geometry");

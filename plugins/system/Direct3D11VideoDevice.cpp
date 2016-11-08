@@ -2384,7 +2384,7 @@ namespace Gek
                 {
                     if (flags & Video::TextureFlags::DepthTarget)
                     {
-                        throw Video::InvalidParameters("Cannot create render target when depth target flag also specified");
+                        throw Video::InvalidParameter("Cannot create render target when depth target flag also specified");
                     }
 
                     bindFlags |= D3D11_BIND_RENDER_TARGET;
@@ -2394,7 +2394,7 @@ namespace Gek
                 {
                     if (depth > 1)
                     {
-                        throw Video::InvalidParameters("Depth target must have depth of one");
+                        throw Video::InvalidParameter("Depth target must have depth of one");
                     }
 
                     bindFlags |= D3D11_BIND_DEPTH_STENCIL;

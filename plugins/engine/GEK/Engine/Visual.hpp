@@ -16,8 +16,8 @@ namespace Gek
     {
         GEK_INTERFACE(Visual)
         {
+            GEK_ADD_EXCEPTION(MissingParameter);
             GEK_ADD_EXCEPTION(InvalidElementType);
-            GEK_ADD_EXCEPTION(MissingParameters);
             
             virtual ~Visual(void) = default;
 

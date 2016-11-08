@@ -970,7 +970,7 @@ namespace Gek
                     resources->setBackBuffer(videoContext, nullptr);
                 }
 
-                videoContext->drawPrimitive(3, 0);
+                resources->drawPrimitive(videoContext, 3, 0);
             }
         };
 

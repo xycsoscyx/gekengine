@@ -48,7 +48,7 @@
                 "type": "Texture2D"
             },
             {
-                "name": "v",
+                "name": "roughness",
                 "bind": "float",
                 "pattern": "color",
                 "parameters": ".5",

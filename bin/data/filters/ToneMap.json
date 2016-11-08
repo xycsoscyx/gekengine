@@ -18,7 +18,6 @@
         {
             "program": "CalculateLuminance",
             "entry": "mainPixelProgram",
-            "mode": "deferred",
             "resources": [
                 "screen"
             ],
@@ -29,7 +28,7 @@
         {
             "program": "AdaptLuminance",
             "entry": "mainComputeProgram",
-            "mode": "deferred",
+            "mode": "compute",
             "dispatch": "(1, 1, 1)",
             "defines": {
                 "adaptionRate": "1.25"

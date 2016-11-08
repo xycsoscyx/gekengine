@@ -13,7 +13,6 @@
     "passes": [
         {
             "program": "AntiAlias",
-            "mode": "deferred",
             "entry": "mainPixelProgram",
             "copy": {
                 "screenBuffer": "screen"

@@ -541,11 +541,21 @@ namespace Gek
                 }
                 catch (const std::exception &)
                 {
-                    configuration[L"display"][L"mode"] = 0;
                 };
+
+                if (!configuration.is_object())
+                {
+                    configuration = JSON::Object();
+                }
+
+                if (!configuration.has_member(L"display") || !configuration.get(L"display").has_member(L"mode"))
+                {
+                    configuration[L"display"][L"mode"] = 0;
+                }
 
                 configuration[L"editor"][L"enabled"] = false;
                 configuration[L"editor"][L"show_selector"] = false;
+                previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
 
                 HRESULT resultValue = CoInitialize(nullptr);
                 if (FAILED(resultValue))
@@ -572,11 +582,6 @@ namespace Gek
                     };
 
                     displayModeStringList.push_back(displayModeString);
-                }
-
-                if (configuration[L"display"].has_member(L"mode"))
-                {
-                    previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
                 }
 
                 setDisplayMode(currentDisplayMode);
@@ -738,6 +743,8 @@ namespace Gek
 
                 windowActive = true;
                 engineRunning = true;
+
+                population->load(L"demo");
             }
 
             ~Core(void)

@@ -30,7 +30,7 @@ namespace Gek
         GEK_ADD_EXCEPTION(OperationFailed);
         GEK_ADD_EXCEPTION(CreateObjectFailed);
         GEK_ADD_EXCEPTION(ProgramCompilationFailed);
-        GEK_ADD_EXCEPTION(InvalidParameters);
+        GEK_ADD_EXCEPTION(InvalidParameter);
         GEK_ADD_EXCEPTION(InvalidFileType);
         GEK_ADD_EXCEPTION(LoadFileFailed);
 

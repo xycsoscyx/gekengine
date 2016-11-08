@@ -35,13 +35,13 @@ namespace Gek
                 {
                     if (!shaderNode.has_member(L"name"))
                     {
-                        throw MissingParameters("Missing shader name encountered");
+                        throw MissingParameter("Missing shader name encountered");
                     }
 
                     Engine::Shader *shader = resources->getShader(shaderNode[L"name"].as_cstring(), materialHandle);
                     if (!shader)
                     {
-                        throw MissingParameters("Missing shader encountered");
+                        throw MissingParameter("Missing shader encountered");
                     }
 
                     auto &passesNode = shaderNode[L"passes"];
@@ -67,9 +67,14 @@ namespace Gek
                             for (auto &resource : shaderMaterial->resourceList)
                             {
                                 ResourceHandle resourceHandle;
-                                auto &resourceNode = passValue[resource.name];
-                                if (resourceNode.is_object())
+                                if (passValue.has_member(resource.name))
                                 {
+                                    auto &resourceNode = passValue[resource.name];
+                                    if (!resourceNode.is_object())
+                                    {
+                                        throw InvalidParameter("Resource list must be an object");
+                                    }
+
                                     if (resourceNode.has_member(L"file"))
                                     {
                                         String resourceFileName(resourceNode[L"file"].as_string());
@@ -83,6 +88,10 @@ namespace Gek
                                     else if (resourceNode.has_member(L"name"))
                                     {
                                         resourceHandle = resources->getResourceHandle(resourceNode[L"name"].as_cstring());
+                                    }
+                                    else
+                                    {
+                                        throw InvalidParameter("Resource list must have a filename, pattern, or reference value");
                                     }
                                 }
                                 
@@ -98,7 +107,7 @@ namespace Gek
 				}
                 else
                 {
-                    throw MissingParameters("Missing shader object encountered");
+                    throw MissingParameter("Missing shader object encountered");
                 }
             }
 

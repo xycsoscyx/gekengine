@@ -21,7 +21,6 @@ namespace Gek
 
         GEK_INTERFACE(Renderer)
         {
-
             struct DirectionalLightData
             {
                 Math::Float3 radiance;
