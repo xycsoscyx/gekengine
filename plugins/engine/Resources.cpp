@@ -1053,11 +1053,13 @@ namespace Gek
                 return programCache.getHandle(std::move(load));
             }
 
-            RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)
+            RenderStateHandle createRenderState(const wchar_t *stateName, const Video::RenderStateInformation &renderState)
             {
-                auto load = [this, renderState](RenderStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), renderState](RenderStateHandle) -> Video::ObjectPtr
                 {
-                    return videoDevice->createRenderState(renderState);
+                    auto state = videoDevice->createRenderState(renderState);
+					state->setName(stateName);
+					return state;
                 };
 
                 auto hash = getHash(static_cast<uint8_t>(renderState.fillMode),
@@ -1073,12 +1075,14 @@ namespace Gek
                 return renderStateCache.getHandle(hash, std::move(load));
             }
 
-            DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
+            DepthStateHandle createDepthState(const wchar_t *stateName, const Video::DepthStateInformation &depthState)
             {
-                auto load = [this, depthState](DepthStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), depthState](DepthStateHandle) -> Video::ObjectPtr
                 {
-                    return videoDevice->createDepthState(depthState);
-                };
+					auto state = videoDevice->createDepthState(depthState);
+					state->setName(stateName);
+					return state;
+				};
 
                 auto hash = getHash(depthState.enable,
                     static_cast<uint8_t>(depthState.writeMask),
@@ -1097,12 +1101,14 @@ namespace Gek
                 return depthStateCache.getHandle(hash, std::move(load));
             }
 
-            BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(const wchar_t *stateName, const Video::UnifiedBlendStateInformation &blendState)
             {
-                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
-                    return videoDevice->createBlendState(blendState);
-                };
+					auto state = videoDevice->createBlendState(blendState);
+					state->setName(stateName);
+					return state;
+				};
 
                 auto hash = getHash(blendState.enable,
                     static_cast<uint8_t>(blendState.colorSource),
@@ -1115,12 +1121,14 @@ namespace Gek
                 return blendStateCache.getHandle(hash, std::move(load));
             }
 
-            BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(const wchar_t *stateName, const Video::IndependentBlendStateInformation &blendState)
             {
-                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
-                    return videoDevice->createBlendState(blendState);
-                };
+                    auto state = videoDevice->createBlendState(blendState);
+					state->setName(stateName);
+					return state;
+				};
 
                 auto hash = 0;
                 for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)

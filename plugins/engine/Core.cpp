@@ -654,14 +654,17 @@ namespace Gek
 
                 auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
                 vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
+				vertexProgram->setName(L"core:vertexProgram");
 
                 std::vector<Video::InputElement> elementList;
                 elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::Position));
                 elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::TexCoord));
                 elementList.push_back(Video::InputElement(Video::Format::R8G8B8A8_UNORM, Video::InputElement::Semantic::Color));
                 inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
+				inputLayout->setName(L"core:inputLayout");
 
                 constantBuffer = videoDevice->createBuffer(sizeof(Math::SIMD::Float4x4), 1, Video::BufferType::Constant, 0);
+				constantBuffer->setName(L"core:constantBuffer");
 
                 static const wchar_t *pixelShader =
                     L"struct PixelInput" \
@@ -681,6 +684,7 @@ namespace Gek
 
                 compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
                 pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
+				pixelProgram->setName(L"core:pixelProgram");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendStateInformation.enable = true;
@@ -691,6 +695,7 @@ namespace Gek
                 blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
                 blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
                 blendState = videoDevice->createBlendState(blendStateInformation);
+				blendState->setName(L"core:blendState");
 
                 Video::RenderStateInformation renderStateInformation;
                 renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
@@ -698,12 +703,14 @@ namespace Gek
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
                 renderState = videoDevice->createRenderState(renderStateInformation);
+				renderState->setName(L"core:renderState");
 
                 Video::DepthStateInformation depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                 depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
                 depthState = videoDevice->createDepthState(depthStateInformation);
+				depthState->setName(L"core:depthState");
 
                 uint8_t *pixels = nullptr;
                 int32_t fontWidth = 0, fontHeight = 0;
@@ -717,6 +724,7 @@ namespace Gek
                 samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerState = videoDevice->createSamplerState(samplerStateInformation);
+				depthState->setName(L"core:samplerState");
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)

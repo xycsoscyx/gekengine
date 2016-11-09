@@ -57,7 +57,7 @@ namespace Gek
                             {
                                 Video::RenderStateInformation renderStateInformation;
                                 renderStateInformation.load(materialNode.get(L"renderState"));
-                                passData.renderState = resources->createRenderState(renderStateInformation);
+								passData.renderState = resources->createRenderState(String::create(L"%v:renderState", materialName), renderStateInformation);
                             }
                             else
                             {

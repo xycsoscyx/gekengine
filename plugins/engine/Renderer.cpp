@@ -228,6 +228,7 @@ namespace Gek
                 pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
+				pointSamplerState->setName(L"renderer:pointSamplerState");
 
                 Video::SamplerStateInformation linearClampSamplerStateData;
                 linearClampSamplerStateData.maximumAnisotropy = 8;
@@ -235,6 +236,7 @@ namespace Gek
                 linearClampSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 linearClampSamplerState = videoDevice->createSamplerState(linearClampSamplerStateData);
+				linearClampSamplerState->setName(L"renderer:linearClampSamplerState");
 
                 Video::SamplerStateInformation linearWrapSamplerStateData;
                 linearWrapSamplerStateData.maximumAnisotropy = 8;
@@ -242,24 +244,28 @@ namespace Gek
                 linearWrapSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 linearWrapSamplerState = videoDevice->createSamplerState(linearWrapSamplerStateData);
+				linearWrapSamplerState->setName(L"renderer:linearWrapSamplerState");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendState = videoDevice->createBlendState(blendStateInformation);
+				blendState->setName(L"renderer:blendState");
 
                 Video::RenderStateInformation renderStateInformation;
                 renderState = videoDevice->createRenderState(renderStateInformation);
+				renderState->setName(L"renderer:renderState");
 
                 Video::DepthStateInformation depthStateInformation;
                 depthState = videoDevice->createDepthState(depthStateInformation);
+				depthState->setName(L"renderer:depthState");
 
                 engineConstantBuffer = videoDevice->createBuffer(sizeof(EngineConstantData), 1, Video::BufferType::Constant, 0);
-                engineConstantBuffer->setName(L"engineConstantBuffer");
+                engineConstantBuffer->setName(L"renderer:engineConstantBuffer");
 
                 cameraConstantBuffer = videoDevice->createBuffer(sizeof(CameraConstantData), 1, Video::BufferType::Constant, 0);
-                cameraConstantBuffer->setName(L"cameraConstantBuffer");
+                cameraConstantBuffer->setName(L"renderer:cameraConstantBuffer");
 
                 lightConstantBuffer = videoDevice->createBuffer(sizeof(LightConstantData), 1, Video::BufferType::Constant, 0);
-                lightConstantBuffer->setName(L"lightConstantBuffer");
+                lightConstantBuffer->setName(L"renderer:lightConstantBuffer");
 
                 static const wchar_t program[] =
                     L"struct Output" \
@@ -290,30 +296,30 @@ namespace Gek
 
                 auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
                 deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
-                deferredVertexProgram->setName(L"deferredVertexProgram");
+                deferredVertexProgram->setName(L"renderer:deferredVertexProgram");
 
                 auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
                 deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
-                deferredPixelProgram->setName(L"deferredPixelProgram");
+                deferredPixelProgram->setName(L"renderer:deferredPixelProgram");
 
                 directionalLightList.reserve(10);
                 directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                directionalLightDataBuffer->setName(L"directionalLightDataBuffer");
+                directionalLightDataBuffer->setName(L"renderer:directionalLightDataBuffer");
 
                 pointLightList.reserve(200);
                 pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                pointLightDataBuffer->setName(L"pointLightDataBuffer");
+                pointLightDataBuffer->setName(L"renderer:pointLightDataBuffer");
 
                 spotLightList.reserve(200);
                 spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.capacity(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                spotLightDataBuffer->setName(L"spotLightDataBuffer");
+                spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
 
                 clusterDataBuffer = videoDevice->createBuffer(Video::Format::R32G32B32_UINT, GridSize, Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                clusterDataBuffer->setName(L"clusterDataBuffer");
+                clusterDataBuffer->setName(L"renderer:clusterDataBuffer");
 
                 clusterIndexList.reserve(GridSize * 10);
                 clusterIndexBuffer = videoDevice->createBuffer(Video::Format::R32_UINT, clusterIndexList.capacity(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                clusterIndexBuffer->setName(L"clusterIndexBuffer");
+                clusterIndexBuffer->setName(L"renderer:clusterIndexBuffer");
             }
 
             ~Renderer(void)
@@ -727,8 +733,9 @@ namespace Gek
                             {
                                 if (!directionalLightDataBuffer || directionalLightDataBuffer->getCount() < directionalLightList.size())
                                 {
-                                    directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                    directionalLightDataBuffer->setName(L"directionalLightDataBuffer");
+									directionalLightDataBuffer = nullptr;
+									directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                    directionalLightDataBuffer->setName(L"renderer:directionalLightDataBuffer");
                                 }
                             }
                         });
@@ -746,8 +753,9 @@ namespace Gek
                             {
                                 if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
                                 {
-                                    pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                    pointLightDataBuffer->setName(L"pointLightDataBuffer");
+									pointLightDataBuffer = nullptr;
+									pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                    pointLightDataBuffer->setName(L"renderer:pointLightDataBuffer");
                                 }
                             }
                         });
@@ -765,8 +773,9 @@ namespace Gek
                             {
                                 if (!spotLightDataBuffer || spotLightDataBuffer->getCount() < spotLightList.size())
                                 {
-                                    spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                    spotLightDataBuffer->setName(L"spotLightDataBuffer");
+									spotLightDataBuffer = nullptr;
+									spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                    spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
                                 }
                             }
                         });
@@ -821,8 +830,9 @@ namespace Gek
                         {
                             if (!clusterIndexBuffer || clusterIndexBuffer->getCount() < clusterIndexList.size())
                             {
+								clusterIndexBuffer = nullptr;
                                 clusterIndexBuffer = videoDevice->createBuffer(Video::Format::R32_UINT, clusterIndexList.size(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                clusterIndexBuffer->setName(L"clusterIndexBuffer");
+                                clusterIndexBuffer->setName(L"renderer:clusterIndexBuffer");
                             }
 
                             uint32_t *clusterIndexData = nullptr;

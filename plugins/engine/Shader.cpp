@@ -30,7 +30,6 @@ namespace Gek
             {
                 Pass::Mode mode = Pass::Mode::Forward;
                 bool lighting = false;
-                bool enableDepth = false;
                 ResourceHandle depthBuffer;
                 uint32_t clearDepthFlags = 0;
                 float clearDepthValue = 1.0f;
@@ -706,6 +705,22 @@ namespace Gek
                                 pass.clearDepthValue = depthStateNode.get(L"clear", 1.0f).as<float>();
                                 pass.clearDepthFlags |= Video::ClearFlags::Depth;
                             }
+
+							if (depthStateInformation.enable)
+							{
+								if (!passNode.has_member(L"depthBuffer"))
+								{
+									throw MissingParameter("Enabling depth state requires a depth buffer target");
+								}
+
+								auto depthBufferSearch = resourceMap.find(passNode.get(L"depthBuffer").as_string());
+								if (depthBufferSearch == resourceMap.end())
+								{
+									throw UnlistedRenderTarget("Missing depth buffer encountered");
+								}
+
+								pass.depthBuffer = depthBufferSearch->second;
+							}
                         }
 
                         Video::UnifiedBlendStateInformation blendStateInformation;
@@ -720,9 +735,9 @@ namespace Gek
                             renderStateInformation.load(passNode.get(L"renderState"));
                         }
 
-                        pass.depthState = resources->createDepthState(depthStateInformation);
-                        pass.blendState = resources->createBlendState(blendStateInformation);
-                        pass.renderState = resources->createRenderState(renderStateInformation);
+                        pass.depthState = resources->createDepthState(String::create(L"%v:depthState", shaderName), depthStateInformation);
+                        pass.blendState = resources->createBlendState(String::create(L"%v:blendState", shaderName), blendStateInformation);
+                        pass.renderState = resources->createRenderState(String::create(L"%v:renderState", shaderName), renderStateInformation);
                     }
 
                     if (passNode.has_member(L"clear"))
@@ -1080,14 +1095,14 @@ namespace Gek
                 default:
                     resources->setDepthState(videoContext, pass.depthState, 0x0);
                     resources->setBlendState(videoContext, pass.blendState, pass.blendFactor, 0xFFFFFFFF);
-                    if (pass.clearDepthFlags > 0)
+                    if (pass.depthBuffer && pass.clearDepthFlags > 0)
                     {
                         resources->clearDepthStencilTarget(videoContext, pass.depthBuffer, pass.clearDepthFlags, pass.clearDepthValue, pass.clearStencilValue);
                     }
 
                     if (!pass.renderTargetList.empty())
                     {
-                        resources->setRenderTargetList(videoContext, pass.renderTargetList, (pass.enableDepth ? &pass.depthBuffer : nullptr));
+                        resources->setRenderTargetList(videoContext, pass.renderTargetList, (pass.depthBuffer ? &pass.depthBuffer : nullptr));
                     }
 
                     break;
