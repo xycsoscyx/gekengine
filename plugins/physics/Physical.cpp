@@ -51,12 +51,6 @@ namespace Gek
             {
                 ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             }
-
-            // Plugin::Component
-            const wchar_t * const getName(void) const
-            {
-                return L"physical";
-            }
         };
 
         GEK_REGISTER_CONTEXT_USER(Physical)

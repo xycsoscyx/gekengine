@@ -724,7 +724,7 @@ namespace Gek
                 samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerState = videoDevice->createSamplerState(samplerStateInformation);
-				depthState->setName(L"core:samplerState");
+				samplerState->setName(L"core:samplerState");
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)

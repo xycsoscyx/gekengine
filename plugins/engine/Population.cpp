@@ -155,16 +155,16 @@ namespace Gek
                     {
                         const JSON::Object worldNode = JSON::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"));
 
-                        auto &prefabsNode = worldNode[L"prefabs"];
-                        if (!prefabsNode.is_object())
+                        auto &templatesNode = worldNode[L"Templates"];
+                        if (!templatesNode.is_object())
                         {
-                            throw InvalidPrefabsBlock("Scene prefabs must be an object");
+                            throw InvalidPrefabsBlock("Scene Templates must be an object");
                         }
 
-                        auto &populationNode = worldNode[L"population"];
+                        auto &populationNode = worldNode[L"Population"];
                         if (!populationNode.is_array())
                         {
-                            throw InvalidPopulationBlock("Scene population must be an array");
+                            throw InvalidPopulationBlock("Scene Population must be an array");
                         }
 
                         for (auto &entityNode : populationNode.elements())
@@ -175,12 +175,12 @@ namespace Gek
                             }
 
                             std::vector<JSON::Member> entityComponentList;
-                            if (entityNode.has_member(L"prefab"))
+                            if (entityNode.has_member(L"Template"))
                             {
-                                auto &prefabNode = prefabsNode.get(entityNode[L"prefab"].as_string());
-                                for (auto &prefabComponentNode : prefabNode.members())
+                                auto &templateNode = templatesNode.get(entityNode[L"Template"].as_string());
+                                for (auto &componentNode : templateNode.members())
                                 {
-                                    entityComponentList.push_back(prefabComponentNode);
+                                    entityComponentList.push_back(componentNode);
                                 }
                             }
 

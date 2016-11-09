@@ -700,6 +700,7 @@ namespace Gek
                         {
                             auto &depthStateNode = passNode.get(L"depthState");
                             depthStateInformation.load(depthStateNode);
+
                             if (depthStateNode.is_object() && depthStateNode.has_member(L"clear"))
                             {
                                 pass.clearDepthValue = depthStateNode.get(L"clear", 1.0f).as<float>();
@@ -735,9 +736,9 @@ namespace Gek
                             renderStateInformation.load(passNode.get(L"renderState"));
                         }
 
-                        pass.depthState = resources->createDepthState(String::create(L"%v:depthState", shaderName), depthStateInformation);
-                        pass.blendState = resources->createBlendState(String::create(L"%v:blendState", shaderName), blendStateInformation);
-                        pass.renderState = resources->createRenderState(String::create(L"%v:renderState", shaderName), renderStateInformation);
+                        pass.depthState = resources->createDepthState(depthStateInformation);
+                        pass.blendState = resources->createBlendState(blendStateInformation);
+                        pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
                     if (passNode.has_member(L"clear"))
