@@ -369,7 +369,7 @@ namespace Gek
         TokenList infixTokenList;
         for (size_t index = 0; index < expression.size(); ++index)
         {
-            String nextToken(expression.subString(index, 1));
+            String nextToken(expression.substr(index, 1));
             if (isOperation(nextToken) || isParenthesis(nextToken) || isSeparator(nextToken))
             {
                 if (!runningToken.empty())

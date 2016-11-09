@@ -22,11 +22,29 @@ namespace Gek
         class ComponentMixin
             : public BASE
         {
-        public:
-            virtual ~ComponentMixin(void) = default;
+		private:
+			String name;
 
-            // Plugin::Component
-            std::type_index getIdentifier(void) const
+		public:
+			ComponentMixin(void)
+			{
+				name = typeid(COMPONENT).name();
+				auto colonPosition = name.rfind(L':');
+				if (colonPosition != StringUTF8::npos)
+				{
+					name = name.substr(colonPosition + 1);
+				}
+			}
+
+			virtual ~ComponentMixin(void) = default;
+
+			// Plugin::Component
+			const wchar_t * const getName(void) const
+			{
+				return name.data();
+			}
+
+			std::type_index getIdentifier(void) const
             {
                 return typeid(COMPONENT);
             }

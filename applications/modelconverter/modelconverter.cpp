@@ -457,7 +457,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		if (engineIndex != String::npos)
 		{
 			// skip hard drive location, jump to known engine structure
-			texturesPath = texturesPath.subString(engineIndex);
+			texturesPath = texturesPath.substr(engineIndex);
 		}
 
 		FileSystem::find(materialsPath, findMaterials);
@@ -469,18 +469,18 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			albedoName = FileSystem::replaceExtension(albedoName);
             if (albedoName.find(L"textures\\") == 0)
             {
-                albedoName = albedoName.subString(9);
+                albedoName = albedoName.substr(9);
             }
             else if (albedoName.find(L"..\\textures\\") == 0)
             {
-                albedoName = albedoName.subString(12);
+                albedoName = albedoName.substr(12);
             }
             else
 			{
 				auto texturesIndex = albedoName.find(texturesPath);
 				if (texturesIndex != String::npos)
 				{
-					albedoName = albedoName.subString(texturesIndex + texturesPath.length() + 1);
+					albedoName = albedoName.substr(texturesIndex + texturesPath.length() + 1);
 				}
 			}
 
