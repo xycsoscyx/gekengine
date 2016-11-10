@@ -1,668 +1,659 @@
 {
-    "name": "Demo",
-    "prefabs": {
-        "basic_point_light": {
-            "transform": {
+    "Templates": {
+        "BasicPointLight": {
+            "Transform": {
                 "position": "(random(-45, 45), random(5, 30), random(-20, 20))",
                 "rotation": "(0, random(0,360), 0)"
             },
-            "point_light": {
+            "PointLight": {
                 "radius": "random(0.5, 2.0)",
                 "range": "random(10, 20)"
             },
-            "color": "(random(0, 1), random(0, 1), random(0, 1))"
+            "Color": "(random(0, 1), random(0, 1), random(0, 1))"
         },
-        "basic_spot_light": {
-            "transform": {
+        "BasicSpotLight": {
+            "Transform": {
                 "position": "(random(-45, 45), random(5, 30), random(-20, 20))",
                 "rotation": "(0, random(0,360), 0)"
             },
-            "spot_light": {
+            "SpotLight": {
                 "range": "random(10, 20)",
-                "inner_angle": "random(30,60)",
-                "outer_angle": "random(75,120)",
-                "cone_falloff": "random(0.5, 4.0)"
+                "innerAngle": "random(30,60)",
+                "outerAngle": "random(75,120)",
+                "coneFalloff": "random(0.5, 4.0)"
             },
-            "color": "(random(0, 1), random(0, 1), random(0, 1))",
-            "spin": {}
-        },
-        "basic_explosion": {
-            "transform": {
-                "position": "(random(-45, 45), random(5, 30), random(-20, 20))"
-            },
-            "explosion": {
-                "strength": 10
-            }
+            "Color": "(random(0, 1), random(0, 1), random(0, 1))",
+            "Spin": {}
         }
     },
-    "population": [
+    "Population": [
         {
-            "transform": {},
-            "model": "sponza",
-            "physical": {}
+            "Transform": {},
+            "Model": "sponza",
+            "Physical": {}
         },
         {
-            "name": "player_body",
-            "transform": {
+            "Name": "player",
+            "Transform": {
                 "position": "(0, 5, 0)",
                 "rotation": "(0, pi/2, 0)"
             },
-            "first_person_camera": {
+            "FirstPersonCamera": {
                 "mode": "perspective",
-                "field_of_view": 70,
-                "near_clip": 0.5,
-                "far_clip": 200,
-                "value": "antialias, tonemap"
+                "fieldOfView": 70,
+                "nearClip": 0.5,
+                "farClip": 200
+                //"filterList": "antialias, tonemap"
             },
-            "player": {
+            "Player": {
                 "height": 6,
-                "outer_raduis": 1.5,
-                "outer_radius": 0.5,
-                "stair_step": 1.5
+                "outerRadius": 1.5,
+                "innerRadius": 0.5,
+                "stairStep": 1.5
             },
-            "physical": {
+            "Physical": {
                 "mass": 250
             }
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_point_light"
+            "Template": "BasicPointLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         },
         {
-            "prefab": "basic_spot_light"
+            "Template": "BasicSpotLight"
         }
     ]
 }

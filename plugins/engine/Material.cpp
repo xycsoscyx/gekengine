@@ -38,13 +38,18 @@ namespace Gek
                         throw MissingParameter("Missing shader name encountered");
                     }
 
-                    Engine::Shader *shader = resources->getShader(shaderNode[L"name"].as_cstring(), materialHandle);
+                    if (!shaderNode.has_member(L"passes"))
+                    {
+                        throw MissingParameter("Missing shader pass list encountered");
+                    }
+
+                    Engine::Shader *shader = resources->getShader(shaderNode.get(L"name").as_cstring(), materialHandle);
                     if (!shader)
                     {
                         throw MissingParameter("Missing shader encountered");
                     }
 
-                    auto &passesNode = shaderNode[L"passes"];
+                    auto &passesNode = shaderNode.get(L"passes");
                     for (auto &passNode : passesNode.members())
                     {
                         String passName(passNode.name());
@@ -57,7 +62,7 @@ namespace Gek
                             {
                                 Video::RenderStateInformation renderStateInformation;
                                 renderStateInformation.load(materialNode.get(L"renderState"));
-								passData.renderState = resources->createRenderState(String::create(L"%v:renderState", materialName), renderStateInformation);
+								passData.renderState = resources->createRenderState(renderStateInformation);
                             }
                             else
                             {

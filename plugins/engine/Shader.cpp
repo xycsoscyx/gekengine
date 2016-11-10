@@ -735,9 +735,9 @@ namespace Gek
                             renderStateInformation.load(passNode.get(L"renderState"));
                         }
 
-                        pass.depthState = resources->createDepthState(String::create(L"%v:depthState", shaderName), depthStateInformation);
-                        pass.blendState = resources->createBlendState(String::create(L"%v:blendState", shaderName), blendStateInformation);
-                        pass.renderState = resources->createRenderState(String::create(L"%v:renderState", shaderName), renderStateInformation);
+                        pass.depthState = resources->createDepthState(depthStateInformation);
+                        pass.blendState = resources->createBlendState(blendStateInformation);
+                        pass.renderState = resources->createRenderState(renderStateInformation);
                     }
 
                     if (passNode.has_member(L"clear"))

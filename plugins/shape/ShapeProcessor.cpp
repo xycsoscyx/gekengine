@@ -428,12 +428,6 @@ namespace Gek
         {
             ui(guiContext, data, 0);
         }
-
-        // Plugin::Component
-        const wchar_t * const getName(void) const
-        {
-            return L"shape";
-        }
     };
 
     GEK_CONTEXT_USER(ShapeProcessor, Plugin::Core *)

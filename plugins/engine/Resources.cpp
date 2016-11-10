@@ -41,13 +41,16 @@ namespace Gek
         {
         public:
             using TypePtr = std::shared_ptr<TYPE>;
+            using ResourceHandleMap = concurrency::concurrent_unordered_map<std::size_t, HANDLE>;
+            using ResourceMap = concurrency::concurrent_unordered_map<HANDLE, TypePtr>;
+
+        private:
+            uint32_t nextIdentifier = 0;
 
         protected:
-            ResourceRequester *resources;
-
-            uint32_t nextIdentifier = 0;
-            concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
-            concurrency::concurrent_unordered_map<HANDLE, TypePtr> resourceMap;
+            ResourceRequester *resources = nullptr;
+            ResourceHandleMap resourceHandleMap;
+            ResourceMap resourceMap;
 
         public:
             ResourceCache(ResourceRequester *resources)
@@ -1061,12 +1064,12 @@ namespace Gek
                 return programCache.getHandle(std::move(load));
             }
 
-            RenderStateHandle createRenderState(const wchar_t *stateName, const Video::RenderStateInformation &renderState)
+            RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)
             {
-                auto load = [this, stateName = String(stateName), renderState](RenderStateHandle) -> Video::ObjectPtr
+                auto load = [this, renderState](RenderStateHandle) -> Video::ObjectPtr
                 {
                     auto state = videoDevice->createRenderState(renderState);
-					state->setName(stateName);
+					//state->setName(stateName);
 					return state;
                 };
 
@@ -1083,12 +1086,12 @@ namespace Gek
                 return renderStateCache.getHandle(hash, std::move(load));
             }
 
-            DepthStateHandle createDepthState(const wchar_t *stateName, const Video::DepthStateInformation &depthState)
+            DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
             {
-                auto load = [this, stateName = String(stateName), depthState](DepthStateHandle) -> Video::ObjectPtr
+                auto load = [this, depthState](DepthStateHandle) -> Video::ObjectPtr
                 {
 					auto state = videoDevice->createDepthState(depthState);
-					state->setName(stateName);
+					//state->setName(stateName);
 					return state;
 				};
 
@@ -1109,12 +1112,12 @@ namespace Gek
                 return depthStateCache.getHandle(hash, std::move(load));
             }
 
-            BlendStateHandle createBlendState(const wchar_t *stateName, const Video::UnifiedBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
             {
-                auto load = [this, stateName = String(stateName), blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
 					auto state = videoDevice->createBlendState(blendState);
-					state->setName(stateName);
+					//state->setName(stateName);
 					return state;
 				};
 
@@ -1129,12 +1132,12 @@ namespace Gek
                 return blendStateCache.getHandle(hash, std::move(load));
             }
 
-            BlendStateHandle createBlendState(const wchar_t *stateName, const Video::IndependentBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
             {
-                auto load = [this, stateName = String(stateName), blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
                     auto state = videoDevice->createBlendState(blendState);
-					state->setName(stateName);
+					//state->setName(stateName);
 					return state;
 				};
 

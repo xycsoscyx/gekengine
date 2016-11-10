@@ -79,10 +79,10 @@ namespace Gek
             virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
             virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
 
-            virtual RenderStateHandle createRenderState(const wchar_t *stateName, const Video::RenderStateInformation &renderState) = 0;
-            virtual DepthStateHandle createDepthState(const wchar_t *stateName, const Video::DepthStateInformation &depthState) = 0;
-            virtual BlendStateHandle createBlendState(const wchar_t *stateName, const Video::UnifiedBlendStateInformation &blendState) = 0;
-            virtual BlendStateHandle createBlendState(const wchar_t *stateName, const Video::IndependentBlendStateInformation &blendState) = 0;
+            virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
+            virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;
+            virtual BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState) = 0;
+            virtual BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
 
             virtual void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle) = 0;
             virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;

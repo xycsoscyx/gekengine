@@ -83,8 +83,8 @@ namespace Gek
             {
                 passList.clear();
 
-                depthState = resources->createDepthState(String::create(L"%v:depthState", filterName), Video::DepthStateInformation());
-                renderState = resources->createRenderState(String::create(L"%v:renderState", filterName), Video::RenderStateInformation());
+                depthState = resources->createDepthState(Video::DepthStateInformation());
+                renderState = resources->createRenderState(Video::RenderStateInformation());
 
                 const JSON::Object filterNode = JSON::load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"));
                 if (!filterNode.has_member(L"passes"))
@@ -483,7 +483,7 @@ namespace Gek
                             blendStateInformation.load(passNode.get(L"blendState"));
                         }
 
-                        pass.blendState = resources->createBlendState(String::create(L"%v:blendState", filterName), blendStateInformation);
+                        pass.blendState = resources->createBlendState(blendStateInformation);
                     }
 
                     if (passNode.has_member(L"clear"))

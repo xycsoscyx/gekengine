@@ -52,12 +52,6 @@ namespace Gek
         void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
         }
-
-        // Plugin::Component
-        const wchar_t * const getName(void) const
-        {
-            return L"spin";
-        }
     };
 
     GEK_CONTEXT_USER(SpinProcessor, Plugin::Core *)
