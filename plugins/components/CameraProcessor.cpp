@@ -25,22 +25,22 @@ namespace Gek
 
             void save(JSON::Object &componentData) const
             {
-                componentData.set(L"fieldOfView", Math::convertRadiansToDegrees(fieldOfView));
-				componentData.set(L"nearClip", nearClip);
-				componentData.set(L"farClip", farClip);
+                componentData.set(L"field_of_view", Math::convertRadiansToDegrees(fieldOfView));
+				componentData.set(L"near_clip", nearClip);
+				componentData.set(L"far_clip", farClip);
 				componentData.set(L"target", target);
-				componentData.set(L"filterList", String::create(filterList, L','));
+				componentData.set(L"value", String::create(filterList, L','));
             }
 
             void load(const JSON::Object &componentData)
             {
                 if (componentData.is_object())
                 {
-                    fieldOfView = Math::convertDegreesToRadians(componentData.get(L"fieldOfView", 90.0f).as<float>());
-                    nearClip = componentData.get(L"nearClip", 1.0f).as<float>();
-                    farClip = componentData.get(L"farClip", 100.0f).as<float>();
+                    fieldOfView = Math::convertDegreesToRadians(componentData.get(L"field_of_view", 90.0f).as<float>());
+                    nearClip = componentData.get(L"near_clip", 1.0f).as<float>();
+                    farClip = componentData.get(L"far_clip", 100.0f).as<float>();
                     target = componentData.get(L"target", L"").as_string();
-                    filterList = String(componentData.get(L"filterList", L"").as_string()).split(L',');
+                    filterList = String(componentData.get(L"filters", L"").as_string()).split(L',');
                 }
             }
         };
@@ -93,6 +93,12 @@ namespace Gek
         void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+        }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"first_person_camera";
         }
     };
 

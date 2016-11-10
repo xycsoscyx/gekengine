@@ -52,6 +52,12 @@ namespace Gek
         {
             ui(guiContext, data, 0);
         }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"color";
+        }
     };
 
     GEK_REGISTER_CONTEXT_USER(Color);

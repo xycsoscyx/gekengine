@@ -18,9 +18,9 @@ namespace Gek
         void Player::save(JSON::Object &componentData) const
         {
 			componentData.set(L"height", height);
-			componentData.set(L"outerRadius", outerRadius);
-			componentData.set(L"innerRadius", innerRadius);
-			componentData.set(L"stairStep", stairStep);
+			componentData.set(L"outer_radius", outerRadius);
+			componentData.set(L"inner_radius", innerRadius);
+			componentData.set(L"stair_step", stairStep);
         }
 
         void Player::load(const JSON::Object &componentData)
@@ -28,9 +28,9 @@ namespace Gek
             if (componentData.is_object())
             {
                 height = componentData.get(L"height", 6.0f).as<float>();
-                outerRadius = componentData.get(L"outerRadius", 1.5f).as<float>();
-                innerRadius = componentData.get(L"innerRadius", 0.5f).as<float>();
-                stairStep = componentData.get(L"stairStep", 1.0f).as<float>();
+                outerRadius = componentData.get(L"outer_radius", 1.5f).as<float>();
+                innerRadius = componentData.get(L"inner_radius", 0.5f).as<float>();
+                stairStep = componentData.get(L"stair_step", 1.0f).as<float>();
             }
         }
     }; // namespace Components
@@ -66,6 +66,12 @@ namespace Gek
             void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
             {
                 ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            }
+
+            // Plugin::Component
+            const wchar_t * const getName(void) const
+            {
+                return L"player";
             }
         };
 

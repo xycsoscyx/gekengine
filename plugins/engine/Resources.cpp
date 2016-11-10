@@ -586,7 +586,7 @@ namespace Gek
                         }
                         else if (line.find(L"#include") == 0)
                         {
-                            String includeName(line.substr(8));
+                            String includeName(line.subString(8));
                             includeName.trim();
 
                             if (includeName.empty())
@@ -603,7 +603,7 @@ namespace Gek
                                 else
                                 {
                                     auto includeType = includeName.at(0);
-                                    includeName = includeName.substr(1, includeName.length() - 2);
+                                    includeName = includeName.subString(1, includeName.length() - 2);
                                     if (includeType == L'\"')
                                     {
                                         String localFileName(FileSystem::getFileName(programDirectory, includeName));
@@ -1053,12 +1053,12 @@ namespace Gek
                 return programCache.getHandle(std::move(load));
             }
 
-            RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState)
+            RenderStateHandle createRenderState(const wchar_t *stateName, const Video::RenderStateInformation &renderState)
             {
-                auto load = [this, renderState](RenderStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), renderState](RenderStateHandle) -> Video::ObjectPtr
                 {
                     auto state = videoDevice->createRenderState(renderState);
-					//state->setName(stateName);
+					state->setName(stateName);
 					return state;
                 };
 
@@ -1075,12 +1075,12 @@ namespace Gek
                 return renderStateCache.getHandle(hash, std::move(load));
             }
 
-            DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
+            DepthStateHandle createDepthState(const wchar_t *stateName, const Video::DepthStateInformation &depthState)
             {
-                auto load = [this, depthState](DepthStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), depthState](DepthStateHandle) -> Video::ObjectPtr
                 {
 					auto state = videoDevice->createDepthState(depthState);
-					//state->setName(stateName);
+					state->setName(stateName);
 					return state;
 				};
 
@@ -1101,12 +1101,12 @@ namespace Gek
                 return depthStateCache.getHandle(hash, std::move(load));
             }
 
-            BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(const wchar_t *stateName, const Video::UnifiedBlendStateInformation &blendState)
             {
-                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
 					auto state = videoDevice->createBlendState(blendState);
-					//state->setName(stateName);
+					state->setName(stateName);
 					return state;
 				};
 
@@ -1121,12 +1121,12 @@ namespace Gek
                 return blendStateCache.getHandle(hash, std::move(load));
             }
 
-            BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
+            BlendStateHandle createBlendState(const wchar_t *stateName, const Video::IndependentBlendStateInformation &blendState)
             {
-                auto load = [this, blendState](BlendStateHandle) -> Video::ObjectPtr
+                auto load = [this, stateName = String(stateName), blendState](BlendStateHandle) -> Video::ObjectPtr
                 {
                     auto state = videoDevice->createBlendState(blendState);
-					//state->setName(stateName);
+					state->setName(stateName);
 					return state;
 				};
 

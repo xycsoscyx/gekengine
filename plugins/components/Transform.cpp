@@ -112,6 +112,12 @@ namespace Gek
 
             ImGui::SetCurrentContext(nullptr);
         }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"transform";
+        }
     };
 
     GEK_REGISTER_CONTEXT_USER(Transform);

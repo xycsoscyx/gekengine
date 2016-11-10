@@ -80,6 +80,12 @@ namespace Gek
         {
             ui(guiContext, data, 0);
         }
+
+        // Plugin::Component
+        const wchar_t * const getName(void) const
+        {
+            return L"model";
+        }
     };
 
     GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
