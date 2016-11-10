@@ -409,10 +409,15 @@ namespace Gek
 
                     if (pass.mode == Pass::Mode::Compute)
                     {
-                        pass.width = float(videoDevice->getBackBuffer()->getWidth());
-                        pass.height = float(videoDevice->getBackBuffer()->getHeight());
+                        if (!passNode.has_member(L"dispatch"))
+                        {
+                            throw MissingParameter("Compute pass requires dispatch member");
+                        }
 
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"compute"].as_string(), BindType::UInt3);
+                        pass.width = float(displayWidth);
+                        pass.height = float(displayHeight);
+
+                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.get(L"dispatch").as_string(), BindType::UInt3);
                         pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
                         pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
                         pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
@@ -508,12 +513,12 @@ namespace Gek
                         }
                     }
 
-                    if(passNode.has_member(L"generatemipmaps"))
+                    if(passNode.has_member(L"generateMipMaps"))
                     {
-                        auto &generateMipMapsNode = passNode.get(L"generatemipmaps");
+                        auto &generateMipMapsNode = passNode.get(L"generateMipMaps");
                         if (!generateMipMapsNode.is_array())
                         {
-                            throw InvalidParameter("Shader mipmap generation list must be an object");
+                            throw InvalidParameter("Shader generateMipMaps list must be an object");
                         }
 
                         for (auto &generateMipMaps : generateMipMapsNode.elements())
@@ -608,7 +613,7 @@ namespace Gek
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
-                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedaccess");
+                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedAccess");
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);

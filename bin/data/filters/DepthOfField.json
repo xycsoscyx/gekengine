@@ -68,7 +68,7 @@
             "resources": [
                 "depthBuffer"
             ],
-            "unorderedaccess": [
+            "unorderedAccess": [
                 "averageFocalDepth"
             ]
         },

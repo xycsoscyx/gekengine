@@ -42,8 +42,8 @@
                 "mode": "perspective",
                 "fieldOfView": 70,
                 "nearClip": 0.5,
-                "farClip": 200
-                //"filterList": "antialias, tonemap"
+                "farClip": 200,
+                "filterList": "tonemap, antialias"
             },
             "Player": {
                 "height": 6,

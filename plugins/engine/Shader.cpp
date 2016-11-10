@@ -115,7 +115,7 @@ namespace Gek
                 const JSON::Object shaderNode = JSON::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
                 if (!shaderNode.has_member(L"passes"))
                 {
-                    throw MissingParameter("Shader requiredspass list");
+                    throw MissingParameter("Shader requires pass list");
                 }
 
                 auto &passesNode = shaderNode.get(L"passes");
@@ -536,7 +536,7 @@ namespace Gek
                         auto &definesNode = passNode.get(L"defines");
                         if (!definesNode.is_object())
                         {
-                            throw InvalidParameterType("Shader local defines must be an object");
+                            throw InvalidParameterType("Local defines must be an object");
                         }
 
                         for (auto &defineNode : definesNode.members())
@@ -612,13 +612,13 @@ namespace Gek
                     {
                         if (!passNode.has_member(L"dispatch"))
                         {
-                            throw MissingParameter("Shader compute pass requires dispatch member");
+                            throw MissingParameter("Compute pass requires dispatch member");
                         }
 
                         pass.width = float(displayWidth);
                         pass.height = float(displayHeight);
 
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode[L"dispatch"].as_string(), BindType::UInt3);
+                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.get(L"dispatch").as_string(), BindType::UInt3);
                         pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
                         pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
                         pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
@@ -745,7 +745,7 @@ namespace Gek
                         auto &clearNode = passNode.get(L"clear");
                         if (!clearNode.is_object())
                         {
-                            throw InvalidParameter("Shader clear list must be an object");
+                            throw InvalidParameter("Clear list must be an object");
                         }
 
                         for (auto &clearTargetNode : clearNode.members())
@@ -762,12 +762,12 @@ namespace Gek
                         }
                     }
 
-                    if (passNode.has_member(L"generatemipmaps"))
+                    if (passNode.has_member(L"generateMipMaps"))
                     {
-                        auto &generateMipMapsNode = passNode.get(L"generatemipmaps");
+                        auto &generateMipMapsNode = passNode.get(L"generateMipMaps");
                         if (!generateMipMapsNode.is_array())
                         {
-                            throw InvalidParameter("Shader mipmap generation list must be an object");
+                            throw InvalidParameter("GenerateMipMaps list must be an object");
                         }
 
                         for (auto &generateMipMaps : generateMipMapsNode.elements())
@@ -787,7 +787,7 @@ namespace Gek
                         auto &copyNode = passNode[L"copy"];
                         if (!copyNode.is_object())
                         {
-                            throw InvalidParameter("Shader copy list must be an object");
+                            throw InvalidParameter("Copy list must be an object");
                         }
 
                         for (auto &copy : copyNode.members())
@@ -864,7 +864,7 @@ namespace Gek
                             auto &map = resourcePair.second;
                             if (map.source != MapSource::Pattern)
                             {
-                                throw MissingParameter("Shader material must be a pattern");
+                                throw MissingParameter("Material fallback must be a pattern");
                             }
 
                             Material::Resource resource;
@@ -949,7 +949,7 @@ namespace Gek
                         nextUnorderedStage = pass.renderTargetList.size();
                     }
 
-                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedaccess");
+                    std::unordered_map<String, String> unorderedAccessAliasMap = getAliasedMap(passNode, L"unorderedAccess");
                     for (auto &resourcePair : unorderedAccessAliasMap)
                     {
                         auto resourceSearch = resourceMap.find(resourcePair.first);

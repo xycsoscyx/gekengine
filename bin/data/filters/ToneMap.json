@@ -39,7 +39,7 @@
             "resources": [
                 "luminanceBuffer"
             ],
-            "unorderedaccess": [
+            "unorderedAccess": [
                 "averageLuminanceBuffer"
             ]
         },
@@ -69,7 +69,7 @@
                 "linearWhite": "11.2"
             },
             "copy": {
-                "screen": "screenBuffer"
+                "screenBuffer": "screen"
             },
             "resources": [
                 "averageLuminanceBuffer",
