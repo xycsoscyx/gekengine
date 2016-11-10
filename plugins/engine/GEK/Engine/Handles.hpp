@@ -14,16 +14,11 @@ namespace Gek
     template <typename TYPE, uint8_t UNIQUE>
     struct Handle
     {
-        TYPE identifier;
+        TYPE identifier = 0;
 
-        Handle(void)
-            : identifier(0)
+        void operator = (TYPE identifier)
         {
-        }
-
-        void assign(uint64_t identifier)
-        {
-            this->identifier = TYPE(identifier);
+            this->identifier = identifier;
         }
 
         operator bool() const

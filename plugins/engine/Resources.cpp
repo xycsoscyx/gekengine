@@ -45,7 +45,7 @@ namespace Gek
         protected:
             ResourceRequester *resources;
 
-            uint64_t nextIdentifier = 0;
+            uint32_t nextIdentifier = 0;
             concurrency::concurrent_unordered_map<std::size_t, HANDLE> resourceHandleMap;
             concurrency::concurrent_unordered_map<HANDLE, TypePtr> resourceMap;
 
@@ -56,14 +56,17 @@ namespace Gek
                 GEK_REQUIRE(resources);
             }
 
-            virtual ~ResourceCache(void)
-            {
-            }
+            virtual ~ResourceCache(void) = default;
 
             virtual void clear(void)
             {
                 resourceHandleMap.clear();
                 resourceMap.clear();
+            }
+
+            void setResource(HANDLE handle, const TypePtr &data)
+            {
+                resourceMap[handle] = data;
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
@@ -75,6 +78,11 @@ namespace Gek
                 }
 
                 return nullptr;
+            }
+
+            uint32_t getNextHandle(void)
+            {
+                return InterlockedIncrement(&nextIdentifier);
             }
         };
 
@@ -112,9 +120,9 @@ namespace Gek
                         if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                         {
                             loadParameters[handle] = parameters;
-                            resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
+                            resources->addRequest([this, handle, load = move(load)](void) -> void
                             {
-                                resource = load(handle);
+                                setResource(handle, load(handle));
                             });
                         }
                     }
@@ -122,12 +130,12 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
-                    resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
+                    resources->addRequest([this, handle, load = move(load)](void) -> void
                     {
-                        resource = load(handle);
+                        setResource(handle, load(handle));
                     });
                 }
 
@@ -149,12 +157,12 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     loadParameters[handle] = 0;
-                    resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
+                    resources->addRequest([this, handle, load = move(load)](void) -> void
                     {
-                        resource = load(handle);
+                        setResource(handle, load(handle));
                     });
                 }
 
@@ -189,10 +197,10 @@ namespace Gek
             HANDLE getHandle(std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
-                handle.assign(InterlockedIncrement(&nextIdentifier));
-                resources->addRequest([this, handle, load = move(load), &resource = resourceMap[handle]](void) -> void
+                handle = getNextHandle();
+                resources->addRequest([this, handle, load = move(load)](void) -> void
                 {
-                    resource = load(handle);
+                    setResource(handle, load(handle));
                 });
 
                 return handle;
@@ -244,10 +252,10 @@ namespace Gek
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    handle.assign(InterlockedIncrement(&nextIdentifier));
+                    handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     auto &resource = resourceMap[handle];
-                    resource = load(handle);
+                    setResource(handle, load(handle));
                 }
 
                 return handle;
