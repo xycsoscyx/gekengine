@@ -1,5 +1,5 @@
-﻿#include "GEK\Math\Common.hpp"
-#include "GEK\Math\Convert.hpp"
+﻿#include "GEK\Math\Constants.hpp"
+#include "GEK\Math\Utility.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
@@ -226,14 +226,14 @@ namespace Gek
                                         ImGui::Separator();
                                         if (editingEnabled)
                                         {
-                                            auto viewMatrix(Math::convert(rotation));
+                                            auto viewMatrix(Math::Utility::convert(rotation));
                                             viewMatrix.translation = position;
                                             viewMatrix.invert();
 
                                             const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                                             const float width = float(backBuffer->getWidth());
                                             const float height = float(backBuffer->getHeight());
-                                            auto projectionMatrix(Math::SIMD::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                                            auto projectionMatrix(Math::Utility::Matrix::createPerspective(Math::Utility::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                                             component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
                                         }
@@ -305,19 +305,19 @@ namespace Gek
                     float frameTime = population->getFrameTime();
 
                     static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                    rotation = Math::Quaternion::createAngularRotation(upAxis, headingAngle);
-                    auto cameraMatrix(Math::convert(rotation));
+                    rotation = Math::Utility::Quaternion::createAngularRotation(upAxis, headingAngle);
+                    auto cameraMatrix(Math::Utility::convert(rotation));
                     position += (cameraMatrix.nz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
                     position += (cameraMatrix.nx * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
 
-                    auto viewMatrix(Math::convert(rotation));
+                    auto viewMatrix(Math::Utility::convert(rotation));
                     viewMatrix.translation = position;
                     viewMatrix.invert();
 
                     const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getWidth());
                     const float height = float(backBuffer->getHeight());
-                    auto projectionMatrix(Math::SIMD::Float4x4::createPerspective(Math::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                    auto projectionMatrix(Math::Utility::Matrix::createPerspective(Math::Utility::convertDegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                     renderer->render(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
                 }

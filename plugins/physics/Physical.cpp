@@ -2,7 +2,7 @@
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Constants.hpp"
 
 namespace Gek
 {

@@ -124,7 +124,7 @@ namespace Gek
 
             Vector2 lerp(const Vector2 &vector, TYPE factor) const
             {
-                return Math::lerp((*this), vector, factor);
+                return Math::Utility::lerp((*this), vector, factor);
             }
 
 			void normalize(void)

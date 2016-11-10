@@ -61,33 +61,6 @@ namespace Gek
                 return (*this);
             }
 
-            static BaseQuaternion createEulerRotation(TYPE pitch, TYPE yaw, TYPE roll)
-            {
-                TYPE sinPitch(std::sin(pitch * 0.5f));
-                TYPE sinYaw(std::sin(yaw * 0.5f));
-                TYPE sinRoll(std::sin(roll * 0.5f));
-                TYPE cosPitch(std::cos(pitch * 0.5f));
-                TYPE cosYaw(std::cos(yaw * 0.5f));
-                TYPE cosRoll(std::cos(roll * 0.5f));
-                return BaseQuaternion(
-                    ((sinPitch * cosYaw * cosRoll) - (cosPitch * sinYaw * sinRoll)),
-                    ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll)),
-                    ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll)),
-                    ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
-            }
-
-            static BaseQuaternion createAngularRotation(const Vector3<TYPE> &axis, TYPE radians)
-            {
-                TYPE halfRadians = (radians * 0.5f);
-                Vector3<TYPE> normal(axis.getNormal());
-                TYPE sinAngle(std::sin(halfRadians));
-                return BaseQuaternion(
-                    (normal.x * sinAngle),
-                    (normal.y * sinAngle),
-                    (normal.z * sinAngle),
-                    std::cos(halfRadians));
-            }
-
             TYPE getLengthSquared(void) const
             {
                 return dot(*this);
@@ -114,14 +87,14 @@ namespace Gek
                 // this is correct
                 BaseQuaternion rotation(*this);
                 TYPE omegaMagnitudeSquared = omega.dot(omega);
-                const TYPE errorAngle = convertDegreesToRadians(TYPE(0.0125));
+                const TYPE errorAngle = Utility::convertDegreesToRadians(TYPE(0.0125));
                 const TYPE errorAngleSquared = (errorAngle * errorAngle);
                 if (omegaMagnitudeSquared > errorAngleSquared)
                 {
                     TYPE inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
                     Vector3<TYPE> omegaAxis(omega * inverseOmegaMagnitude);
                     TYPE omegaAngle = inverseOmegaMagnitude * omegaMagnitudeSquared * deltaTime;
-                    BaseQuaternion deltaRotation(createAngularRotation(omegaAxis, omegaAngle));
+                    BaseQuaternion deltaRotation(Utility::Quaternion::createAngularRotation(omegaAxis, omegaAngle));
                     rotation = rotation * deltaRotation;
                     rotation *= (TYPE(1) / std::sqrt(rotation.dot(rotation)));
                 }

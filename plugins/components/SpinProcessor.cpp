@@ -6,7 +6,7 @@
 #include "GEK\Engine\Entity.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Constants.hpp"
 #include "GEK\Math\Matrix4x4SIMD.hpp"
 #include <random>
 
@@ -82,7 +82,7 @@ namespace Gek
 
             population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
             {
-                Math::Quaternion rotation(Math::Quaternion::createEulerRotation((population->getFrameTime() * spinComponent.torque.x),
+                Math::Quaternion rotation(Math::Utility::Quaternion::createEulerRotation((population->getFrameTime() * spinComponent.torque.x),
                     (population->getFrameTime() * spinComponent.torque.y),
                     (population->getFrameTime() * spinComponent.torque.z)));
                 transformComponent.rotation *= rotation;

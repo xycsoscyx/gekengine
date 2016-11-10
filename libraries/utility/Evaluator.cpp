@@ -1,7 +1,8 @@
+#include "GEK\Math\Utility.hpp"
 #include "GEK\Utility\Evaluator.hpp"
 #include "GEK\Utility\ShuntingYard.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Constants.hpp"
 
 namespace Gek
 {
@@ -134,7 +135,7 @@ namespace Gek
                     {
                         Math::Float3 euler;
                         shuntingYard.evaluate(expression, euler);
-                        result = Math::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
+                        result = Math::Utility::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
                     }
 
                     break;

@@ -1,6 +1,6 @@
+#include "GEK\Math\Utility.hpp"
 #include "GEK\Utility\ShuntingYard.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Math\Common.hpp"
 #include <unordered_map>
 #include <functional>
 #include <random>
@@ -39,8 +39,9 @@ namespace Gek
     ShuntingYard::ShuntingYard(void)
         : mersineTwister(std::random_device()())
     {
-        variableMap[L"pi"] = 3.14159265358979323846f;
-        variableMap[L"e"] = 2.71828182845904523536f;
+        variableMap[L"pi"] = Math::Pi;
+        variableMap[L"tau"] = Math::Tau;
+        variableMap[L"e"] = Math::E;
 
         operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
         {
@@ -146,7 +147,7 @@ namespace Gek
             float value3 = stack.popTop().value;
             float value2 = stack.popTop().value;
             float value1 = stack.popTop().value;
-            return Math::lerp(value1, value2, value3);
+            return Math::Utility::lerp(value1, value2, value3);
         } } });
 
         functionsMap.insert({ L"random",{ 2, [&](Stack<Token> &stack) -> float

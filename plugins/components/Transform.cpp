@@ -106,7 +106,7 @@ namespace Gek
 
             ImGuizmo::BeginFrame();
             ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
-            transformComponent.rotation = Math::convert(matrix);
+            transformComponent.rotation = Math::Utility::convert(matrix);
             transformComponent.position = matrix.translation;
             transformComponent.scale = matrix.getScaling();
 

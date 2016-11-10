@@ -6,7 +6,7 @@
 #include "GEK\Engine\Entity.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Constants.hpp"
 #include "GEK\Math\Matrix4x4SIMD.hpp"
 #include <unordered_map>
 #include <ppl.h>
@@ -25,7 +25,7 @@ namespace Gek
 
             void save(JSON::Object &componentData) const
             {
-                componentData.set(L"fieldOfView", Math::convertRadiansToDegrees(fieldOfView));
+                componentData.set(L"fieldOfView", Math::Utility::convertRadiansToDegrees(fieldOfView));
 				componentData.set(L"nearClip", nearClip);
 				componentData.set(L"farClip", farClip);
 				componentData.set(L"target", target);
@@ -36,7 +36,7 @@ namespace Gek
             {
                 if (componentData.is_object())
                 {
-                    fieldOfView = Math::convertDegreesToRadians(componentData.get(L"fieldOfView", 90.0f).as<float>());
+                    fieldOfView = Math::Utility::convertDegreesToRadians(componentData.get(L"fieldOfView", 90.0f).as<float>());
                     nearClip = componentData.get(L"nearClip", 1.0f).as<float>();
                     farClip = componentData.get(L"farClip", 100.0f).as<float>();
                     target = componentData.get(L"target", L"").as_string();
@@ -202,7 +202,7 @@ namespace Gek
                 const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                 const float width = float(backBuffer->getWidth());
                 const float height = float(backBuffer->getHeight());
-                Math::SIMD::Float4x4 projectionMatrix(Math::SIMD::Float4x4::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
+                Math::SIMD::Float4x4 projectionMatrix(Math::Utility::Matrix::createPerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
                 renderer->render(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
             });

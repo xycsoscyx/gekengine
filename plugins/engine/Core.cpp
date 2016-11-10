@@ -1,14 +1,15 @@
-﻿#include "GEK\Utility\Exceptions.hpp"
+﻿#include "GEK\Math\Utility.hpp"
+#include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\Timer.hpp"
+#include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\AudioDevice.hpp"
 #include "GEK\Engine\Application.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Population.hpp"
 #include "GEK\Engine\Resources.hpp"
 #include "GEK\Engine\Renderer.hpp"
-#include "GEK\Utility\ContextUser.hpp"
 #include <concurrent_queue.h>
 #include <queue>
 #include <ppl.h>
@@ -1250,8 +1251,9 @@ namespace Gek
                 {
                     RECT windowRectangle;
                     GetWindowRect(window, &windowRectangle);
-					SetCursorPos(int(Math::lerp(float(windowRectangle.left), float(windowRectangle.right), 0.5f)), 
-						int(Math::lerp(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
+					SetCursorPos(
+                        int(Math::Utility::lerp(float(windowRectangle.left), float(windowRectangle.right), 0.5f)), 
+						int(Math::Utility::lerp(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
                 }
 
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
@@ -1307,7 +1309,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getWidth();
                 uint32_t height = backBuffer->getHeight();
-                auto orthographic = Math::SIMD::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                auto orthographic = Math::Utility::Matrix::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 videoDevice->updateResource(constantBuffer.get(), &orthographic);
 
                 auto videoContext = videoDevice->getDefaultContext();

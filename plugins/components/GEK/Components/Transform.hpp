@@ -10,7 +10,7 @@
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\Matrix4x4SIMD.hpp"
 #include "GEK\Math\Quaternion.hpp"
-#include "GEK\Math\Convert.hpp"
+#include "GEK\Math\Utility.hpp"
 #include "GEK\Engine\Component.hpp"
 
 namespace Gek
@@ -38,7 +38,7 @@ namespace Gek
 
             inline Math::SIMD::Float4x4 getMatrix(void) const
             {
-                auto matrix(Math::convert(rotation));
+                auto matrix(Math::Utility::convert(rotation));
                 matrix.translation = position;
                 return matrix;
             }

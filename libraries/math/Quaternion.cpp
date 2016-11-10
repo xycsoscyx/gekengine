@@ -1,6 +1,6 @@
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Math\Matrix4x4SIMD.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK\Math\Constants.hpp"
 #include <algorithm>
 
 namespace Gek

@@ -39,7 +39,6 @@
                 "rotation": "(0, pi/2, 0)"
             },
             "FirstPersonCamera": {
-                "mode": "perspective",
                 "fieldOfView": 70,
                 "nearClip": 0.5,
                 "farClip": 200,
