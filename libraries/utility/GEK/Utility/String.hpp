@@ -9,7 +9,7 @@
 
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4SIMD.hpp"
+#include "GEK\Math\SIMD4.hpp"
 #include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include <functional>

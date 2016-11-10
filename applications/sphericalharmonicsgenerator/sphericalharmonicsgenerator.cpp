@@ -2,7 +2,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Math\Constants.hpp"
-#include "GEK\Math\Matrix4x4SIMD.hpp"
+#include "GEK\Math\SIMD4x4.hpp"
 #include <DirectXTex.h>
 #include <array>
 #include <ppl.h>

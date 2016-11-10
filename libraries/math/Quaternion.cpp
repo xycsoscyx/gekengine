@@ -1,5 +1,5 @@
 #include "GEK\Math\Quaternion.hpp"
-#include "GEK\Math\Matrix4x4SIMD.hpp"
+#include "GEK\Math\SIMD4x4.hpp"
 #include "GEK\Math\Constants.hpp"
 #include <algorithm>
 

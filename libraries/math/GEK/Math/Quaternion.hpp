@@ -7,6 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "GEK\Math\Constants.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
 #include <type_traits>
@@ -15,114 +16,174 @@ namespace Gek
 {
     namespace Math
     {
-        template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
-        struct BaseQuaternion
+        struct Quaternion
         {
         public:
-            static const BaseQuaternion Identity;
+            static const Quaternion Identity;
 
         public:
             union
             {
-                struct { TYPE x, y, z, w; };
-                struct { TYPE data[4]; };
+                struct { float x, y, z, w; };
+                struct { float data[4]; };
                 struct { __m128 simd; };
-                struct { Vector3<TYPE> vector; TYPE w; };
+                struct { Float3 vector; float w; };
             };
 
         public:
-            BaseQuaternion(void)
+            static Quaternion createEulerRotation(float pitch, float yaw, float roll)
+            {
+                float sinPitch(std::sin(pitch * 0.5f));
+                float sinYaw(std::sin(yaw * 0.5f));
+                float sinRoll(std::sin(roll * 0.5f));
+                float cosPitch(std::cos(pitch * 0.5f));
+                float cosYaw(std::cos(yaw * 0.5f));
+                float cosRoll(std::cos(roll * 0.5f));
+                return Quaternion(
+                    ((sinPitch * cosYaw * cosRoll) - (cosPitch * sinYaw * sinRoll)),
+                    ((sinPitch * cosYaw * sinRoll) + (cosPitch * sinYaw * cosRoll)),
+                    ((cosPitch * cosYaw * sinRoll) - (sinPitch * sinYaw * cosRoll)),
+                    ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
+            }
+
+            static Quaternion createAngularRotation(const Float3 &axis, float radians)
+            {
+                float halfRadians = (radians * 0.5f);
+                Float3 normal(axis.getNormal());
+                float sinAngle(std::sin(halfRadians));
+                return Quaternion(
+                    (normal.x * sinAngle),
+                    (normal.y * sinAngle),
+                    (normal.z * sinAngle),
+                    std::cos(halfRadians));
+            }
+
+            static Quaternion createPitchRotation(float radians)
+            {
+                float halfRadians = (radians * 0.5f);
+                float sinAngle(std::sin(halfRadians));
+                return Quaternion(
+                    sinAngle,
+                    0.0f,
+                    0.0f,
+                    std::cos(halfRadians));
+            }
+
+            static Quaternion createYawRotation(float radians)
+            {
+                float halfRadians = (radians * 0.5f);
+                float sinAngle(std::sin(halfRadians));
+                return Quaternion(
+                    0.0f,
+                    sinAngle,
+                    0.0f,
+                    std::cos(halfRadians));
+            }
+
+            static Quaternion createRollRotation(float radians)
+            {
+                float halfRadians = (radians * 0.5f);
+                float sinAngle(std::sin(halfRadians));
+                return Quaternion(
+                    0.0f,
+                    0.0f,
+                    sinAngle,
+                    std::cos(halfRadians));
+            }
+
+        public:
+            Quaternion(void)
             {
             }
 
-            BaseQuaternion(__m128 simd)
+            Quaternion(__m128 simd)
                 : simd(simd)
             {
             }
 
-            BaseQuaternion(TYPE x, TYPE y, TYPE z, TYPE w)
+            Quaternion(float x, float y, float z, float w)
                 : simd(_mm_setr_ps(x, y, z, w))
             {
             }
 
-            BaseQuaternion(const TYPE *data)
+            Quaternion(const float *data)
                 : simd(_mm_loadu_ps(data))
             {
             }
 
-            BaseQuaternion(const BaseQuaternion &vector)
+            Quaternion(const Quaternion &vector)
                 : simd(vector.simd)
             {
             }
 
-            BaseQuaternion &set(TYPE x, TYPE y, TYPE z, TYPE w)
+            Quaternion &set(float x, float y, float z, float w)
             {
                 simd = _mm_setr_ps(x, y, z, w);
                 return (*this);
             }
 
-            TYPE getLengthSquared(void) const
+            float getLengthSquared(void) const
             {
                 return dot(*this);
             }
 
-            TYPE getLength(void) const
+            float getLength(void) const
             {
                 return std::sqrt(getLengthSquared());
             }
 
-            BaseQuaternion getNormal(void) const
+            Quaternion getNormal(void) const
             {
                 auto length = _mm_set1_ps(getLength());
                 return _mm_mul_ps(simd, _mm_rcp_ps(length));
             }
 
-            BaseQuaternion getInverse(void) const
+            Quaternion getInverse(void) const
             {
-                return BaseQuaternion(-x, -y, -z, w);
+                return Quaternion(-x, -y, -z, w);
             }
 
-            BaseQuaternion integrateOmega(const Vector3<TYPE> &omega, TYPE deltaTime) const
+            Quaternion integrateOmega(const Float3 &omega, float deltaTime) const
             {
                 // this is correct
-                BaseQuaternion rotation(*this);
-                TYPE omegaMagnitudeSquared = omega.dot(omega);
-                const TYPE errorAngle = Utility::convertDegreesToRadians(TYPE(0.0125));
-                const TYPE errorAngleSquared = (errorAngle * errorAngle);
+                Quaternion rotation(*this);
+                float omegaMagnitudeSquared = omega.dot(omega);
+                const float errorAngle = (0.0125 * (Pi / 180.0f));
+                const float errorAngleSquared = (errorAngle * errorAngle);
                 if (omegaMagnitudeSquared > errorAngleSquared)
                 {
-                    TYPE inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
-                    Vector3<TYPE> omegaAxis(omega * inverseOmegaMagnitude);
-                    TYPE omegaAngle = inverseOmegaMagnitude * omegaMagnitudeSquared * deltaTime;
-                    BaseQuaternion deltaRotation(Utility::Quaternion::createAngularRotation(omegaAxis, omegaAngle));
+                    float inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
+                    Float3 omegaAxis(omega * inverseOmegaMagnitude);
+                    float omegaAngle = inverseOmegaMagnitude * omegaMagnitudeSquared * deltaTime;
+                    Quaternion deltaRotation(createAngularRotation(omegaAxis, omegaAngle));
                     rotation = rotation * deltaRotation;
-                    rotation *= (TYPE(1) / std::sqrt(rotation.dot(rotation)));
+                    rotation *= (1.0f / std::sqrt(rotation.dot(rotation)));
                 }
 
                 return rotation;
             }
 
-            Vector3<TYPE> calculateAverageOmega(const BaseQuaternion &rotationTarget, TYPE inverseDeltaTime) const
+            Float3 calculateAverageOmega(const Quaternion &rotationTarget, float inverseDeltaTime) const
             {
-                BaseQuaternion rotationSource(*this);
+                Quaternion rotationSource(*this);
                 if (rotationSource.dot(rotationTarget) < 0.0f)
                 {
                     rotationSource *= -1.0f;
                 }
 
-                BaseQuaternion deltaRotation(rotationSource.getInverse() * rotationTarget);
-                Vector3<TYPE> omegaDirection(deltaRotation.vector);
+                Quaternion deltaRotation(rotationSource.getInverse() * rotationTarget);
+                Float3 omegaDirection(deltaRotation.vector);
 
-                TYPE omegaMagnitudeSquared = omegaDirection.dot(omegaDirection);
-                if (omegaMagnitudeSquared	< TYPE(TYPE(1.0e-5f) * TYPE(1.0e-5f)))
+                float omegaMagnitudeSquared = omegaDirection.dot(omegaDirection);
+                if (omegaMagnitudeSquared < (Epsilon * Epsilon))
                 {
-                    return Vector3<TYPE>::Zero;
+                    return Float3::Zero;
                 }
 
-                TYPE inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
-                TYPE directionMagnitude = omegaMagnitudeSquared * inverseOmegaMagnitude;
+                float inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
+                float directionMagnitude = omegaMagnitudeSquared * inverseOmegaMagnitude;
 
-                TYPE omegaMagnitude = TYPE(2.0f) * std::atan2(directionMagnitude, deltaRotation.w) * inverseDeltaTime;
+                float omegaMagnitude = 2.0f * std::atan2(directionMagnitude, deltaRotation.w) * inverseDeltaTime;
                 return omegaDirection * (inverseOmegaMagnitude * omegaMagnitude);
             }
 
@@ -139,26 +200,26 @@ namespace Gek
                 (*this) = getNormal();
             }
 
-            TYPE dot(const BaseQuaternion &rotation) const
+            float dot(const Quaternion &rotation) const
             {
                 return ((x * rotation.x) + (y * rotation.y) + (z * rotation.z) + (w * rotation.w));
             }
 
-            BaseQuaternion slerp(const BaseQuaternion &rotation, TYPE factor) const
+            Quaternion slerp(const Quaternion &rotation, float factor) const
             {
-                TYPE omega = std::acos(clamp(dot(rotation), -1.0f, 1.0f));
+                float omega = std::acos(dot(rotation));
                 if (std::abs(omega) < 1e-10f)
                 {
                     omega = 1e-10f;
                 }
 
-                TYPE sinTheta = std::sin(omega);
-                TYPE factor0 = (std::sin((1.0f - factor) * omega) / sinTheta);
-                TYPE factor1 = (std::sin(factor * omega) / sinTheta);
-                return blend((*this), factor0, rotation, factor1);
+                float sinTheta = std::sin(omega);
+                float factor0 = (std::sin((1.0f - factor) * omega) / sinTheta);
+                float factor1 = (std::sin(factor * omega) / sinTheta);
+                return ((*this) * factor0) + (rotation * factor1);
             }
 
-            bool operator == (const BaseQuaternion &rotation) const
+            bool operator == (const Quaternion &rotation) const
             {
                 if (x != rotation.x) return false;
                 if (y != rotation.y) return false;
@@ -167,7 +228,7 @@ namespace Gek
                 return true;
             }
 
-            bool operator != (const BaseQuaternion &rotation) const
+            bool operator != (const Quaternion &rotation) const
             {
                 if (x != rotation.x) return true;
                 if (y != rotation.y) return true;
@@ -176,73 +237,71 @@ namespace Gek
                 return false;
             }
 
-            operator const TYPE *() const
+            operator const float *() const
             {
                 return data;
             }
 
-            operator TYPE *()
+            operator float *()
             {
                 return data;
             }
 
-            Vector3<TYPE> operator * (const Vector3<TYPE> &vector) const
+            Float3 operator * (const Float3 &vector) const
             {
-                Vector3<TYPE> cross(2.0f * this->vector.cross(vector));
+                Float3 cross(2.0f * this->vector.cross(vector));
                 return (vector + (this->w * cross) + this->vector.cross(cross));
             }
 
-            BaseQuaternion operator * (const BaseQuaternion &rotation) const
+            Quaternion operator * (const Quaternion &rotation) const
             {
-                return BaseQuaternion(
+                return Quaternion(
                     ((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
                     ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
                     ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
                     ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z))).getNormal();
             }
 
-            void operator *= (const BaseQuaternion &rotation)
+            void operator *= (const Quaternion &rotation)
             {
                 (*this) = ((*this) * rotation);
             }
 
-            BaseQuaternion &operator = (const BaseQuaternion &rotation)
+            Quaternion &operator = (const Quaternion &rotation)
             {
                 simd = rotation.simd;
                 return (*this);
             }
 
-            void operator /= (TYPE scalar)
+            void operator /= (float scalar)
             {
                 simd = _mm_div_ps(simd, _mm_set1_ps(scalar));
             }
 
-            void operator *= (TYPE scalar)
+            void operator *= (float scalar)
             {
                 simd = _mm_mul_ps(simd, _mm_set1_ps(scalar));
             }
 
-            BaseQuaternion operator / (TYPE scalar) const
+            Quaternion operator / (float scalar) const
             {
                 return _mm_div_ps(simd, _mm_set1_ps(scalar));
             }
 
-            BaseQuaternion operator + (TYPE scalar) const
+            Quaternion operator + (float scalar) const
             {
                 return _mm_add_ps(simd, _mm_set1_ps(scalar));
             }
 
-            BaseQuaternion operator * (TYPE scalar) const
+            Quaternion operator * (float scalar) const
             {
                 return _mm_mul_ps(simd, _mm_set1_ps(scalar));
             }
 
-            BaseQuaternion operator + (const BaseQuaternion &rotation) const
+            Quaternion operator + (const Quaternion &rotation) const
             {
                 return _mm_add_ps(simd, rotation.simd);
             }
         };
-
-        using Quaternion = BaseQuaternion<float>;
     }; // namespace Math
 }; // namespace Gek

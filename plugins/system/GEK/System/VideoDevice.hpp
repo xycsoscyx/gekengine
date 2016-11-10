@@ -10,7 +10,7 @@
 #include "GEK\Math\Constants.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Vector4SIMD.hpp"
+#include "GEK\Math\SIMD4.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\JSON.hpp"

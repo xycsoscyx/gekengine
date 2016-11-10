@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Matrix4x4SIMD.hpp"
+#include "GEK\Math\SIMD4x4.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Shapes\AlignedBox.hpp"
 

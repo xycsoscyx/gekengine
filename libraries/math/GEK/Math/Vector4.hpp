@@ -168,11 +168,6 @@ namespace Gek
                 return ((x * vector.x) + (y * vector.y) + (z * vector.z) + (w * vector.w));
             }
 
-            Vector4 lerp(const Vector4 &vector, TYPE factor) const
-            {
-                return Math::Utility::lerp((*this), vector, factor);
-            }
-
 			void normalize(void)
 			{
 				(*this) = getNormal();
