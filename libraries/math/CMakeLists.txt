@@ -5,8 +5,8 @@ string(REPLACE " " "_" ProjectID ${ProjectID})
 
 project(${ProjectID})
 
-file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
-file(GLOB SOURCES "*.[hc]pp")
+file(GLOB HEADERS "GEK/${ProjectID}/*.hpp" "GEK/${ProjectID}/SIMD/*.hpp")
+file(GLOB SOURCES "*.[hc]pp" "SIMD/*.[hc]pp" )
 add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})

@@ -398,16 +398,14 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        template <typename TYPE>
-        BaseString &operator = (const Math::SIMD::Vector4<TYPE> &value)
+        BaseString &operator = (const Math::SIMD::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        template <typename TYPE>
-        BaseString &operator = (const Math::BaseQuaternion<TYPE> &value)
+        BaseString &operator = (const Math::Quaternion &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -540,16 +538,14 @@ namespace Gek
             append(stream.str());
         }
 
-        template <typename TYPE>
-        void operator += (const Math::SIMD::Vector4<TYPE> &value)
+        void operator += (const Math::SIMD::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
             append(stream.str());
         }
 
-        template <typename TYPE>
-        void operator += (const Math::BaseQuaternion<TYPE> &value)
+        void operator += (const Math::Quaternion &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -669,25 +665,23 @@ namespace Gek
 			return (stream.fail() ? Math::Vector4<TYPE>::Zero : value);
 		}
 
-		template <typename TYPE>
-        operator Math::SIMD::Vector4<TYPE>() const
+        operator Math::SIMD::Float4() const
         {
-            Math::SIMD::Vector4<TYPE> value;
+            Math::SIMD::Float4 value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(',') >> value.w >> MustMatch(')'); // ( X , Y , Z , W )
-            return (stream.fail() ? Math::SIMD::Vector4<TYPE>::Zero : value);
+            return (stream.fail() ? Math::SIMD::Float4::Zero : value);
         }
 
-		template <typename TYPE>
-		operator Math::BaseQuaternion<TYPE> () const
+		operator Math::Quaternion () const
         {
-            Math::BaseQuaternion<TYPE> value;
+            Math::Quaternion value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z;
             switch (stream.peek())
             {
             case ')':
-                value = Math::BaseQuaternion<TYPE>::createEulerRotation(value.x, value.y, value.z);
+                value = Math::Quaternion::createEulerRotation(value.x, value.y, value.z);
                 stream >> MustMatch(')');
                 break;
 
@@ -696,7 +690,7 @@ namespace Gek
                 break;
             };
 
-            return (stream.fail() ? Math::BaseQuaternion<TYPE>::Identity : value);
+            return (stream.fail() ? Math::Quaternion::Identity : value);
         }
 
         operator const ELEMENT * () const

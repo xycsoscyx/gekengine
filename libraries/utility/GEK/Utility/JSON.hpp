@@ -91,39 +91,39 @@ namespace jsoncons
         }
     };
 
-    template<typename TYPE, class Json>
-    struct json_type_traits<Json, Gek::Math::SIMD::Vector4<TYPE>>
+    template<class Json>
+    struct json_type_traits<Json, Gek::Math::SIMD::Float4>
     {
-        static Gek::Math::SIMD::Vector4<TYPE> as(const Json &object)
+        static Gek::Math::SIMD::Float4 as(const Json &object)
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::SIMD::Vector4<TYPE>>(object.as_cstring());
+                return Gek::Evaluator::get<Gek::Math::SIMD::Float4>(object.as_cstring());
             }
 
-            return Gek::Math::SIMD::Vector4<TYPE>::Zero;
+            return Gek::Math::SIMD::Float4::Zero;
         }
 
-        static Json to_json(const Gek::Math::SIMD::Vector4<TYPE> &value)
+        static Json to_json(const Gek::Math::SIMD::Float4 &value)
         {
             return Gek::String::create(L"%v", value);
         }
     };
 
-    template<typename TYPE, class Json>
-    struct json_type_traits<Json, Gek::Math::BaseQuaternion<TYPE>>
+    template<class Json>
+    struct json_type_traits<Json, Gek::Math::Quaternion>
     {
-        static Gek::Math::BaseQuaternion<TYPE> as(const Json &object)
+        static Gek::Math::Quaternion as(const Json &object)
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::BaseQuaternion<TYPE>>(object.as_cstring());
+                return Gek::Evaluator::get<Gek::Math::Quaternion>(object.as_cstring());
             }
 
-            return Gek::Math::BaseQuaternion<TYPE>::Identity;
+            return Gek::Math::Quaternion::Identity;
         }
 
-        static Json to_json(const Gek::Math::BaseQuaternion<TYPE> &value)
+        static Json to_json(const Gek::Math::Quaternion &value)
         {
             return Gek::String::create(L"%v", value);
         }
