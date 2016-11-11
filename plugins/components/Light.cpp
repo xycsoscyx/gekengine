@@ -1,4 +1,3 @@
-#include "GEK\Math\Convert.hpp"
 #include "GEK\Components\Light.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"

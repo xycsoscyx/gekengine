@@ -238,9 +238,9 @@ namespace Gek
             {
                 Math::SIMD::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
-                Math::SIMD::Quaternion playerRotation(Math::convert(matrix));
+                Math::SIMD::Quaternion playerRotation(matrix.getRotation());
                 Math::SIMD::Quaternion targetRotation(Math::SIMD::Quaternion::createYawRotation(headingAngle));
-                return playerRotation.calculateAverageOmega(targetRotation, 0.5f / frameTime);
+                return playerRotation.getAverageOmega(targetRotation, 0.5f / frameTime);
             }
 
             Math::Float3 calculateDesiredVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed, const Math::Float3& gravity, float frameTime) const
@@ -427,9 +427,8 @@ namespace Gek
                 NewtonBodyGetOmega(newtonBody, omega.data);
 
                 // integrate body angular velocity
-                auto integratedRotation(Math::convert(matrix).integrateOmega(omega, frameTime));
-                integratedRotation.normalize();
-                matrix = Math::convert(integratedRotation, matrix.translation);
+                auto integratedRotation(matrix.getRotation().getIntegratedOmega(omega, frameTime));
+                matrix.setRotation(integratedRotation.getNormal());
 
                 // integrate linear velocity
                 float normalizedRemainingTime = 1.0f;
@@ -598,8 +597,8 @@ namespace Gek
                 NewtonBodySetMatrix(newtonBody, matrix.data);
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                transformComponent.rotation = Math::convert(matrix);
-                transformComponent.position = matrix.translation + matrix.ny * playerComponent.height;
+                transformComponent.rotation = matrix.getRotation();
+                transformComponent.position = (matrix.translation + (matrix.ny * playerComponent.height));
             }
 
 		private:

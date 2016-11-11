@@ -33,7 +33,6 @@ LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM
     return DefWindowProc(window, message, wParam, lParam);
 }
 
-#include "GEK\Math\Convert.hpp"
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
 {
     try

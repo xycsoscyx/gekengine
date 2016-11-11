@@ -80,8 +80,8 @@ namespace Gek
             {
                 Math::SIMD::Float4x4 matrix(matrixData);
 				auto &transform = entity->getComponent<Components::Transform>();
-				transform.position = matrix.translation;
-                transform.rotation = Math::convert(matrix);
+                transform.rotation = matrix.getRotation();
+                transform.position = matrix.translation;
             }
         };
 

@@ -1,5 +1,4 @@
 ﻿#include "GEK\Math\Common.hpp"
-#include "GEK\Math\Convert.hpp"
 #include "GEK\Math\SIMD\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
@@ -226,8 +225,7 @@ namespace Gek
                                         ImGui::Separator();
                                         if (editingEnabled)
                                         {
-                                            auto viewMatrix(Math::convert(rotation));
-                                            viewMatrix.translation = position;
+                                            Math::SIMD::Float4x4 viewMatrix(rotation, position);
                                             viewMatrix.invert();
 
                                             const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
@@ -306,11 +304,10 @@ namespace Gek
 
                     static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
                     rotation = Math::SIMD::Quaternion::createAngularRotation(upAxis, headingAngle);
-                    auto cameraMatrix(Math::convert(rotation));
-                    position += (cameraMatrix.nz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
-                    position += (cameraMatrix.nx * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
 
-                    auto viewMatrix(Math::convert(rotation));
+                    Math::SIMD::Float4x4 viewMatrix(rotation);
+                    position += (viewMatrix.nz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
+                    position += (viewMatrix.nx * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
                     viewMatrix.translation = position;
                     viewMatrix.invert();
 

@@ -145,7 +145,7 @@ namespace Gek
                     return Quaternion(-x, -y, -z, w);
                 }
 
-                inline Quaternion integrateOmega(const Float3 &omega, float deltaTime) const
+                inline Quaternion getIntegratedOmega(const Float3 &omega, float deltaTime) const
                 {
                     // this is correct
                     Quaternion rotation(*this);
@@ -165,7 +165,7 @@ namespace Gek
                     return rotation;
                 }
 
-                inline Float3 calculateAverageOmega(const Quaternion &rotationTarget, float inverseDeltaTime) const
+                inline Float3 getAverageOmega(const Quaternion &rotationTarget, float inverseDeltaTime) const
                 {
                     Quaternion rotationSource(*this);
                     if (rotationSource.dot(rotationTarget) < 0.0f)
@@ -177,7 +177,7 @@ namespace Gek
                     Float3 omegaDirection(deltaRotation.vector);
 
                     float omegaMagnitudeSquared = omegaDirection.dot(omegaDirection);
-                    if (omegaMagnitudeSquared	< float(float(1.0e-5f) * float(1.0e-5f)))
+                    if (omegaMagnitudeSquared < float(float(1.0e-5f) * float(1.0e-5f)))
                     {
                         return Float3::Zero;
                     }

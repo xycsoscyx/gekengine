@@ -10,6 +10,7 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\SIMD\Quaternion.hpp"
 #include <xmmintrin.h>
 #include <type_traits>
 
@@ -260,6 +261,40 @@ namespace Gek
                 {
                 }
 
+                inline Float4x4(const Quaternion &rotation, const Float3 &translation)
+                    : rw(translation, 1.0f)
+                {
+                    setRotation(rotation);
+                }
+
+                inline void setRotation(const Quaternion &rotation)
+                {
+                    float xx(rotation.x * rotation.x);
+                    float yy(rotation.y * rotation.y);
+                    float zz(rotation.z * rotation.z);
+                    float ww(rotation.w * rotation.w);
+                    float length(xx + yy + zz + ww);
+                    if (length == 0.0f)
+                    {
+                        rx.set(1.0f, 0.0f, 0.0f, 0.0f);
+                        ry.set(0.0f, 1.0f, 0.0f, 0.0f);
+                        rz.set(0.0f, 0.0f, 1.0f, 0.0f);
+                    }
+                    else
+                    {
+                        float determinant(1.0f / length);
+                        float xy(rotation.x * rotation.y);
+                        float xz(rotation.x * rotation.z);
+                        float xw(rotation.x * rotation.w);
+                        float yz(rotation.y * rotation.z);
+                        float yw(rotation.y * rotation.w);
+                        float zw(rotation.z * rotation.w);
+                        rx.set(((xx - yy - zz + ww) * determinant), (2.0f * (xy + zw) * determinant), (2.0f * (xz - yw) * determinant), 0.0f);
+                        ry.set((2.0f * (xy - zw) * determinant), ((-xx + yy - zz + ww) * determinant), (2.0f * (yz + xw) * determinant), 0.0f);
+                        rz.set((2.0f * (xz + yw) * determinant), (2.0f * (yz - xw) * determinant), ((-xx - yy + zz + ww) * determinant), 0.0f);
+                    }
+                }
+
                 inline Float3 getScaling(void) const
                 {
                     return Float3(_11, _22, _33);
@@ -327,14 +362,48 @@ namespace Gek
                     }
                 }
 
-                inline Float4x4 getRotation(void) const
+                inline Quaternion getRotation(void) const
                 {
-                    // Sets row/column 4 to identity
-                    return Float4x4(
-                        _11, _12, _13, 0.0f,
-                        _21, _22, _32, 0.0f,
-                        _31, _32, _33, 0.0f,
-                        0.0f, 0.0f, 0.0f, 1.0f);
+                    float trace(table[0][0] + table[1][1] + table[2][2] + 1.0f);
+                    if (trace > Epsilon)
+                    {
+                        float denominator(0.5f / std::sqrt(trace));
+                        return Quaternion(
+                            ((table[1][2] - table[2][1]) * denominator),
+                            ((table[2][0] - table[0][2]) * denominator),
+                            ((table[0][1] - table[1][0]) * denominator),
+                            (0.25f / denominator));
+                    }
+                    else
+                    {
+                        if ((table[0][0] > table[1][1]) && (table[0][0] > table[2][2]))
+                        {
+                            float denominator(2.0f * std::sqrt(1.0f + table[0][0] - table[1][1] - table[2][2]));
+                            return Quaternion(
+                                (0.25f * denominator),
+                                ((table[1][0] + table[0][1]) / denominator),
+                                ((table[2][0] + table[0][2]) / denominator),
+                                ((table[2][1] - table[1][2]) / denominator));
+                        }
+                        else if (table[1][1] > table[2][2])
+                        {
+                            float denominator(2.0f * (std::sqrt(1.0f + table[1][1] - table[0][0] - table[2][2])));
+                            return Quaternion(
+                                ((table[1][0] + table[0][1]) / denominator),
+                                (0.25f * denominator),
+                                ((table[2][1] + table[1][2]) / denominator),
+                                ((table[2][0] - table[0][2]) / denominator));
+                        }
+                        else
+                        {
+                            float denominator(2.0f * (std::sqrt(1.0f + table[2][2] - table[0][0] - table[1][1])));
+                            return Quaternion(
+                                ((table[2][0] + table[0][2]) / denominator),
+                                ((table[2][1] + table[1][2]) / denominator),
+                                (0.25f * denominator),
+                                ((table[1][0] - table[0][1]) / denominator));
+                        }
+                    }
                 }
 
                 inline Float4x4 &transpose(void)

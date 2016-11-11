@@ -1,4 +1,3 @@
-#include "GEK\Math\Convert.hpp"
 #include "GEK\Utility\ShuntingYard.hpp"
 #include "GEK\Utility\String.hpp"
 #include <unordered_map>
