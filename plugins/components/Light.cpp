@@ -1,4 +1,4 @@
-#include "GEK\Math\Utility.hpp"
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Components\Light.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
@@ -27,8 +27,8 @@ namespace Gek
         {
             componentData.set(L"range",  range);
             componentData.set(L"radius",  radius);
-            componentData.set(L"innerAngle",  Math::Utility::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
-            componentData.set(L"outerAngle",  Math::Utility::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
+            componentData.set(L"innerAngle",  Math::convertRadiansToDegrees(std::acos(innerAngle) * 2.0f));
+            componentData.set(L"outerAngle",  Math::convertRadiansToDegrees(std::acos(outerAngle) * 2.0f));
             componentData.set(L"coneFalloff",  coneFalloff);
         }
 
@@ -38,8 +38,8 @@ namespace Gek
             {
                 range = componentData.get(L"range", 0.0f).as<float>();
                 radius = componentData.get(L"radius", 0.0f).as<float>();
-                innerAngle = std::cos(Math::Utility::convertDegreesToRadians(componentData.get(L"innerAngle", 0.0f).as<float>() * 0.5f));
-                outerAngle = std::cos(Math::Utility::convertDegreesToRadians(componentData.get(L"outerAngle", 0.0f).as<float>() * 0.5f));
+                innerAngle = std::cos(Math::convertDegreesToRadians(componentData.get(L"innerAngle", 0.0f).as<float>() * 0.5f));
+                outerAngle = std::cos(Math::convertDegreesToRadians(componentData.get(L"outerAngle", 0.0f).as<float>() * 0.5f));
                 coneFalloff = componentData.get(L"coneFalloff", 0.0f).as<float>();
             }
         }

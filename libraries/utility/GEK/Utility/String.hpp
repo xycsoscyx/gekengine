@@ -9,9 +9,9 @@
 
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\SIMD4.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Quaternion.hpp"
+#include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\SIMD\Quaternion.hpp"
 #include <functional>
 #include <algorithm>
 #include <iterator>
@@ -405,7 +405,7 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString &operator = (const Math::Quaternion &value)
+        BaseString &operator = (const Math::SIMD::Quaternion &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -545,7 +545,7 @@ namespace Gek
             append(stream.str());
         }
 
-        void operator += (const Math::Quaternion &value)
+        void operator += (const Math::SIMD::Quaternion &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -673,15 +673,15 @@ namespace Gek
             return (stream.fail() ? Math::SIMD::Float4::Zero : value);
         }
 
-		operator Math::Quaternion () const
+		operator Math::SIMD::Quaternion () const
         {
-            Math::Quaternion value;
+            Math::SIMD::Quaternion value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z;
             switch (stream.peek())
             {
             case ')':
-                value = Math::Quaternion::createEulerRotation(value.x, value.y, value.z);
+                value = Math::SIMD::Quaternion::createEulerRotation(value.x, value.y, value.z);
                 stream >> MustMatch(')');
                 break;
 
@@ -690,7 +690,7 @@ namespace Gek
                 break;
             };
 
-            return (stream.fail() ? Math::Quaternion::Identity : value);
+            return (stream.fail() ? Math::SIMD::Quaternion::Identity : value);
         }
 
         operator const ELEMENT * () const

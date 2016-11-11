@@ -20,7 +20,7 @@ namespace Gek
             if (componentData.is_object())
             {
                 position = componentData.get(L"position", Math::Float3::Zero).as<Math::Float3>();
-                rotation = componentData.get(L"rotation", Math::Quaternion::Identity).as<Math::Quaternion>();
+                rotation = componentData.get(L"rotation", Math::SIMD::Quaternion::Identity).as<Math::SIMD::Quaternion>();
                 scale = componentData.get(L"scale", Math::Float3::One).as<Math::Float3>();
             }
         }
@@ -106,7 +106,7 @@ namespace Gek
 
             ImGuizmo::BeginFrame();
             ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
-            transformComponent.rotation = Math::Utility::convert(matrix);
+            transformComponent.rotation = Math::convert(matrix);
             transformComponent.position = matrix.translation;
             transformComponent.scale = matrix.getScaling();
 

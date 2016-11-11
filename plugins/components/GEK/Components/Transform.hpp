@@ -8,9 +8,9 @@
 #pragma once
 
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\SIMD4x4.hpp"
-#include "GEK\Math\Quaternion.hpp"
-#include "GEK\Math\Utility.hpp"
+#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\SIMD\Quaternion.hpp"
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Engine\Component.hpp"
 
 namespace Gek
@@ -30,7 +30,7 @@ namespace Gek
             }
 
             Math::Float3 position = Math::Float3::Zero;
-            Math::Quaternion rotation = Math::Quaternion::Identity;
+            Math::SIMD::Quaternion rotation = Math::SIMD::Quaternion::Identity;
             Math::Float3 scale = Math::Float3::One;
 
             void save(JSON::Object &componentData) const;
@@ -38,7 +38,7 @@ namespace Gek
 
             inline Math::SIMD::Float4x4 getMatrix(void) const
             {
-                auto matrix(Math::Utility::convert(rotation));
+                auto matrix(Math::convert(rotation));
                 matrix.translation = position;
                 return matrix;
             }

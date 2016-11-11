@@ -1,4 +1,4 @@
-#include "GEK\Math\Utility.hpp"
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Utility\ShuntingYard.hpp"
 #include "GEK\Utility\String.hpp"
 #include <unordered_map>
@@ -147,7 +147,7 @@ namespace Gek
             float value3 = stack.popTop().value;
             float value2 = stack.popTop().value;
             float value1 = stack.popTop().value;
-            return Math::Utility::lerp(value1, value2, value3);
+            return Math::lerp(value1, value2, value3);
         } } });
 
         functionsMap.insert({ L"random",{ 2, [&](Stack<Token> &stack) -> float

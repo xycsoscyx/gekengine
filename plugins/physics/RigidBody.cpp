@@ -1,5 +1,5 @@
-#include "GEK\Math\Constants.hpp"
-#include "GEK\Math\SIMD4x4.hpp"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\SIMD\Matrix4x4.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
@@ -81,7 +81,7 @@ namespace Gek
                 Math::SIMD::Float4x4 matrix(matrixData);
 				auto &transform = entity->getComponent<Components::Transform>();
 				transform.position = matrix.translation;
-                transform.rotation = Math::Utility::convert(matrix);
+                transform.rotation = Math::convert(matrix);
             }
         };
 

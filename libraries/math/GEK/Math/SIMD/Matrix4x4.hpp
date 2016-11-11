@@ -9,7 +9,7 @@
 
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4SIMD.hpp"
+#include "GEK\Math\SIMD\Vector4.hpp"
 #include <xmmintrin.h>
 #include <type_traits>
 

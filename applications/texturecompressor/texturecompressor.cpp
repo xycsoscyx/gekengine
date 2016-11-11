@@ -1,6 +1,6 @@
-#include "GEK\Math\Constants.hpp"
+#include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\SIMD4x4.hpp"
+#include "GEK\Math\SIMD\Matrix4x4.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"

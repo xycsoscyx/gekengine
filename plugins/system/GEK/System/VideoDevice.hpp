@@ -7,10 +7,10 @@
 /// Last Changed: $Date:   Sun Oct 23 19:59:14 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\Constants.hpp"
+#include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\SIMD4.hpp"
+#include "GEK\Math\SIMD\Vector4.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\JSON.hpp"

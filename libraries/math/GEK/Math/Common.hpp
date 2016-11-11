@@ -17,7 +17,9 @@ namespace Gek
 		const float Infinity = std::numeric_limits<float>::max();
 		const float NegativeInfinity = std::numeric_limits<float>::lowest();
 		const float Epsilon = std::numeric_limits<float>::min();
-		const float Pi = 3.14159265358979323846f;
+        const float Pi = 3.14159265358979323846f;
+        const float Tau = (2.0f * Pi);
+        const float E = 2.71828182845904523536f;
 
 		template <typename TYPE>
 		TYPE convertDegreesToRadians(TYPE degrees)

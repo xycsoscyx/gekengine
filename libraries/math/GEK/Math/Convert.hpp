@@ -11,16 +11,16 @@
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Vector4SIMD.hpp"
-#include "GEK\Math\Matrix4x4SIMD.hpp"
-#include "GEK\Math\Quaternion.hpp"
+#include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\SIMD\Quaternion.hpp"
 #include <type_traits>
 
 namespace Gek
 {
     namespace Math
     {
-        inline SIMD::Float4x4 convert(const Quaternion &quaternion, const Float3 &translation = Math::Float3::Zero)
+        inline SIMD::Float4x4 convert(const SIMD::Quaternion &quaternion, const Float3 &translation = Math::Float3::Zero)
         {
             float xx(quaternion.x * quaternion.x);
             float yy(quaternion.y * quaternion.y);
@@ -52,13 +52,13 @@ namespace Gek
             }
         }
 
-        inline Quaternion convert(const SIMD::Float4x4 &matrix)
+        inline SIMD::Quaternion convert(const SIMD::Float4x4 &matrix)
         {
             float trace(matrix.table[0][0] + matrix.table[1][1] + matrix.table[2][2] + 1.0f);
             if (trace > Epsilon)
             {
                 float denominator(0.5f / std::sqrt(trace));
-                return Quaternion(
+                return SIMD::Quaternion(
                     ((matrix.table[1][2] - matrix.table[2][1]) * denominator),
                     ((matrix.table[2][0] - matrix.table[0][2]) * denominator),
                     ((matrix.table[0][1] - matrix.table[1][0]) * denominator),
@@ -69,7 +69,7 @@ namespace Gek
                 if ((matrix.table[0][0] > matrix.table[1][1]) && (matrix.table[0][0] > matrix.table[2][2]))
                 {
                     float denominator(2.0f * std::sqrt(1.0f + matrix.table[0][0] - matrix.table[1][1] - matrix.table[2][2]));
-                    return Quaternion(
+                    return SIMD::Quaternion(
                         (0.25f * denominator),
                         ((matrix.table[1][0] + matrix.table[0][1]) / denominator),
                         ((matrix.table[2][0] + matrix.table[0][2]) / denominator),
@@ -78,7 +78,7 @@ namespace Gek
                 else if (matrix.table[1][1] > matrix.table[2][2])
                 {
                     float denominator(2.0f * (std::sqrt(1.0f + matrix.table[1][1] - matrix.table[0][0] - matrix.table[2][2])));
-                    return Quaternion(
+                    return SIMD::Quaternion(
                         ((matrix.table[1][0] + matrix.table[0][1]) / denominator),
                         (0.25f * denominator),
                         ((matrix.table[2][1] + matrix.table[1][2]) / denominator),
@@ -87,7 +87,7 @@ namespace Gek
                 else
                 {
                     float denominator(2.0f * (std::sqrt(1.0f + matrix.table[2][2] - matrix.table[0][0] - matrix.table[1][1])));
-                    return Quaternion(
+                    return SIMD::Quaternion(
                         ((matrix.table[2][0] + matrix.table[0][2]) / denominator),
                         ((matrix.table[2][1] + matrix.table[1][2]) / denominator),
                         (0.25f * denominator),

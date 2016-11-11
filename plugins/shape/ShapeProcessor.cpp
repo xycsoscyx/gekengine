@@ -1,4 +1,4 @@
-﻿#include "GEK\Math\SIMD4x4.hpp"
+﻿#include "GEK\Math\SIMD\Matrix4x4.hpp"
 #include "GEK\Shapes\AlignedBox.hpp"
 #include "GEK\Shapes\OrientedBox.hpp"
 #include "GEK\Utility\String.hpp"

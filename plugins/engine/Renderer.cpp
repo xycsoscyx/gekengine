@@ -361,7 +361,7 @@ namespace Gek
             }
 
             // Clustered Lighting
-            inline Math::Float3 getLightDirection(const Math::Quaternion &quaternion)
+            inline Math::Float3 getLightDirection(const Math::SIMD::Quaternion &quaternion)
             {
                 float xx(quaternion.x * quaternion.x);
                 float yy(quaternion.y * quaternion.y);

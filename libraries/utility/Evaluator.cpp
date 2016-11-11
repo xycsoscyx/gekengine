@@ -1,8 +1,8 @@
-#include "GEK\Math\Utility.hpp"
+#include "GEK\Math\Convert.hpp"
 #include "GEK\Utility\Evaluator.hpp"
 #include "GEK\Utility\ShuntingYard.hpp"
 #include "GEK\Utility\String.hpp"
-#include "GEK\Math\Constants.hpp"
+#include "GEK\Math\Common.hpp"
 
 namespace Gek
 {
@@ -123,7 +123,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
+        void get(const wchar_t *expression, Math::SIMD::Quaternion &result, const Math::SIMD::Quaternion &defaultValue)
         {
             try
             {
@@ -135,7 +135,7 @@ namespace Gek
                     {
                         Math::Float3 euler;
                         shuntingYard.evaluate(expression, euler);
-                        result = Math::Utility::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
+                        result = Math::SIMD::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
                     }
 
                     break;

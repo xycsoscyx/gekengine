@@ -1,5 +1,5 @@
-#include "GEK\Math\Constants.hpp"
-#include "GEK\Math\SIMD4x4.hpp"
+#include "GEK\Math\Common.hpp"
+#include "GEK\Math\SIMD\Matrix4x4.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
@@ -165,7 +165,7 @@ namespace Gek
 				const auto &playerComponent = entity->getComponent<Components::Player>();
 
                 setRestrainingDistance(0.0f);
-                setClimbSlope(Math::Utility::convertDegreesToRadians(45.0f));
+                setClimbSlope(Math::convertDegreesToRadians(45.0f));
 
                 const int stepCount = 12;
                 Math::Float3 convexPoints[2][stepCount];
@@ -175,7 +175,7 @@ namespace Gek
                 Math::Float3 p1(playerComponent.innerRadius, playerComponent.height, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::Utility::Matrix::createYawRotation(step * 2.0f * Math::Pi / stepCount));
+                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createYawRotation(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(p0);
                     convexPoints[1][step] = rotation.rotate(p1);
                 }
@@ -214,7 +214,7 @@ namespace Gek
                 Math::Float3 q1(castRadius, castHeight, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::Utility::Matrix::createYawRotation(step * 2.0f * Math::Pi / stepCount));
+                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createYawRotation(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(q0);
                     convexPoints[1][step] = rotation.rotate(q1);
                 }
@@ -238,8 +238,8 @@ namespace Gek
             {
                 Math::SIMD::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
-                Math::Quaternion playerRotation(Math::Utility::convert(matrix));
-                Math::Quaternion targetRotation(Math::Utility::Quaternion::createYawRotation(headingAngle));
+                Math::SIMD::Quaternion playerRotation(Math::convert(matrix));
+                Math::SIMD::Quaternion targetRotation(Math::SIMD::Quaternion::createYawRotation(headingAngle));
                 return playerRotation.calculateAverageOmega(targetRotation, 0.5f / frameTime);
             }
 
@@ -427,9 +427,9 @@ namespace Gek
                 NewtonBodyGetOmega(newtonBody, omega.data);
 
                 // integrate body angular velocity
-                auto integratedRotation(Math::Utility::convert(matrix).integrateOmega(omega, frameTime));
+                auto integratedRotation(Math::convert(matrix).integrateOmega(omega, frameTime));
                 integratedRotation.normalize();
-                matrix = Math::Utility::convert(integratedRotation, matrix.translation);
+                matrix = Math::convert(integratedRotation, matrix.translation);
 
                 // integrate linear velocity
                 float normalizedRemainingTime = 1.0f;
@@ -598,7 +598,7 @@ namespace Gek
                 NewtonBodySetMatrix(newtonBody, matrix.data);
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                transformComponent.rotation = Math::Utility::convert(matrix);
+                transformComponent.rotation = Math::convert(matrix);
                 transformComponent.position = matrix.translation + matrix.ny * playerComponent.height;
             }
 

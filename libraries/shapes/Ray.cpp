@@ -1,6 +1,6 @@
 #include "GEK\Shapes\Ray.hpp"
 #include "GEK\Shapes\OrientedBox.hpp"
-#include "GEK\Math\Constants.hpp"
+#include "GEK\Math\Common.hpp"
 #include <algorithm>
 
 namespace Gek

@@ -9,9 +9,9 @@
 
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\SIMD4.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Quaternion.hpp"
+#include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\SIMD\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 
 namespace Gek
@@ -25,7 +25,7 @@ namespace Gek
         void get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue = Math::Float3::Zero);
         void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue = Math::Float4::Zero);
         void get(const wchar_t *expression, Math::SIMD::Float4 &result, const Math::SIMD::Float4 &defaultValue = Math::SIMD::Float4::Zero);
-        void get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue = Math::Quaternion::Identity);
+        void get(const wchar_t *expression, Math::SIMD::Quaternion &result, const Math::SIMD::Quaternion &defaultValue = Math::SIMD::Quaternion::Identity);
         void get(const wchar_t *expression, String &result);
 
         template <typename TYPE>
