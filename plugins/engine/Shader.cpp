@@ -277,7 +277,7 @@ namespace Gek
                         String name(elementNode.get(L"name").as_string());
                         if (elementNode.has_member(L"system"))
                         {
-                            String system(elementNode[L"system"].as_string());
+                            String system(elementNode.get(L"system").as_string());
                             if (system.compareNoCase(L"isFrontFacing") == 0)
                             {
                                 String format(elementNode.get(L"format", L"bool").as_string());
@@ -481,7 +481,7 @@ namespace Gek
 
                                 uint32_t stride = evaluate(globalDefinesMap, bufferValue.get(L"stride").as_string(), BindType::UInt);
                                 resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
-                                resourceStructuresMap[bufferName] = bufferValue[L"structure"].as_string();
+                                resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
                             }
                             else if (bufferValue.has_member(L"format"))
                             {
@@ -758,7 +758,7 @@ namespace Gek
                             }
 
                             auto &clearTargetValue = clearTargetNode.value();
-                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue[L"type"].as_string()), clearTargetValue[L"value"].as_string())));
+                            pass.clearResourceMap.insert(std::make_pair(resourceSearch->second, ClearData(getClearType(clearTargetValue.get(L"type", L"").as_string()), clearTargetValue.get(L"value", L"").as_string())));
                         }
                     }
 
@@ -784,7 +784,7 @@ namespace Gek
 
                     if (passNode.has_member(L"copy"))
                     {
-                        auto &copyNode = passNode[L"copy"];
+                        auto &copyNode = passNode.get(L"copy");
                         if (!copyNode.is_object())
                         {
                             throw InvalidParameter("Copy list must be an object");
