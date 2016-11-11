@@ -14,10 +14,6 @@ namespace Gek
 {
     namespace Components
     {
-        static std::random_device randomDevice;
-        static std::mt19937 mersineTwister(randomDevice());
-        static std::uniform_real_distribution<float> random(-1.0f, 1.0f);
-
         GEK_COMPONENT(Spin)
         {
             Math::Float3 torque;
@@ -28,9 +24,7 @@ namespace Gek
 
             void load(const JSON::Object &componentData)
             {
-                torque.x = random(mersineTwister);
-                torque.y = random(mersineTwister);
-                torque.z = random(mersineTwister);
+                torque = Evaluator::get<Math::Float3>(L"(random(-pi,pi), random(-pi,pi), random(-pi,pi))");
             }
         };
     }; // namespace Components

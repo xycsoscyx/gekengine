@@ -10,6 +10,7 @@ namespace Gek
         namespace SIMD
         {
             const Quaternion Quaternion::Identity(0.0f, 0.0f, 0.0f, 1.0f);
+            const Quaternion Quaternion::Zero(0.0f, 0.0f, 0.0f, 0.0f);
         }; // namespace SIMD
     }; // namespace Math
 }; // namespace Gek

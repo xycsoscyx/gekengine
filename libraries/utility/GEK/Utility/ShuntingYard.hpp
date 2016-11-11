@@ -104,6 +104,8 @@ namespace Gek
     public:
         ShuntingYard(void);
 
+        void setRandomSeed(uint32_t seed);
+
         TokenList getTokenList(const wchar_t *expression);
         uint32_t getReturnSize(const TokenList &rpnTokenList);
 

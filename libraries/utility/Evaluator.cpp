@@ -8,6 +8,10 @@ namespace Gek
     namespace Evaluator
     {
         static ShuntingYard shuntingYard;
+        void setRandomSeed(uint32_t seed)
+        {
+            shuntingYard.setRandomSeed(seed);
+        }
 
         template <typename TYPE>
         void castResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)

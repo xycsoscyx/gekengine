@@ -22,6 +22,7 @@ namespace Gek
             {
             public:
                 static const Quaternion Identity;
+                static const Quaternion Zero;
 
             public:
                 union
@@ -145,50 +146,47 @@ namespace Gek
                     return Quaternion(-x, -y, -z, w);
                 }
 
-                inline Quaternion getIntegratedOmega(const Float3 &omega, float deltaTime) const
+                inline Quaternion getIntegratedOmega(const Float3 &omega, float timestep) const
                 {
                     // this is correct
                     Quaternion rotation(*this);
-                    float omegaMagnitudeSquared = omega.dot(omega);
-                    const float errorAngle = convertDegreesToRadians(float(0.0125));
-                    const float errorAngleSquared = (errorAngle * errorAngle);
-                    if (omegaMagnitudeSquared > errorAngleSquared)
+                    float omegaMag2 = omega.dot(omega);
+                    const float errAngle = 0.0125f * 3.141592f / 180.0f;
+                    const float errAngle2 = errAngle * errAngle;
+                    if (omegaMag2 > errAngle2)
                     {
-                        float inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
-                        Float3 omegaAxis(omega * inverseOmegaMagnitude);
-                        float omegaAngle = inverseOmegaMagnitude * omegaMagnitudeSquared * deltaTime;
+                        float invOmegaMag = 1.0f / std::sqrt(omegaMag2);
+                        Float3 omegaAxis(omega * (invOmegaMag));
+                        float omegaAngle = invOmegaMag * omegaMag2 * timestep;
                         Quaternion deltaRotation(createAngularRotation(omegaAxis, omegaAngle));
                         rotation = rotation * deltaRotation;
-                        rotation *= (float(1) / std::sqrt(rotation.dot(rotation)));
+                        rotation *= (1.0f / std::sqrt(rotation.dot(rotation)));
                     }
 
                     return rotation;
                 }
 
-                inline Float3 getAverageOmega(const Quaternion &rotationTarget, float inverseDeltaTime) const
+                inline Float3 getAverageOmega(const Quaternion &q1, float invdt) const
                 {
-                    Quaternion rotationSource(*this);
-                    if (rotationSource.dot(rotationTarget) < 0.0f)
+                    Quaternion q0(*this);
+                    if (q0.dot(q1) < 0.0f) 
                     {
-                        rotationSource *= -1.0f;
+                        q0 *= -1.0f;
                     }
 
-                    Quaternion deltaRotation(rotationSource.getInverse() * rotationTarget);
-                    Float3 omegaDirection(deltaRotation.vector);
-
-                    float omegaMagnitudeSquared = omegaDirection.dot(omegaDirection);
-                    if (omegaMagnitudeSquared < float(float(1.0e-5f) * float(1.0e-5f)))
+                    Quaternion dq(q0.getInverse() * q1);
+                    float dirMag2 = dq.vector.dot(dq.vector);
+                    if (dirMag2	< (Epsilon * Epsilon))
                     {
                         return Float3::Zero;
                     }
 
-                    float inverseOmegaMagnitude = 1.0f / std::sqrt(omegaMagnitudeSquared);
-                    float directionMagnitude = omegaMagnitudeSquared * inverseOmegaMagnitude;
+                    float dirMagInv = 1.0f / std::sqrt(dirMag2);
+                    float dirMag = dirMag2 * dirMagInv;
 
-                    float omegaMagnitude = float(2.0f) * std::atan2(directionMagnitude, deltaRotation.w) * inverseDeltaTime;
-                    return omegaDirection * (inverseOmegaMagnitude * omegaMagnitude);
+                    float omegaMag = 2.0f * std::atan2(dirMag, dq.w) * invdt;
+                    return dq.vector * (dirMagInv * omegaMag);
                 }
-
 
                 inline void invert(void)
                 {

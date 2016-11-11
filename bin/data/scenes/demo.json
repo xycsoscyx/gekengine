@@ -1,4 +1,5 @@
 {
+    "Seed": 0,
     "Templates": {
         "BasicPointLight": {
             "Transform": {
@@ -23,14 +24,14 @@
                 "coneFalloff": "random(0.5, 4.0)"
             },
             "Color": "(random(0, 1), random(0, 1), random(0, 1))",
-            "Spin": {}
+            "Spin": { }
         }
     },
     "Population": [
         {
-            "Transform": {},
+            "Transform": { },
             "Model": "sponza",
-            "Physical": {}
+            "Physical": { }
         },
         {
             "Name": "player",

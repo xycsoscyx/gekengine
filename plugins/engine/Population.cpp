@@ -155,6 +155,15 @@ namespace Gek
                     {
                         const JSON::Object worldNode = JSON::load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"));
 
+                        if (worldNode.has_member(L"Seed"))
+                        {
+                            Evaluator::setRandomSeed(worldNode.get(L"Seed", 0).as_uint());
+                        }
+                        else
+                        {
+                            Evaluator::setRandomSeed(std::time(nullptr));
+                        }
+
                         auto &templatesNode = worldNode[L"Templates"];
                         if (!templatesNode.is_object())
                         {

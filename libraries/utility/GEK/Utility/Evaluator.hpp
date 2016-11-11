@@ -18,6 +18,8 @@ namespace Gek
 {
     namespace Evaluator
     {
+        void setRandomSeed(uint32_t seed);
+
         void get(const wchar_t *expression, int32_t &result, int32_t defaultValue = 0);
         void get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue = 0);
         void get(const wchar_t *expression, float &result, float defaultValue = 0.0f);

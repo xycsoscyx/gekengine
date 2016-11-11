@@ -158,6 +158,11 @@ namespace Gek
         } } });
     }
 
+    void ShuntingYard::setRandomSeed(uint32_t seed)
+    {
+        mersineTwister.seed(seed);
+    }
+
     uint32_t ShuntingYard::getReturnSize(const TokenList &rpnTokenList)
     {
         return rpnTokenList.back().parameterCount;
