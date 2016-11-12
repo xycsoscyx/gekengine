@@ -37,7 +37,6 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
-        String rootPath;
         String currentModuleName((MAX_PATH + 1), L' ');
         GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
         currentModuleName.trimRight();
@@ -48,19 +47,14 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 
         std::experimental::filesystem::path fullModulePath(fullModuleName);
         fullModulePath.remove_filename();
-        fullModulePath.remove_filename();
+        String pluginPath(fullModulePath.wstring());
 
-        rootPath = fullModulePath.wstring();
-
+        SetCurrentDirectory(pluginPath);
         std::vector<String> searchPathList;
+        searchPathList.push_back(pluginPath);
 
-#ifdef _DEBUG
-        SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Debug"));
-        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Debug"));
-#else
-        SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Release"));
-        searchPathList.push_back(FileSystem::getFileName(rootPath, L"Release"));
-#endif
+        fullModulePath.remove_filename();
+        String rootPath(fullModulePath.wstring());
 
         WNDCLASS windowClass;
         windowClass.style = 0;

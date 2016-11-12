@@ -36,7 +36,7 @@
         {
             "Name": "player",
             "Transform": {
-                "position": "(0, 5, 0)",
+                "position": "(0, 20, 0)",
                 "rotation": "(0, pi/2, 0)"
             },
             "FirstPersonCamera": {

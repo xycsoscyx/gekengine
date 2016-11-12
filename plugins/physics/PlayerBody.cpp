@@ -164,7 +164,7 @@ namespace Gek
 				const auto &transformComponent = entity->getComponent<Components::Transform>();
 				const auto &playerComponent = entity->getComponent<Components::Player>();
 
-                setRestrainingDistance(0.0f);
+                setRestrainingDistance(0.01f);
                 setClimbSlope(Math::convertDegreesToRadians(45.0f));
 
                 const int stepCount = 12;
@@ -199,7 +199,7 @@ namespace Gek
 
                 // create the kinematic body
                 newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, transformComponent.getMatrix().data);
-                NewtonBodySetUserData(newtonBody, (Newton::Entity *)this);
+                NewtonBodySetUserData(newtonBody, static_cast<Newton::Entity *>(this));
 
                 // players must have weight, otherwise they are infinitely strong when they collide
                 NewtonCollision* const shape = NewtonBodyGetCollision(newtonBody);
@@ -234,13 +234,55 @@ namespace Gek
                 population->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
 			}
 
+            Math::Float3 calculateAverageOmega(const Math::SIMD::Quaternion &q0, const Math::SIMD::Quaternion &q1, float invdt) const
+            {
+                float scale = 1.0f;
+                if (q0.dot(q1) < 0.0f)
+                {
+                    scale = -1.0f;
+                }
+
+                Math::SIMD::Quaternion delta((q0 * scale).getInverse() * q1);
+                float dirMag2 = delta.vector.dot(delta.vector);
+                if (dirMag2	< (1.0e-5f * 1.0e-5f))
+                {
+                    return Math::Float3::Zero;
+                }
+
+                float dirMagInv = 1.0f / std::sqrt(dirMag2);
+                float dirMag = dirMag2 * dirMagInv;
+
+                float omegaMag = 2.0f * std::atan2(dirMag, delta.w) * invdt;
+                return delta.vector * (dirMagInv * omegaMag);
+            }
+
+            Math::SIMD::Quaternion integrateOmega(const Math::SIMD::Quaternion &_rotation, const Math::Float3& omega, float timestep) const
+            {
+                // this is correct
+                Math::SIMD::Quaternion rotation(_rotation);
+                float omegaMag2 = omega.dot(omega);
+                const float errAngle = 0.0125f * 3.141592f / 180.0f;
+                const float errAngle2 = errAngle * errAngle;
+                if (omegaMag2 > errAngle2)
+                {
+                    float invOmegaMag = 1.0f / std::sqrt(omegaMag2);
+                    Math::Float3 omegaAxis(omega * (invOmegaMag));
+                    float omegaAngle = invOmegaMag * omegaMag2 * timestep;
+                    Math::SIMD::Quaternion deltaRotation(Math::SIMD::Quaternion::createAngularRotation(omegaAxis, omegaAngle));
+                    rotation = rotation * deltaRotation;
+                    rotation *= (1.0f / std::sqrt(rotation.dot(rotation)));
+                }
+
+                return rotation;
+            }
+
             Math::Float3 calculateDesiredOmega(float headingAngle, float frameTime) const
             {
                 Math::SIMD::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
                 Math::SIMD::Quaternion playerRotation(matrix.getRotation());
                 Math::SIMD::Quaternion targetRotation(Math::SIMD::Quaternion::createYawRotation(headingAngle));
-                return playerRotation.getAverageOmega(targetRotation, 0.5f / frameTime);
+                return calculateAverageOmega(playerRotation, targetRotation, 0.5f / frameTime);
             }
 
             Math::Float3 calculateDesiredVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed, const Math::Float3& gravity, float frameTime) const
@@ -427,7 +469,7 @@ namespace Gek
                 NewtonBodyGetOmega(newtonBody, omega.data);
 
                 // integrate body angular velocity
-                auto integratedRotation(matrix.getRotation().getIntegratedOmega(omega, frameTime));
+                auto integratedRotation(integrateOmega(matrix.getRotation(), omega, frameTime));
                 matrix.setRotation(integratedRotation.getNormal());
 
                 // integrate linear velocity
@@ -597,8 +639,8 @@ namespace Gek
                 NewtonBodySetMatrix(newtonBody, matrix.data);
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                transformComponent.rotation = matrix.getRotation();
-                transformComponent.position = (matrix.translation + (matrix.ny * playerComponent.height));
+                transformComponent.setMatrix(matrix);
+                transformComponent.position += matrix.ny * playerComponent.height;
             }
 
 		private:

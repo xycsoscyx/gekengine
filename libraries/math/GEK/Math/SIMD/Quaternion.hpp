@@ -146,48 +146,6 @@ namespace Gek
                     return Quaternion(-x, -y, -z, w);
                 }
 
-                inline Quaternion getIntegratedOmega(const Float3 &omega, float timestep) const
-                {
-                    // this is correct
-                    Quaternion rotation(*this);
-                    float omegaMag2 = omega.dot(omega);
-                    const float errAngle = 0.0125f * 3.141592f / 180.0f;
-                    const float errAngle2 = errAngle * errAngle;
-                    if (omegaMag2 > errAngle2)
-                    {
-                        float invOmegaMag = 1.0f / std::sqrt(omegaMag2);
-                        Float3 omegaAxis(omega * (invOmegaMag));
-                        float omegaAngle = invOmegaMag * omegaMag2 * timestep;
-                        Quaternion deltaRotation(createAngularRotation(omegaAxis, omegaAngle));
-                        rotation = rotation * deltaRotation;
-                        rotation *= (1.0f / std::sqrt(rotation.dot(rotation)));
-                    }
-
-                    return rotation;
-                }
-
-                inline Float3 getAverageOmega(const Quaternion &q1, float invdt) const
-                {
-                    Quaternion q0(*this);
-                    if (q0.dot(q1) < 0.0f) 
-                    {
-                        q0 *= -1.0f;
-                    }
-
-                    Quaternion dq(q0.getInverse() * q1);
-                    float dirMag2 = dq.vector.dot(dq.vector);
-                    if (dirMag2	< (Epsilon * Epsilon))
-                    {
-                        return Float3::Zero;
-                    }
-
-                    float dirMagInv = 1.0f / std::sqrt(dirMag2);
-                    float dirMag = dirMag2 * dirMagInv;
-
-                    float omegaMag = 2.0f * std::atan2(dirMag, dq.w) * invdt;
-                    return dq.vector * (dirMagInv * omegaMag);
-                }
-
                 inline void invert(void)
                 {
                     x = -x;

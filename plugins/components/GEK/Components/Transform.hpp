@@ -39,6 +39,12 @@ namespace Gek
             {
                 return Math::SIMD::Float4x4(rotation, position);
             }
+
+            inline void setMatrix(const Math::SIMD::Float4x4 &matrix)
+            {
+                rotation = matrix.getRotation();
+                position = matrix.translation;
+            }
         };
     }; // namespace Components
 }; // namespace Gek

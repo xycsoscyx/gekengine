@@ -415,7 +415,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 		std::map<String, String> materialAlbedoMap;
 
-		std::function<bool(const wchar_t *)> findMaterials;
+        std::function<bool(const wchar_t *)> findMaterials;
 		findMaterials = [&](const wchar_t *fileName) -> bool
 		{
 			if (FileSystem::isDirectory(fileName))
@@ -426,22 +426,19 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			{
 				try
 				{
+                    String materialName(FileSystem::replaceExtension(fileName).getLower());
+                    materialName.replace((materialsPath + L"\\"), L"");
+
                     const JSON::Object materialNode = JSON::load(fileName);
                     auto &shaderNode = materialNode[L"shader"];
-                    if (shaderNode.is_object() && !shaderNode.empty())
+                    auto &passesNode = shaderNode[L"passes"];
+                    auto &solidNode = passesNode[L"solid"];
+                    auto &albedoNode = solidNode[L"albedo"];
+                    if (albedoNode.is_object())
 					{
-						for (auto &shaderPassNode : shaderNode.members())
+						if (albedoNode.has_member(L"file"))
 						{
-                            auto &albedoNode = shaderPassNode.value()[L"albedo"];
-                            if (albedoNode.is_object())
-							{
-								if (albedoNode.has_member(L"file"))
-								{
-									String materialName(FileSystem::replaceExtension(fileName).getLower());
-									materialName.replace((materialsPath + L"\\"), L"");
-									materialAlbedoMap[albedoNode[L"file"].as_string()] = materialName;
-								}
-							}
+							materialAlbedoMap[albedoNode[L"file"].as_string()] = materialName;
 						}
 					}
 				}

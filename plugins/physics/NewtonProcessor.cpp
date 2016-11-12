@@ -251,7 +251,8 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(newtonWorld);
 
-                NewtonUpdateAsync(newtonWorld, population->getFrameTime());
+                NewtonUpdate(newtonWorld, population->getFrameTime());
+                NewtonWaitForUpdateToFinish(newtonWorld);
             }
 
             // Newton::World
