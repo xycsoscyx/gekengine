@@ -9,6 +9,7 @@
 
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include <xmmintrin.h>
 
 namespace Gek
@@ -119,6 +120,11 @@ namespace Gek
                 {
                 }
 
+                inline Quaternion(const Math::Float4 &vector)
+                    : simd(_mm_loadu_ps(vector.data))
+                {
+                }
+
                 inline Quaternion &set(float x, float y, float z, float w)
                 {
                     simd = _mm_setr_ps(x, y, z, w);
@@ -200,11 +206,6 @@ namespace Gek
                     return data;
                 }
 
-                inline operator float *()
-                {
-                    return data;
-                }
-
                 inline Float3 operator * (const Float3 &vector) const
                 {
                     Float3 cross(2.0f * this->axis.cross(vector));
@@ -228,6 +229,12 @@ namespace Gek
                 inline Quaternion &operator = (const Quaternion &rotation)
                 {
                     simd = rotation.simd;
+                    return (*this);
+                }
+
+                inline Quaternion &operator = (const Math::Float4 &vector)
+                {
+                    simd = _mm_loadu_ps(vector.data);
                     return (*this);
                 }
 

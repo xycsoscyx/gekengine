@@ -200,11 +200,6 @@ namespace Gek
                 return data;
             }
 
-            operator TYPE *()
-            {
-                return data;
-            }
-
             // vector operations
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
             Vector3 &operator = (const Vector3<OTHER> &vector)

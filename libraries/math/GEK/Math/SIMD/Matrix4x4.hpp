@@ -383,12 +383,12 @@ namespace Gek
                     return rows[row];
                 }
 
-                inline operator const float *() const
+                inline operator const __m128 *() const
                 {
-                    return data;
+                    return simd;
                 }
 
-                inline operator float *()
+                inline operator const float *() const
                 {
                     return data;
                 }

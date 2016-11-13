@@ -128,11 +128,6 @@ namespace Gek
                 return data;
             }
 
-            operator TYPE *()
-            {
-                return data;
-            }
-
             void operator *= (const Matrix3x2 &matrix)
             {
                 (*this) = ((*this) * matrix);

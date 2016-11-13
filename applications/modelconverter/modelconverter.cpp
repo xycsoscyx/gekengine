@@ -172,7 +172,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                         mesh->mVertices[vertexIndex].x,
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
-                    vertex.position = (nodeTransform.rotate(vertex.position) * parameters.feetPerUnit);
+                    vertex.position = (nodeTransform.transform(vertex.position) * parameters.feetPerUnit);
                     boundingBox.extend(vertex.position);
 
 					if (parameters.fullModel)

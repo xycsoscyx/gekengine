@@ -9,6 +9,7 @@
 
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include <xmmintrin.h>
 #include <algorithm>
 #include <cstdint>
@@ -66,9 +67,14 @@ namespace Gek
 				}
 
                 inline Float4(const Float4 &vector)
-					: simd(vector.simd)
-				{
-				}
+                    : simd(vector.simd)
+                {
+                }
+
+                inline Float4(const Math::Float4 &vector)
+                    : simd(_mm_loadu_ps(vector.data))
+                {
+                }
 
                 inline Float4(const Float3 &xyz, float w)
 					: simd(_mm_setr_ps(xyz.x, xyz.y, xyz.z, w))
@@ -219,15 +225,15 @@ namespace Gek
 					return data[axis];
 				}
 
-                inline operator const float *() const
-				{
-					return data;
-				}
+                inline operator const __m128 () const
+                {
+                    return simd;
+                }
 
-                inline operator float *()
-				{
-					return data;
-				}
+                inline operator const float *() const
+                {
+                    return data;
+                }
 
                 inline operator const Float3 &() const
                 {
@@ -238,6 +244,12 @@ namespace Gek
                 inline Float4 &operator = (const Float4 &vector)
                 {
                     simd = vector.simd;
+                    return (*this);
+                }
+
+                inline Float4 &operator = (const Math::Float4 &vector)
+                {
+                    simd = _mm_loadu_ps(vector.data);
                     return (*this);
                 }
 

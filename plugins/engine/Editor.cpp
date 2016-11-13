@@ -29,7 +29,7 @@ namespace Gek
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;
             Math::Float3 position = Math::Float3::Zero;
-            Math::SIMD::Quaternion rotation = Math::SIMD::Quaternion(0.0f, 0.0f, 0.0f, 1.0f);
+            Math::SIMD::Quaternion rotation = Math::SIMD::Quaternion::Identity;
             bool moveForward = false;
             bool moveBackward = false;
             bool strafeLeft = false;
