@@ -681,7 +681,7 @@ namespace Gek
             switch (stream.peek())
             {
             case ')':
-                value = Math::SIMD::Quaternion::createEulerRotation(value.x, value.y, value.z);
+                value = Math::SIMD::Quaternion::FromEuler(value.x, value.y, value.z);
                 stream >> MustMatch(')');
                 break;
 

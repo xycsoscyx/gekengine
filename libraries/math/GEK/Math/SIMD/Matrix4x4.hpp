@@ -12,7 +12,6 @@
 #include "GEK\Math\SIMD\Vector4.hpp"
 #include "GEK\Math\SIMD\Quaternion.hpp"
 #include <xmmintrin.h>
-#include <type_traits>
 
 namespace Gek
 {
@@ -20,6 +19,7 @@ namespace Gek
     {
         namespace SIMD
         {
+            __declspec(align(16))
             struct Float4x4
             {
             public:
@@ -28,87 +28,34 @@ namespace Gek
             public:
                 union
                 {
-                    struct { float data[16]; };
-                    struct { float table[4][4]; };
-                    struct { Float4 rows[4]; };
                     struct { __m128 simd[4]; };
-
-                    struct
-                    {
-                        float _11, _12, _13, _14;
-                        float _21, _22, _23, _24;
-                        float _31, _32, _33, _34;
-                        float _41, _42, _43, _44;
-                    };
-
-                    struct
+                    const struct { float data[16]; };
+                    const struct { float table[4][4]; };
+                    const struct { Float4 rows[4]; };
+                    const struct { Float4 rx, ry, rz, rw; };
+                    const struct
                     {
                         Float4 rx;
                         Float4 ry;
                         Float4 rz;
                         union
                         {
-                            struct
-                            {
-                                Float4 rw;
-                            };
-
-                            struct
-                            {
-                                Float3 translation;
-                                float tw;
-                            };
+                            struct { Float4 rw; };
+                            struct { Float4 translation; };
                         };
                     };
 
-                    struct
+                    const struct
                     {
-                        struct
-                        {
-                            Float3 nx;
-                            float nxw;
-                        };
-
-                        struct
-                        {
-                            Float3 ny;
-                            float nyw;
-                        };
-
-                        struct
-                        {
-                            Float3 nz;
-                            float nzw;
-                        };
-
-                        struct
-                        {
-                            Float3 translation;
-                            float tw;
-                        };
-                    };
-
-                    struct
-                    {
-                        struct
-                        {
-                            struct
-                            {
-                                Float3 n;
-                                float w;
-                            } normals[3];
-                        };
-
-                        struct
-                        {
-                            Float3 translation;
-                            float tw;
-                        };
+                        float _11, _12, _13, _14;
+                        float _21, _22, _23, _24;
+                        float _31, _32, _33, _34;
+                        float _41, _42, _43, _44;
                     };
                 };
 
             public:
-                inline static Float4x4 createScaling(const Float3 &scale, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 FromScale(const Float3 &scale, const Float3 &translation = Math::Float3::Zero)
                 {
                     return Float4x4(
                         scale.x, 0.0f, 0.0f, 0.0f,
@@ -117,7 +64,7 @@ namespace Gek
                         translation.x, translation.y, translation.z, 1.0f);
                 }
 
-                inline static Float4x4 createAngularRotation(const Float3 &axis, float radians, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 FromAngular(const Float3 &axis, float radians, const Float3 &translation = Math::Float3::Zero)
                 {
                     // do the trig
                     float cosAngle = cos(radians);
@@ -132,7 +79,7 @@ namespace Gek
                         translation.x, translation.y, translation.z, 1.0f);
                 }
 
-                inline static Float4x4 createEulerRotation(float pitch, float yaw, float roll, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 FromEuler(float pitch, float yaw, float roll, const Float3 &translation = Math::Float3::Zero)
                 {
                     float cosPitch(std::cos(pitch));
                     float sinPitch(std::sin(pitch));
@@ -148,7 +95,7 @@ namespace Gek
                         translation.x, translation.y, translation.z, 1.0f);
                 }
 
-                inline static Float4x4 createPitchRotation(float radians, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 FromPitch(float radians, const Float3 &translation = Math::Float3::Zero)
                 {
                     float cosAngle(std::cos(radians));
                     float sinAngle(std::sin(radians));
@@ -160,7 +107,7 @@ namespace Gek
                         translation.x, translation.y, translation.z, 1.0f);
                 }
 
-                inline static Float4x4 createYawRotation(float radians, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 FromYaw(float radians, const Float3 &translation = Math::Float3::Zero)
                 {
                     float cosAngle(std::cos(radians));
                     float sinAngle(std::sin(radians));
@@ -172,7 +119,7 @@ namespace Gek
                         translation.x, translation.y, translation.z, 1.0f);
                 }
 
-                inline static Float4x4 createRollRotation(float radians, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 FromRoll(float radians, const Float3 &translation = Math::Float3::Zero)
                 {
                     float cosAngle(std::cos(radians));
                     float sinAngle(std::sin(radians));
@@ -185,7 +132,7 @@ namespace Gek
                 }
 
                 // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205347(v=vs.85).aspx
-                inline static Float4x4 createOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
+                inline static Float4x4 MakeOrthographic(float left, float top, float right, float bottom, float nearClip, float farClip)
                 {
                     return Float4x4(
                         (2.0f / (right - left)), 0.0f, 0.0f, 0.0f,
@@ -195,7 +142,7 @@ namespace Gek
                 }
 
                 // https://msdn.microsoft.com/en-us/library/windows/desktop/bb205350(v=vs.85).aspx
-                inline static Float4x4 createPerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
+                inline static Float4x4 MakePerspective(float fieldOfView, float aspectRatio, float nearClip, float farClip)
                 {
                     float yScale(1.0f / std::tan(fieldOfView * 0.5f));
                     float xScale(yScale / aspectRatio);
@@ -208,7 +155,7 @@ namespace Gek
                         0.0f, 0.0f, ((-nearClip * farClip) / denominator), 0.0f);
                 }
 
-                inline static Float4x4 createLookAt(const Float3 &source, const Float3 &target, const Float3 &worldUpVector, const Float3 &translation = Math::Float3::Zero)
+                inline static Float4x4 MakeTargeted(const Float3 &source, const Float3 &target, const Float3 &worldUpVector, const Float3 &translation = Math::Float3::Zero)
                 {
                     Float3 forward((target - source).getNormal());
                     Float3 left(worldUpVector.cross(forward).getNormal());

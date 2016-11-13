@@ -165,7 +165,7 @@ namespace Gek
 				const auto &playerComponent = entity->getComponent<Components::Player>();
 
                 setRestrainingDistance(0.01f);
-                setClimbSlope(Math::convertDegreesToRadians(45.0f));
+                setClimbSlope(Math::DegreesToRadians(45.0f));
 
                 const int stepCount = 12;
                 Math::Float3 convexPoints[2][stepCount];
@@ -175,7 +175,7 @@ namespace Gek
                 Math::Float3 p1(playerComponent.innerRadius, playerComponent.height, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createYawRotation(step * 2.0f * Math::Pi / stepCount));
+                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::FromYaw(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(p0);
                     convexPoints[1][step] = rotation.rotate(p1);
                 }
@@ -185,7 +185,7 @@ namespace Gek
                 // create the outer thick cylinder
                 Math::SIMD::Float4x4 outerShapeMatrix(Math::SIMD::Float4x4::Identity);
                 float capsuleHigh = playerComponent.height - playerComponent.stairStep;
-                outerShapeMatrix.translation = outerShapeMatrix.ny * (capsuleHigh * 0.5f + playerComponent.stairStep);
+                outerShapeMatrix.translation = (outerShapeMatrix.ry.xyz * (capsuleHigh * 0.5f + playerComponent.stairStep));
 
                 NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.25f, 0.5f, 0, outerShapeMatrix.data);
                 NewtonCollisionSetScale(bodyCapsule, playerComponent.outerRadius * 4.0f, capsuleHigh, playerComponent.outerRadius * 4.0f);
@@ -214,7 +214,7 @@ namespace Gek
                 Math::Float3 q1(castRadius, castHeight, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::createYawRotation(step * 2.0f * Math::Pi / stepCount));
+                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::FromYaw(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(q0);
                     convexPoints[1][step] = rotation.rotate(q1);
                 }
@@ -243,7 +243,7 @@ namespace Gek
                 }
 
                 Math::SIMD::Quaternion delta((q0 * scale).getInverse() * q1);
-                float dirMag2 = delta.vector.dot(delta.vector);
+                float dirMag2 = delta.axis.dot(delta.axis);
                 if (dirMag2	< (1.0e-5f * 1.0e-5f))
                 {
                     return Math::Float3::Zero;
@@ -253,7 +253,7 @@ namespace Gek
                 float dirMag = dirMag2 * dirMagInv;
 
                 float omegaMag = 2.0f * std::atan2(dirMag, delta.w) * invdt;
-                return delta.vector * (dirMagInv * omegaMag);
+                return delta.axis * (dirMagInv * omegaMag);
             }
 
             Math::SIMD::Quaternion integrateOmega(const Math::SIMD::Quaternion &_rotation, const Math::Float3& omega, float timestep) const
@@ -268,7 +268,7 @@ namespace Gek
                     float invOmegaMag = 1.0f / std::sqrt(omegaMag2);
                     Math::Float3 omegaAxis(omega * (invOmegaMag));
                     float omegaAngle = invOmegaMag * omegaMag2 * timestep;
-                    Math::SIMD::Quaternion deltaRotation(Math::SIMD::Quaternion::createAngularRotation(omegaAxis, omegaAngle));
+                    Math::SIMD::Quaternion deltaRotation(Math::SIMD::Quaternion::FromAngular(omegaAxis, omegaAngle));
                     rotation = rotation * deltaRotation;
                     rotation *= (1.0f / std::sqrt(rotation.dot(rotation)));
                 }
@@ -281,7 +281,7 @@ namespace Gek
                 Math::SIMD::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
                 Math::SIMD::Quaternion playerRotation(matrix.getRotation());
-                Math::SIMD::Quaternion targetRotation(Math::SIMD::Quaternion::createYawRotation(headingAngle));
+                Math::SIMD::Quaternion targetRotation(Math::SIMD::Quaternion::FromYaw(headingAngle));
                 return calculateAverageOmega(playerRotation, targetRotation, 0.5f / frameTime);
             }
 
@@ -297,15 +297,15 @@ namespace Gek
                 if ((verticalSpeed <= 0.0f) && (groundNormal.dot(groundNormal)) > 0.0f)
                 {
                     // plane is supported by a ground plane, apply the player input velocity
-                    if (groundNormal.dot(matrix.ny) >= maximumSlope)
+                    if (groundNormal.dot(matrix.ry.xyz) >= maximumSlope)
                     {
                         // player is in a legal slope, he is in full control of his movement
                         velocity = (gravity * frameTime);
-                        velocity += (matrix.nx * lateralSpeed);
-                        velocity += (matrix.ny * verticalSpeed);
-                        velocity += (matrix.nz * forwardSpeed);
-                        velocity += (groundVelocity - matrix.ny * matrix.ny.dot(groundVelocity));
-                        velocity += (matrix.ny * currentVelocity.dot(matrix.ny));
+                        velocity += (matrix.rx.xyz * lateralSpeed);
+                        velocity += (matrix.ry.xyz * verticalSpeed);
+                        velocity += (matrix.rz.xyz * forwardSpeed);
+                        velocity += (groundVelocity - matrix.ry.xyz * matrix.ry.xyz.dot(groundVelocity));
+                        velocity += (matrix.ry.xyz * currentVelocity.dot(matrix.ry.xyz));
 
                         float speedLimit = (forwardSpeed * forwardSpeed) + (lateralSpeed * lateralSpeed) + (verticalSpeed * verticalSpeed) + groundVelocity.dot(groundVelocity) + 0.1f;
                         float speedMagnitude = velocity.dot(velocity);
@@ -318,7 +318,7 @@ namespace Gek
                     {
                         // player is in an illegal ramp, he slides down hill an loses control of his movement 
                         velocity = currentVelocity;
-                        velocity += (matrix.ny * verticalSpeed);
+                        velocity += (matrix.ry.xyz * verticalSpeed);
                         velocity += (gravity * frameTime);
                     }
 
@@ -332,7 +332,7 @@ namespace Gek
                 {
                     // player is on free fall, only apply the gravity
                     velocity = currentVelocity;
-                    velocity += (matrix.ny * verticalSpeed);
+                    velocity += (matrix.ry.xyz * verticalSpeed);
                     velocity += (gravity * frameTime);
                 }
 
@@ -351,7 +351,7 @@ namespace Gek
                 if (castCount && (castDistance <= 1.0f))
                 {
                     touchingSurface = true;
-                    Math::Float3 supportPoint(castMatrix.translation + (target - castMatrix.translation) * castDistance);
+                    Math::Float3 supportPoint((target - castMatrix.translation) * castDistance + castMatrix.translation);
                     groundNormal.set(information.m_normal[0], information.m_normal[1], information.m_normal[2]);
                     NewtonBodyGetPointVelocity(information.m_hitBody, supportPoint.data, groundVelocity.data);
                     position = supportPoint;
@@ -491,6 +491,7 @@ namespace Gek
                 upConstratint.m_normal[2] = 0.0f;
                 upConstratint.m_normal[3] = 0.0f;
 
+                Math::Float3 position(matrix.translation);
                 for (int integration = 0; (integration < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedRemainingTime > 1.0e-5f); integration++)
                 {
                     if (velocity.dot(velocity) < 1.0e-6f)
@@ -500,7 +501,7 @@ namespace Gek
 
                     float timeToImpact;
                     NewtonWorldConvexCastReturnInfo currentContactInformation[PLAYER_CONTROLLER_MAX_CONTACTS];
-                    Math::Float3 targetPosition(matrix.translation + (velocity * frameTime));
+                    Math::Float3 targetPosition((velocity * frameTime) + position);
                     int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, targetPosition.data, newtonUpperBodyShape, &timeToImpact, &castFilterData, ConvexCastPreFilter::preFilter , currentContactInformation, sizeof(currentContactInformation) / sizeof(currentContactInformation[0]), threadHandle);
                     if (contactCount)
                     {
@@ -509,10 +510,10 @@ namespace Gek
 
                     if (contactCount)
                     {
-                        matrix.translation += velocity * (timeToImpact * frameTime);
+                        position += velocity * (timeToImpact * frameTime);
                         if (timeToImpact > 0.0f)
                         {
-                            matrix.translation -= velocity * (D_PLAYER_CONTACT_SKIN_THICKNESS / std::sqrt(velocity.dot(velocity)));
+                            position -= velocity * (D_PLAYER_CONTACT_SKIN_THICKNESS / std::sqrt(velocity.dot(velocity)));
                         }
 
                         normalizedRemainingTime -= timeToImpact;
@@ -538,9 +539,9 @@ namespace Gek
                         int castCount = 0;
                         if (touchingSurface)
                         {
-                            upConstratint.m_point[0] = matrix.translation.x;
-                            upConstratint.m_point[1] = matrix.translation.y;
-                            upConstratint.m_point[2] = matrix.translation.z;
+                            upConstratint.m_point[0] = position.x;
+                            upConstratint.m_point[1] = position.y;
+                            upConstratint.m_point[2] = position.z;
                             upConstratint.m_point[3] = 0.0f;
 
                             speed[castCount] = 0.0f;
@@ -603,7 +604,7 @@ namespace Gek
                         if (velocityMagnitude < 1.0e-6f)
                         {
                             float advanceTime = std::min(descreteTimeStep, normalizedRemainingTime * frameTime);
-                            matrix.translation += velocity * advanceTime;
+                            position += velocity * advanceTime;
                             normalizedRemainingTime -= advanceTime / frameTime;
                         }
 
@@ -612,7 +613,7 @@ namespace Gek
                     }
                     else
                     {
-                        matrix.translation = targetPosition;
+                        position = targetPosition;
                         break;
                     }
                 }
@@ -623,16 +624,18 @@ namespace Gek
                 Math::SIMD::Float4x4 supportMatrix(matrix);
                 if (touchingSurface)
                 {
-                    float step = std::abs(matrix.ny.dot(velocity * frameTime));
+                    float step = std::abs(matrix.ry.xyz.dot(velocity * frameTime));
                     float castDistance = (groundNormal.dot(groundNormal) > 0.0f) ? playerComponent.stairStep : step;
-                    Math::Float3 target(matrix.translation - matrix.ny * (castDistance * 2.0f));
-                    updateGroundPlane(matrix.translation, supportMatrix, target, threadHandle);
+                    Math::Float3 target(matrix.translation - matrix.ry.xyz * (castDistance * 2.0f));
+                    updateGroundPlane(position, supportMatrix, target, threadHandle);
                 }
                 else
                 {
                     Math::Float3 target(matrix.translation);
-                    updateGroundPlane(matrix.translation, supportMatrix, target, threadHandle);
+                    updateGroundPlane(position, supportMatrix, target, threadHandle);
                 }
+
+                matrix.translation = position;
 
                 // set player velocity, position and orientation
                 NewtonBodySetVelocity(newtonBody, velocity.data);
@@ -640,7 +643,7 @@ namespace Gek
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.setMatrix(matrix);
-                transformComponent.position += matrix.ny * playerComponent.height;
+                transformComponent.position += matrix.ry.xyz * playerComponent.height;
             }
 
 		private:

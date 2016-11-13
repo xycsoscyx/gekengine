@@ -20,7 +20,7 @@ namespace jsoncons
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<float>(object.as_cstring());
+                return Gek::Evaluator::Get<float>(object.as_cstring());
             }
             else
             {
@@ -41,7 +41,7 @@ namespace jsoncons
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::Vector2<TYPE>>(object.as_cstring());
+                return Gek::Evaluator::Get<Gek::Math::Vector2<TYPE>>(object.as_cstring());
             }
 
             return Gek::Math::Vector2<TYPE>::Zero;
@@ -60,7 +60,7 @@ namespace jsoncons
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::Vector3<TYPE>>(object.as_cstring());
+                return Gek::Evaluator::Get<Gek::Math::Vector3<TYPE>>(object.as_cstring());
             }
 
             return Gek::Math::Vector3<TYPE>::Zero;
@@ -79,7 +79,7 @@ namespace jsoncons
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::Vector4<TYPE>>(object.as_cstring());
+                return Gek::Evaluator::Get<Gek::Math::Vector4<TYPE>>(object.as_cstring());
             }
 
             return Gek::Math::Vector4<TYPE>::Zero;
@@ -98,7 +98,7 @@ namespace jsoncons
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::SIMD::Float4>(object.as_cstring());
+                return Gek::Evaluator::Get<Gek::Math::SIMD::Float4>(object.as_cstring());
             }
 
             return Gek::Math::SIMD::Float4::Zero;
@@ -117,7 +117,7 @@ namespace jsoncons
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::get<Gek::Math::SIMD::Quaternion>(object.as_cstring());
+                return Gek::Evaluator::Get<Gek::Math::SIMD::Quaternion>(object.as_cstring());
             }
 
             return Gek::Math::SIMD::Quaternion::Identity;
@@ -137,7 +137,7 @@ namespace Gek
         using Object = jsoncons::wjson;
         using Member = Object::member_type;
 
-        Object load(const wchar_t *fileName);
-        void save(const wchar_t *fileName, const Object &object);
+        Object Load(const wchar_t *fileName);
+        void Save(const wchar_t *fileName, const Object &object);
 	}; // namespace JSON
 }; // namespace Gek

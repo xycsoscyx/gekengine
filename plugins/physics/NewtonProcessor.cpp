@@ -266,7 +266,7 @@ namespace Gek
             {
                 uint32_t surfaceIndex = 0;
 
-                auto hash = getHash(surfaceName);
+                auto hash = GetHash(surfaceName);
                 auto surfaceSearch = surfaceIndexMap.find(hash);
                 if (surfaceSearch != std::end(surfaceIndexMap))
                 {
@@ -277,7 +277,7 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"));
+                        const JSON::Object materialNode = JSON::Load(getContext()->getFileName(L"data\\materials", surfaceName).append(L".json"));
 
                         auto &surfaceNode = materialNode.get(L"surface");
                         if (surfaceNode.is_object())
@@ -416,7 +416,7 @@ namespace Gek
 
                 NewtonCollision *newtonCollision = nullptr;
 
-                auto hash = getHash(shapeComponent.type, shapeComponent.parameters);
+                auto hash = GetHash(shapeComponent.type, shapeComponent.parameters);
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {
@@ -431,44 +431,44 @@ namespace Gek
 
                     if (shapeComponent.type.compareNoCase(L"cube") == 0)
                     {
-                        Math::Float3 size(Evaluator::get<Math::Float3>(shapeComponent.parameters));
+                        Math::Float3 size(Evaluator::Get<Math::Float3>(shapeComponent.parameters));
                         newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"sphere") == 0)
                     {
-                        float size = Evaluator::get<float>(shapeComponent.parameters);
+                        float size = Evaluator::Get<float>(shapeComponent.parameters);
                         newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"cone") == 0)
                     {
-                        Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
+                        Math::Float2 size(Evaluator::Get<Math::Float2>(shapeComponent.parameters));
                         newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"capsule") == 0)
                     {
-                        Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
+                        Math::Float2 size(Evaluator::Get<Math::Float2>(shapeComponent.parameters));
                         newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"cylinder") == 0)
                     {
-                        Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
+                        Math::Float2 size(Evaluator::Get<Math::Float2>(shapeComponent.parameters));
                         newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     /*
                     else if (shapeComponent.type.compareNoCase(L"tapered_capsule") == 0)
                     {
-                    Math::Float3 size(Evaluator::get<Math::Float3>(shapeComponent.parameters));
+                    Math::Float3 size(Evaluator::Get<Math::Float3>(shapeComponent.parameters));
                     newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     else if (shapeComponent.type.compareNoCase(L"tapered_cylinder") == 0)
                     {
-                    Math::Float3 size(Evaluator::get<Math::Float3>(shapeComponent.parameters));
+                    Math::Float3 size(Evaluator::Get<Math::Float3>(shapeComponent.parameters));
                     newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, hash, Math::SIMD::Float4x4::Identity.data);
                     }
                     */
                     else if (shapeComponent.type.compareNoCase(L"chamfer_cylinder") == 0)
                     {
-                        Math::Float2 size(Evaluator::get<Math::Float2>(shapeComponent.parameters));
+                        Math::Float2 size(Evaluator::Get<Math::Float2>(shapeComponent.parameters));
                         newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::SIMD::Float4x4::Identity.data);
                     }
 
@@ -487,7 +487,7 @@ namespace Gek
             {
                 NewtonCollision *newtonCollision = nullptr;
 
-                auto hash = getHash(modelComponent.name);
+                auto hash = GetHash(modelComponent.name);
                 auto collisionSearch = collisionMap.find(hash);
                 if (collisionSearch != std::end(collisionMap))
                 {
@@ -501,7 +501,7 @@ namespace Gek
                     collisionMap[hash] = nullptr;
 
 					std::vector<uint8_t> buffer;
-					FileSystem::load(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".bin"), buffer);
+					FileSystem::Load(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".bin"), buffer);
 
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")

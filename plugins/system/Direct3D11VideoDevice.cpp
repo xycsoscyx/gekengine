@@ -2586,9 +2586,9 @@ namespace Gek
                 GEK_REQUIRE(d3dDevice);
 
                 std::vector<uint8_t> buffer;
-                FileSystem::load(fileName, buffer);
+                FileSystem::Load(fileName, buffer);
 
-                String extension(FileSystem::getExtension(fileName));
+                String extension(FileSystem::GetExtension(fileName));
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension.compareNoCase(L".dds") == 0)
                 {

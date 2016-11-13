@@ -26,7 +26,6 @@ namespace Gek
             : matrix(matrix)
             , halfsize(box.getSize() * 0.5f)
         {
-            this->matrix.translation += box.getCenter();
         }
 
         OrientedBox &OrientedBox::operator = (const OrientedBox &box)
@@ -38,9 +37,9 @@ namespace Gek
         int OrientedBox::getPosition(const Plane &plane) const
         {
             float distance = plane.getDistance(matrix.translation);
-            float radiusX = std::abs(matrix.nx.dot(plane.normal) * halfsize.x);
-            float radiusY = std::abs(matrix.ny.dot(plane.normal) * halfsize.y);
-            float radiusZ = std::abs(matrix.nz.dot(plane.normal) * halfsize.z);
+            float radiusX = std::abs(matrix.rx.xyz.dot(plane.normal) * halfsize.x);
+            float radiusY = std::abs(matrix.ry.xyz.dot(plane.normal) * halfsize.y);
+            float radiusZ = std::abs(matrix.rz.xyz.dot(plane.normal) * halfsize.z);
             float radius = (radiusX + radiusY + radiusZ);
             if (distance < -radius)
             {

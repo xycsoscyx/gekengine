@@ -30,27 +30,27 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		fullModulePath.remove_filename();
 		rootPath = fullModulePath.append(L"Data").wstring();
 
-		String texturesPath(FileSystem::getFileName(rootPath, L"Textures").getLower());
-		String materialsPath(FileSystem::getFileName(rootPath, L"Materials").getLower());
+		String texturesPath(FileSystem::GetFileName(rootPath, L"Textures").getLower());
+		String materialsPath(FileSystem::GetFileName(rootPath, L"Materials").getLower());
 
 		std::function<bool(const wchar_t *)> findMaterials;
 		findMaterials = [&](const wchar_t *setDirectoryName) -> bool
 		{
-			if (FileSystem::isDirectory(setDirectoryName))
+			if (FileSystem::IsDirectory(setDirectoryName))
 			{
 				printf("Set Found: %S\r\n", setDirectoryName);
-				FileSystem::find(setDirectoryName, [&](const wchar_t *setTexturePath) -> bool
+				FileSystem::Find(setDirectoryName, [&](const wchar_t *setTexturePath) -> bool
 				{
-					if (FileSystem::isDirectory(setTexturePath))
+					if (FileSystem::IsDirectory(setTexturePath))
 					{
 						String materialName(setTexturePath);
 						materialName.replace((texturesPath + L"\\"), L"");
 						printf("> Material Found: %S\r\n", materialName.c_str());
 
 						JSON::Object solidNode;
-						FileSystem::find(setTexturePath, [&](const wchar_t *textureFileName) -> bool
+						FileSystem::Find(setTexturePath, [&](const wchar_t *textureFileName) -> bool
 						{
-							String textureName(FileSystem::replaceExtension(textureFileName).getLower());
+							String textureName(FileSystem::ReplaceExtension(textureFileName).getLower());
 							textureName.replace((texturesPath + L"\\"), L"");
 							textureName.toLower();
 
@@ -100,15 +100,15 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 							std::function<void(const wchar_t *)> createParent;
 							createParent = [&](const wchar_t *directory) -> void
 							{
-								if (!FileSystem::isDirectory(directory))
+								if (!FileSystem::IsDirectory(directory))
 								{
-									createParent(FileSystem::getDirectory(directory));
+									createParent(FileSystem::GetDirectory(directory));
 									CreateDirectory(directory, nullptr);
 								}
 							};
 
-							String materialPath(FileSystem::getFileName(materialsPath, materialName).append(L".json"));
-							createParent(FileSystem::getDirectory(materialPath));
+							String materialPath(FileSystem::GetFileName(materialsPath, materialName).append(L".json"));
+							createParent(FileSystem::GetDirectory(materialPath));
 
 							JSON::Object shaderNode;
 							shaderNode.set(L"solid", solidNode);
@@ -119,7 +119,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 							JSON::Object materialNode;
 							materialNode.set(L"shader", passesNode);
-                            JSON::save(materialPath, materialNode);
+                            JSON::Save(materialPath, materialNode);
 						}
 					}
 
@@ -130,7 +130,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			return true;
 		};
 
-		FileSystem::find(texturesPath, findMaterials);
+		FileSystem::Find(texturesPath, findMaterials);
     }
     catch (const std::exception &exception)
     {

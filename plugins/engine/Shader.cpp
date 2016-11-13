@@ -112,7 +112,7 @@ namespace Gek
 
                 auto backBuffer = videoDevice->getBackBuffer();
 
-                const JSON::Object shaderNode = JSON::load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
+                const JSON::Object shaderNode = JSON::Load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
                 if (!shaderNode.has_member(L"passes"))
                 {
                     throw MissingParameter("Shader requires pass list");
@@ -182,21 +182,21 @@ namespace Gek
                         break;
 
                     case BindType::Int:
-                        result = Evaluator::get<int32_t>(value);
+                        result = Evaluator::Get<int32_t>(value);
                         break;
 
                     case BindType::UInt:
-                        result = Evaluator::get<uint32_t>(value);
+                        result = Evaluator::Get<uint32_t>(value);
                         break;
 
                     case BindType::Float:
-                        result = Evaluator::get<float>(value);
+                        result = Evaluator::Get<float>(value);
                         break;
 
                     case BindType::Int2:
                         if (true)
                         {
-                            Math::Float2 vector = Evaluator::get<Math::Float2>(value);
+                            Math::Float2 vector = Evaluator::Get<Math::Float2>(value);
                             result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
                             break;
                         }
@@ -204,19 +204,19 @@ namespace Gek
                     case BindType::UInt2:
                         if (true)
                         {
-                            Math::Float2 vector = Evaluator::get<Math::Float2>(value);
+                            Math::Float2 vector = Evaluator::Get<Math::Float2>(value);
                             result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
                             break;
                         }
 
                     case BindType::Float2:
-                        result = Evaluator::get<Math::Float2>(value);
+                        result = Evaluator::Get<Math::Float2>(value);
                         break;
 
                     case BindType::Int3:
                         if (true)
                         {
-                            Math::Float3 vector = Evaluator::get<Math::Float3>(value);
+                            Math::Float3 vector = Evaluator::Get<Math::Float3>(value);
                             result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
                             break;
                         }
@@ -224,19 +224,19 @@ namespace Gek
                     case BindType::UInt3:
                         if (true)
                         {
-                            Math::Float3 vector = Evaluator::get<Math::Float3>(value);
+                            Math::Float3 vector = Evaluator::Get<Math::Float3>(value);
                             result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
                             break;
                         }
 
                     case BindType::Float3:
-                        result = Evaluator::get<Math::Float3>(value);
+                        result = Evaluator::Get<Math::Float3>(value);
                         break;
 
                     case BindType::Int4:
                         if (true)
                         {
-                            Math::SIMD::Float4 vector = Evaluator::get<Math::SIMD::Float4>(value);
+                            Math::SIMD::Float4 vector = Evaluator::Get<Math::SIMD::Float4>(value);
                             result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
                             break;
                         }
@@ -244,13 +244,13 @@ namespace Gek
                     case BindType::UInt4:
                         if (true)
                         {
-                            Math::SIMD::Float4 vector = Evaluator::get<Math::SIMD::Float4>(value);
+                            Math::SIMD::Float4 vector = Evaluator::Get<Math::SIMD::Float4>(value);
                             result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
                             break;
                         }
 
                     case BindType::Float4:
-                        result = Evaluator::get<Math::SIMD::Float4>(value);
+                        result = Evaluator::Get<Math::SIMD::Float4>(value);
                         break;
                     };
 
@@ -994,7 +994,7 @@ namespace Gek
                     }
 
                     String entryPoint(passNode.get(L"entry").as_string());
-                    String name(FileSystem::getFileName(shaderName, passNode.get(L"program").as_cstring()).append(L".hlsl"));
+                    String name(FileSystem::GetFileName(shaderName, passNode.get(L"program").as_cstring()).append(L".hlsl"));
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }

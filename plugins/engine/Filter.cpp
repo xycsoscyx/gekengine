@@ -86,7 +86,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                const JSON::Object filterNode = JSON::load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"));
+                const JSON::Object filterNode = JSON::Load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"));
                 if (!filterNode.has_member(L"passes"))
                 {
                     throw MissingParameter("Shader requiredspass list");
@@ -150,25 +150,25 @@ namespace Gek
                     case BindType::Int:
                     case BindType::UInt:
                     case BindType::Float:
-                        result = Evaluator::get<float>(value);
+                        result = Evaluator::Get<float>(value);
                         break;
 
                     case BindType::Int2:
                     case BindType::UInt2:
                     case BindType::Float2:
-                        result = Evaluator::get<Math::Float2>(value);
+                        result = Evaluator::Get<Math::Float2>(value);
                         break;
 
                     case BindType::Int3:
                     case BindType::UInt3:
                     case BindType::Float3:
-                        result = Evaluator::get<Math::Float3>(value);
+                        result = Evaluator::Get<Math::Float3>(value);
                         break;
 
                     case BindType::Int4:
                     case BindType::UInt4:
                     case BindType::Float4:
-                        result = Evaluator::get<Math::SIMD::Float4>(value);
+                        result = Evaluator::Get<Math::SIMD::Float4>(value);
                         break;
                     };
 
@@ -658,7 +658,7 @@ namespace Gek
                     }
 
                     String entryPoint(passNode.get(L"entry").as_string());
-                    String name(FileSystem::getFileName(filterName, passNode.get(L"program").as_cstring()).append(L".hlsl"));
+                    String name(FileSystem::GetFileName(filterName, passNode.get(L"program").as_cstring()).append(L".hlsl"));
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }

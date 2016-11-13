@@ -24,7 +24,7 @@ namespace Gek
 
             void load(const JSON::Object &componentData)
             {
-                torque = Evaluator::get<Math::Float3>(L"(random(-pi,pi), random(-pi,pi), random(-pi,pi))");
+                torque = Evaluator::Get<Math::Float3>(L"(random(-pi,pi), random(-pi,pi), random(-pi,pi))");
             }
         };
     }; // namespace Components
@@ -76,7 +76,7 @@ namespace Gek
 
             population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
             {
-                Math::SIMD::Quaternion rotation(Math::SIMD::Quaternion::createEulerRotation((population->getFrameTime() * spinComponent.torque.x),
+                Math::SIMD::Quaternion rotation(Math::SIMD::Quaternion::FromEuler((population->getFrameTime() * spinComponent.torque.x),
                     (population->getFrameTime() * spinComponent.torque.y),
                     (population->getFrameTime() * spinComponent.torque.z)));
                 transformComponent.rotation *= rotation;

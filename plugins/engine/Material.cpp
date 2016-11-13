@@ -28,7 +28,7 @@ namespace Gek
             {
                 GEK_REQUIRE(resources);
 
-                const JSON::Object materialNode = JSON::load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"));
+                const JSON::Object materialNode = JSON::Load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"));
 
                 auto &shaderNode = materialNode[L"shader"];
                 if (shaderNode.is_object())

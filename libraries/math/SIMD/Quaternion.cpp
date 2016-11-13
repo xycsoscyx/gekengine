@@ -1,7 +1,4 @@
 #include "GEK\Math\SIMD\Quaternion.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
-#include "GEK\Math\Common.hpp"
-#include <algorithm>
 
 namespace Gek
 {
@@ -9,8 +6,8 @@ namespace Gek
     {
         namespace SIMD
         {
-            const Quaternion Quaternion::Identity(0.0f, 0.0f, 0.0f, 1.0f);
-            const Quaternion Quaternion::Zero(0.0f, 0.0f, 0.0f, 0.0f);
+            const Quaternion Quaternion::Identity = _mm_setr_ps(0.0f, 0.0f, 0.0f, 1.0f);
+            const Quaternion Quaternion::Zero = _mm_setzero_ps();
         }; // namespace SIMD
     }; // namespace Math
 }; // namespace Gek

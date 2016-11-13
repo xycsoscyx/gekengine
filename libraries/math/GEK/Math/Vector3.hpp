@@ -8,7 +8,6 @@
 #pragma once
 
 #include "GEK\Math\Vector2.hpp"
-#include <type_traits>
 #include <cstdint>
 #include <cmath>
 

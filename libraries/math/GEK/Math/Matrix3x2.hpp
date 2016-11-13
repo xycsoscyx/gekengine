@@ -8,7 +8,6 @@
 #pragma once
 
 #include "GEK\Math\Vector2.hpp"
-#include <type_traits>
 
 namespace Gek
 {
@@ -41,6 +40,36 @@ namespace Gek
                     Vector2<TYPE> translation;
                 };
             };
+
+        public:
+            static Matrix3x2 FromScale(TYPE scale)
+            {
+                return Matrix3x2(
+                {
+                    scale, 0.0f,
+                    0.0f, scale,
+                    0.0f, 0.0f,
+                });
+            }
+
+            static Matrix3x2 FromScale(const Vector2<TYPE> &scale)
+            {
+                return Matrix3x2(
+                {
+                    scale.x, 0.0f,
+                    0.0f, scale.y,
+                    0.0f, 0.0f,
+                });
+            }
+
+            static Matrix3x2 FromAngle(TYPE radians)
+            {
+                return Matrix3x2(
+                {
+                    std::cos(radians), -std::sin(radians),
+                    std::sin(radians),  std::cos(radians),
+                });
+            }
 
         public:
             Matrix3x2(void)
@@ -77,35 +106,6 @@ namespace Gek
                 matrix.rows[1],
                 matrix.rows[2] }
             {
-            }
-
-            static Matrix3x2 createScaling(TYPE scale)
-            {
-                return Matrix3x2(
-                {
-                    scale, 0.0f,
-                    0.0f, scale,
-                    0.0f, 0.0f,
-                });
-            }
-
-            static Matrix3x2 createScaling(const Vector2<TYPE> &scale)
-            {
-                return Matrix3x2(
-                {
-                    scale.x, 0.0f,
-                    0.0f, scale.y,
-                    0.0f, 0.0f,
-                });
-            }
-
-            static Matrix3x2 createRotation(TYPE radians)
-            {
-                return Matrix3x2(
-                {
-                    std::cos(radians), -std::sin(radians),
-                    std::sin(radians),  std::cos(radians),
-                });
             }
 
             Vector2<TYPE> getScaling(void) const

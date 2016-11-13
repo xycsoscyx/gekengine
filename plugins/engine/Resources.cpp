@@ -471,7 +471,7 @@ namespace Gek
                     String fileName(baseFileName);
                     fileName.append(format);
 
-                    if (FileSystem::isFile(fileName))
+                    if (FileSystem::IsFile(fileName))
                     {
                         auto texture = videoDevice->loadTexture(fileName, flags);
                         texture->setName(fileName);
@@ -608,13 +608,13 @@ namespace Gek
                 GEK_REQUIRE(engineData);
 
                 String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
-                String fileName(FileSystem::getFileName(rootProgramsDirectory, name));
-                if (FileSystem::isFile(fileName))
+                String fileName(FileSystem::GetFileName(rootProgramsDirectory, name));
+                if (FileSystem::IsFile(fileName))
                 {
-                    String programDirectory(FileSystem::getDirectory(fileName));
+                    String programDirectory(FileSystem::GetDirectory(fileName));
 
                     String baseProgram;
-                    FileSystem::load(fileName, baseProgram);
+                    FileSystem::Load(fileName, baseProgram);
                     baseProgram.replace(L"\r\n", L"\r");
                     baseProgram.replace(L"\n\r", L"\r");
                     baseProgram.replace(L"\n", L"\r");
@@ -649,18 +649,18 @@ namespace Gek
                                     includeName = includeName.subString(1, includeName.length() - 2);
                                     if (includeType == L'\"')
                                     {
-                                        String localFileName(FileSystem::getFileName(programDirectory, includeName));
-                                        if (FileSystem::isFile(localFileName))
+                                        String localFileName(FileSystem::GetFileName(programDirectory, includeName));
+                                        if (FileSystem::IsFile(localFileName))
                                         {
-                                            FileSystem::load(localFileName, includeData);
+                                            FileSystem::Load(localFileName, includeData);
                                         }
                                     }
                                     else if (includeType == L'<')
                                     {
-                                        String rootFileName(FileSystem::getFileName(rootProgramsDirectory, includeName));
-                                        if (FileSystem::isFile(rootFileName))
+                                        String rootFileName(FileSystem::GetFileName(rootProgramsDirectory, includeName));
+                                        if (FileSystem::IsFile(rootFileName))
                                         {
-                                            FileSystem::load(rootFileName, includeData);
+                                            FileSystem::Load(rootFileName, includeData);
                                         }
                                     }
                                     else
@@ -718,7 +718,7 @@ namespace Gek
                     return getContext()->createClass<Plugin::Visual>(L"Engine::Visual", videoDevice, (Engine::Resources *)this, visualName);
                 };
 
-                auto hash = getHash(visualName);
+                auto hash = GetHash(visualName);
                 return visualCache.getHandle(hash, std::move(load));
             }
 
@@ -731,7 +731,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Material>(L"Engine::Material", (Engine::Resources *)this, materialName, handle);
                 };
 
-                auto hash = getHash(materialName);
+                auto hash = GetHash(materialName);
                 return materialCache.getHandle(hash, std::move(load));
             }
 
@@ -744,7 +744,7 @@ namespace Gek
                     return loadTextureData(textureName, flags);
                 };
 
-                auto hash = getHash(textureName);
+                auto hash = GetHash(textureName);
                 return dynamicCache.getHandle(hash, flags, std::move(load));
             }
 
@@ -758,7 +758,7 @@ namespace Gek
                     return createTextureData(pattern, parameters);
                 };
 
-                auto hash = getHash(pattern, parameters);
+                auto hash = GetHash(pattern, parameters);
                 return dynamicCache.getHandle(hash, 0, std::move(load));
             }
 
@@ -773,8 +773,8 @@ namespace Gek
                     return texture;
                 };
 
-                auto hash = getHash(textureName);
-                auto parameters = getHash(format, width, height, depth, mipmaps, flags);
+                auto hash = GetHash(textureName);
+                auto parameters = GetHash(format, width, height, depth, mipmaps, flags);
                 return dynamicCache.getHandle(hash, parameters, std::move(load));
             }
 
@@ -789,10 +789,10 @@ namespace Gek
                     return buffer;
                 };
 
-                auto hash = getHash(bufferName);
+                auto hash = GetHash(bufferName);
                 if (staticData.empty())
                 {
-                    auto parameters = getHash(stride, count, type, flags);
+                    auto parameters = GetHash(stride, count, type, flags);
                     return dynamicCache.getHandle(hash, parameters, std::move(load));
                 }
                 else
@@ -812,10 +812,10 @@ namespace Gek
                     return buffer;
                 };
 
-                auto hash = getHash(bufferName);
+                auto hash = GetHash(bufferName);
                 if (staticData.empty())
                 {
-                    auto parameters = getHash(format, count, type, flags);
+                    auto parameters = GetHash(format, count, type, flags);
                     return dynamicCache.getHandle(hash, parameters, std::move(load));
                 }
                 else
@@ -1006,7 +1006,7 @@ namespace Gek
             {
                 GEK_REQUIRE(resourceName);
 
-                return dynamicCache.getHandle(getHash(resourceName));
+                return dynamicCache.getHandle(GetHash(resourceName));
             }
 
             Engine::Shader * const getShader(ShaderHandle handle) const
@@ -1024,7 +1024,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Shader>(L"Engine::Shader", videoDevice, (Engine::Resources *)this, core->getPopulation(), shaderName);
                 };
 
-                auto hash = getHash(shaderName);
+                auto hash = GetHash(shaderName);
                 ShaderHandle shader = shaderCache.getHandle(hash, std::move(load));
                 if (material)
                 {
@@ -1043,7 +1043,7 @@ namespace Gek
                     return getContext()->createClass<Engine::Filter>(L"Engine::Filter", videoDevice, (Engine::Resources *)this, filterName);
                 };
 
-                auto hash = getHash(filterName);
+                auto hash = GetHash(filterName);
                 ResourceHandle filter = filterCache.getHandle(hash, std::move(load));
                 return filterCache.getResource(filter);
             }
@@ -1056,24 +1056,24 @@ namespace Gek
 
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
-                auto hash = getHash(uncompiledProgram);
+                auto hash = GetHash(uncompiledProgram);
                 auto cache = String::create(L".%v.bin", hash);
-                String cacheFileName(FileSystem::replaceExtension(getContext()->getFileName(L"data\\cache", name), cache));
+                String cacheFileName(FileSystem::ReplaceExtension(getContext()->getFileName(L"data\\cache", name), cache));
 
 				std::vector<uint8_t> compiledProgram;
-                if (FileSystem::isFile(cacheFileName))
+                if (FileSystem::IsFile(cacheFileName))
                 {
-                    FileSystem::load(cacheFileName, compiledProgram);
+                    FileSystem::Load(cacheFileName, compiledProgram);
                 }
                 else
                 {
 #ifdef _DEBUG
 					auto debug = String::create(L".%v.hlsl", hash);
-					String debugFileName(FileSystem::replaceExtension(getContext()->getFileName(L"data\\cache", name), debug));
-					FileSystem::save(debugFileName, uncompiledProgram);
+					String debugFileName(FileSystem::ReplaceExtension(getContext()->getFileName(L"data\\cache", name), debug));
+					FileSystem::Save(debugFileName, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
-                    FileSystem::save(cacheFileName, compiledProgram);
+                    FileSystem::Save(cacheFileName, compiledProgram);
                 }
 
                 return compiledProgram;
@@ -1105,7 +1105,7 @@ namespace Gek
 					return state;
                 };
 
-                auto hash = getHash(static_cast<uint8_t>(renderState.fillMode),
+                auto hash = GetHash(static_cast<uint8_t>(renderState.fillMode),
                     static_cast<uint8_t>(renderState.cullMode),
                     renderState.frontCounterClockwise,
                     renderState.depthBias,
@@ -1127,7 +1127,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = getHash(depthState.enable,
+                auto hash = GetHash(depthState.enable,
                     static_cast<uint8_t>(depthState.writeMask),
                     static_cast<uint8_t>(depthState.comparisonFunction),
                     depthState.stencilEnable,
@@ -1153,7 +1153,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = getHash(blendState.enable,
+                auto hash = GetHash(blendState.enable,
                     static_cast<uint8_t>(blendState.colorSource),
                     static_cast<uint8_t>(blendState.colorDestination),
                     static_cast<uint8_t>(blendState.colorOperation),
@@ -1178,7 +1178,7 @@ namespace Gek
                 {
                     if (blendState.targetStates[renderTarget].enable)
                     {
-                        hash = getHash(hash, renderTarget,
+                        hash = GetHash(hash, renderTarget,
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination),
                             static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation),

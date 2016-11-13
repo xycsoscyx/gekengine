@@ -10,6 +10,11 @@ namespace Gek
 
         Frustum::Frustum(const Math::SIMD::Float4x4 &perspectiveTransform)
         {
+            create(perspectiveTransform);
+        }
+
+        void Frustum::create(const Math::SIMD::Float4x4 &perspectiveTransform)
+        {
             // Left clipping plane
             planes[0].a = perspectiveTransform._14 + perspectiveTransform._11;
             planes[0].b = perspectiveTransform._24 + perspectiveTransform._21;

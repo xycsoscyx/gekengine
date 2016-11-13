@@ -87,7 +87,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             throw std::exception("Unable to create window");
         }
 
-        ContextPtr context(Context::create(rootPath, searchPathList));
+        ContextPtr context(Context::Create(rootPath, searchPathList));
         ApplicationPtr application(context->createClass<Application>(L"Engine::Core", window));
 
         SetWindowLongPtr(window, GWLP_USERDATA, LONG(application.get()));

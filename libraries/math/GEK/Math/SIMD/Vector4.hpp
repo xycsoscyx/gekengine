@@ -10,7 +10,6 @@
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
-#include <type_traits>
 #include <algorithm>
 #include <cstdint>
 #include <cmath>
@@ -21,6 +20,7 @@ namespace Gek
     {
 		namespace SIMD
 		{
+            __declspec(align(16))
 			struct Float4
 			{
 			public:
@@ -32,12 +32,12 @@ namespace Gek
 			public:
 				union
 				{
-					struct { float x, y, z, w; };
-					struct { Float3 xyz; float w; };
-					struct { Float2 xy; Float2 zw; };
-					struct { Float2 minimum; Float2 maximum; };
-					struct { float data[4]; };
-					struct { __m128 simd; };
+                    struct { __m128 simd; };
+                    const struct { float x, y, z, w; };
+                    const struct { Float3 xyz; float w; };
+                    const struct { Float2 xy; Float2 zw; };
+                    const struct { Float2 minimum; Float2 maximum; };
+                    const struct { float data[4]; };
 				};
 
 			public:
@@ -142,7 +142,7 @@ namespace Gek
 
                 inline Float4 getSaturated(void) const
 				{
-					return getClamped(Zero, One);
+                    return getClamped(Zero, One);
 				}
 
                 inline float dot(const Float4 &vector) const
@@ -229,12 +229,23 @@ namespace Gek
 					return data;
 				}
 
+                inline operator const Float3 &() const
+                {
+                    return xyz;
+                }
+
 				// vector operations
                 inline Float4 &operator = (const Float4 &vector)
-				{
-					simd = vector.simd;
-					return (*this);
-				}
+                {
+                    simd = vector.simd;
+                    return (*this);
+                }
+
+                inline Float4 &operator = (const Float3 &vector)
+                {
+                    simd = _mm_setr_ps(vector.x, vector.y, vector.z, w);
+                    return (*this);
+                }
 
                 inline void operator -= (const Float4 &vector)
 				{

@@ -182,25 +182,25 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 							mesh->mTextureCoords[0][vertexIndex].y);
 
                         Math::SIMD::Float4x4 basis;
-                        basis.nx.set(
+                        basis.rx.xyz.set(
 							mesh->mTangents[vertexIndex].x,
 							mesh->mTangents[vertexIndex].y,
 							mesh->mTangents[vertexIndex].z);
 
-                        basis.ny.set(
+                        basis.ry.xyz.set(
                             mesh->mBitangents[vertexIndex].x,
 							mesh->mBitangents[vertexIndex].y,
 							mesh->mBitangents[vertexIndex].z);
 
-                        basis.nz.set(
+                        basis.rz.xyz.set(
                             mesh->mNormals[vertexIndex].x,
 							mesh->mNormals[vertexIndex].y,
 							mesh->mNormals[vertexIndex].z);
 
                         basis = basis * nodeTransform;
-                        vertex.tangent = basis.nx;
-                        vertex.biTangent = basis.ny;
-                        vertex.normal = basis.nz;
+                        vertex.tangent = basis.rx.xyz;
+                        vertex.biTangent = basis.ry.xyz;
+                        vertex.normal = basis.rz.xyz;
 					}
 
                     model.vertexList.push_back(vertex);
@@ -410,26 +410,26 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		fullModulePath.remove_filename();
 		rootPath = fullModulePath.append(L"Data").wstring();
 
-		String texturesPath(FileSystem::getFileName(rootPath, L"Textures").getLower());
-		String materialsPath(FileSystem::getFileName(rootPath, L"Materials").getLower());
+		String texturesPath(FileSystem::GetFileName(rootPath, L"Textures").getLower());
+		String materialsPath(FileSystem::GetFileName(rootPath, L"Materials").getLower());
 
 		std::map<String, String> materialAlbedoMap;
 
         std::function<bool(const wchar_t *)> findMaterials;
 		findMaterials = [&](const wchar_t *fileName) -> bool
 		{
-			if (FileSystem::isDirectory(fileName))
+			if (FileSystem::IsDirectory(fileName))
 			{
-				FileSystem::find(fileName, findMaterials);
+				FileSystem::Find(fileName, findMaterials);
 			}
-			else if (FileSystem::isFile(fileName))
+			else if (FileSystem::IsFile(fileName))
 			{
 				try
 				{
-                    String materialName(FileSystem::replaceExtension(fileName).getLower());
+                    String materialName(FileSystem::ReplaceExtension(fileName).getLower());
                     materialName.replace((materialsPath + L"\\"), L"");
 
-                    const JSON::Object materialNode = JSON::load(fileName);
+                    const JSON::Object materialNode = JSON::Load(fileName);
                     auto &shaderNode = materialNode[L"shader"];
                     auto &passesNode = shaderNode[L"passes"];
                     auto &solidNode = passesNode[L"solid"];
@@ -457,13 +457,13 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			texturesPath = texturesPath.subString(engineIndex);
 		}
 
-		FileSystem::find(materialsPath, findMaterials);
+		FileSystem::Find(materialsPath, findMaterials);
         std::unordered_map<String, std::list<Model>> materialMultiMap;
         for (auto &albedo : albedoMap)
         {
             String albedoName(albedo.first.getLower());
             albedoName.replace(L"/", L"\\");
-			albedoName = FileSystem::replaceExtension(albedoName);
+			albedoName = FileSystem::ReplaceExtension(albedoName);
             if (albedoName.find(L"textures\\") == 0)
             {
                 albedoName = albedoName.subString(9);

@@ -202,11 +202,11 @@ namespace Gek
 
             DrawCallList drawCallList;
 
-            const Shapes::Frustum viewFrustum;
-            const Math::SIMD::Float4x4 viewMatrix;
-            const Math::SIMD::Float4x4 projectionMatrix;
-            const float nearClip = 0.0f;
-            const float farClip = 0.0f;
+            Shapes::Frustum viewFrustum;
+            Math::SIMD::Float4x4 viewMatrix;
+            Math::SIMD::Float4x4 projectionMatrix;
+            float nearClip = 0.0f;
+            float farClip = 0.0f;
 
         public:
             Renderer(Context *context, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
@@ -527,7 +527,7 @@ namespace Gek
             void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                //if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
+                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                 {
                     auto &colorComponent = entity->getComponent<Components::Color>();
 
@@ -546,7 +546,7 @@ namespace Gek
             void addLight(Plugin::Entity *entity, const Components::SpotLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                //if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
+                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
                 {
                     auto &colorComponent = entity->getComponent<Components::Color>();
 
@@ -631,11 +631,11 @@ namespace Gek
                 auto width = backBuffer->getWidth();
                 auto height = backBuffer->getHeight();
 
-                *const_cast<Shapes::Frustum *>(&this->viewFrustum) = Shapes::Frustum(viewMatrix * projectionMatrix);
-                *const_cast<Math::SIMD::Float4x4 *>(&this->viewMatrix) = viewMatrix;
-                *const_cast<Math::SIMD::Float4x4 *>(&this->projectionMatrix) = projectionMatrix;
-                *const_cast<float *>(&this->nearClip) = nearClip;
-                *const_cast<float *>(&this->farClip) = farClip;
+                this->viewFrustum.create(viewMatrix * projectionMatrix);
+                this->viewMatrix = viewMatrix;
+                this->projectionMatrix = projectionMatrix;
+                this->nearClip = nearClip;
+                this->farClip = farClip;
 
                 EngineConstantData engineConstantData;
                 engineConstantData.frameTime = population->getFrameTime();

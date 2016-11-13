@@ -10,7 +10,6 @@
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
-#include <type_traits>
 #include <cstdint>
 #include <cmath>
 

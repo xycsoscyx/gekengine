@@ -8,13 +8,13 @@ namespace Gek
     namespace Evaluator
     {
         static ShuntingYard shuntingYard;
-        void setRandomSeed(uint32_t seed)
+        void SetRandomSeed(uint32_t seed)
         {
             shuntingYard.setRandomSeed(seed);
         }
 
         template <typename TYPE>
-        void castResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)
+        void CastResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)
         {
             try
             {
@@ -29,7 +29,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        void getResult(const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
+        void GetResult(const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
         {
             try
             {
@@ -58,37 +58,37 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, int32_t &result, int32_t defaultValue)
+        void Get(const wchar_t *expression, int32_t &result, int32_t defaultValue)
         {
-            castResult(expression, result, defaultValue);
+            CastResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
+        void Get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
         {
-            castResult(expression, result, defaultValue);
+            CastResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, float &result, float defaultValue)
+        void Get(const wchar_t *expression, float &result, float defaultValue)
         {
-            castResult(expression, result, defaultValue);
+            CastResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
+        void Get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
         {
-            getResult(expression, result, defaultValue);
+            GetResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
+        void Get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
         {
-            getResult(expression, result, defaultValue);
+            GetResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::SIMD::Float4 &result, const Math::SIMD::Float4 &defaultValue)
+        void Get(const wchar_t *expression, Math::SIMD::Float4 &result, const Math::SIMD::Float4 &defaultValue)
         {
-            getResult(expression, result, defaultValue);
+            GetResult(expression, result, defaultValue);
         }
 
-        void get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
+        void Get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
         {
             try
             {
@@ -126,7 +126,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, Math::SIMD::Quaternion &result, const Math::SIMD::Quaternion &defaultValue)
+        void Get(const wchar_t *expression, Math::SIMD::Quaternion &result, const Math::SIMD::Quaternion &defaultValue)
         {
             try
             {
@@ -138,7 +138,7 @@ namespace Gek
                     {
                         Math::Float3 euler;
                         shuntingYard.evaluate(expression, euler);
-                        result = Math::SIMD::Quaternion::createEulerRotation(euler.x, euler.y, euler.z);
+                        result = Math::SIMD::Quaternion::FromEuler(euler.x, euler.y, euler.z);
                     }
 
                     break;
@@ -154,7 +154,7 @@ namespace Gek
             };
         }
 
-        void get(const wchar_t *expression, String &result)
+        void Get(const wchar_t *expression, String &result)
         {
             result = expression;
         }

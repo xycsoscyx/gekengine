@@ -514,7 +514,7 @@ namespace Gek
         {
             ProcessorMixin::addEntity(entity, [&](auto &data, auto &shapeComponent, auto &transformComponent) -> void
             {
-                auto hash = getHash(shapeComponent.parameters, shapeComponent.type);
+                auto hash = GetHash(shapeComponent.parameters, shapeComponent.type);
                 auto pair = shapeMap.insert(std::make_pair(hash, Shape()));
                 if (pair.second)
                 {

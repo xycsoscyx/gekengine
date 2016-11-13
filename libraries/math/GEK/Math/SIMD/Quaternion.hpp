@@ -10,7 +10,6 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include <xmmintrin.h>
-#include <type_traits>
 
 namespace Gek
 {
@@ -18,6 +17,7 @@ namespace Gek
     {
         namespace SIMD
         {
+            __declspec(align(16))
             struct Quaternion
             {
             public:
@@ -27,14 +27,14 @@ namespace Gek
             public:
                 union
                 {
-                    struct { float x, y, z, w; };
-                    struct { float data[4]; };
                     struct { __m128 simd; };
-                    struct { Float3 vector; float w; };
+                    const struct { float x, y, z, w; };
+                    const struct { float data[4]; };
+                    const struct { Float3 axis; float angle; };
                 };
 
             public:
-                inline static Quaternion createEulerRotation(float pitch, float yaw, float roll)
+                inline static Quaternion FromEuler(float pitch, float yaw, float roll)
                 {
                     float sinPitch(std::sin(pitch * 0.5f));
                     float sinYaw(std::sin(yaw * 0.5f));
@@ -49,7 +49,7 @@ namespace Gek
                         ((cosPitch * cosYaw * cosRoll) + (sinPitch * sinYaw * sinRoll)));
                 }
 
-                inline static Quaternion createAngularRotation(const Float3 &axis, float radians)
+                inline static Quaternion FromAngular(const Float3 &axis, float radians)
                 {
                     float halfRadians = (radians * 0.5f);
                     Float3 normal(axis.getNormal());
@@ -61,7 +61,7 @@ namespace Gek
                         std::cos(halfRadians));
                 }
 
-                inline static Quaternion createPitchRotation(float radians)
+                inline static Quaternion FromPitch(float radians)
                 {
                     float halfRadians = (radians * 0.5f);
                     float sinAngle(std::sin(halfRadians));
@@ -72,7 +72,7 @@ namespace Gek
                         std::cos(halfRadians));
                 }
 
-                inline static Quaternion createYawRotation(float radians)
+                inline static Quaternion FromYaw(float radians)
                 {
                     float halfRadians = (radians * 0.5f);
                     float sinAngle(std::sin(halfRadians));
@@ -83,7 +83,7 @@ namespace Gek
                         std::cos(halfRadians));
                 }
 
-                inline static Quaternion createRollRotation(float radians)
+                inline static Quaternion FromRoll(float radians)
                 {
                     float halfRadians = (radians * 0.5f);
                     float sinAngle(std::sin(halfRadians));
@@ -165,7 +165,7 @@ namespace Gek
 
                 inline Quaternion slerp(const Quaternion &rotation, float factor) const
                 {
-                    float omega = std::acos(clamp(dot(rotation), -1.0f, 1.0f));
+                    float omega = std::acos(Clamp(dot(rotation), -1.0f, 1.0f));
                     if (std::abs(omega) < 1e-10f)
                     {
                         omega = 1e-10f;
@@ -174,7 +174,7 @@ namespace Gek
                     float sinTheta = std::sin(omega);
                     float factor0 = (std::sin((1.0f - factor) * omega) / sinTheta);
                     float factor1 = (std::sin(factor * omega) / sinTheta);
-                    return blend((*this), factor0, rotation, factor1);
+                    return Blend((*this), factor0, rotation, factor1);
                 }
 
                 inline bool operator == (const Quaternion &rotation) const
@@ -207,8 +207,8 @@ namespace Gek
 
                 inline Float3 operator * (const Float3 &vector) const
                 {
-                    Float3 cross(2.0f * this->vector.cross(vector));
-                    return (vector + (this->w * cross) + this->vector.cross(cross));
+                    Float3 cross(2.0f * this->axis.cross(vector));
+                    return (vector + (this->angle * cross) + this->axis.cross(cross));
                 }
 
                 inline Quaternion operator * (const Quaternion &rotation) const

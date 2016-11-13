@@ -537,7 +537,7 @@ namespace Gek
 
                 try
                 {
-                    configuration = JSON::load(getContext()->getFileName(L"config.json"));
+                    configuration = JSON::Load(getContext()->getFileName(L"config.json"));
                 }
                 catch (const std::exception &)
                 {
@@ -778,7 +778,7 @@ namespace Gek
                 population = nullptr;
                 videoDevice = nullptr;
                 configuration.erase(L"editor");
-                JSON::save(getContext()->getFileName(L"config.json"), configuration);
+                JSON::Save(getContext()->getFileName(L"config.json"), configuration);
                 CoUninitialize();
             }
 
@@ -1251,8 +1251,8 @@ namespace Gek
                     RECT windowRectangle;
                     GetWindowRect(window, &windowRectangle);
 					SetCursorPos(
-                        int(Math::lerp(float(windowRectangle.left), float(windowRectangle.right), 0.5f)), 
-						int(Math::lerp(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
+                        int(Math::Interpolate(float(windowRectangle.left), float(windowRectangle.right), 0.5f)),
+						int(Math::Interpolate(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
                 }
 
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
@@ -1308,7 +1308,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getWidth();
                 uint32_t height = backBuffer->getHeight();
-                auto orthographic = Math::SIMD::Float4x4::createOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                auto orthographic = Math::SIMD::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 videoDevice->updateResource(constantBuffer.get(), &orthographic);
 
                 auto videoContext = videoDevice->getDefaultContext();

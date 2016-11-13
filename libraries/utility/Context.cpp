@@ -25,9 +25,9 @@ namespace Gek
 			searchPathList.push_back(rootPath);
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::find(searchPath, [&](const wchar_t *fileName) -> bool
+                FileSystem::Find(searchPath, [&](const wchar_t *fileName) -> bool
                 {
-					if (FileSystem::isFile(fileName) && FileSystem::getExtension(fileName).compareNoCase(L".dll") == 0)
+					if (FileSystem::IsFile(fileName) && FileSystem::GetExtension(fileName).compareNoCase(L".dll") == 0)
 					{
 						HMODULE module = LoadLibrary(fileName);
 						if (module)
@@ -107,7 +107,7 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::create(const wchar_t *rootPath, const std::vector<String> &searchPathList)
+    ContextPtr Context::Create(const wchar_t *rootPath, const std::vector<String> &searchPathList)
     {
         return std::make_shared<ContextImplementation>(rootPath, searchPathList);
     }

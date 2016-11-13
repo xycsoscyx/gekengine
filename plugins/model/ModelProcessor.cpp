@@ -216,13 +216,13 @@ namespace Gek
             ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 String fileName(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".gek"));
-                auto pair = modelMap.insert(std::make_pair(getHash(modelComponent.name), Model()));
+                auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                 if (pair.second)
                 {
                     loadPool.enqueue([this, name = String(modelComponent.name), fileName, &model = pair.first->second](void) -> void
                     {
                         std::vector<uint8_t> buffer;
-                        FileSystem::load(fileName, buffer, sizeof(Header));
+                        FileSystem::Load(fileName, buffer, sizeof(Header));
 
                         Header *header = (Header *)buffer.data();
                         if (header->identifier != *(uint32_t *)"GEKX")
@@ -244,7 +244,7 @@ namespace Gek
                         loadPool.enqueue([this, &model, name, fileName](void) -> void
                         {
                             std::vector<uint8_t> buffer;
-                            FileSystem::load(fileName, buffer);
+                            FileSystem::Load(fileName, buffer);
 
                             Header *header = (Header *)buffer.data();
                             model.materialList.resize(header->materialCount);

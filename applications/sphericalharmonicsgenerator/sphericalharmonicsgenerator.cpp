@@ -161,9 +161,9 @@ typedef SH<Math::SIMD::Float4, 9> SH9Color;
 ::DirectX::ScratchImage loadTexture(const wchar_t *fileName)
 {
     std::vector<uint8_t> buffer;
-    FileSystem::load(fileName, buffer);
+    FileSystem::Load(fileName, buffer);
 
-	String extension(FileSystem::getExtension(fileName));
+	String extension(FileSystem::GetExtension(fileName));
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
 	if (extension.compareNoCase(L".dds") == 0)
 	{
@@ -265,10 +265,10 @@ typedef SH<Math::SIMD::Float4, 9> SH9Color;
     {
 		for (auto &format : formatList)
 		{
-            String fileName(FileSystem::getFileName(directory, faceList[face]).append(format));
-            if (FileSystem::isFile(fileName))
+            String fileName(FileSystem::GetFileName(directory, faceList[face]).append(format));
+            if (FileSystem::IsFile(fileName))
             {
-                cubeMapList[face] = loadTexture(FileSystem::getFileName(directory, faceList[face]).append(format));
+                cubeMapList[face] = loadTexture(FileSystem::GetFileName(directory, faceList[face]).append(format));
                 break;
             }
 		}
@@ -471,7 +471,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             output.format("    radiance.coefficients[%] = float3(%v, %v, %v);\r\n", axis, sphericalHarmonics[axis].x, sphericalHarmonics[axis].y, sphericalHarmonics[axis].z);
         }
 
-        FileSystem::save(L"..//data//programs//Standard//radiance.hpp", output);
+        FileSystem::Save(L"..//data//programs//Standard//radiance.hpp", output);
         printf("%s", output.c_str());
     }
     catch (const std::exception &exception)

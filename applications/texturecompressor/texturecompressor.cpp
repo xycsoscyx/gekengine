@@ -20,13 +20,13 @@ using namespace Gek;
 
 void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 {
-	if (!FileSystem::isFile(inputFileName))
+	if (!FileSystem::IsFile(inputFileName))
 	{
 		throw std::exception("Input file not found");
 	}
 
-	String outputFileName(FileSystem::replaceExtension(inputFileName, L".dds"));
-	if (FileSystem::isFile(outputFileName) && FileSystem::isFileNewer(outputFileName, inputFileName))
+	String outputFileName(FileSystem::ReplaceExtension(inputFileName, L".dds"));
+	if (FileSystem::IsFile(outputFileName) && FileSystem::IsFileNewer(outputFileName, inputFileName))
 	{
 		throw std::exception("Input file hasn't changed since last compression");
 	}
@@ -35,9 +35,9 @@ void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 	printf("             <- %S\r\n", outputFileName.c_str());
 
 	std::vector<uint8_t> buffer;
-	FileSystem::load(inputFileName, buffer);
+	FileSystem::Load(inputFileName, buffer);
 
-	String extension(FileSystem::getExtension(inputFileName));
+	String extension(FileSystem::GetExtension(inputFileName));
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
 	if (extension.compareNoCase(L".tga") == 0)
 	{
@@ -75,7 +75,7 @@ void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 	}
 
 	bool useDevice = false;
-	String inputName(FileSystem::replaceExtension(inputFileName));
+	String inputName(FileSystem::ReplaceExtension(inputFileName));
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
 	if (inputName.endsWith(L"basecolor") ||
@@ -188,14 +188,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		std::vector<String> searchPathList;
 
 #ifdef _DEBUG
-		SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Debug"));
-		searchPathList.push_back(FileSystem::getFileName(rootPath, L"Debug\\Plugins"));
+		SetCurrentDirectory(FileSystem::GetFileName(rootPath, L"Debug"));
+		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Debug\\Plugins"));
 #else
-		SetCurrentDirectory(FileSystem::getFileName(rootPath, L"Release"));
-		searchPathList.push_back(FileSystem::getFileName(rootPath, L"Release\\Plugins"));
+		SetCurrentDirectory(FileSystem::GetFileName(rootPath, L"Release"));
+		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Release\\Plugins"));
 #endif
 
-		String texturesPath(FileSystem::getFileName(rootPath, L"Data\\Textures").getLower());
+		String texturesPath(FileSystem::GetFileName(rootPath, L"Data\\Textures").getLower());
 
 		WNDCLASS windowClass;
 		windowClass.style = 0;
@@ -220,17 +220,17 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 			throw std::exception("Unable to create window");
 		}
 
-		ContextPtr context(Context::create(rootPath, searchPathList));
+		ContextPtr context(Context::Create(rootPath, searchPathList));
 		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
 
 		std::function<bool(const wchar_t *)> searchDirectory;
 		searchDirectory = [&](const wchar_t *fileName) -> bool
 		{
-			if (FileSystem::isDirectory(fileName))
+			if (FileSystem::IsDirectory(fileName))
 			{
-				FileSystem::find(fileName, searchDirectory);
+				FileSystem::Find(fileName, searchDirectory);
 			}
-			else if (FileSystem::isFile(fileName) && FileSystem::getExtension(fileName).compareNoCase(L".dds") != 0)
+			else if (FileSystem::IsFile(fileName) && FileSystem::GetExtension(fileName).compareNoCase(L".dds") != 0)
 			{
 				try
 				{
@@ -246,7 +246,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		};
 
 		CoInitialize(nullptr);
-		FileSystem::find(texturesPath, searchDirectory);
+		FileSystem::Find(texturesPath, searchDirectory);
 		CoUninitialize();
 	
 		DestroyWindow(window);

@@ -7,56 +7,56 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		String getFileName(const wchar_t *rootDirectory, const std::vector<String> &list)
+		String GetFileName(const wchar_t *rootDirectory, const std::vector<String> &list)
 		{
             String fileName(rootDirectory);
             fileName.join(list, std::experimental::filesystem::path::preferred_separator);
             return fileName;
 		}
 
-		String replaceExtension(const wchar_t *fileName, const wchar_t *extension)
+		String ReplaceExtension(const wchar_t *fileName, const wchar_t *extension)
 		{
 			std::experimental::filesystem::path filePath(fileName);
 			filePath.replace_extension(extension ? extension : L"");
 			return filePath.wstring();
 		}
 
-		String getExtension(const wchar_t *fileName)
+		String GetExtension(const wchar_t *fileName)
         {
             std::experimental::filesystem::path filePath(fileName);
             return filePath.extension().wstring();
         }
 
-		String getFileName(const wchar_t *fileName)
+		String GetFileName(const wchar_t *fileName)
 		{
 			std::experimental::filesystem::path filePath(fileName);
 			return filePath.filename().wstring();
 		}
 
-		String getDirectory(const wchar_t *fileName)
+		String GetDirectory(const wchar_t *fileName)
         {
             std::experimental::filesystem::path filePath(fileName);
             return filePath.parent_path().wstring();
         }
 
-        bool isFile(const wchar_t *fileName)
+        bool IsFile(const wchar_t *fileName)
         {
             return std::experimental::filesystem::is_regular_file(fileName);
         }
 
-        bool isDirectory(const wchar_t *fileName)
+        bool IsDirectory(const wchar_t *fileName)
         {
             return std::experimental::filesystem::is_directory(fileName);
         }
 
-		bool isFileNewer(const wchar_t *newFile, const wchar_t *oldFile)
+		bool IsFileNewer(const wchar_t *newFile, const wchar_t *oldFile)
 		{
 			auto newFileTime = std::experimental::filesystem::last_write_time(newFile);
 			auto oldFileTime = std::experimental::filesystem::last_write_time(oldFile);
 			return (newFileTime > oldFileTime);
 		}
 
-		void find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *)> onFileFound)
+		void Find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *)> onFileFound)
 		{
 			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
@@ -64,7 +64,7 @@ namespace Gek
 			}
 		}
 
-		void load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
+		void Load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
 			HANDLE file = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if(file == INVALID_HANDLE_VALUE)
@@ -84,35 +84,35 @@ namespace Gek
 			}
 		}
 
-		void load(const wchar_t *fileName, StringUTF8 &string)
+		void Load(const wchar_t *fileName, StringUTF8 &string)
 		{
 			std::vector<uint8_t> buffer;
-			load(fileName, buffer);
+			Load(fileName, buffer);
 			buffer.push_back('\0');
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-		void load(const wchar_t *fileName, String &string)
+		void Load(const wchar_t *fileName, String &string)
 		{
 			std::vector<uint8_t> buffer;
-			load(fileName, buffer);
+			Load(fileName, buffer);
 			buffer.push_back('\0');
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-        void createDirectory(const wchar_t *fileName)
+        void CreateDirectory(const wchar_t *fileName)
         {
-            auto directory = getDirectory(fileName);
+            auto directory = GetDirectory(fileName);
             if (!directory.empty())
             {
-                createDirectory(directory);
-                CreateDirectory(directory, nullptr);
+                CreateDirectory(directory);
+                ::CreateDirectory(directory, nullptr);
             }
         }
 
-        void save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
+        void Save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
         {
-            createDirectory(fileName);
+            CreateDirectory(fileName);
             HANDLE file = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 			if (file == INVALID_HANDLE_VALUE)
 			{
@@ -129,16 +129,16 @@ namespace Gek
 			}
         }
 
-        void save(const wchar_t *fileName, const StringUTF8 &string)
+        void Save(const wchar_t *fileName, const StringUTF8 &string)
         {
             std::vector<uint8_t> buffer(string.length());
             std::copy(std::begin(string), std::end(string), std::begin(buffer));
-            save(fileName, buffer);
+            Save(fileName, buffer);
         }
 
-        void save(const wchar_t *fileName, const String &string)
+        void Save(const wchar_t *fileName, const String &string)
         {
-            save(fileName, StringUTF8(string));
+            Save(fileName, StringUTF8(string));
         }
     } // namespace FileSystem
 }; // namespace Gek

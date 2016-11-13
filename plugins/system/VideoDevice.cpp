@@ -149,11 +149,7 @@ namespace Gek
 
             auto getOperation = [](const String &operation) -> Operation
             {
-                if (operation.compareNoCase(L"Zero") == 0)
-                {
-                    return Operation::Zero;
-                }
-                else if (operation.compareNoCase(L"Replace") == 0)
+                if (operation.compareNoCase(L"Replace") == 0)
                 {
                     return Operation::Replace;
                 }

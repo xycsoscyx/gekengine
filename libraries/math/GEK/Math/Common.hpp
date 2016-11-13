@@ -7,8 +7,9 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include <limits>
+#include <algorithm>
 #include <cstdint>
+#include <limits>
 
 namespace Gek
 {
@@ -22,37 +23,37 @@ namespace Gek
         const float E = 2.71828182845904523536f;
 
 		template <typename TYPE>
-		TYPE convertDegreesToRadians(TYPE degrees)
+		TYPE DegreesToRadians(TYPE degrees)
 		{
 			return TYPE(degrees * (Pi / 180.0f));
 		}
 
 		template <typename TYPE>
-		TYPE convertRadiansToDegrees(TYPE radians)
+		TYPE RadiansToDegrees(TYPE radians)
 		{
 			return TYPE(radians * (180.0f / Pi));
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA lerp(const DATA &valueA, const DATA &valueB, TYPE factor)
+		DATA Interpolate(const DATA &valueA, const DATA &valueB, TYPE factor)
 		{
 			return (((valueB - valueA) * factor) + valueA);
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA blend(const DATA &valueA, const DATA &valueB, TYPE factor)
+		DATA Blend(const DATA &valueA, const DATA &valueB, TYPE factor)
 		{
 			return ((valueA * (1.0f - factor)) + (valueB * factor));
 		}
 
 		template <typename DATA, typename TYPE>
-		DATA blend(const DATA &valueA, TYPE factorX, const DATA &valueB, TYPE factorY)
+		DATA Blend(const DATA &valueA, TYPE factorX, const DATA &valueB, TYPE factorY)
 		{
 			return ((valueA * factorX) + (valueB * factorY));
 		}
 
         template <typename TYPE>
-        TYPE clamp(TYPE value, TYPE min, TYPE max)
+        TYPE Clamp(TYPE value, TYPE min, TYPE max)
         {
             return std::min(std::max(value, min), max);
         }

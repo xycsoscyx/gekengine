@@ -6,7 +6,7 @@
 #include <stack>
 #include <regex>
 
-// https://blog.kallisti.net.nz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
+// https://blog.kallisti.net.rz.xyz/2008/02/extension-to-the-shunting-yard-algorithm-to-allow-variable-numbers-of-arguments-to-functions/
 
 namespace Gek
 {
@@ -146,7 +146,7 @@ namespace Gek
             float value3 = stack.popTop().value;
             float value2 = stack.popTop().value;
             float value1 = stack.popTop().value;
-            return Math::lerp(value1, value2, value3);
+            return Math::Interpolate(value1, value2, value3);
         } } });
 
         functionsMap.insert({ L"random",{ 2, [&](Stack<Token> &stack) -> float
