@@ -139,20 +139,20 @@ namespace Gek
                 this->w = data[3];
             }
 
-            inline float getLengthSquared(void) const
+            inline float getMagnitudeSquared(void) const
             {
                 return dot(*this);
             }
 
-            inline float getLength(void) const
+            inline float getMagnitude(void) const
             {
-                return std::sqrt(getLengthSquared());
+                return std::sqrt(getMagnitudeSquared());
             }
 
             inline Quaternion getNormal(void) const
             {
-                float inverseLength = (1.0f / getLength());
-                return ((*this) * inverseLength);
+                float inverseMagnitude = (1.0f / getMagnitude());
+                return ((*this) * inverseMagnitude);
             }
 
             inline Quaternion getInverse(void) const
@@ -167,8 +167,8 @@ namespace Gek
 
             inline void normalize(void)
             {
-                float inverseLength = (1.0f / getLength());
-                (*this) *= inverseLength;
+                float inverseMagnitude = (1.0f / getMagnitude());
+                (*this) *= inverseMagnitude;
             }
 
             inline float dot(const Quaternion &rotation) const

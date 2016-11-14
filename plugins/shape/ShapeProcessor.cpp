@@ -224,7 +224,7 @@ namespace Gek
             // 1/3 times the sum of the three vertices
             static const Math::Float3 oneThird(1.0f / 3.0f);
             Math::Float3 centroid(oneThird * (vertices[triangles[0].vertices[0]].position + vertices[triangles[0].vertices[1]].position + vertices[triangles[0].vertices[2]].position));
-            return (1.0f / centroid.getLength());
+            return (1.0f / centroid.getMagnitude());
         }
 
     public:

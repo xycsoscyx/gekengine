@@ -74,25 +74,25 @@ namespace Gek
                 this->z = TYPE(data[2]);
             }
 
-            TYPE getLengthSquared(void) const
+            TYPE getMagnitudeSquared(void) const
             {
                 return dot(*this);
             }
 
-            TYPE getLength(void) const
+            TYPE getMagnitude(void) const
             {
-                return std::sqrt(getLengthSquared());
+                return std::sqrt(getMagnitudeSquared());
             }
 
             TYPE getDistance(const Vector3 &vector) const
             {
-                return (vector - (*this)).getLength();
+                return (vector - (*this)).getMagnitude();
             }
 
             Vector3 getNormal(void) const
             {
-                float inverseLength = (1.0f / getLength());
-                return ((*this) * inverseLength);
+                float inverseMagnitude = (1.0f / getMagnitude());
+                return ((*this) * inverseMagnitude);
             }
 
 			Vector3 getMinimum(const Vector3 &vector) const
@@ -142,8 +142,8 @@ namespace Gek
 
             void normalize(void)
             {
-                float inverseLength = (1.0f / getLength());
-                (*this) *= inverseLength;
+                float inverseMagnitude = (1.0f / getMagnitude());
+                (*this) *= inverseMagnitude;
             }
 
             bool operator < (const Vector3 &vector) const
