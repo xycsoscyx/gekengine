@@ -235,11 +235,6 @@ namespace Gek
                     return data;
                 }
 
-                inline operator const Float3 &() const
-                {
-                    return xyz;
-                }
-
 				// vector operations
                 inline Float4 &operator = (const Float4 &vector)
                 {

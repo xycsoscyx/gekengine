@@ -34,7 +34,7 @@ namespace Gek
         {
             float minimum(0.0f);
             float maximum(Math::Infinity);
-            Math::Float3 positionDelta(orientedBox.matrix.translation - origin);
+            Math::Float3 positionDelta(orientedBox.matrix.translation.xyz - origin);
             for (int axis = 0; axis < 3; ++axis)
             {
                 float axisAngle = orientedBox.matrix.rows[axis].xyz.dot(positionDelta);

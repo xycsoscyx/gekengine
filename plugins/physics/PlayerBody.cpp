@@ -234,7 +234,7 @@ namespace Gek
                 population->onAction.disconnect<PlayerBody, &PlayerBody::onAction>(this);
 			}
 
-            Math::Float3 calculateAverageOmega(const Math::SIMD::Quaternion &q0, const Math::SIMD::Quaternion &q1, float invdt) const
+            Math::Float3 calculateAverageOmega(const Math::Quaternion &q0, const Math::Quaternion &q1, float invdt) const
             {
                 float scale = 1.0f;
                 if (q0.dot(q1) < 0.0f)
@@ -242,7 +242,7 @@ namespace Gek
                     scale = -1.0f;
                 }
 
-                Math::SIMD::Quaternion delta((q0 * scale).getInverse() * q1);
+                Math::Quaternion delta((q0 * scale).getInverse() * q1);
                 float dirMag2 = delta.axis.dot(delta.axis);
                 if (dirMag2	< (1.0e-5f * 1.0e-5f))
                 {
@@ -256,10 +256,10 @@ namespace Gek
                 return delta.axis * (dirMagInv * omegaMag);
             }
 
-            Math::SIMD::Quaternion integrateOmega(const Math::SIMD::Quaternion &_rotation, const Math::Float3& omega, float timestep) const
+            Math::Quaternion integrateOmega(const Math::Quaternion &_rotation, const Math::Float3& omega, float timestep) const
             {
                 // this is correct
-                Math::SIMD::Quaternion rotation(_rotation);
+                Math::Quaternion rotation(_rotation);
                 float omegaMag2 = omega.dot(omega);
                 const float errAngle = 0.0125f * 3.141592f / 180.0f;
                 const float errAngle2 = errAngle * errAngle;
@@ -268,9 +268,8 @@ namespace Gek
                     float invOmegaMag = 1.0f / std::sqrt(omegaMag2);
                     Math::Float3 omegaAxis(omega * (invOmegaMag));
                     float omegaAngle = invOmegaMag * omegaMag2 * timestep;
-                    Math::SIMD::Quaternion deltaRotation(Math::SIMD::Quaternion::FromAngular(omegaAxis, omegaAngle));
-                    rotation = rotation * deltaRotation;
-                    rotation *= (1.0f / std::sqrt(rotation.dot(rotation)));
+                    Math::Quaternion deltaRotation(Math::Quaternion::FromAngular(omegaAxis, omegaAngle));
+                    rotation = (rotation * deltaRotation).getNormal();
                 }
 
                 return rotation;
@@ -280,8 +279,8 @@ namespace Gek
             {
                 Math::SIMD::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
-                Math::SIMD::Quaternion playerRotation(matrix.getRotation());
-                Math::SIMD::Quaternion targetRotation(Math::SIMD::Quaternion::FromYaw(headingAngle));
+                Math::Quaternion playerRotation(matrix.getRotation());
+                Math::Quaternion targetRotation(Math::Quaternion::FromYaw(headingAngle));
                 return calculateAverageOmega(playerRotation, targetRotation, 0.5f / frameTime);
             }
 
@@ -626,7 +625,7 @@ namespace Gek
                 {
                     float step = std::abs(matrix.ry.xyz.dot(velocity * frameTime));
                     float castDistance = (groundNormal.dot(groundNormal) > 0.0f) ? playerComponent.stairStep : step;
-                    Math::Float3 target(matrix.translation - matrix.ry.xyz * (castDistance * 2.0f));
+                    Math::Float3 target(matrix.translation.xyz - matrix.ry.xyz * (castDistance * 2.0f));
                     updateGroundPlane(position, supportMatrix, target, threadHandle);
                 }
                 else

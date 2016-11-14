@@ -81,7 +81,7 @@ namespace Gek
                 Math::SIMD::Float4x4 matrix(matrixData);
 				auto &transform = entity->getComponent<Components::Transform>();
                 transform.rotation = matrix.getRotation();
-                transform.position = matrix.translation;
+                transform.position = matrix.translation.xyz;
             }
         };
 

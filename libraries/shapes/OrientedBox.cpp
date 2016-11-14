@@ -16,7 +16,7 @@ namespace Gek
         {
         }
 
-        OrientedBox::OrientedBox(const AlignedBox &box, const Math::SIMD::Quaternion &rotation, const Math::Float3 &translation)
+        OrientedBox::OrientedBox(const AlignedBox &box, const Math::Quaternion &rotation, const Math::Float3 &translation)
             : matrix(rotation, translation + box.getCenter())
             , halfsize(box.getSize() * 0.5f)
         {
@@ -36,7 +36,7 @@ namespace Gek
 
         int OrientedBox::getPosition(const Plane &plane) const
         {
-            float distance = plane.getDistance(matrix.translation);
+            float distance = plane.getDistance(matrix.translation.xyz);
             float radiusX = std::abs(matrix.rx.xyz.dot(plane.normal) * halfsize.x);
             float radiusY = std::abs(matrix.ry.xyz.dot(plane.normal) * halfsize.y);
             float radiusZ = std::abs(matrix.rz.xyz.dot(plane.normal) * halfsize.z);

@@ -9,7 +9,7 @@
 
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\SIMD\Matrix4x4.hpp"
-#include "GEK\Math\SIMD\Quaternion.hpp"
+#include "GEK\Math\Quaternion.hpp"
 #include "GEK\Engine\Component.hpp"
 
 namespace Gek
@@ -18,18 +18,8 @@ namespace Gek
     {
         GEK_COMPONENT(Transform)
         {
-            void *operator new(size_t size)
-            {
-                return _mm_malloc(size * sizeof(Transform), 16);
-            }
-
-            void operator delete(void *data)
-            {
-                _mm_free(data);
-            }
-
             Math::Float3 position = Math::Float3::Zero;
-            Math::SIMD::Quaternion rotation = Math::SIMD::Quaternion::Identity;
+            Math::Quaternion rotation = Math::Quaternion::Identity;
             Math::Float3 scale = Math::Float3::One;
 
             void save(JSON::Object &componentData) const;
@@ -43,7 +33,7 @@ namespace Gek
             inline void setMatrix(const Math::SIMD::Float4x4 &matrix)
             {
                 rotation = matrix.getRotation();
-                position = matrix.translation;
+                position = matrix.translation.xyz;
             }
         };
     }; // namespace Components

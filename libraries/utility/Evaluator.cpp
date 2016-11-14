@@ -126,7 +126,7 @@ namespace Gek
             };
         }
 
-        void Get(const wchar_t *expression, Math::SIMD::Quaternion &result, const Math::SIMD::Quaternion &defaultValue)
+        void Get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
         {
             try
             {
@@ -138,7 +138,7 @@ namespace Gek
                     {
                         Math::Float3 euler;
                         shuntingYard.evaluate(expression, euler);
-                        result = Math::SIMD::Quaternion::FromEuler(euler.x, euler.y, euler.z);
+                        result = Math::Quaternion::FromEuler(euler.x, euler.y, euler.z);
                     }
 
                     break;

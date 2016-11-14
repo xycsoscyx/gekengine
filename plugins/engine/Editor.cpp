@@ -1,5 +1,5 @@
 ﻿#include "GEK\Math\Common.hpp"
-#include "GEK\Math\SIMD\Quaternion.hpp"
+#include "GEK\Math\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Utility\JSON.hpp"
@@ -29,7 +29,7 @@ namespace Gek
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;
             Math::Float3 position = Math::Float3::Zero;
-            Math::SIMD::Quaternion rotation = Math::SIMD::Quaternion::Identity;
+            Math::Quaternion rotation = Math::Quaternion::Identity;
             bool moveForward = false;
             bool moveBackward = false;
             bool strafeLeft = false;
@@ -287,7 +287,7 @@ namespace Gek
                 headingAngle = 0.0f;
                 lookingAngle = 0.0f;
                 position = Math::Float3::Zero;
-                rotation = Math::SIMD::Quaternion::Identity;
+                rotation = Math::Quaternion::Identity;
                 moveForward = false;
                 moveBackward = false;
                 strafeLeft = false;
@@ -303,7 +303,7 @@ namespace Gek
                     float frameTime = population->getFrameTime();
 
                     static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                    rotation = Math::SIMD::Quaternion::FromAngular(upAxis, headingAngle);
+                    rotation = Math::Quaternion::FromAngular(upAxis, headingAngle);
 
                     Math::SIMD::Float4x4 viewMatrix(rotation);
                     position += (viewMatrix.rz.xyz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
