@@ -587,7 +587,7 @@ namespace Gek
                 setDisplayMode(currentDisplayMode);
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, videoDevice.get());
-                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", videoDevice.get(), getPopulation(), resources.get());
+                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this, videoDevice.get(), getPopulation(), resources.get());
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
@@ -1245,7 +1245,6 @@ namespace Gek
                     }
                 }
 
-                onInterface.emit(showCursor);
                 if (windowActive && !showCursor)
                 {
                     RECT windowRectangle;
@@ -1255,6 +1254,8 @@ namespace Gek
 						int(Math::Interpolate(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
                 }
 
+                onDisplay.emit();
+                onInterface.emit(showCursor);
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
 
                 ImGui::Render();

@@ -20,6 +20,7 @@
 #include "GEK\Shapes\Sphere.hpp"
 #include <concurrent_unordered_set.h>
 #include <concurrent_vector.h>
+#include <concurrent_queue.h>
 #include <algorithm>
 #include <ppl.h>
 
@@ -27,7 +28,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Renderer, Video::Device *, Plugin::Population *, Engine::Resources *)
+        GEK_CONTEXT_USER(Renderer, Plugin::Core *, Video::Device *, Plugin::Population *, Engine::Resources *)
             , public Plugin::Renderer
         {
         public:
@@ -163,7 +164,18 @@ namespace Gek
                 }
             };
 
+            struct RenderCall
+            {
+                Shapes::Frustum viewFrustum;
+                Math::SIMD::Float4x4 viewMatrix;
+                Math::SIMD::Float4x4 projectionMatrix;
+                float nearClip, farClip;
+                std::vector<String> filterList;
+                ResourceHandle cameraTarget;
+            };
+
         private:
+            Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
             Plugin::Population *population = nullptr;
             Engine::Resources *resources = nullptr;
@@ -201,21 +213,19 @@ namespace Gek
             Video::BufferPtr clusterIndexBuffer;
 
             DrawCallList drawCallList;
-
-            Shapes::Frustum viewFrustum;
-            Math::SIMD::Float4x4 viewMatrix;
-            Math::SIMD::Float4x4 projectionMatrix;
-            float nearClip = 0.0f;
-            float farClip = 0.0f;
+            concurrency::concurrent_queue<RenderCall> renderCallList;
+            RenderCall renderCall;
 
         public:
-            Renderer(Context *context, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
+            Renderer(Context *context, Plugin::Core *core, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
                 : ContextRegistration(context)
+                , core(core)
                 , videoDevice(videoDevice)
                 , population(population)
                 , resources(resources)
                 , threadPool(3)
             {
+                core->onDisplay.connect<Renderer, &Renderer::onDisplay>(this);
                 population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Renderer, &Renderer::onLoadSucceeded>(this);
                 population->onEntityCreated.connect<Renderer, &Renderer::onEntityCreated>(this);
@@ -330,6 +340,7 @@ namespace Gek
                 population->onEntityCreated.disconnect<Renderer, &Renderer::onEntityCreated>(this);
                 population->onLoadSucceeded.disconnect<Renderer, &Renderer::onLoadSucceeded>(this);
                 population->onLoadBegin.disconnect<Renderer, &Renderer::onLoadBegin>(this);
+                core->onDisplay.disconnect<Renderer, &Renderer::onDisplay>(this);
             }
 
             void addEntity(Plugin::Entity *entity)
@@ -426,11 +437,11 @@ namespace Gek
             {
                 // Early out with empty rectangle if the light is too far behind the view frustum
                 Math::SIMD::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
-                if ((position.z + radius) >= nearClip)
+                if ((position.z + radius) >= renderCall.nearClip)
                 {
                     clipRegion.set(-1.0f, -1.0f, 1.0f, 1.0f);
-                    updateClipRegion(position.x, position.z, radius, projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
-                    updateClipRegion(position.y, position.z, radius, projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
+                    updateClipRegion(position.x, position.z, radius, renderCall.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
+                    updateClipRegion(position.y, position.z, radius, renderCall.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
                 }
 
                 return clipRegion;
@@ -439,14 +450,14 @@ namespace Gek
             bool isSeparated(float x, float y, float z, const Math::Float3 &position, float range)
             {
                 // sub-frustrum bounds in view space       
-                float minimumZ = (z - 0) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
-                float maximumZ = (z + 1) * 1.0f / GridDepth * (farClip - nearClip) + nearClip;
+                float minimumZ = (z - 0) * 1.0f / GridDepth * (renderCall.farClip - renderCall.nearClip) + renderCall.nearClip;
+                float maximumZ = (z + 1) * 1.0f / GridDepth * (renderCall.farClip - renderCall.nearClip) + renderCall.nearClip;
 
                 static const Math::SIMD::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
                 static const Math::SIMD::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
                 Math::SIMD::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
-                Math::SIMD::Float4 projectionScale(Math::Float2(projectionMatrix.rx.x), Math::Float2(projectionMatrix.ry.y));
+                Math::SIMD::Float4 projectionScale(Math::Float2(renderCall.projectionMatrix.rx.x), Math::Float2(renderCall.projectionMatrix.ry.y));
                 auto minimum = Negate * (Math::SIMD::Float4::One - Math::SIMD::Float4::Two / GridDimensions * tileBounds) * minimumZ / projectionScale;
                 auto maximum = Negate * (Math::SIMD::Float4::One - Math::SIMD::Float4::Two / GridDimensions * tileBounds) * maximumZ / projectionScale;
 
@@ -485,8 +496,8 @@ namespace Gek
                 gridBounds[2] = (gridBounds[2] > GridWidth ? GridWidth : gridBounds[2]);
                 gridBounds[3] = (gridBounds[3] > GridHeight ? GridHeight : gridBounds[3]);
 
-                float centerDepth = ((position.z - nearClip) / (farClip - nearClip));
-                float rangeDepth = (range / (farClip - nearClip));
+                float centerDepth = ((position.z - renderCall.nearClip) / (renderCall.farClip - renderCall.nearClip));
+                float rangeDepth = (range / (renderCall.farClip - renderCall.nearClip));
 
                 Math::Int2 depthBounds(
                     std::floor((centerDepth - rangeDepth) * GridDepth),
@@ -527,14 +538,14 @@ namespace Gek
             void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
+                if (renderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                 {
                     auto &colorComponent = entity->getComponent<Components::Color>();
 
                     auto lightIterator = pointLightList.grow_by(1);
                     PointLightData &lightData = (*lightIterator);
                     lightData.radiance = colorComponent.value.xyz;
-                    lightData.position = viewMatrix.transform(transformComponent.position);
+                    lightData.position = renderCall.viewMatrix.transform(transformComponent.position);
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
 
@@ -546,17 +557,17 @@ namespace Gek
             void addLight(Plugin::Entity *entity, const Components::SpotLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                if (viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
+                if (renderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
                 {
                     auto &colorComponent = entity->getComponent<Components::Color>();
 
                     auto lightIterator = spotLightList.grow_by(1);
                     SpotLightData &lightData = (*lightIterator);
                     lightData.radiance = colorComponent.value.xyz;
-                    lightData.position = viewMatrix.transform(transformComponent.position);
+                    lightData.position = renderCall.viewMatrix.transform(transformComponent.position);
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
-                    lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                    lightData.direction = renderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                     lightData.innerAngle = lightComponent.innerAngle;
                     lightData.outerAngle = lightComponent.outerAngle;
                     lightData.coneFalloff = lightComponent.coneFalloff;
@@ -621,309 +632,321 @@ namespace Gek
                     }
                 }
             }
+            
+            void queueRenderCall(const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
+            {
+                RenderCall renderCall;
+                renderCall.viewMatrix = viewMatrix;
+                renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
+                renderCall.projectionMatrix = projectionMatrix;
+                renderCall.nearClip = nearClip;
+                renderCall.farClip = farClip;
+                if (filterList)
+                {
+                    renderCall.filterList = (*filterList);
+                }
 
-            void render(const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
+                renderCall.cameraTarget = cameraTarget;
+                renderCallList.push(renderCall);
+            }
+
+            // Plugin::Core Slots
+            void onDisplay(void)
             {
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                auto backBuffer = videoDevice->getBackBuffer();
-                auto width = backBuffer->getWidth();
-                auto height = backBuffer->getHeight();
-
-                this->viewFrustum.create(viewMatrix * projectionMatrix);
-                this->viewMatrix = viewMatrix;
-                this->projectionMatrix = projectionMatrix;
-                this->nearClip = nearClip;
-                this->farClip = farClip;
-
-                EngineConstantData engineConstantData;
-                engineConstantData.frameTime = population->getFrameTime();
-                engineConstantData.worldTime = population->getWorldTime();
-
-                CameraConstantData cameraConstantData;
-                cameraConstantData.fieldOfView.x = (1.0f / projectionMatrix._11);
-                cameraConstantData.fieldOfView.y = (1.0f / projectionMatrix._22);
-                cameraConstantData.nearClip = nearClip;
-                cameraConstantData.farClip = farClip;
-                cameraConstantData.viewMatrix = viewMatrix;
-                cameraConstantData.projectionMatrix = projectionMatrix;
-
-                drawCallList.clear();
-                onRenderScene.emit(viewFrustum, viewMatrix);
-                if (!drawCallList.empty())
+                while (renderCallList.try_pop(renderCall))
                 {
-                    Video::Device::Context *videoContext = videoDevice->getDefaultContext();
-                    videoContext->clearState();
+                    auto backBuffer = videoDevice->getBackBuffer();
+                    auto width = backBuffer->getWidth();
+                    auto height = backBuffer->getHeight();
 
-                    videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
-                    videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
+                    EngineConstantData engineConstantData;
+                    engineConstantData.frameTime = population->getFrameTime();
+                    engineConstantData.worldTime = population->getWorldTime();
 
-                    std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
-                    videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
-                    videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
-                    videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
-                    videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
+                    CameraConstantData cameraConstantData;
+                    cameraConstantData.fieldOfView.x = (1.0f / renderCall.projectionMatrix._11);
+                    cameraConstantData.fieldOfView.y = (1.0f / renderCall.projectionMatrix._22);
+                    cameraConstantData.nearClip = renderCall.nearClip;
+                    cameraConstantData.farClip = renderCall.farClip;
+                    cameraConstantData.viewMatrix = renderCall.viewMatrix;
+                    cameraConstantData.projectionMatrix = renderCall.projectionMatrix;
 
-                    std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
-                    videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
-
-                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-
-                    concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
+                    drawCallList.clear();
+                    onRenderScene.emit(renderCall.viewFrustum, renderCall.viewMatrix);
+                    if (!drawCallList.empty())
                     {
-                        return (leftValue.value < rightValue.value);
-                    });
+                        Video::Device::Context *videoContext = videoDevice->getDefaultContext();
+                        videoContext->clearState();
 
-                    bool isLightingRequired = false;
+                        videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
+                        videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
 
-                    ShaderHandle currentShader;
-                    std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
-                    for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
-                    {
-                        currentShader = drawCall->shader;
+                        std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
+                        videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
 
-                        auto beginShaderList = drawCall;
-                        while (drawCall != std::end(drawCallList) && drawCall->shader == currentShader)
+                        std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
+                        videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
+
+                        videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                        concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
                         {
-                            ++drawCall;
-                        };
-
-                        auto endShaderList = drawCall;
-                        Engine::Shader *shader = resources->getShader(currentShader);
-                        if (!shader)
-                        {
-                            continue;
-                        }
-
-                        auto &shaderList = drawCallSetMap[shader->getPriority()];
-                        shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
-                        for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); pass; pass = pass->next())
-                        {
-                            isLightingRequired |= pass->isLightingRequired();
-                        }
-                    }
-
-                    if (isLightingRequired)
-                    {
-                        lightIndexCount = 0;
-                        concurrency::parallel_for_each(std::begin(clusterLightsList), std::end(clusterLightsList), [&](auto &gridData) -> void
-                        {
-                            gridData.pointLightList.clear();
-                            gridData.spotLightList.clear();
+                            return (leftValue.value < rightValue.value);
                         });
 
-                        auto directionalLightsDone = threadPool.enqueue([&](void) -> void
-                        {
-                            directionalLightList.clear();
-                            directionalLightList.reserve(directionalLightEntities.size());
-                            for (auto &entity : directionalLightEntities)
-                            {
-                                auto &transformComponent = entity->getComponent<Components::Transform>();
-                                auto &colorComponent = entity->getComponent<Components::Color>();
-                                auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
+                        bool isLightingRequired = false;
 
-                                DirectionalLightData lightData;
-                                lightData.radiance = colorComponent.value.xyz;
-                                lightData.direction = viewMatrix.rotate(getLightDirection(transformComponent.rotation));
-                                directionalLightList.push_back(lightData);
+                        ShaderHandle currentShader;
+                        std::map<uint32_t, std::vector<DrawCallSet>> drawCallSetMap;
+                        for (auto &drawCall = std::begin(drawCallList); drawCall != std::end(drawCallList); )
+                        {
+                            currentShader = drawCall->shader;
+
+                            auto beginShaderList = drawCall;
+                            while (drawCall != std::end(drawCallList) && drawCall->shader == currentShader)
+                            {
+                                ++drawCall;
+                            };
+
+                            auto endShaderList = drawCall;
+                            Engine::Shader *shader = resources->getShader(currentShader);
+                            if (!shader)
+                            {
+                                continue;
+                            }
+
+                            auto &shaderList = drawCallSetMap[shader->getPriority()];
+                            shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
+                            for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, renderCall.viewFrustum); pass; pass = pass->next())
+                            {
+                                isLightingRequired |= pass->isLightingRequired();
+                            }
+                        }
+
+                        if (isLightingRequired)
+                        {
+                            lightIndexCount = 0;
+                            concurrency::parallel_for_each(std::begin(clusterLightsList), std::end(clusterLightsList), [&](auto &gridData) -> void
+                            {
+                                gridData.pointLightList.clear();
+                                gridData.spotLightList.clear();
+                            });
+
+                            auto directionalLightsDone = threadPool.enqueue([&](void) -> void
+                            {
+                                directionalLightList.clear();
+                                directionalLightList.reserve(directionalLightEntities.size());
+                                for (auto &entity : directionalLightEntities)
+                                {
+                                    auto &transformComponent = entity->getComponent<Components::Transform>();
+                                    auto &colorComponent = entity->getComponent<Components::Color>();
+                                    auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
+
+                                    DirectionalLightData lightData;
+                                    lightData.radiance = colorComponent.value.xyz;
+                                    lightData.direction = renderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                                    directionalLightList.push_back(lightData);
+                                }
+
+                                if (!directionalLightList.empty())
+                                {
+                                    if (!directionalLightDataBuffer || directionalLightDataBuffer->getCount() < directionalLightList.size())
+                                    {
+                                        directionalLightDataBuffer = nullptr;
+                                        directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                        directionalLightDataBuffer->setName(L"renderer:directionalLightDataBuffer");
+                                    }
+                                }
+                            });
+
+                            auto pointLightsDone = threadPool.enqueue([&](void) -> void
+                            {
+                                pointLightList.clear();
+                                concurrency::parallel_for_each(std::begin(pointLightEntities), std::end(pointLightEntities), [&](Plugin::Entity *entity) -> void
+                                {
+                                    auto &lightComponent = entity->getComponent<Components::PointLight>();
+                                    addLight(entity, lightComponent);
+                                });
+
+                                if (!pointLightList.empty())
+                                {
+                                    if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
+                                    {
+                                        pointLightDataBuffer = nullptr;
+                                        pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                        pointLightDataBuffer->setName(L"renderer:pointLightDataBuffer");
+                                    }
+                                }
+                            });
+
+                            auto spotLightsDone = threadPool.enqueue([&](void) -> void
+                            {
+                                spotLightList.clear();
+                                concurrency::parallel_for_each(std::begin(spotLightEntities), std::end(spotLightEntities), [&](Plugin::Entity *entity) -> void
+                                {
+                                    auto &lightComponent = entity->getComponent<Components::SpotLight>();
+                                    addLight(entity, lightComponent);
+                                });
+
+                                if (!spotLightList.empty())
+                                {
+                                    if (!spotLightDataBuffer || spotLightDataBuffer->getCount() < spotLightList.size())
+                                    {
+                                        spotLightDataBuffer = nullptr;
+                                        spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                        spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
+                                    }
+                                }
+                            });
+
+                            directionalLightsDone.get();
+                            pointLightsDone.get();
+                            spotLightsDone.get();
+
+                            clusterIndexList.clear();
+                            clusterIndexList.reserve(lightIndexCount);
+                            for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
+                            {
+                                auto &clusterData = clusterDataList[tileIndex];
+                                auto &clusterLights = clusterLightsList[tileIndex];
+                                clusterData.indexOffset = clusterIndexList.size();
+                                clusterData.pointLightCount = clusterLights.pointLightList.size();
+                                clusterData.spotLightCount = clusterLights.spotLightList.size();
+                                clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.pointLightList), std::end(clusterLights.pointLightList));
+                                clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.spotLightList), std::end(clusterLights.spotLightList));
                             }
 
                             if (!directionalLightList.empty())
                             {
-                                if (!directionalLightDataBuffer || directionalLightDataBuffer->getCount() < directionalLightList.size())
-                                {
-									directionalLightDataBuffer = nullptr;
-									directionalLightDataBuffer = videoDevice->createBuffer(sizeof(DirectionalLightData), directionalLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                    directionalLightDataBuffer->setName(L"renderer:directionalLightDataBuffer");
-                                }
+                                DirectionalLightData *directionalLightData = nullptr;
+                                videoDevice->mapBuffer(directionalLightDataBuffer.get(), directionalLightData);
+                                std::copy(std::begin(directionalLightList), std::end(directionalLightList), directionalLightData);
+                                videoDevice->unmapBuffer(directionalLightDataBuffer.get());
                             }
-                        });
-
-                        auto pointLightsDone = threadPool.enqueue([&](void) -> void
-                        {
-                            pointLightList.clear();
-                            concurrency::parallel_for_each(std::begin(pointLightEntities), std::end(pointLightEntities), [&](Plugin::Entity *entity) -> void
-                            {
-                                auto &lightComponent = entity->getComponent<Components::PointLight>();
-                                addLight(entity, lightComponent);
-                            });
 
                             if (!pointLightList.empty())
                             {
-                                if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
-                                {
-									pointLightDataBuffer = nullptr;
-									pointLightDataBuffer = videoDevice->createBuffer(sizeof(PointLightData), pointLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                    pointLightDataBuffer->setName(L"renderer:pointLightDataBuffer");
-                                }
+                                PointLightData *pointLightData = nullptr;
+                                videoDevice->mapBuffer(pointLightDataBuffer.get(), pointLightData);
+                                std::copy(std::begin(pointLightList), std::end(pointLightList), pointLightData);
+                                videoDevice->unmapBuffer(pointLightDataBuffer.get());
                             }
-                        });
-
-                        auto spotLightsDone = threadPool.enqueue([&](void) -> void
-                        {
-                            spotLightList.clear();
-                            concurrency::parallel_for_each(std::begin(spotLightEntities), std::end(spotLightEntities), [&](Plugin::Entity *entity) -> void
-                            {
-                                auto &lightComponent = entity->getComponent<Components::SpotLight>();
-                                addLight(entity, lightComponent);
-                            });
 
                             if (!spotLightList.empty())
                             {
-                                if (!spotLightDataBuffer || spotLightDataBuffer->getCount() < spotLightList.size())
-                                {
-									spotLightDataBuffer = nullptr;
-									spotLightDataBuffer = videoDevice->createBuffer(sizeof(SpotLightData), spotLightList.size(), Video::BufferType::Structured, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                    spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
-                                }
-                            }
-                        });
-
-                        directionalLightsDone.get();
-                        pointLightsDone.get();
-                        spotLightsDone.get();
-
-                        clusterIndexList.clear();
-                        clusterIndexList.reserve(lightIndexCount);
-                        for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
-                        {
-                            auto &clusterData = clusterDataList[tileIndex];
-                            auto &clusterLights = clusterLightsList[tileIndex];
-                            clusterData.indexOffset = clusterIndexList.size();
-                            clusterData.pointLightCount = clusterLights.pointLightList.size();
-                            clusterData.spotLightCount = clusterLights.spotLightList.size();
-                            clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.pointLightList), std::end(clusterLights.pointLightList));
-                            clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.spotLightList), std::end(clusterLights.spotLightList));
-                        }
-
-                        if (!directionalLightList.empty())
-                        {
-                            DirectionalLightData *directionalLightData = nullptr;
-                            videoDevice->mapBuffer(directionalLightDataBuffer.get(), directionalLightData);
-                            std::copy(std::begin(directionalLightList), std::end(directionalLightList), directionalLightData);
-                            videoDevice->unmapBuffer(directionalLightDataBuffer.get());
-                        }
-
-                        if (!pointLightList.empty())
-                        {
-                            PointLightData *pointLightData = nullptr;
-                            videoDevice->mapBuffer(pointLightDataBuffer.get(), pointLightData);
-                            std::copy(std::begin(pointLightList), std::end(pointLightList), pointLightData);
-                            videoDevice->unmapBuffer(pointLightDataBuffer.get());
-                        }
-
-                        if (!spotLightList.empty())
-                        {
-                            SpotLightData *spotLightData = nullptr;
-                            videoDevice->mapBuffer(spotLightDataBuffer.get(), spotLightData);
-                            std::copy(std::begin(spotLightList), std::end(spotLightList), spotLightData);
-                            videoDevice->unmapBuffer(spotLightDataBuffer.get());
-                        }
-
-                        ClusterData *clusterDataData = nullptr;
-                        videoDevice->mapBuffer(clusterDataBuffer.get(), clusterDataData);
-                        std::copy(std::begin(clusterDataList), std::end(clusterDataList), clusterDataData);
-                        videoDevice->unmapBuffer(clusterDataBuffer.get());
-
-                        if (!clusterIndexList.empty())
-                        {
-                            if (!clusterIndexBuffer || clusterIndexBuffer->getCount() < clusterIndexList.size())
-                            {
-								clusterIndexBuffer = nullptr;
-                                clusterIndexBuffer = videoDevice->createBuffer(Video::Format::R32_UINT, clusterIndexList.size(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
-                                clusterIndexBuffer->setName(L"renderer:clusterIndexBuffer");
+                                SpotLightData *spotLightData = nullptr;
+                                videoDevice->mapBuffer(spotLightDataBuffer.get(), spotLightData);
+                                std::copy(std::begin(spotLightList), std::end(spotLightList), spotLightData);
+                                videoDevice->unmapBuffer(spotLightDataBuffer.get());
                             }
 
-                            uint32_t *clusterIndexData = nullptr;
-                            videoDevice->mapBuffer(clusterIndexBuffer.get(), clusterIndexData);
-                            std::copy(std::begin(clusterIndexList), std::end(clusterIndexList), clusterIndexData);
-                            videoDevice->unmapBuffer(clusterIndexBuffer.get());
-                        }
+                            ClusterData *clusterDataData = nullptr;
+                            videoDevice->mapBuffer(clusterDataBuffer.get(), clusterDataData);
+                            std::copy(std::begin(clusterDataList), std::end(clusterDataList), clusterDataData);
+                            videoDevice->unmapBuffer(clusterDataBuffer.get());
 
-                        LightConstantData lightConstants;
-                        lightConstants.directionalLightCount = directionalLightList.size();
-                        lightConstants.pointLightCount = pointLightList.size();
-                        lightConstants.spotLightCount = spotLightList.size();
-                        lightConstants.gridSize.x = GridWidth;
-                        lightConstants.gridSize.y = GridHeight;
-                        lightConstants.gridSize.z = GridDepth;
-                        lightConstants.tileSize.x = (width / GridWidth);
-                        lightConstants.tileSize.y = (height / GridHeight);
-                        videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
-                    }
-
-                    for (auto &shaderDrawCallList : drawCallSetMap)
-                    {
-                        for (auto &shaderDrawCall : shaderDrawCallList.second)
-                        {
-                            auto &shader = shaderDrawCall.shader;
-                            for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, viewFrustum); pass; pass = pass->next())
+                            if (!clusterIndexList.empty())
                             {
-                                resources->startResourceBlock();
-                                if (pass->isLightingRequired())
+                                if (!clusterIndexBuffer || clusterIndexBuffer->getCount() < clusterIndexList.size())
                                 {
-                                    videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
-                                    videoContext->pixelPipeline()->setResourceList(
-                                    {
-                                        directionalLightDataBuffer.get(),
-                                        pointLightDataBuffer.get(),
-                                        spotLightDataBuffer.get(),
-                                        clusterDataBuffer.get(),
-                                        clusterIndexBuffer.get()
-                                    }, 0);
+                                    clusterIndexBuffer = nullptr;
+                                    clusterIndexBuffer = videoDevice->createBuffer(Video::Format::R32_UINT, clusterIndexList.size(), Video::BufferType::Raw, Video::BufferFlags::Mappable | Video::BufferFlags::Resource);
+                                    clusterIndexBuffer->setName(L"renderer:clusterIndexBuffer");
                                 }
 
-                                switch (pass->prepare())
+                                uint32_t *clusterIndexData = nullptr;
+                                videoDevice->mapBuffer(clusterIndexBuffer.get(), clusterIndexData);
+                                std::copy(std::begin(clusterIndexList), std::end(clusterIndexList), clusterIndexData);
+                                videoDevice->unmapBuffer(clusterIndexBuffer.get());
+                            }
+
+                            LightConstantData lightConstants;
+                            lightConstants.directionalLightCount = directionalLightList.size();
+                            lightConstants.pointLightCount = pointLightList.size();
+                            lightConstants.spotLightCount = spotLightList.size();
+                            lightConstants.gridSize.x = GridWidth;
+                            lightConstants.gridSize.y = GridHeight;
+                            lightConstants.gridSize.z = GridDepth;
+                            lightConstants.tileSize.x = (width / GridWidth);
+                            lightConstants.tileSize.y = (height / GridHeight);
+                            videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
+                        }
+
+                        for (auto &shaderDrawCallList : drawCallSetMap)
+                        {
+                            for (auto &shaderDrawCall : shaderDrawCallList.second)
+                            {
+                                auto &shader = shaderDrawCall.shader;
+                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, renderCall.viewFrustum); pass; pass = pass->next())
                                 {
-                                case Engine::Shader::Pass::Mode::Forward:
-                                    if (true)
+                                    resources->startResourceBlock();
+                                    if (pass->isLightingRequired())
                                     {
-                                        VisualHandle currentVisual;
-                                        MaterialHandle currentMaterial;
-                                        for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
+                                        videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
+                                        videoContext->pixelPipeline()->setResourceList(
                                         {
-                                            if (currentVisual != drawCall->plugin)
-                                            {
-                                                currentVisual = drawCall->plugin;
-                                                resources->setVisual(videoContext, currentVisual);
-                                            }
-
-                                            if (currentMaterial != drawCall->material)
-                                            {
-                                                currentMaterial = drawCall->material;
-                                                resources->setMaterial(videoContext, pass.get(), currentMaterial);
-                                            }
-
-                                            drawCall->onDraw(videoContext);
-                                        }
+                                            directionalLightDataBuffer.get(),
+                                            pointLightDataBuffer.get(),
+                                            spotLightDataBuffer.get(),
+                                            clusterDataBuffer.get(),
+                                            clusterIndexBuffer.get()
+                                        }, 0);
                                     }
 
-                                    break;
+                                    switch (pass->prepare())
+                                    {
+                                    case Engine::Shader::Pass::Mode::Forward:
+                                        if (true)
+                                        {
+                                            VisualHandle currentVisual;
+                                            MaterialHandle currentMaterial;
+                                            for (auto drawCall = shaderDrawCall.begin; drawCall != shaderDrawCall.end; ++drawCall)
+                                            {
+                                                if (currentVisual != drawCall->plugin)
+                                                {
+                                                    currentVisual = drawCall->plugin;
+                                                    resources->setVisual(videoContext, currentVisual);
+                                                }
 
-                                case Engine::Shader::Pass::Mode::Deferred:
-                                    videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                                    resources->drawPrimitive(videoContext, 3, 0);
-                                    break;
+                                                if (currentMaterial != drawCall->material)
+                                                {
+                                                    currentMaterial = drawCall->material;
+                                                    resources->setMaterial(videoContext, pass.get(), currentMaterial);
+                                                }
 
-                                case Engine::Shader::Pass::Mode::Compute:
-                                    break;
-                                };
+                                                drawCall->onDraw(videoContext);
+                                            }
+                                        }
 
-                                pass->clear();
-                                if (pass->isLightingRequired())
-                                {
-                                    videoContext->pixelPipeline()->clearResourceList(5, 0);
-                                    videoContext->pixelPipeline()->clearConstantBufferList(1, 3);
+                                        break;
+
+                                    case Engine::Shader::Pass::Mode::Deferred:
+                                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                                        resources->drawPrimitive(videoContext, 3, 0);
+                                        break;
+
+                                    case Engine::Shader::Pass::Mode::Compute:
+                                        break;
+                                    };
+
+                                    pass->clear();
+                                    if (pass->isLightingRequired())
+                                    {
+                                        videoContext->pixelPipeline()->clearResourceList(5, 0);
+                                        videoContext->pixelPipeline()->clearConstantBufferList(1, 3);
+                                    }
                                 }
                             }
                         }
-                    }
 
-                    if (filterList)
-                    {
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (auto &filterName : *filterList)
+                        for (auto &filterName : renderCall.filterList)
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
@@ -944,18 +967,17 @@ namespace Gek
                                 }
                             }
                         }
-                    }
 
-                    videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
-                    videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
-                    videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
-                    videoContext->computePipeline()->clearConstantBufferList(2, 0);
-
-                    if (cameraTarget)
-                    {
-                        renderOverlay(videoContext, resources->getResourceHandle(L"screen"), cameraTarget);
+                        videoContext->geometryPipeline()->clearConstantBufferList(2, 0);
+                        videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
+                        videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
+                        videoContext->computePipeline()->clearConstantBufferList(2, 0);
+                        if (renderCall.cameraTarget)
+                        {
+                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), renderCall.cameraTarget);
+                        }
                     }
-                }
+                };
             }
 
             void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)

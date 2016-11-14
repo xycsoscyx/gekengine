@@ -27,6 +27,7 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
             Nano::Signal<void(void)> onResize;
+            Nano::Signal<void(void)> onDisplay;
             Nano::Signal<void(bool showCursor)> onInterface;
 
             virtual ~Core(void) = default;

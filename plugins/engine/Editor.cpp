@@ -316,7 +316,7 @@ namespace Gek
                     const float height = float(backBuffer->getHeight());
                     auto projectionMatrix(Math::SIMD::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
-                    renderer->render(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
+                    renderer->queueRenderCall(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
                 }
             }
         };

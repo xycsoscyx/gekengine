@@ -204,7 +204,7 @@ namespace Gek
                 const float height = float(backBuffer->getHeight());
                 Math::SIMD::Float4x4 projectionMatrix(Math::SIMD::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                renderer->render(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
+                renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
             });
         }
     };
