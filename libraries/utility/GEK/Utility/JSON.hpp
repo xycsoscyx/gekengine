@@ -92,19 +92,19 @@ namespace jsoncons
     };
 
     template<class Json>
-    struct json_type_traits<Json, Gek::Math::SIMD::Float4>
+    struct json_type_traits<Json, Gek::Math::Float4>
     {
-        static Gek::Math::SIMD::Float4 as(const Json &object)
+        static Gek::Math::Float4 as(const Json &object)
         {
             if (object.is_string())
             {
-                return Gek::Evaluator::Get<Gek::Math::SIMD::Float4>(object.as_cstring());
+                return Gek::Evaluator::Get<Gek::Math::Float4>(object.as_cstring());
             }
 
-            return Gek::Math::SIMD::Float4::Zero;
+            return Gek::Math::Float4::Zero;
         }
 
-        static Json to_json(const Gek::Math::SIMD::Float4 &value)
+        static Json to_json(const Gek::Math::Float4 &value)
         {
             return Gek::String::create(L"%v", value);
         }

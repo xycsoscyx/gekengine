@@ -663,7 +663,7 @@ namespace Gek
                 inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
 				inputLayout->setName(L"core:inputLayout");
 
-                constantBuffer = videoDevice->createBuffer(sizeof(Math::SIMD::Float4x4), 1, Video::BufferType::Constant, 0);
+                constantBuffer = videoDevice->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
 				constantBuffer->setName(L"core:constantBuffer");
 
                 static const wchar_t *pixelShader =
@@ -1309,7 +1309,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 uint32_t width = backBuffer->getWidth();
                 uint32_t height = backBuffer->getHeight();
-                auto orthographic = Math::SIMD::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 videoDevice->updateResource(constantBuffer.get(), &orthographic);
 
                 auto videoContext = videoDevice->getDefaultContext();

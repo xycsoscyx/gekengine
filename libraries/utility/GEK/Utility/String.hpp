@@ -10,7 +10,7 @@
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include <functional>
 #include <algorithm>
@@ -398,7 +398,7 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        BaseString &operator = (const Math::SIMD::Float4 &value)
+        BaseString &operator = (const Math::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -538,7 +538,7 @@ namespace Gek
             append(stream.str());
         }
 
-        void operator += (const Math::SIMD::Float4 &value)
+        void operator += (const Math::Float4 &value)
         {
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
             stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
@@ -665,12 +665,12 @@ namespace Gek
 			return (stream.fail() ? Math::Vector4<TYPE>::Zero : value);
 		}
 
-        operator Math::SIMD::Float4() const
+        operator Math::Float4() const
         {
-            Math::SIMD::Float4 value;
+            Math::Float4 value;
             std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
             stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(',') >> value.w >> MustMatch(')'); // ( X , Y , Z , W )
-            return (stream.fail() ? Math::SIMD::Float4::Zero : value);
+            return (stream.fail() ? Math::Float4::Zero : value);
         }
 
 		operator Math::Quaternion () const

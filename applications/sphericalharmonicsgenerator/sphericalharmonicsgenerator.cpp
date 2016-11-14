@@ -2,7 +2,7 @@
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include <DirectXTex.h>
 #include <array>
 #include <ppl.h>
@@ -156,7 +156,7 @@ public:
 };
 
 typedef SH<float, 9> SH9;
-typedef SH<Math::SIMD::Float4, 9> SH9Color;
+typedef SH<Math::Float4, 9> SH9Color;
 
 ::DirectX::ScratchImage loadTexture(const wchar_t *fileName)
 {
@@ -321,7 +321,7 @@ SH9 ProjectOntoSH9(const Math::Float3& direction)
     return sh;
 }
 
-SH9Color ProjectOntoSH9Color(const Math::Float3& direction, const Math::SIMD::Float4& color)
+SH9Color ProjectOntoSH9Color(const Math::Float3& direction, const Math::Float4& color)
 {
     SH9 sh = ProjectOntoSH9(direction);
 
@@ -334,7 +334,7 @@ SH9Color ProjectOntoSH9Color(const Math::Float3& direction, const Math::SIMD::Fl
     return shColor;
 }
 
-Math::SIMD::Float4 EvalSH9Cosine(const Math::Float3& direction, const SH9Color& sh)
+Math::Float4 EvalSH9Cosine(const Math::Float3& direction, const SH9Color& sh)
 {
     SH9 dirSH = ProjectOntoSH9(direction);
     dirSH[0] *= CosineA0;
@@ -347,7 +347,7 @@ Math::SIMD::Float4 EvalSH9Cosine(const Math::Float3& direction, const SH9Color& 
     dirSH[7] *= CosineA2;
     dirSH[8] *= CosineA2;
 
-    Math::SIMD::Float4 result(0.0f);
+    Math::Float4 result(0.0f);
     for (int axis = 0; axis < 9; ++axis)
     {
         result += sh[axis] * dirSH[axis];
@@ -397,7 +397,7 @@ SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
     float imageSizeFloat = float(imageSize);
 
     SH9Color result;
-    Math::SIMD::Float4 weightSum(0.0f);
+    Math::Float4 weightSum(0.0f);
     for (int face = 0; face < 6; ++face)
     {
         ::DirectX::Image imageFace(image.GetImages()[face]);
@@ -410,10 +410,10 @@ SH9Color ProjectCubeMapToSH(const ::DirectX::ScratchImage &image)
             {
                 float u = (((x + 0.5f) / imageSizeFloat) * 2.0f) - 1.0f;
 
-                Math::SIMD::Float4 sample(&pixels[x * 4]);
+                Math::Float4 sample(&pixels[x * 4]);
 
                 const float temp = 1.0f + u * u + v * v;
-                Math::SIMD::Float4 weight(4.0f / (std::sqrt(temp) * temp));
+                Math::Float4 weight(4.0f / (std::sqrt(temp) * temp));
 
                 Math::Float3 direction(MapXYSToDirection(face, u, v));
                 result += ProjectOntoSH9Color(direction, sample) * weight;

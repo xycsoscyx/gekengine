@@ -1344,13 +1344,13 @@ namespace Gek
                     d3dDeviceContext->RSSetScissorRects(UINT(rectangleList.size()), (D3D11_RECT *)rectangleList.data());
                 }
 
-                void clearResource(Video::Object *object, const Math::SIMD::Float4 &value)
+                void clearResource(Video::Object *object, const Math::Float4 &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
                 }
 
-                void clearUnorderedAccess(Video::Object *object, const Math::SIMD::Float4 &value)
+                void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);

@@ -83,11 +83,6 @@ namespace Gek
             GetResult(expression, result, defaultValue);
         }
 
-        void Get(const wchar_t *expression, Math::SIMD::Float4 &result, const Math::SIMD::Float4 &defaultValue)
-        {
-            GetResult(expression, result, defaultValue);
-        }
-
         void Get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
         {
             try

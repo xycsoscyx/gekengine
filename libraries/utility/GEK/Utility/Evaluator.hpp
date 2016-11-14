@@ -10,7 +10,7 @@
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Utility\String.hpp"
 
@@ -26,7 +26,6 @@ namespace Gek
         void Get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue = Math::Float2::Zero);
         void Get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue = Math::Float3::Zero);
         void Get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue = Math::Float4::Zero);
-        void Get(const wchar_t *expression, Math::SIMD::Float4 &result, const Math::SIMD::Float4 &defaultValue = Math::SIMD::Float4::Zero);
         void Get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue = Math::Quaternion::Identity);
         void Get(const wchar_t *expression, String &result);
 

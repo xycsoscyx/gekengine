@@ -722,11 +722,11 @@ namespace Gek
             {
             }
 
-            void clearResource(Video::Object *object, const Math::SIMD::Float4 &value)
+            void clearResource(Video::Object *object, const Math::Float4 &value)
             {
             }
 
-            void clearUnorderedAccess(Video::Object *object, const Math::SIMD::Float4 &value)
+            void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
             {
             }
 

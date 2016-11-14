@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\SIMD\Vector4.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Vector4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\Context.hpp"
 
@@ -39,7 +39,7 @@ namespace Gek
             virtual void setVolume(float volume) = 0;
             virtual float getVolume(void) = 0;
 
-            virtual void setListener(const Math::SIMD::Float4x4 &matrix) = 0;
+            virtual void setListener(const Math::Float4x4 &matrix) = 0;
 
 			virtual BufferPtr loadBuffer(const wchar_t *fileName) = 0;
 			virtual SoundPtr createSound(void) = 0;

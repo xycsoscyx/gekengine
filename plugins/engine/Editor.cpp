@@ -225,13 +225,13 @@ namespace Gek
                                         ImGui::Separator();
                                         if (editingEnabled)
                                         {
-                                            Math::SIMD::Float4x4 viewMatrix(rotation, position);
+                                            Math::Float4x4 viewMatrix(rotation, position);
                                             viewMatrix.invert();
 
                                             const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                                             const float width = float(backBuffer->getWidth());
                                             const float height = float(backBuffer->getHeight());
-                                            auto projectionMatrix(Math::SIMD::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                                            auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                                             component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
                                         }
@@ -305,16 +305,16 @@ namespace Gek
                     static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
                     rotation = Math::Quaternion::FromAngular(upAxis, headingAngle);
 
-                    Math::SIMD::Float4x4 viewMatrix(rotation);
+                    Math::Float4x4 viewMatrix(rotation);
                     position += (viewMatrix.rz.xyz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
                     position += (viewMatrix.rx.xyz * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
-                    viewMatrix.translation = position;
+                    viewMatrix.translation.xyz = position;
                     viewMatrix.invert();
 
                     const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getWidth());
                     const float height = float(backBuffer->getHeight());
-                    auto projectionMatrix(Math::SIMD::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+                    auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                     renderer->queueRenderCall(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
                 }

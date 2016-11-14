@@ -7,7 +7,7 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Shapes\Plane.hpp"
 
 namespace Gek
@@ -21,9 +21,9 @@ namespace Gek
 
         public:
             Frustum(void);
-            Frustum(const Math::SIMD::Float4x4 &perspectiveTransform);
+            Frustum(const Math::Float4x4 &perspectiveTransform);
 
-            void create(const Math::SIMD::Float4x4 &perspectiveTransform);
+            void create(const Math::Float4x4 &perspectiveTransform);
 
             template <class SHAPE>
             bool isVisible(const SHAPE &shape) const

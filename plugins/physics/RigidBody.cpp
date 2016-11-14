@@ -1,5 +1,5 @@
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\ComponentMixin.hpp"
@@ -33,7 +33,7 @@ namespace Gek
 				const auto &physical = entity->getComponent<Components::Physical>();
 				const auto &transform = entity->getComponent<Components::Transform>();
 
-                Math::SIMD::Float4x4 matrix(transform.getMatrix());
+                Math::Float4x4 matrix(transform.getMatrix());
                 newtonBody = NewtonCreateDynamicBody(newtonWorld, newtonCollision, matrix.data);
                 if (newtonBody == nullptr)
                 {
@@ -78,7 +78,7 @@ namespace Gek
 
             void onSetTransform(const float* const matrixData, int threadHandle)
             {
-                Math::SIMD::Float4x4 matrix(matrixData);
+                Math::Float4x4 matrix(matrixData);
 				auto &transform = entity->getComponent<Components::Transform>();
                 transform.rotation = matrix.getRotation();
                 transform.position = matrix.translation.xyz;

@@ -22,7 +22,7 @@ namespace Gek
         {
         }
 
-        OrientedBox::OrientedBox(const AlignedBox &box, const Math::SIMD::Float4x4 &matrix)
+        OrientedBox::OrientedBox(const AlignedBox &box, const Math::Float4x4 &matrix)
             : matrix(matrix)
             , halfsize(box.getSize() * 0.5f)
         {

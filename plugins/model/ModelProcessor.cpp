@@ -1,4 +1,4 @@
-﻿#include "GEK\Math\SIMD\Matrix4x4.hpp"
+﻿#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Shapes\AlignedBox.hpp"
 #include "GEK\Shapes\OrientedBox.hpp"
 #include "GEK\Utility\String.hpp"
@@ -76,7 +76,7 @@ namespace Gek
             ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ui(guiContext, data, 0);
         }
@@ -140,11 +140,12 @@ namespace Gek
             MaterialHandle skin;
         };
 
+        __declspec(align(16))
         struct Instance
         {
-            Math::SIMD::Float4x4 matrix;
+            Math::Float4x4 matrix;
 
-            Instance(const Math::SIMD::Float4x4 &matrix)
+            Instance(const Math::Float4x4 &matrix)
                 : matrix(matrix)
             {
             }
@@ -329,7 +330,7 @@ namespace Gek
             resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
         }
 
-        void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::SIMD::Float4x4 &viewMatrix)
+        void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
         {
             GEK_REQUIRE(renderer);
 
@@ -337,7 +338,7 @@ namespace Gek
             list([&](Plugin::Entity *entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
-                Math::SIMD::Float4x4 matrix(transformComponent.getMatrix());
+                Math::Float4x4 matrix(transformComponent.getMatrix());
 
                 Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
                 orientedBox.halfsize *= transformComponent.scale;

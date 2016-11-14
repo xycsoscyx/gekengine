@@ -7,7 +7,7 @@
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include <unordered_map>
 #include <ppl.h>
 
@@ -90,7 +90,7 @@ namespace Gek
             ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
             ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
@@ -202,7 +202,7 @@ namespace Gek
                 const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                 const float width = float(backBuffer->getWidth());
                 const float height = float(backBuffer->getHeight());
-                Math::SIMD::Float4x4 projectionMatrix(Math::SIMD::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
+                Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
                 renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
             });

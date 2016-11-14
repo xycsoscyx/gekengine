@@ -3,6 +3,7 @@
 #include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Utility\ThreadPool.hpp"
+#include "GEK\Utility\Allocator.hpp"
 #include "GEK\Engine\Core.hpp"
 #include "GEK\Engine\Renderer.hpp"
 #include "GEK\Engine\Resources.hpp"
@@ -38,22 +39,25 @@ namespace Gek
             static const uint32_t GridSize = (GridWidth * GridHeight * GridDepth);
 
         public:
-            struct EngineConstantData
+            __declspec(align(16))
+                struct EngineConstantData
             {
                 float worldTime;
                 float frameTime;
                 float buffer[2];
             };
 
+            __declspec(align(16))
             struct CameraConstantData
             {
                 Math::Float2 fieldOfView;
                 float nearClip;
                 float farClip;
-                Math::SIMD::Float4x4 viewMatrix;
-                Math::SIMD::Float4x4 projectionMatrix;
+                Math::Float4x4 viewMatrix;
+                Math::Float4x4 projectionMatrix;
             };
 
+            __declspec(align(16))
             struct LightConstantData
             {
                 Math::UInt3 gridSize;
@@ -167,8 +171,8 @@ namespace Gek
             struct RenderCall
             {
                 Shapes::Frustum viewFrustum;
-                Math::SIMD::Float4x4 viewMatrix;
-                Math::SIMD::Float4x4 projectionMatrix;
+                Math::Float4x4 viewMatrix;
+                Math::Float4x4 projectionMatrix;
                 float nearClip, farClip;
                 std::vector<String> filterList;
                 ResourceHandle cameraTarget;
@@ -197,9 +201,9 @@ namespace Gek
             concurrency::concurrent_unordered_set<Plugin::Entity *> pointLightEntities;
             concurrency::concurrent_unordered_set<Plugin::Entity *> spotLightEntities;
 
-            concurrency::concurrent_vector<DirectionalLightData> directionalLightList;
-            concurrency::concurrent_vector<PointLightData> pointLightList;
-            concurrency::concurrent_vector<SpotLightData> spotLightList;
+            concurrency::concurrent_vector<DirectionalLightData, AlignedAllocator<DirectionalLightData, 16>> directionalLightList;
+            concurrency::concurrent_vector<PointLightData, AlignedAllocator<PointLightData, 16>> pointLightList;
+            concurrency::concurrent_vector<SpotLightData, AlignedAllocator<SpotLightData, 16>> spotLightList;
             ClusterTile clusterLightsList[GridSize];
             ClusterData clusterDataList[GridSize];
             std::vector<uint32_t> clusterIndexList;
@@ -214,7 +218,7 @@ namespace Gek
 
             DrawCallList drawCallList;
             concurrency::concurrent_queue<RenderCall> renderCallList;
-            RenderCall renderCall;
+            RenderCall currentRenderCall;
 
         public:
             Renderer(Context *context, Plugin::Core *core, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
@@ -372,7 +376,7 @@ namespace Gek
             }
 
             // Clustered Lighting
-            inline Math::Float3 getLightDirection(const Math::Quaternion &quaternion)
+            inline Math::Float3 getLightDirection(const Math::Quaternion &quaternion) const
             {
                 float xx(quaternion.x * quaternion.x);
                 float yy(quaternion.y * quaternion.y);
@@ -394,7 +398,7 @@ namespace Gek
                 }
             }
 
-            inline void updateClipRegionRoot(float tangentCoordinate, float lightCoordinate, float lightDepth, float radius, float radiusSquared, float lightRangeSquared, float cameraScale, float& minimum, float& maximum)
+            inline void updateClipRegionRoot(float tangentCoordinate, float lightCoordinate, float lightDepth, float radius, float radiusSquared, float lightRangeSquared, float cameraScale, float& minimum, float& maximum) const
             {
                 float nz = ((radius - tangentCoordinate * lightCoordinate) / lightDepth);
                 float pz = ((lightRangeSquared - radiusSquared) / (lightDepth - (nz / tangentCoordinate) * lightCoordinate));
@@ -414,7 +418,7 @@ namespace Gek
                 }
             }
 
-            inline void updateClipRegion(float lightCoordinate, float lightDepth, float radius, float cameraScale, float& minimum, float& maximum)
+            inline void updateClipRegion(float lightCoordinate, float lightDepth, float radius, float cameraScale, float& minimum, float& maximum) const
             {
                 float radiusSquared = (radius * radius);
                 float lightDepthSquared = (lightDepth * lightDepth);
@@ -433,33 +437,39 @@ namespace Gek
             }
 
             // Returns bounding box [min.xy, max.xy] in clip [-1, 1] space.
-            inline Math::SIMD::Float4 getClipBounds(const Math::Float3 &position, float radius)
+            inline Math::Float4 getClipBounds(const Math::Float3 &position, float range) const
             {
                 // Early out with empty rectangle if the light is too far behind the view frustum
-                Math::SIMD::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
-                if ((position.z + radius) >= renderCall.nearClip)
+                Math::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
+                if ((position.z + range) >= currentRenderCall.nearClip)
                 {
                     clipRegion.set(-1.0f, -1.0f, 1.0f, 1.0f);
-                    updateClipRegion(position.x, position.z, radius, renderCall.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
-                    updateClipRegion(position.y, position.z, radius, renderCall.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
+                    updateClipRegion(position.x, position.z, range, currentRenderCall.projectionMatrix.rx.x, clipRegion.minimum.x, clipRegion.maximum.x);
+                    updateClipRegion(position.y, position.z, range, currentRenderCall.projectionMatrix.ry.y, clipRegion.minimum.y, clipRegion.maximum.y);
                 }
 
                 return clipRegion;
             }
 
-            bool isSeparated(float x, float y, float z, const Math::Float3 &position, float range)
+            inline Math::Float4 getScreenBounds(const Math::Float3 &position, float range) const
+            {
+                auto clipBounds((getClipBounds(position, range) + 1.0f) * 0.5f);
+                return Math::Float4(clipBounds.x, (1.0f - clipBounds.w), clipBounds.z, (1.0f - clipBounds.y));
+            }
+
+            bool isSeparated(float x, float y, float z, const Math::Float3 &position, float range) const
             {
                 // sub-frustrum bounds in view space       
-                float minimumZ = (z - 0) * 1.0f / GridDepth * (renderCall.farClip - renderCall.nearClip) + renderCall.nearClip;
-                float maximumZ = (z + 1) * 1.0f / GridDepth * (renderCall.farClip - renderCall.nearClip) + renderCall.nearClip;
+                float minimumZ = (z - 0) * 1.0f / GridDepth * (currentRenderCall.farClip - currentRenderCall.nearClip) + currentRenderCall.nearClip;
+                float maximumZ = (z + 1) * 1.0f / GridDepth * (currentRenderCall.farClip - currentRenderCall.nearClip) + currentRenderCall.nearClip;
 
-                static const Math::SIMD::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
-                static const Math::SIMD::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
+                static const Math::Float4 Negate(Math::Float2(-1.0f), Math::Float2(1.0f));
+                static const Math::Float4 GridDimensions(GridWidth, GridWidth, GridHeight, GridHeight);
 
-                Math::SIMD::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
-                Math::SIMD::Float4 projectionScale(Math::Float2(renderCall.projectionMatrix.rx.x), Math::Float2(renderCall.projectionMatrix.ry.y));
-                auto minimum = Negate * (Math::SIMD::Float4::One - Math::SIMD::Float4::Two / GridDimensions * tileBounds) * minimumZ / projectionScale;
-                auto maximum = Negate * (Math::SIMD::Float4::One - Math::SIMD::Float4::Two / GridDimensions * tileBounds) * maximumZ / projectionScale;
+                Math::Float4 tileBounds(x, (x + 1.0f), y, (y + 1.0f));
+                Math::Float4 projectionScale(Math::Float2(currentRenderCall.projectionMatrix.rx.x), Math::Float2(currentRenderCall.projectionMatrix.ry.y));
+                auto minimum = Negate * (1.0f - 2.0f / GridDimensions * tileBounds) * minimumZ / projectionScale;
+                auto maximum = Negate * (1.0f - 2.0f / GridDimensions * tileBounds) * maximumZ / projectionScale;
 
                 // heuristic plane separation test - works pretty well in practice
                 Math::Float3 minimumZcenter((minimum.x + minimum.y) * 0.5f, (minimum.z + minimum.w) * 0.5f, minimumZ);
@@ -480,15 +490,14 @@ namespace Gek
 
             void addLightCluster(const Math::Float3 &position, float range, uint32_t lightIndex, bool pointLight)
             {
-                auto flipBounds((getClipBounds(position, range) + Math::SIMD::Float4::One) * Math::SIMD::Float4::Half);
-                Math::SIMD::Float4 clipBounds(flipBounds.x, (1.0f - flipBounds.w), flipBounds.z, (1.0f - flipBounds.y));
+                Math::Float4 screenBounds(getScreenBounds(position, range));
 
                 static const Math::Int2 GridDimensions(GridWidth, GridHeight);
                 Math::Int4 gridBounds(
-                    int32_t(std::floor(clipBounds.x * GridWidth)),
-                    int32_t(std::floor(clipBounds.y * GridHeight)),
-                    int32_t(std::ceil(clipBounds.z * GridWidth)),
-                    int32_t(std::ceil(clipBounds.w * GridHeight))
+                    int32_t(std::floor(screenBounds.x * GridWidth)),
+                    int32_t(std::floor(screenBounds.y * GridHeight)),
+                    int32_t(std::ceil(screenBounds.z * GridWidth)),
+                    int32_t(std::ceil(screenBounds.w * GridHeight))
                 );
                 
                 gridBounds[0] = (gridBounds[0] < 0 ? 0 : gridBounds[0]);
@@ -496,8 +505,8 @@ namespace Gek
                 gridBounds[2] = (gridBounds[2] > GridWidth ? GridWidth : gridBounds[2]);
                 gridBounds[3] = (gridBounds[3] > GridHeight ? GridHeight : gridBounds[3]);
 
-                float centerDepth = ((position.z - renderCall.nearClip) / (renderCall.farClip - renderCall.nearClip));
-                float rangeDepth = (range / (renderCall.farClip - renderCall.nearClip));
+                float centerDepth = ((position.z - currentRenderCall.nearClip) / (currentRenderCall.farClip - currentRenderCall.nearClip));
+                float rangeDepth = (range / (currentRenderCall.farClip - currentRenderCall.nearClip));
 
                 Math::Int2 depthBounds(
                     std::floor((centerDepth - rangeDepth) * GridDepth),
@@ -538,14 +547,14 @@ namespace Gek
             void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                if (renderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
+                if (currentRenderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
                 {
                     auto &colorComponent = entity->getComponent<Components::Color>();
 
                     auto lightIterator = pointLightList.grow_by(1);
                     PointLightData &lightData = (*lightIterator);
                     lightData.radiance = colorComponent.value.xyz;
-                    lightData.position = renderCall.viewMatrix.transform(transformComponent.position);
+                    lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
 
@@ -557,17 +566,17 @@ namespace Gek
             void addLight(Plugin::Entity *entity, const Components::SpotLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
-                if (renderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
+                if (currentRenderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
                 {
                     auto &colorComponent = entity->getComponent<Components::Color>();
 
                     auto lightIterator = spotLightList.grow_by(1);
                     SpotLightData &lightData = (*lightIterator);
                     lightData.radiance = colorComponent.value.xyz;
-                    lightData.position = renderCall.viewMatrix.transform(transformComponent.position);
+                    lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
-                    lightData.direction = renderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                    lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                     lightData.innerAngle = lightComponent.innerAngle;
                     lightData.outerAngle = lightComponent.outerAngle;
                     lightData.coneFalloff = lightComponent.coneFalloff;
@@ -633,12 +642,12 @@ namespace Gek
                 }
             }
             
-            void queueRenderCall(const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
+            void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
             {
                 RenderCall renderCall;
                 renderCall.viewMatrix = viewMatrix;
-                renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
                 renderCall.projectionMatrix = projectionMatrix;
+                renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
                 renderCall.nearClip = nearClip;
                 renderCall.farClip = farClip;
                 if (filterList)
@@ -656,7 +665,7 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                while (renderCallList.try_pop(renderCall))
+                while (renderCallList.try_pop(currentRenderCall))
                 {
                     auto backBuffer = videoDevice->getBackBuffer();
                     auto width = backBuffer->getWidth();
@@ -667,15 +676,15 @@ namespace Gek
                     engineConstantData.worldTime = population->getWorldTime();
 
                     CameraConstantData cameraConstantData;
-                    cameraConstantData.fieldOfView.x = (1.0f / renderCall.projectionMatrix._11);
-                    cameraConstantData.fieldOfView.y = (1.0f / renderCall.projectionMatrix._22);
-                    cameraConstantData.nearClip = renderCall.nearClip;
-                    cameraConstantData.farClip = renderCall.farClip;
-                    cameraConstantData.viewMatrix = renderCall.viewMatrix;
-                    cameraConstantData.projectionMatrix = renderCall.projectionMatrix;
+                    cameraConstantData.fieldOfView.x = (1.0f / currentRenderCall.projectionMatrix._11);
+                    cameraConstantData.fieldOfView.y = (1.0f / currentRenderCall.projectionMatrix._22);
+                    cameraConstantData.nearClip = currentRenderCall.nearClip;
+                    cameraConstantData.farClip = currentRenderCall.farClip;
+                    cameraConstantData.viewMatrix = currentRenderCall.viewMatrix;
+                    cameraConstantData.projectionMatrix = currentRenderCall.projectionMatrix;
 
                     drawCallList.clear();
-                    onRenderScene.emit(renderCall.viewFrustum, renderCall.viewMatrix);
+                    onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix);
                     if (!drawCallList.empty())
                     {
                         Video::Device::Context *videoContext = videoDevice->getDefaultContext();
@@ -723,7 +732,7 @@ namespace Gek
 
                             auto &shaderList = drawCallSetMap[shader->getPriority()];
                             shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
-                            for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, renderCall.viewFrustum); pass; pass = pass->next())
+                            for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
                             {
                                 isLightingRequired |= pass->isLightingRequired();
                             }
@@ -750,7 +759,7 @@ namespace Gek
 
                                     DirectionalLightData lightData;
                                     lightData.radiance = colorComponent.value.xyz;
-                                    lightData.direction = renderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
+                                    lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                                     directionalLightList.push_back(lightData);
                                 }
 
@@ -883,7 +892,7 @@ namespace Gek
                             for (auto &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
-                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, renderCall.viewFrustum); pass; pass = pass->next())
+                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
                                 {
                                     resources->startResourceBlock();
                                     if (pass->isLightingRequired())
@@ -946,7 +955,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (auto &filterName : renderCall.filterList)
+                        for (auto &filterName : currentRenderCall.filterList)
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)
@@ -972,9 +981,9 @@ namespace Gek
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
-                        if (renderCall.cameraTarget)
+                        if (currentRenderCall.cameraTarget)
                         {
-                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), renderCall.cameraTarget);
+                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), currentRenderCall.cameraTarget);
                         }
                     }
                 };

@@ -7,9 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 15:54:27 2016 +0000 $
 #pragma once
 
+#include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector2.hpp"
-#include <cstdint>
-#include <cmath>
 
 namespace Gek
 {
@@ -70,7 +69,7 @@ namespace Gek
 
             TYPE getLengthSquared(void) const
             {
-                return ((x * x) + (y * y) + (z * z));
+                return dot(*this);
             }
 
             TYPE getLength(void) const
@@ -85,7 +84,8 @@ namespace Gek
 
             Vector3 getNormal(void) const
             {
-                return ((*this) / getLength());
+                float inverseLength = (1.0f / getLength());
+                return ((*this) * inverseLength);
             }
 
 			Vector3 getMinimum(const Vector3 &vector) const
@@ -127,14 +127,16 @@ namespace Gek
 
             Vector3 cross(const Vector3 &vector) const
             {
-                return Vector3(((y * vector.z) - (z * vector.y)),
+                return Vector3(
+                    ((y * vector.z) - (z * vector.y)),
                     ((z * vector.x) - (x * vector.z)),
                     ((x * vector.y) - (y * vector.x)));
             }
 
             void normalize(void)
             {
-                (*this) = getNormal();
+                float inverseLength = (1.0f / getLength());
+                (*this) *= inverseLength;
             }
 
             bool operator < (const Vector3 &vector) const

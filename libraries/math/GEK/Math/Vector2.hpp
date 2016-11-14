@@ -7,8 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include <cstdint>
-#include <cmath>
+#include "GEK\Math\Common.hpp"
 
 namespace Gek
 {
@@ -69,7 +68,7 @@ namespace Gek
 
             TYPE getLengthSquared(void) const
             {
-                return ((x * x) + (y * y));
+                return dot(*this);
             }
 
             TYPE getLength(void) const
@@ -84,7 +83,8 @@ namespace Gek
 
             Vector2 getNormal(void) const
             {
-                return ((*this) / getLength());
+                float inverseLength = (1.0f / getLength());
+                return ((*this) * inverseLength);
             }
 
 			Vector2 getMinimum(const Vector2 &vector) const
@@ -123,8 +123,9 @@ namespace Gek
 
 			void normalize(void)
 			{
-				(*this) = getNormal();
-			}
+                float inverseLength = (1.0f / getLength());
+                (*this) *= inverseLength;
+            }
 
 			bool operator < (const Vector2 &vector) const
             {
@@ -285,31 +286,31 @@ namespace Gek
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator - (const Vector2<TYPE> &vector)
         {
-            return Vector2(-vector.x, -vector.y);
+            return Vector2<TYPE>(-vector.x, -vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator + (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Vector2(scalar + vector.x, scalar + vector.y);
+            return Vector2<TYPE>(scalar + vector.x, scalar + vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator - (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Vector2(scalar - vector.x, scalar - vector.y);
+            return Vector2<TYPE>(scalar - vector.x, scalar - vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator * (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Vector2(scalar * vector.x, scalar * vector.y);
+            return Vector2<TYPE>(scalar * vector.x, scalar * vector.y);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector2<TYPE> operator / (TYPE scalar, const Vector2<TYPE> &vector)
         {
-            return Vector2(scalar / vector.x, scalar / vector.y);
+            return Vector2<TYPE>(scalar / vector.x, scalar / vector.y);
         }
 
         using Float2 = Vector2<float>;

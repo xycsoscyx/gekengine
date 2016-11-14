@@ -45,6 +45,7 @@ namespace Gek
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
             };
 
+            __declspec(align(16))
             struct FilterConstantData
             {
                 Math::Float2 targetSize;
@@ -168,7 +169,7 @@ namespace Gek
                     case BindType::Int4:
                     case BindType::UInt4:
                     case BindType::Float4:
-                        result = Evaluator::Get<Math::SIMD::Float4>(value);
+                        result = Evaluator::Get<Math::Float4>(value);
                         break;
                     };
 

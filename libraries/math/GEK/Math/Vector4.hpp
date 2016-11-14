@@ -7,11 +7,9 @@
 /// Last Changed: $Date$
 #pragma once
 
+#include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector3.hpp"
-#include <xmmintrin.h>
-#include <cstdint>
-#include <cmath>
 
 namespace Gek
 {
@@ -109,12 +107,12 @@ namespace Gek
 
             TYPE getLengthSquared(void) const
             {
-                return this->dot(*this);
+                return dot(*this);
             }
 
             TYPE getLength(void) const
             {
-				return dot(*this);
+                return std::sqrt(getLengthSquared());
             }
 
             TYPE getDistance(const Vector4 &vector) const
@@ -124,7 +122,8 @@ namespace Gek
 
             Vector4 getNormal(void) const
             {
-				return ((*this) / getLength());
+                float inverseLength = (1.0f / getLength());
+                return ((*this) * inverseLength);
             }
 
 			Vector4 getMinimum(const Vector4 &vector) const
@@ -169,7 +168,8 @@ namespace Gek
 
 			void normalize(void)
 			{
-				(*this) = getNormal();
+                float inverseLength = (1.0f / getLength());
+                (*this) *= inverseLength;
 			}
 
 			bool operator < (const Vector4 &vector) const
@@ -355,51 +355,51 @@ namespace Gek
 
             Vector4 operator - (TYPE scalar) const
             {
-				return Vector4(
-					(x - scalar),
-					(y - scalar),
-					(z - scalar),
-					(w - scalar))
-            }
+                return Vector4(
+                    (x - scalar),
+                    (y - scalar),
+                    (z - scalar),
+                    (w - scalar));
+            };
 
             Vector4 operator + (TYPE scalar) const
             {
-				return Vector4(
-					(x + scalar),
-					(y + scalar),
-					(z + scalar),
-					(w + scalar))
+                return Vector4(
+                    (x + scalar),
+                    (y + scalar),
+                    (z + scalar),
+                    (w + scalar));
 			}
 
             Vector4 operator / (TYPE scalar) const
             {
-				return Vector4(
-					(x / scalar),
-					(y / scalar),
-					(z / scalar),
-					(w / scalar))
+                return Vector4(
+                    (x / scalar),
+                    (y / scalar),
+                    (z / scalar),
+                    (w / scalar));
 			}
 
             Vector4 operator * (TYPE scalar) const
             {
-				return Vector4(
-					(x * scalar),
-					(y * scalar),
-					(z * scalar),
-					(w * scalar))
+                return Vector4(
+                    (x * scalar),
+                    (y * scalar),
+                    (z * scalar),
+                    (w * scalar));
 			}
         };
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator - (const Vector4<TYPE> &vector)
         {
-			return Vector4(-vector.x, -vector.y, -vector.z, -vector.w);
+			return Vector4<TYPE>(-vector.x, -vector.y, -vector.z, -vector.w);
         }
 
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator + (TYPE scalar, const Vector4<TYPE> &vector)
         {
-			return Vector4(
+			return Vector4<TYPE>(
 				(scalar + vector.x),
 				(scalar + vector.y),
 				(scalar + vector.z),
@@ -409,7 +409,7 @@ namespace Gek
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator - (TYPE scalar, const Vector4<TYPE> &vector)
         {
-			return Vector4(
+			return Vector4<TYPE>(
 				(scalar - vector.x),
 				(scalar - vector.y),
 				(scalar - vector.z),
@@ -419,7 +419,7 @@ namespace Gek
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator * (TYPE scalar, const Vector4<TYPE> &vector)
         {
-			return Vector4(
+			return Vector4<TYPE>(
 				(scalar * vector.x),
 				(scalar * vector.y),
 				(scalar * vector.z),
@@ -429,7 +429,7 @@ namespace Gek
         template <typename TYPE, typename = typename std::enable_if<std::is_arithmetic<TYPE>::value, TYPE>::type>
         Vector4<TYPE> operator / (TYPE scalar, const Vector4<TYPE> &vector)
         {
-			return Vector4(
+			return Vector4<TYPE>(
 				(scalar / vector.x),
 				(scalar / vector.y),
 				(scalar / vector.z),

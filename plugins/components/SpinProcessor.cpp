@@ -7,7 +7,7 @@
 #include "GEK\Engine\ComponentMixin.hpp"
 #include "GEK\Components\Transform.hpp"
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include <random>
 
 namespace Gek
@@ -43,7 +43,7 @@ namespace Gek
         {
         }
 
-        void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
         {
         }
     };

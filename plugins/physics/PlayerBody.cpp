@@ -1,5 +1,5 @@
 #include "GEK\Math\Common.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\Engine\Core.hpp"
@@ -175,7 +175,7 @@ namespace Gek
                 Math::Float3 p1(playerComponent.innerRadius, playerComponent.height, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::FromYaw(step * 2.0f * Math::Pi / stepCount));
+                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(p0);
                     convexPoints[1][step] = rotation.rotate(p1);
                 }
@@ -183,9 +183,9 @@ namespace Gek
                 NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, stepCount * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
 
                 // create the outer thick cylinder
-                Math::SIMD::Float4x4 outerShapeMatrix(Math::SIMD::Float4x4::Identity);
+                Math::Float4x4 outerShapeMatrix(Math::Float4x4::Identity);
                 float capsuleHigh = playerComponent.height - playerComponent.stairStep;
-                outerShapeMatrix.translation = (outerShapeMatrix.ry.xyz * (capsuleHigh * 0.5f + playerComponent.stairStep));
+                outerShapeMatrix.translation.xyz = (outerShapeMatrix.ry.xyz * (capsuleHigh * 0.5f + playerComponent.stairStep));
 
                 NewtonCollision* const bodyCapsule = NewtonCreateCapsule(newtonWorld, 0.25f, 0.25f, 0.5f, 0, outerShapeMatrix.data);
                 NewtonCollisionSetScale(bodyCapsule, playerComponent.outerRadius * 4.0f, capsuleHigh, playerComponent.outerRadius * 4.0f);
@@ -214,7 +214,7 @@ namespace Gek
                 Math::Float3 q1(castRadius, castHeight, 0.0f);
                 for (int step = 0; step < stepCount; step++)
                 {
-                    Math::SIMD::Float4x4 rotation(Math::SIMD::Float4x4::FromYaw(step * 2.0f * Math::Pi / stepCount));
+                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(step * 2.0f * Math::Pi / stepCount));
                     convexPoints[0][step] = rotation.rotate(q0);
                     convexPoints[1][step] = rotation.rotate(q1);
                 }
@@ -277,7 +277,7 @@ namespace Gek
 
             Math::Float3 calculateDesiredOmega(float headingAngle, float frameTime) const
             {
-                Math::SIMD::Float4x4 matrix;
+                Math::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
                 Math::Quaternion playerRotation(matrix.getRotation());
                 Math::Quaternion targetRotation(Math::Quaternion::FromYaw(headingAngle));
@@ -286,7 +286,7 @@ namespace Gek
 
             Math::Float3 calculateDesiredVelocity(float forwardSpeed, float lateralSpeed, float verticalSpeed, const Math::Float3& gravity, float frameTime) const
             {
-                Math::SIMD::Float4x4 matrix;
+                Math::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
 
                 Math::Float3 currentVelocity;
@@ -338,7 +338,7 @@ namespace Gek
                 return velocity;
             }
 
-            void updateGroundPlane(Math::Float3 &position, const Math::SIMD::Float4x4& castMatrix, const Math::Float3& target, int threadHandle)
+            void updateGroundPlane(Math::Float3 &position, const Math::Float4x4& castMatrix, const Math::Float3& target, int threadHandle)
             {
                 float castDistance = 10.0f;
                 ConvexCastPreFilter filter(newtonBody);
@@ -458,7 +458,7 @@ namespace Gek
                 // get the body motion state 
                 const auto &playerComponent = entity->getComponent<Components::Player>();
 
-                Math::SIMD::Float4x4 matrix;
+                Math::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
 
                 Math::Float3 velocity;
@@ -620,7 +620,7 @@ namespace Gek
                 NewtonCollisionSetScale(newtonUpperBodyShape, scale.x, scale.y, scale.z);
 
                 // determine if player is standing on some plane
-                Math::SIMD::Float4x4 supportMatrix(matrix);
+                Math::Float4x4 supportMatrix(matrix);
                 if (touchingSurface)
                 {
                     float step = std::abs(matrix.ry.xyz.dot(velocity * frameTime));
@@ -634,7 +634,7 @@ namespace Gek
                     updateGroundPlane(position, supportMatrix, target, threadHandle);
                 }
 
-                matrix.translation = position;
+                matrix.translation.xyz = position;
 
                 // set player velocity, position and orientation
                 NewtonBodySetVelocity(newtonBody, velocity.data);

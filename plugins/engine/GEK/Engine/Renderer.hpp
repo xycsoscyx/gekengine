@@ -21,6 +21,7 @@ namespace Gek
 
         GEK_INTERFACE(Renderer)
         {
+            __declspec(align(16))
             struct DirectionalLightData
             {
                 Math::Float3 radiance;
@@ -29,6 +30,7 @@ namespace Gek
 				float padding2;
 			};
 
+            __declspec(align(16))
             struct PointLightData
             {
                 Math::Float3 radiance;
@@ -37,6 +39,7 @@ namespace Gek
                 float range;
             };
 
+            __declspec(align(16))
             struct SpotLightData
             {
                 Math::Float3 radiance;
@@ -51,14 +54,14 @@ namespace Gek
 				float padding2;
             };
 
-            Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::SIMD::Float4x4 &viewMatrix)> onRenderScene;
+            Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)> onRenderScene;
 
             virtual ~Renderer(void) = default;
 
             virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
-            virtual void queueRenderCall(const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList = nullptr, ResourceHandle cameraTarget = ResourceHandle()) = 0;
+            virtual void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList = nullptr, ResourceHandle cameraTarget = ResourceHandle()) = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
         };

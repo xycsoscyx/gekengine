@@ -63,7 +63,7 @@ namespace Gek
             break;
 
         case ClearType::Target:
-            value = (Math::SIMD::Float4)data;
+            value = data;
             break;
             
         case ClearType::UInt:

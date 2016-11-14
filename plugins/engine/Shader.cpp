@@ -58,7 +58,7 @@ namespace Gek
             };
 
             __declspec(align(16))
-                struct ShaderConstantData
+            struct ShaderConstantData
             {
                 Math::Float2 targetSize;
                 float padding[2];
@@ -236,7 +236,7 @@ namespace Gek
                     case BindType::Int4:
                         if (true)
                         {
-                            Math::SIMD::Float4 vector = Evaluator::Get<Math::SIMD::Float4>(value);
+                            Math::Float4 vector = Evaluator::Get<Math::Float4>(value);
                             result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
                             break;
                         }
@@ -244,13 +244,13 @@ namespace Gek
                     case BindType::UInt4:
                         if (true)
                         {
-                            Math::SIMD::Float4 vector = Evaluator::Get<Math::SIMD::Float4>(value);
+                            Math::Float4 vector = Evaluator::Get<Math::Float4>(value);
                             result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
                             break;
                         }
 
                     case BindType::Float4:
-                        result = Evaluator::Get<Math::SIMD::Float4>(value);
+                        result = Evaluator::Get<Math::Float4>(value);
                         break;
                     };
 
@@ -1201,7 +1201,7 @@ namespace Gek
                 }
             };
 
-            Pass::Iterator begin(Video::Device::Context *videoContext, const Math::SIMD::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+            Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(videoContext);

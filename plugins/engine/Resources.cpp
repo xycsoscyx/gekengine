@@ -325,7 +325,13 @@ namespace Gek
 
                 for (uint32_t object = 0; object < listCount; ++object)
                 {
-                    objectList[object] = dynamic_cast<TYPE *>(cache.getResource(inputList[object]));
+                    auto resource = cache.getResource(inputList[object]);
+                    if (!resource)
+                    {
+                        return false;
+                    }
+
+                    objectList[object] = dynamic_cast<TYPE *>(resource);
                     if (!objectList[object])
                     {
                         return false;
@@ -344,11 +350,13 @@ namespace Gek
 
                 for (uint32_t object = 0; object < listCount; ++object)
                 {
-                    objectList[object] = cache.getResource(inputList[object]);
-                    if (!objectList[object])
+                    auto resource = cache.getResource(inputList[object]);
+                    if (!resource)
                     {
                         return false;
                     }
+
+                    objectList[object] = resource;
                 }
 
                 return true;
@@ -522,7 +530,7 @@ namespace Gek
                         }
                         else if (colorSize == 4)
                         {
-                            Math::SIMD::Float4 color;
+                            Math::Float4 color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             colorData[0] = uint8_t(color.x * 255.0f);
                             colorData[1] = uint8_t(color.y * 255.0f);
@@ -1213,7 +1221,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::SIMD::Float4 &value)
+            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value)
             {
                 GEK_REQUIRE(videoContext);
 

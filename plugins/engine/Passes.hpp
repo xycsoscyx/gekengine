@@ -82,7 +82,7 @@ namespace Gek
         union
         {
             Math::Float4 color;
-            Math::SIMD::Float4 value;
+            Math::Float4 value;
             uint32_t uint[4];
         };
 

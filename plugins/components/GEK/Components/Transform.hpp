@@ -8,7 +8,7 @@
 #pragma once
 
 #include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Math\Quaternion.hpp"
 #include "GEK\Engine\Component.hpp"
 
@@ -25,12 +25,12 @@ namespace Gek
             void save(JSON::Object &componentData) const;
             void load(const JSON::Object &componentData);
 
-            inline Math::SIMD::Float4x4 getMatrix(void) const
+            inline Math::Float4x4 getMatrix(void) const
             {
-                return Math::SIMD::Float4x4(rotation, position);
+                return Math::Float4x4(rotation, position);
             }
 
-            inline void setMatrix(const Math::SIMD::Float4x4 &matrix)
+            inline void setMatrix(const Math::Float4x4 &matrix)
             {
                 rotation = matrix.getRotation();
                 position = matrix.translation.xyz;

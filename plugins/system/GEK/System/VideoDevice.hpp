@@ -10,7 +10,7 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector2.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\SIMD\Vector4.hpp"
+#include "GEK\Math\Vector4.hpp"
 #include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\JSON.hpp"
@@ -520,7 +520,7 @@ namespace Gek
                 virtual void generateMipMaps(Texture *texture) = 0;
 
                 virtual void clearState(void) = 0;
-                virtual void clearUnorderedAccess(Object *object, const Math::SIMD::Float4 &value) = 0;
+                virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;
                 virtual void clearUnorderedAccess(Object *object, const uint32_t value[4]) = 0;
                 virtual void clearRenderTarget(Target *renderTarget, const Math::Float4 &clearColor) = 0;
                 virtual void clearDepthStencilTarget(Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;

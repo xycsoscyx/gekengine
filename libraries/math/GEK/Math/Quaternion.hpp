@@ -10,7 +10,6 @@
 #include "GEK\Math\Common.hpp"
 #include "GEK\Math\Vector3.hpp"
 #include "GEK\Math\Vector4.hpp"
-#include <xmmintrin.h>
 
 namespace Gek
 {
@@ -113,18 +112,14 @@ namespace Gek
             }
 
             inline Quaternion(const Quaternion &rotation)
-                : x(rotation.x)
-                , y(rotation.y)
-                , z(rotation.z)
-                , w(rotation.w)
+                : axis(rotation.axis)
+                , angle(rotation.angle)
             {
             }
 
-            inline Quaternion(const Float3 &axis, float angle)
-                : x(axis.x)
-                , y(axis.y)
-                , z(axis.z)
-                , w(angle)
+            inline Quaternion(const Math::Float3 &axis, float angle)
+                : axis(axis)
+                , angle(angle)
             {
             }
 
@@ -149,7 +144,8 @@ namespace Gek
 
             inline Quaternion getNormal(void) const
             {
-                return ((*this) * (1.0f / getLength()));
+                float inverseLength = (1.0f / getLength());
+                return ((*this) * inverseLength);
             }
 
             inline Quaternion getInverse(void) const
@@ -164,7 +160,8 @@ namespace Gek
 
             inline void normalize(void)
             {
-                (*this) = getNormal();
+                float inverseLength = (1.0f / getLength());
+                (*this) *= inverseLength;
             }
 
             inline float dot(const Quaternion &rotation) const
@@ -209,10 +206,10 @@ namespace Gek
                 return data;
             }
 
-            inline Float3 operator * (const Float3 &vector) const
+            inline Float3 rotate(const Float3 &vector) const
             {
-                Float3 cross(2.0f * this->axis.cross(vector));
-                return (vector + (this->angle * cross) + this->axis.cross(cross));
+                Float3 twoCross(2.0f * axis.cross(vector));
+                return (vector + (angle * twoCross) + axis.cross(twoCross));
             }
 
             inline Quaternion operator * (const Quaternion &rotation) const
@@ -231,21 +228,41 @@ namespace Gek
 
             inline Quaternion &operator = (const Quaternion &rotation)
             {
-                x = rotation.x;
-                y = rotation.y;
-                x = rotation.z;
-                w = rotation.w;
+                axis = rotation.axis;
+                angle = rotation.angle;
                 return (*this);
             }
 
-            inline Quaternion operator * (float scale) const
+            inline void operator /= (float scalar)
             {
-                return Quaternion((axis * scale), (w * scale));
+                axis /= scalar;
+                angle /= scalar;
+            }
+
+            inline void operator *= (float scalar)
+            {
+                axis *= scalar;
+                angle *= scalar;
+            }
+
+            inline Quaternion operator / (float scalar) const
+            {
+                return Quaternion((axis / scalar), (angle / scalar));
+            }
+
+            inline Quaternion operator + (float scalar) const
+            {
+                return Quaternion((axis + scalar), (angle + scalar));
+            }
+
+            inline Quaternion operator * (float scalar) const
+            {
+                return Quaternion((axis * scalar), (angle *scalar));
             }
 
             inline Quaternion operator + (const Quaternion &rotation) const
             {
-                return Quaternion((axis + rotation.axis), (w + rotation.w));
+                return Quaternion((axis + rotation.axis), (angle + rotation.angle));
             }
         };
     }; // namespace Math

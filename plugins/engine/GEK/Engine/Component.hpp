@@ -7,7 +7,7 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\SIMD\Matrix4x4.hpp"
+#include "GEK\Math\Matrix4x4.hpp"
 #include "GEK\Utility\Context.hpp"
 #include "GEK\Utility\JSON.hpp"
 #include <typeindex>
@@ -65,7 +65,7 @@ namespace Gek
             virtual ~Component(void) = default;
             
             virtual void show(ImGuiContext *guiContext, Plugin::Component::Data *data) = 0;
-            virtual void edit(ImGuiContext *guiContext, const Math::SIMD::Float4x4 &viewMatrix, const Math::SIMD::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
+            virtual void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
         };
     }; // namespace Edit
 }; // namespace Gek
