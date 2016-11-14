@@ -66,6 +66,12 @@ namespace Gek
                 this->y = TYPE(y);
             }
 
+            void set(const TYPE *data)
+            {
+                this->x = TYPE(data[0]);
+                this->y = TYPE(data[1]);
+            }
+
             TYPE getLengthSquared(void) const
             {
                 return dot(*this);

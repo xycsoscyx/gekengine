@@ -123,13 +123,20 @@ namespace Gek
             {
             }
 
-            inline Quaternion &set(float x, float y, float z, float w)
+            inline void set(float x, float y, float z, float w)
             {
                 this->x = x;
                 this->y = y;
                 this->z = z;
                 this->w = w;
-                return (*this);
+            }
+
+            void set(const float *data)
+            {
+                this->x = data[0];
+                this->y = data[1];
+                this->z = data[2];
+                this->w = data[3];
             }
 
             inline float getLengthSquared(void) const
