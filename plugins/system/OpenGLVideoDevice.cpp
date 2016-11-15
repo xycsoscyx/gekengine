@@ -6,8 +6,9 @@
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
-#include <gl/GL.h>
-#include <gl/Glee.h>
+
+#include <glbinding\gl45core\gl.h>
+#include <glbinding\Binding.h>
 
 namespace Gek
 {
@@ -843,6 +844,8 @@ namespace Gek
 
                 RECT clientRectangle;
                 GetClientRect(window, &clientRectangle);
+
+                glbinding::Binding::initialize();
 
                 defaultContext = std::make_shared<Context>(this);
             }
