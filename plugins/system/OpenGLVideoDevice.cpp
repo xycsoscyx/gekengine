@@ -7,6 +7,9 @@
 #include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
 
+#define GLFW_DLL
+#include <GLFW/glfw3.h>
+
 namespace Gek
 {
     namespace OpenGL

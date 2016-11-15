@@ -19,3 +19,9 @@
 [submodule "external/jsoncons"]
 	path = external/jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
+[submodule "external/glfw"]
+	path = external/glfw
+	url = https://github.com/glfw/glfw.git
+[submodule "external/glew"]
+	path = external/glew
+	url = https://github.com/nigels-com/glew.git
