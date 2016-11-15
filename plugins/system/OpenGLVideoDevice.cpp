@@ -6,9 +6,8 @@
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
-
-#define GLFW_DLL
-#include <GLFW/glfw3.h>
+#include <gl/GL.h>
+#include <gl/Glee.h>
 
 namespace Gek
 {
@@ -824,7 +823,9 @@ namespace Gek
         };
 
         public:
-            HWND window;
+            HWND window = nullptr;
+
+            HDC windowDC = nullptr;
 
             Video::DisplayModeList displayModeList;
 
@@ -838,6 +839,11 @@ namespace Gek
             {
                 GEK_REQUIRE(window);
 
+                windowDC = GetDC(window);
+
+                RECT clientRectangle;
+                GetClientRect(window, &clientRectangle);
+
                 defaultContext = std::make_shared<Context>(this);
             }
 
@@ -847,12 +853,16 @@ namespace Gek
 
                 backBuffer = nullptr;
                 defaultContext = nullptr;
+
+                ReleaseDC(window, windowDC);
             }
 
             // System
             Video::DisplayModeList getDisplayModeList(Video::Format format) const
             {
-                return Video::DisplayModeList();
+                Video::DisplayModeList displayModeList;
+
+                return displayModeList;
             }
 
             void setFullScreenState(bool fullScreen)

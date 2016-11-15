@@ -57,7 +57,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         String rootPath(fullModulePath.wstring());
 
         WNDCLASS windowClass;
-        windowClass.style = 0;
+        windowClass.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
         windowClass.lpfnWndProc = WindowProc;
         windowClass.cbClsExtra = 0;
         windowClass.cbWndExtra = 0;

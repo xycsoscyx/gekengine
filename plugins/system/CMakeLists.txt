@@ -13,7 +13,7 @@ set_property(TARGET ${ProjectID} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS True)
 
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} math utility DirectXTex)
+target_link_libraries(${ProjectID} math utility DirectXTex libgleeStatic)
 
 set_target_properties(${ProjectID}
     PROPERTIES

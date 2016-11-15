@@ -11,20 +11,14 @@ include(FindWindowsSDK)
 SET(BUILD_SHARED_LIBS False CACHE BOOL "" FORCE)
 SET(BUILD_STATIC_LIBS True CACHE BOOL "" FORCE)
 
-SET(BUILD_UTILS False, CACHE BOOL "" FORCE)
-SET(GLEW_USE_STATIC_LIBS True CACHE BOOL "" FORCE)
-add_subdirectory("glew/build/cmake")
-add_custom_command(
-    OUTPUT ${CMAKE_SOURCE_DIR}/external/glew/src/glew.c ${CMAKE_SOURCE_DIR}/external/glew/src/glewinfo.c
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/external/glew/auto
-    COMMAND ${CMAKE_MAKE_PROGRAM}
-)
-
-SET(GLFW_BUILD_DOCS False CACHE BOOL "" FORCE)
-SET(GLFW_BUILD_EXAMPLES False CACHE BOOL "" FORCE)
-SET(GLFW_BUILD_TESTS False CACHE BOOL "" FORCE)
-SET(GLFW_INSTALL False CACHE BOOL "" FORCE)
-add_subdirectory("glfw")
+if(MSVC)
+    remove_definitions(-DUNICODE -D_UNICODE)
+endif()
+add_subdirectory("glee")
+target_include_directories(libgleeStatic INTERFACE "${CMAKE_CURRENT_LIST_DIR}/glee/include")
+if(MSVC)
+    add_definitions(-DUNICODE -D_UNICODE)
+endif()
 
 SET(ASSIMP_BUILD_IFC_IMPORTER False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
@@ -81,8 +75,14 @@ set_property(TARGET dCustomJoints PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dMath PROPERTY FOLDER "External/dNewton")
 set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
 
+set_property(TARGET imgui PROPERTY FOLDER "External/ImGui")
+
+set_property(TARGET gleegen PROPERTY FOLDER "External/glee")
+set_property(TARGET gleexmlgen PROPERTY FOLDER "External/glee")
+set_property(TARGET libgleeShared PROPERTY FOLDER "External/glee")
+set_property(TARGET libgleeStatic PROPERTY FOLDER "External/glee")
+set_property(TARGET update_glee PROPERTY FOLDER "External/glee")
+
 if(WIN32)
     set_property(TARGET DirectXTex PROPERTY FOLDER "External/DirectXTex")
 endif()
-
-set_property(TARGET imgui PROPERTY FOLDER "External/ImGui")
