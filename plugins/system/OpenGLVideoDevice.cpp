@@ -6,6 +6,7 @@
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
+#include <wingdi.h>
 
 #include <glbinding\gl45core\gl.h>
 #include <glbinding\Binding.h>
@@ -104,37 +105,37 @@ namespace Gek
             }
         };
 
-		class InputLayout
-			: public Video::Object
-		{
-		public:
+        class InputLayout
+            : public Video::Object
+        {
+        public:
 
-		public:
-			InputLayout(void)
-			{
-			}
+        public:
+            InputLayout(void)
+            {
+            }
 
-			void setName(const wchar_t *name)
-			{
-			}
-		};
+            void setName(const wchar_t *name)
+            {
+            }
+        };
 
-		class ComputeProgram
-			: public Video::Object
-		{
-		public:
+        class ComputeProgram
+            : public Video::Object
+        {
+        public:
 
-		public:
-			ComputeProgram(void)
-			{
-			}
+        public:
+            ComputeProgram(void)
+            {
+            }
 
-			void setName(const wchar_t *name)
-			{
-			}
-		};
+            void setName(const wchar_t *name)
+            {
+            }
+        };
 
-		class VertexProgram
+        class VertexProgram
             : public Video::Object
         {
         public:
@@ -350,8 +351,8 @@ namespace Gek
                 , width(width)
                 , height(height)
                 , depth(depth)
-				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
-			{
+                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+            {
             }
 
             virtual ~Target(void) = default;
@@ -827,6 +828,7 @@ namespace Gek
             HWND window = nullptr;
 
             HDC windowDC = nullptr;
+            HGLRC openGLRC = nullptr;
 
             Video::DisplayModeList displayModeList;
 
@@ -841,9 +843,48 @@ namespace Gek
                 GEK_REQUIRE(window);
 
                 windowDC = GetDC(window);
+                if (!windowDC)
+                {
+                    throw Video::CreationFailed("Unable to get the device context from the window");
+                }
 
-                RECT clientRectangle;
-                GetClientRect(window, &clientRectangle);
+                PIXELFORMATDESCRIPTOR pixelFormatDescriptor =
+                {
+                    sizeof(PIXELFORMATDESCRIPTOR),
+                    1,
+                    PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
+                    PFD_TYPE_RGBA,             //The kind of framebuffer. RGBA or palette.
+                    32,                        //Colordepth of the framebuffer.
+                    0, 0, 0, 0, 0, 0,
+                    0,
+                    0,
+                    0,
+                    0, 0, 0, 0,
+                    0,                        //Number of bits for the depthbuffer
+                    0,                        //Number of bits for the stencilbuffer
+                    0,                        //Number of Aux buffers in the framebuffer.
+                    PFD_MAIN_PLANE,
+                    0,
+                    0, 0, 0
+                };
+
+                // If the video card/display can handle our desired pixel format then we set it as the current one.
+                auto pixelFormat = ChoosePixelFormat(windowDC, &pixelFormatDescriptor);
+                if (!SetPixelFormat(windowDC, pixelFormat, &pixelFormatDescriptor))
+                {
+                    throw Video::CreationFailed("Unable to select appropriate device context pixel format");
+                }
+
+                openGLRC = wglCreateContext(windowDC);
+                if (!openGLRC)
+                {
+                    throw Video::CreationFailed("Unable to create a rendering context for the window");
+                }
+
+                if (!wglMakeCurrent(windowDC, openGLRC))
+                {
+                    throw Video::CreationFailed("Unable to set rendering context for window");
+                }
 
                 glbinding::Binding::initialize();
 
@@ -857,6 +898,8 @@ namespace Gek
                 backBuffer = nullptr;
                 defaultContext = nullptr;
 
+                wglMakeCurrent(windowDC, nullptr);
+                wglDeleteContext(openGLRC);
                 ReleaseDC(window, windowDC);
             }
 
@@ -864,6 +907,47 @@ namespace Gek
             Video::DisplayModeList getDisplayModeList(Video::Format format) const
             {
                 Video::DisplayModeList displayModeList;
+
+                DEVMODE deviceMode;
+                if (EnumDisplaySettings(nullptr, 0, &deviceMode))
+                {
+                    DWORD mode = 1;
+                    while (EnumDisplaySettings(nullptr, mode++, &deviceMode))
+                    {
+                        auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
+                        {
+                            const float AspectRatio4x3 = (4.0f / 3.0f);
+                            const float AspectRatio16x9 = (16.0f / 9.0f);
+                            const float AspectRatio16x10 = (16.0f / 10.0f);
+                            float aspectRatio = (float(width) / float(height));
+                            if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
+                            {
+                                return Video::DisplayMode::AspectRatio::_4x3;
+                            }
+                            else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
+                            {
+                                return Video::DisplayMode::AspectRatio::_16x9;
+                            }
+                            else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
+                            {
+                                return Video::DisplayMode::AspectRatio::_16x10;
+                            }
+                            else
+                            {
+                                return Video::DisplayMode::AspectRatio::Unknown;
+                            }
+                        };
+
+                        Video::DisplayMode displayMode;
+                        displayMode.width = deviceMode.dmPelsWidth;
+                        displayMode.height = deviceMode.dmPelsHeight;
+                        //displayMode.format = DirectX::getFormat(dxgiDisplayMode.Format);
+                        displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
+                        displayMode.refreshRate.numerator = deviceMode.dmDisplayFrequency;
+                        displayMode.refreshRate.denominator = 1;
+                        displayModeList.push_back(displayMode);
+                    };
+                }
 
                 return displayModeList;
             }

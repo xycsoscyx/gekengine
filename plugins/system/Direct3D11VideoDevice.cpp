@@ -2244,6 +2244,9 @@ namespace Gek
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
             {
+                GEK_REQUIRE(compiledSize);
+                GEK_REQUIRE(compiledData);
+
                 std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
                 Video::InputElement::Source lastSource = Video::InputElement::Source::Vertex;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
@@ -2294,6 +2297,10 @@ namespace Gek
             template <class SHADER, class PROGRAM, typename RETURN, typename CLASS, typename... PARAMETERS>
             Video::ObjectPtr createProgram(const void *compiledData, uint32_t compiledSize, RETURN(__stdcall CLASS::*function)(PARAMETERS...))
             {
+                GEK_REQUIRE(compiledData);
+                GEK_REQUIRE(compiledSize);
+                GEK_REQUIRE(function);
+
                 CComPtr<SHADER> d3dShader;
                 HRESULT resultValue = (d3dDevice->*function)(compiledData, compiledSize, nullptr, &d3dShader);
                 if (FAILED(resultValue) || !d3dShader)
@@ -2306,6 +2313,9 @@ namespace Gek
 
             Video::ObjectPtr createProgram(Video::PipelineType pipelineType, const void *compiledData, uint32_t compiledSize)
             {
+                GEK_REQUIRE(compiledData);
+                GEK_REQUIRE(compiledSize);
+
                 switch (pipelineType)
                 {
                 case Video::PipelineType::Compute:
@@ -2353,6 +2363,10 @@ namespace Gek
 
             std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
             {
+                GEK_REQUIRE(name);
+                GEK_REQUIRE(uncompiledProgram);
+                GEK_REQUIRE(entryFunction);
+
                 switch (pipelineType)
                 {
                 case Video::PipelineType::Compute:
