@@ -19,6 +19,3 @@
 [submodule "external/jsoncons"]
 	path = external/jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
-[submodule "external/glee"]
-	path = external/glee
-	url = http://git.code.sf.net/p/glee/glee
