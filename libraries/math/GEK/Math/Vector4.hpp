@@ -156,7 +156,7 @@ namespace Gek
 
 			Vector4 getClamped(const Vector4 &min, const Vector4 &max) const
 			{
-				return Vector3(
+				return Vector4(
 					std::min(std::max(x, min.x), max.x),
 					std::min(std::max(y, min.y), max.y),
 					std::min(std::max(z, min.z), max.z),

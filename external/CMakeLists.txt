@@ -57,10 +57,8 @@ target_include_directories(jsoncons INTERFACE "${CMAKE_CURRENT_LIST_DIR}/jsoncon
 
 set_property(TARGET glmeta PROPERTY FOLDER "External/GLBinding")
 set_property(TARGET component_install PROPERTY FOLDER "External/GLBinding")
-set_property(TARGET generate PROPERTY FOLDER "External/GLBinding")
 set_property(TARGET pack PROPERTY FOLDER "External/GLBinding")
 set_property(TARGET pack-glbinding PROPERTY FOLDER "External/GLBinding")
-set_property(TARGET update PROPERTY FOLDER "External/GLBinding")
 set_property(TARGET glbinding PROPERTY FOLDER "External/GLBinding")
 
 set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")

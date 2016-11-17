@@ -1074,7 +1074,7 @@ namespace Gek
                     FileSystem::Load(cacheFileName, compiledProgram);
                 }
                 
-                if (!compiledProgram.empty())
+                if (compiledProgram.empty())
                 {
 #ifdef _DEBUG
 					auto debug = String::create(L".%v.hlsl", hash);
