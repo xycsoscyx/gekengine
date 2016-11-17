@@ -137,24 +137,24 @@ namespace Gek
 				const auto &playerComponent = entity->getComponent<Components::Player>();
 
                 setRestrainingDistance(0.0f);
-                setClimbSlope(45.0f * 3.1416f / 180.0f);
+                setClimbSlope(Math::DegreesToRadians(45.0f));
 
                 headingAngle = transformComponent.rotation.getEuler().y;
 
-                const int steps = 12;
-                Math::Float3 convexPoints[2][steps];
+                const int convexShapeDensity = 12;
+                Math::Float3 convexPoints[2][convexShapeDensity];
 
                 // create an inner thin cylinder
-                Math::Float3 p0(playerComponent.innerRadius, 0.0f, 0.0f);
-                Math::Float3 p1(playerComponent.innerRadius, playerComponent.height, 0.0f);
-                for (int i = 0; i < steps; i++)
+                Math::Float3 point0(playerComponent.innerRadius, 0.0f, 0.0f);
+                Math::Float3 point1(playerComponent.innerRadius, playerComponent.height, 0.0f);
+                for (int point = 0; point < convexShapeDensity; point++)
                 {
-                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(i * 2.0f * 3.141592f / steps));
-                    convexPoints[0][i] = rotation.rotate(p0);
-                    convexPoints[1][i] = rotation.rotate(p1);
+                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(point * 2.0f * Math::Pi / convexShapeDensity));
+                    convexPoints[0][point] = rotation.rotate(point0);
+                    convexPoints[1][point] = rotation.rotate(point1);
                 }
 
-                NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, steps * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
+                NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, convexShapeDensity * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
 
                 // create the outer thick cylinder
                 Math::Float4x4 outerShapeMatrix(Math::Float4x4::Identity);
@@ -185,16 +185,16 @@ namespace Gek
                 float castHeight = capsuleHigh * 0.4f;
                 float castRadius = (playerComponent.innerRadius * 0.5f > 0.05f) ? playerComponent.innerRadius * 0.5f : 0.05f;
 
-                Math::Float3 q0(castRadius, 0.0f, 0.0f);
-                Math::Float3 q1(castRadius, castHeight, 0.0f);
-                for (int i = 0; i < steps; i++)
+                point0.set(castRadius, 0.0f, 0.0f);
+                point1.set(castRadius, castHeight, 0.0f);
+                for (int point = 0; point < convexShapeDensity; point++)
                 {
-                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(i * 2.0f * 3.141592f / steps));
-                    convexPoints[0][i] = rotation.rotate(q0);
-                    convexPoints[1][i] = rotation.rotate(q1);
+                    Math::Float4x4 rotation(Math::Float4x4::FromYaw(point * 2.0f * Math::Pi / convexShapeDensity));
+                    convexPoints[0][point] = rotation.rotate(point0);
+                    convexPoints[1][point] = rotation.rotate(point1);
                 }
                 
-                newtonCastingShape = NewtonCreateConvexHull(newtonWorld, steps * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
+                newtonCastingShape = NewtonCreateConvexHull(newtonWorld, convexShapeDensity * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
                 newtonSupportShape = NewtonCompoundCollisionGetCollisionFromNode(shape, NewtonCompoundCollisionGetNodeByIndex(shape, 0));
                 newtonUpperBodyShape = NewtonCompoundCollisionGetCollisionFromNode(shape, NewtonCompoundCollisionGetNodeByIndex(shape, 1));
 
@@ -247,7 +247,7 @@ namespace Gek
             {
                 // this is correct
                 float omegaMagnitudeSquared = omega.getMagnitudeSquared();
-                const float ErrorAngle = 0.0125f * 3.141592f / 180.0f;
+                const float ErrorAngle = Math::DegreesToRadians(0.0125f);
                 const float ErrorAngleSquared = ErrorAngle * ErrorAngle;
                 if (omegaMagnitudeSquared > ErrorAngleSquared)
                 {
@@ -333,7 +333,7 @@ namespace Gek
 
             float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
             {
-                Math::Float3 contactVelocity(0.0f, 0.0f, 0.0f);
+                Math::Float3 contactVelocity = Math::Float3::Zero;
                 if (contactInfo->m_hitBody)
                 {
                     NewtonBodyGetPointVelocity(contactInfo->m_hitBody, contactInfo->m_point, contactVelocity.data);
@@ -347,8 +347,8 @@ namespace Gek
 
             void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& targetPoint, int threadHandle)
             {
-                groundNormal.set(0.0f);
-                groundVelocity.set(0.0f);
+                groundNormal = Math::Float3::Zero;
+                groundVelocity = Math::Float3::Zero;
 
                 float distance = 10.0f;
                 ConvexCastFilter filter(newtonBody);
@@ -479,9 +479,9 @@ namespace Gek
                 upConstraint.m_normal[2] = 0.0f;
                 upConstraint.m_normal[3] = 0.0f;
 
-                for (int j = 0; (j < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > 1.0e-5f); j++)
+                for (int j = 0; (j < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > Math::Epsilon); j++)
                 {
-                    if (velocity.getMagnitudeSquared() < 1.0e-6f)
+                    if (velocity.getMagnitudeSquared() < Math::Epsilon)
                     {
                         break;
                     }
@@ -502,16 +502,16 @@ namespace Gek
                         float contactSpeedList[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                         float contactBounceSpeedList[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
                         Math::Float3 contactBounceNormalList[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                        for (int i = 1; i < contactCount; i++)
+                        for (int contact = 1; contact < contactCount; contact++)
                         {
-                            Math::Float3 sourceNormal(currentContactList[i - 1].m_normal);
-                            for (int k = 0; k < i; k++)
+                            Math::Float3 sourceNormal(currentContactList[contact - 1].m_normal);
+                            for (int search = 0; search < contact; search++)
                             {
-                                Math::Float3 targetNormal(currentContactList[k].m_normal);
-                                if (sourceNormal.dot(targetNormal) > 0.9999f)
+                                Math::Float3 targetNormal(currentContactList[search].m_normal);
+                                if (sourceNormal.dot(targetNormal) > (1.0f - Math::Epsilon))
                                 {
-                                    currentContactList[i] = currentContactList[contactCount - 1];
-                                    i--;
+                                    currentContactList[contact] = currentContactList[contactCount - 1];
+                                    contact--;
                                     contactCount--;
                                     break;
                                 }
@@ -532,32 +532,32 @@ namespace Gek
                             currentContact++;
                         }
 
-                        for (int i = 0; i < contactCount; i++)
+                        for (int contact = 0; contact < contactCount; contact++)
                         {
                             contactSpeedList[currentContact] = 0.0f;
-                            contactBounceNormalList[currentContact].set(currentContactList[i].m_normal);
-                            contactBounceSpeedList[currentContact] = calculateContactKinematics(velocity, &currentContactList[i]);
+                            contactBounceNormalList[currentContact].set(currentContactList[contact].m_normal);
+                            contactBounceSpeedList[currentContact] = calculateContactKinematics(velocity, &currentContactList[contact]);
                             currentContact++;
                         }
 
-                        for (int i = 0; i < prevContactCount; i++)
+                        for (int contact = 0; contact < prevContactCount; contact++)
                         {
                             contactSpeedList[currentContact] = 0.0f;
-                            contactBounceNormalList[currentContact].set(previousContactList[i].m_normal);
-                            contactBounceSpeedList[currentContact] = calculateContactKinematics(velocity, &previousContactList[i]);
+                            contactBounceNormalList[currentContact].set(previousContactList[contact].m_normal);
+                            contactBounceSpeedList[currentContact] = calculateContactKinematics(velocity, &previousContactList[contact]);
                             currentContact++;
                         }
 
                         float residual = 10.0f;
                         Math::Float3 auxBounceVeloc(0.0f, 0.0f, 0.0f);
-                        for (int i = 0; (i < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > 1.0e-3f); i++)
+                        for (int contact = 0; (contact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > Math::Epsilon); contact++)
                         {
                             residual = 0.0f;
-                            for (int k = 0; k < currentContact; k++)
+                            for (int search = 0; search < currentContact; search++)
                             {
-                                Math::Float3 normal(contactBounceNormalList[k]);
-                                float v = contactBounceSpeedList[k] - normal.dot(auxBounceVeloc);
-                                float x = contactSpeedList[k] + v;
+                                Math::Float3 normal(contactBounceNormalList[search]);
+                                float v = contactBounceSpeedList[search] - normal.dot(auxBounceVeloc);
+                                float x = contactSpeedList[search] + v;
                                 if (x < 0.0f)
                                 {
                                     v = 0.0f;
@@ -569,21 +569,21 @@ namespace Gek
                                     residual = std::abs(v);
                                 }
 
-                                auxBounceVeloc += normal * (x - contactSpeedList[k]);
-                                contactSpeedList[k] = x;
+                                auxBounceVeloc += normal * (x - contactSpeedList[search]);
+                                contactSpeedList[search] = x;
                             }
                         }
 
                         Math::Float3 stepVelocity(0.0f);
-                        for (int i = 0; i < currentContact; i++)
+                        for (int contact = 0; contact < currentContact; contact++)
                         {
-                            Math::Float3 normal(contactBounceNormalList[i]);
-                            stepVelocity += normal * (contactSpeedList[i]);
+                            Math::Float3 normal(contactBounceNormalList[contact]);
+                            stepVelocity += normal * (contactSpeedList[contact]);
                         }
 
                         velocity += stepVelocity;
                         float velocityMagnitude = stepVelocity.getMagnitudeSquared();
-                        if (velocityMagnitude < 1.0e-6f)
+                        if (velocityMagnitude < Math::Epsilon)
                         {
                             float advanceTime = std::min(descreteTimeStep, normalizedTimeLeft * frameTime);
                             matrix.translation.xyz += (velocity * advanceTime);
@@ -629,10 +629,6 @@ namespace Gek
             }
 		};
 
-		/* Idle
-		If the ground drops out, the player starts to drop (uncontrolled)
-		Actions trigger action states (crouch, walk, jump)
-		*/
 		StatePtr IdleState::onUpdate(PlayerBody *player, float frameTime)
 		{
 			return nullptr;

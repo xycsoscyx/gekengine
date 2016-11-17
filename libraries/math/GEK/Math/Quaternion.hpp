@@ -207,33 +207,26 @@ namespace Gek
             inline Quaternion slerp(const Quaternion &rotation, float factor) const
             {
                 Quaternion result;
-                float angle = dot(rotation);
-                if ((angle + 1.0f) > 1.0e-5)
+                float deltaAngle = dot(rotation);
+                if ((deltaAngle + 1.0f) > Epsilon)
                 {
-                    float Sclp;
-                    float Sclq;
-                    if (angle < 0.995f)
+                    float factor0;
+                    float factor1;
+                    if (deltaAngle < 0.995f)
                     {
-                        float ang = std::acos(angle);
-                        float sinAng = std::sin(ang);
-
-                        float den = 1.0f / sinAng;
-
-                        Sclp = std::sin((1.0f - factor) * ang) * den;
-                        Sclq = std::sin(factor * ang) * den;
-
+                        float acos = std::acos(deltaAngle);
+                        float sin = std::sin(acos);
+                        float denominator = 1.0f / sin;
+                        factor0 = std::sin((1.0f - factor) * acos) * denominator;
+                        factor1 = std::sin(factor * acos) * denominator;
                     }
                     else
                     {
-                        Sclp = 1.0f - factor;
-                        Sclq = factor;
+                        factor0 = 1.0f - factor;
+                        factor1 = factor;
                     }
 
-                    result.w = w * Sclp + rotation.w * Sclq;
-                    result.x = x * Sclp + rotation.x * Sclq;
-                    result.y = y * Sclp + rotation.y * Sclq;
-                    result.z = z * Sclp + rotation.z * Sclq;
-
+                    result = ((*this) * factor0) + (rotation * factor1);
                 }
                 else
                 {
@@ -241,24 +234,16 @@ namespace Gek
                     result.x = -y;
                     result.y = x;
                     result.z = w;
-
-                    float Sclp = std::sin((1.0f - factor) * (3.141592f *0.5f));
-                    float Sclq = std::sin(factor * (3.141592f * 0.5f));
-
-                    result.w = w * Sclp + result.w * Sclq;
-                    result.x = x * Sclp + result.x * Sclq;
-                    result.y = y * Sclp + result.y * Sclq;
-                    result.z = z * Sclp + result.z * Sclq;
+                    float factor0 = std::sin((1.0f - factor) * (Pi * 0.5f));
+                    float factor1 = std::sin(factor * (Pi * 0.5f));
+                    result = ((*this) * factor0) + (rotation * factor1);
                 }
 
-                angle = result.dot(result);
-                if ((angle) < (1.0f - 1.0e-4f))
+                deltaAngle = result.dot(result);
+                if ((deltaAngle) < (1.0f - Epsilon))
                 {
-                    angle = 1.0f / std::sqrt(angle);
-                    result.w *= angle;
-                    result.x *= angle;
-                    result.y *= angle;
-                    result.z *= angle;
+                    deltaAngle = 1.0f / std::sqrt(deltaAngle);
+                    result *= deltaAngle;
                 }
 
                 return result;
@@ -296,10 +281,10 @@ namespace Gek
             inline Quaternion operator * (const Quaternion &rotation) const
             {
                 return Quaternion(
-                    ((w * rotation.x) + (x * rotation.w) + (y * rotation.z) - (z * rotation.y)),
-                    ((w * rotation.y) + (y * rotation.w) + (z * rotation.x) - (x * rotation.z)),
-                    ((w * rotation.z) + (z * rotation.w) + (x * rotation.y) - (y * rotation.x)),
-                    ((w * rotation.w) - (x * rotation.x) - (y * rotation.y) - (z * rotation.z))).getNormal();
+                    rotation.x * w + rotation.w * x - rotation.z * y + rotation.y * z,
+                    rotation.y * w + rotation.z * x + rotation.w * y - rotation.x * z,
+                    rotation.z * w - rotation.y * x + rotation.x * y + rotation.w * z,
+                    rotation.w * w - rotation.x * x - rotation.y * y - rotation.z * z);
             }
 
             inline void operator *= (const Quaternion &rotation)
