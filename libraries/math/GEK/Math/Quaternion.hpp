@@ -131,12 +131,40 @@ namespace Gek
                 this->w = w;
             }
 
-            void set(const float *data)
+            inline void set(const float *data)
             {
                 this->x = data[0];
                 this->y = data[1];
                 this->z = data[2];
                 this->w = data[3];
+            }
+
+            inline Float3 getEuler(void) const
+            {
+                float pitch;
+                float yaw;
+                float roll;
+                float val = 2.0f * (y * w - z * x);
+                if (val >= 0.99995f)
+                {
+                    pitch = 2.0f * std::atan2(x, w);
+                    yaw = (0.5f * 3.141592f);
+                    roll = 0.0f;
+                }
+                else if (val <= -0.99995f)
+                {
+                    pitch = 2.0f * std::atan2(x, w);
+                    yaw = -(0.5f * 3.141592f);
+                    roll = 0.0f;
+                }
+                else
+                {
+                    yaw = std::asin(val);
+                    pitch = std::atan2(2.0f * (x * w + z * y), 1.0f - 2.0f * (x * x + y * y));
+                    roll = std::atan2(2.0f * (z * w + x * y), 1.0f - 2.0f * (y * y + z * z));
+                }
+
+                return Float3(pitch, yaw, roll);
             }
 
             inline float getMagnitudeSquared(void) const
@@ -178,16 +206,62 @@ namespace Gek
 
             inline Quaternion slerp(const Quaternion &rotation, float factor) const
             {
-                float omega = std::acos(Clamp(dot(rotation), -1.0f, 1.0f));
-                if (std::abs(omega) < 1e-10f)
+                Quaternion result;
+                float angle = dot(rotation);
+                if ((angle + 1.0f) > 1.0e-5)
                 {
-                    omega = 1e-10f;
+                    float Sclp;
+                    float Sclq;
+                    if (angle < 0.995f)
+                    {
+                        float ang = std::acos(angle);
+                        float sinAng = std::sin(ang);
+
+                        float den = 1.0f / sinAng;
+
+                        Sclp = std::sin((1.0f - factor) * ang) * den;
+                        Sclq = std::sin(factor * ang) * den;
+
+                    }
+                    else
+                    {
+                        Sclp = 1.0f - factor;
+                        Sclq = factor;
+                    }
+
+                    result.w = w * Sclp + rotation.w * Sclq;
+                    result.x = x * Sclp + rotation.x * Sclq;
+                    result.y = y * Sclp + rotation.y * Sclq;
+                    result.z = z * Sclp + rotation.z * Sclq;
+
+                }
+                else
+                {
+                    result.w = z;
+                    result.x = -y;
+                    result.y = x;
+                    result.z = w;
+
+                    float Sclp = std::sin((1.0f - factor) * (3.141592f *0.5f));
+                    float Sclq = std::sin(factor * (3.141592f * 0.5f));
+
+                    result.w = w * Sclp + result.w * Sclq;
+                    result.x = x * Sclp + result.x * Sclq;
+                    result.y = y * Sclp + result.y * Sclq;
+                    result.z = z * Sclp + result.z * Sclq;
                 }
 
-                float sinTheta = std::sin(omega);
-                float factor0 = (std::sin((1.0f - factor) * omega) / sinTheta);
-                float factor1 = (std::sin(factor * omega) / sinTheta);
-                return Blend((*this), factor0, rotation, factor1);
+                angle = result.dot(result);
+                if ((angle) < (1.0f - 1.0e-4f))
+                {
+                    angle = 1.0f / std::sqrt(angle);
+                    result.w *= angle;
+                    result.x *= angle;
+                    result.y *= angle;
+                    result.z *= angle;
+                }
+
+                return result;
             }
 
             inline bool operator == (const Quaternion &rotation) const
