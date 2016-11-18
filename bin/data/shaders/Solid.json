@@ -64,161 +64,20 @@
         ]
     },
     "defines": {
-        "gaussianRadius": {
-            "bind": "int",
-            "value": "3"
-        },
-        "gaussianSigma": "2.3",
-        "edgeSharpness": "0.1"
     },
     "textures": {
         "depthBuffer": {
             "bind": "float",
             "flags": "depth",
             "format": "D32_FLOAT"
-        },
-        "albedoBuffer": {
-            "bind": "float3",
-            "flags": "target",
-            "format": "R11G11B10_FLOAT"
-        },
-        "materialBuffer": {
-            "bind": "float2",
-            "flags": "target",
-            "format": "R8G8_UNORM"
-        },
-        "normalBuffer": {
-            "bind": "float2",
-            "flags": "target",
-            "format": "R8G8_NORM"
-        },
-        "ambientBuffer": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R8_UNORM"
-        },
-        "gaussianBuffer": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R8_UNORM"
         }
     },
     "passes": [
         {
-            "program": "ForwardPAss",
+            "program": "AccumulateLighting",
             "entry": "mainPixelProgram",
             "mode": "forward",
             "material": "solid",
-            "depthBuffer":  "depthBuffer",
-            "depthState": {
-                "enable": true,
-                "comparisonFunction": "LessEqual",
-                "writeMask": "All",
-                "clear": 1
-            },
-            "targets": [
-                "albedoBuffer",
-                "materialBuffer",
-                "normalBuffer"
-            ]
-        },
-        {
-            "program": "AmbientCalculation",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "radius": "2",
-                "tapCount": {
-                    "bind": "int",
-                    "value": "24"
-                },
-                "spiralTurns": "13",
-                "intensity": "20",
-                "bias": "0.08",
-                "falloffFunction": {
-                    "bind": "int",
-                    "value": "0"
-                },
-                "epsilon": "0.001"
-            },
-            "resources": [
-                "normalBuffer",
-                "depthBuffer"
-            ],
-            "targets": [
-                "ambientBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(2,0)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "ambientBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "gaussianBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(0,2)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "gaussianBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "ambientBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(1,0)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "ambientBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "gaussianBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(0,1)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "gaussianBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "ambientBuffer"
-            ]
-        },
-        {
-            "program": "AccumulateLighting",
-            "entry": "mainPixelProgram",
             "lighting": true,
             "defines": {
                 "useHalfLambert": {
@@ -226,13 +85,13 @@
                     "value": "true"
                 }
             },
-            "resources": [
-                "ambientBuffer",
-                "albedoBuffer",
-                "materialBuffer",
-                "normalBuffer",
-                "depthBuffer"
-            ],
+            "depthBuffer":  "depthBuffer",
+            "depthState": {
+                "enable": true,
+                "comparisonFunction": "LessEqual",
+                "writeMask": "All",
+                "clear": 1
+            },
             "targets": [
                 "screen"
             ]
