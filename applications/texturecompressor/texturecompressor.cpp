@@ -1,20 +1,13 @@
-#include "GEK\Math\Common.hpp"
-#include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
-#include "GEK\Utility\Exceptions.hpp"
 #include "GEK\Utility\String.hpp"
 #include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\JSON.hpp"
 #include "GEK\Utility\Context.hpp"
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
-#include <Shlwapi.h>
-#include <DirectXTex.h>
 #include <experimental\filesystem>
-#include <unordered_map>
 #include <algorithm>
-#include <vector>
 #include <map>
+
+#include <DirectXTex.h>
 
 using namespace Gek;
 

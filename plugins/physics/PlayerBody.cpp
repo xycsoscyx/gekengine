@@ -12,18 +12,17 @@
 
 #include <Newton.h>
 
+#define PLAYER_CONTROLLER_MAX_CONTACTS	32
+#define PLAYER_MIN_RESTRAINING_DISTANCE	1.0e-2f
+#define D_DESCRETE_MOTION_STEPS				8
+#define D_PLAYER_MAX_INTERGRATION_STEPS		8
+#define D_PLAYER_MAX_SOLVER_ITERATIONS		16
+#define D_PLAYER_CONTACT_SKIN_THICKNESS		0.025f
+
 namespace Gek
 {
 	namespace Newton
 	{
-        static const int PLAYER_CONTROLLER_MAX_CONTACTS = 32;
-        static const float PLAYER_MIN_RESTRAINING_DISTANCE = 1.0e-2f;
-
-        static const int D_DESCRETE_MOTION_STEPS = 8;
-        static const int D_PLAYER_MAX_INTERGRATION_STEPS = 8;
-        static const int D_PLAYER_MAX_SOLVER_ITERATIONS = 16;
-        static const float D_PLAYER_CONTACT_SKIN_THICKNESS = 0.025f;
-
         class ConvexCastFilter
         {
         protected:

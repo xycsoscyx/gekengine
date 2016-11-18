@@ -31,88 +31,92 @@ namespace Gek
                 const JSON::Object materialNode = JSON::Load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"));
 
                 auto &shaderNode = materialNode[L"shader"];
-                if (shaderNode.is_object())
+                if (!shaderNode.is_object())
                 {
-                    if (!shaderNode.has_member(L"name"))
-                    {
-                        throw MissingParameter("Missing shader name encountered");
-                    }
+                    throw InvalidParameter("Shader block must be an object");
+                }
 
-                    if (!shaderNode.has_member(L"passes"))
-                    {
-                        throw MissingParameter("Missing shader pass list encountered");
-                    }
+                if (!shaderNode.has_member(L"name"))
+                {
+                    throw MissingParameter("Missing shader name encountered");
+                }
 
-                    Engine::Shader *shader = resources->getShader(shaderNode.get(L"name").as_cstring(), materialHandle);
-                    if (!shader)
-                    {
-                        throw MissingParameter("Missing shader encountered");
-                    }
+                if (!shaderNode.has_member(L"passes"))
+                {
+                    throw MissingParameter("Missing pass list encountered");
+                }
 
-                    auto &passesNode = shaderNode.get(L"passes");
-                    for (auto &passNode : passesNode.members())
+                Engine::Shader *shader = resources->getShader(shaderNode.get(L"name").as_cstring(), materialHandle);
+                if (!shader)
+                {
+                    throw MissingParameter("Missing shader encountered");
+                }
+
+                auto &passesNode = shaderNode.get(L"passes");
+                for (auto &passNode : passesNode.members())
+                {
+                    String passName(passNode.name());
+                    auto &passValue = passNode.value();
+                    auto shaderMaterial = shader->getMaterial(passName);
+                    if (shaderMaterial)
                     {
-                        String passName(passNode.name());
-                        auto &passValue = passNode.value();
-                        auto shaderMaterial = shader->getMaterial(passName);
-                        if (shaderMaterial)
+                        auto &passData = passDataMap[shaderMaterial->identifier];
+                        if (passValue.has_member(L"renderState"))
                         {
-                            auto &passData = passDataMap[shaderMaterial->identifier];
-                            if (materialNode.has_member(L"renderState"))
-                            {
-                                Video::RenderStateInformation renderStateInformation;
-                                renderStateInformation.load(materialNode.get(L"renderState"));
-								passData.renderState = resources->createRenderState(renderStateInformation);
-                            }
-                            else
-                            {
-                                passData.renderState = shaderMaterial->renderState;
-                            }
+                            Video::RenderStateInformation renderStateInformation;
+                            renderStateInformation.load(passValue.get(L"renderState"));
+                            passData.renderState = resources->createRenderState(renderStateInformation);
+                        }
+                        else
+                        {
+                            passData.renderState = shaderMaterial->renderState;
+                        }
 
-                            for (auto &resource : shaderMaterial->resourceList)
-                            {
-                                ResourceHandle resourceHandle;
-                                if (passValue.has_member(resource.name))
-                                {
-                                    auto &resourceNode = passValue[resource.name];
-                                    if (!resourceNode.is_object())
-                                    {
-                                        throw InvalidParameter("Resource list must be an object");
-                                    }
+                        if (!passValue.has_member(L"data"))
+                        {
+                            throw MissingParameter("Missing pass data encountered");
+                        }
 
-                                    if (resourceNode.has_member(L"file"))
-                                    {
-                                        String resourceFileName(resourceNode[L"file"].as_string());
-                                        uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
-                                        resourceHandle = resources->loadTexture(resourceFileName, flags);
-                                    }
-                                    else if (resourceNode.has_member(L"pattern"))
-                                    {
-                                        resourceHandle = resources->createTexture(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
-                                    }
-                                    else if (resourceNode.has_member(L"name"))
-                                    {
-                                        resourceHandle = resources->getResourceHandle(resourceNode[L"name"].as_cstring());
-                                    }
-                                    else
-                                    {
-                                        throw InvalidParameter("Resource list must have a filename, pattern, or reference value");
-                                    }
-                                }
-                                
-                                if (!resourceHandle)
+                        auto &passDataNode = passValue.get(L"data");
+                        for (auto &resource : shaderMaterial->resourceList)
+                        {
+                            ResourceHandle resourceHandle;
+                            if (passDataNode.has_member(resource.name))
+                            {
+                                auto &resourceNode = passDataNode[resource.name];
+                                if (!resourceNode.is_object())
                                 {
-                                    resourceHandle = resources->createTexture(resource.pattern, resource.parameters);
+                                    throw InvalidParameter("Resource list must be an object");
                                 }
 
-                                passData.resourceList.push_back(resourceHandle);
+                                if (resourceNode.has_member(L"file"))
+                                {
+                                    String resourceFileName(resourceNode[L"file"].as_string());
+                                    uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
+                                    resourceHandle = resources->loadTexture(resourceFileName, flags);
+                                }
+                                else if (resourceNode.has_member(L"pattern"))
+                                {
+                                    resourceHandle = resources->createTexture(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
+                                }
+                                else if (resourceNode.has_member(L"name"))
+                                {
+                                    resourceHandle = resources->getResourceHandle(resourceNode[L"name"].as_cstring());
+                                }
+                                else
+                                {
+                                    throw InvalidParameter("Resource list must have a filename, pattern, or reference value");
+                                }
                             }
+
+                            if (!resourceHandle)
+                            {
+                                resourceHandle = resources->createTexture(resource.pattern, resource.parameters);
+                            }
+
+                            passData.resourceList.push_back(resourceHandle);
                         }
                     }
-				}
-                else
-                {
-                    throw MissingParameter("Missing shader object encountered");
                 }
             }
 
