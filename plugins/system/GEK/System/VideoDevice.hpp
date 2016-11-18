@@ -451,6 +451,14 @@ namespace Gek
             }
         };
 
+        struct DeviceOptions
+        {
+            String device;
+            Format backBufferFormat = Format::R8G8B8A8_UNORM_SRGB;
+            uint32_t multiSampleCount = 0;
+            uint32_t multiSampleQuality = 0;
+        };
+
         GEK_INTERFACE(Object)
         {
             virtual ~Object(void) = default;

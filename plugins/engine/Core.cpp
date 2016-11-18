@@ -563,8 +563,12 @@ namespace Gek
                     throw InitializationFailed("Failed call to CoInitialize");
                 }
 
-                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default"));
-                displayModeList = videoDevice->getDisplayModeList(Video::Format::R8G8B8A8_UNORM_SRGB);
+                Video::DeviceOptions deviceOptions;
+                deviceOptions.multiSampleCount = 4;
+                deviceOptions.multiSampleQuality = 0;
+                deviceOptions.backBufferFormat = Video::Format::R8G8B8A8_UNORM_SRGB;
+                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, deviceOptions);
+                displayModeList = videoDevice->getDisplayModeList(deviceOptions.backBufferFormat);
                 for (auto &displayMode : displayModeList)
                 {
                     StringUTF8 displayModeString(StringUTF8::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));

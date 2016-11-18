@@ -892,7 +892,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, Video::Format, String)
+        GEK_CONTEXT_USER(Device, HWND, Video::DeviceOptions)
             , public Video::Debug::Device
         {
             class Context
@@ -1548,7 +1548,7 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, Video::Format backBufferFormat, String device)
+            Device(Gek::Context *context, HWND window, Video::DeviceOptions deviceOptions)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent(window) != nullptr)
@@ -1587,10 +1587,10 @@ namespace Gek
                 DXGI_SWAP_CHAIN_DESC1 swapChainDescription;
                 swapChainDescription.Width = 0;
                 swapChainDescription.Height = 0;
-                swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(backBufferFormat)];
+                swapChainDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(deviceOptions.backBufferFormat)];
                 swapChainDescription.Stereo = false;
-                swapChainDescription.SampleDesc.Count = 1;
-                swapChainDescription.SampleDesc.Quality = 0;
+                swapChainDescription.SampleDesc.Count = deviceOptions.multiSampleCount;
+                swapChainDescription.SampleDesc.Quality = deviceOptions.multiSampleQuality;
                 swapChainDescription.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
                 swapChainDescription.BufferCount = 2;
                 swapChainDescription.Scaling = DXGI_SCALING_STRETCH;
