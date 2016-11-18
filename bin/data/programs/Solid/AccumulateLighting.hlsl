@@ -130,7 +130,7 @@ uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 	return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
 }
 
-OutputPixel mainPixelProgram(InputPixel inputPixel)
+float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     // final images will be sRGB format and converted to linear automatically
     const float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
