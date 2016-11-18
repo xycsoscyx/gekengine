@@ -1,0 +1,241 @@
+{
+    "priority": 1,
+    "input": [
+        {
+            "name": "position",
+            "bind": "float3",
+            "semantic": "POSITION"
+        },
+        {
+            "name": "texCoord",
+            "bind": "float2",
+            "semantic": "TEXCOORD"
+        },
+        {
+            "name": "tangent",
+            "bind": "float3",
+            "semantic": "TANGENT"
+        },
+        {
+            "name": "biTangent",
+            "bind": "float3",
+            "semantic": "BITANGENT"
+        },
+        {
+            "name": "normal",
+            "bind": "float3",
+            "semantic": "NORMAL"
+        },
+        {
+            "name": "isFrontFacing",
+            "system": "isFrontFacing"
+        }
+    ],
+    "material": {
+        "solid": [
+            {
+                "name": "albedo",
+                "bind": "float4",
+                "pattern": "system",
+                "parameters": "debug",
+                "type": "Texture2D"
+            },
+            {
+                "name": "normal",
+                "bind": "float2",
+                "pattern": "system",
+                "parameters": "flat",
+                "type": "Texture2D"
+            },
+            {
+                "name": "roughness",
+                "bind": "float",
+                "pattern": "color",
+                "parameters": ".5",
+                "type": "Texture2D"
+            },
+            {
+                "name": "metallic",
+                "bind": "float",
+                "pattern": "color",
+                "parameters": "0",
+                "type": "Texture2D"
+            }
+        ]
+    },
+    "defines": {
+        "gaussianRadius": {
+            "bind": "int",
+            "value": "3"
+        },
+        "gaussianSigma": "2.3",
+        "edgeSharpness": "0.1"
+    },
+    "textures": {
+        "depthBuffer": {
+            "bind": "float",
+            "flags": "depth",
+            "format": "D32_FLOAT"
+        },
+        "albedoBuffer": {
+            "bind": "float3",
+            "flags": "target",
+            "format": "R11G11B10_FLOAT"
+        },
+        "materialBuffer": {
+            "bind": "float2",
+            "flags": "target",
+            "format": "R8G8_UNORM"
+        },
+        "normalBuffer": {
+            "bind": "float2",
+            "flags": "target",
+            "format": "R8G8_NORM"
+        },
+        "ambientBuffer": {
+            "bind": "float",
+            "flags": "target",
+            "format": "R8_UNORM"
+        },
+        "gaussianBuffer": {
+            "bind": "float",
+            "flags": "target",
+            "format": "R8_UNORM"
+        }
+    },
+    "passes": [
+        {
+            "program": "ForwardPAss",
+            "entry": "mainPixelProgram",
+            "mode": "forward",
+            "material": "solid",
+            "depthBuffer":  "depthBuffer",
+            "depthState": {
+                "enable": true,
+                "comparisonFunction": "LessEqual",
+                "writeMask": "All",
+                "clear": 1
+            },
+            "targets": [
+                "albedoBuffer",
+                "materialBuffer",
+                "normalBuffer"
+            ]
+        },
+        {
+            "program": "AmbientCalculation",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "radius": "2",
+                "tapCount": {
+                    "bind": "int",
+                    "value": "24"
+                },
+                "spiralTurns": "13",
+                "intensity": "20",
+                "bias": "0.08",
+                "falloffFunction": {
+                    "bind": "int",
+                    "value": "0"
+                },
+                "epsilon": "0.001"
+            },
+            "resources": [
+                "normalBuffer",
+                "depthBuffer"
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "blurAxis": {
+                    "bind": "int2",
+                    "value": "(2,0)"
+                }
+            },
+            "resources": [
+                "depthBuffer",
+                { "ambientBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "gaussianBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "blurAxis": {
+                    "bind": "int2",
+                    "value": "(0,2)"
+                }
+            },
+            "resources": [
+                "depthBuffer",
+                { "gaussianBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "blurAxis": {
+                    "bind": "int2",
+                    "value": "(1,0)"
+                }
+            },
+            "resources": [
+                "depthBuffer",
+                { "ambientBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "gaussianBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "blurAxis": {
+                    "bind": "int2",
+                    "value": "(0,1)"
+                }
+            },
+            "resources": [
+                "depthBuffer",
+                { "gaussianBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AccumulateLighting",
+            "entry": "mainPixelProgram",
+            "lighting": true,
+            "defines": {
+                "useHalfLambert": {
+                    "bind": "bool",
+                    "value": "true"
+                }
+            },
+            "resources": [
+                "ambientBuffer",
+                "albedoBuffer",
+                "materialBuffer",
+                "normalBuffer",
+                "depthBuffer"
+            ],
+            "targets": [
+                "screen"
+            ]
+        }
+    ]
+}
