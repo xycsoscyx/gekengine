@@ -567,7 +567,7 @@ namespace Gek
                 displayModeList = videoDevice->getDisplayModeList(Video::Format::R8G8B8A8_UNORM_SRGB);
                 for (auto &displayMode : displayModeList)
                 {
-                    StringUTF8 displayModeString(StringUTF8::create("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
+                    StringUTF8 displayModeString(StringUTF8::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
                     switch (displayMode.aspectRatio)
                     {
                     case Video::DisplayMode::AspectRatio::_4x3:
@@ -1208,7 +1208,7 @@ namespace Gek
 								setDisplayMode(previousDisplayMode);
 							}
 
-							ImGui::Text(StringUTF8::create("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+							ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
 
 							ImGui::End();
 						}

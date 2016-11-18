@@ -461,7 +461,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             image = loadIntoCubeMap(fileNameInput);
         };
 
-        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, String::create(L"%v\\cubemap.dds", fileNameInput));
+        ::DirectX::SaveToDDSFile(image.GetImages(), image.GetImageCount(), image.GetMetadata(), 0, String::Format(L"%v\\cubemap.dds", fileNameInput));
 
         SH9Color sphericalHarmonics = ProjectCubeMapToSH(image);
 
@@ -477,7 +477,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     catch (const std::exception &exception)
     {
         printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(StringUTF8::create("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        printf(StringUTF8::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {

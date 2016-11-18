@@ -102,7 +102,7 @@ namespace Gek
                 reload();
 
                 shaderConstantBuffer = videoDevice->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
-                shaderConstantBuffer->setName(String::create(L"%v:shaderConstantBuffer", shaderName));
+                shaderConstantBuffer->setName(String::Format(L"%v:shaderConstantBuffer", shaderName));
             }
 
             void reload(void)
@@ -407,7 +407,7 @@ namespace Gek
                         {
                             String textureSource(textureValue.get(L"source").as_string());
                             resources->getShader(textureSource, MaterialHandle());
-                            resourceMap[textureName] = resources->getResourceHandle(String::create(L"%v:%v:resource", textureName, textureSource));
+                            resourceMap[textureName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
                         }
                         else
                         {
@@ -428,7 +428,7 @@ namespace Gek
 
                             uint32_t flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
                             uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
-                            resourceMap[textureName] = resources->createTexture(String::create(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
+                            resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
                             resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
                         }
 
@@ -457,7 +457,7 @@ namespace Gek
                         {
                             String bufferSource(bufferValue.get(L"source").as_string());
                             resources->getShader(bufferSource, MaterialHandle());
-                            resourceMap[bufferName] = resources->getResourceHandle(String::create(L"%v:%v:resource", bufferName, bufferSource));
+                            resourceMap[bufferName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", bufferName, bufferSource));
                         }
                         else
                         {
@@ -480,7 +480,7 @@ namespace Gek
                                 }
 
                                 uint32_t stride = evaluate(globalDefinesMap, bufferValue.get(L"stride").as_string(), BindType::UInt);
-                                resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
+                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
                                 resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
                             }
                             else if (bufferValue.has_member(L"format"))
@@ -503,7 +503,7 @@ namespace Gek
                                 }
 
                                 resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
-                                resourceMap[bufferName] = resources->createBuffer(String::create(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
+                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
                             }
                             else
                             {

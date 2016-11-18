@@ -294,46 +294,57 @@ namespace Gek
 
             inline Quaternion getRotation(void) const
             {
-                float trace(table[0][0] + table[1][1] + table[2][2] + 1.0f);
-                if (trace > Epsilon)
+                enum QuaternionAxis
                 {
-                    float denominator(0.5f / std::sqrt(trace));
-                    return Quaternion(
-                        ((table[1][2] - table[2][1]) * denominator),
-                        ((table[2][0] - table[0][2]) * denominator),
-                        ((table[0][1] - table[1][0]) * denominator),
-                        (0.25f / denominator));
+                    X_INDEX = 0,
+                    Y_INDEX = 1,
+                    Z_INDEX = 2
+                };
+
+                static QuaternionAxis NextAxisList[] =
+                {
+                    Y_INDEX,
+                    Z_INDEX,
+                    X_INDEX
+                };
+
+                Quaternion result;
+                float trace = table[0][0] + table[1][1] + table[2][2];
+                if (trace > 0.0f)
+                {
+                    trace = std::sqrt(trace + 1.0f);
+                    result.w = 0.5f * trace;
+                    trace = 0.5f / trace;
+                    result.x = (table[1][2] - table[2][1]) * trace;
+                    result.y = (table[2][0] - table[0][2]) * trace;
+                    result.z = (table[0][1] - table[1][0]) * trace;
                 }
                 else
                 {
-                    if ((table[0][0] > table[1][1]) && (table[0][0] > table[2][2]))
+                    QuaternionAxis localXAxis = X_INDEX;
+                    if (table[Y_INDEX][Y_INDEX] > table[X_INDEX][X_INDEX])
                     {
-                        float denominator(2.0f * std::sqrt(1.0f + table[0][0] - table[1][1] - table[2][2]));
-                        return Quaternion(
-                            (0.25f * denominator),
-                            ((table[1][0] + table[0][1]) / denominator),
-                            ((table[2][0] + table[0][2]) / denominator),
-                            ((table[2][1] - table[1][2]) / denominator));
+                        localXAxis = Y_INDEX;
                     }
-                    else if (table[1][1] > table[2][2])
+                    
+                    if (table[Z_INDEX][Z_INDEX] > table[localXAxis][localXAxis])
                     {
-                        float denominator(2.0f * (std::sqrt(1.0f + table[1][1] - table[0][0] - table[2][2])));
-                        return Quaternion(
-                            ((table[1][0] + table[0][1]) / denominator),
-                            (0.25f * denominator),
-                            ((table[2][1] + table[1][2]) / denominator),
-                            ((table[2][0] - table[0][2]) / denominator));
+                        localXAxis = Z_INDEX;
                     }
-                    else
-                    {
-                        float denominator(2.0f * (std::sqrt(1.0f + table[2][2] - table[0][0] - table[1][1])));
-                        return Quaternion(
-                            ((table[2][0] + table[0][2]) / denominator),
-                            ((table[2][1] + table[1][2]) / denominator),
-                            (0.25f * denominator),
-                            ((table[1][0] - table[0][1]) / denominator));
-                    }
+
+                    QuaternionAxis localYAxis = NextAxisList[localXAxis];
+                    QuaternionAxis localZAxis = NextAxisList[localYAxis];
+                    trace = 1.0f + table[localXAxis][localXAxis] - table[localYAxis][localYAxis] - table[localZAxis][localZAxis];
+                    trace = std::sqrt(trace);
+
+                    result.axis[localXAxis] = 0.5f * trace;
+                    trace = 0.5f / trace;
+                    result.w = (table[localYAxis][localZAxis] - table[localZAxis][localYAxis]) * trace;
+                    result.axis[localYAxis] = (table[localXAxis][localYAxis] + table[localYAxis][localXAxis]) * trace;
+                    result.axis[localZAxis] = (table[localXAxis][localZAxis] + table[localZAxis][localXAxis]) * trace;
                 }
+
+                return result;
             }
 
             inline Float4x4 &transpose(void)

@@ -78,14 +78,14 @@ namespace Gek
         public:
             struct Action
             {
-                const wchar_t *name = nullptr;
+                String name;
                 ActionParameter parameter;
 
                 Action(void)
                 {
                 }
 
-                Action(const wchar_t *name, const ActionParameter &parameter)
+                Action(const String &name, const ActionParameter &parameter)
                     : name(name)
                     , parameter(parameter)
                 {
@@ -226,7 +226,7 @@ namespace Gek
                             }
                             else
                             {
-                                auto name(String::create(L"unnamed_%v", ++uniqueEntityIdentifier));
+                                auto name(String::Format(L"unnamed_%v", ++uniqueEntityIdentifier));
                                 entityMap[name] = std::move(entity);
                             }
                         }
@@ -318,7 +318,7 @@ namespace Gek
                 }
             }
 
-            void action(const wchar_t *actionName, const ActionParameter &actionParameter)
+            void action(const String &actionName, const ActionParameter &actionParameter)
             {
                 if (!loading)
                 {
@@ -347,7 +347,7 @@ namespace Gek
                 onEntityCreated.emit(entity.get(), entityName);
                 entityQueue.push([this, entityName = String(entityName), entity](void) -> void
                 {
-                    entityMap.insert(std::make_pair((entityName.empty() ? String::create(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity));
+                    entityMap.insert(std::make_pair((entityName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity));
                 });
 
                 return entity.get();

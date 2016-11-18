@@ -527,8 +527,8 @@ namespace Gek
                             uint32_t divisionCount = parameters;
                             geoSphere.generate(divisionCount);
 
-                            shape.vertexBuffer = geoSphere.createVertexBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), resources);
-                            shape.indexBuffer = geoSphere.createIndexBuffer(String::create(L"shape:index:%v:%v", type, parameters), resources);
+                            shape.vertexBuffer = geoSphere.createVertexBuffer(String::Format(L"shape:vertex:%v:%v", type, parameters), resources);
+                            shape.indexBuffer = geoSphere.createIndexBuffer(String::Format(L"shape:index:%v:%v", type, parameters), resources);
                             shape.indexCount = geoSphere.getIndexCount();
                         }
                         else if (type.compareNoCase(L"cube") == 0)
@@ -559,8 +559,8 @@ namespace Gek
                             static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
                             static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
 
-                            shape.vertexBuffer = resources->createBuffer(String::create(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
-                            shape.indexBuffer = resources->createBuffer(String::create(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
+                            shape.vertexBuffer = resources->createBuffer(String::Format(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
+                            shape.indexBuffer = resources->createBuffer(String::Format(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
                             shape.indexCount = 36;
                         }
                     });

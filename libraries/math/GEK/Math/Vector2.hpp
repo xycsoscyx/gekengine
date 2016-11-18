@@ -51,7 +51,8 @@ namespace Gek
 
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
             Vector2(const Vector2<OTHER> &vector)
-                : data{ TYPE(vector.data[0]), TYPE(vector.data[1]) }
+                : x(TYPE(vector.x))
+                , y(TYPE(vector.y))
             {
             }
 

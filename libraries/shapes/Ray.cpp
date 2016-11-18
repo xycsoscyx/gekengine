@@ -41,8 +41,8 @@ namespace Gek
                 float rayAngle = normal.dot(orientedBox.matrix.rows[axis].xyz);
                 if (std::abs(rayAngle) > Math::Epsilon)
                 {
-                    float positionDelta1 = ((axisAngle - orientedBox.halfsize.data[axis]) / rayAngle);
-                    float positionDelta2 = ((axisAngle + orientedBox.halfsize.data[axis]) / rayAngle);
+                    float positionDelta1 = ((axisAngle - orientedBox.halfsize[axis]) / rayAngle);
+                    float positionDelta2 = ((axisAngle + orientedBox.halfsize[axis]) / rayAngle);
                     if (positionDelta1 > positionDelta2)
                     {
                         float positionDeltaSwap = positionDelta1;
@@ -67,8 +67,8 @@ namespace Gek
                 }
                 else
                 {
-                    if ((-axisAngle - orientedBox.halfsize.data[axis]) > 0.0f ||
-                        (-axisAngle + orientedBox.halfsize.data[axis]) < 0.0f)
+                    if ((-axisAngle - orientedBox.halfsize[axis]) > 0.0f ||
+                        (-axisAngle + orientedBox.halfsize[axis]) < 0.0f)
                     {
                         return float(-1);
                     }

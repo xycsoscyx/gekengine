@@ -606,7 +606,7 @@ namespace Gek
                     throw InvalidParameter("Unknown texture pattern encountered");
                 }
 
-                texture->setName(String::create(L"%v:%v", pattern, parameters));
+                texture->setName(String::Format(L"%v:%v", pattern, parameters));
                 return texture;
             }
 
@@ -1065,7 +1065,7 @@ namespace Gek
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = GetHash(uncompiledProgram);
-                auto cache = String::create(L".%v.bin", hash);
+                auto cache = String::Format(L".%v.bin", hash);
                 String cacheFileName(FileSystem::ReplaceExtension(getContext()->getFileName(L"data\\cache", name), cache));
 
 				std::vector<uint8_t> compiledProgram;
@@ -1077,7 +1077,7 @@ namespace Gek
                 if (compiledProgram.empty())
                 {
 #ifdef _DEBUG
-					auto debug = String::create(L".%v.hlsl", hash);
+					auto debug = String::Format(L".%v.hlsl", hash);
 					String debugFileName(FileSystem::ReplaceExtension(getContext()->getFileName(L"data\\cache", name), debug));
 					FileSystem::Save(debugFileName, uncompiledProgram);
 #endif
@@ -1098,7 +1098,7 @@ namespace Gek
                 {
                     auto compiledProgram = compileProgram(pipelineType, name, entryFunction, engineData);
                     auto program = videoDevice->createProgram(pipelineType, compiledProgram.data(), compiledProgram.size());
-                    program->setName(String::create(L"%v:%v", name, entryFunction));
+                    program->setName(String::Format(L"%v:%v", name, entryFunction));
                     return program;
                 };
 

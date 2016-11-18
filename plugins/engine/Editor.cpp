@@ -252,29 +252,29 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onAction(const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
+            void onAction(const String &actionName, const Plugin::Population::ActionParameter &parameter)
             {
-                if (_wcsicmp(actionName, L"turn") == 0)
+                if (actionName.compareNoCase(L"turn") == 0)
                 {
                     headingAngle += (parameter.value * 0.01f);
                 }
-                else if (_wcsicmp(actionName, L"turn") == 0)
+                else if (actionName.compareNoCase(L"turn") == 0)
                 {
                     headingAngle += (parameter.value * 0.01f);
                 }
-                else if (_wcsicmp(actionName, L"move_forward") == 0)
+                else if (actionName.compareNoCase(L"move_forward") == 0)
                 {
                     moveForward = parameter.state;
                 }
-                else if (_wcsicmp(actionName, L"move_backward") == 0)
+                else if (actionName.compareNoCase(L"move_backward") == 0)
                 {
                     moveBackward = parameter.state;
                 }
-                else if (_wcsicmp(actionName, L"strafe_left") == 0)
+                else if (actionName.compareNoCase(L"strafe_left") == 0)
                 {
                     strafeLeft = parameter.state;
                 }
-                else if (_wcsicmp(actionName, L"strafe_right") == 0)
+                else if (actionName.compareNoCase(L"strafe_right") == 0)
                 {
                     strafeRight = parameter.state;
                 }

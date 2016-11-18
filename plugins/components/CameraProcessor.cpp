@@ -29,7 +29,7 @@ namespace Gek
 				componentData.set(L"nearClip", nearClip);
 				componentData.set(L"farClip", farClip);
 				componentData.set(L"target", target);
-				componentData.set(L"filterList", String::create(filterList, L','));
+				componentData.set(L"filterList", String::Join(filterList, L','));
             }
 
             void load(const JSON::Object &componentData)
@@ -151,7 +151,7 @@ namespace Gek
                     auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                     uint32_t width = backBuffer->getWidth();
                     uint32_t height = backBuffer->getHeight();
-                    data.target = resources->createTexture(String::create(L"camera:%v", cameraComponent.target), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    data.target = resources->createTexture(String::Format(L"camera:%v", cameraComponent.target), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
                 }
             });
         }

@@ -49,7 +49,7 @@ namespace jsoncons
 
         static Json to_json(const Gek::Math::Vector2<TYPE> &value)
         {
-            return Gek::String::create(L"%v", value);
+            return Gek::String::Format(L"%v", value);
         }
     };
 
@@ -68,7 +68,7 @@ namespace jsoncons
 
         static Json to_json(const Gek::Math::Vector3<TYPE> &value)
         {
-            return Gek::String::create(L"%v", value);
+            return Gek::String::Format(L"%v", value);
         }
     };
 
@@ -87,7 +87,7 @@ namespace jsoncons
 
         static Json to_json(const Gek::Math::Vector4<TYPE> &value)
         {
-            return Gek::String::create(L"%v", value);
+            return Gek::String::Format(L"%v", value);
         }
     };
 
@@ -106,7 +106,7 @@ namespace jsoncons
 
         static Json to_json(const Gek::Math::Float4 &value)
         {
-            return Gek::String::create(L"%v", value);
+            return Gek::String::Format(L"%v", value);
         }
     };
 
@@ -125,7 +125,7 @@ namespace jsoncons
 
         static Json to_json(const Gek::Math::Quaternion &value)
         {
-            return Gek::String::create(L"%v", value);
+            return Gek::String::Format(L"%v", value);
         }
     };
 };

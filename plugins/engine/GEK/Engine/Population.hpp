@@ -57,7 +57,7 @@ namespace Gek
             virtual ~Population(void) = default;
 
             std::map<int32_t, Nano::Signal<void(void)>> onUpdate;
-            Nano::Signal<void(const wchar_t *actionName, const ActionParameter &actionParameter)> onAction;
+            Nano::Signal<void(const String &actionName, const ActionParameter &actionParameter)> onAction;
 
             Nano::Signal<void(const String &populationName)> onLoadBegin;
             Nano::Signal<void(const String &populationName)> onLoadSucceeded;
@@ -96,7 +96,7 @@ namespace Gek
             }
 
             virtual void update(float frameTime = 0.0f) = 0;
-            virtual void action(const wchar_t *actionName, const ActionParameter &actionParameter) = 0;
+            virtual void action(const String &actionName, const ActionParameter &actionParameter) = 0;
         };
     }; // namespace Plugin
 

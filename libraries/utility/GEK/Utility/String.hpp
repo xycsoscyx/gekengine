@@ -28,73 +28,26 @@ namespace Gek
     template<class ELEMENT, class TRAITS = std::char_traits<ELEMENT>, class ALLOCATOR = std::allocator<ELEMENT>>
     class BaseString : public std::basic_string<ELEMENT, TRAITS, ALLOCATOR>
     {
-    private:
-        template <typename TYPE>
-        struct traits;
-
-        template <>
-        struct traits<char>
-        {
-            static void convert(std::basic_string<wchar_t> &result, const char *input)
-            {
-                static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-                result.assign(convert.from_bytes(input));
-            }
-        };
-
-        template <>
-        struct traits<wchar_t>
-        {
-            static void convert(std::basic_string<char> &result, const wchar_t *input)
-            {
-                static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
-    			result.assign(convert.to_bytes(input));
-            }
-        };
-
-        template <typename DESTINATION, typename SOURCE>
-        struct converter
-        {
-            static void convert(std::basic_string<DESTINATION> &result, const SOURCE *string)
-            {
-                traits<SOURCE>::convert(result, string);
-            }
-        };
-
-        template <typename DESTINATION>
-        struct converter<DESTINATION, DESTINATION>
-        {
-            static void convert(std::basic_string<DESTINATION> &result, const DESTINATION *string)
-            {
-                result.assign(string);
-            }
-        };
-
-        struct MustMatch
-        {
-            ELEMENT character;
-            MustMatch(ELEMENT character)
-                : character(character)
-            {
-            }
-
-            template <typename STREAM>
-            friend STREAM &operator >> (STREAM &stream, const MustMatch &match)
-            {
-                ELEMENT next;
-                stream.get(next);
-                if (next != match.character)
-                {
-                    stream.setstate(std::ios::failbit);
-                }
-
-                return stream;
-            }
-        };
-
     public:
         using ElementType = ELEMENT;
 
+    public:
+        static BaseString Join(const std::vector<BaseString> &list, ELEMENT delimiter)
+        {
+            BaseString result;
+            result.join(list, delimiter);
+            return result;
+        }
+
+        template<typename TYPE, typename... PARAMETERS>
+        static BaseString Format(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
+        {
+            BaseString result;
+            result.format(formatting, value, arguments...);
+            return result;
+        }
+
+    public:
         BaseString(void)
         {
         }
@@ -253,13 +206,6 @@ namespace Gek
             return (*this);
         }
 
-        static BaseString create(const std::vector<BaseString> &list, ELEMENT delimiter)
-        {
-            BaseString result;
-            result.join(list, delimiter);
-            return result;
-        }
-
 		bool endsWith(const BaseString &string) const
 		{
 			if (string.length() > length()) return false;
@@ -329,14 +275,6 @@ namespace Gek
             };
 
             return (*this);
-        }
-
-        template<typename TYPE, typename... PARAMETERS>
-        static BaseString create(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
-        {
-            BaseString result;
-            result.format(formatting, value, arguments...);
-            return result;
         }
 
         BaseString &operator = (const ELEMENT &value)
@@ -697,6 +635,70 @@ namespace Gek
         {
             return data();
         }
+
+    private:
+        template <typename TYPE>
+        struct traits;
+
+        template <>
+        struct traits<char>
+        {
+            static void convert(std::basic_string<wchar_t> &result, const char *input)
+            {
+                static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+                result.assign(convert.from_bytes(input));
+            }
+        };
+
+        template <>
+        struct traits<wchar_t>
+        {
+            static void convert(std::basic_string<char> &result, const wchar_t *input)
+            {
+                static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
+                result.assign(convert.to_bytes(input));
+            }
+        };
+
+        template <typename DESTINATION, typename SOURCE>
+        struct converter
+        {
+            static void convert(std::basic_string<DESTINATION> &result, const SOURCE *string)
+            {
+                traits<SOURCE>::convert(result, string);
+            }
+        };
+
+        template <typename DESTINATION>
+        struct converter<DESTINATION, DESTINATION>
+        {
+            static void convert(std::basic_string<DESTINATION> &result, const DESTINATION *string)
+            {
+                result.assign(string);
+            }
+        };
+
+        struct MustMatch
+        {
+            ELEMENT character;
+            MustMatch(ELEMENT character)
+                : character(character)
+            {
+            }
+
+            template <typename STREAM>
+            friend STREAM &operator >> (STREAM &stream, const MustMatch &match)
+            {
+                ELEMENT next;
+                stream.get(next);
+                if (next != match.character)
+                {
+                    stream.setstate(std::ios::failbit);
+                }
+
+                return stream;
+            }
+        };
     };
 
     using StringUTF8 = BaseString<char>;

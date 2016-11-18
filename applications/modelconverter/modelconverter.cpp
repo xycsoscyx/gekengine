@@ -664,7 +664,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     catch (const std::exception &exception)
     {
         printf("\r\n\r\nGEK Engine - Error\r\n");
-        printf(StringUTF8::create("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
+        printf(StringUTF8::Format("Caught: %v\r\nType: %v\r\n", exception.what(), typeid(exception).name()));
     }
     catch (...)
     {

@@ -281,10 +281,10 @@ namespace Gek
             inline Quaternion operator * (const Quaternion &rotation) const
             {
                 return Quaternion(
-                    rotation.x * w + rotation.w * x - rotation.z * y + rotation.y * z,
-                    rotation.y * w + rotation.z * x + rotation.w * y - rotation.x * z,
-                    rotation.z * w - rotation.y * x + rotation.x * y + rotation.w * z,
-                    rotation.w * w - rotation.x * x - rotation.y * y - rotation.z * z);
+                    (rotation.w * x) + (rotation.x * w) + (rotation.y * z) - (rotation.z * y),
+                    (rotation.w * y) + (rotation.y * w) + (rotation.z * x) - (rotation.x * z),
+                    (rotation.w * z) + (rotation.z * w) + (rotation.x * y) - (rotation.y * x),
+                    (rotation.w * w) - (rotation.x * x) - (rotation.y * y) - (rotation.z * z));
             }
 
             inline void operator *= (const Quaternion &rotation)

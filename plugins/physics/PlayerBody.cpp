@@ -12,12 +12,12 @@
 
 #include <Newton.h>
 
-#define PLAYER_CONTROLLER_MAX_CONTACTS	32
-#define PLAYER_MIN_RESTRAINING_DISTANCE	1.0e-2f
-#define D_DESCRETE_MOTION_STEPS				8
-#define D_PLAYER_MAX_INTERGRATION_STEPS		8
-#define D_PLAYER_MAX_SOLVER_ITERATIONS		16
-#define D_PLAYER_CONTACT_SKIN_THICKNESS		0.025f
+static const float MinimumRestrainingDistance = 1.0e-2f;
+static const float ContactSkinThickness = 0.025f;
+static const uint32_t MaximumContactCount = 32;
+static const uint32_t DiscreteMotionStepCount = 8;
+static const uint32_t MaximumIntegrationStepCount = 8;
+static const uint32_t MaximumSolverStepCount = 16;
 
 namespace Gek
 {
@@ -26,28 +26,23 @@ namespace Gek
         class ConvexCastFilter
         {
         protected:
-            const NewtonBody *newtonBody;
+            const NewtonBody *sourceBody = nullptr;
 
         public:
-            ConvexCastFilter(void)
-                : newtonBody(nullptr)
+            ConvexCastFilter(const NewtonBody* const sourceBody)
+                : sourceBody(sourceBody)
             {
             }
 
-            ConvexCastFilter(const NewtonBody* const newtonBody)
-                :newtonBody(newtonBody)
+            virtual unsigned PreFilter(const NewtonBody* const collisionBody, const NewtonCollision* const collisionObject)
             {
+                return NewtonCollisionGetMode(collisionObject);
             }
 
-            virtual unsigned PreFilter(const NewtonBody* const newtonBody, const NewtonCollision* const myCollision)
-            {
-                return NewtonCollisionGetMode(myCollision);
-            }
-
-            static unsigned PreFilter(const NewtonBody* const newtonBody, const NewtonCollision* const myCollision, void* const userData)
+            static unsigned PreFilter(const NewtonBody* const collisionBody, const NewtonCollision* const collisionObject, void* const userData)
             {
                 ConvexCastFilter* const filter = static_cast<ConvexCastFilter *>(userData);
-                return (newtonBody != filter->newtonBody) ? filter->PreFilter(newtonBody, myCollision) : 0;
+                return (collisionBody != filter->sourceBody) ? filter->PreFilter(collisionBody, collisionObject) : 0;
             }
         };
 
@@ -59,7 +54,7 @@ namespace Gek
 			virtual void onExit(PlayerBody *player) { };
 
 			virtual StatePtr onUpdate(PlayerBody *player, float frameTime) { return nullptr; };
-			virtual StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter) { return nullptr; };
+			virtual StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter) { return nullptr; };
 		};
 
 		class IdleState
@@ -67,7 +62,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class WalkingState
@@ -75,7 +70,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class JumpingState
@@ -210,7 +205,7 @@ namespace Gek
 
             void setRestrainingDistance(float distance)
             {
-                restrainingDistance = std::max(std::abs(distance), float(PLAYER_MIN_RESTRAINING_DISTANCE));
+                restrainingDistance = std::max(std::abs(distance), float(MinimumRestrainingDistance));
             }
 
             void setClimbSlope(float slopeInRadians)
@@ -239,10 +234,13 @@ namespace Gek
                 float directionMagnitude = directionMagnitudeSquared * inverseDirectionMagnitude;
 
                 float omegaMagnitude = 2.0f * std::atan2(directionMagnitude, deltaRotation.angle) * inverseFrameTime;
-                return omegaDirection * (inverseDirectionMagnitude * omegaMagnitude);
+                auto averageOmega(omegaDirection * (inverseDirectionMagnitude * omegaMagnitude));
+
+                return averageOmega;
             }
 
-            void integrateOmega(Math::Quaternion &rotation, const Math::Float3& omega, float frameTIme) const
+            // New way, but doesn't work despite the comment from Newton code
+            void integrateOmegaBAD(Math::Float4x4 &matrix, const Math::Float3& omega, float frameTIme) const
             {
                 // this is correct
                 float omegaMagnitudeSquared = omega.getMagnitudeSquared();
@@ -254,9 +252,32 @@ namespace Gek
                     Math::Float3 omegaAxis(omega * inverseOmegaMagnitude);
                     float omegaAngle = inverseOmegaMagnitude * omegaMagnitudeSquared * frameTIme;
                     Math::Quaternion deltaRotation(omegaAxis, omegaAngle);
-                    rotation *= deltaRotation;
-                    rotation.normalize();
+                    matrix.setRotation((matrix.getRotation() * deltaRotation).getNormal());
                 }
+            }
+
+            // Old way, works but may not actually be correct?
+            void integrateOmega(Math::Float4x4 &matrix, const Math::Float3 &omega, float frameTime) const
+            {
+                Math::Float3 theta(omega * frameTime * 0.5f);
+                float thetaMagnitideSquared = theta.getMagnitudeSquared();
+
+                float thetaMagnitude;
+                Math::Quaternion deltaRotation;
+                if ((thetaMagnitideSquared * thetaMagnitideSquared / 24.0f) < Math::Epsilon)
+                {
+                    deltaRotation.w = (1.0f - (thetaMagnitideSquared / 2.0f));
+                    thetaMagnitude = (1.0f - (thetaMagnitideSquared / 6.0f));
+                }
+                else
+                {
+                    thetaMagnitude = std::sqrt(thetaMagnitideSquared);
+                    deltaRotation.w = std::cos(thetaMagnitude);
+                    thetaMagnitude = (std::sin(thetaMagnitude) / thetaMagnitude);
+                }
+
+                deltaRotation.axis = (theta * thetaMagnitude);
+                matrix.setRotation((matrix.getRotation() * deltaRotation).getNormal());
             }
 
             Math::Float3 calculateDesiredOmega(const Math::Float4x4 &matrix, float frameTime) const
@@ -268,21 +289,21 @@ namespace Gek
 
             Math::Float3 calculateDesiredVelocity(const Math::Float4x4 &matrix, const Math::Float3& gravity, float frameTime) const
             {
-                Math::Float3 rightDir(matrix.rx.xyz);
-                Math::Float3 updir(matrix.ry.xyz);
-                Math::Float3 frontDir(matrix.rz.xyz);
+                const Math::Float3 &playerXAxis = matrix.rx.xyz;
+                const Math::Float3 &playerYAxis = matrix.ry.xyz;
+                const Math::Float3 &playerZAxis = matrix.rz.xyz;
 
                 Math::Float3 desiredVelocity;
                 if (verticalSpeed <= 0.0f && groundNormal.dot(groundNormal) > 0.0f)
                 {
                     // plane is supported by a ground plane, apply the player input desiredVelocity
-                    if (groundNormal.dot(updir) >= maximumSlope)
+                    if (groundNormal.dot(playerYAxis) >= maximumSlope)
                     {
                         // player is in a legal slope, he is in full control of his movement
                         Math::Float3 currentVelocity;
                         NewtonBodyGetVelocity(newtonBody, currentVelocity.data);
-                        desiredVelocity = (updir * currentVelocity.dot(updir)) + (gravity * frameTime) + (frontDir * forwardSpeed) + (rightDir * lateralSpeed) + (updir * verticalSpeed);
-                        desiredVelocity += (groundVelocity - (updir * updir.dot(groundVelocity)));
+                        desiredVelocity = (playerYAxis * currentVelocity.dot(playerYAxis)) + (gravity * frameTime) + (playerZAxis * forwardSpeed) + (playerXAxis * lateralSpeed) + (playerYAxis * verticalSpeed);
+                        desiredVelocity += (groundVelocity - (playerYAxis * playerYAxis.dot(groundVelocity)));
 
                         float speedLimitMagnitude = forwardSpeed * forwardSpeed + lateralSpeed * lateralSpeed + verticalSpeed * verticalSpeed + groundVelocity.getMagnitudeSquared() + 0.1f;
                         float speedMagnitude = desiredVelocity.getMagnitudeSquared();
@@ -301,7 +322,7 @@ namespace Gek
                     {
                         // player is in an illegal ramp, he slides down hill an loses control of his movement 
                         NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
-                        desiredVelocity += (updir * verticalSpeed);
+                        desiredVelocity += (playerYAxis * verticalSpeed);
                         desiredVelocity += (gravity * frameTime);
                         float friction = groundNormal.dot(desiredVelocity - groundVelocity);
                         if (friction < 0.0f)
@@ -314,7 +335,7 @@ namespace Gek
                 {
                     // player is on free fall, only apply the gravity
                     NewtonBodyGetVelocity(newtonBody, desiredVelocity.data);
-                    desiredVelocity += (updir * verticalSpeed);
+                    desiredVelocity += (playerYAxis * verticalSpeed);
                     desiredVelocity += (gravity * frameTime);
                 }
 
@@ -368,29 +389,29 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-			void onAction(const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
+			void onAction(const String &actionName, const Plugin::Population::ActionParameter &parameter)
 			{
-				if (_wcsicmp(actionName, L"turn") == 0)
+				if (actionName.compareNoCase(L"turn") == 0)
 				{
 					headingAngle += (parameter.value * 0.01f);
 				}
-				else if (_wcsicmp(actionName, L"move_forward") == 0)
+				else if (actionName.compareNoCase(L"move_forward") == 0)
 				{
 					moveForward = parameter.state;
 				}
-				else if (_wcsicmp(actionName, L"move_backward") == 0)
+				else if (actionName.compareNoCase(L"move_backward") == 0)
 				{
 					moveBackward = parameter.state;
 				}
-				else if (_wcsicmp(actionName, L"strafe_left") == 0)
+				else if (actionName.compareNoCase(L"strafe_left") == 0)
 				{
 					strafeLeft = parameter.state;
 				}
-				else if (_wcsicmp(actionName, L"strafe_right") == 0)
+				else if (actionName.compareNoCase(L"strafe_right") == 0)
 				{
 					strafeRight = parameter.state;
 				}
-				else if (_wcsicmp(actionName, L"crouch") == 0)
+				else if (actionName.compareNoCase(L"crouch") == 0)
 				{
 				}
 
@@ -403,7 +424,7 @@ namespace Gek
 				}
 			}
 
-			// Newton::Entity
+            // Newton::Entity
 			Plugin::Entity * const getEntity(void) const
 			{
 				return entity;
@@ -446,25 +467,22 @@ namespace Gek
                 Math::Float4x4 matrix;
                 NewtonBodyGetMatrix(newtonBody, matrix.data);
 
+                // integrate body angular velocity
+                Math::Float3 omega;
+                NewtonBodyGetOmega(newtonBody, omega.data);
+                integrateOmega(matrix, omega, frameTime);
+
+                // integrate linear velocity
                 Math::Float3 velocity;
                 NewtonBodyGetVelocity(newtonBody, velocity.data);
 
-                Math::Float3 omega;
-                NewtonBodyGetOmega(newtonBody, omega.data);
-
-                // integrate body angular velocity
-                Math::Quaternion bodyRotation(matrix.getRotation());
-                integrateOmega(bodyRotation, omega, frameTime);
-                matrix.setRotation(bodyRotation);
-
-                // integrate linear velocity
                 float normalizedTimeLeft = 1.0f;
-                float descreteTimeStep = frameTime * (1.0f / D_DESCRETE_MOTION_STEPS);
+                float descreteTimeStep = frameTime * (1.0f / DiscreteMotionStepCount);
                 int prevContactCount = 0;
                 ConvexCastFilter castFilterData(newtonBody);
-                NewtonWorldConvexCastReturnInfo previousContactList[PLAYER_CONTROLLER_MAX_CONTACTS];
+                NewtonWorldConvexCastReturnInfo previousContactList[MaximumContactCount];
 
-                Math::Float3 updir(matrix.ry.xyz);
+                const Math::Float3 &playerYAxis = matrix.ry.xyz;
 
                 Math::Float3 scale(0.0f);
                 NewtonCollisionGetScale(newtonUpperBodyShape, &scale.x, &scale.y, &scale.z);
@@ -478,7 +496,7 @@ namespace Gek
                 upConstraint.m_normal[2] = 0.0f;
                 upConstraint.m_normal[3] = 0.0f;
 
-                for (int j = 0; (j < D_PLAYER_MAX_INTERGRATION_STEPS) && (normalizedTimeLeft > Math::Epsilon); j++)
+                for (int j = 0; (j < MaximumIntegrationStepCount) && (normalizedTimeLeft > Math::Epsilon); j++)
                 {
                     if (velocity.getMagnitudeSquared() < Math::Epsilon)
                     {
@@ -487,20 +505,20 @@ namespace Gek
 
                     float impactTime;
                     Math::Float3 castTargetPosition(matrix.translation.xyz + (velocity * frameTime));
-                    NewtonWorldConvexCastReturnInfo currentContactList[PLAYER_CONTROLLER_MAX_CONTACTS];
-                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, castTargetPosition.data, newtonUpperBodyShape, &impactTime, &castFilterData, ConvexCastFilter::PreFilter, currentContactList, PLAYER_CONTROLLER_MAX_CONTACTS, threadHandle);
+                    NewtonWorldConvexCastReturnInfo currentContactList[MaximumContactCount];
+                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, castTargetPosition.data, newtonUpperBodyShape, &impactTime, &castFilterData, ConvexCastFilter::PreFilter, currentContactList, MaximumContactCount, threadHandle);
                     if (contactCount)
                     {
                         matrix.translation.xyz += velocity * (impactTime * frameTime);
                         if (impactTime > 0.0f)
                         {
-                            matrix.translation.xyz -= velocity * (D_PLAYER_CONTACT_SKIN_THICKNESS / velocity.getMagnitude());
+                            matrix.translation.xyz -= velocity * (ContactSkinThickness / velocity.getMagnitude());
                         }
 
                         normalizedTimeLeft -= impactTime;
-                        float contactSpeedList[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                        float contactBounceSpeedList[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
-                        Math::Float3 contactBounceNormalList[PLAYER_CONTROLLER_MAX_CONTACTS * 2];
+                        float contactSpeedList[MaximumContactCount * 2];
+                        float contactBounceSpeedList[MaximumContactCount * 2];
+                        Math::Float3 contactBounceNormalList[MaximumContactCount * 2];
                         for (int contact = 1; contact < contactCount; contact++)
                         {
                             Math::Float3 sourceNormal(currentContactList[contact - 1].m_normal);
@@ -549,7 +567,7 @@ namespace Gek
 
                         float residual = 10.0f;
                         Math::Float3 auxBounceVeloc(0.0f, 0.0f, 0.0f);
-                        for (int contact = 0; (contact < D_PLAYER_MAX_SOLVER_ITERATIONS) && (residual > Math::Epsilon); contact++)
+                        for (int contact = 0; (contact < MaximumSolverStepCount) && (residual > Math::Epsilon); contact++)
                         {
                             residual = 0.0f;
                             for (int search = 0; search < currentContact; search++)
@@ -604,7 +622,7 @@ namespace Gek
 
                 // determine if player is standing on some plane
                 Math::Float4x4 supportMatrix(matrix);
-                supportMatrix.translation.xyz += (updir * sphereCastOrigin);
+                supportMatrix.translation.xyz += (playerYAxis * sphereCastOrigin);
                 if (jumping || !touchingSurface)
                 {
                     Math::Float3 targetPoint(matrix.translation);
@@ -612,9 +630,9 @@ namespace Gek
                 }
                 else
                 {
-                    float timeStep = std::abs(updir.dot(velocity * frameTime));
+                    float timeStep = std::abs(playerYAxis.dot(velocity * frameTime));
                     float castDistance = (groundNormal.dot(groundNormal) > 0.0f) ? playerComponent.stairStep : timeStep;
-                    Math::Float3 targetPoint(matrix.translation.xyz - (updir * (castDistance * 2.0f)));
+                    Math::Float3 targetPoint(matrix.translation.xyz - (playerYAxis * (castDistance * 2.0f)));
                     updateGroundPlane(matrix, supportMatrix, targetPoint, threadHandle);
                 }
 
@@ -633,28 +651,28 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr IdleState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
+		StatePtr IdleState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
 		{
-			if (_wcsicmp(actionName, L"crouch") == 0 && parameter.state)
+			if (actionName.compareNoCase(L"crouch") == 0 && parameter.state)
 			{
 			}
-			else if (_wcsicmp(actionName, L"move_forward") == 0 && parameter.state)
-			{
-				return std::make_shared<WalkingState>();
-			}
-			else if (_wcsicmp(actionName, L"move_backward") == 0 && parameter.state)
+			else if (actionName.compareNoCase(L"move_forward") == 0 && parameter.state)
 			{
 				return std::make_shared<WalkingState>();
 			}
-			else if (_wcsicmp(actionName, L"strafe_left") == 0 && parameter.state)
+			else if (actionName.compareNoCase(L"move_backward") == 0 && parameter.state)
 			{
 				return std::make_shared<WalkingState>();
 			}
-			else if (_wcsicmp(actionName, L"strafe_right") == 0 && parameter.state)
+			else if (actionName.compareNoCase(L"strafe_left") == 0 && parameter.state)
 			{
 				return std::make_shared<WalkingState>();
 			}
-			else if (_wcsicmp(actionName, L"jump") == 0 && parameter.state)
+			else if (actionName.compareNoCase(L"strafe_right") == 0 && parameter.state)
+			{
+				return std::make_shared<WalkingState>();
+			}
+			else if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
 			{
 				return std::make_shared<JumpingState>();
 			}
@@ -674,9 +692,9 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr WalkingState::onAction(PlayerBody *player, const wchar_t *actionName, const Plugin::Population::ActionParameter &parameter)
+		StatePtr WalkingState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
 		{
-			if (_wcsicmp(actionName, L"jump") == 0 && parameter.state)
+			if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
 			{
 				return std::make_shared<JumpingState>();
 			}
