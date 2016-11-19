@@ -34,9 +34,9 @@ namespace Gek
             virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
             virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
 
-            virtual ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
+            virtual ResourceHandle createTexture(const wchar_t *textureName, const Video::TextureDescription &description) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::StrideBufferDescription &description, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::FormatBufferDescription &description, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
 
             virtual void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
             virtual void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;

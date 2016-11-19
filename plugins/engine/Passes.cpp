@@ -134,6 +134,7 @@ namespace Gek
     {
         if (mapType.compareNoCase(L"Texture1D") == 0) return MapType::Texture1D;
         else if (mapType.compareNoCase(L"Texture2D") == 0) return MapType::Texture2D;
+        else if (mapType.compareNoCase(L"Texture2DMS") == 0) return MapType::Texture2DMS;
         else if (mapType.compareNoCase(L"Texture3D") == 0) return MapType::Texture3D;
         else if (mapType.compareNoCase(L"Buffer") == 0) return MapType::Buffer;
         else if (mapType.compareNoCase(L"ByteAddressBuffer") == 0) return MapType::ByteAddressBuffer;
@@ -146,6 +147,7 @@ namespace Gek
         {
         case MapType::Texture1D:            return L"Texture1D";
         case MapType::Texture2D:            return L"Texture2D";
+        case MapType::Texture2DMS:          return L"Texture2DMS";
         case MapType::TextureCube:          return L"TextureCube";
         case MapType::Texture3D:            return L"Texture3D";
         case MapType::Buffer:               return L"Buffer";
@@ -352,19 +354,19 @@ namespace Gek
             flag.trim();
             if (flag.compareNoCase(L"target") == 0)
             {
-                flags |= Video::TextureFlags::RenderTarget;
+                flags |= Video::TextureDescription::Flags::RenderTarget;
             }
             else if (flag.compareNoCase(L"depth") == 0)
             {
-                flags |= Video::TextureFlags::DepthTarget;
+                flags |= Video::TextureDescription::Flags::DepthTarget;
             }
             else if (flag.compareNoCase(L"unorderedaccess") == 0)
             {
-                flags |= Video::TextureFlags::UnorderedAccess;
+                flags |= Video::TextureDescription::Flags::UnorderedAccess;
             }
         }
 
-        return (flags | Video::TextureFlags::Resource);
+        return (flags | Video::TextureDescription::Flags::Resource);
     }
 
     uint32_t getBufferFlags(const String &createFlags)
@@ -377,15 +379,15 @@ namespace Gek
             flag.trim();
             if (flag.compareNoCase(L"unorderedaccess") == 0)
             {
-                flags |= Video::BufferFlags::UnorderedAccess;
+                flags |= Video::BufferDescription::Flags::UnorderedAccess;
             }
             else if (flag.compareNoCase(L"counter") == 0)
             {
-                flags |= Video::BufferFlags::Counter;
+                flags |= Video::BufferDescription::Flags::Counter;
             }
         }
 
-        return (flags | Video::BufferFlags::Resource);
+        return (flags | Video::BufferDescription::Flags::Resource);
     }
 
     std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, const wchar_t *name)

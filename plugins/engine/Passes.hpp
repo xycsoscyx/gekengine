@@ -30,6 +30,7 @@ namespace Gek
         Unknown = 0,
         Texture1D,
         Texture2D,
+        Texture2DMS,
         TextureCube,
         Texture3D,
         Buffer,

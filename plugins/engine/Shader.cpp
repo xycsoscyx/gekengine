@@ -101,7 +101,11 @@ namespace Gek
 
                 reload();
 
-                shaderConstantBuffer = videoDevice->createBuffer(sizeof(ShaderConstantData), 1, Video::BufferType::Constant, 0);
+                Video::StrideBufferDescription constantBufferDescription;
+                constantBufferDescription.stride = sizeof(ShaderConstantData);
+                constantBufferDescription.count = 1;
+                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                shaderConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 shaderConstantBuffer->setName(String::Format(L"%v:shaderConstantBuffer", shaderName));
             }
 
@@ -377,7 +381,7 @@ namespace Gek
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
-                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
+                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2DMS, BindType::Float3);
                 resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(displayWidth, displayHeight);
 
                 if (shaderNode.has_member(L"textures"))
@@ -411,25 +415,26 @@ namespace Gek
                         }
                         else
                         {
-                            Video::Format format = Video::getFormat(textureValue.get(L"format", L"").as_string());
-                            if (format == Video::Format::Unknown)
+                            Video::TextureDescription description;
+                            description.format = Video::getFormat(textureValue.get(L"format", L"").as_string());
+                            if (description.format == Video::Format::Unknown)
                             {
                                 throw InvalidParameter("Invalid texture format specified");
                             }
 
-                            uint32_t textureWidth = displayWidth;
-                            uint32_t textureHeight = displayHeight;
+                            description.width = displayWidth;
+                            description.height = displayHeight;
                             if (textureValue.has_member(L"size"))
                             {
                                 Math::Float2 size = evaluate(globalDefinesMap, textureValue.get(L"size").as_string(), BindType::UInt2);
-                                textureWidth = uint32_t(size.x);
-                                textureHeight = uint32_t(size.y);
+                                description.width = uint32_t(size.x);
+                                description.height = uint32_t(size.y);
                             }
 
-                            uint32_t flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
-                            uint32_t textureMipMaps = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
-                            resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), format, textureWidth, textureHeight, 1, textureMipMaps, flags);
-                            resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(textureWidth, textureHeight)));
+                            description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
+                            description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
+                            resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
+                            resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(description.width, description.height)));
                         }
 
                         resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
@@ -461,12 +466,12 @@ namespace Gek
                         }
                         else
                         {
-                            if (!bufferValue.has_member(L"size"))
+                            if (!bufferValue.has_member(L"count"))
                             {
-                                throw MissingParameter("Buffer must have a size value");
+                                throw MissingParameter("Buffer must have a count value");
                             }
 
-                            uint32_t size = evaluate(globalDefinesMap, bufferValue.get(L"size").as_string(), BindType::UInt);
+                            uint32_t count = evaluate(globalDefinesMap, bufferValue.get(L"count").as_string(), BindType::UInt);
                             uint32_t flags = getBufferFlags(bufferValue.get(L"flags", L"0").as_string());
                             if (bufferValue.has_member(L"stride") || bufferValue.has_member(L"structure"))
                             {
@@ -479,31 +484,40 @@ namespace Gek
                                     throw MissingParameter("Structured buffer required a structure name");
                                 }
 
-                                uint32_t stride = evaluate(globalDefinesMap, bufferValue.get(L"stride").as_string(), BindType::UInt);
-                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), stride, size, Video::BufferType::Structured, flags);
+                                Video::StrideBufferDescription description;
+                                description.count = count;
+                                description.flags = flags;
+                                description.type = Video::BufferDescription::Type::Structured;
+                                description.stride = evaluate(globalDefinesMap, bufferValue.get(L"stride").as_string(), BindType::UInt);
+                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
                                 resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
                             }
                             else if (bufferValue.has_member(L"format"))
                             {
-                                BindType bindType;
-                                Video::Format format = Video::getFormat(bufferValue.get(L"format").as_string());
-                                if (bufferValue.has_member(L"bind"))
-                                {
-                                    bindType = getBindType(bufferValue.get(L"bind").as_string());
-                                }
-                                else
-                                {
-                                    bindType = getBindType(format);
-                                }
-
                                 MapType mapType = MapType::Buffer;
                                 if (bufferValue.get(L"byteaddress", false).as_bool())
                                 {
                                     mapType = MapType::ByteAddressBuffer;
                                 }
 
+                                Video::FormatBufferDescription description;
+                                description.count = count;
+                                description.flags = flags;
+                                description.type = Video::BufferDescription::Type::Raw;
+                                description.format = Video::getFormat(bufferValue.get(L"format").as_string());
+                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
+
+                                BindType bindType;
+                                if (bufferValue.has_member(L"bind"))
+                                {
+                                    bindType = getBindType(bufferValue.get(L"bind").as_string());
+                                }
+                                else
+                                {
+                                    bindType = getBindType(description.format);
+                                }
+
                                 resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
-                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), format, size, Video::BufferType::Raw, flags);
                             }
                             else
                             {

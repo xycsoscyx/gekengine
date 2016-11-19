@@ -158,38 +158,6 @@ namespace Gek
             WriteNoOverwrite,
         };
 
-        enum class BufferType : uint8_t
-        {
-            Raw = 0,
-            Vertex,
-            Index,
-            Constant,
-            Structured,
-        };
-
-        namespace BufferFlags
-        {
-            enum
-            {
-                Staging = 1 << 0,
-                Mappable = 1 << 1,
-                Resource = 1 << 2,
-                UnorderedAccess = 1 << 3,
-                Counter = 1 << 4,
-            };
-        }; // BufferFlags
-
-        namespace TextureFlags
-        {
-            enum
-            {
-                RenderTarget = 1 << 0,
-                DepthTarget = 1 << 1,
-                Resource = 1 << 2,
-                UnorderedAccess = 1 << 3,
-            };
-        }; // TextureFlags
-
         namespace TextureLoadFlags
         {
             enum
@@ -429,34 +397,81 @@ namespace Gek
 				Count,
 			};
 
-			Video::Format format;
-			Semantic semantic;
-			Source source;
-            uint32_t sourceIndex;
-
-			InputElement(void)
-                : format(Format::Unknown)
-                , semantic(Semantic::TexCoord)
-                , source(Source::Vertex)
-                , sourceIndex(0)
-            {
-            }
-
-			InputElement(Video::Format format, Semantic semantic, Source source = Source::Vertex, uint32_t sourceIndex = 0)
-                : format(format)
-                , semantic(semantic)
-                , source(source)
-                , sourceIndex(sourceIndex)
-            {
-            }
+            Video::Format format = Format::Unknown;
+            Semantic semantic = Semantic::TexCoord;
+			Source source = Source::Vertex;
+            uint32_t sourceIndex = 0;
         };
 
-        struct DeviceOptions
+        struct DeviceDescription
         {
             String device;
-            Format backBufferFormat = Format::R8G8B8A8_UNORM_SRGB;
-            uint32_t multiSampleCount = 0;
-            uint32_t multiSampleQuality = 0;
+            Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
+            uint32_t sampleCount = 1;
+            uint32_t sampleQuality = 0;
+        };
+
+        struct TextureDescription
+        {
+            struct Flags
+            {
+                enum
+                {
+                    RenderTarget = 1 << 0,
+                    DepthTarget = 1 << 1,
+                    Resource = 1 << 2,
+                    UnorderedAccess = 1 << 3,
+                };
+            }; // Flags
+
+            Video::Format format = Video::Format::Unknown;
+            uint32_t width = 1;
+            uint32_t height = 1;
+            uint32_t depth = 1;
+            uint32_t mipMapCount = 1;
+            uint32_t sampleCount = 1;
+            uint32_t sampleQuality = 0;
+            uint32_t flags = 0;
+        };
+
+        struct BufferDescription
+        {
+            struct Flags
+            {
+                enum
+                {
+                    Staging = 1 << 0,
+                    Mappable = 1 << 1,
+                    Resource = 1 << 2,
+                    UnorderedAccess = 1 << 3,
+                    Counter = 1 << 4,
+                };
+            }; // Flags
+
+            enum class Type : uint8_t
+            {
+                Raw = 0,
+                Vertex,
+                Index,
+                Constant,
+                Structured,
+            };
+
+            uint32_t count = 0;
+            Type type = Type::Raw;
+            uint32_t flags = 0;
+        };
+
+        struct StrideBufferDescription
+            : public BufferDescription
+        {
+            uint32_t stride = 0;
+        };
+
+        struct FormatBufferDescription
+            : public BufferDescription
+        {
+            Video::Format format = Video::Format::Unknown;
         };
 
         GEK_INTERFACE(Object)
@@ -584,11 +599,11 @@ namespace Gek
             virtual ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
             virtual ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState) = 0;
 
-            virtual TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data = nullptr) = 0;
+            virtual TexturePtr createTexture(const TextureDescription &description, const void *data = nullptr) = 0;
             virtual TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
 
-            virtual BufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
-            virtual BufferPtr createBuffer(Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *staticData = nullptr) = 0;
+            virtual BufferPtr createBuffer(const StrideBufferDescription &description, const void *staticData = nullptr) = 0;
+            virtual BufferPtr createBuffer(const FormatBufferDescription &description, const void *staticData = nullptr) = 0;
 
             template <typename TYPE>
             void mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)

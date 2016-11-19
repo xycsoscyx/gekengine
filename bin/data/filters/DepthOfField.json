@@ -12,7 +12,7 @@
     },
     "buffers": {
         "averageFocalDepth": {
-            "size": "1",
+            "count": "1",
             "flags": "unorderedAccess",
             "format": "R32_FLOAT"
         }

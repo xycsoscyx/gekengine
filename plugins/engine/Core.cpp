@@ -563,12 +563,9 @@ namespace Gek
                     throw InitializationFailed("Failed call to CoInitialize");
                 }
 
-                Video::DeviceOptions deviceOptions;
-                deviceOptions.multiSampleCount = 4;
-                deviceOptions.multiSampleQuality = 0;
-                deviceOptions.backBufferFormat = Video::Format::R8G8B8A8_UNORM_SRGB;
-                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, deviceOptions);
-                displayModeList = videoDevice->getDisplayModeList(deviceOptions.backBufferFormat);
+                Video::DeviceDescription deviceDescription;
+                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, deviceDescription);
+                displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
                 for (auto &displayMode : displayModeList)
                 {
                     StringUTF8 displayModeString(StringUTF8::Format("%vx%v, %vhz", displayMode.width, displayMode.height, uint32_t(std::ceil(float(displayMode.refreshRate.numerator) / float(displayMode.refreshRate.denominator)))));
@@ -661,13 +658,28 @@ namespace Gek
 				vertexProgram->setName(L"core:vertexProgram");
 
                 std::vector<Video::InputElement> elementList;
-                elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::Position));
-                elementList.push_back(Video::InputElement(Video::Format::R32G32_FLOAT, Video::InputElement::Semantic::TexCoord));
-                elementList.push_back(Video::InputElement(Video::Format::R8G8B8A8_UNORM, Video::InputElement::Semantic::Color));
+
+                Video::InputElement element;
+                element.format = Video::Format::R32G32_FLOAT;
+                element.semantic = Video::InputElement::Semantic::Position;
+                elementList.push_back(element);
+
+                element.format = Video::Format::R32G32_FLOAT;
+                element.semantic = Video::InputElement::Semantic::TexCoord;
+                elementList.push_back(element);
+
+                element.format = Video::Format::R8G8B8A8_UNORM;
+                element.semantic = Video::InputElement::Semantic::Color;
+                elementList.push_back(element);
+
                 inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
 				inputLayout->setName(L"core:inputLayout");
 
-                constantBuffer = videoDevice->createBuffer(sizeof(Math::Float4x4), 1, Video::BufferType::Constant, 0);
+                Video::StrideBufferDescription constantBufferDescription;
+                constantBufferDescription.stride = sizeof(Math::Float4x4);
+                constantBufferDescription.count = 1;
+                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                constantBuffer = videoDevice->createBuffer(constantBufferDescription);
 				constantBuffer->setName(L"core:constantBuffer");
 
                 static const wchar_t *pixelShader =
@@ -719,7 +731,14 @@ namespace Gek
                 uint8_t *pixels = nullptr;
                 int32_t fontWidth = 0, fontHeight = 0;
                 imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
-                font = videoDevice->createTexture(Video::Format::R8G8B8A8_UNORM, fontWidth, fontHeight, 1, 1, Video::TextureFlags::Resource, pixels);
+
+                Video::TextureDescription fontDescription;
+                fontDescription.format = Video::Format::R8G8B8A8_UNORM;
+                fontDescription.width = fontWidth;
+                fontDescription.height = fontHeight;
+                fontDescription.flags = Video::TextureDescription::Flags::Resource;
+                font = videoDevice->createTexture(fontDescription, pixels);
+
                 imGuiIo.Fonts->TexID = (Video::Object *)font.get();
 
                 Video::SamplerStateInformation samplerStateInformation;
@@ -1274,24 +1293,35 @@ namespace Gek
             {
                 if (!vertexBuffer || vertexBuffer->getCount() < drawData->TotalVtxCount)
                 {
-                    vertexBuffer = videoDevice->createBuffer(sizeof(ImDrawVert), drawData->TotalVtxCount, Video::BufferType::Vertex, Video::BufferFlags::Mappable);
+                    Video::StrideBufferDescription vertexBufferDescription;
+                    vertexBufferDescription.stride = sizeof(ImDrawVert);
+                    vertexBufferDescription.count = drawData->TotalVtxCount;
+                    vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
+                    vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
+                    vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                 }
 
                 if (!indexBuffer || indexBuffer->getCount() < drawData->TotalIdxCount)
                 {
+                    Video::FormatBufferDescription vertexBufferDescription;
+                    vertexBufferDescription.count = drawData->TotalIdxCount;
+                    vertexBufferDescription.type = Video::BufferDescription::Type::Index;
+                    vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
                     switch (sizeof(ImDrawIdx))
                     {
                     case 2:
-                        indexBuffer = videoDevice->createBuffer(Video::Format::R16_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
+                        vertexBufferDescription.format = Video::Format::R16_UINT;
                         break;
 
                     case 4:
-                        indexBuffer = videoDevice->createBuffer(Video::Format::R32_UINT, drawData->TotalIdxCount, Video::BufferType::Index, Video::BufferFlags::Mappable);
+                        vertexBufferDescription.format = Video::Format::R32_UINT;
                         break;
 
                     default:
                         throw InvalidIndexBufferFormat("Index buffer can only be 16bit or 32bit");
                     };
+
+                    indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                 }
 
                 ImDrawVert* vertexData = nullptr;

@@ -43,6 +43,20 @@ namespace Gek
         return 0;
     }
 
+    template <typename STRUCT>
+    size_t GetStructHash(const STRUCT &data)
+    {
+        const uint8_t *rawData = (const uint8_t *)&data;
+        size_t hash = GetHash(rawData[0]);
+        size_t size = sizeof(STRUCT);
+        for (size_t index = 1; index < size; index++)
+        {
+            hash = CombineHashes(hash, GetHash(rawData[index]));
+        }
+
+        return hash;
+    }
+
     template <typename TYPE, typename... PARAMETERS>
     size_t GetHash(const TYPE &value, const PARAMETERS&... arguments)
     {

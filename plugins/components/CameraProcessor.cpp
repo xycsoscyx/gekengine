@@ -149,9 +149,13 @@ namespace Gek
                 if (!cameraComponent.target.empty())
                 {
                     auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                    uint32_t width = backBuffer->getWidth();
-                    uint32_t height = backBuffer->getHeight();
-                    data.target = resources->createTexture(String::Format(L"camera:%v", cameraComponent.target), Video::Format::R8G8B8A8_UNORM_SRGB, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                    Video::TextureDescription description;
+                    description.format = Video::Format::R8G8B8A8_UNORM_SRGB;
+                    description.width = backBuffer->getWidth();
+                    description.height = backBuffer->getHeight();
+                    description.sampleCount = 4;
+                    description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
+                    data.target = resources->createTexture(String::Format(L"camera:%v", cameraComponent.target), description);
                 }
             });
         }

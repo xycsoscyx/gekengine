@@ -361,16 +361,28 @@ namespace Gek
 
         ResourceHandle createVertexBuffer(const wchar_t *name, Plugin::Resources *resources)
         {
+            Video::StrideBufferDescription vertexBufferDescription;
+            vertexBufferDescription.stride = sizeof(Vertex);
+            vertexBufferDescription.count = vertices.size();
+            vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
+
             uint8_t *data = (uint8_t *)vertices.data();
             uint32_t size = (vertices.size() * sizeof(Vertex));
-            return resources->createBuffer(name, sizeof(Vertex), vertices.size(), Video::BufferType::Vertex, 0, std::vector<uint8_t>(data, data + size));
+
+            return resources->createBuffer(name, vertexBufferDescription, std::vector<uint8_t>(data, data + size));
         }
 
         ResourceHandle createIndexBuffer(const wchar_t *name, Plugin::Resources *resources)
         {
+            Video::FormatBufferDescription indexBufferDescription;
+            indexBufferDescription.format = Video::Format::R16_UINT;
+            indexBufferDescription.count = indices.size();
+            indexBufferDescription.type = Video::BufferDescription::Type::Index;
+
             uint8_t *data = (uint8_t *)indices.data();
             uint32_t size = (indices.size() * sizeof(uint16_t));
-            return resources->createBuffer(name, Video::Format::R16_UINT, indices.size(), Video::BufferType::Index, 0, std::vector<uint8_t>(data, data + size));
+
+            return resources->createBuffer(name, indexBufferDescription, std::vector<uint8_t>(data, data + size));
         }
 
         uint32_t getIndexCount(void) const
@@ -497,7 +509,12 @@ namespace Gek
 
             visual = resources->loadVisual(L"shape");
 
-            constantBuffer = renderer->getVideoDevice()->createBuffer(sizeof(Instance), 1, Video::BufferType::Constant, Video::BufferFlags::Mappable);
+            Video::StrideBufferDescription description;
+            description.stride = sizeof(Instance);
+            description.count = 1;
+            description.type = Video::BufferDescription::Type::Constant;
+            description.flags = Video::BufferDescription::Flags::Mappable;
+            constantBuffer = renderer->getVideoDevice()->createBuffer(description);
         }
 
         ~ShapeProcessor(void)
@@ -557,11 +574,19 @@ namespace Gek
                             };
 
                             static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
-                            static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
+                            Video::StrideBufferDescription vertexBufferDescription;
+                            vertexBufferDescription.stride = sizeof(Vertex);
+                            vertexBufferDescription.count = ARRAYSIZE(vertices);
+                            vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
+                            shape.vertexBuffer = resources->createBuffer(String::Format(L"shape:vertex:%v:%v", type, parameters), vertexBufferDescription, vertexBuffer);
 
-                            shape.vertexBuffer = resources->createBuffer(String::Format(L"shape:vertex:%v:%v", type, parameters), sizeof(Vertex), ARRAYSIZE(vertices), Video::BufferType::Vertex, 0, vertexBuffer);
-                            shape.indexBuffer = resources->createBuffer(String::Format(L"shape:index:%v:%v", type, parameters), Video::Format::R16_UINT, ARRAYSIZE(indices), Video::BufferType::Index, 0, indexBuffer);
-                            shape.indexCount = 36;
+                            static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
+                            Video::FormatBufferDescription indexBufferDescription;
+                            indexBufferDescription.format = Video::Format::R16_UINT;
+                            indexBufferDescription.count = ARRAYSIZE(indices);
+                            indexBufferDescription.type = Video::BufferDescription::Type::Index;
+                            shape.indexBuffer = resources->createBuffer(String::Format(L"shape:index:%v:%v", type, parameters), indexBufferDescription, vertexBuffer);
+                            shape.indexCount = indexBufferDescription.count;
                         }
                     });
                 }

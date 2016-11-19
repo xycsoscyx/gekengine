@@ -496,7 +496,7 @@ namespace Gek
                 if (pattern.compareNoCase(L"color") == 0)
                 {
                     uint8_t colorData[4];
-                    Video::Format format = Video::Format::Unknown;
+                    Video::TextureDescription description;
                     try
                     {
                         auto rpnTokenList = shuntingYard.getTokenList(parameters);
@@ -506,7 +506,7 @@ namespace Gek
                             float color;
                             shuntingYard.evaluate(rpnTokenList, color);
                             colorData[0] = uint8_t(color * 255.0f);
-                            format = Video::Format::R8_UNORM;
+                            description.format = Video::Format::R8_UNORM;
                         }
                         else if (colorSize == 2)
                         {
@@ -516,7 +516,7 @@ namespace Gek
                             colorData[1] = uint8_t(color.y * 255.0f);
                             colorData[2] = 0;
                             colorData[3] = 0;
-                            format = Video::Format::R8G8_UNORM;
+                            description.format = Video::Format::R8G8_UNORM;
                         }
                         else if (colorSize == 3)
                         {
@@ -526,7 +526,7 @@ namespace Gek
                             colorData[1] = uint8_t(color.y * 255.0f);
                             colorData[2] = uint8_t(color.z * 255.0f);
                             colorData[3] = 0;
-                            format = Video::Format::R8G8B8A8_UNORM;
+                            description.format = Video::Format::R8G8B8A8_UNORM;
                         }
                         else if (colorSize == 4)
                         {
@@ -536,19 +536,20 @@ namespace Gek
                             colorData[1] = uint8_t(color.y * 255.0f);
                             colorData[2] = uint8_t(color.z * 255.0f);
                             colorData[3] = uint8_t(color.w * 255.0f);
-                            format = Video::Format::R8G8B8A8_UNORM;
+                            description.format = Video::Format::R8G8B8A8_UNORM;
                         }
                     }
                     catch (const ShuntingYard::Exception &)
                     {
                     };
 
-                    if (format == Video::Format::Unknown)
+                    if (description.format == Video::Format::Unknown)
                     {
                         throw InvalidParameter("Invalid color format encountered");
                     }
 
-                    texture = videoDevice->createTexture(format, 1, 1, 1, 1, Video::TextureFlags::Resource, colorData);
+                    description.flags = Video::TextureDescription::Flags::Resource;
+                    texture = videoDevice->createTexture(description, colorData);
                 }
                 else if (pattern.compareNoCase(L"normal") == 0)
                 {
@@ -570,7 +571,10 @@ namespace Gek
                         255,
                     };
 
-                    texture = videoDevice->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
+                    Video::TextureDescription description;
+                    description.format = Video::Format::R8G8B8A8_UNORM;
+                    description.flags = Video::TextureDescription::Flags::Resource;
+                    texture = videoDevice->createTexture(description, normalData);
                 }
                 else if (pattern.compareNoCase(L"system") == 0)
                 {
@@ -581,7 +585,10 @@ namespace Gek
                             255, 0, 255, 255,
                         };
 
-                        texture = videoDevice->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, data);
+                        Video::TextureDescription description;
+                        description.format = Video::Format::R8G8B8A8_UNORM;
+                        description.flags = Video::TextureDescription::Flags::Resource;
+                        texture = videoDevice->createTexture(description, data);
                     }
                     else if (parameters.compareNoCase(L"flat") == 0)
                     {
@@ -594,7 +601,10 @@ namespace Gek
                             255,
                         };
 
-                        texture = videoDevice->createTexture(Video::Format::R8G8B8A8_UNORM, 1, 1, 1, 1, Video::TextureFlags::Resource, normalData);
+                        Video::TextureDescription description;
+                        description.format = Video::Format::R8G8B8A8_UNORM;
+                        description.flags = Video::TextureDescription::Flags::Resource;
+                        texture = videoDevice->createTexture(description, normalData);
                     }
                     else
                     {
@@ -704,10 +714,14 @@ namespace Gek
                 filterCache.reload();
 
                 auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getWidth();
-                uint32_t height = backBuffer->getHeight();
-                createTexture(L"screen", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
-                createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                Video::TextureDescription description;
+                description.format = Video::Format::R11G11B10_FLOAT;
+                description.width = backBuffer->getWidth();
+                description.height = backBuffer->getHeight();
+                description.sampleCount = 4;
+                description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
+                createTexture(L"screen", description);
+                createTexture(L"screenBuffer", description);
             }
 
             // ResourceRequester
@@ -770,29 +784,29 @@ namespace Gek
                 return dynamicCache.getHandle(hash, 0, std::move(load));
             }
 
-            ResourceHandle createTexture(const wchar_t *textureName, Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags)
+            ResourceHandle createTexture(const wchar_t *textureName, const Video::TextureDescription &description)
             {
                 GEK_REQUIRE(textureName);
 
-                auto load = [this, textureName = String(textureName), format, width, height, depth, mipmaps, flags](ResourceHandle)->Video::TexturePtr
+                auto load = [this, textureName = String(textureName), description](ResourceHandle)->Video::TexturePtr
                 {
-                    auto texture = videoDevice->createTexture(format, width, height, depth, mipmaps, flags);
+                    auto texture = videoDevice->createTexture(description);
                     texture->setName(textureName);
                     return texture;
                 };
 
                 auto hash = GetHash(textureName);
-                auto parameters = GetHash(format, width, height, depth, mipmaps, flags);
+                auto parameters = GetStructHash(description);
                 return dynamicCache.getHandle(hash, parameters, std::move(load));
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::StrideBufferDescription &description, const std::vector<uint8_t> &staticData)
             {
                 GEK_REQUIRE(bufferName);
                 
-                auto load = [this, bufferName = String(bufferName), stride, count, type, flags, staticData](ResourceHandle)->Video::BufferPtr
+                auto load = [this, bufferName = String(bufferName), description, staticData](ResourceHandle)->Video::BufferPtr
                 {
-                    auto buffer = videoDevice->createBuffer(stride, count, type, flags, (void *)staticData.data());
+                    auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
                     buffer->setName(bufferName);
                     return buffer;
                 };
@@ -800,7 +814,7 @@ namespace Gek
                 auto hash = GetHash(bufferName);
                 if (staticData.empty())
                 {
-                    auto parameters = GetHash(stride, count, type, flags);
+                    auto parameters = GetStructHash(description);
                     return dynamicCache.getHandle(hash, parameters, std::move(load));
                 }
                 else
@@ -809,13 +823,13 @@ namespace Gek
                 }
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const std::vector<uint8_t> &staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::FormatBufferDescription &description, const std::vector<uint8_t> &staticData)
             {
                 GEK_REQUIRE(bufferName);
 
-                auto load = [this, bufferName = String(bufferName), format, count, type, flags, staticData](ResourceHandle)->Video::BufferPtr
+                auto load = [this, bufferName = String(bufferName), description, staticData](ResourceHandle)->Video::BufferPtr
                 {
-                    auto buffer = videoDevice->createBuffer(format, count, type, flags, (void *)staticData.data());
+                    auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
                     buffer->setName(bufferName);
                     return buffer;
                 };
@@ -823,7 +837,7 @@ namespace Gek
                 auto hash = GetHash(bufferName);
                 if (staticData.empty())
                 {
-                    auto parameters = GetHash(format, count, type, flags);
+                    auto parameters = GetStructHash(description);
                     return dynamicCache.getHandle(hash, parameters, std::move(load));
                 }
                 else
@@ -993,10 +1007,14 @@ namespace Gek
                 blendStateCache.clear();
 
                 auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getWidth();
-                uint32_t height = backBuffer->getHeight();
-                createTexture(L"screen", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
-                createTexture(L"screenBuffer", Video::Format::R11G11B10_FLOAT, width, height, 1, 1, Video::TextureFlags::RenderTarget | Video::TextureFlags::Resource);
+                Video::TextureDescription description;
+                description.format = Video::Format::R11G11B10_FLOAT;
+                description.width = backBuffer->getWidth();
+                description.height = backBuffer->getHeight();
+                description.sampleCount = 4;
+                description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
+                createTexture(L"screen", description);
+                createTexture(L"screenBuffer", description);
             }
 
             ShaderHandle getMaterialShader(MaterialHandle material) const
@@ -1114,16 +1132,7 @@ namespace Gek
 					return state;
                 };
 
-                auto hash = GetHash(static_cast<uint8_t>(renderState.fillMode),
-                    static_cast<uint8_t>(renderState.cullMode),
-                    renderState.frontCounterClockwise,
-                    renderState.depthBias,
-                    renderState.depthBiasClamp,
-                    renderState.slopeScaledDepthBias,
-                    renderState.depthClipEnable,
-                    renderState.scissorEnable,
-                    renderState.multisampleEnable,
-                    renderState.antialiasedLineEnable);
+                auto hash = GetStructHash(renderState);
                 return renderStateCache.getHandle(hash, std::move(load));
             }
 
@@ -1136,20 +1145,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = GetHash(depthState.enable,
-                    static_cast<uint8_t>(depthState.writeMask),
-                    static_cast<uint8_t>(depthState.comparisonFunction),
-                    depthState.stencilEnable,
-                    depthState.stencilReadMask,
-                    depthState.stencilWriteMask,
-                    static_cast<uint8_t>(depthState.stencilFrontState.failOperation),
-                    static_cast<uint8_t>(depthState.stencilFrontState.depthFailOperation),
-                    static_cast<uint8_t>(depthState.stencilFrontState.passOperation),
-                    static_cast<uint8_t>(depthState.stencilFrontState.comparisonFunction),
-                    static_cast<uint8_t>(depthState.stencilBackState.failOperation),
-                    static_cast<uint8_t>(depthState.stencilBackState.depthFailOperation),
-                    static_cast<uint8_t>(depthState.stencilBackState.passOperation),
-                    static_cast<uint8_t>(depthState.stencilBackState.comparisonFunction));
+                auto hash = GetStructHash(depthState);
                 return depthStateCache.getHandle(hash, std::move(load));
             }
 
@@ -1162,14 +1158,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = GetHash(blendState.enable,
-                    static_cast<uint8_t>(blendState.colorSource),
-                    static_cast<uint8_t>(blendState.colorDestination),
-                    static_cast<uint8_t>(blendState.colorOperation),
-                    static_cast<uint8_t>(blendState.alphaSource),
-                    static_cast<uint8_t>(blendState.alphaDestination),
-                    static_cast<uint8_t>(blendState.alphaOperation),
-                    blendState.writeMask);
+                auto hash = GetStructHash(blendState);
                 return blendStateCache.getHandle(hash, std::move(load));
             }
 
@@ -1182,22 +1171,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = 0;
-                for (uint32_t renderTarget = 0; renderTarget < 8; ++renderTarget)
-                {
-                    if (blendState.targetStates[renderTarget].enable)
-                    {
-                        hash = GetHash(hash, renderTarget,
-                            static_cast<uint8_t>(blendState.targetStates[renderTarget].colorSource),
-                            static_cast<uint8_t>(blendState.targetStates[renderTarget].colorDestination),
-                            static_cast<uint8_t>(blendState.targetStates[renderTarget].colorOperation),
-                            static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaSource),
-                            static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaDestination),
-                            static_cast<uint8_t>(blendState.targetStates[renderTarget].alphaOperation),
-                            blendState.targetStates[renderTarget].writeMask);
-                    }
-                }
-
+                auto hash = GetStructHash(blendState);
                 return blendStateCache.getHandle(hash, std::move(load));
             }
 

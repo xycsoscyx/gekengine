@@ -930,20 +930,20 @@ namespace Gek
                 return std::make_shared<SamplerState>();
             }
 
-            Video::BufferPtr createBuffer(Video::Format format, uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
+            Video::BufferPtr createBuffer(Video::Format format, uint32_t stride, uint32_t count, Video::BufferDescription::Type type, uint32_t flags, const void *data)
             {
                 return std::make_shared<Buffer>(format, stride, count);
             }
 
-            Video::BufferPtr createBuffer(uint32_t stride, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
+            Video::BufferPtr createBuffer(const Video::StrideBufferDescription &description, const void *data)
             {
-                return createBuffer(Video::Format::Unknown, stride, count, type, flags, data);
+                return createBuffer(Video::Format::Unknown, description.stride, description.count, description.type, description.flags, data);
             }
 
-            Video::BufferPtr createBuffer(Video::Format format, uint32_t count, Video::BufferType type, uint32_t flags, const void *data)
+            Video::BufferPtr createBuffer(const Video::FormatBufferDescription &description, const void *data)
             {
-                uint32_t stride = 0;//DirectX::FormatStrideList[static_cast<uint8_t>(format)];
-                return createBuffer(format, stride, count, type, flags, data);
+                uint32_t stride = 0;// DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
+                return createBuffer(description.format, stride, description.count, description.type, description.flags, data);
             }
 
             void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
@@ -978,19 +978,19 @@ namespace Gek
                 return std::vector<uint8_t>();
             }
 
-            Video::TexturePtr createTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth, uint32_t mipmaps, uint32_t flags, const void *data)
+            Video::TexturePtr createTexture(const Video::TextureDescription &description, const void *data)
             {
-                if (flags & Video::TextureFlags::RenderTarget)
+                if (description.flags & Video::TextureDescription::Flags::RenderTarget)
                 {
-                    return std::make_shared<TargetViewTexture>(format, width, height, depth);
+                    return std::make_shared<TargetViewTexture>(description.format, description.width, description.height, description.depth);
                 }
-                else if (flags & Video::TextureFlags::DepthTarget)
+                else if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                 {
-                    return std::make_shared<DepthTexture>(format, width, height, depth);
+                    return std::make_shared<DepthTexture>(description.format, description.width, description.height, description.depth);
                 }
                 else
                 {
-                    return std::make_shared<ViewTexture>(format, width, height, depth);
+                    return std::make_shared<ViewTexture>(description.format, description.width, description.height, description.depth);
                 }
             }
 
