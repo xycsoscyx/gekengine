@@ -647,7 +647,7 @@ namespace Gek
                     L"PixelOutput main(in VertexInput input)" \
                     L"{" \
                     L"    PixelOutput output;" \
-                    L"    output.position = mul( ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
+                    L"    output.position = mul(ProjectionMatrix, float4(input.position.xy, 0.0f, 1.0f));" \
                     L"    output.color = input.color;" \
                     L"    output.texCoord  = input.texCoord;" \
                     L"    return output;" \
@@ -675,7 +675,7 @@ namespace Gek
                 inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
 				inputLayout->setName(L"core:inputLayout");
 
-                Video::StrideBufferDescription constantBufferDescription;
+                Video::BufferDescription constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::BufferDescription::Type::Constant;
@@ -1072,8 +1072,8 @@ namespace Gek
                 ImGuiIO &imGuiIo = ImGui::GetIO();
 
                 auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getWidth();
-                uint32_t height = backBuffer->getHeight();
+                uint32_t width = backBuffer->getDescription().width;
+                uint32_t height = backBuffer->getDescription().height;
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
 
                 timer.update();
@@ -1291,9 +1291,9 @@ namespace Gek
             // ImGui
             void renderDrawData(ImDrawData *drawData)
             {
-                if (!vertexBuffer || vertexBuffer->getCount() < drawData->TotalVtxCount)
+                if (!vertexBuffer || vertexBuffer->getDescription().count < drawData->TotalVtxCount)
                 {
-                    Video::StrideBufferDescription vertexBufferDescription;
+                    Video::BufferDescription vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(ImDrawVert);
                     vertexBufferDescription.count = drawData->TotalVtxCount;
                     vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
@@ -1301,9 +1301,9 @@ namespace Gek
                     vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                 }
 
-                if (!indexBuffer || indexBuffer->getCount() < drawData->TotalIdxCount)
+                if (!indexBuffer || indexBuffer->getDescription().count < drawData->TotalIdxCount)
                 {
-                    Video::FormatBufferDescription vertexBufferDescription;
+                    Video::BufferDescription vertexBufferDescription;
                     vertexBufferDescription.count = drawData->TotalIdxCount;
                     vertexBufferDescription.type = Video::BufferDescription::Type::Index;
                     vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
@@ -1341,8 +1341,8 @@ namespace Gek
                 videoDevice->unmapBuffer(vertexBuffer.get());
 
                 auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getWidth();
-                uint32_t height = backBuffer->getHeight();
+                uint32_t width = backBuffer->getDescription().width;
+                uint32_t height = backBuffer->getDescription().height;
                 auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
                 videoDevice->updateResource(constantBuffer.get(), &orthographic);
 

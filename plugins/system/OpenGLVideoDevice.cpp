@@ -6,10 +6,6 @@
 #include "GEK\Utility\ContextUser.hpp"
 #include "GEK\System\VideoDevice.hpp"
 #include <Windows.h>
-#include <wingdi.h>
-
-#include <glbinding\gl45core\gl.h>
-#include <glbinding\Binding.h>
 
 namespace Gek
 {
@@ -235,18 +231,14 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            Video::Format format;
-            uint32_t stride;
-            uint32_t count;
+            Video::BufferDescription description;
 
         public:
-            Buffer(Video::Format format, uint32_t stride, uint32_t count)
+            Buffer(const Video::BufferDescription &description)
                 : Resource()
                 , ShaderResourceView()
                 , UnorderedAccessView()
-                , format(format)
-                , stride(stride)
-                , count(count)
+                , description(description)
             {
             }
 
@@ -257,19 +249,9 @@ namespace Gek
             }
 
             // Video::Buffer
-            Video::Format getFormat(void)
+            const Video::BufferDescription &getDescription(void) const
             {
-                return format;
-            }
-
-            uint32_t getStride(void)
-            {
-                return stride;
-            }
-
-            uint32_t getCount(void)
-            {
-                return stride;
+                return description;
             }
         };
 
@@ -277,41 +259,20 @@ namespace Gek
             : virtual public Video::Texture
         {
         public:
-            Video::Format format;
-            uint32_t width;
-            uint32_t height;
-            uint32_t depth;
+            Video::TextureDescription description;
 
         public:
-            Texture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : format(format)
-                , width(width)
-                , height(height)
-                , depth(depth)
+            Texture(const Video::TextureDescription &description)
+                : description(description)
             {
             }
 
             virtual ~Texture(void) = default;
 
             // Video::Texture
-            Video::Format getFormat(void)
+            const Video::TextureDescription &getDescription(void) const
             {
-                return format;
-            }
-
-            uint32_t getWidth(void)
-            {
-                return width;
-            }
-
-            uint32_t getHeight(void)
-            {
-                return height;
-            }
-
-            uint32_t getDepth(void)
-            {
-                return depth;
+                return description;
             }
         };
 
@@ -322,8 +283,8 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ViewTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : Texture(format, width, height, depth)
+            ViewTexture(const Video::TextureDescription &description)
+                : Texture(description)
                 , Resource()
                 , ShaderResourceView()
                 , UnorderedAccessView()
@@ -339,47 +300,26 @@ namespace Gek
             : virtual public Video::Target
         {
         public:
-            Video::Format format;
-            uint32_t width;
-            uint32_t height;
-            uint32_t depth;
+            Video::TextureDescription description;
             Video::ViewPort viewPort;
 
         public:
-            Target(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : format(format)
-                , width(width)
-                , height(height)
-                , depth(depth)
-                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+            Target(const Video::TextureDescription &description)
+                : description(description)
+                , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
             {
             }
 
             virtual ~Target(void) = default;
 
             // Video::Texture
-            Video::Format getFormat(void)
+            const Video::TextureDescription &getDescription(void) const
             {
-                return format;
-            }
-
-            uint32_t getWidth(void)
-            {
-                return width;
-            }
-
-            uint32_t getHeight(void)
-            {
-                return height;
-            }
-
-            uint32_t getDepth(void)
-            {
-                return depth;
+                return description;
             }
 
             // Video::Target
-            const Video::ViewPort &getViewPort(void)
+            const Video::ViewPort &getViewPort(void) const
             {
                 return viewPort;
             }
@@ -391,8 +331,8 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : Target(format, width, height, depth)
+            TargetTexture(const Video::TextureDescription &description)
+                : Target(description)
                 , Resource()
                 , RenderTargetView()
             {
@@ -411,8 +351,8 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            TargetViewTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : TargetTexture(format, width, height, depth)
+            TargetViewTexture(const Video::TextureDescription &description)
+                : TargetTexture(description)
                 , ShaderResourceView()
                 , UnorderedAccessView()
             {
@@ -434,8 +374,8 @@ namespace Gek
         public:
 
         public:
-            DepthTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : Texture(format, width, height, depth)
+            DepthTexture(const Video::TextureDescription &description)
+                : Texture(description)
                 , Resource()
                 , ShaderResourceView()
                 , UnorderedAccessView()
@@ -825,10 +765,7 @@ namespace Gek
         };
 
         public:
-            HWND window = nullptr;
-
-            HDC windowDC = nullptr;
-            HGLRC openGLRC = nullptr;
+            HWND window;
 
             Video::DisplayModeList displayModeList;
 
@@ -842,52 +779,6 @@ namespace Gek
             {
                 GEK_REQUIRE(window);
 
-                windowDC = GetDC(window);
-                if (!windowDC)
-                {
-                    throw Video::CreationFailed("Unable to get the device context from the window");
-                }
-
-                PIXELFORMATDESCRIPTOR pixelFormatDescriptor =
-                {
-                    sizeof(PIXELFORMATDESCRIPTOR),
-                    1,
-                    PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
-                    PFD_TYPE_RGBA,             //The kind of framebuffer. RGBA or palette.
-                    32,                        //Colordepth of the framebuffer.
-                    0, 0, 0, 0, 0, 0,
-                    0,
-                    0,
-                    0,
-                    0, 0, 0, 0,
-                    0,                        //Number of bits for the depthbuffer
-                    0,                        //Number of bits for the stencilbuffer
-                    0,                        //Number of Aux buffers in the framebuffer.
-                    PFD_MAIN_PLANE,
-                    0,
-                    0, 0, 0
-                };
-
-                // If the video card/display can handle our desired pixel format then we set it as the current one.
-                auto pixelFormat = ChoosePixelFormat(windowDC, &pixelFormatDescriptor);
-                if (!SetPixelFormat(windowDC, pixelFormat, &pixelFormatDescriptor))
-                {
-                    throw Video::CreationFailed("Unable to select appropriate device context pixel format");
-                }
-
-                openGLRC = wglCreateContext(windowDC);
-                if (!openGLRC)
-                {
-                    throw Video::CreationFailed("Unable to create a rendering context for the window");
-                }
-
-                if (!wglMakeCurrent(windowDC, openGLRC))
-                {
-                    throw Video::CreationFailed("Unable to set rendering context for window");
-                }
-
-                glbinding::Binding::initialize();
-
                 defaultContext = std::make_shared<Context>(this);
             }
 
@@ -897,59 +788,12 @@ namespace Gek
 
                 backBuffer = nullptr;
                 defaultContext = nullptr;
-
-                wglMakeCurrent(windowDC, nullptr);
-                wglDeleteContext(openGLRC);
-                ReleaseDC(window, windowDC);
             }
 
             // System
             Video::DisplayModeList getDisplayModeList(Video::Format format) const
             {
-                Video::DisplayModeList displayModeList;
-
-                DEVMODE deviceMode;
-                if (EnumDisplaySettings(nullptr, 0, &deviceMode))
-                {
-                    DWORD mode = 1;
-                    while (EnumDisplaySettings(nullptr, mode++, &deviceMode))
-                    {
-                        auto getAspectRatio = [](uint32_t width, uint32_t height) -> Video::DisplayMode::AspectRatio
-                        {
-                            const float AspectRatio4x3 = (4.0f / 3.0f);
-                            const float AspectRatio16x9 = (16.0f / 9.0f);
-                            const float AspectRatio16x10 = (16.0f / 10.0f);
-                            float aspectRatio = (float(width) / float(height));
-                            if (std::abs(aspectRatio - AspectRatio4x3) < Math::Epsilon)
-                            {
-                                return Video::DisplayMode::AspectRatio::_4x3;
-                            }
-                            else if (std::abs(aspectRatio - AspectRatio16x9) < Math::Epsilon)
-                            {
-                                return Video::DisplayMode::AspectRatio::_16x9;
-                            }
-                            else if (std::abs(aspectRatio - AspectRatio16x10) < Math::Epsilon)
-                            {
-                                return Video::DisplayMode::AspectRatio::_16x10;
-                            }
-                            else
-                            {
-                                return Video::DisplayMode::AspectRatio::Unknown;
-                            }
-                        };
-
-                        Video::DisplayMode displayMode;
-                        displayMode.width = deviceMode.dmPelsWidth;
-                        displayMode.height = deviceMode.dmPelsHeight;
-                        //displayMode.format = DirectX::getFormat(dxgiDisplayMode.Format);
-                        displayMode.aspectRatio = getAspectRatio(displayMode.width, displayMode.height);
-                        displayMode.refreshRate.numerator = deviceMode.dmDisplayFrequency;
-                        displayMode.refreshRate.denominator = 1;
-                        displayModeList.push_back(displayMode);
-                    };
-                }
-
-                return displayModeList;
+                return Video::DisplayModeList();
             }
 
             void setFullScreenState(bool fullScreen)
@@ -973,7 +817,7 @@ namespace Gek
             {
                 if (!backBuffer)
                 {
-                    backBuffer = std::make_shared<TargetTexture>(Video::Format::Unknown, 0, 0, 1);
+                    backBuffer = std::make_shared<TargetTexture>(Video::TextureDescription());
                 }
 
                 return backBuffer.get();
@@ -1030,20 +874,10 @@ namespace Gek
                 return std::make_shared<SamplerState>();
             }
 
-            Video::BufferPtr createBuffer(Video::Format format, uint32_t stride, uint32_t count, Video::BufferDescription::Type type, uint32_t flags, const void *data)
-            {
-                return std::make_shared<Buffer>(format, stride, count);
-            }
-
-            Video::BufferPtr createBuffer(const Video::StrideBufferDescription &description, const void *data)
-            {
-                return createBuffer(Video::Format::Unknown, description.stride, description.count, description.type, description.flags, data);
-            }
-
-            Video::BufferPtr createBuffer(const Video::FormatBufferDescription &description, const void *data)
+            Video::BufferPtr createBuffer(const Video::BufferDescription &description, const void *data)
             {
                 uint32_t stride = 0;// DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
-                return createBuffer(description.format, stride, description.count, description.type, description.flags, data);
+                return std::make_shared<Buffer>(description);
             }
 
             void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
@@ -1082,21 +916,21 @@ namespace Gek
             {
                 if (description.flags & Video::TextureDescription::Flags::RenderTarget)
                 {
-                    return std::make_shared<TargetViewTexture>(description.format, description.width, description.height, description.depth);
+                    return std::make_shared<TargetViewTexture>(description);
                 }
                 else if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                 {
-                    return std::make_shared<DepthTexture>(description.format, description.width, description.height, description.depth);
+                    return std::make_shared<DepthTexture>(description);
                 }
                 else
                 {
-                    return std::make_shared<ViewTexture>(description.format, description.width, description.height, description.depth);
+                    return std::make_shared<ViewTexture>(description);
                 }
             }
 
             Video::TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
             {
-                return std::make_shared<ViewTexture>(Video::Format::Unknown, 0, 0, 0);
+                return std::make_shared<ViewTexture>(Video::TextureDescription());
             }
 
             void executeCommandList(Video::Object *commandList)

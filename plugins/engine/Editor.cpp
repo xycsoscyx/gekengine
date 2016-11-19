@@ -229,8 +229,8 @@ namespace Gek
                                             viewMatrix.invert();
 
                                             const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                                            const float width = float(backBuffer->getWidth());
-                                            const float height = float(backBuffer->getHeight());
+                                            const float width = float(backBuffer->getDescription().width);
+                                            const float height = float(backBuffer->getDescription().height);
                                             auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                                             component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
@@ -312,8 +312,8 @@ namespace Gek
                     viewMatrix.invert();
 
                     const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                    const float width = float(backBuffer->getWidth());
-                    const float height = float(backBuffer->getHeight());
+                    const float width = float(backBuffer->getDescription().width);
+                    const float height = float(backBuffer->getDescription().height);
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
                     renderer->queueRenderCall(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());

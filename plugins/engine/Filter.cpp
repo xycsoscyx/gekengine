@@ -76,7 +76,7 @@ namespace Gek
 
                 reload();
 
-                Video::StrideBufferDescription constantBufferDescription;
+                Video::BufferDescription constantBufferDescription;
                 constantBufferDescription.stride = sizeof(FilterConstantData);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::BufferDescription::Type::Constant;
@@ -104,8 +104,8 @@ namespace Gek
                 }
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
-                uint32_t displayWidth = videoDevice->getBackBuffer()->getWidth();
-                uint32_t displayHeight = videoDevice->getBackBuffer()->getHeight();
+                uint32_t displayWidth = videoDevice->getBackBuffer()->getDescription().width;
+                uint32_t displayHeight = videoDevice->getBackBuffer()->getDescription().height;
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
@@ -187,8 +187,8 @@ namespace Gek
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
-                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2DMS, BindType::Float3);
-                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(videoDevice->getBackBuffer()->getWidth(), videoDevice->getBackBuffer()->getHeight());
+                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
+                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(videoDevice->getBackBuffer()->getDescription().width, videoDevice->getBackBuffer()->getDescription().height);
 
                 if (filterNode.has_member(L"textures"))
                 {
@@ -290,7 +290,7 @@ namespace Gek
                                     throw MissingParameter("Structured buffer required a structure name");
                                 }
 
-                                Video::StrideBufferDescription description;
+                                Video::BufferDescription description;
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::BufferDescription::Type::Structured;
@@ -306,7 +306,7 @@ namespace Gek
                                     mapType = MapType::ByteAddressBuffer;
                                 }
 
-                                Video::FormatBufferDescription description;
+                                Video::BufferDescription description;
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::BufferDescription::Type::Raw;

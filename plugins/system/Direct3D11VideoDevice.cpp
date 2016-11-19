@@ -654,19 +654,15 @@ namespace Gek
         {
         public:
             CComPtr<ID3D11Buffer> d3dObject;
-            Video::Format format = Video::Format::Unknown;
-            uint32_t stride = 0;
-            uint32_t count = 0;
+            Video::BufferDescription description;
 
         public:
-            Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t stride, uint32_t count)
+            Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::BufferDescription &description)
                 : Resource(d3dBuffer)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
+                , description(description)
                 , d3dObject(d3dBuffer)
-                , format(format)
-                , stride(stride)
-                , count(count)
             {
             }
 
@@ -681,36 +677,20 @@ namespace Gek
             }
 
             // Video::Buffer
-            Video::Format getFormat(void)
+            const Video::BufferDescription &getDescription(void) const
             {
-                return format;
-            }
-
-            uint32_t getStride(void)
-            {
-                return stride;
-            }
-
-            uint32_t getCount(void)
-            {
-                return stride;
+                return description;
             }
         };
 
         class BaseTexture
         {
         public:
-			Video::Format format = Video::Format::Unknown;
-            uint32_t width = 0;
-            uint32_t height = 0;
-            uint32_t depth = 0;
+            Video::TextureDescription description;
 
         public:
-            BaseTexture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : format(format)
-                , width(width)
-                , height(height)
-                , depth(depth)
+            BaseTexture(const Video::TextureDescription &description)
+                : description(description)
             {
             }
         };
@@ -720,32 +700,17 @@ namespace Gek
             , public BaseTexture
         {
         public:
-            Texture(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : BaseTexture(format, width, height, depth)
+            Texture(const Video::TextureDescription &description)
+                : BaseTexture(description)
             {
             }
 
             virtual ~Texture(void) = default;
 
             // Video::Texture
-            Video::Format getFormat(void)
+            const Video::TextureDescription &getDescription(void) const
             {
-                return format;
-            }
-
-            uint32_t getWidth(void)
-            {
-                return width;
-            }
-
-            uint32_t getHeight(void)
-            {
-                return height;
-            }
-
-            uint32_t getDepth(void)
-            {
-                return depth;
+                return description;
             }
         };
 
@@ -756,8 +721,8 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : Texture(format, width, height, depth)
+            ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::TextureDescription &description)
+                : Texture(description)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
@@ -780,37 +745,22 @@ namespace Gek
             Video::ViewPort viewPort;
 
         public:
-            Target(Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : BaseTexture(format, width, height, depth)
-				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(width), float(height)), 0.0f, 1.0f)
+            Target(const Video::TextureDescription &description)
+                : BaseTexture(description)
+				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
 			{
             }
 
             virtual ~Target(void) = default;
 
             // Video::Texture
-            Video::Format getFormat(void)
+            const Video::TextureDescription &getDescription(void) const
             {
-                return format;
-            }
-
-            uint32_t getWidth(void)
-            {
-                return width;
-            }
-
-            uint32_t getHeight(void)
-            {
-                return height;
-            }
-
-            uint32_t getDepth(void)
-            {
-                return depth;
+                return description;
             }
 
             // Video::Target
-            const Video::ViewPort &getViewPort(void)
+            const Video::ViewPort &getViewPort(void) const
             {
                 return viewPort;
             }
@@ -822,8 +772,8 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : Target(format, width, height, depth)
+            TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, const Video::TextureDescription &description)
+                : Target(description)
                 , Resource(d3dResource)
                 , RenderTargetView(d3dRenderTargetView)
             {
@@ -844,8 +794,8 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : TargetTexture(d3dResource, d3dRenderTargetView, format, width, height, depth)
+            TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::TextureDescription &description)
+                : TargetTexture(d3dResource, d3dRenderTargetView, description)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
             {
@@ -872,8 +822,8 @@ namespace Gek
             CComPtr<ID3D11DepthStencilView> d3dObject;
 
         public:
-            DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, Video::Format format, uint32_t width, uint32_t height, uint32_t depth)
-                : Texture(format, width, height, depth)
+            DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::TextureDescription &description)
+                : Texture(description)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
@@ -1455,7 +1405,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(indexBuffer);
 
-                    DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getFormat())];
+                    DXGI_FORMAT format = DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
                     d3dDeviceContext->IASetIndexBuffer(getObject<Buffer>(indexBuffer), format, offset);
                 }
 
@@ -1471,7 +1421,7 @@ namespace Gek
                     vertexBufferOffsetsCache.resize(vertexBufferCount);
                     for (uint32_t buffer = 0; buffer < vertexBufferCount; ++buffer)
                     {
-                        vertexBufferStrideCache[buffer] = vertexBufferList[buffer]->getStride();
+                        vertexBufferStrideCache[buffer] = vertexBufferList[buffer]->getDescription().stride;
                         vertexBufferOffsetsCache[buffer] = (offsetList ? offsetList[buffer] : 0);
                     }
 
@@ -1798,10 +1748,14 @@ namespace Gek
                         throw Video::OperationFailed("Unable to create render target view for back buffer");
                     }
 
-                    D3D11_TEXTURE2D_DESC description;
-                    d3dRenderTarget->GetDesc(&description);
-                    Video::Format format = DirectX::getFormat(description.Format);
-                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, format, description.Width, description.Height, 1);
+                    D3D11_TEXTURE2D_DESC textureDescription;
+                    d3dRenderTarget->GetDesc(&textureDescription);
+
+                    Video::TextureDescription description;
+                    description.width = textureDescription.Width;
+                    description.height = textureDescription.Height;
+                    description.format = DirectX::getFormat(textureDescription.Format);
+                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, description);
                 }
 
                 return backBuffer.get();
@@ -2046,15 +2000,32 @@ namespace Gek
                 return std::make_shared<SamplerState>(d3dStates);
             }
 
-            Video::BufferPtr createBuffer(Video::Format format, uint32_t stride, uint32_t count, Video::BufferDescription::Type type, uint32_t flags, const void *data)
+            Video::BufferPtr createBuffer(const Video::BufferDescription &description, const void *data)
             {
                 GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(stride > 0);
-                GEK_REQUIRE(count > 0);
+                GEK_REQUIRE(description.count > 0);
+
+                uint32_t stride = description.stride;
+                if (description.format != Video::Format::Unknown)
+                {
+                    if (description.stride > 0)
+                    {
+                        throw Video::InvalidParameter("Buffer requires only a format or an element stride");
+                    }
+
+                    stride = DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
+                }
+                else if (description.stride > 0)
+                {
+                }
+                else
+                {
+                    throw Video::InvalidParameter("Buffer requires either a format or an element stride");
+                }
 
                 D3D11_BUFFER_DESC bufferDescription;
-                bufferDescription.ByteWidth = (stride * count);
-                switch (type)
+                bufferDescription.ByteWidth = (stride * description.count);
+                switch (description.type)
                 {
                 case Video::BufferDescription::Type::Structured:
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
@@ -2065,7 +2036,7 @@ namespace Gek
                 default:
                     bufferDescription.MiscFlags = 0;
                     bufferDescription.StructureByteStride = 0;
-                    switch (type)
+                    switch (description.type)
                     {
                     case Video::BufferDescription::Type::Vertex:
                         bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
@@ -2090,12 +2061,12 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
                     bufferDescription.CPUAccessFlags = 0;
                 }
-                else if (flags & Video::BufferDescription::Flags::Staging)
+                else if (description.flags & Video::BufferDescription::Flags::Staging)
                 {
                     bufferDescription.Usage = D3D11_USAGE_STAGING;
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
                 }
-                else if (flags & Video::BufferDescription::Flags::Mappable)
+                else if (description.flags & Video::BufferDescription::Flags::Mappable)
                 {
                     bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -2106,12 +2077,12 @@ namespace Gek
                     bufferDescription.CPUAccessFlags = 0;
                 }
 
-                if (flags & Video::BufferDescription::Flags::Resource)
+                if (description.flags & Video::BufferDescription::Flags::Resource)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (flags & Video::BufferDescription::Flags::UnorderedAccess)
+                if (description.flags & Video::BufferDescription::Flags::UnorderedAccess)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2139,13 +2110,13 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (flags & Video::BufferDescription::Flags::Resource)
+                if (description.flags & Video::BufferDescription::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(format)];
+                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = count;
+                    viewDescription.Buffer.NumElements = description.count;
                     HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
                     if (FAILED(resultValue) || !d3dShaderResourceView)
                     {
@@ -2154,14 +2125,14 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (flags & Video::BufferDescription::Flags::UnorderedAccess)
+                if (description.flags & Video::BufferDescription::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(format)];
+                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = count;
-                    viewDescription.Buffer.Flags = (flags & Video::BufferDescription::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
+                    viewDescription.Buffer.NumElements = description.count;
+                    viewDescription.Buffer.Flags = (description.flags & Video::BufferDescription::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
 
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
@@ -2170,18 +2141,7 @@ namespace Gek
                     }
                 }
 
-                return std::make_shared<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, format, stride, count);
-            }
-
-            Video::BufferPtr createBuffer(const Video::StrideBufferDescription &description, const void *data)
-            {
-                return createBuffer(Video::Format::Unknown, description.stride, description.count, description.type, description.flags, data);
-            }
-
-            Video::BufferPtr createBuffer(const Video::FormatBufferDescription &description, const void *data)
-            {
-                uint32_t stride = DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
-                return createBuffer(description.format, stride, description.count, description.type, description.flags, data);
+                return std::make_shared<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, description);
             }
 
             void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
@@ -2231,9 +2191,9 @@ namespace Gek
                 auto sourceTexture = dynamic_cast<BaseTexture *>(source);
                 if (destinationTexture && sourceTexture)
                 {
-                    if (destinationTexture->width != sourceTexture->width ||
-                        destinationTexture->height != sourceTexture->height ||
-                        destinationTexture->depth != sourceTexture->depth)
+                    if (destinationTexture->description.width != sourceTexture->description.width ||
+                        destinationTexture->description.height != sourceTexture->description.height ||
+                        destinationTexture->description.depth != sourceTexture->description.depth)
                     {
                         return;
                     }
@@ -2570,7 +2530,7 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create render target view");
                     }
 
-                    return std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description.format, description.width, description.height, description.depth);
+                    return std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
                 else if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                 {
@@ -2587,11 +2547,11 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create depth stencil view");
                     }
 
-                    return std::make_shared<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description.format, description.width, description.height, description.depth);
+                    return std::make_shared<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
                 else
                 {
-                    return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description.format, description.width, description.height, description.depth);
+                    return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
             }
 
@@ -2652,7 +2612,13 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to get texture resource");
                 }
 
-                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, Video::Format::Unknown, uint32_t(image.GetMetadata().width), uint32_t(image.GetMetadata().height), uint32_t(image.GetMetadata().depth));
+                Video::TextureDescription description;
+                description.width = image.GetMetadata().width;
+                description.height = image.GetMetadata().height;
+                description.depth = image.GetMetadata().depth;
+                description.format = DirectX::getFormat(image.GetMetadata().format);
+                description.mipMapCount = image.GetMetadata().mipLevels;
+                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
             }
 
             void executeCommandList(Video::Object *commandList)

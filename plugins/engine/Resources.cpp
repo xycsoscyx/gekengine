@@ -716,9 +716,8 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 Video::TextureDescription description;
                 description.format = Video::Format::R11G11B10_FLOAT;
-                description.width = backBuffer->getWidth();
-                description.height = backBuffer->getHeight();
-                description.sampleCount = 4;
+                description.width = backBuffer->getDescription().width;
+                description.height = backBuffer->getDescription().height;
                 description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
                 createTexture(L"screen", description);
                 createTexture(L"screenBuffer", description);
@@ -800,33 +799,10 @@ namespace Gek
                 return dynamicCache.getHandle(hash, parameters, std::move(load));
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::StrideBufferDescription &description, const std::vector<uint8_t> &staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, const std::vector<uint8_t> &staticData)
             {
                 GEK_REQUIRE(bufferName);
                 
-                auto load = [this, bufferName = String(bufferName), description, staticData](ResourceHandle)->Video::BufferPtr
-                {
-                    auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
-                    buffer->setName(bufferName);
-                    return buffer;
-                };
-
-                auto hash = GetHash(bufferName);
-                if (staticData.empty())
-                {
-                    auto parameters = GetStructHash(description);
-                    return dynamicCache.getHandle(hash, parameters, std::move(load));
-                }
-                else
-                {
-                    return dynamicCache.getHandle(hash, reinterpret_cast<std::size_t>(staticData.data()), std::move(load));
-                }
-            }
-
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::FormatBufferDescription &description, const std::vector<uint8_t> &staticData)
-            {
-                GEK_REQUIRE(bufferName);
-
                 auto load = [this, bufferName = String(bufferName), description, staticData](ResourceHandle)->Video::BufferPtr
                 {
                     auto buffer = videoDevice->createBuffer(description, (void *)staticData.data());
@@ -1009,9 +985,8 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 Video::TextureDescription description;
                 description.format = Video::Format::R11G11B10_FLOAT;
-                description.width = backBuffer->getWidth();
-                description.height = backBuffer->getHeight();
-                description.sampleCount = 4;
+                description.width = backBuffer->getDescription().width;
+                description.height = backBuffer->getDescription().height;
                 description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
                 createTexture(L"screen", description);
                 createTexture(L"screenBuffer", description);

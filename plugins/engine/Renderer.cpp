@@ -272,7 +272,7 @@ namespace Gek
                 depthState = videoDevice->createDepthState(depthStateInformation);
 				depthState->setName(L"renderer:depthState");
 
-                Video::StrideBufferDescription bufferDescription;
+                Video::BufferDescription bufferDescription;
                 bufferDescription.stride = sizeof(EngineConstantData);
                 bufferDescription.count = 1;
                 bufferDescription.type = Video::BufferDescription::Type::Constant;
@@ -322,7 +322,7 @@ namespace Gek
                 deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"renderer:deferredPixelProgram");
 
-                Video::StrideBufferDescription lightBufferDescription;
+                Video::BufferDescription lightBufferDescription;
                 lightBufferDescription.type = Video::BufferDescription::Type::Structured;
                 lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
 
@@ -344,7 +344,7 @@ namespace Gek
                 spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
                 spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
 
-                Video::FormatBufferDescription clusterBufferDescription;
+                Video::BufferDescription clusterBufferDescription;
                 clusterBufferDescription.type = Video::BufferDescription::Type::Raw;
                 clusterBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                 clusterBufferDescription.format = Video::Format::R32G32B32_UINT;
@@ -691,8 +691,8 @@ namespace Gek
                 while (renderCallList.try_pop(currentRenderCall))
                 {
                     auto backBuffer = videoDevice->getBackBuffer();
-                    auto width = backBuffer->getWidth();
-                    auto height = backBuffer->getHeight();
+                    auto width = backBuffer->getDescription().width;
+                    auto height = backBuffer->getDescription().height;
 
                     EngineConstantData engineConstantData;
                     engineConstantData.frameTime = population->getFrameTime();
@@ -788,11 +788,11 @@ namespace Gek
 
                                 if (!directionalLightList.empty())
                                 {
-                                    if (!directionalLightDataBuffer || directionalLightDataBuffer->getCount() < directionalLightList.size())
+                                    if (!directionalLightDataBuffer || directionalLightDataBuffer->getDescription().count < directionalLightList.size())
                                     {
                                         directionalLightDataBuffer = nullptr;
 
-                                        Video::StrideBufferDescription lightBufferDescription;
+                                        Video::BufferDescription lightBufferDescription;
                                         lightBufferDescription.type = Video::BufferDescription::Type::Structured;
                                         lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(DirectionalLightData);
@@ -814,11 +814,11 @@ namespace Gek
 
                                 if (!pointLightList.empty())
                                 {
-                                    if (!pointLightDataBuffer || pointLightDataBuffer->getCount() < pointLightList.size())
+                                    if (!pointLightDataBuffer || pointLightDataBuffer->getDescription().count < pointLightList.size())
                                     {
                                         pointLightDataBuffer = nullptr;
 
-                                        Video::StrideBufferDescription lightBufferDescription;
+                                        Video::BufferDescription lightBufferDescription;
                                         lightBufferDescription.type = Video::BufferDescription::Type::Structured;
                                         lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(PointLightData);
@@ -840,11 +840,11 @@ namespace Gek
 
                                 if (!spotLightList.empty())
                                 {
-                                    if (!spotLightDataBuffer || spotLightDataBuffer->getCount() < spotLightList.size())
+                                    if (!spotLightDataBuffer || spotLightDataBuffer->getDescription().count < spotLightList.size())
                                     {
                                         spotLightDataBuffer = nullptr;
 
-                                        Video::StrideBufferDescription lightBufferDescription;
+                                        Video::BufferDescription lightBufferDescription;
                                         lightBufferDescription.type = Video::BufferDescription::Type::Structured;
                                         lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(SpotLightData);
@@ -903,11 +903,11 @@ namespace Gek
 
                             if (!clusterIndexList.empty())
                             {
-                                if (!clusterIndexBuffer || clusterIndexBuffer->getCount() < clusterIndexList.size())
+                                if (!clusterIndexBuffer || clusterIndexBuffer->getDescription().count < clusterIndexList.size())
                                 {
                                     clusterIndexBuffer = nullptr;
 
-                                    Video::FormatBufferDescription clusterBufferDescription;
+                                    Video::BufferDescription clusterBufferDescription;
                                     clusterBufferDescription.type = Video::BufferDescription::Type::Raw;
                                     clusterBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                     clusterBufferDescription.format = Video::Format::R32_UINT;

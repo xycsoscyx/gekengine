@@ -403,12 +403,34 @@ namespace Gek
             uint32_t sourceIndex = 0;
         };
 
-        struct DeviceDescription
+        struct BufferDescription
         {
-            String device;
-            Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
-            uint32_t sampleCount = 1;
-            uint32_t sampleQuality = 0;
+            struct Flags
+            {
+                enum
+                {
+                    Staging = 1 << 0,
+                    Mappable = 1 << 1,
+                    Resource = 1 << 2,
+                    UnorderedAccess = 1 << 3,
+                    Counter = 1 << 4,
+                };
+            }; // Flags
+
+            enum class Type : uint8_t
+            {
+                Raw = 0,
+                Vertex,
+                Index,
+                Constant,
+                Structured,
+            };
+
+            Video::Format format = Video::Format::Unknown;
+            uint32_t stride = 0;
+            uint32_t count = 0;
+            Type type = Type::Raw;
+            uint32_t flags = 0;
         };
 
         struct TextureDescription
@@ -434,44 +456,12 @@ namespace Gek
             uint32_t flags = 0;
         };
 
-        struct BufferDescription
+        struct DeviceDescription
         {
-            struct Flags
-            {
-                enum
-                {
-                    Staging = 1 << 0,
-                    Mappable = 1 << 1,
-                    Resource = 1 << 2,
-                    UnorderedAccess = 1 << 3,
-                    Counter = 1 << 4,
-                };
-            }; // Flags
-
-            enum class Type : uint8_t
-            {
-                Raw = 0,
-                Vertex,
-                Index,
-                Constant,
-                Structured,
-            };
-
-            uint32_t count = 0;
-            Type type = Type::Raw;
-            uint32_t flags = 0;
-        };
-
-        struct StrideBufferDescription
-            : public BufferDescription
-        {
-            uint32_t stride = 0;
-        };
-
-        struct FormatBufferDescription
-            : public BufferDescription
-        {
-            Video::Format format = Video::Format::Unknown;
+            String device;
+            Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
+            uint32_t sampleCount = 1;
+            uint32_t sampleQuality = 0;
         };
 
         GEK_INTERFACE(Object)
@@ -486,9 +476,7 @@ namespace Gek
         {
             virtual ~Buffer(void) = default;
         
-            virtual Video::Format getFormat(void) = 0;
-            virtual uint32_t getStride(void) = 0;
-            virtual uint32_t getCount(void) = 0;
+            virtual const BufferDescription &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Texture)
@@ -496,10 +484,7 @@ namespace Gek
         {
             virtual ~Texture(void) = default;
         
-            virtual Video::Format getFormat(void) = 0;
-            virtual uint32_t getWidth(void) = 0;
-            virtual uint32_t getHeight(void) = 0;
-            virtual uint32_t getDepth(void) = 0;
+            virtual const TextureDescription &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Target)
@@ -507,7 +492,7 @@ namespace Gek
         {
             virtual ~Target(void) = default;
             
-            virtual const Video::ViewPort &getViewPort(void) = 0;
+            virtual const Video::ViewPort &getViewPort(void) const = 0;
         };
 
         GEK_INTERFACE(Device)
@@ -602,8 +587,7 @@ namespace Gek
             virtual TexturePtr createTexture(const TextureDescription &description, const void *data = nullptr) = 0;
             virtual TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
 
-            virtual BufferPtr createBuffer(const StrideBufferDescription &description, const void *staticData = nullptr) = 0;
-            virtual BufferPtr createBuffer(const FormatBufferDescription &description, const void *staticData = nullptr) = 0;
+            virtual BufferPtr createBuffer(const BufferDescription &description, const void *staticData = nullptr) = 0;
 
             template <typename TYPE>
             void mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)

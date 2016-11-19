@@ -361,7 +361,7 @@ namespace Gek
 
         ResourceHandle createVertexBuffer(const wchar_t *name, Plugin::Resources *resources)
         {
-            Video::StrideBufferDescription vertexBufferDescription;
+            Video::BufferDescription vertexBufferDescription;
             vertexBufferDescription.stride = sizeof(Vertex);
             vertexBufferDescription.count = vertices.size();
             vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
@@ -374,7 +374,7 @@ namespace Gek
 
         ResourceHandle createIndexBuffer(const wchar_t *name, Plugin::Resources *resources)
         {
-            Video::FormatBufferDescription indexBufferDescription;
+            Video::BufferDescription indexBufferDescription;
             indexBufferDescription.format = Video::Format::R16_UINT;
             indexBufferDescription.count = indices.size();
             indexBufferDescription.type = Video::BufferDescription::Type::Index;
@@ -509,7 +509,7 @@ namespace Gek
 
             visual = resources->loadVisual(L"shape");
 
-            Video::StrideBufferDescription description;
+            Video::BufferDescription description;
             description.stride = sizeof(Instance);
             description.count = 1;
             description.type = Video::BufferDescription::Type::Constant;
@@ -574,14 +574,14 @@ namespace Gek
                             };
 
                             static const std::vector<uint8_t> vertexBuffer((uint8_t *)vertices, (uint8_t *)vertices + (sizeof(Vertex) * ARRAYSIZE(vertices)));
-                            Video::StrideBufferDescription vertexBufferDescription;
+                            Video::BufferDescription vertexBufferDescription;
                             vertexBufferDescription.stride = sizeof(Vertex);
                             vertexBufferDescription.count = ARRAYSIZE(vertices);
                             vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
                             shape.vertexBuffer = resources->createBuffer(String::Format(L"shape:vertex:%v:%v", type, parameters), vertexBufferDescription, vertexBuffer);
 
                             static const std::vector<uint8_t> indexBuffer((uint8_t *)indices, (uint8_t *)indices + (sizeof(uint16_t) * ARRAYSIZE(indices)));
-                            Video::FormatBufferDescription indexBufferDescription;
+                            Video::BufferDescription indexBufferDescription;
                             indexBufferDescription.format = Video::Format::R16_UINT;
                             indexBufferDescription.count = ARRAYSIZE(indices);
                             indexBufferDescription.type = Video::BufferDescription::Type::Index;

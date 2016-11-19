@@ -189,7 +189,7 @@ namespace Gek
 
             visual = resources->loadVisual(L"model");
 
-            Video::StrideBufferDescription description;
+            Video::BufferDescription description;
             description.stride = sizeof(Instance);
             description.count = 1;
             description.type = Video::BufferDescription::Type::Constant;
@@ -270,13 +270,13 @@ namespace Gek
 
                                 material.indexCount = materialHeader.indexCount;
 
-                                Video::FormatBufferDescription indexBufferDescription;
+                                Video::BufferDescription indexBufferDescription;
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = materialHeader.indexCount;
                                 indexBufferDescription.type = Video::BufferDescription::Type::Index;
                                 material.indexBuffer = resources->createBuffer(String::Format(L"model:index:%v:%v", name, materialIndex), indexBufferDescription, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
 
-                                Video::StrideBufferDescription vertexBufferDescription;
+                                Video::BufferDescription vertexBufferDescription;
                                 vertexBufferDescription.stride = sizeof(Vertex);
                                 vertexBufferDescription.count = materialHeader.vertexCount;
                                 vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;

@@ -101,7 +101,7 @@ namespace Gek
 
                 reload();
 
-                Video::StrideBufferDescription constantBufferDescription;
+                Video::BufferDescription constantBufferDescription;
                 constantBufferDescription.stride = sizeof(ShaderConstantData);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::BufferDescription::Type::Constant;
@@ -137,8 +137,8 @@ namespace Gek
                 priority = shaderNode.get(L"priority", 0).as_uint();
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
-                uint32_t displayWidth = backBuffer->getWidth();
-                uint32_t displayHeight = backBuffer->getHeight();
+                uint32_t displayWidth = backBuffer->getDescription().width;
+                uint32_t displayHeight = backBuffer->getDescription().height;
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
                 globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(float(displayWidth), float(displayHeight)));
@@ -381,7 +381,7 @@ namespace Gek
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
-                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2DMS, BindType::Float3);
+                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
                 resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(displayWidth, displayHeight);
 
                 if (shaderNode.has_member(L"textures"))
@@ -484,7 +484,7 @@ namespace Gek
                                     throw MissingParameter("Structured buffer required a structure name");
                                 }
 
-                                Video::StrideBufferDescription description;
+                                Video::BufferDescription description;
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::BufferDescription::Type::Structured;
@@ -500,7 +500,7 @@ namespace Gek
                                     mapType = MapType::ByteAddressBuffer;
                                 }
 
-                                Video::FormatBufferDescription description;
+                                Video::BufferDescription description;
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::BufferDescription::Type::Raw;
@@ -662,8 +662,8 @@ namespace Gek
                         std::unordered_map<String, String> renderTargetsMap = getAliasedMap(passNode, L"targets");
                         if (renderTargetsMap.empty())
                         {
-                            pass.width = float(backBuffer->getWidth());
-                            pass.height = float(backBuffer->getHeight());
+                            pass.width = float(backBuffer->getDescription().width);
+                            pass.height = float(backBuffer->getDescription().height);
                         }
                         else
                         {

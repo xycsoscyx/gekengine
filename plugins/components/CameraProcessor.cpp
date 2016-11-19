@@ -151,8 +151,8 @@ namespace Gek
                     auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
                     Video::TextureDescription description;
                     description.format = Video::Format::R8G8B8A8_UNORM_SRGB;
-                    description.width = backBuffer->getWidth();
-                    description.height = backBuffer->getHeight();
+                    description.width = backBuffer->getDescription().width;
+                    description.height = backBuffer->getDescription().height;
                     description.sampleCount = 4;
                     description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
                     data.target = resources->createTexture(String::Format(L"camera:%v", cameraComponent.target), description);
@@ -204,8 +204,8 @@ namespace Gek
                 auto viewMatrix(transformComponent.getMatrix().getInverse());
 
                 const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                const float width = float(backBuffer->getWidth());
-                const float height = float(backBuffer->getHeight());
+                const float width = float(backBuffer->getDescription().width);
+                const float height = float(backBuffer->getDescription().height);
                 Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
                 renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
