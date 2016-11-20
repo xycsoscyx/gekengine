@@ -1273,6 +1273,15 @@ namespace Gek
                     d3dDeviceContext->GenerateMips(getObject<ShaderResourceView>(texture));
                 }
 
+                void resolveSamples(Video::Texture *destination, Video::Texture *source)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    GEK_REQUIRE(destination);
+                    GEK_REQUIRE(source);
+
+                    d3dDeviceContext->ResolveSubresource(getObject<Resource>(destination), 0, getObject<Resource>(source), 0, DirectX::TextureFormatList[static_cast<uint8_t>(destination->getDescription().format)]);
+                }
+
                 void clearState(void)
                 {
                     GEK_REQUIRE(d3dDeviceContext);

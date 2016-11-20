@@ -526,6 +526,7 @@ namespace Gek
                 virtual Pipeline * const pixelPipeline(void) = 0;
 
                 virtual void generateMipMaps(Texture *texture) = 0;
+                virtual void resolveSamples(Texture *destination, Texture *source) = 0;
 
                 virtual void clearState(void) = 0;
                 virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;

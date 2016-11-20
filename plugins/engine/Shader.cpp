@@ -40,7 +40,6 @@ namespace Gek
                 float width = 0.0f;
                 float height = 0.0f;
                 std::vector<ResourceHandle> resourceList;
-                std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
                 ProgramHandle program;
@@ -48,8 +47,10 @@ namespace Gek
                 uint32_t dispatchHeight = 0;
                 uint32_t dispatchDepth = 0;
 
+                std::unordered_map<ResourceHandle, ClearData> clearResourceMap;
                 std::vector<ResourceHandle> generateMipMapsList;
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
+                std::unordered_map<ResourceHandle, ResourceHandle> resolveSampleMap;
 
                 PassData(uint32_t identifier)
                     : Material(identifier)
@@ -431,6 +432,7 @@ namespace Gek
                                 description.height = uint32_t(size.y);
                             }
 
+                            description.sampleCount = textureValue.get(L"sampleCount", 1).as_uint();
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
                             description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
                             resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
@@ -822,6 +824,32 @@ namespace Gek
                         }
                     }
 
+                    if (passNode.has_member(L"resolve"))
+                    {
+                        auto &resolveNode = passNode.get(L"resolve");
+                        if (!resolveNode.is_object())
+                        {
+                            throw InvalidParameter("Shader copy list must be an object");
+                        }
+
+                        for (auto &resolve : resolveNode.members())
+                        {
+                            auto nameSearch = resourceMap.find(resolve.name());
+                            if (nameSearch == std::end(resourceMap))
+                            {
+                                throw InvalidParameter("Missing resolve target encountered");
+                            }
+
+                            auto valueSearch = resourceMap.find(resolve.value().as_string());
+                            if (valueSearch == std::end(resourceMap))
+                            {
+                                throw InvalidParameter("Missing resolve source encountered");
+                            }
+
+                            pass.resolveSampleMap[nameSearch->second] = valueSearch->second;
+                        }
+                    }
+
                     if (pass.lighting)
                     {
                         engineData += lightsData;
@@ -1059,6 +1087,11 @@ namespace Gek
                 for (auto &copyResource : pass.copyResourceMap)
                 {
                     resources->copyResource(copyResource.first, copyResource.second);
+                }
+
+                for (auto &resolveResource : pass.resolveSampleMap)
+                {
+                    resources->resolveSamples(videoContext, resolveResource.first, resolveResource.second);
                 }
 
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());

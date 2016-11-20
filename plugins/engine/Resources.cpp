@@ -1161,6 +1161,16 @@ namespace Gek
                 }
             }
 
+            void resolveSamples(Video::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle)
+            {
+                auto source = dynamicCache.getResource(sourceHandle);
+                auto destination = dynamicCache.getResource(destinationHandle);
+                if (source && destination)
+                {
+                    videoContext->resolveSamples(dynamic_cast<Video::Texture *>(destination), dynamic_cast<Video::Texture *>(source));
+                }
+            }
+
             void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle)
             {
                 auto source = dynamicCache.getResource(sourceHandle);

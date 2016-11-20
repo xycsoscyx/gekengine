@@ -662,6 +662,10 @@ namespace Gek
             {
             }
 
+            void resolveSamples(Video::Texture *destination, Video::Texture *source)
+            {
+            }
+
             void clearState(void)
             {
             }
