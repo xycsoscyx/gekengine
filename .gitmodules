@@ -1,24 +1,24 @@
 [submodule "external/DirectXTex"]
-	path = external/DirectXTex
+	path = External/DirectXTex
 	url = https://github.com/Microsoft/DirectXTex.git
 [submodule "external/assimp"]
-	path = external/assimp
+	path = External/assimp
 	url = https://github.com/assimp/assimp.git
 [submodule "external/imgui"]
-	path = external/imgui
+	path = External/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "external/imguizmo"]
-	path = external/imguizmo
+	path = External/imguizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
 [submodule "external/newton-dynamics"]
-	path = external/newton-dynamics
+	path = External/newton-dynamics
 	url = https://github.com/MADEAPPS/newton-dynamics.git
 [submodule "external/nano-signal-slot"]
-	path = external/nano-signal-slot
+	path = External/nano-signal-slot
 	url = https://github.com/NoAvailableAlias/nano-signal-slot.git
 [submodule "external/jsoncons"]
-	path = external/jsoncons
+	path = External/jsoncons
 	url = https://github.com/danielaparker/jsoncons.git
 [submodule "external/glbinding"]
-	path = external/glbinding
+	path = External/glbinding
 	url = https://github.com/cginternals/glbinding.git
