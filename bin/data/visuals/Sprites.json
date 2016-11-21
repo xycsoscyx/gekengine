@@ -2,7 +2,7 @@
     "input": [
         {
             "name": "vertexIndex",
-            "system": "vertexid"
+            "system": "vertexIndex"
         }
     ],
     "output": [

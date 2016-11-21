@@ -283,7 +283,7 @@ namespace Gek
                         if (elementNode.has_member(L"system"))
                         {
                             String system(elementNode.get(L"system").as_string());
-                            if (system.compareNoCase(L"isFrontFacing") == 0)
+                            if (system.compareNoCase(L"IsFrontFacing") == 0)
                             {
                                 String format(elementNode.get(L"format", L"bool").as_string());
                                 if (format.compareNoCase(L"int") == 0)
@@ -302,6 +302,10 @@ namespace Gek
                                 {
                                     throw InvalidElementType("Invalid isFrontFacing element format encountered");
                                 }
+                            }
+                            else if (system.compareNoCase(L"SampleIndex") == 0)
+                            {
+                                inputData.format(L"    uint %v : SV_SampleIndex;\r\n", name);
                             }
                         }
                         else

@@ -9,4 +9,4 @@ add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
 target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
 
-target_link_libraries(${ProjectID} math jsoncons)
+target_link_libraries(${ProjectID} Math jsoncons)

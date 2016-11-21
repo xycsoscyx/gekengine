@@ -43,15 +43,15 @@ namespace Gek
 						if (elementNode.has_member(L"system"))
 						{
                             String system(elementNode[L"system"].as_string());
-							if (system.compareNoCase(L"InstanceID") == 0)
+							if (system.compareNoCase(L"InstanceIndex") == 0)
 							{
 								inputVertexData.format(L"    int %v : SV_InstanceId;\r\n", elementName);
 							}
-							else if (system.compareNoCase(L"VertexID") == 0)
+							else if (system.compareNoCase(L"VertexIndex") == 0)
 							{
 								inputVertexData.format(L"    int %v : SV_VertexId;\r\n", elementName);
 							}
-							else if (system.compareNoCase(L"isFrontFacing") == 0)
+							else if (system.compareNoCase(L"IsFrontFacing") == 0)
 							{
 								String format(elementNode.get(L"format", L"bool").as_string());
 								if (format.compareNoCase(L"int") == 0)
