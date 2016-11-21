@@ -1,5 +1,3 @@
-cmake_minimum_required(VERSION 3.6.0)
-
 project (External)
 
 set_property(GLOBAL PROPERTY FOLDER "External")
