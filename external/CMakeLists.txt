@@ -61,8 +61,10 @@ set_property(TARGET glbinding PROPERTY FOLDER "External/GLBinding")
 
 set_property(TARGET zlibstatic PROPERTY FOLDER "External/Assimp")
 set_property(TARGET assimp PROPERTY FOLDER "External/Assimp")
-set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
 set_property(TARGET uninstall PROPERTY FOLDER "External/Assimp")
+if(WIN32)
+    set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
+endif()
 
 set_property(TARGET timeTracker PROPERTY FOLDER "External/Newton")
 set_property(TARGET Newton PROPERTY FOLDER "External/Newton")
