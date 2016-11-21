@@ -6,7 +6,7 @@ project(${ProjectID})
 file(GLOB SOURCES "*.cpp" "*.rc")
 add_executable(${ProjectID} ${SOURCES})
 
-target_link_libraries(${ProjectID} math utility)
+target_link_libraries(${ProjectID} Math Utility)
 
 set_target_properties(${ProjectID}
     PROPERTIES
