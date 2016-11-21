@@ -7,6 +7,6 @@ file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.[hc]pp")
 add_library(${ProjectID} STATIC ${SOURCES} ${HEADERS})
 
-target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_LIST_DIR})
+target_include_directories(${ProjectID} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(${ProjectID} Math jsoncons)
