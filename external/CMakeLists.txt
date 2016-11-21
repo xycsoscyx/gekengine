@@ -22,7 +22,7 @@ SET(ASSIMP_BUILD_ASSIMP_TOOLS False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_ASSIMP_VIEW False CACHE BOOL "" FORCE)
 SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
-add_subdirectory("Assimp")
+add_subdirectory("assimp")
 
 if(WIN32)
     project(DirectXTex)
@@ -49,7 +49,7 @@ include_directories("${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdPar
 
 add_definitions(-D_NEWTON_STATIC_LIB -D_CUSTOM_JOINTS_STATIC_LIB -DPTW32_STATIC_LIB)
 SET(NEWTON_DEMOS_SANDBOX False CACHE BOOL "" FORCE)
-add_subdirectory("Newton-Dynamics")
+add_subdirectory("newton-dynamics")
 
 project(jsoncons)
 add_library(jsoncons INTERFACE)
