@@ -66,10 +66,28 @@
     "defines": {
     },
     "textures": {
-        "depthBuffer": {
+        "depthBufferMS": {
             "bind": "float",
             "flags": "depth",
-            "format": "D32_FLOAT"
+            "format": "D32_FLOAT",
+            "sampleCount":  4
+        },
+        "forwardBufferMS": {
+            "bind": "float3",
+            "flags": "target",
+            "format": "R11G11B10_FLOAT",
+            "sampleCount":  4
+        },
+        "normalBufferMS": {
+            "bind": "float2",
+            "flags": "target",
+            "format": "R8G8_NORM",
+            "sampleCount":  4
+        },
+        "normalBuffer": {
+            "bind": "float2",
+            "flags": "target",
+            "format": "R8G8_NORM"
         }
     },
     "passes": [
@@ -85,13 +103,53 @@
                     "value": "true"
                 }
             },
-            "depthBuffer":  "depthBuffer",
+            "depthBuffer":  "depthBufferMS",
             "depthState": {
                 "enable": true,
                 "comparisonFunction": "LessEqual",
                 "writeMask": "All",
                 "clear": 1
             },
+            "targets": [
+                "forwardBufferMS",
+                "normalBufferMS"
+            ],
+            "resolve": {
+                "screen": "forwardBufferMS",
+                "normalBuffer": "normalBufferMS"
+            }
+        },
+        {
+            "program": "AmbientCalculation",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "radius": "2",
+                "tapCount": {
+                    "bind": "int",
+                    "value": "24"
+                },
+                "spiralTurns": "13",
+                "intensity": "20",
+                "bias": "0.08",
+                "falloffFunction": {
+                    "bind": "int",
+                    "value": "0"
+                },
+                "epsilon": "0.001"
+            },
+            "blendState": {
+                "enable": true,
+                "colorSource":  "Zero",
+                "colorDestination":  "SourceColor",
+                "colorOperation":  "Add",
+                "alphaSource":  "Zero",
+                "alphaDestination":  "Zero",
+                "alphaOperation":  "Add"
+            },
+            "resources": [
+                "normalBuffer",
+                "depthBufferMS"
+            ],
             "targets": [
                 "screen"
             ]

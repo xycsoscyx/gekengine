@@ -130,7 +130,7 @@ uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 	return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
 }
 
-float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be sRGB format and converted to linear automatically
     const float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
@@ -140,6 +140,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     {
         discard;
     }
+
     float3 surfacePosition = inputPixel.position;
 
     const float3x3 viewBasis = float3x3(inputPixel.tangent, inputPixel.biTangent, inputPixel.normal);
@@ -215,5 +216,8 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
 	};
 
-    return surfaceIrradiance;
+    OutputPixel outputPixel;
+    outputPixel.forwardBufferMS = surfaceIrradiance;
+    outputPixel.normalBufferMS = getEncodedNormal(surfaceNormal);
+    return outputPixel;
 }

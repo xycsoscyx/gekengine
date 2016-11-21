@@ -408,6 +408,7 @@ namespace Gek
                             throw InvalidParameter("Invalid exture bind type encountered");
                         }
 
+                        MapType type = MapType::Texture2D;
                         if (textureValue.has_member(L"source"))
                         {
                             String textureSource(textureValue.get(L"source").as_string());
@@ -437,9 +438,10 @@ namespace Gek
                             description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
                             resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
                             resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(description.width, description.height)));
+                            type = (description.sampleCount > 1 ? MapType::Texture2DMS : MapType::Texture2D);
                         }
 
-                        resourceMappingsMap[textureName] = std::make_pair(MapType::Texture2D, bindType);
+                        resourceMappingsMap[textureName] = std::make_pair(type, bindType);
                     }
                 }
 
@@ -1089,11 +1091,6 @@ namespace Gek
                     resources->copyResource(copyResource.first, copyResource.second);
                 }
 
-                for (auto &resolveResource : pass.resolveSampleMap)
-                {
-                    resources->resolveSamples(videoContext, resolveResource.first, resolveResource.second);
-                }
-
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());
                 if (!pass.resourceList.empty())
                 {
@@ -1197,6 +1194,10 @@ namespace Gek
                 videoContext->vertexPipeline()->clearConstantBufferList(1, 2);
                 videoContext->pixelPipeline()->clearConstantBufferList(1, 2);
                 videoContext->computePipeline()->clearConstantBufferList(1, 2);
+                for (auto &resolveResource : pass.resolveSampleMap)
+                {
+                    resources->resolveSamples(videoContext, resolveResource.first, resolveResource.second);
+                }
             }
 
             class PassImplementation
