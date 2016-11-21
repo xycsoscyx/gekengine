@@ -2,7 +2,7 @@ project (External)
 
 set_property(GLOBAL PROPERTY FOLDER "External")
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/external")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/External")
 include(FindDirectX)
 include(FindWindowsSDK)
 
