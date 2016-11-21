@@ -63,8 +63,6 @@
             }
         ]
     },
-    "defines": {
-    },
     "textures": {
         "depthBufferMS": {
             "bind": "float",
@@ -77,17 +75,6 @@
             "flags": "target",
             "format": "R11G11B10_FLOAT",
             "sampleCount":  4
-        },
-        "normalBufferMS": {
-            "bind": "float2",
-            "flags": "target",
-            "format": "R8G8_NORM",
-            "sampleCount":  4
-        },
-        "normalBuffer": {
-            "bind": "float2",
-            "flags": "target",
-            "format": "R8G8_NORM"
         }
     },
     "passes": [
@@ -111,48 +98,11 @@
                 "clear": 1
             },
             "targets": [
-                "forwardBufferMS",
-                "normalBufferMS"
+                "forwardBufferMS"
             ],
             "resolve": {
-                "screen": "forwardBufferMS",
-                "normalBuffer": "normalBufferMS"
+                "screen": "forwardBufferMS"
             }
-        },
-        {
-            "program": "AmbientCalculation",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "radius": "2",
-                "tapCount": {
-                    "bind": "int",
-                    "value": "24"
-                },
-                "spiralTurns": "13",
-                "intensity": "20",
-                "bias": "0.08",
-                "falloffFunction": {
-                    "bind": "int",
-                    "value": "0"
-                },
-                "epsilon": "0.001"
-            },
-            "blendState": {
-                "enable": true,
-                "colorSource":  "Zero",
-                "colorDestination":  "SourceColor",
-                "colorOperation":  "Add",
-                "alphaSource":  "Zero",
-                "alphaDestination":  "Zero",
-                "alphaOperation":  "Add"
-            },
-            "resources": [
-                "normalBuffer",
-                "depthBufferMS"
-            ],
-            "targets": [
-                "screen"
-            ]
         }
     ]
 }
