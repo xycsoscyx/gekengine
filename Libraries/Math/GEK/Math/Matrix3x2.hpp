@@ -37,7 +37,11 @@ namespace Gek
                 {
                     Vector2<TYPE> rx;
                     Vector2<TYPE> ry;
-                    Vector2<TYPE> translation;
+                    union
+                    {
+                        struct { Vector2<TYPE> rz; };
+                        struct { Vector2<TYPE> translation; };
+                    };
                 };
             };
 

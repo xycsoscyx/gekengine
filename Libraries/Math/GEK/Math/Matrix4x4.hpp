@@ -28,7 +28,6 @@ namespace Gek
                 const struct { float data[16]; };
                 const struct { float table[4][4]; };
                 const struct { Float4 rows[4]; };
-                const struct { Float4 rx, ry, rz, rw; };
                 const struct
                 {
                     Float4 rx;
