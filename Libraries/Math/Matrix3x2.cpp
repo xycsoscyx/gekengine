@@ -4,7 +4,7 @@ namespace Gek
 {
     namespace Math
     {
-        const Float3x2 Float3x2::Identity = Float3x2(
+        const Matrix3x2<float> Matrix3x2<float>::Identity = Matrix3x2<float>(
             1.0f, 0.0f,
             0.0f, 1.0f,
             0.0f, 0.0f);
