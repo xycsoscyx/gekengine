@@ -1,4 +1,4 @@
-#include "GEK\System\VideoDevice.hpp"
+#include "GEK/System/VideoDevice.hpp"
 
 namespace Gek
 {

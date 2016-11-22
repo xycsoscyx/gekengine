@@ -7,10 +7,10 @@
 /// Last Changed: $Date:   Fri Oct 21 13:54:12 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
-#include "GEK\Math\Quaternion.hpp"
-#include "GEK\Engine\Component.hpp"
+#include "GEK/Math/Vector3.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Math/Quaternion.hpp"
+#include "GEK/Engine/Component.hpp"
 
 namespace Gek
 {

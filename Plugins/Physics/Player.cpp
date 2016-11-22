@@ -1,11 +1,11 @@
-#include "GEK\Math\Common.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\Engine\Core.hpp"
-#include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Components\Transform.hpp"
-#include "GEK\Newton\Base.hpp"
+#include "GEK/Math/Common.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/Core.hpp"
+#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Newton/Base.hpp"
 #include <algorithm>
 #include <memory>
 

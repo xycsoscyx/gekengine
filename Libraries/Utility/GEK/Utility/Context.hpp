@@ -7,9 +7,9 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\FileSystem.hpp"
+#include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 #include <functional>
 #include <typeindex>
 #include <memory>

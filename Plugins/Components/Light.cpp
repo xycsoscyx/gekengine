@@ -1,7 +1,7 @@
-#include "GEK\Components\Light.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Utility\String.hpp"
+#include "GEK/Components/Light.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Utility/String.hpp"
 
 namespace Gek
 {

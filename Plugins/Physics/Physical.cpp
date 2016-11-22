@@ -1,8 +1,8 @@
-#include "GEK\Newton\Base.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Utility\String.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK/Newton/Base.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Math/Common.hpp"
 
 namespace Gek
 {

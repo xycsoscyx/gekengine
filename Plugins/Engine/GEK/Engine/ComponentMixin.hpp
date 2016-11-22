@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
-#include "GEK\Utility\Evaluator.hpp"
-#include "GEK\Engine\Component.hpp"
+#include "GEK/Utility/Evaluator.hpp"
+#include "GEK/Engine/Component.hpp"
 #include <concurrent_unordered_map.h>
 #include <new>
 

@@ -1,5 +1,5 @@
-#include "GEK\Utility\JSON.hpp"
-#include "GEK\Utility\FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 
 namespace Gek
 {

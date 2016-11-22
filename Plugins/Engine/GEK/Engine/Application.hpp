@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Engine\Core.hpp"
+#include "GEK/Engine/Core.hpp"
 #include <Windows.h>
 
 namespace Gek

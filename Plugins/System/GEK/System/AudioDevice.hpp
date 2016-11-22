@@ -7,10 +7,10 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
-#include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Utility\Context.hpp"
+#include "GEK/Math/Vector4.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Utility/Context.hpp"
 
 namespace Gek
 {

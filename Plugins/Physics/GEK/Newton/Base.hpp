@@ -7,9 +7,9 @@
 /// Last Changed: $Date: 2016-10-13 13:29:45 -0700 (Thu, 13 Oct 2016) $
 #pragma once
 
-#include "GEK\Math\Vector3.hpp"
-#include "GEK\Engine\Component.hpp"
-#include "GEK\Engine\Entity.hpp"
+#include "GEK/Math/Vector3.hpp"
+#include "GEK/Engine/Component.hpp"
+#include "GEK/Engine/Entity.hpp"
 #include <nano_signal_slot.hpp>
 #include <Newton.h>
 

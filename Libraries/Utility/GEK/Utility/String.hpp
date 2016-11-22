@@ -7,11 +7,11 @@
 /// Last Changed: $Date:   Thu Oct 27 08:51:53 2016 -0700 $
 #pragma once
 
-#include "GEK\Math\Vector2.hpp"
-#include "GEK\Math\Vector3.hpp"
-#include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Vector4.hpp"
-#include "GEK\Math\Quaternion.hpp"
+#include "GEK/Math/Vector2.hpp"
+#include "GEK/Math/Vector3.hpp"
+#include "GEK/Math/Vector4.hpp"
+#include "GEK/Math/Vector4.hpp"
+#include "GEK/Math/Quaternion.hpp"
 #include <functional>
 #include <algorithm>
 #include <iterator>

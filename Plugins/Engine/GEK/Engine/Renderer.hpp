@@ -7,10 +7,10 @@
 /// Last Changed: $Date:   Tue Oct 25 14:51:24 2016 +0000 $
 #pragma once
 
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Engine\Resources.hpp"
-#include "GEK\System\VideoDevice.hpp"
-#include "GEK\Shapes\Frustum.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Engine/Resources.hpp"
+#include "GEK/System/VideoDevice.hpp"
+#include "GEK/Shapes/Frustum.hpp"
 #include <nano_signal_slot.hpp>
 
 namespace Gek

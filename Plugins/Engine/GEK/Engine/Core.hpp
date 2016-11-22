@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Utility\JSON.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/JSON.hpp"
 #include <nano_signal_slot.hpp>
 #include <Windows.h>
 

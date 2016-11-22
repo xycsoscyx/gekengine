@@ -1,13 +1,13 @@
-﻿#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\Engine\Core.hpp"
-#include "GEK\Engine\Processor.hpp"
-#include "GEK\Engine\Population.hpp"
-#include "GEK\Engine\Renderer.hpp"
-#include "GEK\Engine\Entity.hpp"
-#include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Components\Transform.hpp"
-#include "GEK\Math\Common.hpp"
-#include "GEK\Math\Matrix4x4.hpp"
+﻿#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/Core.hpp"
+#include "GEK/Engine/Processor.hpp"
+#include "GEK/Engine/Population.hpp"
+#include "GEK/Engine/Renderer.hpp"
+#include "GEK/Engine/Entity.hpp"
+#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Math/Common.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
 #include <random>
 
 namespace Gek

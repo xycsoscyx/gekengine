@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 15:54:27 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\Common.hpp"
-#include "GEK\Math\Vector2.hpp"
+#include "GEK/Math/Common.hpp"
+#include "GEK/Math/Vector2.hpp"
 
 namespace Gek
 {

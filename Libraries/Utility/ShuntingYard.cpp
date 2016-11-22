@@ -1,5 +1,5 @@
-#include "GEK\Utility\ShuntingYard.hpp"
-#include "GEK\Utility\String.hpp"
+#include "GEK/Utility/ShuntingYard.hpp"
+#include "GEK/Utility/String.hpp"
 #include <unordered_map>
 #include <functional>
 #include <random>

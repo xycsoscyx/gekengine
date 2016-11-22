@@ -7,11 +7,11 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\String.hpp"
-#include "GEK\Shapes\Frustum.hpp"
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Engine\Resources.hpp"
-#include "GEK\Engine\Renderer.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Shapes/Frustum.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Engine/Resources.hpp"
+#include "GEK/Engine/Renderer.hpp"
 #include <memory>
 
 namespace Gek

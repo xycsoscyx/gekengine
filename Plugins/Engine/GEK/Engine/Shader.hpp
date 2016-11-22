@@ -7,11 +7,11 @@
 /// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
-#include "GEK\Utility\String.hpp"
-#include "GEK\Shapes\Frustum.hpp"
-#include "GEK\Utility\Context.hpp"
-#include "GEK\System\VideoDevice.hpp"
-#include "GEK\Engine\Material.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Shapes/Frustum.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/System/VideoDevice.hpp"
+#include "GEK/Engine/Material.hpp"
 #include <memory>
 
 namespace Gek

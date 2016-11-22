@@ -1,5 +1,5 @@
-#include "GEK\Shapes\Sphere.hpp"
-#include "GEK\Shapes\Plane.hpp"
+#include "GEK/Shapes/Sphere.hpp"
+#include "GEK/Shapes/Plane.hpp"
 
 namespace Gek
 {

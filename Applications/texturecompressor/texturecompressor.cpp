@@ -1,8 +1,8 @@
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\System\VideoDevice.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/System/VideoDevice.hpp"
 #include <experimental\filesystem>
 #include <algorithm>
 #include <map>

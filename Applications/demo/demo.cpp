@@ -1,10 +1,10 @@
-﻿#include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\Engine\Application.hpp"
-#include "GEK\Engine\Core.hpp"
+﻿#include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/Application.hpp"
+#include "GEK/Engine/Core.hpp"
 #include <experimental\filesystem>
 #include <Windows.h>
 #include <CommCtrl.h>

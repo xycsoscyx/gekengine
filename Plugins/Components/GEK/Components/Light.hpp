@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Engine\Component.hpp"
-#include "GEK\Shapes\Frustum.hpp"
+#include "GEK/Engine/Component.hpp"
+#include "GEK/Shapes/Frustum.hpp"
 
 namespace Gek
 {

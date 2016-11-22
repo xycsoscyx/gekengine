@@ -1,10 +1,10 @@
 #pragma warning(disable : 4005)
 
-#include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\System\VideoDevice.hpp"
+#include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/System/VideoDevice.hpp"
 #include <atlbase.h>
 #include <d3d11.h>
 #include <dxgi1_3.h>

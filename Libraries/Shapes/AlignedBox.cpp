@@ -1,6 +1,6 @@
-#include "GEK\Shapes\AlignedBox.hpp"
-#include "GEK\Shapes\Plane.hpp"
-#include "GEK\Math\Common.hpp"
+#include "GEK/Shapes/AlignedBox.hpp"
+#include "GEK/Shapes/Plane.hpp"
+#include "GEK/Math/Common.hpp"
 #include <algorithm>
 
 namespace Gek

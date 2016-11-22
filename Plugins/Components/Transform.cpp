@@ -1,7 +1,7 @@
-#include "GEK\Components\Transform.hpp"
-#include "GEK\Utility\ContextUser.hpp"
-#include "GEK\Engine\ComponentMixin.hpp"
-#include "GEK\Utility\String.hpp"
+#include "GEK/Components/Transform.hpp"
+#include "GEK/Utility/ContextUser.hpp"
+#include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Utility/String.hpp"
 #include <ImGuizmo.h>
 
 namespace Gek

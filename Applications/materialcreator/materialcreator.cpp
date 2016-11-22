@@ -1,6 +1,6 @@
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\FileSystem.hpp"
-#include "GEK\Utility\JSON.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/JSON.hpp"
 #include <experimental\filesystem>
 #include <Windows.h>
 #include <map>

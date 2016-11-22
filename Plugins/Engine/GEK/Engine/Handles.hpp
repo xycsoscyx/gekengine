@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\Hash.hpp"
+#include "GEK/Utility/Hash.hpp"
 
 namespace Gek
 {

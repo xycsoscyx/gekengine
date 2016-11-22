@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Thu Oct 13 20:39:05 2016 +0000 $
 #pragma once
 
-#include "GEK\Utility\Exceptions.hpp"
-#include "GEK\Utility\Context.hpp"
+#include "GEK/Utility/Exceptions.hpp"
+#include "GEK/Utility/Context.hpp"
 #include <unordered_map>
 
 #define GEK_CONTEXT_USER(CLASS, ...) struct CLASS : public ContextRegistration<CLASS, __VA_ARGS__>

@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Thu Oct 13 20:39:05 2016 +0000 $
 #pragma once
 
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Engine\Component.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Engine/Component.hpp"
 #include <unordered_map>
 #include <typeindex>
 #include <algorithm>

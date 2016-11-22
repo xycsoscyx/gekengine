@@ -7,10 +7,10 @@
 /// Last Changed: $Date:   Sat Oct 15 19:36:10 2016 +0000 $
 #pragma once
 
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\JSON.hpp"
-#include "GEK\System\VideoDevice.hpp"
-#include "GEK\Engine\Resources.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/JSON.hpp"
+#include "GEK/System/VideoDevice.hpp"
+#include "GEK/Engine/Resources.hpp"
 
 namespace Gek
 {

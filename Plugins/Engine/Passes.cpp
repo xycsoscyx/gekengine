@@ -1,4 +1,4 @@
-#include "GEK\Engine\Renderer.hpp"
+#include "GEK/Engine/Renderer.hpp"
 #include "Passes.hpp"
 
 namespace Gek

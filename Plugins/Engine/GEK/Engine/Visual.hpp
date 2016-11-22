@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\Context.hpp"
-#include "GEK\System\VideoDevice.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/System/VideoDevice.hpp"
 
 namespace Gek
 {

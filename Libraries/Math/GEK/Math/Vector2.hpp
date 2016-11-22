@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Common.hpp"
+#include "GEK/Math/Common.hpp"
 
 namespace Gek
 {

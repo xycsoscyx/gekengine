@@ -7,7 +7,7 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Math\Vector3.hpp"
+#include "GEK/Math/Vector3.hpp"
 
 namespace Gek
 {

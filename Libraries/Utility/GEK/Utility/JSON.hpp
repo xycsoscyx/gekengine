@@ -7,8 +7,8 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\Evaluator.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/Evaluator.hpp"
 #include <jsoncons/json.hpp>
 
 namespace jsoncons

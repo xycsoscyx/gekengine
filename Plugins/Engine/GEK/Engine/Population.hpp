@@ -7,9 +7,9 @@
 /// Last Changed: $Date$
 #pragma once
 
-#include "GEK\Utility\String.hpp"
-#include "GEK\Utility\Context.hpp"
-#include "GEK\Engine\Processor.hpp"
+#include "GEK/Utility/String.hpp"
+#include "GEK/Utility/Context.hpp"
+#include "GEK/Engine/Processor.hpp"
 #include <nano_signal_slot.hpp>
 #include <unordered_map>
 #include <functional>

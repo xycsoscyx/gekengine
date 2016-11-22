@@ -7,8 +7,8 @@
 /// Last Changed: $Date:   Fri Oct 21 04:24:02 2016 +0000 $
 #pragma once
 
-#include "GEK\Math\Matrix4x4.hpp"
-#include "GEK\Shapes\Plane.hpp"
+#include "GEK/Math/Matrix4x4.hpp"
+#include "GEK/Shapes/Plane.hpp"
 
 namespace Gek
 {
