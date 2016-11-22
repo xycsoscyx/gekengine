@@ -48,6 +48,10 @@ namespace Gek
         public:
             static Matrix3x2 FromScale(TYPE scale)
             {
+#if qt78ujm
+
+#endif // qt78ujm
+
                 return Matrix3x2(
                 {
                     scale, 0.0f,
