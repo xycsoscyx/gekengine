@@ -9,7 +9,8 @@
 
 #include <algorithm>
 #include <cstdint>
-#include <limits>
+#include <climits>
+#include <cmath>
 
 namespace Gek
 {
