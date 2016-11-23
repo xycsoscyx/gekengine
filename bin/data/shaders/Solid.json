@@ -63,18 +63,13 @@
             }
         ]
     },
+    "defines": {
+    },
     "textures": {
-        "depthBufferMS": {
+        "depthBuffer": {
             "bind": "float",
             "flags": "depth",
-            "format": "D32_FLOAT",
-            "sampleCount":  4
-        },
-        "forwardBufferMS": {
-            "bind": "float3",
-            "flags": "target",
-            "format": "R11G11B10_FLOAT",
-            "sampleCount":  4
+            "format": "D32_FLOAT"
         }
     },
     "passes": [
@@ -90,7 +85,7 @@
                     "value": "true"
                 }
             },
-            "depthBuffer":  "depthBufferMS",
+            "depthBuffer":  "depthBuffer",
             "depthState": {
                 "enable": true,
                 "comparisonFunction": "LessEqual",
@@ -98,11 +93,8 @@
                 "clear": 1
             },
             "targets": [
-                "forwardBufferMS"
-            ],
-            "resolve": {
-                "screen": "forwardBufferMS"
-            }
+                "screen"
+            ]
         }
     ]
 }

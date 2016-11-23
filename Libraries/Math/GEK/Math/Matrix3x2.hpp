@@ -37,21 +37,13 @@ namespace Gek
                 {
                     Vector2<TYPE> rx;
                     Vector2<TYPE> ry;
-                    union
-                    {
-                        struct { Vector2<TYPE> rz; };
-                        struct { Vector2<TYPE> translation; };
-                    };
+                    Vector2<TYPE> translation;
                 };
             };
 
         public:
             static Matrix3x2 FromScale(TYPE scale)
             {
-#if qt78ujm
-
-#endif // qt78ujm
-
                 return Matrix3x2(
                 {
                     scale, 0.0f,
@@ -118,7 +110,7 @@ namespace Gek
 
             Vector2<TYPE> getScaling(void) const
             {
-                return Vector2<TYPE>(_11, _22);
+                return Vector2(_11, _22);
             }
 
             Vector2<TYPE> operator [] (int row) const

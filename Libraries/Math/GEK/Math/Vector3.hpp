@@ -24,19 +24,9 @@ namespace Gek
         public:
             union
             {
-                struct
-                {
-                    union
-                    {
-                        struct { TYPE x, y; };
-                        struct { Vector2<TYPE> xy; };
-                    };
-
-                    float z;
-                };
-
+                struct { TYPE x, y, z; };
+				struct { Vector2<TYPE> xy; TYPE z; };
 				struct { TYPE data[3]; };
-
             };
 
         public:

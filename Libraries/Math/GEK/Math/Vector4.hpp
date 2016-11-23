@@ -27,23 +27,10 @@ namespace Gek
         public:
             union
             {
-                struct
-                {
-                    union
-                    {
-                        struct { TYPE x, y, z; };
-                        struct { TYPE r, g, b; };
-                        struct { Vector3<TYPE> xyz; };
-                        struct { Vector3<TYPE> rgb; };
-                    };
-
-                    union
-                    {
-                        float w;
-                        float a;
-                    };
-                };
-                
+				struct { TYPE x, y, z, w; };
+				struct { TYPE r, g, b, a; };
+				struct { Vector3<TYPE> rgb; TYPE a; };
+				struct { Vector3<TYPE> xyz; TYPE w; };
 				struct { Vector2<TYPE> xy; Vector2<TYPE> zw; };
 				struct { Vector2<TYPE> minimum; Vector2<TYPE> maximum; };
 				struct { TYPE data[4]; };
