@@ -8,6 +8,11 @@ if(MSVC)
 endif()
 
 add_subdirectory("External")
+
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
