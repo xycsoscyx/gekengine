@@ -13,37 +13,33 @@
 
 namespace Gek
 {
-    namespace Components
-    {
-        void Player::save(JSON::Object &componentData) const
-        {
-			componentData.set(L"height", height);
-			componentData.set(L"outerRadius", outerRadius);
-			componentData.set(L"innerRadius", innerRadius);
-			componentData.set(L"stairStep", stairStep);
-        }
-
-        void Player::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                height = componentData.get(L"height", 6.0f).as<float>();
-                outerRadius = componentData.get(L"outerRadius", 1.5f).as<float>();
-                innerRadius = componentData.get(L"innerRadius", 0.5f).as<float>();
-                stairStep = componentData.get(L"stairStep", 1.0f).as<float>();
-            }
-        }
-    }; // namespace Components
-
     namespace Newton
     {
-        GEK_CONTEXT_USER(Player)
+        GEK_CONTEXT_USER(Player, Plugin::Population *)
             , public Plugin::ComponentMixin<Components::Player, Edit::Component>
         {
         public:
-            Player(Context *context)
+            Player(Context *context, Plugin::Population *population)
                 : ContextRegistration(context)
+                , ComponentMixin(population)
             {
+            }
+
+            // Plugin::Component
+            void save(const Components::Player *data, JSON::Object &componentData) const
+            {
+                componentData.set(L"height", data->height);
+                componentData.set(L"outerRadius", data->outerRadius);
+                componentData.set(L"innerRadius", data->innerRadius);
+                componentData.set(L"stairStep", data->stairStep);
+            }
+
+            void load(Components::Player *data, const JSON::Object &componentData)
+            {
+                data->height = getValue(componentData, L"height", 0.0f);
+                data->outerRadius = getValue(componentData, L"outerRadius", 0.0f);
+                data->innerRadius = getValue(componentData, L"innerRadius", 0.0f);
+                data->stairStep = getValue(componentData, L"stairStep", 0.0f);
             }
 
             // Edit::Component

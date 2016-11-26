@@ -469,11 +469,11 @@ namespace Gek
             addressModeU = getAddressMode(object.get(L"addressModeU", L"Clamp").as_string());
             addressModeV = getAddressMode(object.get(L"addressModeV", L"Clamp").as_string());
             addressModeW = getAddressMode(object.get(L"addressModeW", L"Clamp").as_string());
-            mipLevelBias = object.get(L"mipLevelBias", 0.0f).as<float>();
+            mipLevelBias = object.get(L"mipLevelBias", 0.0).as<float>();
             maximumAnisotropy = object.get(L"maximumAnisotropy", 1).as_uint();
             comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Never").as_string());
-            borderColor = object.get(L"borderColor", Math::Float4::Black).as<Math::Float4>();
-            minimumMipLevel = object.get(L"minimumMipLevel", 0.0f).as<float>();
+            borderColor = String(object.get(L"borderColor", L"(0,0,0,0)").as_string());
+            minimumMipLevel = object.get(L"minimumMipLevel", 0.0).as<float>();
             maximumMipLevel = object.get(L"maximumMipLevel", Math::Infinity).as<float>();
         }
     }; // namespace Video

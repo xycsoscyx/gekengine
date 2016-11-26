@@ -167,7 +167,7 @@ namespace Gek
                     }
                 }
 
-                auto evaluate = [](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
+                auto evaluate = [&](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
                 {
                     bool foundDefine = true;
                     while (foundDefine)
@@ -187,21 +187,21 @@ namespace Gek
                         break;
 
                     case BindType::Int:
-                        result = Evaluator::Get<int32_t>(value);
+                        result = Evaluator::Get<int32_t>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::UInt:
-                        result = Evaluator::Get<uint32_t>(value);
+                        result = Evaluator::Get<uint32_t>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Float:
-                        result = Evaluator::Get<float>(value);
+                        result = Evaluator::Get<float>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Int2:
                         if (true)
                         {
-                            Math::Float2 vector = Evaluator::Get<Math::Float2>(value);
+                            Math::Float2 vector = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
                             result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
                             break;
                         }
@@ -209,19 +209,19 @@ namespace Gek
                     case BindType::UInt2:
                         if (true)
                         {
-                            Math::Float2 vector = Evaluator::Get<Math::Float2>(value);
+                            Math::Float2 vector = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
                             result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
                             break;
                         }
 
                     case BindType::Float2:
-                        result = Evaluator::Get<Math::Float2>(value);
+                        result = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Int3:
                         if (true)
                         {
-                            Math::Float3 vector = Evaluator::Get<Math::Float3>(value);
+                            Math::Float3 vector = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
                             result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
                             break;
                         }
@@ -229,19 +229,19 @@ namespace Gek
                     case BindType::UInt3:
                         if (true)
                         {
-                            Math::Float3 vector = Evaluator::Get<Math::Float3>(value);
+                            Math::Float3 vector = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
                             result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
                             break;
                         }
 
                     case BindType::Float3:
-                        result = Evaluator::Get<Math::Float3>(value);
+                        result = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Int4:
                         if (true)
                         {
-                            Math::Float4 vector = Evaluator::Get<Math::Float4>(value);
+                            Math::Float4 vector = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
                             result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
                             break;
                         }
@@ -249,13 +249,13 @@ namespace Gek
                     case BindType::UInt4:
                         if (true)
                         {
-                            Math::Float4 vector = Evaluator::Get<Math::Float4>(value);
+                            Math::Float4 vector = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
                             result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
                             break;
                         }
 
                     case BindType::Float4:
-                        result = Evaluator::Get<Math::Float4>(value);
+                        result = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
                         break;
                     };
 
@@ -1255,7 +1255,6 @@ namespace Gek
 
             Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
-                GEK_REQUIRE(population);
                 GEK_REQUIRE(videoContext);
 
                 return Pass::Iterator(passList.empty() ? nullptr : new PassImplementation(videoContext, this, std::begin(passList), std::end(passList)));

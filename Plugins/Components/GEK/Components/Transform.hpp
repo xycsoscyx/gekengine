@@ -22,9 +22,6 @@ namespace Gek
             Math::Quaternion rotation = Math::Quaternion::Identity;
             Math::Float3 scale = Math::Float3::One;
 
-            void save(JSON::Object &componentData) const;
-            void load(const JSON::Object &componentData);
-
             inline Math::Float4x4 getMatrix(void) const
             {
                 return Math::Float4x4(rotation, position);

@@ -97,6 +97,7 @@ namespace Gek
 
             float worldTime = 0.0f;
             float frameTime = 0.0f;
+            ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
 
             std::unordered_map<String, std::type_index> componentNamesMap;
@@ -120,7 +121,7 @@ namespace Gek
 
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
-                    Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className));
+                    Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     auto componentSearch = componentMap.insert(std::make_pair(component->getIdentifier(), component));
                     if (componentSearch.second)
                     {
@@ -157,11 +158,11 @@ namespace Gek
 
                         if (worldNode.has_member(L"Seed"))
                         {
-                            Evaluator::SetRandomSeed(worldNode.get(L"Seed", 0).as_uint());
+                            shuntingYard.setRandomSeed(worldNode.get(L"Seed", 0).as_uint());
                         }
                         else
                         {
-                            Evaluator::SetRandomSeed(std::time(nullptr));
+                            shuntingYard.setRandomSeed(std::time(nullptr));
                         }
 
                         auto &templatesNode = worldNode[L"Templates"];
@@ -267,6 +268,11 @@ namespace Gek
             }
 
             // Plugin::Population
+            ShuntingYard &getShuntingYard(void)
+            {
+                return shuntingYard;
+            }
+
             float getFrameTime(void) const
             {
                 return frameTime;

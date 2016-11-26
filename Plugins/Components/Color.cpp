@@ -1,37 +1,37 @@
 #include "GEK/Components/Color.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Engine/Population.hpp"
 #include "GEK/Utility/String.hpp"
 
 namespace Gek
 {
-    namespace Components
-    {
-        void Color::save(JSON::Object &componentData) const
-        {
-			componentData = value;
-        }
-
-        void Color::load(const JSON::Object &componentData)
-        {
-            if(componentData.is_string())
-            {
-                value = componentData.as<Math::Float4>();
-            }
-            else
-            {
-                value = Math::Float4::White;
-            }
-        }
-    }; // namespace Components
-
-    GEK_CONTEXT_USER(Color)
+    GEK_CONTEXT_USER(Color, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Color, Edit::Component>
     {
     public:
-        Color(Context *context)
+        Color(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::Color *data, JSON::Object &componentData) const
+        {
+            componentData = data->value;
+        }
+
+        void load(Components::Color *data, const JSON::Object &componentData)
+        {
+            if (componentData.is_string())
+            {
+                data->value = Evaluator::Get<Math::Float4>(population->getShuntingYard(), componentData.as_cstring());
+            }
+            else
+            {
+                data->value = Math::Float4::White;
+            }
         }
 
         // Edit::Component

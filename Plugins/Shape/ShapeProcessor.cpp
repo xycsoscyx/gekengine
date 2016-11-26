@@ -391,33 +391,29 @@ namespace Gek
         }
     };
 
-    namespace Components
-    {
-        void Shape::save(JSON::Object &componentData) const
-        {
-			componentData.set(L"type", type);
-			componentData.set(L"parameters", parameters);
-			componentData.set(L"skin", skin);
-        }
-
-        void Shape::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                type = componentData.get(L"type", String());
-                parameters = componentData.get(L"parameters", String());
-                skin = componentData.get(L"skin", String());
-            }
-        }
-    }; // namespace Components
-
-    GEK_CONTEXT_USER(Shape)
+    GEK_CONTEXT_USER(Shape, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Shape, Edit::Component>
     {
     public:
-        Shape(Context *context)
+        Shape(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::Shape *data, JSON::Object &componentData) const
+        {
+            componentData.set(L"type", data->type);
+            componentData.set(L"parameters", data->parameters);
+            componentData.set(L"skin", data->skin);
+        }
+
+        void load(Components::Shape *data, const JSON::Object &componentData)
+        {
+            data->type = getValue(componentData, L"type", String());
+            data->parameters = getValue(componentData, L"parameters", String());
+            data->skin = getValue(componentData, L"skin", String());
         }
 
         // Edit::Component

@@ -6,31 +6,27 @@
 
 namespace Gek
 {
-    namespace Components
-    {
-        void Physical::save(JSON::Object &componentData) const
-        {
-            componentData.set(L"mass", mass);
-        }
-
-        void Physical::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                mass = componentData.get(L"mass", 0.0f).as<float>();
-            }
-        }
-    }; // namespace Components
-
     namespace Newton
     {
-        GEK_CONTEXT_USER(Physical)
+        GEK_CONTEXT_USER(Physical, Plugin::Population *)
             , public Plugin::ComponentMixin<Components::Physical, Edit::Component>
         {
         public:
-            Physical(Context *context)
+            Physical(Context *context, Plugin::Population *population)
                 : ContextRegistration(context)
+                , ComponentMixin(population)
             {
+            }
+
+            // Plugin::Component
+            void save(const Components::Physical *data, JSON::Object &componentData) const
+            {
+                componentData.set(L"mass", data->mass);
+            }
+
+            void load(Components::Physical *data, const JSON::Object &componentData)
+            {
+                data->mass = getValue(componentData, L"mass", 0.0f);
             }
 
             // Edit::Component

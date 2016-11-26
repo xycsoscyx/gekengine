@@ -30,35 +30,27 @@
 
 namespace Gek
 {
-    namespace Components
-    {
-        void Model::save(JSON::Object &componentData) const
-        {
-            componentData.set(L"name", name);
-            componentData.set(L"skin", skin);
-        }
-
-        void Model::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                name = componentData.get(L"name", String()).as_string();
-                skin = componentData.get(L"skin", String()).as_string();
-            }
-            else
-            {
-                name = componentData.as_string();
-            }
-        }
-    }; // namespace Components
-
-    GEK_CONTEXT_USER(Model)
+    GEK_CONTEXT_USER(Model, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Model, Edit::Component>
     {
     public:
-        Model(Context *context)
+        Model(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::Model *data, JSON::Object &componentData) const
+        {
+            componentData.set(L"name", data->name);
+            componentData.set(L"skin", data->skin);
+        }
+
+        void load(Components::Model *data, const JSON::Object &componentData)
+        {
+            data->name = getValue(componentData, L"name", String());
+            data->skin = getValue(componentData, L"skin", String());
         }
 
         // Edit::Component

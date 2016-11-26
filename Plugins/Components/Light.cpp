@@ -5,60 +5,27 @@
 
 namespace Gek
 {
-    namespace Components
-    {
-        void PointLight::save(JSON::Object &componentData) const
-        {
-            componentData.set(L"range", range);
-			componentData.set(L"radius", radius);
-        }
-
-        void PointLight::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                range = componentData.get(L"range", 0.0f).as<float>();
-                radius = componentData.get(L"radius", 0.0f).as<float>();
-            }
-        }
-
-        void SpotLight::save(JSON::Object &componentData) const
-        {
-            componentData.set(L"range",  range);
-            componentData.set(L"radius",  radius);
-            componentData.set(L"innerAngle",  Math::RadiansToDegrees(std::acos(innerAngle) * 2.0f));
-            componentData.set(L"outerAngle",  Math::RadiansToDegrees(std::acos(outerAngle) * 2.0f));
-            componentData.set(L"coneFalloff",  coneFalloff);
-        }
-
-        void SpotLight::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                range = componentData.get(L"range", 0.0f).as<float>();
-                radius = componentData.get(L"radius", 0.0f).as<float>();
-                innerAngle = std::cos(Math::DegreesToRadians(componentData.get(L"innerAngle", 0.0f).as<float>() * 0.5f));
-                outerAngle = std::cos(Math::DegreesToRadians(componentData.get(L"outerAngle", 0.0f).as<float>() * 0.5f));
-                coneFalloff = componentData.get(L"coneFalloff", 0.0f).as<float>();
-            }
-        }
-
-        void DirectionalLight::save(JSON::Object &componentData) const
-        {
-        }
-
-        void DirectionalLight::load(const JSON::Object &componentData)
-        {
-        }
-    }; // namespace Components
-
-    GEK_CONTEXT_USER(PointLight)
+    GEK_CONTEXT_USER(PointLight, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::PointLight, Edit::Component>
     {
     public:
-        PointLight(Context *context)
+        PointLight(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::PointLight *data, JSON::Object &componentData) const
+        {
+            componentData.set(L"range", data->range);
+            componentData.set(L"radius", data->radius);
+        }
+
+        void load(Components::PointLight *data, const JSON::Object &componentData)
+        {
+            data->range = getValue(componentData, L"range", 0.0f);
+            data->radius = getValue(componentData, L"radius", 0.0f);
         }
 
         // Edit::Component
@@ -82,13 +49,33 @@ namespace Gek
         }
     };
 
-    GEK_CONTEXT_USER(SpotLight)
+    GEK_CONTEXT_USER(SpotLight, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::SpotLight, Edit::Component>
     {
     public:
-        SpotLight(Context *context)
+        SpotLight(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::SpotLight *data, JSON::Object &componentData) const
+        {
+            componentData.set(L"range", data->range);
+            componentData.set(L"radius", data->radius);
+            componentData.set(L"innerAngle", Math::RadiansToDegrees(std::acos(data->innerAngle) * 2.0f));
+            componentData.set(L"outerAngle", Math::RadiansToDegrees(std::acos(data->outerAngle) * 2.0f));
+            componentData.set(L"coneFalloff", data->coneFalloff);
+        }
+
+        void load(Components::SpotLight *data, const JSON::Object &componentData)
+        {
+            data->range = getValue(componentData, L"range", 0.0f);
+            data->radius = getValue(componentData, L"radius", 0.0f);
+            data->innerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, L"innerAngle", 0.0f)));
+            data->outerAngle = std::cos(Math::DegreesToRadians(getValue(componentData, L"outerAngle", 0.0f)));
+            data->coneFalloff = getValue(componentData, L"coneFalloff", 0.0f);
         }
 
         // Edit::Component
@@ -115,12 +102,13 @@ namespace Gek
         }
     };
 
-    GEK_CONTEXT_USER(DirectionalLight)
+    GEK_CONTEXT_USER(DirectionalLight, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::DirectionalLight, Edit::Component>
     {
     public:
-        DirectionalLight(Context *context)
+        DirectionalLight(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
         }
 

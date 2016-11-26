@@ -1,5 +1,5 @@
 {
-    "Seed": 0,
+    "Seed": 7151980,
     "Templates": {
         "BasicPointLight": {
             "Transform": {
@@ -30,7 +30,9 @@
     "Population": [
         {
             "Transform": { },
-            "Model": "sponza",
+            "Model": {
+                "name": "sponza"
+            },
             "Physical": { }
         },
         {

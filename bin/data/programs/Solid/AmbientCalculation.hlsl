@@ -113,10 +113,10 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 // Scalable Ambient Obscurance
 // http://graphics.cs.williams.edu/papers/SAOHPG12/
 // https://github.com/PeterTh/gedosato/blob/master/pack/assets/dx9/SAO.fx
-float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
+float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float3 surfacePosition = getPosition(inputPixel.texCoord);
-    const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer[inputPixel.screen.xy]);
+    const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
 
     // McGuire noise function
     // Hash function used the HPG12 AlchemyAO paper

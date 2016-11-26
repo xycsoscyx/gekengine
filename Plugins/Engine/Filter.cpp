@@ -21,7 +21,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Filter, Video::Device *, Engine::Resources *, String)
+        GEK_CONTEXT_USER(Filter, Video::Device *, Engine::Resources *, Plugin::Population *, String)
             , public Engine::Filter
         {
         public:
@@ -56,6 +56,7 @@ namespace Gek
         private:
             Video::Device *videoDevice = nullptr;
             Engine::Resources *resources = nullptr;
+            Plugin::Population *population = nullptr;
 
             String filterName;
 
@@ -66,14 +67,16 @@ namespace Gek
             std::list<PassData> passList;
 
         public:
-            Filter(Context *context, Video::Device *videoDevice, Engine::Resources *resources, String filterName)
+            Filter(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, String filterName)
                 : ContextRegistration(context)
                 , videoDevice(videoDevice)
                 , resources(resources)
+                , population(population)
                 , filterName(filterName)
             {
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
+                GEK_REQUIRE(population);
 
                 reload();
 
@@ -134,7 +137,7 @@ namespace Gek
                     }
                 }
 
-                auto evaluate = [](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
+                auto evaluate = [&](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
                 {
                     bool foundDefine = true;
                     while (foundDefine)
@@ -154,27 +157,75 @@ namespace Gek
                         break;
 
                     case BindType::Int:
+                        result = Evaluator::Get<int32_t>(population->getShuntingYard(), value);
+                        break;
+
                     case BindType::UInt:
+                        result = Evaluator::Get<uint32_t>(population->getShuntingYard(), value);
+                        break;
+
                     case BindType::Float:
-                        result = Evaluator::Get<float>(value);
+                        result = Evaluator::Get<float>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Int2:
+                        if (true)
+                        {
+                            Math::Float2 vector = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
+                            result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
+                            break;
+                        }
+
                     case BindType::UInt2:
+                        if (true)
+                        {
+                            Math::Float2 vector = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
+                            result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
+                            break;
+                        }
+
                     case BindType::Float2:
-                        result = Evaluator::Get<Math::Float2>(value);
+                        result = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Int3:
+                        if (true)
+                        {
+                            Math::Float3 vector = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
+                            result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
+                            break;
+                        }
+
                     case BindType::UInt3:
+                        if (true)
+                        {
+                            Math::Float3 vector = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
+                            result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
+                            break;
+                        }
+
                     case BindType::Float3:
-                        result = Evaluator::Get<Math::Float3>(value);
+                        result = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
                         break;
 
                     case BindType::Int4:
+                        if (true)
+                        {
+                            Math::Float4 vector = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
+                            result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
+                            break;
+                        }
+
                     case BindType::UInt4:
+                        if (true)
+                        {
+                            Math::Float4 vector = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
+                            result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
+                            break;
+                        }
+
                     case BindType::Float4:
-                        result = Evaluator::Get<Math::Float4>(value);
+                        result = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
                         break;
                     };
 

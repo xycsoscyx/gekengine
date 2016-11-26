@@ -1,5 +1,4 @@
 #include "GEK/Utility/Evaluator.hpp"
-#include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Math/Common.hpp"
 
@@ -7,14 +6,10 @@ namespace Gek
 {
     namespace Evaluator
     {
-        static ShuntingYard shuntingYard;
-        void SetRandomSeed(uint32_t seed)
-        {
-            shuntingYard.setRandomSeed(seed);
-        }
+        static ShuntingYard defaultShuntingYard;
 
         template <typename TYPE>
-        void CastResult(const wchar_t *expression, TYPE &result, TYPE defaultValue)
+        void CastResult(ShuntingYard &shuntingYard, const wchar_t *expression, TYPE &result, TYPE defaultValue)
         {
             try
             {
@@ -29,7 +24,7 @@ namespace Gek
         }
 
         template <typename TYPE>
-        void GetResult(const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
+        void GetResult(ShuntingYard &shuntingYard, const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
         {
             try
             {
@@ -58,32 +53,32 @@ namespace Gek
             };
         }
 
-        void Get(const wchar_t *expression, int32_t &result, int32_t defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, int32_t &result, int32_t defaultValue)
         {
-            CastResult(expression, result, defaultValue);
+            CastResult(shuntingYard, expression, result, defaultValue);
         }
 
-        void Get(const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
         {
-            CastResult(expression, result, defaultValue);
+            CastResult(shuntingYard, expression, result, defaultValue);
         }
 
-        void Get(const wchar_t *expression, float &result, float defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, float &result, float defaultValue)
         {
-            CastResult(expression, result, defaultValue);
+            CastResult(shuntingYard, expression, result, defaultValue);
         }
 
-        void Get(const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
         {
-            GetResult(expression, result, defaultValue);
+            GetResult(shuntingYard, expression, result, defaultValue);
         }
 
-        void Get(const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
         {
-            GetResult(expression, result, defaultValue);
+            GetResult(shuntingYard, expression, result, defaultValue);
         }
 
-        void Get(const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
         {
             try
             {
@@ -121,7 +116,7 @@ namespace Gek
             };
         }
 
-        void Get(const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
         {
             try
             {
@@ -149,7 +144,7 @@ namespace Gek
             };
         }
 
-        void Get(const wchar_t *expression, String &result)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, String &result)
         {
             result = expression;
         }

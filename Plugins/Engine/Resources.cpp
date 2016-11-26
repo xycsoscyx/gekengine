@@ -1,4 +1,6 @@
-﻿#include "GEK/Utility/String.hpp"
+﻿#define _ENABLE_ATOMIC_ALIGNMENT_FIX
+
+#include "GEK/Utility/String.hpp"
 #include "GEK/Utility/ThreadPool.hpp"
 #include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Utility/FileSystem.hpp"
@@ -69,7 +71,8 @@ namespace Gek
 
             void setResource(HANDLE handle, const TypePtr &data)
             {
-                resourceMap[handle] = data;
+                auto &resource = resourceMap[handle];
+                std::atomic_store(&resource, data);
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
@@ -418,9 +421,6 @@ namespace Gek
 
             Validate drawPrimitiveValid;
             Validate dispatchValid;
-
-            Video::TargetPtr screen;
-            Video::TargetPtr screenBuffer;
 
         public:
             Resources(Context *context, Plugin::Core *core, Video::Device *videoDevice)
@@ -1041,7 +1041,7 @@ namespace Gek
 
                 auto load = [this, filterName = String(filterName)](ResourceHandle)->Engine::FilterPtr
                 {
-                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", videoDevice, (Engine::Resources *)this, filterName);
+                    return getContext()->createClass<Engine::Filter>(L"Engine::Filter", videoDevice, (Engine::Resources *)this, core->getPopulation(), filterName);
                 };
 
                 auto hash = GetHash(filterName);

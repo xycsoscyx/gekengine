@@ -8,7 +8,6 @@
 #pragma once
 
 #include "GEK/Utility/String.hpp"
-#include "GEK/Utility/Evaluator.hpp"
 #include <jsoncons/json.hpp>
 
 namespace jsoncons
@@ -18,14 +17,7 @@ namespace jsoncons
     {
         static float as(const Json &object)
         {
-            if (object.is_string())
-            {
-                return Gek::Evaluator::Get<float>(object.as_cstring());
-            }
-            else
-            {
-                return float(object.as_double());
-            }
+            return float(object.as_double());
         }
 
         static Json to_json(const float &value)
@@ -37,16 +29,6 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector2<TYPE>>
     {
-        static Gek::Math::Vector2<TYPE> as(const Json &object)
-        {
-            if (object.is_string())
-            {
-                return Gek::Evaluator::Get<Gek::Math::Vector2<TYPE>>(object.as_cstring());
-            }
-
-            return Gek::Math::Vector2<TYPE>::Zero;
-        }
-
         static Json to_json(const Gek::Math::Vector2<TYPE> &value)
         {
             return Gek::String::Format(L"%v", value);
@@ -56,16 +38,6 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector3<TYPE>>
     {
-        static Gek::Math::Vector3<TYPE> as(const Json &object)
-        {
-            if (object.is_string())
-            {
-                return Gek::Evaluator::Get<Gek::Math::Vector3<TYPE>>(object.as_cstring());
-            }
-
-            return Gek::Math::Vector3<TYPE>::Zero;
-        }
-
         static Json to_json(const Gek::Math::Vector3<TYPE> &value)
         {
             return Gek::String::Format(L"%v", value);
@@ -75,16 +47,6 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector4<TYPE>>
     {
-        static Gek::Math::Vector4<TYPE> as(const Json &object)
-        {
-            if (object.is_string())
-            {
-                return Gek::Evaluator::Get<Gek::Math::Vector4<TYPE>>(object.as_cstring());
-            }
-
-            return Gek::Math::Vector4<TYPE>::Zero;
-        }
-
         static Json to_json(const Gek::Math::Vector4<TYPE> &value)
         {
             return Gek::String::Format(L"%v", value);
@@ -94,16 +56,6 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, Gek::Math::Float4>
     {
-        static Gek::Math::Float4 as(const Json &object)
-        {
-            if (object.is_string())
-            {
-                return Gek::Evaluator::Get<Gek::Math::Float4>(object.as_cstring());
-            }
-
-            return Gek::Math::Float4::Zero;
-        }
-
         static Json to_json(const Gek::Math::Float4 &value)
         {
             return Gek::String::Format(L"%v", value);
@@ -113,16 +65,6 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, Gek::Math::Quaternion>
     {
-        static Gek::Math::Quaternion as(const Json &object)
-        {
-            if (object.is_string())
-            {
-                return Gek::Evaluator::Get<Gek::Math::Quaternion>(object.as_cstring());
-            }
-
-            return Gek::Math::Quaternion::Identity;
-        }
-
         static Json to_json(const Gek::Math::Quaternion &value)
         {
             return Gek::String::Format(L"%v", value);

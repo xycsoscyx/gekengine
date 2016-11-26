@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Context.hpp"
+#include "GEK/Utility/ShuntingYard.hpp"
 #include "GEK/Engine/Processor.hpp"
 #include <nano_signal_slot.hpp>
 #include <unordered_map>
@@ -69,6 +70,7 @@ namespace Gek
             Nano::Signal<void(Plugin::Entity *entity, const std::type_index &type)> onComponentAdded;
             Nano::Signal<void(Plugin::Entity *entity, const std::type_index &type)> onComponentRemoved;
 
+            virtual ShuntingYard &getShuntingYard(void) = 0;
             virtual float getWorldTime(void) const = 0;
             virtual float getFrameTime(void) const = 0;
             virtual bool isLoading(void) const = 0;

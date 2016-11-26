@@ -64,12 +64,33 @@
         ]
     },
     "defines": {
+        "gaussianRadius": {
+            "bind": "int",
+            "value": "4"
+        },
+        "gaussianSigma": "1.75",
+        "edgeSharpness": "0.01"
     },
     "textures": {
         "depthBuffer": {
             "bind": "float",
             "flags": "depth",
             "format": "D32_FLOAT"
+         },
+        "normalBuffer": {
+            "bind": "float3",
+            "flags": "target",
+            "format": "R8G8B8A8_UNORM"
+        },
+        "ambientBuffer": {
+            "bind": "float",
+            "flags": "target",
+            "format": "R8_UNORM"
+        },
+        "gaussianBuffer": {
+            "bind": "float",
+            "flags": "target",
+            "format": "R8_UNORM"
         }
     },
     "passes": [
@@ -91,6 +112,83 @@
                 "comparisonFunction": "LessEqual",
                 "writeMask": "All",
                 "clear": 1
+            },
+            "targets": [
+                "screen",
+                "normalBuffer"
+            ]
+        },
+        {
+            "program": "AmbientCalculation",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "radius": "1",
+                "tapCount": {
+                    "bind": "int",
+                    "value": "24"
+                },
+                "spiralTurns": "17",
+                "intensity": "2",
+                "bias": "0.2",
+                "falloffFunction": {
+                    "bind": "int",
+                    "value": "0"
+                },
+                "epsilon": "0.001"
+            },
+            "resources": [
+                "normalBuffer",
+                "depthBuffer"
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "blurAxis": {
+                    "bind": "int2",
+                    "value": "(1,0)"
+                }
+            },
+            "resources": [
+                "depthBuffer",
+                { "ambientBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "gaussianBuffer"
+            ]
+        },
+        {
+            "program": "AmbientBlur",
+            "entry": "mainPixelProgram",
+            "defines": {
+                "blurAxis": {
+                    "bind": "int2",
+                    "value": "(0,1)"
+                }
+            },
+            "resources": [
+                "depthBuffer",
+                { "gaussianBuffer": "inputBuffer" }
+            ],
+            "targets": [
+                "ambientBuffer"
+            ]
+        },
+        {
+            "program": "AmbientLighting",
+            "entry": "mainPixelProgram",
+            "resources": [
+                "ambientBuffer"
+            ],
+            "blendState": {
+                "enable": true,
+                "colorSource": "zero",
+                "colorDestination": "sourceColor",
+                "colorOperation": "add"
             },
             "targets": [
                 "screen"

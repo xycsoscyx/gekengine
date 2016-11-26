@@ -22,37 +22,36 @@ namespace Gek
             float farClip = 100.0f;
             String target;
             std::vector<String> filterList;
-
-            void save(JSON::Object &componentData) const
-            {
-                componentData.set(L"fieldOfView", Math::RadiansToDegrees(fieldOfView));
-				componentData.set(L"nearClip", nearClip);
-				componentData.set(L"farClip", farClip);
-				componentData.set(L"target", target);
-				componentData.set(L"filterList", String::Join(filterList, L','));
-            }
-
-            void load(const JSON::Object &componentData)
-            {
-                if (componentData.is_object())
-                {
-                    fieldOfView = Math::DegreesToRadians(componentData.get(L"fieldOfView", 90.0f).as<float>());
-                    nearClip = componentData.get(L"nearClip", 1.0f).as<float>();
-                    farClip = componentData.get(L"farClip", 100.0f).as<float>();
-                    target = componentData.get(L"target", L"").as_string();
-                    filterList = String(componentData.get(L"filterList", L"").as_string()).split(L',');
-                }
-            }
         };
     };
 
-    GEK_CONTEXT_USER(FirstPersonCamera)
+    GEK_CONTEXT_USER(FirstPersonCamera, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::FirstPersonCamera, Edit::Component>
     {
     public:
-        FirstPersonCamera(Context *context)
+        FirstPersonCamera(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::FirstPersonCamera *data, JSON::Object &componentData) const
+        {
+            componentData.set(L"fieldOfView", Math::RadiansToDegrees(data->fieldOfView));
+            componentData.set(L"nearClip", data->nearClip);
+            componentData.set(L"farClip", data->farClip);
+            componentData.set(L"target", data->target);
+            componentData.set(L"filterList", String::Join(data->filterList, L','));
+        }
+
+        void load(Components::FirstPersonCamera *data, const JSON::Object &componentData)
+        {
+            data->fieldOfView = Math::DegreesToRadians(getValue(componentData, L"fieldOfView", 90.0f));
+            data->nearClip = getValue(componentData, L"nearClip", 1.0f);
+            data->farClip = getValue(componentData, L"farClip", 100.0f);
+            data->target = getValue(componentData, L"target", String());
+            data->filterList = getValue(componentData, L"filterList", String()).split(L',');
         }
 
         // Edit::Component

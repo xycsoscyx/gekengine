@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/Evaluator.hpp"
 #include "GEK/Engine/Component.hpp"
+#include "GEK/Engine/Population.hpp"
 #include <concurrent_unordered_map.h>
 #include <new>
 
@@ -25,8 +26,12 @@ namespace Gek
         private:
             String name;
 
+        protected:
+            Population *population = nullptr;
+
         public:
-            ComponentMixin(void)
+            ComponentMixin(Population *population)
+                : population(population)
             {
                 name = typeid(COMPONENT).name();
                 auto colonPosition = name.rfind(':');
@@ -54,14 +59,44 @@ namespace Gek
                 return std::make_unique<COMPONENT>();
             }
 
-            void save(Plugin::Component::Data *component, JSON::Object &componentData) const
+            template <typename TYPE>
+            TYPE getValue(const JSON::Object &data, const TYPE &defaultValue)
             {
-                static_cast<COMPONENT *>(component)->save(componentData);
+                if (data.is_string())
+                {
+                    return Evaluator::Get<TYPE>(population->getShuntingYard(), data.as_cstring());
+                }
+                else if (data.is<TYPE>())
+                {
+                    return data.as<TYPE>();
+                }
+
+                return defaultValue;
+            }
+
+            template <typename TYPE>
+            TYPE getValue(const JSON::Object &componentData, const wchar_t *name, const TYPE &defaultValue)
+            {
+                if (componentData.is_object() && componentData.has_member(name))
+                {
+                    auto data = componentData.get(name);
+                    return getValue(data, defaultValue);
+                }
+
+                return defaultValue;
+            }
+
+            virtual void save(const COMPONENT *component, JSON::Object &componentData) const { };
+            virtual void load(COMPONENT *component, const JSON::Object &componentData) { };
+
+            void save(const Plugin::Component::Data *component, JSON::Object &componentData) const
+            {
+                save(static_cast<const COMPONENT *>(component), componentData);
             }
 
             void load(Plugin::Component::Data *component, const JSON::Object &componentData)
             {
-                static_cast<COMPONENT *>(component)->load(componentData);
+                load(static_cast<COMPONENT *>(component), componentData);
             }
         };
 

@@ -17,9 +17,6 @@ namespace Gek
         GEK_COMPONENT(Color)
         {
             Math::Float4 value = Math::Float4::White;
-
-            void save(JSON::Object &componentData) const;
-            void load(const JSON::Object &componentData);
         };
     }; // namespace Components
 }; // namespace Gek

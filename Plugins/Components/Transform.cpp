@@ -1,32 +1,13 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Engine/Population.hpp"
 #include "GEK/Utility/String.hpp"
 #include <ImGuizmo.h>
 
 namespace Gek
 {
-    namespace Components
-    {
-        void Transform::save(JSON::Object &componentData) const
-        {
-            componentData.set(L"position", position);
-			componentData.set(L"rotation", rotation);
-			componentData.set(L"scale", scale);
-        }
-
-        void Transform::load(const JSON::Object &componentData)
-        {
-            if (componentData.is_object())
-            {
-                position = componentData.get(L"position", Math::Float3::Zero).as<Math::Float3>();
-                rotation = componentData.get(L"rotation", Math::Quaternion::Identity).as<Math::Quaternion>();
-                scale = componentData.get(L"scale", Math::Float3::One).as<Math::Float3>();
-            }
-        }
-    }; // namespace Components
-
-    GEK_CONTEXT_USER(Transform)
+    GEK_CONTEXT_USER(Transform, Plugin::Population *)
         , public Plugin::ComponentMixin<Components::Transform, Edit::Component>
     {
     private:
@@ -37,9 +18,25 @@ namespace Gek
         float snapScale = (1.0f / 10.0f);
 
     public:
-        Transform(Context *context)
+        Transform(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
+        }
+
+        // Plugin::Component
+        void save(const Components::Transform *data, JSON::Object &componentData) const
+        {
+            componentData.set(L"position", data->position);
+            componentData.set(L"rotation", data->rotation);
+            componentData.set(L"scale", data->scale);
+        }
+
+        void load(Components::Transform *data, const JSON::Object &componentData)
+        {
+            data->position = getValue(componentData, L"position", Math::Float3::Zero);
+            data->rotation = getValue(componentData, L"rotation", Math::Quaternion::Identity);
+            data->scale = getValue(componentData, L"scale", Math::Float3::One);
         }
 
         // Edit::Component

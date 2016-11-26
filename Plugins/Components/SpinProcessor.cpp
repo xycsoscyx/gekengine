@@ -17,34 +17,27 @@ namespace Gek
         GEK_COMPONENT(Spin)
         {
             Math::Float3 torque;
-
-            void save(JSON::Object &componentData) const
-            {
-            }
-
-            void load(const JSON::Object &componentData)
-            {
-                torque = Evaluator::Get<Math::Float3>(L"(random(-pi,pi), random(-pi,pi), random(-pi,pi))");
-            }
         };
     }; // namespace Components
 
-    GEK_CONTEXT_USER(Spin)
-        , public Plugin::ComponentMixin<Components::Spin, Edit::Component>
+    GEK_CONTEXT_USER(Spin, Plugin::Population *)
+        , public Plugin::ComponentMixin<Components::Spin>
     {
     public:
-        Spin(Context *context)
+        Spin(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
+            , ComponentMixin(population)
         {
         }
 
-        // Edit::Component
-        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        // Plugin::Component
+        void save(const Components::Spin *data, JSON::Object &componentData) const
         {
         }
 
-        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        void load(Components::Spin *data, const JSON::Object &componentData)
         {
+            data->torque = Evaluator::Get<Math::Float3>(population->getShuntingYard(), L"(random(-pi,pi), random(-pi,pi), random(-pi,pi))");
         }
     };
 

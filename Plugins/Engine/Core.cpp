@@ -500,7 +500,9 @@ namespace Gek
             std::vector<StringUTF8> displayModeStringList;
             bool fullScreen = false;
 
+           
             JSON::Object configuration;
+            ShuntingYard shuntingYard;
 
             Timer timer;
             float mouseSensitivity = 0.5f;
