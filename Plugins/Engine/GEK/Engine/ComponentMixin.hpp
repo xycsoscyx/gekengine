@@ -59,17 +59,74 @@ namespace Gek
                 return std::make_unique<COMPONENT>();
             }
 
+            bool getValue(const JSON::Object &data, bool defaultValue)
+            {
+                try
+                {
+                    if (data.is_bool())
+                    {
+                        return data.as_bool();
+                    }
+                    if (data.is_integer())
+                    {
+                        return (data.as_integer() ? true : false);
+                    }
+                    else if (data.is_string())
+                    {
+                        return Evaluator::Get<bool>(population->getShuntingYard(), data.as_cstring());
+                    }
+                }
+                catch (...)
+                {
+                };
+
+                return defaultValue;
+            }
+
+            float getValue(const JSON::Object &data, float defaultValue)
+            {
+                try
+                {
+                    if (data.is_double())
+                    {
+                        return float(data.as_double());
+                    }
+                    if (data.is_integer())
+                    {
+                        return float(data.as_integer());
+                    }
+                    else if (data.is_string())
+                    {
+                        return Evaluator::Get<float>(population->getShuntingYard(), data.as_cstring());
+                    }
+                }
+                catch (...)
+                {
+                };
+
+                return defaultValue;
+            }
+
             template <typename TYPE>
             TYPE getValue(const JSON::Object &data, const TYPE &defaultValue)
             {
-                if (data.is_string())
+                try
                 {
-                    return Evaluator::Get<TYPE>(population->getShuntingYard(), data.as_cstring());
+                    if (data.is_string())
+                    {
+                        return Evaluator::Get<TYPE>(population->getShuntingYard(), data.as_cstring());
+                    }
+                    else
+                    {
+                        // to_string returns with surrounding quoted
+                        auto string = data.to_string();
+                        string = string.substr(1, string.length() - 2);
+                        return Evaluator::Get<TYPE>(population->getShuntingYard(), string.c_str());
+                    }
                 }
-                else if (data.is<TYPE>())
+                catch (...)
                 {
-                    return data.as<TYPE>();
-                }
+                };
 
                 return defaultValue;
             }
@@ -79,7 +136,7 @@ namespace Gek
             {
                 if (componentData.is_object() && componentData.has_member(name))
                 {
-                    auto data = componentData.get(name);
+                    auto &data = componentData.get(name);
                     return getValue(data, defaultValue);
                 }
 

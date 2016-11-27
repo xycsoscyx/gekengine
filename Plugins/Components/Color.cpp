@@ -24,14 +24,7 @@ namespace Gek
 
         void load(Components::Color *data, const JSON::Object &componentData)
         {
-            if (componentData.is_string())
-            {
-                data->value = Evaluator::Get<Math::Float4>(population->getShuntingYard(), componentData.as_cstring());
-            }
-            else
-            {
-                data->value = Math::Float4::White;
-            }
+            data->value = getValue(componentData, Math::Float4::White);
         }
 
         // Edit::Component

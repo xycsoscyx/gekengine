@@ -17,7 +17,7 @@ namespace Gek
     {
         GEK_COMPONENT(FirstPersonCamera)
         {
-            float fieldOfView = 90.0f;
+            float fieldOfView = Math::DegreesToRadians(90.0f);
             float nearClip = 1.0f;
             float farClip = 100.0f;
             String target;

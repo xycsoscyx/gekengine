@@ -6,10 +6,8 @@ namespace Gek
 {
     namespace Evaluator
     {
-        static ShuntingYard defaultShuntingYard;
-
         template <typename TYPE>
-        void CastResult(ShuntingYard &shuntingYard, const wchar_t *expression, TYPE &result, TYPE defaultValue)
+        void CastResult(ShuntingYard &shuntingYard, const wchar_t *expression, TYPE &result)
         {
             try
             {
@@ -19,12 +17,12 @@ namespace Gek
             }
             catch (const ShuntingYard::Exception &)
             {
-                result = defaultValue;
+                throw Exception("Unable to evaluate scalar expression");
             };
         }
 
         template <typename TYPE>
-        void GetResult(ShuntingYard &shuntingYard, const wchar_t *expression, TYPE &result, const TYPE &defaultValue)
+        void GetResult(ShuntingYard &shuntingYard, const wchar_t *expression, TYPE &result)
         {
             try
             {
@@ -49,36 +47,36 @@ namespace Gek
             }
             catch (const ShuntingYard::Exception &)
             {
-                result = defaultValue;
+                throw Exception("Unable to evaluate vector expression");
             };
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, int32_t &result, int32_t defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, int32_t &result)
         {
-            CastResult(shuntingYard, expression, result, defaultValue);
+            CastResult(shuntingYard, expression, result);
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, uint32_t &result, uint32_t defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, uint32_t &result)
         {
-            CastResult(shuntingYard, expression, result, defaultValue);
+            CastResult(shuntingYard, expression, result);
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, float &result, float defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, float &result)
         {
-            CastResult(shuntingYard, expression, result, defaultValue);
+            CastResult(shuntingYard, expression, result);
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float2 &result)
         {
-            GetResult(shuntingYard, expression, result, defaultValue);
+            GetResult(shuntingYard, expression, result);
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float3 &result)
         {
-            GetResult(shuntingYard, expression, result, defaultValue);
+            GetResult(shuntingYard, expression, result);
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float4 &result)
         {
             try
             {
@@ -105,18 +103,21 @@ namespace Gek
 
                     break;
 
-                default:
+                case 4:
                     shuntingYard.evaluate(expression, result);
                     break;
+
+                default:
+                    throw Exception("Expression does not evaluate into four component vector");
                 };
             }
             catch (const ShuntingYard::Exception &)
             {
-                result = defaultValue;
+                throw Exception("Unable to evaluate vector expression");
             };
         }
 
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue)
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Quaternion &result)
         {
             try
             {
@@ -133,14 +134,17 @@ namespace Gek
 
                     break;
 
-                default:
+                case 4:
                     shuntingYard.evaluate(expression, result);
                     break;
+
+                default:
+                    throw Exception("Expression does not evaluate into four component quaternion");
                 };
             }
             catch (const ShuntingYard::Exception &)
             {
-                result = defaultValue;
+                throw Exception("Unable to evaluate quaternion expression");
             };
         }
 

@@ -19,13 +19,15 @@ namespace Gek
 {
     namespace Evaluator
     {
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, int32_t &result, int32_t defaultValue = 0);
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, uint32_t &result, uint32_t defaultValue = 0);
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, float &result, float defaultValue = 0.0f);
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float2 &result, const Math::Float2 &defaultValue = Math::Float2::Zero);
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float3 &result, const Math::Float3 &defaultValue = Math::Float3::Zero);
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float4 &result, const Math::Float4 &defaultValue = Math::Float4::Zero);
-        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Quaternion &result, const Math::Quaternion &defaultValue = Math::Quaternion::Identity);
+        GEK_ADD_EXCEPTION();
+
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, int32_t &result);
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, uint32_t &result);
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, float &result);
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float2 &result);
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float3 &result);
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Float4 &result);
+        void Get(ShuntingYard &shuntingYard, const wchar_t *expression, Math::Quaternion &result);
         void Get(ShuntingYard &shuntingYard, const wchar_t *expression, String &result);
 
         template <typename TYPE>
