@@ -433,7 +433,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                     auto &shaderNode = materialNode[L"shader"];
                     auto &passesNode = shaderNode[L"passes"];
                     auto &solidNode = passesNode[L"solid"];
-                    auto &albedoNode = solidNode[L"albedo"];
+                    auto &dataNode = solidNode[L"data"];
+                    auto &albedoNode = dataNode[L"albedo"];
                     if (albedoNode.is_object())
 					{
 						if (albedoNode.has_member(L"file"))
