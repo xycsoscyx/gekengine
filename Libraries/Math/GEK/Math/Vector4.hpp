@@ -113,6 +113,12 @@ namespace Gek
                 this->w = TYPE(data[3]);
             }
 
+            void set(const Vector3<TYPE> &xyz, float w)
+            {
+                this->xyz = xyz;
+                this->w = w;
+            }
+
             TYPE getMagnitudeSquared(void) const
             {
                 return dot(*this);

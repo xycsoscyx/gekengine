@@ -370,17 +370,17 @@ namespace Gek
                 groundNormal = Math::Float3::Zero;
                 groundVelocity = Math::Float3::Zero;
 
-                float distance = 10.0f;
+                float contactDistance = 10.0f;
                 ConvexCastFilter filter(newtonBody);
-                NewtonWorldConvexCastReturnInfo castInformation;
-                int contactCount = NewtonWorldConvexCast(newtonWorld, castMatrix.data, targetPoint.data, newtonCastingShape, &distance, &filter, ConvexCastFilter::PreFilter, &castInformation, 1, threadHandle);
-                if (contactCount && (distance <= 1.0f))
+                NewtonWorldConvexCastReturnInfo contactInformation;
+                int count = NewtonWorldConvexCast(newtonWorld, castMatrix.data, targetPoint.data, newtonCastingShape, &contactDistance, &filter, ConvexCastFilter::PreFilter, &contactInformation, 1, threadHandle);
+                if (count && (contactDistance <= 1.0f))
                 {
                     touchingSurface = true;
-                    Math::Float3 supportPoint(castMatrix.translation.xyz + ((targetPoint - castMatrix.translation.xyz) * distance));
-                    groundNormal.set(castInformation.m_normal);
-                    NewtonBodyGetPointVelocity(castInformation.m_hitBody, supportPoint.data, groundVelocity.data);
-                    matrix.translation.xyz = supportPoint;
+                    auto supportPoint(castMatrix.translation.xyz + (targetPoint - castMatrix.translation.xyz) * contactDistance);
+                    groundNormal.set(contactInformation.m_normal);
+                    NewtonBodyGetPointVelocity(contactInformation.m_hitBody, supportPoint.data, groundVelocity.data);
+                    matrix.translation.set(supportPoint, 1.0f);
                 }
                 else
                 {
