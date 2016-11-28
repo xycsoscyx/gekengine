@@ -35,7 +35,16 @@ namespace Gek
             virtual ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters) = 0;
 
             virtual ResourceHandle createTexture(const wchar_t *textureName, const Video::TextureDescription &description) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, const std::vector<uint8_t> &staticData = std::vector<uint8_t>()) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, std::vector<uint8_t> &&staticData) = 0;
+
+            template <typename TYPE>
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, const TYPE *staticData)
+            {
+                auto rawData = reinterpret_cast<const uint8_t *>(staticData);
+                std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
+                return createBuffer(bufferName, description, std::move(rawBuffer));
+            }
 
             virtual void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset) = 0;
             virtual void setVertexBufferList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &resourceHandleList, uint32_t firstSlot, uint32_t *offsetList = nullptr) = 0;

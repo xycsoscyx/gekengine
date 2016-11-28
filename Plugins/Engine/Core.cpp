@@ -543,6 +543,7 @@ namespace Gek
                 }
                 catch (const std::exception &)
                 {
+                    log(L"Core", Plugin::Core::LogType::Debug, L"Configuration not found, using default values");
                 };
 
                 if (!configuration.is_object())
@@ -830,6 +831,11 @@ namespace Gek
 			}
 
             // Plugin::Core
+            void log(const wchar_t *system, LogType logType, const wchar_t *message)
+            {
+                OutputDebugString(String::Format(L"(%s) %s\r\n", system, message));
+            }
+
             JSON::Object &getConfiguration(void)
             {
                 return configuration;

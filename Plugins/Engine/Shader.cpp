@@ -789,7 +789,7 @@ namespace Gek
                         auto &generateMipMapsNode = passNode.get(L"generateMipMaps");
                         if (!generateMipMapsNode.is_array())
                         {
-                            throw InvalidParameter("GenerateMipMaps list must be an object");
+                            throw InvalidParameter("GenerateMipMaps list must be an array");
                         }
 
                         for (auto &generateMipMaps : generateMipMapsNode.elements())

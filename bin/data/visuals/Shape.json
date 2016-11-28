@@ -15,6 +15,20 @@
             "sourceindex": "0"
         },
         {
+            "name": "tangent",
+            "bind": "float3",
+            "semantic": "TANGENT",
+            "source": "vertex",
+            "sourceindex": "0"
+        },
+        {
+            "name": "biTangent",
+            "bind": "float3",
+            "semantic": "BITANGENT",
+            "source": "vertex",
+            "sourceindex": "0"
+        },
+        {
             "name": "normal",
             "bind": "float3",
             "semantic": "NORMAL",
@@ -32,6 +46,16 @@
             "name": "texCoord",
             "bind": "float2",
             "semantic": "TEXCOORD"
+        },
+        {
+            "name": "tangent",
+            "bind": "float3",
+            "semantic": "TANGENT"
+        },
+        {
+            "name": "biTangent",
+            "bind": "float3",
+            "semantic": "BITANGENT"
         },
         {
             "name": "normal",

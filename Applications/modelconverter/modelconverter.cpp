@@ -367,13 +367,13 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		}
 
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
-        auto originalScene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
-        if (originalScene == nullptr)
+        auto scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
+        if (scene == nullptr)
         {
             throw std::exception("Unable to load scene with Assimp");
         }
 
-        auto scene = aiApplyPostProcessing(originalScene, postProcessFlags);
+        scene = aiApplyPostProcessing(scene, postProcessFlags);
         if (scene == nullptr)
 		{
 			throw std::exception("Unable to apply post processing with Assimp");

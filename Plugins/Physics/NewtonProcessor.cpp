@@ -14,7 +14,6 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Newton/Base.hpp"
 #include "GEK/Model/Base.hpp"
-#include "GEK/Shape/Base.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 
@@ -201,11 +200,6 @@ namespace Gek
                         {
                             const auto &modelComponent = entity->getComponent<Components::Model>();
                             newtonCollision = loadCollision(modelComponent);
-                        }
-                        else if (entity->hasComponents<Components::Shape>())
-                        {
-                            const auto &shapeComponent = entity->getComponent<Components::Shape>();
-                            newtonCollision = createCollision(shapeComponent);
                         }
 
                         if (newtonCollision)
@@ -409,7 +403,7 @@ namespace Gek
 
                 return 0;
             }
-
+/*
             NewtonCollision *createCollision(const Components::Shape &shapeComponent)
             {
                 GEK_REQUIRE(population);
@@ -454,18 +448,6 @@ namespace Gek
                         Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
                         newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
                     }
-                    /*
-                    else if (shapeComponent.type.compareNoCase(L"tapered_capsule") == 0)
-                    {
-                    Math::Float3 size(Evaluator::Get<Math::Float3>(core->getShuntingYard(), shapeComponent.parameters));
-                    newtonCollision = NewtonCreateTaperedCapsule(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
-                    }
-                    else if (shapeComponent.type.compareNoCase(L"tapered_cylinder") == 0)
-                    {
-                    Math::Float3 size(Evaluator::Get<Math::Float3>(core->getShuntingYard(), shapeComponent.parameters));
-                    newtonCollision = NewtonCreateTaperedCylinder(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
-                    }
-                    */
                     else if (shapeComponent.type.compareNoCase(L"chamfer_cylinder") == 0)
                     {
                         Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
@@ -482,7 +464,7 @@ namespace Gek
 
                 return newtonCollision;
             }
-
+*/
             NewtonCollision *loadCollision(const Components::Model &modelComponent)
             {
                 NewtonCollision *newtonCollision = nullptr;

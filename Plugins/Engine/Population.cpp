@@ -237,8 +237,9 @@ namespace Gek
                     worldTime = 0.0f;
                     onLoadSucceeded.emit(populationName);
                 }
-                catch (const std::exception &)
+                catch (const std::exception &exception)
                 {
+                    core->log(L"Population", Plugin::Core::LogType::Error, String::Format(L"Unable to load population: %v", exception.what()));
                     onLoadFailed.emit(populationName);
                 };
 

@@ -26,11 +26,21 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidDisplayMode);
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
+            enum class LogType : uint8_t
+            {
+                Message = 0,
+                Warning,
+                Error,
+                Debug,
+            };
+
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(void)> onDisplay;
             Nano::Signal<void(bool showCursor)> onInterface;
 
             virtual ~Core(void) = default;
+
+            virtual void log(const wchar_t *system, LogType logType, const wchar_t *message) = 0;
 
             virtual JSON::Object &getConfiguration(void) = 0;
             virtual JSON::Object const &getConfiguration(void) const = 0;

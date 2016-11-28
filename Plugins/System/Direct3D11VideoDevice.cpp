@@ -2208,7 +2208,14 @@ namespace Gek
                     }
                 }
 
-                d3dDeviceContext->CopyResource(getObject<Resource>(destination), getObject<Resource>(source));
+                if (destinationTexture->description.mipMapCount > 0 || sourceTexture->description.mipMapCount > 0)
+                {
+                    d3dDeviceContext->CopySubresourceRegion(getObject<Resource>(destination), 0, 0, 0, 0, getObject<Resource>(source), 0, nullptr);
+                }
+                else
+                {
+                    d3dDeviceContext->CopyResource(getObject<Resource>(destination), getObject<Resource>(source));
+                }
             }
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)

@@ -18,13 +18,12 @@
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Color.hpp"
 #include "GEK/Model/Base.hpp"
-#include <concurrent_queue.h>
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
-#include <ppl.h>
-#include <future>
 #include <algorithm>
 #include <memory>
+#include <future>
+#include <ppl.h>
 #include <array>
 #include <map>
 
@@ -200,15 +199,6 @@ namespace Gek
             population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
         }
 
-        template <typename TYPE>
-        std::vector<uint8_t> getBuffer(uint8_t **bufferData, uint32_t count)
-        {
-            auto start = (*bufferData);
-            (*bufferData) += (sizeof(TYPE) * count);
-            auto end = (*bufferData);
-            return std::vector<uint8_t>(start, end);
-        }
-
         void addEntity(Plugin::Entity *entity)
         {
             ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
@@ -266,13 +256,15 @@ namespace Gek
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = materialHeader.indexCount;
                                 indexBufferDescription.type = Video::BufferDescription::Type::Index;
-                                material.indexBuffer = resources->createBuffer(String::Format(L"model:index:%v:%v", name, materialIndex), indexBufferDescription, getBuffer<uint16_t>(&bufferData, materialHeader.indexCount));
+                                material.indexBuffer = resources->createBuffer(String::Format(L"model:index:%v:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                bufferData += (sizeof(uint16_t) * materialHeader.indexCount);
 
                                 Video::BufferDescription vertexBufferDescription;
                                 vertexBufferDescription.stride = sizeof(Vertex);
                                 vertexBufferDescription.count = materialHeader.vertexCount;
                                 vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
-                                material.vertexBuffer = resources->createBuffer(String::Format(L"model:vertex:%v:%v", name, materialIndex), vertexBufferDescription, getBuffer<Vertex>(&bufferData, materialHeader.vertexCount));
+                                material.vertexBuffer = resources->createBuffer(String::Format(L"model:vertex:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Vertex *>(bufferData));
+                                bufferData += (sizeof(Vertex) * materialHeader.vertexCount);
                             }
                         });
                     });

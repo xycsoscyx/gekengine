@@ -588,7 +588,7 @@ namespace Gek
                         auto &generateMipMapsNode = passNode.get(L"generateMipMaps");
                         if (!generateMipMapsNode.is_array())
                         {
-                            throw InvalidParameter("Shader generateMipMaps list must be an object");
+                            throw InvalidParameter("Shader generateMipMaps list must be an array");
                         }
 
                         for (auto &generateMipMaps : generateMipMapsNode.elements())
