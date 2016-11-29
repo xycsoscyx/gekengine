@@ -4,54 +4,80 @@
 #include <GEKUtility.hlsl>
 #include <GEKLighting.hlsl>
 
-float3 getGlassAverage(float2 texCoord, int glassLevel)
+// 4x4 bicubic filter using 4 bilinear texture lookups 
+// See GPU Gems 2: "Fast Third-Order Texture Filtering", Sigg & Hadwiger:
+// http://http.developer.nvidia.com/GPUGems2/gpugems2_chapter20.html
+
+
+// w0, w1, w2, and w3 are the four cubic B-spline basis functions
+float w0(float a)
 {
-    //--------------------------------------------------------------------------------------
-    // Calculate the center of the texel to avoid any filtering
+    return (1.0 / 6.0)*(a*(a*(-a + 3.0) - 3.0) + 1.0);
+}
 
-    uint levels;
-    float2 textureDimensions;
-    Resources::glassBuffer.GetDimensions(glassLevel, textureDimensions.x, textureDimensions.y, levels);
-    float2 invTextureDimensions = 1.f / textureDimensions;
+float w1(float a)
+{
+    return (1.0 / 6.0)*(a*a*(3.0*a - 6.0) + 4.0);
+}
 
-    texCoord *= textureDimensions;
+float w2(float a)
+{
+    return (1.0 / 6.0)*(a*(a*(-3.0*a + 3.0) + 3.0) + 1.0);
+}
 
-    float2 texelCenter = floor(texCoord - 0.5f) + 0.5f;
-    float2 fracOffset = texCoord - texelCenter;
-    float2 fracOffset_x2 = fracOffset * fracOffset;
-    float2 fracOffset_x3 = fracOffset * fracOffset_x2;
+float w3(float a)
+{
+    return (1.0 / 6.0)*(a*a*a);
+}
 
-    //--------------------------------------------------------------------------------------
-    // Calculate the filter weights (B-Spline Weighting Function)
+// g0 and g1 are the two amplitude functions
+float g0(float a)
+{
+    return w0(a) + w1(a);
+}
 
-    float2 weight0 = fracOffset_x2 - 0.5f * (fracOffset_x3 + fracOffset);
-    float2 weight1 = 1.5f * fracOffset_x3 - 2.5f * fracOffset_x2 + 1.f;
-    float2 weight3 = 0.5f * (fracOffset_x3 - fracOffset_x2);
-    float2 weight2 = 1.f - weight0 - weight1 - weight3;
+float g1(float a)
+{
+    return w2(a) + w3(a);
+}
 
-    //--------------------------------------------------------------------------------------
-    // Calculate the texture coordinates
+// h0 and h1 are the two offset functions
+float h0(float a)
+{
+    return -1.0 + w1(a) / (w0(a) + w1(a));
+}
 
-    float2 scalingFactor0 = weight0 + weight1;
-    float2 scalingFactor1 = weight2 + weight3;
+float h1(float a)
+{
+    return 1.0 + w3(a) / (w2(a) + w3(a));
+}
 
-    float2 f0 = weight1 / (weight0 + weight1);
-    float2 f1 = weight3 / (weight2 + weight3);
+float3 getCubicFilter(float2 texCoord, int glassLevel)
+{
+    int levelCount;
+    float2 glassSize;
+    Resources::glassBuffer.GetDimensions(glassLevel, glassSize.x, glassSize.y, levelCount);
+    float2 pixelSize = 1.0 / glassSize;
 
-    float2 texCoord0 = texelCenter - 1.f + f0;
-    float2 texCoord1 = texelCenter + 1.f + f1;
+    texCoord = texCoord*glassSize + 0.5;
+    float2 iuv = floor(texCoord);
+    float2 fuv = frac(texCoord);
 
-    texCoord0 *= invTextureDimensions;
-    texCoord1 *= invTextureDimensions;
+    float g0x = g0(fuv.x);
+    float g1x = g1(fuv.x);
+    float h0x = h0(fuv.x);
+    float h1x = h1(fuv.x);
+    float h0y = h0(fuv.y);
+    float h1y = h1(fuv.y);
 
-    //--------------------------------------------------------------------------------------
-    // Sample the texture
+    float2 p0 = (float2(iuv.x + h0x, iuv.y + h0y) - 0.5) * pixelSize;
+    float2 p1 = (float2(iuv.x + h1x, iuv.y + h0y) - 0.5) * pixelSize;
+    float2 p2 = (float2(iuv.x + h0x, iuv.y + h1y) - 0.5) * pixelSize;
+    float2 p3 = (float2(iuv.x + h1x, iuv.y + h1y) - 0.5) * pixelSize;
 
     return
-        Resources::glassBuffer.SampleLevel(Global::linearClampSampler, float2(texCoord0.x, texCoord0.y), glassLevel) * scalingFactor0.x * scalingFactor0.y +
-        Resources::glassBuffer.SampleLevel(Global::linearClampSampler, float2(texCoord1.x, texCoord0.y), glassLevel) * scalingFactor1.x * scalingFactor0.y +
-        Resources::glassBuffer.SampleLevel(Global::linearClampSampler, float2(texCoord0.x, texCoord1.y), glassLevel) * scalingFactor0.x * scalingFactor1.y +
-        Resources::glassBuffer.SampleLevel(Global::linearClampSampler, float2(texCoord1.x, texCoord1.y), glassLevel) * scalingFactor1.x * scalingFactor1.y;
+        g0(fuv.y) * (g0x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p0, glassLevel) + g1x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p1, glassLevel)) +
+        g1(fuv.y) * (g0x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p2, glassLevel) + g1x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p3, glassLevel));
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
@@ -79,13 +105,13 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     float glassRoughness = (materialRoughness * 5.0);
     int glassLevel = int(floor(glassRoughness));
-    float3 glassColor = getGlassAverage((inputPixel.screen.xy * Shader::pixelSize), glassLevel);
+    float3 glassColor = getCubicFilter((inputPixel.screen.xy * Shader::pixelSize), glassLevel);
 
     [branch]
     if (materialRoughness < 1.0)
     {
         float lerpLevel = frac(glassRoughness);
-        glassColor = lerp(glassColor, getGlassAverage((inputPixel.screen.xy * Shader::pixelSize), (glassLevel + 1)), lerpLevel);
+        glassColor = lerp(glassColor, getCubicFilter((inputPixel.screen.xy * Shader::pixelSize), (glassLevel + 1)), lerpLevel);
     }
 
     materialRoughness = 0.1;
@@ -102,51 +128,51 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     // reduce roughness range from [0 .. 1] to [0.5 .. 1]
     float materialDisneyAlpha = pow(0.5 + materialRoughness * 0.5, 2.0);
 
-	float3 surfaceIrradiance = 0.0;
+    float3 surfaceIrradiance = 0.0;
 
     for (uint directionalIndex = 0; directionalIndex < Lights::directionalCount; directionalIndex++)
     {
-		float3 lightDirection = Lights::directionalList[directionalIndex].direction;
-		float3 lightRadiance = Lights::directionalList[directionalIndex].radiance;
-
-		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
-	}
-
-	uint clusterOffset = getClusterOffset(inputPixel.screen.xy, surfacePosition.z);
-	uint3 clusterData = Lights::clusterDataList[clusterOffset];
-	uint indexOffset = clusterData.x;
-	uint pointLightCount = clusterData.y;
-	uint spotLightCount = clusterData.z;
-
-	while (pointLightCount-- > 0)
-	{
-		uint lightIndex = Lights::clusterIndexList[indexOffset++];
-		Lights::PointData lightData = Lights::pointList[lightIndex];
-
-		float3 lightRay = (lightData.position - surfacePosition);
-		float3 centerToRay = (lightRay - (dot(lightRay, reflectNormal) * reflectNormal));
-		float3 closestPoint = (lightRay + (centerToRay * saturate(lightData.radius / length(centerToRay))));
-		float lightDistance = length(closestPoint);
-		float3 lightDirection = normalize(closestPoint);
-		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range));
+        float3 lightDirection = Lights::directionalList[directionalIndex].direction;
+        float3 lightRadiance = Lights::directionalList[directionalIndex].radiance;
 
         surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
-	};
+    }
 
-	while (spotLightCount-- > 0)
-	{
-		uint lightIndex = Lights::clusterIndexList[indexOffset++];
-		Lights::SpotData lightData = Lights::spotList[lightIndex];
+    uint clusterOffset = getClusterOffset(inputPixel.screen.xy, surfacePosition.z);
+    uint3 clusterData = Lights::clusterDataList[clusterOffset];
+    uint indexOffset = clusterData.x;
+    uint pointLightCount = clusterData.y;
+    uint spotLightCount = clusterData.z;
 
-		float3 lightRay = (lightData.position - surfacePosition);
-		float lightDistance = length(lightRay);
-		float3 lightDirection = (lightRay / lightDistance);
-		float rho = saturate(dot(lightData.direction, -lightDirection));
-		float spotFactor = pow(saturate(rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle), lightData.coneFalloff);
-		float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range) * spotFactor);
+    while (pointLightCount-- > 0)
+    {
+        uint lightIndex = Lights::clusterIndexList[indexOffset++];
+        Lights::PointData lightData = Lights::pointList[lightIndex];
 
-		surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
-	};
+        float3 lightRay = (lightData.position - surfacePosition);
+        float3 centerToRay = (lightRay - (dot(lightRay, reflectNormal) * reflectNormal));
+        float3 closestPoint = (lightRay + (centerToRay * saturate(lightData.radius / length(centerToRay))));
+        float lightDistance = length(closestPoint);
+        float3 lightDirection = normalize(closestPoint);
+        float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range));
+
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+    };
+
+    while (spotLightCount-- > 0)
+    {
+        uint lightIndex = Lights::clusterIndexList[indexOffset++];
+        Lights::SpotData lightData = Lights::spotList[lightIndex];
+
+        float3 lightRay = (lightData.position - surfacePosition);
+        float lightDistance = length(lightRay);
+        float3 lightDirection = (lightRay / lightDistance);
+        float rho = saturate(dot(lightData.direction, -lightDirection));
+        float spotFactor = pow(saturate(rho - lightData.outerAngle) / (lightData.innerAngle - lightData.outerAngle), lightData.coneFalloff);
+        float3 lightRadiance = (lightData.radiance * getFalloff(lightDistance, lightData.range) * spotFactor);
+
+        surfaceIrradiance += getSurfaceIrradiance(surfaceNormal, viewDirection, VdotN, materialAlbedo, materialRoughness, materialMetallic, materialAlpha, materialDisneyAlpha, lightDirection, lightRadiance);
+    };
 
     return surfaceIrradiance + glassColor * materialAlbedo;
 }
