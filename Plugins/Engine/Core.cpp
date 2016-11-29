@@ -745,7 +745,7 @@ namespace Gek
                 imGuiIo.Fonts->TexID = (Video::Object *)font.get();
 
                 Video::SamplerStateInformation samplerStateInformation;
-                samplerStateInformation.filterMode = Video::SamplerStateInformation::FilterMode::AllLinear;
+                samplerStateInformation.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
                 samplerStateInformation.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;

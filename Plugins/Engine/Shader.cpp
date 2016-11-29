@@ -16,6 +16,7 @@
 #include "GEK/Components/Color.hpp"
 #include "Passes.hpp"
 #include <concurrent_vector.h>
+#include <unordered_set>
 #include <ppl.h>
 
 namespace Gek
@@ -81,7 +82,7 @@ namespace Gek
             Plugin::Population *population = nullptr;
 
             String shaderName;
-            uint32_t priority = 0;
+            uint32_t drawOrder = 0;
 
             Video::BufferPtr shaderConstantBuffer;
 
@@ -134,8 +135,6 @@ namespace Gek
                 {
                     throw InvalidParameter("Material must be an object");
                 }
-
-                priority = shaderNode.get(L"priority", 0).as_uint();
 
                 std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
                 uint32_t displayWidth = backBuffer->getDescription().width;
@@ -383,6 +382,7 @@ namespace Gek
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 std::unordered_map<String, String> resourceStructuresMap;
+                std::unordered_set<Engine::Shader *> requiredShaderSet;
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
@@ -416,7 +416,7 @@ namespace Gek
                         if (textureValue.has_member(L"source"))
                         {
                             String textureSource(textureValue.get(L"source").as_string());
-                            resources->getShader(textureSource, MaterialHandle());
+                            requiredShaderSet.insert(resources->getShader(textureSource, MaterialHandle()));
                             resourceMap[textureName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
                         }
                         else
@@ -469,7 +469,7 @@ namespace Gek
                         if (bufferValue.has_member(L"source"))
                         {
                             String bufferSource(bufferValue.get(L"source").as_string());
-                            resources->getShader(bufferSource, MaterialHandle());
+                            requiredShaderSet.insert(resources->getShader(bufferSource, MaterialHandle()));
                             resourceMap[bufferName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", bufferName, bufferSource));
                         }
                         else
@@ -533,6 +533,12 @@ namespace Gek
                             }
                         }
                     }
+                }
+
+                drawOrder = requiredShaderSet.size();
+                for (auto &requiredShader : requiredShaderSet)
+                {
+                    drawOrder += requiredShader->getDrawOrder();
                 }
 
                 for (auto &passNode : passesNode.elements())
@@ -1049,9 +1055,9 @@ namespace Gek
             }
 
             // Shader
-            uint32_t getPriority(void) const
+            uint32_t getDrawOrder(void) const
             {
-                return priority;
+                return drawOrder;
             }
 
             const Material *getMaterial(const wchar_t *passName) const
@@ -1085,14 +1091,14 @@ namespace Gek
                     };
                 }
 
-                for (auto &resource : pass.generateMipMapsList)
-                {
-                    resources->generateMipMaps(videoContext, resource);
-                }
-
                 for (auto &copyResource : pass.copyResourceMap)
                 {
                     resources->copyResource(copyResource.first, copyResource.second);
+                }
+
+                for (auto &resource : pass.generateMipMapsList)
+                {
+                    resources->generateMipMaps(videoContext, resource);
                 }
 
                 Video::Device::Context::Pipeline *videoPipeline = (pass.mode == Pass::Mode::Compute ? videoContext->computePipeline() : videoContext->pixelPipeline());

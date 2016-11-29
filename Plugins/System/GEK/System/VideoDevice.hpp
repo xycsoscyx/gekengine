@@ -342,18 +342,45 @@ namespace Gek
 
         struct SamplerStateInformation
         {
-			enum class FilterMode : uint8_t
-			{
-				AllPoint = 0,
-				MinMagPointMipLinear,
-				MinPointMAgLinearMipPoint,
-				MinPointMagMipLinear,
-				MinLinearMagMipPoint,
-				MinLinearMagPointMipLinear,
-				MinMagLinearMipPoint,
-				AllLinear,
-				Anisotropic,
-			};
+            enum class FilterMode : uint8_t
+            {
+                MinificationMagnificationMipMapPoint = 0,
+                MinificationMagnificationPointMipMapLinear,
+                MinificationPointMagnificationLinearMipMapPoint,
+                MinificationPointMagnificationMipMapLinear,
+                MinificationLinearMagnificationMipMapPoint,
+                MinificationLinearMagnificationPointMipMapLinear,
+                MinificationMagnificationLinearMipMapPoint,
+                MinificationMagnificationMipMapLinear,
+                Anisotropic,
+                ComparisonMinificationMagnificationMipMapPoint,
+                ComparisonMinificationMagnificationPointMipMapLinear,
+                ComparisonMinificationPointMagnificationLinearMipMapPoint,
+                ComparisonMinificationPointMagnificationMipMapLinear,
+                ComparisonMinificationLinearMagnificationMipMapPoint,
+                ComparisonMinificationLinearMagnificationPointMipMapLinear,
+                ComparisonMinificationMagnificationLinearMipMapPoint,
+                ComparisonMinificationMagnificationMipMapLinear,
+                ComparisonAnisotropic,
+                MinimumMinificationMagnificationMipMapPoint,
+                MinimumMinificationMagnificationPointMipMapLinear,
+                MinimumMinificationPointMagnificationLinearMipMapPoint,
+                MinimumMinificationPointMagnificationMipMapLinear,
+                MinimumMinificationLinearMagnificationMipMapPoint,
+                MinimumMinificationLinearMagnificationPointMipMapLinear,
+                MinimumMinificationMagnificationLinearMipMapPoint,
+                MinimumMinificationMagnificationMipMapLinear,
+                MinimumAnisotropic,
+                MaximumMinificationMagnificationMipMapPoint,
+                MaximumMinificationMagnificationPointMipMapLinear,
+                MaximumMinificationPointMagnificationLinearMipMapPoint,
+                MaximumMinificationPointMagnificationMipMapLinear,
+                MaximumMinificationLinearMagnificationMipMapPoint,
+                MaximumMinificationLinearMagnificationPointMipMapLinear,
+                MaximumMinificationMagnificationLinearMipMapPoint,
+                MaximumMinificationMagnificationMipMapLinear,
+                MaximumAnisotropic,
+            };
 
 			enum class AddressMode : uint8_t
 			{
@@ -364,7 +391,7 @@ namespace Gek
 				Border,
 			};
 
-			FilterMode filterMode = FilterMode::AllPoint;
+			FilterMode filterMode = FilterMode::MinificationMagnificationMipMapPoint;
             AddressMode addressModeU = AddressMode::Clamp;
             AddressMode addressModeV = AddressMode::Clamp;
             AddressMode addressModeW = AddressMode::Clamp;

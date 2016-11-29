@@ -403,41 +403,149 @@ namespace Gek
 
             auto getFilterMode = [](const String &filterMode) -> FilterMode
             {
-                if (filterMode.compareNoCase(L"MinMagPointMipLinear") == 0)
+                if (filterMode.compareNoCase(L"MinificationMagnificationPointMipMapLinear") == 0)
                 {
-                    return FilterMode::MinMagPointMipLinear;
+                    return FilterMode::MinificationMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinPointMAgLinearMipPoint") == 0)
+                else if (filterMode.compareNoCase(L"MinificationPointMagnificationLinearMipMapPoint") == 0)
                 {
-                    return FilterMode::MinPointMAgLinearMipPoint;
+                    return FilterMode::MinificationPointMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinPointMagMipLinear") == 0)
+                else if (filterMode.compareNoCase(L"MinificationPointMagnificationMipMapLinear") == 0)
                 {
-                    return FilterMode::MinPointMagMipLinear;
+                    return FilterMode::MinificationPointMagnificationMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinLinearMagMipPoint") == 0)
+                else if (filterMode.compareNoCase(L"MinificationLinearMagnificationMipMapPoint") == 0)
                 {
-                    return FilterMode::MinLinearMagMipPoint;
+                    return FilterMode::MinificationLinearMagnificationMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"MinLinearMagPointMipLinear") == 0)
+                else if (filterMode.compareNoCase(L"MinificationLinearMagnificationPointMipMapLinear") == 0)
                 {
-                    return FilterMode::MinLinearMagPointMipLinear;
+                    return FilterMode::MinificationLinearMagnificationPointMipMapLinear;
                 }
-                else if (filterMode.compareNoCase(L"MinMagLinearMipPoint") == 0)
+                else if (filterMode.compareNoCase(L"MinificationMagnificationLinearMipMapPoint") == 0)
                 {
-                    return FilterMode::MinMagLinearMipPoint;
+                    return FilterMode::MinificationMagnificationLinearMipMapPoint;
                 }
-                else if (filterMode.compareNoCase(L"AllLinear") == 0)
+                else if (filterMode.compareNoCase(L"MinificationMagnificationMipMapLinear") == 0)
                 {
-                    return FilterMode::AllLinear;
+                    return FilterMode::MinificationMagnificationMipMapLinear;
                 }
                 else if (filterMode.compareNoCase(L"Anisotropic") == 0)
                 {
                     return FilterMode::Anisotropic;
                 }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapPoint") == 0)
+                {
+                    return FilterMode::ComparisonMinificationMagnificationMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationPointMipMapLinear") == 0)
+                {
+                    return FilterMode::ComparisonMinificationMagnificationPointMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationLinearMipMapPoint") == 0)
+                {
+                    return FilterMode::ComparisonMinificationPointMagnificationLinearMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationPointMagnificationMipMapLinear") == 0)
+                {
+                    return FilterMode::ComparisonMinificationPointMagnificationMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationMipMapPoint") == 0)
+                {
+                    return FilterMode::ComparisonMinificationLinearMagnificationMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationLinearMagnificationPointMipMapLinear") == 0)
+                {
+                    return FilterMode::ComparisonMinificationLinearMagnificationPointMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationLinearMipMapPoint") == 0)
+                {
+                    return FilterMode::ComparisonMinificationMagnificationLinearMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonMinificationMagnificationMipMapLinear") == 0)
+                {
+                    return FilterMode::ComparisonMinificationMagnificationMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"ComparisonAnisotropic") == 0)
+                {
+                    return FilterMode::ComparisonAnisotropic;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapPoint") == 0)
+                {
+                    return FilterMode::MinimumMinificationMagnificationMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationPointMipMapLinear") == 0)
+                {
+                    return FilterMode::MinimumMinificationMagnificationPointMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationLinearMipMapPoint") == 0)
+                {
+                    return FilterMode::MinimumMinificationPointMagnificationLinearMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationPointMagnificationMipMapLinear") == 0)
+                {
+                    return FilterMode::MinimumMinificationPointMagnificationMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationMipMapPoint") == 0)
+                {
+                    return FilterMode::MinimumMinificationLinearMagnificationMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationLinearMagnificationPointMipMapLinear") == 0)
+                {
+                    return FilterMode::MinimumMinificationLinearMagnificationPointMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationLinearMipMapPoint") == 0)
+                {
+                    return FilterMode::MinimumMinificationMagnificationLinearMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MinimumMinificationMagnificationMipMapLinear") == 0)
+                {
+                    return FilterMode::MinimumMinificationMagnificationMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MinimumAnisotropic") == 0)
+                {
+                    return FilterMode::MinimumAnisotropic;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapPoint") == 0)
+                {
+                    return FilterMode::MaximumMinificationMagnificationMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationPointMipMapLinear") == 0)
+                {
+                    return FilterMode::MaximumMinificationMagnificationPointMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationLinearMipMapPoint") == 0)
+                {
+                    return FilterMode::MaximumMinificationPointMagnificationLinearMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationPointMagnificationMipMapLinear") == 0)
+                {
+                    return FilterMode::MaximumMinificationPointMagnificationMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationMipMapPoint") == 0)
+                {
+                    return FilterMode::MaximumMinificationLinearMagnificationMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationLinearMagnificationPointMipMapLinear") == 0)
+                {
+                    return FilterMode::MaximumMinificationLinearMagnificationPointMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationLinearMipMapPoint") == 0)
+                {
+                    return FilterMode::MaximumMinificationMagnificationLinearMipMapPoint;
+                }
+                else if (filterMode.compareNoCase(L"MaximumMinificationMagnificationMipMapLinear") == 0)
+                {
+                    return FilterMode::MaximumMinificationMagnificationMipMapLinear;
+                }
+                else if (filterMode.compareNoCase(L"MaximumAnisotropic") == 0)
+                {
+                    return FilterMode::MaximumAnisotropic;
+                }
                 else
                 {
-                    return FilterMode::AllPoint;
+                    return FilterMode::MinificationMagnificationMipMapPoint;
                 }
             };
 

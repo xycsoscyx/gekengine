@@ -238,7 +238,7 @@ namespace Gek
                 population->onComponentRemoved.connect<Renderer, &Renderer::onComponentRemoved>(this);
 
                 Video::SamplerStateInformation pointSamplerStateData;
-                pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::AllPoint;
+                pointSamplerStateData.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
                 pointSamplerStateData.addressModeU = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerStateData.addressModeV = Video::SamplerStateInformation::AddressMode::Clamp;
                 pointSamplerState = videoDevice->createSamplerState(pointSamplerStateData);
@@ -753,7 +753,7 @@ namespace Gek
                                 continue;
                             }
 
-                            auto &shaderList = drawCallSetMap[shader->getPriority()];
+                            auto &shaderList = drawCallSetMap[shader->getDrawOrder()];
                             shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
                             for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
                             {

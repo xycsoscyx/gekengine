@@ -3,7 +3,7 @@
     "Templates": {
         "BasicPointLight": {
             "Transform": {
-                "position": "(random(-45, 45), random(5, 30), random(-20, 20))",
+                "position": "(random(-45, 45), random(-5, 30), random(-20, 20))",
                 "rotation": "(0, random(0,360), 0)"
             },
             "PointLight": {
