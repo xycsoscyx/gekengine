@@ -110,7 +110,7 @@ namespace Gek
 
             Vector2<TYPE> getScaling(void) const
             {
-                return Vector2(_11, _22);
+                return Vector2<TYPE>(_11, _22);
             }
 
             Vector2<TYPE> operator [] (int row) const

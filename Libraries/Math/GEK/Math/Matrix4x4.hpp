@@ -25,11 +25,18 @@ namespace Gek
         public:
             union
             {
-                const struct { float data[16]; };
-                const struct { float table[4][4]; };
-                const struct { Float4 rows[4]; };
-                const struct { Float4 rx, ry, rz, rw; };
-                const struct
+                float data[16];
+                float table[4][4];
+                struct
+                {
+                    float _11, _12, _13, _14;
+                    float _21, _22, _23, _24;
+                    float _31, _32, _33, _34;
+                    float _41, _42, _43, _44;
+                };
+
+                Float4 rows[4];
+                struct
                 {
                     Float4 rx;
                     Float4 ry;
@@ -39,14 +46,6 @@ namespace Gek
                         struct { Float4 rw; };
                         struct { Float4 translation; };
                     };
-                };
-
-                const struct
-                {
-                    float _11, _12, _13, _14;
-                    float _21, _22, _23, _24;
-                    float _31, _32, _33, _34;
-                    float _41, _42, _43, _44;
                 };
             };
 

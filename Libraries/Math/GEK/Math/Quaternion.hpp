@@ -24,9 +24,21 @@ namespace Gek
         public:
             union
             {
-                const struct { float x, y, z, w; };
-                const struct { float data[4]; };
-                const struct { Float3 axis; float angle; };
+                struct { float data[4]; };
+                struct
+                {
+                    union
+                    {
+                        struct { float x, y, z; };
+                        Float3 axis;
+                    };
+                    
+                    union
+                    {
+                        float w;
+                        float angle;
+                    };
+                };
             };
 
         public:
