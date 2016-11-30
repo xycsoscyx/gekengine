@@ -6,8 +6,8 @@
 #include "GEK/Engine/Application.hpp"
 #include "GEK/Engine/Core.hpp"
 #include <experimental\filesystem>
-#include <Windows.h>
 #include <CommCtrl.h>
+#include <Windows.h>
 
 using namespace Gek;
 
@@ -33,31 +33,8 @@ LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM
     return DefWindowProc(window, message, wParam, lParam);
 }
 
-namespace Defines
-{
-    static const float gaussianSigma = 1.75f;
-};
-
-float getGaussianWeight(float offset)
-{
-    return (1.0f / (sqrt(Math::Tau) * Defines::gaussianSigma)) * exp(-(offset*offset) / (2.0f * Defines::gaussianSigma*Defines::gaussianSigma));
-}
-
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
 {
-    float gaussianKernel[9] = 
-    {
-        getGaussianWeight(-4.0f),
-        getGaussianWeight(-3.0f),
-        getGaussianWeight(-2.0f),
-        getGaussianWeight(-1.0f),
-        getGaussianWeight( 0.0f),
-        getGaussianWeight(+1.0f),
-        getGaussianWeight(+2.0f),
-        getGaussianWeight(+3.0f),
-        getGaussianWeight(+4.0f),
-    };
-
     try
     {
         String currentModuleName((MAX_PATH + 1), L' ');

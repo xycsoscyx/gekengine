@@ -22,6 +22,3 @@
 [submodule "external/glbinding"]
 	path = External/glbinding
 	url = https://github.com/cginternals/glbinding.git
-[submodule "External/SFML"]
-	path = External/SFML
-	url = https://github.com/SFML/SFML.git

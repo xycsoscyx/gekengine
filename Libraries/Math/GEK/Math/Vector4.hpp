@@ -44,6 +44,12 @@ namespace Gek
                         float a;
                     };
                 };
+
+                struct
+                {
+                    Vector2<TYPE> minimum;
+                    Vector2<TYPE> maximum;
+                };
             };
 
         public:
