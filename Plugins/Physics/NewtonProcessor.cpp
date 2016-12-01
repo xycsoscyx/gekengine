@@ -69,16 +69,16 @@ namespace Gek
             };
 
         private:
-            Plugin::Core *core;
-            Plugin::Population *population;
-            uint32_t updateHandle;
+            Plugin::Core *core = nullptr;
+            Plugin::Population *population = nullptr;
+            uint32_t updateHandle = 0;
 
-            NewtonWorld *newtonWorld;
-            NewtonCollision *newtonStaticScene;
-            NewtonBody *newtonStaticBody;
+            NewtonWorld *newtonWorld = nullptr;
+            NewtonCollision *newtonStaticScene = nullptr;
+            NewtonBody *newtonStaticBody = nullptr;
             std::unordered_map<uint32_t, uint32_t> staticSurfaceMap;
 
-            Math::Float3 gravity;
+            Math::Float3 gravity = Math::Float3(0.0f, -32.174f, 0.0f);
             concurrency::concurrent_vector<Surface> surfaceList;
             concurrency::concurrent_unordered_map<std::size_t, uint32_t> surfaceIndexMap;
             concurrency::concurrent_unordered_map<Plugin::Entity *, Newton::EntityPtr> entityMap;
@@ -89,11 +89,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , core(core)
                 , population(core->getPopulation())
-                , updateHandle(0)
                 , newtonWorld(NewtonCreate())
-                , newtonStaticScene(nullptr)
-                , newtonStaticBody(nullptr)
-                , gravity(0.0f, -32.174f, 0.0f)
             {
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(newtonWorld);
@@ -185,10 +181,11 @@ namespace Gek
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
                 population->listEntities<Components::Transform, Components::Physical>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &physicalComponent) -> void
                 {
-                    concurrency::critical_section::scoped_lock lock(criticalSection);
                     if (entity->hasComponent<Components::Player>())
                     {
+                        criticalSection.lock();
                         Newton::EntityPtr playerBody(createPlayerBody(population, newtonWorld, entity));
+                        criticalSection.unlock();
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
@@ -206,28 +203,35 @@ namespace Gek
 
                         if (newtonCollision)
                         {
+                            criticalSection.lock();
+                            NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
+                            criticalSection.unlock();
+
                             if (physicalComponent.mass == 0.0f)
                             {
-                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
                                 NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
                                 NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
-                                NewtonDestroyCollision(clonedCollision);
                             }
                             else
                             {
-                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
+                                criticalSection.lock();
+                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, clonedCollision, entity));
+                                criticalSection.unlock();
                                 if (rigidBody)
                                 {
                                     entityMap[entity] = rigidBody;
                                     NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
                                 }
                             }
+
+                            NewtonDestroyCollision(clonedCollision);
                         }
                     }
                 });
 
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
                 newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
+                NewtonBodySetCollidable(newtonStaticBody, true);
             }
 
             void onEntityDestroyed(Plugin::Entity *entity)
@@ -521,7 +525,10 @@ namespace Gek
                     {
 						HullHeader *hullHeader = (HullHeader *)header;
 						DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
-						newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
+                        
+                        criticalSection.lock();
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
+                        criticalSection.unlock();
                     }
                     else if (header->type == 2)
                     {
@@ -533,7 +540,10 @@ namespace Gek
                         }
 
 						DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
+
+                        criticalSection.lock();
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
+                        criticalSection.unlock();
                     }
                     else
                     {
@@ -545,6 +555,7 @@ namespace Gek
                         throw Newton::UnableToCreateCollision("Unable to create model collision object");
                     }
 
+                    //NewtonCollisionSetMode(newtonCollision, 0);
                     NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
                 }

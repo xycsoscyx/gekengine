@@ -16,16 +16,14 @@ namespace Gek
             : public Newton::Entity
         {
         private:
-            Newton::World *world;
-
-            Plugin::Entity *entity;
-            NewtonBody *newtonBody;
+            Newton::World *world = nullptr;
+            Plugin::Entity *entity = nullptr;
+            NewtonBody *newtonBody = nullptr;
 
         public:
             RigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
                 : world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
                 , entity(entity)
-                , newtonBody(nullptr)
             {
                 GEK_REQUIRE(world);
                 GEK_REQUIRE(entity);
@@ -42,6 +40,7 @@ namespace Gek
 
                 NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
                 NewtonBodySetMassProperties(newtonBody, physical.mass, newtonCollision);
+                NewtonBodySetCollidable(newtonBody, true);
             }
 
             ~RigidBody(void)
@@ -65,7 +64,7 @@ namespace Gek
                 return 0;
             }
 
-            void onPreUpdate(int threadHandle)
+            void onPreUpdate(float frameTime, int threadHandle)
             {
 				const auto &physical = entity->getComponent<Components::Physical>();
 				const auto &transform = entity->getComponent<Components::Transform>();
@@ -73,7 +72,7 @@ namespace Gek
                 NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
 
                 Math::Float3 gravity(world->getGravity(transform.position));
-                NewtonBodyAddForce(newtonBody, (gravity * physical.mass).data);
+                NewtonBodyAddForce(newtonBody, (gravity * physical.mass * frameTime).data);
             }
 
             void onSetTransform(const float* const matrixData, int threadHandle)

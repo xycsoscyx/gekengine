@@ -213,7 +213,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
         NewtonWorld *newtonWorld = NewtonCreate();
-        NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4().data);
+        NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointList.size(), pointList.data()->data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4::Identity.data);
         if (newtonCollision == nullptr)
         {
             throw std::exception("Unable to create convex hull collision object");

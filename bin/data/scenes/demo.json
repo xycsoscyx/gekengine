@@ -59,34 +59,46 @@
         },
         {
             "Transform": {
-                "position": "(1.5, 10, 0)"
+                "position": "(3, 10, 3)"
             },
             "Model": {
                 "name": "cube"
+            },
+            "Physical": {
+                "mass":  10
             }
         },
         {
             "Transform": {
-                "position": "(-1.5, 10, 0)"
+                "position": "(3, 10, -3)"
             },
             "Model": {
                 "name": "cube"
+            },
+            "Physical": {
+                "mass":  10
             }
         },
         {
             "Transform": {
-                "position": "(0, 10, 1.5)"
+                "position": "(-3, 10, 3)"
             },
             "Model": {
                 "name": "cube"
+            },
+            "Physical": {
+                "mass":  10
             }
         },
         {
             "Transform": {
-                "position": "(0, 10, -1.5)"
+                "position": "(-3, 10, -3)"
             },
             "Model": {
                 "name": "cube"
+            },
+            "Physical": {
+                "mass":  10
             }
         },
         {
