@@ -70,7 +70,7 @@ namespace Gek
 				const auto &physical = entity->getComponent<Components::Physical>();
 				const auto &transform = entity->getComponent<Components::Transform>();
 
-                NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), transform.scale.x, transform.scale.y, transform.scale.z);
+                NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
 
                 Math::Float3 gravity(world->getGravity(transform.position));
                 NewtonBodyAddForce(newtonBody, (gravity * physical.mass).data);

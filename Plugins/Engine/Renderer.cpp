@@ -95,30 +95,12 @@ namespace Gek
 
                 std::function<void(Video::Device::Context *)> onDraw;
 
-                DrawCallValue(const DrawCallValue &drawCallValue)
-                    : value(drawCallValue.value)
-                    , onDraw(drawCallValue.onDraw)
-                {
-                }
-
-                DrawCallValue(DrawCallValue &&drawCallValue)
-                    : value(drawCallValue.value)
-                    , onDraw(std::move(drawCallValue.onDraw))
-                {
-                }
-
-                DrawCallValue(MaterialHandle material, VisualHandle plugin, ShaderHandle shader, std::function<void(Video::Device::Context *)> onDraw)
+                DrawCallValue(MaterialHandle material, VisualHandle plugin, ShaderHandle shader, std::function<void(Video::Device::Context *)> &&onDraw)
                     : material(material)
                     , plugin(plugin)
                     , shader(shader)
-                    , onDraw(onDraw)
+                    , onDraw(std::move(onDraw))
                 {
-                }
-
-                void operator = (const DrawCallValue &drawCallValue)
-                {
-                    value = drawCallValue.value;
-                    onDraw = drawCallValue.onDraw;
                 }
             };
 
@@ -653,14 +635,14 @@ namespace Gek
                 return videoDevice;
             }
 
-            void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> draw)
+            void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> &&draw)
             {
                 if (plugin && material && draw)
                 {
                     ShaderHandle shader = resources->getMaterialShader(material);
                     if (shader)
                     {
-                        drawCallList.push_back(DrawCallValue(material, plugin, shader, draw));
+                        drawCallList.push_back(DrawCallValue(material, plugin, shader, std::move(draw)));
                     }
                 }
             }

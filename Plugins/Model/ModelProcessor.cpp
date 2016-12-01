@@ -309,7 +309,6 @@ namespace Gek
                 Model &model = *data.model;
                 Math::Float4x4 matrix(transformComponent.getMatrix());
                 Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
-                orientedBox.halfsize *= transformComponent.scale;
                 if (viewFrustum.isVisible(orientedBox))
                 {
                     auto modelViewMatrix(matrix * viewMatrix);

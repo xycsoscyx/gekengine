@@ -29,14 +29,12 @@ namespace Gek
         {
             componentData.set(L"position", data->position);
             componentData.set(L"rotation", data->rotation);
-            componentData.set(L"scale", data->scale);
         }
 
         void load(Components::Transform *data, const JSON::Object &componentData)
         {
             data->position = getValue(componentData, L"position", Math::Float3::Zero);
             data->rotation = getValue(componentData, L"rotation", Math::Quaternion::Identity);
-            data->scale = getValue(componentData, L"scale", Math::Float3::One);
         }
 
         // Edit::Component
@@ -46,7 +44,6 @@ namespace Gek
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
             ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_ReadOnly);
             ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
-            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
             ImGui::SetCurrentContext(nullptr);
         }
 
@@ -65,16 +62,9 @@ namespace Gek
                 currentGizmoOperation = ImGuizmo::ROTATE;
             }
 
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Scale", currentGizmoOperation == ImGuizmo::SCALE))
-            {
-                currentGizmoOperation = ImGuizmo::SCALE;
-            }
-
             ImGui::Separator();
             ImGui::InputFloat3("Position", transformComponent.position.data, 4);
             ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 4);
-            ImGui::InputFloat3("Scale", transformComponent.scale.data, 4);
 
             ImGui::Separator();
             ImGui::Checkbox("Snap", &useSnap);
@@ -105,7 +95,6 @@ namespace Gek
             ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
             transformComponent.rotation = matrix.getRotation();
             transformComponent.position = matrix.translation.xyz;
-            transformComponent.scale = matrix.getScaling();
 
             ImGui::SetCurrentContext(nullptr);
         }

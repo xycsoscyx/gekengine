@@ -20,7 +20,6 @@ namespace Gek
         {
             Math::Float3 position = Math::Float3::Zero;
             Math::Quaternion rotation = Math::Quaternion::Identity;
-            Math::Float3 scale = Math::Float3::One;
 
             inline Math::Float4x4 getMatrix(void) const
             {

@@ -60,7 +60,7 @@ namespace Gek
 
             virtual Video::Device * getVideoDevice(void) const = 0;
 
-            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> draw) = 0;
+            virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> &&draw) = 0;
             virtual void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList = nullptr, ResourceHandle cameraTarget = ResourceHandle()) = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
