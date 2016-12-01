@@ -24,29 +24,16 @@ using namespace Gek;
 
 struct Header
 {
-    uint32_t identifier = 0;
-    uint16_t type = 0;
-    uint16_t version = 0;
-};
-
-struct TreeHeader : public Header
-{
-    struct Material
-    {
-        wchar_t name[64] = L"";
-    };
-
-    uint32_t materialCount = 0;
-};
-
-struct ModelHeader : public Header
-{
     struct Material
     {
         wchar_t name[64] = L"";
         uint32_t vertexCount = 0;
         uint32_t indexCount = 0;
     };
+
+    uint32_t identifier = *(uint32_t *)"GEKX";
+    uint16_t type = 0;
+    uint16_t version = 5;
 
     Shapes::AlignedBox boundingBox;
 
@@ -70,26 +57,16 @@ struct Model
 
 struct Parameters
 {
-    enum class Mode : uint8_t
-    {
-        Model = 0,
-        Tree,
-        Hull,
-    };
-
     float feetPerUnit = 1.0f;
-    Mode mode = Mode::Model;
 };
 
-void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, const Math::Float4x4 &accumulatedTransform, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
         throw std::exception("Invalid model node");
     }
 
-    Math::Float4x4 localTransform(&node->mTransformation.a1);
-    Math::Float4x4 nodeTransform(localTransform.getTranspose() * accumulatedTransform);
     if (node->mNumMeshes > 0)
     {
         if (node->mMeshes == nullptr)
@@ -118,45 +95,25 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 					throw std::exception("Invalid mesh vertex list");
 				}
 
-				if (parameters.mode == Parameters::Mode::Model)
+				if (mesh->mTextureCoords[0] == nullptr)
 				{
-					if (mesh->mTextureCoords[0] == nullptr)
-					{
-						throw std::exception("Invalid mesh texture coordinate list");
-					}
-
-					if (mesh->mTangents == nullptr)
-					{
-						throw std::exception("Invalid mesh tangent list");
-					}
-
-					if (mesh->mBitangents == nullptr)
-					{
-						throw std::exception("Invalid mesh bitangent list");
-					}
-
-					if (mesh->mNormals == nullptr)
-					{
-						throw std::exception("Invalid mesh normal list");
-					}
+					throw std::exception("Invalid mesh texture coordinate list");
 				}
 
-                StringUTF8 material;
-                if (parameters.mode == Parameters::Mode::Hull)
-                {
-                    material = "hull";
-                }
-                else
-                {
-                    const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
+				if (mesh->mTangents == nullptr)
+				{
+					throw std::exception("Invalid mesh tangent list");
+				}
 
-                    aiString sceneDiffuseMaterial;
-                    sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                    if (sceneDiffuseMaterial.length > 0)
-                    {
-                        material = sceneDiffuseMaterial.C_Str();;
-                    }
-                }
+				if (mesh->mBitangents == nullptr)
+				{
+					throw std::exception("Invalid mesh bitangent list");
+				}
+
+				if (mesh->mNormals == nullptr)
+				{
+					throw std::exception("Invalid mesh normal list");
+				}
 
                 Model model;
                 for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
@@ -181,44 +138,36 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                         mesh->mVertices[vertexIndex].x,
                         mesh->mVertices[vertexIndex].y,
                         mesh->mVertices[vertexIndex].z);
-                    vertex.position = (nodeTransform.transform(vertex.position) * parameters.feetPerUnit);
+                    vertex.position *= parameters.feetPerUnit;
                     boundingBox.extend(vertex.position);
 
-					if (parameters.mode == Parameters::Mode::Model)
-					{
-						vertex.texCoord.set(
-							mesh->mTextureCoords[0][vertexIndex].x,
-							mesh->mTextureCoords[0][vertexIndex].y);
+					vertex.texCoord.set(
+						mesh->mTextureCoords[0][vertexIndex].x,
+						mesh->mTextureCoords[0][vertexIndex].y);
 
-                        Math::Float4x4 basis;
-                        basis.rx.xyz.set(
-							mesh->mTangents[vertexIndex].x,
-							mesh->mTangents[vertexIndex].y,
-							mesh->mTangents[vertexIndex].z);
+                    vertex.tangent.set(
+						mesh->mTangents[vertexIndex].x,
+						mesh->mTangents[vertexIndex].y,
+						mesh->mTangents[vertexIndex].z);
 
-                        basis.ry.xyz.set(
-                            mesh->mBitangents[vertexIndex].x,
-							mesh->mBitangents[vertexIndex].y,
-							mesh->mBitangents[vertexIndex].z);
+                    vertex.biTangent.set(
+                        mesh->mBitangents[vertexIndex].x,
+						mesh->mBitangents[vertexIndex].y,
+						mesh->mBitangents[vertexIndex].z);
 
-                        basis.rz.xyz.set(
-                            mesh->mNormals[vertexIndex].x,
-							mesh->mNormals[vertexIndex].y,
-							mesh->mNormals[vertexIndex].z);
-
-                        basis = basis * nodeTransform;
-                        vertex.tangent = basis.rx.xyz;
-                        vertex.biTangent = basis.ry.xyz;
-                        vertex.normal = basis.rz.xyz;
-					}
+                    vertex.normal.set(
+                        mesh->mNormals[vertexIndex].x,
+						mesh->mNormals[vertexIndex].y,
+						mesh->mNormals[vertexIndex].z);
 
                     model.vertexList.push_back(vertex);
                 }
 
-                if (!material.empty())
-                {
-                    albedoMap[material].push_back(model);
-                }
+                aiString sceneDiffuseMaterial;
+                const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
+                sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
+                StringUTF8 material(sceneDiffuseMaterial.C_Str());
+                albedoMap[material].push_back(model);
             }
         }
     }
@@ -232,7 +181,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(parameters, scene, node->mChildren[childIndex], nodeTransform, albedoMap, boundingBox);
+            getMeshes(parameters, scene, node->mChildren[childIndex], albedoMap, boundingBox);
         }
     }
 }
@@ -272,27 +221,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             {
                 fileNameOutput = argumentList[argumentIndex];
             }
-            else if (arguments[0].compareNoCase(L"-mode") == 0)
-            {
-                if (arguments.size() != 2)
-                {
-                    throw std::exception("Missing parameters for mode");
-                }
-
-                auto mode(arguments[1]);
-                if (mode.compareNoCase(L"hull") == 0)
-                {
-                    parameters.mode = Parameters::Mode::Hull;
-                }
-                else if (mode.compareNoCase(L"tree") == 0)
-                {
-                    parameters.mode = Parameters::Mode::Tree;
-                }
-                else
-                {
-                    parameters.mode = Parameters::Mode::Model;
-                }
-			}
             else if (arguments[0].compareNoCase(L"-flipCoords") == 0)
             {
                 flipCoords = true;
@@ -342,52 +270,34 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         unsigned int importFlags =
             (flipWinding ? aiProcess_FlipWindingOrder : 0) |
-            aiProcess_RemoveComponent | // remove extra data that is not required
-            aiProcess_SplitLargeMeshes | // split large, unrenderable meshes into submeshes
-            aiProcess_Triangulate | // triangulate polygons with more than 3 edges
-            aiProcess_SortByPType | // make ‘clean’ meshes which consist of a single typ of primitives
-            aiProcess_ImproveCacheLocality | // improve the cache locality of the output vertices
-            aiProcess_RemoveRedundantMaterials | // remove redundant materials
-            aiProcess_FindDegenerates | // remove degenerated polygons from the import
-            aiProcess_FindInstances | // search for instanced meshes and remove them by references to one master
-            aiProcess_OptimizeMeshes | // join small meshes, if possible
+            (flipCoords ? aiProcess_FlipUVs : 0) |
+            aiProcess_OptimizeGraph |
+            aiProcess_OptimizeMeshes |
+            aiProcess_RemoveComponent |
+            aiProcess_SplitLargeMeshes |
+            aiProcess_PreTransformVertices |
+            aiProcess_Triangulate |
+            aiProcess_SortByPType |
+            aiProcess_ImproveCacheLocality |
+            aiProcess_RemoveRedundantMaterials |
+            aiProcess_FindDegenerates |
+            aiProcess_FindInstances |
+            aiProcess_GenUVCoords |
+            aiProcess_TransformUVCoords |
             0;
 
         unsigned int postProcessFlags =
-            aiProcess_JoinIdenticalVertices | // join identical vertices / optimize indexing
-            aiProcess_FindInvalidData | // detect invalid model data, such as invalid normal vectors
-			0;
+            aiProcess_JoinIdenticalVertices |
+            aiProcess_FindInvalidData |
+            aiProcess_GenSmoothNormals |
+            aiProcess_CalcTangentSpace |
+            0;
 
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        if (parameters.mode == Parameters::Mode::Model)
-        {
-			importFlags |= aiProcess_GenUVCoords; // convert spherical, cylindrical, box and planar mapping to proper UVs
-            importFlags |= aiProcess_TransformUVCoords; // preprocess UV transformations (scaling, translation …)
-            
-			postProcessFlags |= aiProcess_GenSmoothNormals; // generate smoothed normal vectors
-			postProcessFlags |= aiProcess_CalcTangentSpace; // generate tangent vectors
-
-			aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
-			aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
-            if (flipCoords)
-            {
-                importFlags |= aiProcess_FlipUVs;
-            }
-        }
-        else
-        {
-            notRequiredComponents |= aiComponent_TEXCOORDS; // we don't need texture coordinates for collision information
-            notRequiredComponents |= aiComponent_NORMALS; // we don't need normals for collision information
-			notRequiredComponents |= aiComponent_TANGENTS_AND_BITANGENTS; // we don't need tangents and bitangents for collision information
-            if (parameters.mode == Parameters::Mode::Hull)
-            {
-                notRequiredComponents |= aiComponent_TEXTURES; // we don't need textures for hull collisions
-                notRequiredComponents |= aiComponent_MATERIALS; // we don't need materials for hull collisions
-            }
-        }
-
+		aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+		aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
         auto scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
@@ -406,150 +316,131 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             throw std::exception("Scene has no meshes");
         }
 
-        if (parameters.mode != Parameters::Mode::Hull && !scene->HasMaterials())
+        if (!scene->HasMaterials())
         {
-            throw std::exception("Exporting to model/tree requires materials in scene");
+            throw std::exception("Exporting to model requires materials in scene");
         }
 
 		Shapes::AlignedBox boundingBox;
         std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
-        getMeshes(parameters, scene, scene->mRootNode, Math::Float4x4::Identity, albedoMap, boundingBox);
+        getMeshes(parameters, scene, scene->mRootNode, albedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        std::unordered_map<String, Model> materialMap;
-        if (parameters.mode == Parameters::Mode::Hull)
-        {
-            for (auto &albedo : albedoMap)
-            {
-                Model &material = materialMap[albedo.first];
-                for (auto &instance : albedo.second)
-                {
-                    for (auto &index : instance.indexList)
-                    {
-                        material.indexList.push_back(uint16_t(index + material.vertexList.size()));
-                    }
+        String rootPath;
+        String currentModuleName((MAX_PATH + 1), L' ');
+        GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+        currentModuleName.trimRight();
 
-                    material.vertexList.insert(std::end(material.vertexList), std::begin(instance.vertexList), std::end(instance.vertexList));
-                }
+        String fullModuleName((MAX_PATH + 1), L' ');
+        GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
+        fullModuleName.trimRight();
+
+        std::experimental::filesystem::path fullModulePath(fullModuleName);
+        fullModulePath.remove_filename();
+        fullModulePath.remove_filename();
+        rootPath = fullModulePath.append(L"Data").wstring();
+
+        String texturesPath(FileSystem::GetFileName(rootPath, L"Textures").getLower());
+        String materialsPath(FileSystem::GetFileName(rootPath, L"Materials").getLower());
+
+        std::map<String, String> materialAlbedoMap;
+
+        std::function<bool(const wchar_t *)> findMaterials;
+        findMaterials = [&](const wchar_t *fileName) -> bool
+        {
+            if (FileSystem::IsDirectory(fileName))
+            {
+                FileSystem::Find(fileName, findMaterials);
             }
-        }
-        else
-        {
-            String rootPath;
-            String currentModuleName((MAX_PATH + 1), L' ');
-            GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-            currentModuleName.trimRight();
-
-            String fullModuleName((MAX_PATH + 1), L' ');
-            GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-            fullModuleName.trimRight();
-
-            std::experimental::filesystem::path fullModulePath(fullModuleName);
-            fullModulePath.remove_filename();
-            fullModulePath.remove_filename();
-            rootPath = fullModulePath.append(L"Data").wstring();
-
-            String texturesPath(FileSystem::GetFileName(rootPath, L"Textures").getLower());
-            String materialsPath(FileSystem::GetFileName(rootPath, L"Materials").getLower());
-
-            std::map<String, String> materialAlbedoMap;
-
-            std::function<bool(const wchar_t *)> findMaterials;
-            findMaterials = [&](const wchar_t *fileName) -> bool
+            else if (FileSystem::IsFile(fileName))
             {
-                if (FileSystem::IsDirectory(fileName))
+                try
                 {
-                    FileSystem::Find(fileName, findMaterials);
-                }
-                else if (FileSystem::IsFile(fileName))
-                {
-                    try
-                    {
-                        String materialName(FileSystem::ReplaceExtension(fileName).getLower());
-                        materialName.replace((materialsPath + L"\\"), L"");
+                    String materialName(FileSystem::ReplaceExtension(fileName).getLower());
+                    materialName.replace((materialsPath + L"\\"), L"");
 
-                        const JSON::Object materialNode = JSON::Load(fileName);
-                        auto &shaderNode = materialNode[L"shader"];
-                        auto &passesNode = shaderNode[L"passes"];
-                        auto &solidNode = passesNode[L"solid"];
-                        auto &dataNode = solidNode[L"data"];
-                        auto &albedoNode = dataNode[L"albedo"];
-                        if (albedoNode.is_object())
+                    const JSON::Object materialNode = JSON::Load(fileName);
+                    auto &shaderNode = materialNode[L"shader"];
+                    auto &passesNode = shaderNode[L"passes"];
+                    auto &solidNode = passesNode[L"solid"];
+                    auto &dataNode = solidNode[L"data"];
+                    auto &albedoNode = dataNode[L"albedo"];
+                    if (albedoNode.is_object())
+                    {
+                        if (albedoNode.has_member(L"file"))
                         {
-                            if (albedoNode.has_member(L"file"))
-                            {
-                                materialAlbedoMap[albedoNode[L"file"].as_string()] = materialName;
-                            }
+                            materialAlbedoMap[albedoNode[L"file"].as_string()] = materialName;
                         }
                     }
-                    catch (...)
-                    {
-                    };
                 }
-
-                return true;
-            };
-
-            auto engineIndex = texturesPath.find(L"gek engine");
-            if (engineIndex != String::npos)
-            {
-                // skip hard drive location, jump to known engine structure
-                texturesPath = texturesPath.subString(engineIndex);
+                catch (...)
+                {
+                };
             }
 
-            FileSystem::Find(materialsPath, findMaterials);
-            std::unordered_map<String, std::list<Model>> materialMultiMap;
-            for (auto &albedo : albedoMap)
+            return true;
+        };
+
+        auto engineIndex = texturesPath.find(L"gek engine");
+        if (engineIndex != String::npos)
+        {
+            // skip hard drive location, jump to known engine structure
+            texturesPath = texturesPath.subString(engineIndex);
+        }
+
+        FileSystem::Find(materialsPath, findMaterials);
+        std::unordered_map<String, std::list<Model>> materialMultiMap;
+        for (auto &albedo : albedoMap)
+        {
+            String albedoName(albedo.first.getLower());
+            albedoName.replace(L"/", L"\\");
+            albedoName = FileSystem::ReplaceExtension(albedoName);
+            if (albedoName.find(L"textures\\") == 0)
             {
-                String albedoName(albedo.first.getLower());
-                albedoName.replace(L"/", L"\\");
-                albedoName = FileSystem::ReplaceExtension(albedoName);
-                if (albedoName.find(L"textures\\") == 0)
+                albedoName = albedoName.subString(9);
+            }
+            else if (albedoName.find(L"..\\textures\\") == 0)
+            {
+                albedoName = albedoName.subString(12);
+            }
+            else
+            {
+                auto texturesIndex = albedoName.find(texturesPath);
+                if (texturesIndex != String::npos)
                 {
-                    albedoName = albedoName.subString(9);
-                }
-                else if (albedoName.find(L"..\\textures\\") == 0)
-                {
-                    albedoName = albedoName.subString(12);
-                }
-                else
-                {
-                    auto texturesIndex = albedoName.find(texturesPath);
-                    if (texturesIndex != String::npos)
-                    {
-                        albedoName = albedoName.subString(texturesIndex + texturesPath.length() + 1);
-                    }
-                }
-
-                //printf("FileName: %s\r\n", albedo.first.c_str());
-                //printf("Albedo: %S\r\n", albedoName.c_str());
-
-                auto materialAlebedoSearch = materialAlbedoMap.find(albedoName);
-                if (materialAlebedoSearch == std::end(materialAlbedoMap))
-                {
-                    printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
-                }
-                else
-                {
-                    materialMultiMap[materialAlebedoSearch->second] = albedo.second;
-                    //printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
+                    albedoName = albedoName.subString(texturesIndex + texturesPath.length() + 1);
                 }
             }
 
-            for (auto &multiMaterial : materialMultiMap)
-            {
-                Model &material = materialMap[multiMaterial.first];
-                for (auto &instance : multiMaterial.second)
-                {
-                    for (auto &index : instance.indexList)
-                    {
-                        material.indexList.push_back(uint16_t(index + material.vertexList.size()));
-                    }
+            //printf("FileName: %s\r\n", albedo.first.c_str());
+            //printf("Albedo: %S\r\n", albedoName.c_str());
 
-                    material.vertexList.insert(std::end(material.vertexList), std::begin(instance.vertexList), std::end(instance.vertexList));
+            auto materialAlebedoSearch = materialAlbedoMap.find(albedoName);
+            if (materialAlebedoSearch == std::end(materialAlbedoMap))
+            {
+                printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
+            }
+            else
+            {
+                materialMultiMap[materialAlebedoSearch->second] = albedo.second;
+                //printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
+            }
+        }
+
+        std::unordered_map<String, Model> materialMap;
+        for (auto &multiMaterial : materialMultiMap)
+        {
+            Model &material = materialMap[multiMaterial.first];
+            for (auto &instance : multiMaterial.second)
+            {
+                for (auto &index : instance.indexList)
+                {
+                    material.indexList.push_back(uint16_t(index + material.vertexList.size()));
                 }
+
+                material.vertexList.insert(std::end(material.vertexList), std::begin(instance.vertexList), std::end(instance.vertexList));
             }
         }
 
@@ -561,158 +452,38 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		printf("> Num. Models: %d\r\n", materialMap.size());
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
-        switch (parameters.mode)
+
+        FILE *file = nullptr;
+        _wfopen_s(&file, fileNameOutput, L"wb");
+        if (file == nullptr)
         {
-        case Parameters::Mode::Hull:
-            if (true)
-            {
-                std::vector<Math::Float3> pointCloudList;
-                for (auto &material : materialMap)
-                {
-                    for (auto &vertex : material.second.vertexList)
-                    {
-                        pointCloudList.push_back(vertex.position);
-                    }
-                }
+            throw std::exception("Unable to create output file");
+        }
 
-                printf("> Num. Points: %d\r\n", pointCloudList.size());
+        Header header;
+        header.materialCount = materialMap.size();
+        header.boundingBox = boundingBox;
+        fwrite(&header, sizeof(Header), 1, file);
+        for (auto &material : materialMap)
+        {
+            printf("-  %S\r\n", material.first.c_str());
+            printf("    %d vertices\r\n", material.second.vertexList.size());
+            printf("    %d indices\r\n", material.second.indexList.size());
 
-                NewtonWorld *newtonWorld = NewtonCreate();
-                NewtonCollision *newtonCollision = NewtonCreateConvexHull(newtonWorld, pointCloudList.size(), pointCloudList[0].data, sizeof(Math::Float3), 0.025f, 0, Math::Float4x4().data);
-                if (newtonCollision == nullptr)
-                {
-                    throw std::exception("Unable to create convex hull collision object");
-                }
+            Header::Material materialHeader;
+            wcsncpy(materialHeader.name, material.first, 63);
+            materialHeader.vertexCount = material.second.vertexList.size();
+            materialHeader.indexCount = material.second.indexList.size();
+            fwrite(&materialHeader, sizeof(Header::Material), 1, file);
+        }
 
-                FILE *file = nullptr;
-                _wfopen_s(&file, fileNameOutput, L"wb");
-                if (file == nullptr)
-                {
-                    throw std::exception("Unable to create output file");
-                }
+        for (auto &material : materialMap)
+        {
+            fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
+            fwrite(material.second.vertexList.data(), sizeof(Vertex), material.second.vertexList.size(), file);
+        }
 
-                Header header;
-                header.identifier = *(uint32_t *)"GEKX";
-                header.type = 1;
-                header.version = 1;
-                fwrite(&header, sizeof(Header), 1, file);
-                NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
-                fclose(file);
-
-                NewtonDestroyCollision(newtonCollision);
-                NewtonDestroy(newtonWorld);
-            }
-
-            break;
-
-        case Parameters::Mode::Tree:
-            if (true)
-            {
-                NewtonWorld *newtonWorld = NewtonCreate();
-                NewtonCollision *newtonCollision = NewtonCreateTreeCollision(newtonWorld, 0);
-                if (newtonCollision == nullptr)
-                {
-                    throw std::exception("Unable to create tree collision object");
-                }
-
-                int materialIdentifier = 0;
-                NewtonTreeCollisionBeginBuild(newtonCollision);
-                for (auto &material : materialMap)
-                {
-                    printf("-  %S\r\n", material.first.c_str());
-                    printf("    %d vertices\r\n", material.second.vertexList.size());
-                    printf("    %d indices\r\n", material.second.indexList.size());
-
-                    auto &indexList = material.second.indexList;
-                    auto &vertexList = material.second.vertexList;
-                    for (uint32_t index = 0; index < indexList.size(); index += 3)
-                    {
-                        Math::Float3 faceList[3] =
-                        {
-                            vertexList[indexList[index + 0]].position,
-                            vertexList[indexList[index + 1]].position,
-                            vertexList[indexList[index + 2]].position,
-                        };
-
-                        NewtonTreeCollisionAddFace(newtonCollision, 3, faceList[0].data, sizeof(Math::Float3), materialIdentifier);
-                    }
-
-                    ++materialIdentifier;
-                }
-
-                NewtonTreeCollisionEndBuild(newtonCollision, 1);
-
-                FILE *file = nullptr;
-                _wfopen_s(&file, fileNameOutput, L"wb");
-                if (file == nullptr)
-                {
-                    throw std::exception("Unable to create output file");
-                }
-
-                TreeHeader header;
-                header.identifier = *(uint32_t *)"GEKX";
-                header.type = 2;
-                header.version = 1;
-                header.materialCount = materialMap.size();
-                fwrite(&header, sizeof(TreeHeader), 1, file);
-                for (auto &material : materialMap)
-                {
-                    TreeHeader::Material materialHeader;
-                    wcsncpy(materialHeader.name, material.first, 63);
-                    fwrite(&materialHeader, sizeof(TreeHeader::Material), 1, file);
-                }
-
-                NewtonCollisionSerialize(newtonWorld, newtonCollision, serializeCollision, file);
-                fclose(file);
-
-                NewtonDestroyCollision(newtonCollision);
-                NewtonDestroy(newtonWorld);
-            }
-
-            break;
-
-        case Parameters::Mode::Model:
-            if (true)
-            {
-                FILE *file = nullptr;
-                _wfopen_s(&file, fileNameOutput, L"wb");
-                if (file == nullptr)
-                {
-                    throw std::exception("Unable to create output file");
-                }
-
-                ModelHeader header;
-                header.identifier = *(uint32_t *)"GEKX";
-                header.type = 0;
-                header.version = 5;
-                header.materialCount = materialMap.size();
-                header.boundingBox = boundingBox;
-                fwrite(&header, sizeof(ModelHeader), 1, file);
-                for (auto &material : materialMap)
-                {
-                    printf("-  %S\r\n", material.first.c_str());
-                    printf("    %d vertices\r\n", material.second.vertexList.size());
-                    printf("    %d indices\r\n", material.second.indexList.size());
-
-                    ModelHeader::Material materialHeader;
-                    wcsncpy(materialHeader.name, material.first, 63);
-                    materialHeader.vertexCount = material.second.vertexList.size();
-                    materialHeader.indexCount = material.second.indexList.size();
-                    fwrite(&materialHeader, sizeof(ModelHeader::Material), 1, file);
-                }
-
-                for (auto &material : materialMap)
-                {
-                    fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
-                    fwrite(material.second.vertexList.data(), sizeof(Vertex), material.second.vertexList.size(), file);
-                }
-
-                fclose(file);
-            }
-
-            break;
-
-        };
+        fclose(file);
     }
     catch (const std::exception &exception)
     {

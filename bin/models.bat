@@ -1,11 +1,11 @@
-.\release\modelconverter -input data\models\sponza.fbx -output data\models\sponza.gek -mode:model -flipCoords -smoothAngle:75
+.\release\createmodel -input data\models\sponza.fbx -output data\models\sponza.gek -flipCoords -smoothAngle:75
 pause
 
-.\release\modelconverter -input data\models\sponza.fbx -output data\models\sponza.bin -mode:tree
+.\release\createtree -input data\models\sponza.fbx -output data\models\sponza.bin
 pause
 
-.\release\modelconverter -input data\models\cube.fbx -output data\models\cube.gek -mode:model -flipCoords
+.\release\createmodel -input data\models\cube.fbx -output data\models\cube.gek -flipCoords
 pause
 
-.\release\modelconverter -input data\models\cube.fbx -output data\models\cube.bin -mode:hull
+.\release\createhull -input data\models\cube.fbx -output data\models\cube.bin
 pause
