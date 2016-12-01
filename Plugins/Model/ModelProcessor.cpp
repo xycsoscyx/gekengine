@@ -131,17 +131,6 @@ namespace Gek
             MaterialHandle skin;
         };
 
-        __declspec(align(16))
-        struct Instance
-        {
-            Math::Float4x4 matrix;
-
-            Instance(const Math::Float4x4 &matrix)
-                : matrix(matrix)
-            {
-            }
-        };
-
     private:
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
@@ -153,9 +142,9 @@ namespace Gek
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
 
-        using InstanceList = concurrency::concurrent_vector<Instance, AlignedAllocator<Instance, 16>>;
-        using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, InstanceList>;
-        using VisibleMap = concurrency::concurrent_unordered_map<Model *, MaterialMap>;
+        using MatrixList = concurrency::concurrent_vector<Math::Float4x4>;
+        using SkinMap = concurrency::concurrent_unordered_map<MaterialHandle, MatrixList>;
+        using VisibleMap = concurrency::concurrent_unordered_map<Model *, SkinMap>;
         VisibleMap visibleMap;
 
     public:
@@ -181,7 +170,7 @@ namespace Gek
             visual = resources->loadVisual(L"model");
 
             Video::BufferDescription description;
-            description.stride = sizeof(Instance);
+            description.stride = sizeof(Math::Float4x4);
             description.count = 1;
             description.type = Video::BufferDescription::Type::Constant;
             description.flags = Video::BufferDescription::Flags::Mappable;
@@ -316,19 +305,6 @@ namespace Gek
         }
 
         // Plugin::Renderer Slots
-        static void drawCall(Video::Device *videoDevice, Video::Device::Context *videoContext, Plugin::Resources *resources, const Material &material, const Instance *instanceList, Video::Buffer *constantBuffer)
-        {
-            Instance *instanceData = nullptr;
-            videoDevice->mapBuffer(constantBuffer, instanceData);
-            std::copy(instanceList, (instanceList + 1), instanceData);
-            videoDevice->unmapBuffer(constantBuffer);
-
-            videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer }, 4);
-            resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);
-            resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
-            resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
-        }
-
         void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
         {
             GEK_REQUIRE(renderer);
@@ -338,15 +314,13 @@ namespace Gek
             {
                 Model &model = *data.model;
                 Math::Float4x4 matrix(transformComponent.getMatrix());
-
                 Shapes::OrientedBox orientedBox(model.alignedBox, matrix);
                 orientedBox.halfsize *= transformComponent.scale;
-
                 if (viewFrustum.isVisible(orientedBox))
                 {
                     auto &materialList = visibleMap[&model];
-                    auto &instanceList = materialList[data.skin];
-                    instanceList.push_back(Instance(matrix * viewMatrix));
+                    auto &matrixList = materialList[data.skin];
+                    matrixList.push_back(matrix * viewMatrix);
                 }
             });
 
@@ -355,13 +329,30 @@ namespace Gek
                 auto model = visibleMap.first;
                 if (!model->materialList.empty())
                 {
-                    concurrency::parallel_for_each(std::begin(visibleMap.second), std::end(visibleMap.second), [&](auto &materialMap) -> void
+                    concurrency::parallel_for_each(std::begin(visibleMap.second), std::end(visibleMap.second), [&](auto &skinMap) -> void
                     {
-                        concurrency::parallel_for_each(std::begin(materialMap.second), std::end(materialMap.second), [&](auto &instanceList) -> void
+                        concurrency::parallel_for_each(std::begin(skinMap.second), std::end(skinMap.second), [&](auto &matrix) -> void
                         {
                             concurrency::parallel_for_each(std::begin(model->materialList), std::end(model->materialList), [&](const Material &material) -> void
                             {
-                                renderer->queueDrawCall(visual, (material.skin ? materialMap.first : material.material), std::bind(drawCall, renderer->getVideoDevice(), std::placeholders::_1, resources, material, &instanceList, constantBuffer.get()));
+                                renderer->queueDrawCall(visual, (material.skin ? skinMap.first : material.material), [this, matrix, material](Video::Device::Context *videoContext) -> void
+                                {
+                                    try
+                                    {
+                                        Math::Float4x4 *constantData = nullptr;
+                                        renderer->getVideoDevice()->mapBuffer(constantBuffer.get(), constantData);
+                                        (*constantData) = matrix;
+                                        renderer->getVideoDevice()->unmapBuffer(constantBuffer.get());
+
+                                        videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 4);
+                                        resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);
+                                        resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
+                                        resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
+                                    }
+                                    catch (...)
+                                    {
+                                    };
+                                });
                             });
                         });
                     });
