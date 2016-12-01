@@ -59,21 +59,17 @@ namespace Gek
                 }
             };
 
-            __declspec(align(16))
             struct ShaderConstantData
             {
                 Math::Float2 targetSize;
                 float padding[2];
             };
 
-            struct LightType
+            enum class LightType : uint8_t
             {
-                enum
-                {
-                    Directional = 0,
-                    Point = 1,
-                    Spot = 2,
-                };
+                Directional = 0,
+                Point = 1,
+                Spot = 2,
             };
 
         private:
@@ -88,6 +84,7 @@ namespace Gek
 
             std::list<PassData> passList;
             std::unordered_map<String, PassData *> forwardPassMap;
+            bool lightingRequired = false;
 
         public:
             Shader(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, String shaderName)
@@ -557,6 +554,7 @@ namespace Gek
                     PassData &pass = passList.back();
 
                     pass.lighting = passNode.get(L"lighting", false).as_bool();
+                    lightingRequired |= pass.lighting;
 
                     std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
                     if (passNode.has_member(L"defines"))
@@ -1069,6 +1067,11 @@ namespace Gek
                 }
 
                 return nullptr;
+            }
+
+            bool isLightingRequired(void) const
+            {
+                return lightingRequired;
             }
 
             Pass::Mode preparePass(Video::Device::Context *videoContext, PassData &pass)

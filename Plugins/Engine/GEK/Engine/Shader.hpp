@@ -76,6 +76,7 @@ namespace Gek
 
             virtual uint32_t getDrawOrder(void) const = 0;
             virtual const Material *getMaterial(const wchar_t *passName) const = 0;
+            virtual bool isLightingRequired(void) const = 0;
 
             virtual Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum) = 0;
         };

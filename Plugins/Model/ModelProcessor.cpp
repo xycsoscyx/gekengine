@@ -314,7 +314,7 @@ namespace Gek
                     auto modelViewMatrix(matrix * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.materialList), std::end(model.materialList), [&](const Material &material) -> void
                     {
-                        renderer->queueDrawCall(visual, (material.skin ? data.skin : material.material), [this, modelViewMatrix, material](Video::Device::Context *videoContext) -> void
+                        renderer->queueDrawCall(visual, (material.skin ? data.skin : material.material), std::move([this, modelViewMatrix, material](Video::Device::Context *videoContext) -> void
                         {
                             Math::Float4x4 *constantData = nullptr;
                             if (renderer->getVideoDevice()->mapBuffer(constantBuffer.get(), constantData))
@@ -327,7 +327,7 @@ namespace Gek
                                 resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
                                 resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
                             }
-                        });
+                        }));
                     });
                 }
             });

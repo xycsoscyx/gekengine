@@ -46,7 +46,6 @@ namespace Gek
                 std::unordered_map<ResourceHandle, ResourceHandle> resolveSampleMap;
             };
 
-            __declspec(align(16))
             struct FilterConstantData
             {
                 Math::Float2 targetSize;

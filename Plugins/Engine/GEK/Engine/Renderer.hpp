@@ -21,7 +21,6 @@ namespace Gek
 
         GEK_INTERFACE(Renderer)
         {
-            __declspec(align(16))
             struct DirectionalLightData
             {
                 Math::Float3 radiance;
@@ -30,7 +29,6 @@ namespace Gek
 				float padding2;
 			};
 
-            __declspec(align(16))
             struct PointLightData
             {
                 Math::Float3 radiance;
@@ -39,7 +37,6 @@ namespace Gek
                 float range;
             };
 
-            __declspec(align(16))
             struct SpotLightData
             {
                 Math::Float3 radiance;

@@ -39,15 +39,13 @@ namespace Gek
             static const uint32_t GridSize = (GridWidth * GridHeight * GridDepth);
 
         public:
-            __declspec(align(16))
-                struct EngineConstantData
+            struct EngineConstantData
             {
                 float worldTime;
                 float frameTime;
                 float buffer[2];
             };
 
-            __declspec(align(16))
             struct CameraConstantData
             {
                 Math::Float2 fieldOfView;
@@ -57,7 +55,6 @@ namespace Gek
                 Math::Float4x4 projectionMatrix;
             };
 
-            __declspec(align(16))
             struct LightConstantData
             {
                 Math::UInt3 gridSize;
@@ -117,36 +114,6 @@ namespace Gek
                     , begin(begin)
                     , end(end)
                 {
-                }
-
-                DrawCallSet(const DrawCallSet &drawCallSet)
-                    : shader(drawCallSet.shader)
-                    , begin(drawCallSet.begin)
-                    , end(drawCallSet.end)
-                {
-                }
-
-                DrawCallSet(DrawCallSet &&drawCallSet)
-                    : shader(std::move(drawCallSet.shader))
-                    , begin(std::move(drawCallSet.begin))
-                    , end(std::move(drawCallSet.end))
-                {
-                }
-
-                DrawCallSet &operator = (const DrawCallSet &drawCallSet)
-                {
-                    shader = drawCallSet.shader;
-                    begin = drawCallSet.begin;
-                    end = drawCallSet.end;
-                    return (*this);
-                }
-
-                DrawCallSet &operator = (DrawCallSet &&drawCallSet)
-                {
-                    shader = std::move(drawCallSet.shader);
-                    begin = std::move(drawCallSet.begin);
-                    end = std::move(drawCallSet.end);
-                    return (*this);
                 }
             };
 
@@ -672,42 +639,13 @@ namespace Gek
 
                 while (renderCallList.try_pop(currentRenderCall))
                 {
-                    auto backBuffer = videoDevice->getBackBuffer();
-                    auto width = backBuffer->getDescription().width;
-                    auto height = backBuffer->getDescription().height;
-
-                    EngineConstantData engineConstantData;
-                    engineConstantData.frameTime = population->getFrameTime();
-                    engineConstantData.worldTime = population->getWorldTime();
-
-                    CameraConstantData cameraConstantData;
-                    cameraConstantData.fieldOfView.x = (1.0f / currentRenderCall.projectionMatrix._11);
-                    cameraConstantData.fieldOfView.y = (1.0f / currentRenderCall.projectionMatrix._22);
-                    cameraConstantData.nearClip = currentRenderCall.nearClip;
-                    cameraConstantData.farClip = currentRenderCall.farClip;
-                    cameraConstantData.viewMatrix = currentRenderCall.viewMatrix;
-                    cameraConstantData.projectionMatrix = currentRenderCall.projectionMatrix;
-
                     drawCallList.clear();
                     onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix);
                     if (!drawCallList.empty())
                     {
-                        Video::Device::Context *videoContext = videoDevice->getDefaultContext();
-                        videoContext->clearState();
-
-                        videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
-                        videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
-
-                        std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
-                        videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
-                        videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
-                        videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
-                        videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
-
-                        std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
-                        videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
-
-                        videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                        auto backBuffer = videoDevice->getBackBuffer();
+                        auto width = backBuffer->getDescription().width;
+                        auto height = backBuffer->getDescription().height;
 
                         concurrency::parallel_sort(std::begin(drawCallList), std::end(drawCallList), [](const DrawCallValue &leftValue, const DrawCallValue &rightValue) -> bool
                         {
@@ -735,12 +673,9 @@ namespace Gek
                                 continue;
                             }
 
+                            isLightingRequired |= shader->isLightingRequired();
                             auto &shaderList = drawCallSetMap[shader->getDrawOrder()];
                             shaderList.push_back(DrawCallSet(shader, beginShaderList, endShaderList));
-                            for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
-                            {
-                                isLightingRequired |= pass->isLightingRequired();
-                            }
                         }
 
                         if (isLightingRequired)
@@ -946,6 +881,48 @@ namespace Gek
                             videoDevice->updateResource(lightConstantBuffer.get(), &lightConstants);
                         }
 
+                        EngineConstantData engineConstantData;
+                        engineConstantData.frameTime = population->getFrameTime();
+                        engineConstantData.worldTime = population->getWorldTime();
+
+                        CameraConstantData cameraConstantData;
+                        cameraConstantData.fieldOfView.x = (1.0f / currentRenderCall.projectionMatrix._11);
+                        cameraConstantData.fieldOfView.y = (1.0f / currentRenderCall.projectionMatrix._22);
+                        cameraConstantData.nearClip = currentRenderCall.nearClip;
+                        cameraConstantData.farClip = currentRenderCall.farClip;
+                        cameraConstantData.viewMatrix = currentRenderCall.viewMatrix;
+                        cameraConstantData.projectionMatrix = currentRenderCall.projectionMatrix;
+
+                        Video::Device::Context *videoContext = videoDevice->getDefaultContext();
+                        videoContext->clearState();
+
+                        videoDevice->updateResource(engineConstantBuffer.get(), &engineConstantData);
+                        videoDevice->updateResource(cameraConstantBuffer.get(), &cameraConstantData);
+
+                        std::vector<Video::Buffer *> bufferList = { engineConstantBuffer.get(), cameraConstantBuffer.get() };
+                        videoContext->geometryPipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->vertexPipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->pixelPipeline()->setConstantBufferList(bufferList, 0);
+                        videoContext->computePipeline()->setConstantBufferList(bufferList, 0);
+
+                        std::vector<Video::Object *> samplerList = { pointSamplerState.get(), linearClampSamplerState.get(), linearWrapSamplerState.get() };
+                        videoContext->pixelPipeline()->setSamplerStateList(samplerList, 0);
+
+                        videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                        if (isLightingRequired)
+                        {
+                            videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
+                            videoContext->pixelPipeline()->setResourceList(
+                            {
+                                directionalLightDataBuffer.get(),
+                                pointLightDataBuffer.get(),
+                                spotLightDataBuffer.get(),
+                                tileOffsetCountBuffer.get(),
+                                lightIndexBuffer.get()
+                            }, 0);
+                        }
+
                         for (auto &shaderDrawCallList : drawCallSetMap)
                         {
                             for (auto &shaderDrawCall : shaderDrawCallList.second)
@@ -954,19 +931,6 @@ namespace Gek
                                 for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
                                 {
                                     resources->startResourceBlock();
-                                    if (pass->isLightingRequired())
-                                    {
-                                        videoContext->pixelPipeline()->setConstantBufferList({ lightConstantBuffer.get() }, 3);
-                                        videoContext->pixelPipeline()->setResourceList(
-                                        {
-                                            directionalLightDataBuffer.get(),
-                                            pointLightDataBuffer.get(),
-                                            spotLightDataBuffer.get(),
-                                            tileOffsetCountBuffer.get(),
-                                            lightIndexBuffer.get()
-                                        }, 0);
-                                    }
-
                                     switch (pass->prepare())
                                     {
                                     case Engine::Shader::Pass::Mode::Forward:
@@ -1004,11 +968,6 @@ namespace Gek
                                     };
 
                                     pass->clear();
-                                    if (pass->isLightingRequired())
-                                    {
-                                        videoContext->pixelPipeline()->clearResourceList(5, 0);
-                                        videoContext->pixelPipeline()->clearConstantBufferList(1, 3);
-                                    }
                                 }
                             }
                         }
