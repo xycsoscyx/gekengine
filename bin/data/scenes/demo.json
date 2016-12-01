@@ -59,7 +59,7 @@
         },
         {
             "Transform": {
-                "position": "(5, 20, 0)"
+                "position": "(1.5, 20, 0)"
             },
             "Model": {
                 "name": "cube"
@@ -70,7 +70,7 @@
         },
         {
             "Transform": {
-                "position": "(-5, 20, 0)"
+                "position": "(-1.5, 20, 0)"
             },
             "Model": {
                 "name": "cube"
@@ -81,7 +81,7 @@
         },
         {
             "Transform": {
-                "position": "(0, 20, 5)"
+                "position": "(0, 20, 1.5)"
             },
             "Model": {
                 "name": "cube"
@@ -92,7 +92,7 @@
         },
         {
             "Transform": {
-                "position": "(0, 20, -5)"
+                "position": "(0, 20, -1.5)"
             },
             "Model": {
                 "name": "cube"
