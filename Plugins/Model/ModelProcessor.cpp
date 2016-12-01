@@ -213,7 +213,7 @@ namespace Gek
                         }
 
                         model.alignedBox = header->boundingBox;
-                        loadPool.enqueue([this, &model, name, fileName](void) -> void
+                        loadPool.enqueue([this, name = name, fileName, &model](void) -> void
                         {
                             std::vector<uint8_t> buffer;
                             FileSystem::Load(fileName, buffer);
