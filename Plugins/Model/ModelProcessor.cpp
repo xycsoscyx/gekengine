@@ -142,11 +142,6 @@ namespace Gek
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
 
-        using MatrixList = concurrency::concurrent_vector<Math::Float4x4>;
-        using SkinMap = concurrency::concurrent_unordered_map<MaterialHandle, MatrixList>;
-        using VisibleMap = concurrency::concurrent_unordered_map<Model *, SkinMap>;
-        VisibleMap visibleMap;
-
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
@@ -196,7 +191,7 @@ namespace Gek
                 auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                 if (pair.second)
                 {
-                    loadPool.enqueue([this, name = String(modelComponent.name), fileName, &model = pair.first->second](void) -> void
+                    loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                     {
                         std::vector<uint8_t> buffer;
                         FileSystem::Load(fileName, buffer, sizeof(Header));
@@ -239,8 +234,6 @@ namespace Gek
                                     material.material = resources->loadMaterial(materialHeader.name);
                                 }
 
-                                material.indexCount = materialHeader.indexCount;
-
                                 Video::BufferDescription indexBufferDescription;
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = materialHeader.indexCount;
@@ -254,6 +247,8 @@ namespace Gek
                                 vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
                                 material.vertexBuffer = resources->createBuffer(String::Format(L"model:vertex:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Vertex *>(bufferData));
                                 bufferData += (sizeof(Vertex) * materialHeader.vertexCount);
+
+                                material.indexCount = materialHeader.indexCount;
                             }
                         });
                     });
@@ -309,7 +304,6 @@ namespace Gek
         {
             GEK_REQUIRE(renderer);
 
-            visibleMap.clear();
             list([&](Plugin::Entity *entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
@@ -318,42 +312,22 @@ namespace Gek
                 orientedBox.halfsize *= transformComponent.scale;
                 if (viewFrustum.isVisible(orientedBox))
                 {
-                    auto &materialList = visibleMap[&model];
-                    auto &matrixList = materialList[data.skin];
-                    matrixList.push_back(matrix * viewMatrix);
-                }
-            });
-
-            concurrency::parallel_for_each(std::begin(visibleMap), std::end(visibleMap), [&](auto &visibleMap) -> void
-            {
-                auto model = visibleMap.first;
-                if (!model->materialList.empty())
-                {
-                    concurrency::parallel_for_each(std::begin(visibleMap.second), std::end(visibleMap.second), [&](auto &skinMap) -> void
+                    auto modelViewMatrix(matrix * viewMatrix);
+                    concurrency::parallel_for_each(std::begin(model.materialList), std::end(model.materialList), [&](const Material &material) -> void
                     {
-                        concurrency::parallel_for_each(std::begin(skinMap.second), std::end(skinMap.second), [&](auto &matrix) -> void
+                        renderer->queueDrawCall(visual, (material.skin ? data.skin : material.material), [this, modelViewMatrix, material](Video::Device::Context *videoContext) -> void
                         {
-                            concurrency::parallel_for_each(std::begin(model->materialList), std::end(model->materialList), [&](const Material &material) -> void
+                            Math::Float4x4 *constantData = nullptr;
+                            if (renderer->getVideoDevice()->mapBuffer(constantBuffer.get(), constantData))
                             {
-                                renderer->queueDrawCall(visual, (material.skin ? skinMap.first : material.material), [this, matrix, material](Video::Device::Context *videoContext) -> void
-                                {
-                                    try
-                                    {
-                                        Math::Float4x4 *constantData = nullptr;
-                                        renderer->getVideoDevice()->mapBuffer(constantBuffer.get(), constantData);
-                                        (*constantData) = matrix;
-                                        renderer->getVideoDevice()->unmapBuffer(constantBuffer.get());
+                                memcpy(constantData, &modelViewMatrix, sizeof(Math::Float4x4));
+                                renderer->getVideoDevice()->unmapBuffer(constantBuffer.get());
 
-                                        videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 4);
-                                        resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);
-                                        resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
-                                        resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
-                                    }
-                                    catch (...)
-                                    {
-                                    };
-                                });
-                            });
+                                videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 4);
+                                resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);
+                                resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
+                                resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
+                            }
                         });
                     });
                 }

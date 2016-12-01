@@ -5,5 +5,5 @@
 
 float4 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    return Resources::ambientBuffer.Sample(Global::pointSampler, inputPixel.texCoord);
+    return Resources::ambientBuffer.Sample(Global::PointSampler, inputPixel.texCoord);
 }

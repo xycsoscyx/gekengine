@@ -10,7 +10,7 @@ void mainComputeProgram(void)
 
     float averageLuminance = UnorderedAccess::averageLuminanceBuffer[0];
     const float currentLuminance = exp(Resources::luminanceBuffer.Load(uint3(0, 0, (mipMapCount - 1))));
-    averageLuminance += (currentLuminance - averageLuminance) * (1.0 - exp(-Engine::frameTime * Defines::adaptionRate));
+    averageLuminance += (currentLuminance - averageLuminance) * (1.0 - exp(-Engine::FrameTime * Defines::adaptionRate));
     averageLuminance = (isfinite(averageLuminance) ? averageLuminance : 0.0);
     UnorderedAccess::averageLuminanceBuffer[0] = max(averageLuminance, Math::Epsilon);
 }

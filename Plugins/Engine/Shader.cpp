@@ -373,7 +373,7 @@ namespace Gek
                     L"    StructuredBuffer<DirectionalData> directionalList : register(t0);\r\n" \
                     L"    StructuredBuffer<PointData> pointList : register(t1);\r\n" \
                     L"    StructuredBuffer<SpotData> spotList : register(t2);\r\n" \
-                    L"    Buffer<uint3> clusterDataList : register(t3);\r\n" \
+                    L"    Buffer<uint2> clusterDataList : register(t3);\r\n" \
                     L"    Buffer<uint> clusterIndexList : register(t4);\r\n" \
                     L"};\r\n" \
                     L"\r\n";

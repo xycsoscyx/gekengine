@@ -35,7 +35,7 @@ float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)
 /** Read the camera-space position of the point at screen-space pixel ssP */
 float3 getPosition(float2 ssP)
 {
-    const float depth = Resources::depthBuffer.SampleLevel(Global::pointSampler, ssP, 0);
+    const float depth = Resources::depthBuffer.SampleLevel(Global::PointSampler, ssP, 0);
     return getPositionFromSample(ssP, depth);
 }
 
@@ -116,7 +116,7 @@ float getAmbientObscurance(float2 texCoord, float3 surfacePosition, float3 surfa
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     const float3 surfacePosition = getPosition(inputPixel.texCoord);
-    const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer.Sample(Global::pointSampler, inputPixel.texCoord));
+    const float3 surfaceNormal = getDecodedNormal(Resources::normalBuffer.Sample(Global::PointSampler, inputPixel.texCoord));
 
     // McGuire noise function
     // Hash function used the HPG12 AlchemyAO paper

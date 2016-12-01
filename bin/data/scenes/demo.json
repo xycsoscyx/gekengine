@@ -42,9 +42,9 @@
                 "rotation": "(0, pi/2, 0)"
             },
             "FirstPersonCamera": {
-                "fieldOfView": 70,
-                "nearClip": 0.5,
-                "farClip": 200,
+                "FieldOfView": 70,
+                "NearClip": 0.5,
+                "FarClip": 200,
                 "filterList": "tonemap"
             },
             "Player": {
@@ -59,46 +59,34 @@
         },
         {
             "Transform": {
-                "position": "(1.5, 20, 0)"
+                "position": "(1.5, 10, 0)"
             },
             "Model": {
                 "name": "cube"
-            },
-            "Physical": {
-                "mass":  10.0
             }
         },
         {
             "Transform": {
-                "position": "(-1.5, 20, 0)"
+                "position": "(-1.5, 10, 0)"
             },
             "Model": {
                 "name": "cube"
-            },
-            "Physical": {
-                "mass":  10.0
             }
         },
         {
             "Transform": {
-                "position": "(0, 20, 1.5)"
+                "position": "(0, 10, 1.5)"
             },
             "Model": {
                 "name": "cube"
-            },
-            "Physical": {
-                "mass":  10.0
             }
         },
         {
             "Transform": {
-                "position": "(0, 20, -1.5)"
+                "position": "(0, 10, -1.5)"
             },
             "Model": {
                 "name": "cube"
-            },
-            "Physical": {
-                "mass":  10.0
             }
         },
         {

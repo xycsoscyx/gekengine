@@ -833,7 +833,7 @@ namespace Gek
             // Plugin::Core
             void log(const wchar_t *system, LogType logType, const wchar_t *message)
             {
-                OutputDebugString(String::Format(L"(%s) %s\r\n", system, message));
+                OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
             }
 
             JSON::Object &getConfiguration(void)
@@ -1332,74 +1332,84 @@ namespace Gek
                     indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                 }
 
+                bool dataUploaded = false;
                 ImDrawVert* vertexData = nullptr;
                 ImDrawIdx* indexData = nullptr;
-                videoDevice->mapBuffer(vertexBuffer.get(), vertexData);
-                videoDevice->mapBuffer(indexBuffer.get(), indexData);
-                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
+                if (videoDevice->mapBuffer(vertexBuffer.get(), vertexData))
                 {
-                    const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                    std::copy(commandList->VtxBuffer.Data, (commandList->VtxBuffer.Data + commandList->VtxBuffer.Size), vertexData);
-                    std::copy(commandList->IdxBuffer.Data, (commandList->IdxBuffer.Data + commandList->IdxBuffer.Size), indexData);
-                    vertexData += commandList->VtxBuffer.Size;
-                    indexData += commandList->IdxBuffer.Size;
-                }
-
-                videoDevice->unmapBuffer(indexBuffer.get());
-                videoDevice->unmapBuffer(vertexBuffer.get());
-
-                auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getDescription().width;
-                uint32_t height = backBuffer->getDescription().height;
-                auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-                videoDevice->updateResource(constantBuffer.get(), &orthographic);
-
-                auto videoContext = videoDevice->getDefaultContext();
-                resources->setBackBuffer(videoContext, nullptr);
-
-                videoContext->setInputLayout(inputLayout.get());
-                videoContext->setVertexBufferList({ vertexBuffer.get() }, 0);
-                videoContext->setIndexBuffer(indexBuffer.get(), 0);
-                videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                videoContext->vertexPipeline()->setProgram(vertexProgram.get());
-                videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 0);
-                videoContext->pixelPipeline()->setProgram(pixelProgram.get());
-                videoContext->pixelPipeline()->setSamplerStateList({ samplerState.get() }, 0);
-
-                videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
-                videoContext->setDepthState(depthState.get(), 0);
-                videoContext->setRenderState(renderState.get());
-
-                uint32_t vertexOffset = 0;
-                uint32_t indexOffset = 0;
-                for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
-                {
-                    const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                    for (uint32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
+                    if (videoDevice->mapBuffer(indexBuffer.get(), indexData))
                     {
-                        const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
-                        if (command->UserCallback)
+                        for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                         {
-                            command->UserCallback(commandList, command);
-                        }
-                        else
-                        {
-                            std::vector<Math::UInt4> scissorBoxList(1);
-                            scissorBoxList[0].minimum = Math::UInt2(command->ClipRect.x, command->ClipRect.y);
-                            scissorBoxList[0].maximum = Math::UInt2(command->ClipRect.z, command->ClipRect.w);
-                            videoContext->setScissorList(scissorBoxList);
-
-                            std::vector<Video::Object *> textureList(1);
-                            textureList[0] = (Video::Object *)command->TextureId;
-                            videoContext->pixelPipeline()->setResourceList(textureList, 0);
-
-                            videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
+                            const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+                            std::copy(commandList->VtxBuffer.Data, (commandList->VtxBuffer.Data + commandList->VtxBuffer.Size), vertexData);
+                            std::copy(commandList->IdxBuffer.Data, (commandList->IdxBuffer.Data + commandList->IdxBuffer.Size), indexData);
+                            vertexData += commandList->VtxBuffer.Size;
+                            indexData += commandList->IdxBuffer.Size;
                         }
 
-                        indexOffset += command->ElemCount;
+                        dataUploaded = true;
+                        videoDevice->unmapBuffer(indexBuffer.get());
                     }
 
-                    vertexOffset += commandList->VtxBuffer.Size;
+                    videoDevice->unmapBuffer(vertexBuffer.get());
+                }
+
+                if (dataUploaded)
+                {
+                    auto backBuffer = videoDevice->getBackBuffer();
+                    uint32_t width = backBuffer->getDescription().width;
+                    uint32_t height = backBuffer->getDescription().height;
+                    auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
+                    videoDevice->updateResource(constantBuffer.get(), &orthographic);
+
+                    auto videoContext = videoDevice->getDefaultContext();
+                    resources->setBackBuffer(videoContext, nullptr);
+
+                    videoContext->setInputLayout(inputLayout.get());
+                    videoContext->setVertexBufferList({ vertexBuffer.get() }, 0);
+                    videoContext->setIndexBuffer(indexBuffer.get(), 0);
+                    videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+                    videoContext->vertexPipeline()->setProgram(vertexProgram.get());
+                    videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 0);
+                    videoContext->pixelPipeline()->setProgram(pixelProgram.get());
+                    videoContext->pixelPipeline()->setSamplerStateList({ samplerState.get() }, 0);
+
+                    videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
+                    videoContext->setDepthState(depthState.get(), 0);
+                    videoContext->setRenderState(renderState.get());
+
+                    uint32_t vertexOffset = 0;
+                    uint32_t indexOffset = 0;
+                    for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
+                    {
+                        const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
+                        for (uint32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
+                        {
+                            const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
+                            if (command->UserCallback)
+                            {
+                                command->UserCallback(commandList, command);
+                            }
+                            else
+                            {
+                                std::vector<Math::UInt4> scissorBoxList(1);
+                                scissorBoxList[0].minimum = Math::UInt2(command->ClipRect.x, command->ClipRect.y);
+                                scissorBoxList[0].maximum = Math::UInt2(command->ClipRect.z, command->ClipRect.w);
+                                videoContext->setScissorList(scissorBoxList);
+
+                                std::vector<Video::Object *> textureList(1);
+                                textureList[0] = (Video::Object *)command->TextureId;
+                                videoContext->pixelPipeline()->setResourceList(textureList, 0);
+
+                                videoContext->drawIndexedPrimitive(command->ElemCount, indexOffset, vertexOffset);
+                            }
+
+                            indexOffset += command->ElemCount;
+                        }
+
+                        vertexOffset += commandList->VtxBuffer.Size;
+                    }
                 }
             }
         };

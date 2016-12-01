@@ -2180,7 +2180,7 @@ namespace Gek
                 return std::make_shared<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, description);
             }
 
-            void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
+            bool mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
             {
                 GEK_REQUIRE(d3dDeviceContext);
 
@@ -2191,13 +2191,13 @@ namespace Gek
                 mappedSubResource.RowPitch = 0;
                 mappedSubResource.DepthPitch = 0;
 
-                HRESULT resultValue = d3dDeviceContext->Map(getObject<Buffer>(buffer), 0, d3dMapping, 0, &mappedSubResource);
-                if (FAILED(resultValue))
+                if (SUCCEEDED(d3dDeviceContext->Map(getObject<Buffer>(buffer), 0, d3dMapping, 0, &mappedSubResource)))
                 {
-                    throw Video::OperationFailed("Unable to map buffer to system memory");
+                    data = mappedSubResource.pData;
+                    return true;
                 }
 
-                data = mappedSubResource.pData;
+                return false;
             }
 
             void unmapBuffer(Video::Buffer *buffer)

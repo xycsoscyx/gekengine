@@ -72,7 +72,7 @@ namespace Gek
             void setResource(HANDLE handle, const TypePtr &data)
             {
                 auto &resource = resourceMap[handle];
-                std::atomic_store(&resource, data);
+                std::atomic_exchange(&resource, data);
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
@@ -80,7 +80,7 @@ namespace Gek
                 auto resourceSearch = resourceMap.find(handle);
                 if (resourceSearch != std::end(resourceMap))
                 {
-                    return resourceSearch->second.get();
+                    return std::atomic_load(&resourceSearch->second).get();
                 }
 
                 return nullptr;
@@ -262,7 +262,7 @@ namespace Gek
             {
                 for (auto &resourceSearch : resourceMap)
                 {
-                    auto resource = resourceSearch.second.get();
+                    auto &resource = std::atomic_load(&resourceSearch.second);
                     if (resource)
                     {
                         resource->reload();
@@ -292,7 +292,6 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-                    auto &resource = resourceMap[handle];
                     setResource(handle, load(handle));
                 }
 
@@ -633,17 +632,17 @@ namespace Gek
 
                     String baseProgram;
                     FileSystem::Load(fileName, baseProgram);
-                    baseProgram.replace(L"\r\n", L"\r");
-                    baseProgram.replace(L"\n\r", L"\r");
-                    baseProgram.replace(L"\n", L"\r");
-                    auto programLines = baseProgram.split(L'\r', false);
+                    baseProgram.replace(L"\r", L"$");
+                    baseProgram.replace(L"\n", L"$");
+                    baseProgram.replace(L"$$", L"$");
+                    auto programLines = baseProgram.split(L'$', false);
 
                     String uncompiledProgram;
                     for (auto &line : programLines)
                     {
                         if (line.empty())
                         {
-                            continue;
+                            uncompiledProgram.append(L"\r\n");
                         }
                         else if (line.find(L"#include") == 0)
                         {

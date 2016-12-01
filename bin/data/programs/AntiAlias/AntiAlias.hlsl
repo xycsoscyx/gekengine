@@ -28,14 +28,14 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     const float dirReduce = max((luminanceNW + luminanceNE + luminanceSW + luminanceSE) * (0.25 * Defines::reduceMultiplier), Defines::reduceMinimum);
 
     const float recipricalDirection = 1.0 / (min(abs(direection.x), abs(direection.y)) + dirReduce);
-    direection = min(Defines::spanMaximum, max(-Defines::spanMaximum, direection * recipricalDirection)) * Shader::pixelSize;
+    direection = min(Defines::spanMaximum, max(-Defines::spanMaximum, direection * recipricalDirection)) * Shader::TargetPixelSize;
 
-    float3 colorA = Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord + direection * (1.0 / 3.0 - 0.5), 0);
-    colorA += Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord + direection * (2.0 / 3.0 - 0.5), 0);
+    float3 colorA = Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord + direection * (1.0 / 3.0 - 0.5), 0);
+    colorA += Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord + direection * (2.0 / 3.0 - 0.5), 0);
     colorA *= 0.5;
 
-    float3 colorB = Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord + direection * -0.5, 0);
-    colorB += Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord + direection * 0.5, 0);
+    float3 colorB = Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord + direection * -0.5, 0);
+    colorB += Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord + direection * 0.5, 0);
     colorB = ((colorA * 0.5) + (0.25 * colorB));
 
     const float luminanceB = getLuminance(colorB);

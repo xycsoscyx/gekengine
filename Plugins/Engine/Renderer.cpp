@@ -67,17 +67,17 @@ namespace Gek
                 uint32_t spotLightCount;
             };
 
-            struct ClusterTile
+            struct TileLightIndex
             {
-                concurrency::concurrent_vector<uint32_t> pointLightList;
-                concurrency::concurrent_vector<uint32_t> spotLightList;
+                concurrency::concurrent_vector<uint16_t> pointLightList;
+                concurrency::concurrent_vector<uint16_t> spotLightList;
             };
 
-            struct ClusterData
+            struct TileOffsetCount
             {
                 uint32_t indexOffset;
-                uint32_t pointLightCount;
-                uint32_t spotLightCount;
+                uint16_t pointLightCount;
+                uint16_t spotLightCount;
             };
 
             struct DrawCallValue
@@ -204,17 +204,17 @@ namespace Gek
             concurrency::concurrent_vector<DirectionalLightData, AlignedAllocator<DirectionalLightData, 16>> directionalLightList;
             concurrency::concurrent_vector<PointLightData, AlignedAllocator<PointLightData, 16>> pointLightList;
             concurrency::concurrent_vector<SpotLightData, AlignedAllocator<SpotLightData, 16>> spotLightList;
-            ClusterTile clusterLightsList[GridSize];
-            ClusterData clusterDataList[GridSize];
-            std::vector<uint32_t> clusterIndexList;
+            TileLightIndex tileLightIndexList[GridSize];
+            TileOffsetCount tileOffsetCountList[GridSize];
+            std::vector<uint16_t> lightIndexList;
             uint32_t lightIndexCount = 0;
 
             Video::BufferPtr lightConstantBuffer;
             Video::BufferPtr directionalLightDataBuffer;
             Video::BufferPtr pointLightDataBuffer;
             Video::BufferPtr spotLightDataBuffer;
-            Video::BufferPtr clusterDataBuffer;
-            Video::BufferPtr clusterIndexBuffer;
+            Video::BufferPtr tileOffsetCountBuffer;
+            Video::BufferPtr lightIndexBuffer;
 
             DrawCallList drawCallList;
             concurrency::concurrent_queue<RenderCall> renderCallList;
@@ -272,19 +272,19 @@ namespace Gek
                 depthState = videoDevice->createDepthState(depthStateInformation);
 				depthState->setName(L"renderer:depthState");
 
-                Video::BufferDescription bufferDescription;
-                bufferDescription.stride = sizeof(EngineConstantData);
-                bufferDescription.count = 1;
-                bufferDescription.type = Video::BufferDescription::Type::Constant;
-                engineConstantBuffer = videoDevice->createBuffer(bufferDescription);
+                Video::BufferDescription constantBufferDescription;
+                constantBufferDescription.stride = sizeof(EngineConstantData);
+                constantBufferDescription.count = 1;
+                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 engineConstantBuffer->setName(L"renderer:engineConstantBuffer");
 
-                bufferDescription.stride = sizeof(CameraConstantData);
-                cameraConstantBuffer = videoDevice->createBuffer(bufferDescription);
+                constantBufferDescription.stride = sizeof(CameraConstantData);
+                cameraConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 cameraConstantBuffer->setName(L"renderer:cameraConstantBuffer");
 
-                bufferDescription.stride = sizeof(LightConstantData);
-                lightConstantBuffer = videoDevice->createBuffer(bufferDescription);
+                constantBufferDescription.stride = sizeof(LightConstantData);
+                lightConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 lightConstantBuffer->setName(L"renderer:lightConstantBuffer");
 
                 static const wchar_t program[] =
@@ -344,19 +344,19 @@ namespace Gek
                 spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
                 spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
 
-                Video::BufferDescription clusterBufferDescription;
-                clusterBufferDescription.type = Video::BufferDescription::Type::Raw;
-                clusterBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
-                clusterBufferDescription.format = Video::Format::R32G32B32_UINT;
-                clusterBufferDescription.count = GridSize;
-                clusterDataBuffer = videoDevice->createBuffer(clusterBufferDescription);
-                clusterDataBuffer->setName(L"renderer:clusterDataBuffer");
+                Video::BufferDescription tileBufferDescription;
+                tileBufferDescription.type = Video::BufferDescription::Type::Raw;
+                tileBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                tileBufferDescription.format = Video::Format::R32G32_UINT;
+                tileBufferDescription.count = GridSize;
+                tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
+                tileOffsetCountBuffer->setName(L"renderer:tileOffsetCountBuffer");
 
-                clusterIndexList.reserve(GridSize * 10);
-                clusterBufferDescription.format = Video::Format::R32_UINT;
-                clusterBufferDescription.count = clusterIndexList.capacity();
-                clusterIndexBuffer = videoDevice->createBuffer(clusterBufferDescription);
-                clusterIndexBuffer->setName(L"renderer:clusterIndexBuffer");
+                lightIndexList.reserve(GridSize * 10);
+                tileBufferDescription.format = Video::Format::R16_UINT;
+                tileBufferDescription.count = lightIndexList.capacity();
+                lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
+                lightIndexBuffer->setName(L"renderer:lightIndexBuffer");
             }
 
             ~Renderer(void)
@@ -550,7 +550,7 @@ namespace Gek
                             if (!isSeparated(x, y, z, position, range))
                             {
                                 uint32_t gridIndex = (ySlize + x);
-                                auto &gridData = clusterLightsList[gridIndex];
+                                auto &gridData = tileLightIndexList[gridIndex];
                                 if (pointLight)
                                 {
                                     gridData.pointLightList.push_back(lightIndex);
@@ -764,7 +764,7 @@ namespace Gek
                         if (isLightingRequired)
                         {
                             lightIndexCount = 0;
-                            concurrency::parallel_for_each(std::begin(clusterLightsList), std::end(clusterLightsList), [&](auto &gridData) -> void
+                            concurrency::parallel_for_each(std::begin(tileLightIndexList), std::end(tileLightIndexList), [&](auto &gridData) -> void
                             {
                                 gridData.pointLightList.clear();
                                 gridData.spotLightList.clear();
@@ -859,67 +859,97 @@ namespace Gek
                             pointLightsDone.get();
                             spotLightsDone.get();
 
-                            clusterIndexList.clear();
-                            clusterIndexList.reserve(lightIndexCount);
+                            lightIndexList.clear();
+                            lightIndexList.reserve(lightIndexCount);
                             for (uint32_t tileIndex = 0; tileIndex < GridSize; tileIndex++)
                             {
-                                auto &clusterData = clusterDataList[tileIndex];
-                                auto &clusterLights = clusterLightsList[tileIndex];
-                                clusterData.indexOffset = clusterIndexList.size();
-                                clusterData.pointLightCount = clusterLights.pointLightList.size();
-                                clusterData.spotLightCount = clusterLights.spotLightList.size();
-                                clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.pointLightList), std::end(clusterLights.pointLightList));
-                                clusterIndexList.insert(std::end(clusterIndexList), std::begin(clusterLights.spotLightList), std::end(clusterLights.spotLightList));
+                                auto &tileOffsetCount = tileOffsetCountList[tileIndex];
+                                auto &tileLightIndex = tileLightIndexList[tileIndex];
+                                tileOffsetCount.indexOffset = lightIndexList.size();
+                                tileOffsetCount.pointLightCount = tileLightIndex.pointLightList.size();
+                                tileOffsetCount.spotLightCount = tileLightIndex.spotLightList.size();
+                                lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.pointLightList), std::end(tileLightIndex.pointLightList));
+                                lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.spotLightList), std::end(tileLightIndex.spotLightList));
                             }
 
                             if (!directionalLightList.empty())
                             {
                                 DirectionalLightData *directionalLightData = nullptr;
-                                videoDevice->mapBuffer(directionalLightDataBuffer.get(), directionalLightData);
-                                std::copy(std::begin(directionalLightList), std::end(directionalLightList), directionalLightData);
-                                videoDevice->unmapBuffer(directionalLightDataBuffer.get());
+                                if (videoDevice->mapBuffer(directionalLightDataBuffer.get(), directionalLightData))
+                                {
+                                    std::copy(std::begin(directionalLightList), std::end(directionalLightList), directionalLightData);
+                                    videoDevice->unmapBuffer(directionalLightDataBuffer.get());
+                                }
+                                else
+                                {
+                                    continue;
+                                }
                             }
 
                             if (!pointLightList.empty())
                             {
                                 PointLightData *pointLightData = nullptr;
-                                videoDevice->mapBuffer(pointLightDataBuffer.get(), pointLightData);
-                                std::copy(std::begin(pointLightList), std::end(pointLightList), pointLightData);
-                                videoDevice->unmapBuffer(pointLightDataBuffer.get());
+                                if (videoDevice->mapBuffer(pointLightDataBuffer.get(), pointLightData))
+                                {
+                                    std::copy(std::begin(pointLightList), std::end(pointLightList), pointLightData);
+                                    videoDevice->unmapBuffer(pointLightDataBuffer.get());
+                                }
+                                else
+                                {
+                                    continue;
+                                }
                             }
 
                             if (!spotLightList.empty())
                             {
                                 SpotLightData *spotLightData = nullptr;
-                                videoDevice->mapBuffer(spotLightDataBuffer.get(), spotLightData);
-                                std::copy(std::begin(spotLightList), std::end(spotLightList), spotLightData);
-                                videoDevice->unmapBuffer(spotLightDataBuffer.get());
+                                if (videoDevice->mapBuffer(spotLightDataBuffer.get(), spotLightData))
+                                {
+                                    std::copy(std::begin(spotLightList), std::end(spotLightList), spotLightData);
+                                    videoDevice->unmapBuffer(spotLightDataBuffer.get());
+                                }
+                                else
+                                {
+                                    continue;
+                                }
                             }
 
-                            ClusterData *clusterDataData = nullptr;
-                            videoDevice->mapBuffer(clusterDataBuffer.get(), clusterDataData);
-                            std::copy(std::begin(clusterDataList), std::end(clusterDataList), clusterDataData);
-                            videoDevice->unmapBuffer(clusterDataBuffer.get());
-
-                            if (!clusterIndexList.empty())
+                            TileOffsetCount *tileOffsetCountData = nullptr;
+                            if (videoDevice->mapBuffer(tileOffsetCountBuffer.get(), tileOffsetCountData))
                             {
-                                if (!clusterIndexBuffer || clusterIndexBuffer->getDescription().count < clusterIndexList.size())
-                                {
-                                    clusterIndexBuffer = nullptr;
+                                std::copy(std::begin(tileOffsetCountList), std::end(tileOffsetCountList), tileOffsetCountData);
+                                videoDevice->unmapBuffer(tileOffsetCountBuffer.get());
+                            }
+                            else
+                            {
+                                continue;
+                            }
 
-                                    Video::BufferDescription clusterBufferDescription;
-                                    clusterBufferDescription.type = Video::BufferDescription::Type::Raw;
-                                    clusterBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
-                                    clusterBufferDescription.format = Video::Format::R32_UINT;
-                                    clusterBufferDescription.count = clusterIndexList.size();
-                                    clusterIndexBuffer = videoDevice->createBuffer(clusterBufferDescription);
-                                    clusterIndexBuffer->setName(L"renderer:clusterIndexBuffer");
+                            if (!lightIndexList.empty())
+                            {
+                                if (!lightIndexBuffer || lightIndexBuffer->getDescription().count < lightIndexList.size())
+                                {
+                                    lightIndexBuffer = nullptr;
+
+                                    Video::BufferDescription tileBufferDescription;
+                                    tileBufferDescription.type = Video::BufferDescription::Type::Raw;
+                                    tileBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                                    tileBufferDescription.format = Video::Format::R16_UINT;
+                                    tileBufferDescription.count = lightIndexList.size();
+                                    lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
+                                    lightIndexBuffer->setName(L"renderer:lightIndexBuffer");
                                 }
 
-                                uint32_t *clusterIndexData = nullptr;
-                                videoDevice->mapBuffer(clusterIndexBuffer.get(), clusterIndexData);
-                                std::copy(std::begin(clusterIndexList), std::end(clusterIndexList), clusterIndexData);
-                                videoDevice->unmapBuffer(clusterIndexBuffer.get());
+                                uint16_t *lightIndexData = nullptr;
+                                if (videoDevice->mapBuffer(lightIndexBuffer.get(), lightIndexData))
+                                {
+                                    std::copy(std::begin(lightIndexList), std::end(lightIndexList), lightIndexData);
+                                    videoDevice->unmapBuffer(lightIndexBuffer.get());
+                                }
+                                else
+                                {
+                                    continue;
+                                }
                             }
 
                             LightConstantData lightConstants;
@@ -950,8 +980,8 @@ namespace Gek
                                             directionalLightDataBuffer.get(),
                                             pointLightDataBuffer.get(),
                                             spotLightDataBuffer.get(),
-                                            clusterDataBuffer.get(),
-                                            clusterIndexBuffer.get()
+                                            tileOffsetCountBuffer.get(),
+                                            lightIndexBuffer.get()
                                         }, 0);
                                     }
 

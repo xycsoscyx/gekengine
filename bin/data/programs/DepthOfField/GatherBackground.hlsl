@@ -19,11 +19,11 @@ float2 getDitherableNoise(float2 coord)
 
 float3 getChromaticAberation(float2 texCoord, float blur)
 {
-    const float2 offset = (Shader::pixelSize * Defines::bokehChromaticAberation * blur);
+    const float2 offset = (Shader::TargetPixelSize * Defines::bokehChromaticAberation * blur);
     return float3(
-        Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(0.0, 1.0) * offset, 0).r,
-        Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(-0.866, -0.5) * offset, 0).g,
-        Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + float2(0.866, -0.5) * offset, 0).b);
+        Resources::screenBuffer.SampleLevel(Global::PointSampler, texCoord + float2(0.0, 1.0) * offset, 0).r,
+        Resources::screenBuffer.SampleLevel(Global::PointSampler, texCoord + float2(-0.866, -0.5) * offset, 0).g,
+        Resources::screenBuffer.SampleLevel(Global::PointSampler, texCoord + float2(0.866, -0.5) * offset, 0).b);
 }
 
 float3 getColor(float2 texCoord, float blur)
@@ -34,7 +34,7 @@ float3 getColor(float2 texCoord, float blur)
     }
     else
     {
-        return Resources::screenBuffer.SampleLevel(Global::pointSampler, texCoord + Shader::pixelSize * blur, 0);
+        return Resources::screenBuffer.SampleLevel(Global::PointSampler, texCoord + Shader::TargetPixelSize * blur, 0);
     }
 }
 
@@ -90,10 +90,10 @@ float getModifier(float2 offset)
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
 	const float blurDistance = abs(Resources::circleOfConfusion[inputPixel.screen.xy]);
-    const float2 noise = ((getDitherableNoise(inputPixel.texCoord) * blurDistance) + (Shader::pixelSize * blurDistance));
+    const float2 noise = ((getDitherableNoise(inputPixel.texCoord) * blurDistance) + (Shader::TargetPixelSize * blurDistance));
 
     float totalWeight = 1.0;
-    float3 finalColor = Resources::screenBuffer.SampleLevel(Global::pointSampler, inputPixel.texCoord, 0);
+    float3 finalColor = Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord, 0);
     
     [unroll]
     for (float ring = 1.0; ring <= Defines::ringCount; ring++)

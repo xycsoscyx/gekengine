@@ -9,17 +9,17 @@ namespace Math
 
 namespace Global
 {
-    SamplerState pointSampler : register(s0);
-    SamplerState linearClampSampler : register(s1);
-    SamplerState linearWrapSampler : register(s2);
+    SamplerState PointSampler : register(s0);
+    SamplerState LinearClampSampler : register(s1);
+    SamplerState LinearWrapSampler : register(s2);
 };
 
 namespace Engine
 {
     cbuffer Constants : register(b0)
     {
-        float worldTime;
-        float frameTime;
+        float WorldTime;
+        float FrameTime;
         float buffer[2];
     };
 };
@@ -28,11 +28,11 @@ namespace Camera
 {
     cbuffer Constants : register(b1)
     {
-        float2 fieldOfView;
-        float nearClip;
-        float farClip;
-        float4x4 viewMatrix;
-        float4x4 projectionMatrix;
+        float2 FieldOfView;
+        float NearClip;
+        float FarClip;
+        float4x4 ViewMatrix;
+        float4x4 ProjectionMatrix;
     };
 };
 
@@ -40,10 +40,9 @@ namespace Shader
 {
     cbuffer Constants : register(b2)
     {
-        float2 targetSize;
+        float2 TargetSize;
         float buffer[2];
     };
 
-    static const float2 pixelSize = (1.0 / targetSize);
-    static const float2 halfPixelSize = (0.5 / targetSize);
+    static const float2 TargetPixelSize = (1.0 / TargetSize);
 };

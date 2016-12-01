@@ -52,7 +52,7 @@ OutputVertex mainVertexProgram(InputVertex inputVertex)
     edge.z = 0.0;
 
     OutputVertex outputVertex;
-    outputVertex.position = (edge + mul(Camera::viewMatrix, float4(spriteData.position, 1.0)).xyz);
+    outputVertex.position = (edge + mul(Camera::ViewMatrix, float4(spriteData.position, 1.0)).xyz);
     outputVertex.normal = normalize(float3(normal.xy, -1.0));
     outputVertex.texCoord.x = ((cornerIndex % 2) ? texCoord11.x : texCoord00.x);
     outputVertex.texCoord.y = ((cornerIndex & 2) ? texCoord11.y : texCoord00.y);

@@ -25,7 +25,7 @@ float getBlurredDepth(float2 texCoord) // blurring depth
     [unroll]
     for (int index = 0; index < 9; index++)
     {
-        blurredDepth += (getLinearDepthFromSample(Resources::depthBuffer.SampleLevel(Global::pointSampler, texCoord + offset[index], 0)) * kernel[index]);
+        blurredDepth += (getLinearDepthFromSample(Resources::depthBuffer.SampleLevel(Global::PointSampler, texCoord + offset[index], 0)) * kernel[index]);
     }
 
     return blurredDepth;
@@ -39,7 +39,7 @@ float getDepth(float2 texCoord)
     }
     else
     {
-        return getLinearDepthFromSample(Resources::depthBuffer.SampleLevel(Global::pointSampler, texCoord, 0));
+        return getLinearDepthFromSample(Resources::depthBuffer.SampleLevel(Global::PointSampler, texCoord, 0));
     }
 }
 

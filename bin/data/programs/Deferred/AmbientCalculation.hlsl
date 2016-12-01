@@ -35,7 +35,7 @@ float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)
 /** Read the camera-space position of the point at screen-space pixel ssP */
 float3 getPosition(float2 ssP)
 {
-    const float depth = Resources::depthBuffer.SampleLevel(Global::pointSampler, ssP, 0);
+    const float depth = Resources::depthBuffer.SampleLevel(Global::PointSampler, ssP, 0);
     return getPositionFromSample(ssP, depth);
 }
 

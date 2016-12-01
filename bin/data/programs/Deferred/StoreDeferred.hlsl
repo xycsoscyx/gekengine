@@ -6,7 +6,7 @@
 OutputPixel mainPixelProgram(InputPixel inputPixel)
 {
     // final images will be sRGB format and converted to linear automatically
-    const float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    const float4 albedo = Resources::albedo.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
     
     [branch]
     if(albedo.a < 0.5)
@@ -19,7 +19,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
-    normal.xy = Resources::normal.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    normal.xy = Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
     normal.xy = ((normal.xy * 2.0) - 1.0);
 	normal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
@@ -28,8 +28,8 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     OutputPixel outputPixel;
     outputPixel.albedoBuffer = albedo.rgb;
-    outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
-    outputPixel.materialBuffer.y = Resources::metallic.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    outputPixel.materialBuffer.x = Resources::roughness.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    outputPixel.materialBuffer.y = Resources::metallic.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
     outputPixel.normalBuffer = getEncodedNormal(normal);
     return outputPixel;
 }

@@ -119,7 +119,7 @@ uint getClusterOffset(float2 screenPosition, float surfaceDepth)
 {
     uint2 gridLocation = floor(screenPosition / Lights::tileSize.xy);
 
-    float depth = (surfaceDepth - Camera::nearClip) / (Camera::farClip - Camera::nearClip);
+    float depth = (surfaceDepth - Camera::NearClip) / (Camera::FarClip - Camera::NearClip);
     uint gridSlice = floor(depth * Lights::gridSize.z);
 
     return ((((gridSlice * Lights::gridSize.y) + gridLocation.y) * Lights::gridSize.x) + gridLocation.x);
@@ -149,10 +149,10 @@ float3 getSurfaceIrradiance(float2 screenCoord, float3 surfacePosition, float3 s
     }
 
     uint clusterOffset = getClusterOffset(screenCoord, surfacePosition.z);
-    uint3 clusterData = Lights::clusterDataList[clusterOffset];
+    uint2 clusterData = Lights::clusterDataList[clusterOffset];
     uint indexOffset = clusterData.x;
-    uint pointLightCount = clusterData.y;
-    uint spotLightCount = clusterData.z;
+    uint pointLightCount = clusterData.y & 0x0000FFFF;
+    uint spotLightCount = clusterData.y >> 16;
 
     while (pointLightCount-- > 0)
     {

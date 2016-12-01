@@ -27,7 +27,7 @@ float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
         float tapWeight = getGaussianWeight(abs(tapIndex));
 
         // range domain (the "bilateral" tapWeight). As depth difference increases, decrease tapWeight.
-        tapWeight *= max(0.0, 1.0 - (Camera::farClip * Defines::edgeSharpness) * abs(tapDepth - surfaceDepth));
+        tapWeight *= max(0.0, 1.0 - (Camera::FarClip * Defines::edgeSharpness) * abs(tapDepth - surfaceDepth));
 
         totalOcclusion += tapOcclusion * tapWeight;
         totalWeight += tapWeight;

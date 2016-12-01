@@ -884,8 +884,9 @@ namespace Gek
                 return std::make_shared<Buffer>(description);
             }
 
-            void mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
+            bool mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
             {
+                return false;
             }
 
             void unmapBuffer(Video::Buffer *buffer)

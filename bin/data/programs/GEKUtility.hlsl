@@ -95,7 +95,7 @@ float3x3 getCoTangentFrame(float3 position, float3 normal, float2 texCoord)
 float getLinearDepthFromSample(float depthSample)
 {
     depthSample = 2.0 * depthSample - 1.0;
-    depthSample = 2.0 * Camera::nearClip * Camera::farClip / (Camera::farClip + Camera::nearClip - depthSample * (Camera::farClip - Camera::nearClip));
+    depthSample = 2.0 * Camera::NearClip * Camera::FarClip / (Camera::FarClip + Camera::NearClip - depthSample * (Camera::FarClip - Camera::NearClip));
     return depthSample;
 }
 
@@ -104,7 +104,7 @@ float3 getPositionFromLinearDepth(float2 texCoord, float linearDepth)
     float2 adjustedCoord = texCoord;
     adjustedCoord.y = (1.0 - adjustedCoord.y);
     adjustedCoord = (adjustedCoord * 2.0 - 1.0);
-    return (float3((adjustedCoord * Camera::fieldOfView), 1.0) * linearDepth);
+    return (float3((adjustedCoord * Camera::FieldOfView), 1.0) * linearDepth);
 }
 
 float3 getPositionFromSample(float2 texCoord, float depthSample)

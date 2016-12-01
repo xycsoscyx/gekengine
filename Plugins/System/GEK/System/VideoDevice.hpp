@@ -618,12 +618,12 @@ namespace Gek
             virtual BufferPtr createBuffer(const BufferDescription &description, const void *staticData = nullptr) = 0;
 
             template <typename TYPE>
-            void mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)
+            bool mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)
             {
-                mapBuffer(buffer, (void *&)data, mapping);
+                return mapBuffer(buffer, (void *&)data, mapping);
             }
 
-            virtual void mapBuffer(Buffer *buffer, void *&data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
+            virtual bool mapBuffer(Buffer *buffer, void *&data, Video::Map mapping = Video::Map::WriteDiscard) = 0;
             virtual void unmapBuffer(Buffer *buffer) = 0;
 
             virtual void updateResource(Object *buffer, const void *data) = 0;

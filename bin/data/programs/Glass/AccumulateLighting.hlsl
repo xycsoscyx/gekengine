@@ -57,7 +57,7 @@ float3 getCubicFilter(float2 texCoord, int glassLevel)
     int levelCount;
     float2 glassSize;
     Resources::glassBuffer.GetDimensions(glassLevel, glassSize.x, glassSize.y, levelCount);
-    float2 pixelSize = 1.0 / glassSize;
+    float2 TargetPixelSize = 1.0 / glassSize;
 
     texCoord = texCoord*glassSize + 0.5;
     float2 iuv = floor(texCoord);
@@ -70,20 +70,20 @@ float3 getCubicFilter(float2 texCoord, int glassLevel)
     float h0y = h0(fuv.y);
     float h1y = h1(fuv.y);
 
-    float2 p0 = (float2(iuv.x + h0x, iuv.y + h0y) - 0.5) * pixelSize;
-    float2 p1 = (float2(iuv.x + h1x, iuv.y + h0y) - 0.5) * pixelSize;
-    float2 p2 = (float2(iuv.x + h0x, iuv.y + h1y) - 0.5) * pixelSize;
-    float2 p3 = (float2(iuv.x + h1x, iuv.y + h1y) - 0.5) * pixelSize;
+    float2 p0 = (float2(iuv.x + h0x, iuv.y + h0y) - 0.5) * TargetPixelSize;
+    float2 p1 = (float2(iuv.x + h1x, iuv.y + h0y) - 0.5) * TargetPixelSize;
+    float2 p2 = (float2(iuv.x + h0x, iuv.y + h1y) - 0.5) * TargetPixelSize;
+    float2 p3 = (float2(iuv.x + h1x, iuv.y + h1y) - 0.5) * TargetPixelSize;
 
     return
-        g0(fuv.y) * (g0x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p0, glassLevel) + g1x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p1, glassLevel)) +
-        g1(fuv.y) * (g0x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p2, glassLevel) + g1x * Resources::glassBuffer.SampleLevel(Global::linearClampSampler, p3, glassLevel));
+        g0(fuv.y) * (g0x * Resources::glassBuffer.SampleLevel(Global::LinearClampSampler, p0, glassLevel) + g1x * Resources::glassBuffer.SampleLevel(Global::LinearClampSampler, p1, glassLevel)) +
+        g1(fuv.y) * (g0x * Resources::glassBuffer.SampleLevel(Global::LinearClampSampler, p2, glassLevel) + g1x * Resources::glassBuffer.SampleLevel(Global::LinearClampSampler, p3, glassLevel));
 }
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
     // final images will be sRGB format and converted to linear automatically
-    const float4 albedo = Resources::albedo.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    const float4 albedo = Resources::albedo.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
 
     float3 surfacePosition = inputPixel.position;
 
@@ -92,7 +92,7 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 
     float3 surfaceNormal;
     // assume normals are stored as 3Dc format, so generate the Z value
-    surfaceNormal.xy = Resources::normal.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    surfaceNormal.xy = Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
     surfaceNormal.xy = ((surfaceNormal.xy * 2.0) - 1.0);
     surfaceNormal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     surfaceNormal.z = sqrt(1.0 - dot(surfaceNormal.xy, surfaceNormal.xy));
@@ -100,18 +100,18 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     surfaceNormal = normalize(inputPixel.isFrontFacing ? surfaceNormal : -surfaceNormal);
 
     float3 materialAlbedo = albedo.rgb;
-    float materialRoughness = Resources::roughness.Sample(Global::linearWrapSampler, inputPixel.texCoord);
-    float materialMetallic = Resources::metallic.Sample(Global::linearWrapSampler, inputPixel.texCoord);
+    float materialRoughness = Resources::roughness.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    float materialMetallic = Resources::metallic.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
 
     float glassRoughness = (materialRoughness * 5.0);
     int glassLevel = int(floor(glassRoughness));
-    float3 glassColor = getCubicFilter((inputPixel.screen.xy * Shader::pixelSize), glassLevel);
+    float3 glassColor = getCubicFilter((inputPixel.screen.xy * Shader::TargetPixelSize), glassLevel);
 
     [branch]
     if (materialRoughness < 1.0)
     {
         float lerpLevel = frac(glassRoughness);
-        glassColor = lerp(glassColor, getCubicFilter((inputPixel.screen.xy * Shader::pixelSize), (glassLevel + 1)), lerpLevel);
+        glassColor = lerp(glassColor, getCubicFilter((inputPixel.screen.xy * Shader::TargetPixelSize), (glassLevel + 1)), lerpLevel);
     }
 
     float3 surfaceIrradiance = getSurfaceIrradiance(inputPixel.screen.xy, surfacePosition, surfaceNormal, materialAlbedo, 0.1, 1.0);

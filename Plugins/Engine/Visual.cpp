@@ -132,7 +132,7 @@ namespace Gek
 						L"\r\n" \
 						L"OutputVertex getProjection(OutputVertex outputVertex)\r\n" \
 						L"{\r\n" \
-						L"    outputVertex.projected = mul(Camera::projectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
+						L"    outputVertex.projected = mul(Camera::ProjectionMatrix, float4(outputVertex.position, 1.0));\r\n" \
 						L"    return outputVertex;\r\n" \
 						L"}\r\n", inputVertexData, outputVertexData);
 
