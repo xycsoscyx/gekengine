@@ -58,6 +58,50 @@
             }
         },
         {
+            "Transform": {
+                "position": "(5, 20, 0)"
+            },
+            "Model": {
+                "name": "cube"
+            },
+            "Physical": {
+                "mass":  10.0
+            }
+        },
+        {
+            "Transform": {
+                "position": "(-5, 20, 0)"
+            },
+            "Model": {
+                "name": "cube"
+            },
+            "Physical": {
+                "mass":  10.0
+            }
+        },
+        {
+            "Transform": {
+                "position": "(0, 20, 5)"
+            },
+            "Model": {
+                "name": "cube"
+            },
+            "Physical": {
+                "mass":  10.0
+            }
+        },
+        {
+            "Transform": {
+                "position": "(0, 20, -5)"
+            },
+            "Model": {
+                "name": "cube"
+            },
+            "Physical": {
+                "mass":  10.0
+            }
+        },
+        {
             "Template": "BasicPointLight"
         },
         {

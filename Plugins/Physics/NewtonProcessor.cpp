@@ -173,6 +173,7 @@ namespace Gek
                 surfaceList.push_back(Surface());
             }
 
+            concurrency::critical_section criticalSection;
             void onLoadSucceeded(const String &populationName)
             {
                 newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
@@ -184,6 +185,7 @@ namespace Gek
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
                 population->listEntities<Components::Transform, Components::Physical>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &physicalComponent) -> void
                 {
+                    concurrency::critical_section::scoped_lock lock(criticalSection);
                     if (entity->hasComponent<Components::Player>())
                     {
                         Newton::EntityPtr playerBody(createPlayerBody(population, newtonWorld, entity));
@@ -543,6 +545,7 @@ namespace Gek
                         throw Newton::UnableToCreateCollision("Unable to create model collision object");
                     }
 
+                    NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
                 }
 

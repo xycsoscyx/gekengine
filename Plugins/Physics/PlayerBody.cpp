@@ -148,7 +148,7 @@ namespace Gek
                     convexPoints[1][point] = rotation.rotate(point1);
                 }
 
-                NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, convexShapeDensity * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
+                NewtonCollision* const supportShape = NewtonCreateConvexHull(newtonWorld, convexShapeDensity * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
 
                 // create the outer thick cylinder
                 Math::Float4x4 outerShapeMatrix(Math::Float4x4::Identity);
@@ -188,7 +188,7 @@ namespace Gek
                     convexPoints[1][point] = rotation.rotate(point1);
                 }
                 
-                newtonCastingShape = NewtonCreateConvexHull(newtonWorld, convexShapeDensity * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, NULL);
+                newtonCastingShape = NewtonCreateConvexHull(newtonWorld, convexShapeDensity * 2, convexPoints[0][0].data, sizeof(Math::Float3), 0.0f, 0, nullptr);
                 newtonSupportShape = NewtonCompoundCollisionGetCollisionFromNode(shape, NewtonCompoundCollisionGetNodeByIndex(shape, 0));
                 newtonUpperBodyShape = NewtonCompoundCollisionGetCollisionFromNode(shape, NewtonCompoundCollisionGetNodeByIndex(shape, 1));
 
