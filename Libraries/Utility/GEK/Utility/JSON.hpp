@@ -15,12 +15,14 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, float>
     {
+        typedef typename Json::allocator_type allocator_type;
+
         static float as(const Json &object)
         {
             return float(object.as_double());
         }
 
-        static Json to_json(const float &value)
+        static Json to_json(const float &value, const allocator_type& allocator)
         {
             return double(value);
         }
@@ -29,7 +31,9 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector2<TYPE>>
     {
-        static Json to_json(const Gek::Math::Vector2<TYPE> &value)
+        typedef typename Json::allocator_type allocator_type;
+
+        static Json to_json(const Gek::Math::Vector2<TYPE> &value, const allocator_type& allocator)
         {
             return Gek::String::Format(L"%v", value);
         }
@@ -38,7 +42,9 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector3<TYPE>>
     {
-        static Json to_json(const Gek::Math::Vector3<TYPE> &value)
+        typedef typename Json::allocator_type allocator_type;
+
+        static Json to_json(const Gek::Math::Vector3<TYPE> &value, const allocator_type& allocator)
         {
             return Gek::String::Format(L"%v", value);
         }
@@ -47,7 +53,9 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector4<TYPE>>
     {
-        static Json to_json(const Gek::Math::Vector4<TYPE> &value)
+        typedef typename Json::allocator_type allocator_type;
+
+        static Json to_json(const Gek::Math::Vector4<TYPE> &value, const allocator_type& allocator)
         {
             return Gek::String::Format(L"%v", value);
         }
@@ -56,7 +64,9 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, Gek::Math::Float4>
     {
-        static Json to_json(const Gek::Math::Float4 &value)
+        typedef typename Json::allocator_type allocator_type;
+
+        static Json to_json(const Gek::Math::Float4 &value, const allocator_type& allocator)
         {
             return Gek::String::Format(L"%v", value);
         }
@@ -65,7 +75,9 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, Gek::Math::Quaternion>
     {
-        static Json to_json(const Gek::Math::Quaternion &value)
+        typedef typename Json::allocator_type allocator_type;
+
+        static Json to_json(const Gek::Math::Quaternion &value, const allocator_type& allocator)
         {
             return Gek::String::Format(L"%v", value);
         }
