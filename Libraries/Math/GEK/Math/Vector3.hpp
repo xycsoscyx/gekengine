@@ -18,8 +18,8 @@ namespace Gek
         struct Vector3
         {
         public:
-            static const Vector3 Zero;
-            static const Vector3 One;
+            static const Vector3<TYPE> Zero;
+            static const Vector3<TYPE> One;
 
         public:
             union
@@ -43,46 +43,52 @@ namespace Gek
             {
             }
 
-            Vector3(TYPE scalar)
+            Vector3(const Vector3<TYPE> &vector)
+                : x(vector.x)
+                , y(vector.y)
+                , z(vector.z)
+            {
+            }
+
+            explicit Vector3(TYPE scalar)
                 : data{ scalar, scalar, scalar }
             {
             }
 
-            Vector3(TYPE x, TYPE y, TYPE z)
+            explicit Vector3(TYPE x, TYPE y, TYPE z)
                 : data{ x, y, z }
             {
             }
 
-            Vector3(const TYPE *data)
+            explicit Vector3(const TYPE *data)
                 : data{ data[0], data[1], data[2] }
             {
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3(const Vector3<OTHER> &vector)
-                : x(TYPE(vector.x))
-                , y(TYPE(vector.y))
-                , z(TYPE(vector.z))
+            Vector3(const Vector2<TYPE> &xy, TYPE z)
+                : x(vector.x)
+                , y(vector.y)
+                , z(z)
             {
             }
 
             void set(TYPE value)
             {
-                this->x = this->y = this->z = TYPE(value);
+                this->x = this->y = this->z = value;
             }
 
             void set(TYPE x, TYPE y, TYPE z)
             {
-                this->x = TYPE(x);
-                this->y = TYPE(y);
-                this->z = TYPE(z);
+                this->x = x;
+                this->y = y;
+                this->z = z;
             }
 
             void set(const TYPE *data)
             {
-                this->x = TYPE(data[0]);
-                this->y = TYPE(data[1]);
-                this->z = TYPE(data[2]);
+                this->x = data[0];
+                this->y = data[1];
+                this->z = data[2];
             }
 
             TYPE getMagnitudeSquared(void) const
@@ -95,18 +101,18 @@ namespace Gek
                 return std::sqrt(getMagnitudeSquared());
             }
 
-            TYPE getDistance(const Vector3 &vector) const
+            TYPE getDistance(const Vector3<TYPE> &vector) const
             {
                 return (vector - (*this)).getMagnitude();
             }
 
-            Vector3 getNormal(void) const
+            Vector3<TYPE> getNormal(void) const
             {
                 float inverseMagnitude = (1.0f / getMagnitude());
                 return ((*this) * inverseMagnitude);
             }
 
-			Vector3 getMinimum(const Vector3 &vector) const
+			Vector3<TYPE> getMinimum(const Vector3<TYPE> &vector) const
 			{
 				return Vector3(
 					std::min(x, vector.x),
@@ -115,7 +121,7 @@ namespace Gek
 				);
 			}
 
-			Vector3 getMaximum(const Vector3 &vector) const
+			Vector3<TYPE> getMaximum(const Vector3<TYPE> &vector) const
 			{
 				return Vector3(
 					std::max(x, vector.x),
@@ -124,7 +130,7 @@ namespace Gek
 				);
 			}
 
-			Vector3 getClamped(const Vector3 &min, const Vector3 &max) const
+			Vector3<TYPE> getClamped(const Vector3<TYPE> &min, const Vector3<TYPE> &max) const
 			{
 				return Vector3(
 					std::min(std::max(x, min.x), max.x),
@@ -133,17 +139,17 @@ namespace Gek
 				);
 			}
 
-			Vector3 getSaturated(void) const
+			Vector3<TYPE> getSaturated(void) const
 			{
 				return getClamped(Zero, One);
 			}
 
-			TYPE dot(const Vector3 &vector) const
+			TYPE dot(const Vector3<TYPE> &vector) const
             {
                 return ((x * vector.x) + (y * vector.y) + (z * vector.z));
             }
 
-            Vector3 cross(const Vector3 &vector) const
+            Vector3<TYPE> cross(const Vector3<TYPE> &vector) const
             {
                 return Vector3(
                     ((y * vector.z) - (z * vector.y)),
@@ -157,7 +163,7 @@ namespace Gek
                 (*this) *= inverseMagnitude;
             }
 
-            bool operator < (const Vector3 &vector) const
+            bool operator < (const Vector3<TYPE> &vector) const
             {
                 if (x >= vector.x) return false;
                 if (y >= vector.y) return false;
@@ -165,7 +171,7 @@ namespace Gek
                 return true;
             }
 
-            bool operator > (const Vector3 &vector) const
+            bool operator > (const Vector3<TYPE> &vector) const
             {
                 if (x <= vector.x) return false;
                 if (y <= vector.y) return false;
@@ -173,7 +179,7 @@ namespace Gek
                 return true;
             }
 
-            bool operator <= (const Vector3 &vector) const
+            bool operator <= (const Vector3<TYPE> &vector) const
             {
                 if (x > vector.x) return false;
                 if (y > vector.y) return false;
@@ -181,7 +187,7 @@ namespace Gek
                 return true;
             }
 
-            bool operator >= (const Vector3 &vector) const
+            bool operator >= (const Vector3<TYPE> &vector) const
             {
                 if (x < vector.x) return false;
                 if (y < vector.y) return false;
@@ -189,7 +195,7 @@ namespace Gek
                 return true;
             }
 
-            bool operator == (const Vector3 &vector) const
+            bool operator == (const Vector3<TYPE> &vector) const
             {
                 if (x != vector.x) return false;
                 if (y != vector.y) return false;
@@ -197,7 +203,7 @@ namespace Gek
                 return true;
             }
 
-            bool operator != (const Vector3 &vector) const
+            bool operator != (const Vector3<TYPE> &vector) const
             {
                 if (x != vector.x) return true;
                 if (y != vector.y) return true;
@@ -221,59 +227,58 @@ namespace Gek
             }
 
             // vector operations
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector3 &operator = (const Vector3<OTHER> &vector)
+            Vector3<TYPE> &operator = (const Vector3<TYPE> &vector)
             {
-                x = TYPE(vector.x);
-                y = TYPE(vector.y);
-                z = TYPE(vector.z);
+                x = vector.x;
+                y = vector.y;
+                z = vector.z;
                 return (*this);
             }
 
-            void operator -= (const Vector3 &vector)
+            void operator -= (const Vector3<TYPE> &vector)
             {
                 x -= vector.x;
                 y -= vector.y;
                 z -= vector.z;
             }
 
-            void operator += (const Vector3 &vector)
+            void operator += (const Vector3<TYPE> &vector)
             {
                 x += vector.x;
                 y += vector.y;
                 z += vector.z;
             }
 
-            void operator /= (const Vector3 &vector)
+            void operator /= (const Vector3<TYPE> &vector)
             {
                 x /= vector.x;
                 y /= vector.y;
                 z /= vector.z;
             }
 
-            void operator *= (const Vector3 &vector)
+            void operator *= (const Vector3<TYPE> &vector)
             {
                 x *= vector.x;
                 y *= vector.y;
                 z *= vector.z;
             }
 
-            Vector3 operator - (const Vector3 &vector) const
+            Vector3<TYPE> operator - (const Vector3<TYPE> &vector) const
             {
                 return Vector3((x - vector.x), (y - vector.y), (z - vector.z));
             }
 
-            Vector3 operator + (const Vector3 &vector) const
+            Vector3<TYPE> operator + (const Vector3<TYPE> &vector) const
             {
                 return Vector3((x + vector.x), (y + vector.y), (z + vector.z));
             }
 
-            Vector3 operator / (const Vector3 &vector) const
+            Vector3<TYPE> operator / (const Vector3<TYPE> &vector) const
             {
                 return Vector3((x / vector.x), (y / vector.y), (z / vector.z));
             }
 
-            Vector3 operator * (const Vector3 &vector) const
+            Vector3<TYPE> operator * (const Vector3<TYPE> &vector) const
             {
                 return Vector3((x * vector.x), (y * vector.y), (z * vector.z));
             }
@@ -307,22 +312,22 @@ namespace Gek
                 z *= scalar;
             }
 
-            Vector3 operator - (TYPE scalar) const
+            Vector3<TYPE> operator - (TYPE scalar) const
             {
                 return Vector3((x - scalar), (y - scalar), (z - scalar));
             }
 
-            Vector3 operator + (TYPE scalar) const
+            Vector3<TYPE> operator + (TYPE scalar) const
             {
                 return Vector3((x + scalar), (y + scalar), (z + scalar));
             }
 
-            Vector3 operator / (TYPE scalar) const
+            Vector3<TYPE> operator / (TYPE scalar) const
             {
                 return Vector3((x / scalar), (y / scalar), (z / scalar));
             }
 
-            Vector3 operator * (TYPE scalar) const
+            Vector3<TYPE> operator * (TYPE scalar) const
             {
                 return Vector3((x * scalar), (y * scalar), (z * scalar));
             }

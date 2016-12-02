@@ -62,7 +62,7 @@ namespace Gek
             ImGui::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, flags);
-            ImGui::InputText("Target", firstPersonCameraComponent.target, flags);
+            ImGui::InputString("Target", firstPersonCameraComponent.target, flags);
             if (ImGui::ListBoxHeader("Filters", firstPersonCameraComponent.filterList.size(), 5))
             {
                 ImGuiListClipper clipper(firstPersonCameraComponent.filterList.size(), ImGui::GetTextLineHeightWithSpacing());
@@ -72,7 +72,7 @@ namespace Gek
                     {
                         ImGui::PushID(filterIndex);
                         ImGui::PushItemWidth(-1);
-                        ImGui::InputText("##", firstPersonCameraComponent.filterList[filterIndex], flags);
+                        ImGui::InputString("##", firstPersonCameraComponent.filterList[filterIndex], flags);
                         ImGui::PopItemWidth();
                         ImGui::PopID();
                     }

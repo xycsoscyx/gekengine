@@ -73,7 +73,7 @@ namespace Gek
                 auto &configuration = core->getConfiguration();
                 bool editingEnabled = configuration[L"editor"][L"enabled"].as_bool();
                 bool showSelectionMenu = configuration[L"editor"][L"show_selector"].as_bool();
-                if (showCursor && showSelectionMenu && ImGui::Begin("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                if (showCursor && showSelectionMenu && ImGui::BeginDock("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                 {
                     ImGui::Dummy(ImVec2(350, 0));
                     auto &entityMap = population->getEntityMap();
@@ -245,7 +245,7 @@ namespace Gek
                         }
                     }
 
-                    ImGui::End();
+                    ImGui::EndDock();
                 }
 
                 configuration[L"editor"][L"show_selector"] = showSelectionMenu;

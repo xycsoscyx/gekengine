@@ -57,8 +57,8 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
-            ImGui::InputText("Model", modelComponent.name, flags);
-            ImGui::InputText("Skin", modelComponent.skin, flags);
+            ImGui::InputString("Model", modelComponent.name, flags);
+            ImGui::InputString("Skin", modelComponent.skin, flags);
             ImGui::SetCurrentContext(nullptr);
         }
 

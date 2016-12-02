@@ -107,7 +107,13 @@ namespace Gek
             {
             }
 
-            inline Quaternion(float x, float y, float z, float w)
+            inline Quaternion(const Quaternion &rotation)
+                : axis(rotation.axis)
+                , angle(rotation.angle)
+            {
+            }
+
+            explicit inline Quaternion(float x, float y, float z, float w)
                 : x(x)
                 , y(y)
                 , z(z)
@@ -115,7 +121,7 @@ namespace Gek
             {
             }
 
-            inline Quaternion(const float *data)
+            explicit inline Quaternion(const float *data)
                 : x(data[0])
                 , y(data[1])
                 , z(data[2])
@@ -123,13 +129,7 @@ namespace Gek
             {
             }
 
-            inline Quaternion(const Quaternion &rotation)
-                : axis(rotation.axis)
-                , angle(rotation.angle)
-            {
-            }
-
-            inline Quaternion(const Math::Float3 &axis, float angle)
+            explicit inline Quaternion(const Math::Float3 &axis, float angle)
                 : axis(axis)
                 , angle(angle)
             {

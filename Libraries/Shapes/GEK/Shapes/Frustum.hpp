@@ -21,6 +21,7 @@ namespace Gek
 
         public:
             Frustum(void);
+            Frustum(const Frustum &frustum);
             Frustum(const Math::Float4x4 &perspectiveTransform);
 
             void create(const Math::Float4x4 &perspectiveTransform);

@@ -34,25 +34,25 @@ namespace Gek
             {
             }
 
-            Vector2(TYPE scalar)
-                : data{ TYPE(scalar), TYPE(scalar) }
-            {
-            }
-
-            Vector2(TYPE x, TYPE y)
-                : data{ TYPE(x), TYPE(y) }
-            {
-            }
-
-            Vector2(const TYPE *data)
-                : data{ TYPE(data[0]), TYPE(data[1]) }
-            {
-            }
-
             template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
             Vector2(const Vector2<OTHER> &vector)
                 : x(TYPE(vector.x))
                 , y(TYPE(vector.y))
+            {
+            }
+
+            explicit Vector2(TYPE scalar)
+                : data{ TYPE(scalar), TYPE(scalar) }
+            {
+            }
+
+            explicit Vector2(TYPE x, TYPE y)
+                : data{ TYPE(x), TYPE(y) }
+            {
+            }
+
+            explicit Vector2(const TYPE *data)
+                : data{ TYPE(data[0]), TYPE(data[1]) }
             {
             }
 

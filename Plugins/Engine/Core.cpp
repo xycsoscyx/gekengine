@@ -3,6 +3,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/ContextUser.hpp"
+#include "GEK/GUI/Utilities.hpp"
 #include "GEK/System/AudioDevice.hpp"
 #include "GEK/Engine/Application.hpp"
 #include "GEK/Engine/Core.hpp"
@@ -12,8 +13,6 @@
 #include <concurrent_queue.h>
 #include <queue>
 #include <ppl.h>
-
-#include <imgui.h>
 
 namespace ImGui
 {
@@ -599,6 +598,7 @@ namespace Gek
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.Fonts->AddFontDefault();
+                imGuiIo.Fonts->Build();
 
                 imGuiIo.KeyMap[ImGuiKey_Tab] = VK_TAB;
                 imGuiIo.KeyMap[ImGuiKey_LeftArrow] = VK_LEFT;
@@ -1154,29 +1154,32 @@ namespace Gek
                             ImGui::EndMainMenuBar();
                         }
 
-                        ImGui::SetNextWindowPosCenter();
-                        if (showLoadLevel && ImGui::Begin("Level Name", &showLoadLevel, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        auto size = ImGui::GetIO().DisplaySize;
+                        ImGui::RootDock(ImVec2(0, 0), size);
+
+                        ImGui::SetNextWindowPosCenter(ImGuiSetCond_FirstUseEver);
+                        if (showLoadLevel && ImGui::BeginDock("Level Name", &showLoadLevel, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                         {
-                            char name[256] = "";
+                            String levelName;
                             //ImGui::SetKeyboardFocusHere();
-                            if (ImGui::InputText("##Level Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
+                            if (ImGui::InputString("##Level Name", levelName, ImGuiInputTextFlags_EnterReturnsTrue))
                             {
-                                population->load(String(name));
+                                population->load(levelName);
                                 showLoadLevel = false;
                             }
 
                             ImGui::SameLine();
                             if (ImGui::Button("OK"))
                             {
-                                population->load(String(name));
+                                population->load(levelName);
                                 showLoadLevel = false;
                             }
 
-                            ImGui::End();
+                            ImGui::EndDock();
                         }
 
                         ImGui::SetNextWindowPos(ImVec2(0.0f, 20.0f));
-                        if (showOptionsMenu && ImGui::Begin("Options Menu", &showOptionsMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        if (showOptionsMenu && ImGui::BeginDock("Options Menu", &showOptionsMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
                         {
                             ImGui::Dummy(ImVec2(200, 0));
 
@@ -1217,7 +1220,7 @@ namespace Gek
 							ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 							ImGui::PopItemWidth();
 
-                            ImGui::End();
+                            ImGui::EndDock();
                         }
 
                         ImGui::SetNextWindowPosCenter();

@@ -122,9 +122,25 @@ namespace Gek
                 Shapes::Frustum viewFrustum;
                 Math::Float4x4 viewMatrix;
                 Math::Float4x4 projectionMatrix;
-                float nearClip, farClip;
+                float nearClip = 0.0f;
+                float farClip = 0.0f;
                 std::vector<String> filterList;
                 ResourceHandle cameraTarget;
+
+                RenderCall(void)
+                {
+                }
+
+                RenderCall(const RenderCall &renderCall)
+                    : viewFrustum(renderCall.viewFrustum)
+                    , viewMatrix(renderCall.viewMatrix)
+                    , projectionMatrix(renderCall.projectionMatrix)
+                    , nearClip(renderCall.nearClip)
+                    , farClip(renderCall.farClip)
+                    , filterList(renderCall.filterList)
+                    , cameraTarget(renderCall.cameraTarget)
+                {
+                }
             };
 
         private:

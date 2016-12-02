@@ -76,31 +76,7 @@ namespace Gek
             {
             }
 
-            Matrix3x2(TYPE _11, TYPE _12, TYPE _21, TYPE _22, TYPE _31, TYPE _32)
-                : data{
-                    _11, _12,
-                    _21, _22,
-                    _31, _32 }
-            {
-            }
-
-            Matrix3x2(const TYPE *data)
-                : data {
-                data[0], data[1],
-                data[2], data[3],
-                data[4], data[5] }
-            {
-            }
-
-            Matrix3x2(const Vector2<TYPE> *data)
-                : rows{
-                data[0],
-                data[1],
-                data[2] }
-            {
-            }
-
-            Matrix3x2(const Matrix3x2 &matrix)
+            explicit Matrix3x2(const Matrix3x2 &matrix)
                 : rows{
                 matrix.rows[0],
                 matrix.rows[1],
@@ -108,24 +84,25 @@ namespace Gek
             {
             }
 
+            explicit Matrix3x2(TYPE _11, TYPE _12, TYPE _21, TYPE _22, TYPE _31, TYPE _32)
+                : data{
+                    _11, _12,
+                    _21, _22,
+                    _31, _32 }
+            {
+            }
+
+            explicit Matrix3x2(const TYPE *data)
+                : data {
+                data[0], data[1],
+                data[2], data[3],
+                data[4], data[5] }
+            {
+            }
+
             Vector2<TYPE> getScaling(void) const
             {
                 return Vector2<TYPE>(_11, _22);
-            }
-
-            Vector2<TYPE> operator [] (int row) const
-            {
-                return rows[row];
-            }
-
-            Vector2<TYPE> &operator [] (int row)
-            {
-                return rows[row];
-            }
-
-            operator const TYPE *() const
-            {
-                return data;
             }
 
             void operator *= (const Matrix3x2 &matrix)

@@ -22,3 +22,6 @@
 [submodule "external/glbinding"]
 	path = External/glbinding
 	url = https://github.com/cginternals/glbinding.git
+[submodule "External/ImWindow"]
+	path = External/ImWindow
+	url = https://github.com/thennequin/ImWindow.git

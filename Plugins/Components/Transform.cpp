@@ -13,7 +13,7 @@ namespace Gek
     private:
         ImGuizmo::OPERATION currentGizmoOperation = ImGuizmo::TRANSLATE;
         bool useSnap = true;
-        Math::Float3 snapPosition = (1.0f / 12.0f);
+        Math::Float3 snapPosition = Math::Float3(1.0f / 12.0f);
         float snapRotation = 10.0f;
         float snapScale = (1.0f / 10.0f);
 

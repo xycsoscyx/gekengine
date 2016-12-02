@@ -10,30 +10,12 @@
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
+#include "GEK/GUI/Utilities.hpp"
 #include <typeindex>
-#include <imgui.h>
 
 #pragma warning(disable:4503)
 
 #define GEK_COMPONENT(TYPE)         struct TYPE : public Plugin::Component::Data
-
-struct ImGuiContext;
-
-namespace ImGui
-{
-    inline bool InputText(const char* label, Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL)
-    {
-        Gek::StringUTF8 stringUTF8(string);
-        stringUTF8.reserve(256);
-        if (InputText(label, &stringUTF8.front(), 255, flags, callback, user_data))
-        {
-            string = stringUTF8;
-            return true;
-        }
-
-        return false;
-    }
-}; // namespace ImGui
 
 namespace Gek
 {

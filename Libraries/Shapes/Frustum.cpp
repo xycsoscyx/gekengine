@@ -8,6 +8,14 @@ namespace Gek
         {
         }
 
+        Frustum::Frustum(const Frustum &frustum)
+        {
+            for(uint32_t index = 0; index < 6; index++)
+            {
+                planes[index] = frustum.planes[index];
+            }
+        }
+
         Frustum::Frustum(const Math::Float4x4 &perspectiveTransform)
         {
             create(perspectiveTransform);

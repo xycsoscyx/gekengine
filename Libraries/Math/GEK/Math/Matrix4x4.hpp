@@ -167,7 +167,15 @@ namespace Gek
             {
             }
 
-            inline Float4x4(
+            inline Float4x4(const Float4x4 &matrix)
+                : rx(matrix.data + 0)
+                , ry(matrix.data + 4)
+                , rz(matrix.data + 8)
+                , rw(matrix.data + 12)
+            {
+            }
+
+            explicit inline Float4x4(
                 float _11, float _12, float _13, float _14,
                 float _21, float _22, float _23, float _24,
                 float _31, float _32, float _33, float _34,
@@ -179,7 +187,7 @@ namespace Gek
             {
             }
 
-            inline Float4x4(const float *data)
+            explicit inline Float4x4(const float *data)
                 : rx(data + 0)
                 , ry(data + 4)
                 , rz(data + 8)
@@ -187,15 +195,7 @@ namespace Gek
             {
             }
 
-            inline Float4x4(const Float4x4 &matrix)
-                : rx(matrix.data + 0)
-                , ry(matrix.data + 4)
-                , rz(matrix.data + 8)
-                , rw(matrix.data + 12)
-            {
-            }
-
-            inline Float4x4(const Quaternion &rotation, const Float3 &translation)
+            explicit inline Float4x4(const Quaternion &rotation, const Float3 &translation)
                 : rw(translation, 1.0f)
             {
                 setRotation(rotation);
@@ -356,21 +356,6 @@ namespace Gek
             {
                 (*this) = getInverse();
                 return (*this);
-            }
-
-            inline Float4 operator [] (int row) const
-            {
-                return rows[row];
-            }
-
-            inline Float4 &operator [] (int row)
-            {
-                return rows[row];
-            }
-
-            inline operator const float *() const
-            {
-                return data;
             }
 
             inline Float4x4 &operator = (const Float4x4 &matrix)

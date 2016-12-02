@@ -40,8 +40,8 @@ namespace Gek
                     
                     union
                     {
-                        float w;
-                        float a;
+                        TYPE w;
+                        TYPE a;
                     };
                 };
 
@@ -57,7 +57,15 @@ namespace Gek
             {
             }
 
-            Vector4(TYPE value)
+            Vector4(const Vector4<TYPE> &vector)
+                : x(vector.x)
+                , y(vector.y)
+                , z(vector.z)
+                , w(vector.w)
+            {
+            }
+
+            explicit Vector4(TYPE value)
 				: x(value)
 				, y(value)
 				, z(value)
@@ -65,7 +73,7 @@ namespace Gek
             {
             }
 
-            Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
+            explicit Vector4(TYPE x, TYPE y, TYPE z, TYPE w)
 				: x(x)
 				, y(y)
 				, z(z)
@@ -73,7 +81,7 @@ namespace Gek
 			{
             }
 
-            Vector4(const TYPE *data)
+            explicit Vector4(const TYPE *data)
 				: x(data[0])
 				, y(data[1])
 				, z(data[2])
@@ -81,30 +89,19 @@ namespace Gek
 			{
             }
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector4(const Vector4<OTHER> &vector)
-				: x(TYPE(vector.x))
-				, y(TYPE(vector.y))
-				, z(TYPE(vector.z))
-				, w(TYPE(vector.w))
+            explicit Vector4(const Vector3<TYPE> &xyz, TYPE w)
+				: x(xyz.x)
+				, y(xyz.y)
+				, z(xyz.z)
+				, w(w)
 			{
 			}
 
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector4(const Vector3<OTHER> &xyz, OTHER w)
-				: x(TYPE(xyz.x))
-				, y(TYPE(xyz.y))
-				, z(TYPE(xyz.z))
-				, w(TYPE(w))
-			{
-			}
-
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector4(const Vector2<OTHER> &xy, const Vector2<OTHER> &zw)
-				: x(TYPE(xy.x))
-				, y(TYPE(xy.y))
-				, z(TYPE(zw.x))
-				, w(TYPE(zw.y))
+            explicit Vector4(const Vector2<TYPE> &xy, const Vector2<TYPE> &zw)
+				: x(xy.x)
+				, y(xy.y)
+				, z(zw.x)
+				, w(zw.y)
 			{
 			}
 
@@ -123,10 +120,10 @@ namespace Gek
 
             void set(const TYPE *data)
             {
-                this->x = TYPE(data[0]);
-                this->y = TYPE(data[1]);
-                this->z = TYPE(data[2]);
-                this->w = TYPE(data[3]);
+                this->x = data[0];
+                this->y = data[1];
+                this->z = data[2];
+                this->w = data[3];
             }
 
             void set(const Vector3<TYPE> &xyz, float w)
@@ -272,13 +269,12 @@ namespace Gek
             }
 
             // vector operations
-            template <typename OTHER, typename = typename std::enable_if<std::is_arithmetic<OTHER>::value, OTHER>::type>
-            Vector4 &operator = (const Vector4<OTHER> &vector)
+            Vector4 &operator = (const Vector4<TYPE> &vector)
             {
-                x = TYPE(vector.x);
-                y = TYPE(vector.y);
-                z = TYPE(vector.z);
-                w = TYPE(vector.w);
+                x = vector.x;
+                y = vector.y;
+                z = vector.z;
+                w = vector.w;
                 return (*this);
             }
 

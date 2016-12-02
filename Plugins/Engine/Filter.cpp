@@ -111,7 +111,7 @@ namespace Gek
                 uint32_t displayHeight = videoDevice->getBackBuffer()->getDescription().height;
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
                 globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
-                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(displayWidth, displayHeight));
+                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, Math::Float2(float(displayWidth), float(displayHeight)));
                 if (filterNode.has_member(L"defines"))
                 {
                     auto &definesNode = filterNode.get(L"defines");
