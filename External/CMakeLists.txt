@@ -39,15 +39,58 @@ project(nano-signal-slot)
 add_library(nano-signal-slot INTERFACE)
 target_include_directories(nano-signal-slot INTERFACE "${CMAKE_CURRENT_LIST_DIR}/nano-signal-slot")
 
-project(tinyxml)
-file(GLOB SOURCES "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml/*.cpp" "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml/*.h")
-add_library(tinyxml STATIC ${SOURCES})
-target_include_directories(tinyxml PUBLIC "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml")
-include_directories("${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml")
+#project(tinyxml)
+#file(GLOB SOURCES "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml/*.cpp" "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml/*.h")
+#add_library(tinyxml STATIC ${SOURCES})
+#target_include_directories(tinyxml PUBLIC "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml")
+#include_directories("${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/packages/thirdParty/tinyxml")
 
 add_definitions(-D_NEWTON_STATIC_LIB -D_CUSTOM_JOINTS_STATIC_LIB -DPTW32_STATIC_LIB)
-SET(NEWTON_DEMOS_SANDBOX False CACHE BOOL "" FORCE)
-add_subdirectory("newton-dynamics")
+#SET(NEWTON_DEMOS_SANDBOX False CACHE BOOL "" FORCE)
+#add_subdirectory("newton-dynamics")
+
+# Copied from master branch since 3.13 cmakes are broken
+add_definitions(-DHAVE_STRUCT_TIMESPEC)
+set(NEWTON_SOURCE "${CMAKE_CURRENT_LIST_DIR}/newton-dynamics/coreLibrary_300/source")
+
+file(GLOB dg_srcs "${NEWTON_SOURCE}/core/*.cpp")         # low level library
+file(GLOB physics_srcs "${NEWTON_SOURCE}/physics/*.cpp") # physics engine
+file(GLOB mesh_srcs "${NEWTON_SOURCE}/meshUtil/*.cpp")   # mesh geometry
+file(GLOB amp_srcs "${NEWTON_SOURCE}/ampPhysics/*.cpp")  # amp acceleration
+file(GLOB newton_srcs "${NEWTON_SOURCE}/newton/*.cpp")   # Newton engine
+
+if (WIN32)
+  # modified pthread library
+  file(GLOB_RECURSE pthread_srcs "${NEWTON_SOURCE}/pthreads.2/pthread.c")
+else (WIN32)
+  set(pthread_srcs "")
+endif (WIN32)
+
+add_library(NewtonObj OBJECT ${dg_srcs} ${physics_srcs} ${mesh_srcs} ${newton_srcs} ${amp_srcs} ${pthread_srcs})
+
+if (WIN32)
+  # add modified pthread library
+  target_include_directories(NewtonObj PRIVATE ${NEWTON_SOURCE}/pthreads.2)
+endif (WIN32)
+
+target_include_directories(NewtonObj PRIVATE ${NEWTON_SOURCE}/core)
+target_include_directories(NewtonObj PRIVATE ${NEWTON_SOURCE}/physics)
+target_include_directories(NewtonObj PRIVATE ${NEWTON_SOURCE}/meshUtil)
+target_include_directories(NewtonObj PRIVATE ${NEWTON_SOURCE}/ampPhysics)
+target_include_directories(NewtonObj INTERFACE ${NEWTON_SOURCE}/newton)
+
+# create static library
+add_library(NewtonStatic STATIC $<TARGET_OBJECTS:NewtonObj>)
+target_include_directories(NewtonStatic INTERFACE ${NEWTON_SOURCE}/newton)
+
+if (MSVC)
+  set_source_files_properties(${NEWTON_SOURCE}/core/dgTypes.cpp PROPERTIES COMPILE_FLAGS "/YcdgStdafx.h")
+  set_source_files_properties(${NEWTON_SOURCE}/newton/NewtonClass.cpp PROPERTIES COMPILE_FLAGS "/YcNewtonStdAfx.h")
+  set_source_files_properties(${NEWTON_SOURCE}/physics/dgWorld.cpp PROPERTIES COMPILE_FLAGS "/YcdgPhysicsStdafx.h")
+
+  set_target_properties(NewtonStatic PROPERTIES COMPILE_FLAGS "/YudgStdafx.h /YuNewtonStdAfx.h /YudgPhysicsStdafx.h")
+  set_target_properties (NewtonStatic PROPERTIES COMPILE_DEFINITIONS "_NEWTON_STATIC_LIB;_WIN_32_VER;PTW32_BUILD;PTW32_STATIC_LIB;_CRT_SECURE_NO_WARNINGS")
+endif(MSVC)
 
 project(jsoncons)
 add_library(jsoncons INTERFACE)
@@ -66,17 +109,17 @@ if(WIN32)
     set_property(TARGET UpdateAssimpLibsDebugSymbolsAndDLLs PROPERTY FOLDER "External/Assimp")
 endif()
 
-set_property(TARGET timeTracker PROPERTY FOLDER "External/Newton")
-set_property(TARGET Newton PROPERTY FOLDER "External/Newton")
+#set_property(TARGET timeTracker PROPERTY FOLDER "External/Newton")
+#set_property(TARGET Newton PROPERTY FOLDER "External/Newton")
 set_property(TARGET NewtonObj PROPERTY FOLDER "External/Newton")
 set_property(TARGET NewtonStatic PROPERTY FOLDER "External/Newton")
 
-set_property(TARGET tinyxml PROPERTY FOLDER "External/dNewton")
-set_property(TARGET dAnimation PROPERTY FOLDER "External/dNewton")
-set_property(TARGET dContainers PROPERTY FOLDER "External/dNewton")
-set_property(TARGET dCustomJoints PROPERTY FOLDER "External/dNewton")
-set_property(TARGET dMath PROPERTY FOLDER "External/dNewton")
-set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
+#set_property(TARGET tinyxml PROPERTY FOLDER "External/dNewton")
+#set_property(TARGET dAnimation PROPERTY FOLDER "External/dNewton")
+#set_property(TARGET dContainers PROPERTY FOLDER "External/dNewton")
+#set_property(TARGET dCustomJoints PROPERTY FOLDER "External/dNewton")
+#set_property(TARGET dMath PROPERTY FOLDER "External/dNewton")
+#set_property(TARGET dScene PROPERTY FOLDER "External/dNewton")
 
 set_property(TARGET imgui PROPERTY FOLDER "External/ImGui")
 

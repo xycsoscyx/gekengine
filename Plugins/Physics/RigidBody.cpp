@@ -72,7 +72,7 @@ namespace Gek
                 NewtonCollisionSetScale(NewtonBodyGetCollision(newtonBody), 1.0f, 1.0f, 1.0f);
 
                 Math::Float3 gravity(world->getGravity(transform.position));
-                NewtonBodyAddForce(newtonBody, (gravity * physical.mass * frameTime).data);
+                NewtonBodyAddForce(newtonBody, (gravity * physical.mass * 0.1f).data);
             }
 
             void onSetTransform(const float* const matrixData, int threadHandle)

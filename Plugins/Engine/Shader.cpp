@@ -875,7 +875,7 @@ namespace Gek
                         }
 
                         String passMaterial(passNode.get(L"material").as_string());
-                        auto &namedMaterialNode = materialNode[passMaterial];
+                        auto &namedMaterialNode = materialNode.get(passMaterial);
                         if (!namedMaterialNode.is_array())
                         {
                             throw MissingParameter("Material list must be an array");

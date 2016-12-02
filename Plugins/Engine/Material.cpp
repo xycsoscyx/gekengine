@@ -83,7 +83,7 @@ namespace Gek
                             ResourceHandle resourceHandle;
                             if (passDataNode.has_member(resource.name))
                             {
-                                auto &resourceNode = passDataNode[resource.name];
+                                auto &resourceNode = passDataNode.get(resource.name);
                                 if (!resourceNode.is_object())
                                 {
                                     throw InvalidParameter("Resource list must be an object");

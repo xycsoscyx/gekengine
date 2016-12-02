@@ -100,7 +100,7 @@ namespace Gek
                 NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-                NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
+                NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, this, newtonOnAABBOverlap, newtonOnContactFriction);
 
                 population->onLoadBegin.connect<Processor, &Processor::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Processor, &Processor::onLoadSucceeded>(this);
@@ -181,11 +181,10 @@ namespace Gek
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
                 population->listEntities<Components::Transform, Components::Physical>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &physicalComponent) -> void
                 {
+                    concurrency::critical_section::scoped_lock lock(criticalSection);
                     if (entity->hasComponent<Components::Player>())
                     {
-                        criticalSection.lock();
                         Newton::EntityPtr playerBody(createPlayerBody(population, newtonWorld, entity));
-                        criticalSection.unlock();
                         if (playerBody)
                         {
                             entityMap[entity] = playerBody;
@@ -203,33 +202,31 @@ namespace Gek
 
                         if (newtonCollision)
                         {
-                            criticalSection.lock();
-                            NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                            criticalSection.unlock();
-
                             if (physicalComponent.mass == 0.0f)
                             {
+                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
                                 NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
                                 NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
+                                NewtonDestroyCollision(clonedCollision);
                             }
                             else
                             {
-                                criticalSection.lock();
-                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, clonedCollision, entity));
-                                criticalSection.unlock();
+                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
                                 if (rigidBody)
                                 {
                                     entityMap[entity] = rigidBody;
                                     NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
                                 }
                             }
-
-                            NewtonDestroyCollision(clonedCollision);
                         }
                     }
                 });
 
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
+                NewtonCollisionSetMode(newtonStaticScene, true);
+                NewtonCollisionSetScale(newtonStaticScene, 1.0f, 1.0f, 1.0f);
+                NewtonCollisionSetMatrix(newtonStaticScene, Math::Float4x4::Identity.data);
+
                 newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
                 NewtonBodySetCollidable(newtonStaticBody, true);
             }
@@ -507,9 +504,9 @@ namespace Gek
 						std::vector<uint8_t> &buffer;
 						std::size_t offset;
 
-						DeSerializationData(std::vector<uint8_t> &buffer, uint8_t *end)
+						DeSerializationData(std::vector<uint8_t> &buffer, uint8_t *start)
 							: buffer(buffer)
-							, offset(end - &buffer.at(0))
+							, offset(start - &buffer.at(0))
 						{
 						}
 					};
@@ -525,10 +522,7 @@ namespace Gek
                     {
 						HullHeader *hullHeader = (HullHeader *)header;
 						DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
-                        
-                        criticalSection.lock();
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
-                        criticalSection.unlock();
                     }
                     else if (header->type == 2)
                     {
@@ -540,10 +534,7 @@ namespace Gek
                         }
 
 						DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
-
-                        criticalSection.lock();
                         newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
-                        criticalSection.unlock();
                     }
                     else
                     {
@@ -555,7 +546,8 @@ namespace Gek
                         throw Newton::UnableToCreateCollision("Unable to create model collision object");
                     }
 
-                    //NewtonCollisionSetMode(newtonCollision, 0);
+                    NewtonCollisionSetMode(newtonCollision, true);
+                    NewtonCollisionSetScale(newtonCollision, 1.0f, 1.0f, 1.0f);
                     NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
                     collisionMap[hash] = newtonCollision;
                 }
