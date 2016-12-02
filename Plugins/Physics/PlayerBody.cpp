@@ -78,7 +78,6 @@ namespace Gek
 		{
 		public:
 			void onEnter(PlayerBody *player);
-			void onExit(PlayerBody *player);
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
 		};
 
@@ -114,7 +113,6 @@ namespace Gek
             Math::Float3 groundVelocity = Math::Float3::Zero;
 
             bool touchingSurface = false;
-            bool jumping = false;
 
         public:
 			PlayerBody(Plugin::Population *population,
@@ -442,9 +440,6 @@ namespace Gek
 
             void onPreUpdate(float frameTime, int threadHandle)
 			{
-                forwardSpeed = 0.0f;
-                lateralSpeed = 0.0f;
-                verticalSpeed = 0.0f;
                 StatePtr nextState(currentState->onUpdate(this, frameTime));
 				if (nextState)
 				{
@@ -536,7 +531,7 @@ namespace Gek
                         }
 
                         int currentContact = 0;
-                        if (!jumping || touchingSurface)
+                        if (touchingSurface)
                         {
                             upConstraint.m_point[0] = matrix.translation.x;
                             upConstraint.m_point[1] = matrix.translation.y;
@@ -623,7 +618,7 @@ namespace Gek
                 // determine if player is standing on some plane
                 Math::Float4x4 supportMatrix(matrix);
                 supportMatrix.translation.xyz += (playerYAxis * sphereCastOrigin);
-                if (jumping || !touchingSurface)
+                if (!touchingSurface)
                 {
                     Math::Float3 targetPoint(matrix.translation);
                     updateGroundPlane(matrix, supportMatrix, targetPoint, threadHandle);
@@ -643,6 +638,9 @@ namespace Gek
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.setMatrix(matrix);
                 transformComponent.position += matrix.ry.xyz * playerComponent.height;
+                forwardSpeed = 0.0f;
+                lateralSpeed = 0.0f;
+                verticalSpeed = 0.0f;
             }
 		};
 
@@ -672,7 +670,7 @@ namespace Gek
 			{
 				return std::make_shared<WalkingState>();
 			}
-			else if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
+			else if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
 			{
 				return std::make_shared<JumpingState>();
 			}
@@ -694,7 +692,7 @@ namespace Gek
 
 		StatePtr WalkingState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
 		{
-			if (actionName.compareNoCase(L"jump") == 0 && parameter.state)
+			if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
 			{
 				return std::make_shared<JumpingState>();
 			}
@@ -704,21 +702,23 @@ namespace Gek
 
 		void JumpingState::onEnter(PlayerBody *player)
 		{
-			player->verticalSpeed += 10.0f;
-            player->jumping = true;
-		}
-
-		void JumpingState::onExit(PlayerBody *player)
-		{
-            player->jumping = false;
+            player->verticalSpeed += 10.0f;
+            player->touchingSurface = false;
 		}
 
 		StatePtr JumpingState::onUpdate(PlayerBody *player, float frameTime)
 		{
 			if (player->touchingSurface)
 			{
-				return std::make_shared<IdleState>();
-			}
+                if (player->moveForward || player->moveBackward || player->strafeLeft || player->strafeRight)
+                {
+                    return std::make_shared<WalkingState>();
+                }
+                else
+                {
+                    return std::make_shared<IdleState>();
+                }
+            }
 
 			return nullptr;
 		}
