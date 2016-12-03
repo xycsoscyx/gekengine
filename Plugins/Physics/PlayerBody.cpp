@@ -85,6 +85,7 @@ namespace Gek
 			: public Newton::Entity
 		{
 		public:
+            Plugin::Core *core = nullptr;
             Plugin::Population *population = nullptr;
 			Newton::World *world = nullptr;
 			NewtonWorld *newtonWorld = nullptr;
@@ -105,6 +106,7 @@ namespace Gek
             bool strafeLeft = false;
             bool strafeRight = false;
 			float headingAngle = 0.0f;
+            float lookingAngle = 0.0f;
 			float forwardSpeed = 0.0f;
 			float lateralSpeed = 0.0f;
 			float verticalSpeed = 0.0f;
@@ -115,10 +117,12 @@ namespace Gek
             bool touchingSurface = false;
 
         public:
-			PlayerBody(Plugin::Population *population,
+			PlayerBody(Plugin::Core *core,
+                Plugin::Population *population,
 				NewtonWorld *newtonWorld,
 				Plugin::Entity *entity)
-				: population(population)
+                : core(core)
+				, population(population)
 				, world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
 				, newtonWorld(newtonWorld)
 				, entity(entity)
@@ -389,11 +393,21 @@ namespace Gek
             // Plugin::Population Slots
 			void onAction(const String &actionName, const Plugin::Population::ActionParameter &parameter)
 			{
-				if (actionName.compareNoCase(L"turn") == 0)
+                if (core->isEditorActive())
+                {
+                    return;
+                }
+
+                if (actionName.compareNoCase(L"turn") == 0)
 				{
 					headingAngle += (parameter.value * 0.01f);
 				}
-				else if (actionName.compareNoCase(L"move_forward") == 0)
+                else if (actionName.compareNoCase(L"tilt") == 0)
+                {
+                    lookingAngle += (parameter.value * 0.01f);
+                    lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
+                }
+                else if (actionName.compareNoCase(L"move_forward") == 0)
 				{
 					moveForward = parameter.state;
 				}
@@ -637,7 +651,8 @@ namespace Gek
 
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 transformComponent.setMatrix(matrix);
-                transformComponent.position += matrix.ry.xyz * playerComponent.height;
+                transformComponent.position += (matrix.ry.xyz * playerComponent.height);
+                transformComponent.rotation = (Math::Quaternion::FromPitch(lookingAngle) * transformComponent.rotation);
                 forwardSpeed = 0.0f;
                 lateralSpeed = 0.0f;
                 verticalSpeed = 0.0f;
@@ -723,9 +738,9 @@ namespace Gek
 			return nullptr;
 		}
 
-		Newton::EntityPtr createPlayerBody(Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
+		Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
 		{
-			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(population, newtonWorld, entity));
+			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(core, population, newtonWorld, entity));
             population->onAction.connect<PlayerBody, &PlayerBody::onAction>(player.get());
 			return player;
 		}

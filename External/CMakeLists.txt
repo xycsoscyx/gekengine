@@ -31,9 +31,13 @@ if(WIN32)
 endif()
 
 project(imgui)
-file(GLOB SOURCES "imgui/*.cpp" "imgui/*.h" "imguizmo/*.cpp" "imguizmo/*.h")
+file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h"
+                  "imgui-addons/addons/imguidock/*.*"
+                  "imguizmo/*.cpp" "imguizmo/*.h")
 add_library(imgui STATIC ${SOURCES})
-target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui" "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
+target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons"
+                                        "${CMAKE_CURRENT_LIST_DIR}/imgui-addons/addons/imguidock"
+                                        "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
 
 project(nano-signal-slot)
 add_library(nano-signal-slot INTERFACE)

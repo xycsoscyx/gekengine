@@ -106,13 +106,15 @@ namespace Gek
         };
 
     private:
-        Plugin::Population *population;
-        Plugin::Resources *resources;
-        Plugin::Renderer *renderer;
+        Plugin::Core *core = nullptr;
+        Plugin::Population *population = nullptr;
+        Plugin::Resources *resources = nullptr;
+        Plugin::Renderer *renderer = nullptr;
 
     public:
         CameraProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
+            , core(core)
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
@@ -198,17 +200,20 @@ namespace Gek
         {
             GEK_REQUIRE(renderer);
 
-            list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+            if (!core->isEditorActive())
             {
-                auto viewMatrix(transformComponent.getMatrix().getInverse());
+                list([&](Plugin::Entity *entity, auto &data, auto &cameraComponent, auto &transformComponent) -> void
+                {
+                    auto viewMatrix(transformComponent.getMatrix().getInverse());
 
-                const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                const float width = float(backBuffer->getDescription().width);
-                const float height = float(backBuffer->getDescription().height);
-                Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
+                    const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                    const float width = float(backBuffer->getDescription().width);
+                    const float height = float(backBuffer->getDescription().height);
+                    Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
-            });
+                    renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
+                });
+            }
         }
     };
 

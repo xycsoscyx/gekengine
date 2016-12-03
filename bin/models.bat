@@ -7,5 +7,5 @@ pause
 .\release\createmodel -input data\models\cube.fbx -output data\models\cube.gek -flipCoords
 pause
 
-.\release\createhull -input data\models\cube.fbx -output data\models\cube.bin
+.\release\createhull -input data\models\cube.hull.fbx -output data\models\cube.bin
 pause

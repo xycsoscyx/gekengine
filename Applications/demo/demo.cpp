@@ -87,30 +87,37 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             throw std::exception("Unable to create window");
         }
 
-        ContextPtr context(Context::Create(rootPath, searchPathList));
-        ApplicationPtr application(context->createClass<Application>(L"Engine::Core", window));
-
-        SetWindowLongPtr(window, GWLP_USERDATA, LONG(application.get()));
-        ShowWindow(window, SW_SHOW);
-        UpdateWindow(window);
-
-        MSG message = { 0 };
-        while (message.message != WM_QUIT)
+        if (true)
         {
-            while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+            ContextPtr context(Context::Create(rootPath, searchPathList));
+            if (true)
             {
-                TranslateMessage(&message);
-                DispatchMessage(&message);
-            };
+                ApplicationPtr application(context->createClass<Application>(L"Engine::Core", window));
 
-            if (!application->update())
-            {
-                break;
+                SetWindowLongPtr(window, GWLP_USERDATA, LONG(application.get()));
+                ShowWindow(window, SW_SHOW);
+                UpdateWindow(window);
+
+                MSG message = { 0 };
+                while (message.message != WM_QUIT)
+                {
+                    while (PeekMessage(&message, nullptr, 0U, 0U, PM_REMOVE))
+                    {
+                        TranslateMessage(&message);
+                        DispatchMessage(&message);
+                    };
+
+                    if (!application->update())
+                    {
+                        break;
+                    }
+                };
+
+                SetWindowLongPtr(window, GWLP_USERDATA, 0);
             }
-        };
+        }
 
         DestroyWindow(window);
-        SetWindowLongPtr(window, GWLP_USERDATA, 0);
     }
     catch (const std::exception &exception)
     {

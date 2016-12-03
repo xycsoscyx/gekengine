@@ -45,11 +45,13 @@ namespace Gek
         , public Plugin::Processor
     {
     private:
-        Plugin::Population *population;
+        Plugin::Core *core = nullptr;
+        Plugin::Population *population = nullptr;
 
     public:
         SpinProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
+            , core(core)
             , population(core->getPopulation())
         {
             GEK_REQUIRE(population);
@@ -67,11 +69,14 @@ namespace Gek
         {
             GEK_REQUIRE(population);
 
-            population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
+            if (!core->isEditorActive())
             {
-                auto omega(spinComponent.torque * population->getFrameTime());
-                transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);
-            });
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
+                {
+                    auto omega(spinComponent.torque * population->getFrameTime());
+                    transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);
+                });
+            }
         }
     };
 

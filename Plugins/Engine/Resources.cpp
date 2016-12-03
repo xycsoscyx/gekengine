@@ -47,6 +47,7 @@ namespace Gek
             using ResourceMap = concurrency::concurrent_unordered_map<HANDLE, TypePtr>;
 
         private:
+            uint32_t validationIdentifier = 0;
             uint32_t nextIdentifier = 0;
 
         protected:
@@ -65,22 +66,26 @@ namespace Gek
 
             virtual void clear(void)
             {
+                validationIdentifier = nextIdentifier;
                 resourceHandleMap.clear();
                 resourceMap.clear();
             }
 
             void setResource(HANDLE handle, const TypePtr &data)
             {
-                auto &resource = resourceMap[handle];
+                auto &resource = resourceMap.insert(std::make_pair(handle, nullptr)).first->second;
                 std::atomic_exchange(&resource, data);
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
             {
-                auto resourceSearch = resourceMap.find(handle);
-                if (resourceSearch != std::end(resourceMap))
+                if (handle.identifier >= validationIdentifier)
                 {
-                    return std::atomic_load(&resourceSearch->second).get();
+                    auto resourceSearch = resourceMap.find(handle);
+                    if (resourceSearch != std::end(resourceMap))
+                    {
+                        return std::atomic_load(&resourceSearch->second).get();
+                    }
                 }
 
                 return nullptr;

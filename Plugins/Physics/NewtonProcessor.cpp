@@ -23,7 +23,7 @@ namespace Gek
 {
     namespace Newton
     {
-        extern EntityPtr createPlayerBody(Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity);
+        extern Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity);
         extern EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
 
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
@@ -140,6 +140,227 @@ namespace Gek
                 GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
             }
 
+            uint32_t getStaticSceneSurface(const Math::Float3 &position, const Math::Float3 &normal)
+            {
+                dLong surfaceAttribute = 0;
+                Math::Float3 collisionNormal;
+                NewtonCollisionRayCast(newtonStaticScene, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
+                if (surfaceAttribute > 0)
+                {
+                    return staticSurfaceMap[uint32_t(surfaceAttribute)];
+                }
+
+                return 0;
+            }
+            /*
+            NewtonCollision *createCollision(const Components::Shape &shapeComponent)
+            {
+            GEK_REQUIRE(population);
+
+            NewtonCollision *newtonCollision = nullptr;
+
+            auto hash = GetHash(shapeComponent.type, shapeComponent.parameters);
+            auto collisionSearch = collisionMap.find(hash);
+            if (collisionSearch != std::end(collisionMap))
+            {
+            if (collisionSearch->second)
+            {
+            newtonCollision = collisionSearch->second;
+            }
+            }
+            else
+            {
+            collisionMap[hash] = nullptr;
+
+            if (shapeComponent.type.compareNoCase(L"cube") == 0)
+            {
+            Math::Float3 size(Evaluator::Get<Math::Float3>(population->getShuntingYard(), shapeComponent.parameters));
+            newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
+            }
+            else if (shapeComponent.type.compareNoCase(L"sphere") == 0)
+            {
+            float size = Evaluator::Get<float>(population->getShuntingYard(), shapeComponent.parameters);
+            newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::Float4x4::Identity.data);
+            }
+            else if (shapeComponent.type.compareNoCase(L"cone") == 0)
+            {
+            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
+            newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
+            }
+            else if (shapeComponent.type.compareNoCase(L"capsule") == 0)
+            {
+            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
+            newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
+            }
+            else if (shapeComponent.type.compareNoCase(L"cylinder") == 0)
+            {
+            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
+            newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
+            }
+            else if (shapeComponent.type.compareNoCase(L"chamfer_cylinder") == 0)
+            {
+            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
+            newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
+            }
+
+            if (newtonCollision == nullptr)
+            {
+            throw Newton::UnableToCreateCollision("Unable to create shape collision object");
+            }
+
+            collisionMap[hash] = newtonCollision;
+            }
+
+            return newtonCollision;
+            }
+            */
+            NewtonCollision *loadCollision(const Components::Model &modelComponent)
+            {
+                NewtonCollision *newtonCollision = nullptr;
+
+                auto hash = GetHash(modelComponent.name);
+                auto collisionSearch = collisionMap.find(hash);
+                if (collisionSearch != std::end(collisionMap))
+                {
+                    if (collisionSearch->second)
+                    {
+                        newtonCollision = collisionSearch->second;
+                    }
+                }
+                else
+                {
+                    collisionMap[hash] = nullptr;
+
+                    std::vector<uint8_t> buffer;
+                    FileSystem::Load(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".bin"), buffer);
+
+                    Header *header = (Header *)buffer.data();
+                    if (header->identifier != *(uint32_t *)"GEKX")
+                    {
+                        throw Newton::InvalidModelIdentifier("Unknown model file identifier encountered");
+                    }
+
+                    if (header->version != 1)
+                    {
+                        throw Newton::InvalidModelVersion("Unsupported model version encountered");
+                    }
+
+                    struct DeSerializationData
+                    {
+                        std::vector<uint8_t> &buffer;
+                        std::size_t offset;
+
+                        DeSerializationData(std::vector<uint8_t> &buffer, uint8_t *start)
+                            : buffer(buffer)
+                            , offset(start - &buffer.at(0))
+                        {
+                        }
+                    };
+
+                    auto deSerializeCollision = [](void* const serializeHandle, void* const buffer, int size) -> void
+                    {
+                        auto data = (DeSerializationData *)serializeHandle;
+                        memcpy(buffer, &data->buffer.at(data->offset), size);
+                        data->offset += size;
+                    };
+
+                    if (header->type == 1)
+                    {
+                        HullHeader *hullHeader = (HullHeader *)header;
+                        DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
+                    }
+                    else if (header->type == 2)
+                    {
+                        TreeHeader *treeHeader = (TreeHeader *)header;
+                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
+                        {
+                            TreeHeader::Material &materialHeader = treeHeader->materialList[materialIndex];
+                            staticSurfaceMap[materialIndex] = loadSurface(materialHeader.name);
+                        }
+
+                        DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
+                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
+                    }
+                    else
+                    {
+                        throw Newton::InvalidModelType("Unsupported model type encountered");
+                    }
+
+                    if (newtonCollision == nullptr)
+                    {
+                        throw Newton::UnableToCreateCollision("Unable to create model collision object");
+                    }
+
+                    NewtonCollisionSetMode(newtonCollision, true);
+                    NewtonCollisionSetScale(newtonCollision, 1.0f, 1.0f, 1.0f);
+                    NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
+                    collisionMap[hash] = newtonCollision;
+                }
+
+                return newtonCollision;
+            }
+
+            concurrency::critical_section criticalSection;
+            void addEntity(Plugin::Entity *entity)
+            {
+                if (entity->hasComponents<Components::Transform, Components::Physical>())
+                {
+                    auto &transformComponent = entity->getComponent<Components::Transform>();
+                    auto &physicalComponent = entity->getComponent<Components::Physical>();
+
+                    concurrency::critical_section::scoped_lock lock(criticalSection);
+                    if (entity->hasComponent<Components::Player>())
+                    {
+                        Newton::EntityPtr playerBody(createPlayerBody(core, population, newtonWorld, entity));
+                        if (playerBody)
+                        {
+                            entityMap[entity] = playerBody;
+                            NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
+                        }
+                    }
+                    else
+                    {
+                        NewtonCollision *newtonCollision = nullptr;
+                        if (entity->hasComponents<Components::Model>())
+                        {
+                            const auto &modelComponent = entity->getComponent<Components::Model>();
+                            newtonCollision = loadCollision(modelComponent);
+                        }
+
+                        if (newtonCollision)
+                        {
+                            if (physicalComponent.mass == 0.0f && loadingScene)
+                            {
+                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
+                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
+                                NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
+                                NewtonDestroyCollision(clonedCollision);
+                            }
+                            else
+                            {
+                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
+                                if (rigidBody)
+                                {
+                                    entityMap[entity] = rigidBody;
+                                    NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            void removeEntity(Plugin::Entity *entity)
+            {
+                auto entitySearch = entityMap.find(entity);
+                if (entitySearch != std::end(entityMap))
+                {
+                    NewtonDestroyBody(entitySearch->second->getNewtonBody());
+                    entityMap.unsafe_erase(entitySearch);
+                }
+            }
+
             // Plugin::Population Slots
             void onLoadBegin(const String &populationName)
             {
@@ -169,9 +390,10 @@ namespace Gek
                 surfaceList.push_back(Surface());
             }
 
-            concurrency::critical_section criticalSection;
+            bool loadingScene = false;
             void onLoadSucceeded(const String &populationName)
             {
+                loadingScene = true;
                 newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
                 if (newtonStaticScene == nullptr)
                 {
@@ -179,47 +401,9 @@ namespace Gek
                 }
 
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-                population->listEntities<Components::Transform, Components::Physical>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &physicalComponent) -> void
+                population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
                 {
-                    concurrency::critical_section::scoped_lock lock(criticalSection);
-                    if (entity->hasComponent<Components::Player>())
-                    {
-                        Newton::EntityPtr playerBody(createPlayerBody(population, newtonWorld, entity));
-                        if (playerBody)
-                        {
-                            entityMap[entity] = playerBody;
-                            NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
-                        }
-                    }
-                    else
-                    {
-                        NewtonCollision *newtonCollision = nullptr;
-                        if (entity->hasComponents<Components::Model>())
-                        {
-                            const auto &modelComponent = entity->getComponent<Components::Model>();
-                            newtonCollision = loadCollision(modelComponent);
-                        }
-
-                        if (newtonCollision)
-                        {
-                            if (physicalComponent.mass == 0.0f)
-                            {
-                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
-                                NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
-                                NewtonDestroyCollision(clonedCollision);
-                            }
-                            else
-                            {
-                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
-                                if (rigidBody)
-                                {
-                                    entityMap[entity] = rigidBody;
-                                    NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
-                                }
-                            }
-                        }
-                    }
+                    addEntity(entity);
                 });
 
                 NewtonSceneCollisionEndAddRemove(newtonStaticScene);
@@ -229,18 +413,27 @@ namespace Gek
 
                 newtonStaticBody = NewtonCreateDynamicBody(newtonWorld, newtonStaticScene, Math::Float4x4::Identity.data);
                 NewtonBodySetCollidable(newtonStaticBody, true);
+                loadingScene = false;
+            }
+
+            void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
+            {
+                addEntity(entity);
             }
 
             void onEntityDestroyed(Plugin::Entity *entity)
             {
-                GEK_REQUIRE(entity);
+                removeEntity(entity);
+            }
 
-                auto entitySearch = entityMap.find(entity);
-                if (entitySearch != std::end(entityMap))
-                {
-                    NewtonDestroyBody(entitySearch->second->getNewtonBody());
-                    entityMap.unsafe_erase(entitySearch);
-                }
+            void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+            {
+                addEntity(entity);
+            }
+
+            void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+            {
+                removeEntity(entity);
             }
 
             void onUpdate(void)
@@ -248,8 +441,11 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(newtonWorld);
 
-                NewtonUpdate(newtonWorld, population->getFrameTime());
-                NewtonWaitForUpdateToFinish(newtonWorld);
+                if (!core->isEditorActive())
+                {
+                    NewtonUpdate(newtonWorld, population->getFrameTime());
+                    NewtonWaitForUpdateToFinish(newtonWorld);
+                }
             }
 
             // Newton::World
@@ -391,168 +587,6 @@ namespace Gek
                 }
 
                 NewtonWorldCriticalSectionUnlock(newtonWorld);
-            }
-
-        private:
-            uint32_t getStaticSceneSurface(const Math::Float3 &position, const Math::Float3 &normal)
-            {
-                dLong surfaceAttribute = 0;
-                Math::Float3 collisionNormal;
-                NewtonCollisionRayCast(newtonStaticScene, (position - normal).data, (position + normal).data, collisionNormal.data, &surfaceAttribute);
-                if (surfaceAttribute > 0)
-                {
-                    return staticSurfaceMap[uint32_t(surfaceAttribute)];
-                }
-
-                return 0;
-            }
-/*
-            NewtonCollision *createCollision(const Components::Shape &shapeComponent)
-            {
-                GEK_REQUIRE(population);
-
-                NewtonCollision *newtonCollision = nullptr;
-
-                auto hash = GetHash(shapeComponent.type, shapeComponent.parameters);
-                auto collisionSearch = collisionMap.find(hash);
-                if (collisionSearch != std::end(collisionMap))
-                {
-                    if (collisionSearch->second)
-                    {
-                        newtonCollision = collisionSearch->second;
-                    }
-                }
-                else
-                {
-                    collisionMap[hash] = nullptr;
-
-                    if (shapeComponent.type.compareNoCase(L"cube") == 0)
-                    {
-                        Math::Float3 size(Evaluator::Get<Math::Float3>(population->getShuntingYard(), shapeComponent.parameters));
-                        newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
-                    }
-                    else if (shapeComponent.type.compareNoCase(L"sphere") == 0)
-                    {
-                        float size = Evaluator::Get<float>(population->getShuntingYard(), shapeComponent.parameters);
-                        newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::Float4x4::Identity.data);
-                    }
-                    else if (shapeComponent.type.compareNoCase(L"cone") == 0)
-                    {
-                        Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-                        newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
-                    }
-                    else if (shapeComponent.type.compareNoCase(L"capsule") == 0)
-                    {
-                        Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-                        newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
-                    }
-                    else if (shapeComponent.type.compareNoCase(L"cylinder") == 0)
-                    {
-                        Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-                        newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
-                    }
-                    else if (shapeComponent.type.compareNoCase(L"chamfer_cylinder") == 0)
-                    {
-                        Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-                        newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
-                    }
-
-                    if (newtonCollision == nullptr)
-                    {
-                        throw Newton::UnableToCreateCollision("Unable to create shape collision object");
-                    }
-
-                    collisionMap[hash] = newtonCollision;
-                }
-
-                return newtonCollision;
-            }
-*/
-            NewtonCollision *loadCollision(const Components::Model &modelComponent)
-            {
-                NewtonCollision *newtonCollision = nullptr;
-
-                auto hash = GetHash(modelComponent.name);
-                auto collisionSearch = collisionMap.find(hash);
-                if (collisionSearch != std::end(collisionMap))
-                {
-                    if (collisionSearch->second)
-                    {
-                        newtonCollision = collisionSearch->second;
-                    }
-                }
-                else
-                {
-                    collisionMap[hash] = nullptr;
-
-					std::vector<uint8_t> buffer;
-					FileSystem::Load(getContext()->getFileName(L"data\\models", modelComponent.name).append(L".bin"), buffer);
-
-                    Header *header = (Header *)buffer.data();
-                    if (header->identifier != *(uint32_t *)"GEKX")
-                    {
-                        throw Newton::InvalidModelIdentifier("Unknown model file identifier encountered");
-                    }
-
-					if (header->version != 1)
-                    {
-                        throw Newton::InvalidModelVersion("Unsupported model version encountered");
-                    }
-
-					struct DeSerializationData
-					{
-						std::vector<uint8_t> &buffer;
-						std::size_t offset;
-
-						DeSerializationData(std::vector<uint8_t> &buffer, uint8_t *start)
-							: buffer(buffer)
-							, offset(start - &buffer.at(0))
-						{
-						}
-					};
-
-					auto deSerializeCollision = [](void* const serializeHandle, void* const buffer, int size) -> void
-					{
-						auto data = (DeSerializationData *)serializeHandle;
-						memcpy(buffer, &data->buffer.at(data->offset), size);
-						data->offset += size;
-					};
-
-                    if (header->type == 1)
-                    {
-						HullHeader *hullHeader = (HullHeader *)header;
-						DeSerializationData data(buffer, (uint8_t *)&hullHeader->serializationData[0]);
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
-                    }
-                    else if (header->type == 2)
-                    {
-                        TreeHeader *treeHeader = (TreeHeader *)header;
-                        for (uint32_t materialIndex = 0; materialIndex < treeHeader->materialCount; ++materialIndex)
-                        {
-                            TreeHeader::Material &materialHeader = treeHeader->materialList[materialIndex];
-                            staticSurfaceMap[materialIndex] = loadSurface(materialHeader.name);
-                        }
-
-						DeSerializationData data(buffer, (uint8_t *)&treeHeader->materialList[treeHeader->materialCount]);
-                        newtonCollision = NewtonCreateCollisionFromSerialization(newtonWorld, deSerializeCollision, &data);
-                    }
-                    else
-                    {
-                        throw Newton::InvalidModelType("Unsupported model type encountered");
-                    }
-
-                    if (newtonCollision == nullptr)
-                    {
-                        throw Newton::UnableToCreateCollision("Unable to create model collision object");
-                    }
-
-                    NewtonCollisionSetMode(newtonCollision, true);
-                    NewtonCollisionSetScale(newtonCollision, 1.0f, 1.0f, 1.0f);
-                    NewtonCollisionSetMatrix(newtonCollision, Math::Float4x4::Identity.data);
-                    collisionMap[hash] = newtonCollision;
-                }
-
-                return newtonCollision;
             }
         };
 

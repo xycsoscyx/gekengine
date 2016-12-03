@@ -38,6 +38,10 @@ namespace Gek
             uint32_t selectedEntity = 0;
             uint32_t selectedComponent = 0;
 
+            Video::TexturePtr deleteTexture;
+            Video::TexturePtr showSideBar;
+            Video::TexturePtr hideSideBar;
+
         public:
             Editor(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
@@ -52,6 +56,11 @@ namespace Gek
                 population->onLoadBegin.connect<Editor, &Editor::onLoadBegin>(this);
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
+
+                String baseFileName(getContext()->getFileName(L"data\\gui"));
+                deleteTexture = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
+                showSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"show.png"), 0);
+                hideSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"hide.png"), 0);
             }
 
             ~Editor(void)
@@ -63,6 +72,7 @@ namespace Gek
             }
 
             // Plugin::Core Slots
+            bool showFullEditor = false;
             void onInterface(bool showCursor)
             {
                 if (population->isLoading())
@@ -70,16 +80,22 @@ namespace Gek
                     return;
                 }
 
-                auto &configuration = core->getConfiguration();
-                bool editingEnabled = configuration[L"editor"][L"enabled"].as_bool();
-                bool showSelectionMenu = configuration[L"editor"][L"show_selector"].as_bool();
-                if (showCursor && showSelectionMenu && ImGui::BeginDock("Entity List", &showSelectionMenu, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                if(showFullEditor)
                 {
-                    ImGui::Dummy(ImVec2(350, 0));
+                    ImGui::SetNextWindowSize(ImVec2(350, ImGui::GetIO().DisplaySize.y));
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 350, 0));
+                    ImGui::Begin("Entity List", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+                    ImGui::PushItemWidth(-1.0f);
+
                     auto &entityMap = population->getEntityMap();
                     if (!entityMap.empty())
                     {
-                        ImGui::Separator();
+                        if (ImGui::ImageButton((Video::Object *)hideSideBar.get(), ImVec2(12, 12)))
+                        {
+                            showFullEditor = false;
+                        }
+
+                        ImGui::SameLine();
                         if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                         {
                             ImGui::OpenPopup("Entity Name");
@@ -87,8 +103,8 @@ namespace Gek
 
                         if (ImGui::BeginPopup("Entity Name"))
                         {
-                            char name[256] = "";
-                            if (ImGui::InputText("Name", name, 255, ImGuiInputTextFlags_EnterReturnsTrue))
+                            String name;
+                            if (ImGui::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                             {
                                 population->createEntity(String(name));
                                 ImGui::CloseCurrentPopup();
@@ -97,7 +113,6 @@ namespace Gek
                             ImGui::EndPopup();
                         }
 
-                        ImGui::PushItemWidth(-1.0f);
                         auto entityCount = entityMap.size();
                         if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
                         {
@@ -109,13 +124,11 @@ namespace Gek
                                 for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                                 {
                                     ImGui::PushID(entityIndex);
-                                    ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
-                                    if (ImGui::Button("X"))
+                                    if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
                                     {
                                         population->killEntity(entitySearch->second.get());
                                     }
 
-                                    ImGui::PopStyleVar();
                                     ImGui::PopID();
                                     ImGui::SameLine();
                                     ImGui::SetItemAllowOverlap();
@@ -130,15 +143,11 @@ namespace Gek
                             ImGui::ListBoxFooter();
                         }
 
-                        ImGui::PopItemWidth();
-
                         auto entitySearch = std::begin(entityMap);
                         std::advance(entitySearch, selectedEntity);
                         Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
                         if (entity)
                         {
-                            ImGui::Separator();
-                            ImGui::PushItemWidth(-1.0f);
                             if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                             {
                                 ImGui::OpenPopup("Select Component");
@@ -188,13 +197,11 @@ namespace Gek
                                             std::advance(entityComponentSearch, componentIndex);
 
                                             ImGui::PushID(componentIndex);
-                                            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(7.0f, 0));
-                                            if (ImGui::Button("X"))
+                                            if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
                                             {
                                                 componentDeleteList.push_back(entityComponentSearch->first);
                                             }
 
-                                            ImGui::PopStyleVar();
                                             ImGui::PopID();
                                             ImGui::SameLine();
                                             ImGui::SetItemAllowOverlap();
@@ -212,8 +219,6 @@ namespace Gek
                                     }
                                 }
 
-                                ImGui::PopItemWidth();
-
                                 auto entityComponentSearch = std::begin(entityComponentMap);
                                 std::advance(entityComponentSearch, selectedComponent);
                                 if (entityComponentSearch != std::end(entityComponentMap))
@@ -222,8 +227,7 @@ namespace Gek
                                     Plugin::Component::Data *componentData = entityComponentSearch->second.get();
                                     if (component && componentData)
                                     {
-                                        ImGui::Separator();
-                                        if (editingEnabled)
+                                        if (core->isEditorActive())
                                         {
                                             Math::Float4x4 viewMatrix(rotation, position);
                                             viewMatrix.invert();
@@ -245,22 +249,39 @@ namespace Gek
                         }
                     }
 
-                    ImGui::EndDock();
+                    ImGui::PopItemWidth();
+                    ImGui::End();
                 }
+                else
+                {
+                    ImGui::SetNextWindowSize(ImVec2(36, ImGui::GetIO().DisplaySize.y));
+                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 36, 0));
+                    ImGui::Begin("Entity List", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+                    if (ImGui::ImageButton((Video::Object *)showSideBar.get(), ImVec2(12, 12)))
+                    {
+                        showFullEditor = true;
+                    }
 
-                configuration[L"editor"][L"show_selector"] = showSelectionMenu;
+                    ImGui::End();
+                }
             }
 
             // Plugin::Population Slots
             void onAction(const String &actionName, const Plugin::Population::ActionParameter &parameter)
             {
+                if (!core->isEditorActive())
+                {
+                    return;
+                }
+
                 if (actionName.compareNoCase(L"turn") == 0)
                 {
                     headingAngle += (parameter.value * 0.01f);
                 }
-                else if (actionName.compareNoCase(L"turn") == 0)
+                else if (actionName.compareNoCase(L"tilt") == 0)
                 {
-                    headingAngle += (parameter.value * 0.01f);
+                    lookingAngle += (parameter.value * 0.01f);
+                    lookingAngle = Math::Clamp(lookingAngle, -Math::Pi * 0.5f, Math::Pi * 0.5f);
                 }
                 else if (actionName.compareNoCase(L"move_forward") == 0)
                 {
@@ -296,16 +317,11 @@ namespace Gek
 
             void onUpdate(void)
             {
-                auto &configuration = core->getConfiguration();
-                bool editingEnabled = configuration[L"editor"][L"enabled"].as_bool();
-                if (editingEnabled)
+                if (core->isEditorActive())
                 {
                     float frameTime = population->getFrameTime();
 
-                    static const Math::Float3 upAxis(0.0f, 1.0f, 0.0f);
-                    rotation = Math::Quaternion::FromAngular(upAxis, headingAngle);
-
-                    Math::Float4x4 viewMatrix(rotation);
+                    Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
                     position += (viewMatrix.rz.xyz * (((moveForward ? 1.0f : 0.0f) + (moveBackward ? -1.0f : 0.0f)) * 5.0f) * frameTime);
                     position += (viewMatrix.rx.xyz * (((strafeLeft ? -1.0f : 0.0f) + (strafeRight ? 1.0f : 0.0f)) * 5.0f) * frameTime);
                     viewMatrix.translation.xyz = position;

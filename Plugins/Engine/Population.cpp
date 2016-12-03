@@ -416,8 +416,12 @@ namespace Gek
             void removeComponent(Plugin::Entity *entity, const std::type_index &type)
             {
                 GEK_REQUIRE(entity);
-                onComponentRemoved.emit(entity, type);
-                static_cast<Entity *>(entity)->removeComponent(type);
+
+                if (entity->hasComponent(type))
+                {
+                    onComponentRemoved.emit(entity, type);
+                    static_cast<Entity *>(entity)->removeComponent(type);
+                }
             }
 
             void listEntities(std::function<void(Plugin::Entity *, const wchar_t *)> onEntity) const

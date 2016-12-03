@@ -519,15 +519,17 @@ namespace Gek
             Video::ObjectPtr blendState;
             Video::ObjectPtr renderState;
             Video::ObjectPtr depthState;
-            Video::TexturePtr font;
+            Video::TexturePtr fontTexture;
             Video::ObjectPtr samplerState;
             Video::BufferPtr vertexBuffer;
             Video::BufferPtr indexBuffer;
+            Video::TexturePtr logoTexture;
 
             bool showCursor = false;
             bool showOptionsMenu = false;
 			bool showModeChange = false;
 			float modeChangeTimer = 0.0f;
+            bool editorActive = false;
 
         public:
             Core(Context *context, HWND window)
@@ -555,8 +557,6 @@ namespace Gek
                     configuration[L"display"][L"mode"] = 0;
                 }
 
-                configuration[L"editor"][L"enabled"] = false;
-                configuration[L"editor"][L"show_selector"] = false;
                 previousDisplayMode = currentDisplayMode = configuration[L"display"][L"mode"].as_uint();
 
                 HRESULT resultValue = CoInitialize(nullptr);
@@ -596,6 +596,9 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
+                String baseFileName(getContext()->getFileName(L"data\\gui"));
+                logoTexture = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"logo.png"), 0);
+
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.Fonts->AddFontDefault();
                 imGuiIo.Fonts->Build();
@@ -624,8 +627,9 @@ namespace Gek
                 ImGuiStyle& style = ImGui::GetStyle();
                 //ImGui::SetupImGuiStyle(false, 0.9f);
                 ImGui::ResetStyle(ImGui::ImGuiStyle_OSX, style);
-                style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
-                style.FrameRounding = 3.14f;
+                style.WindowTitleAlign = ImGuiAlign_Center | ImGuiAlign_VCenter;
+                style.WindowRounding = 0.0f;
+                style.FrameRounding = 1.0f;
 
                 static const wchar_t *vertexShader =
                     L"cbuffer vertexBuffer : register(b0)" \
@@ -740,9 +744,9 @@ namespace Gek
                 fontDescription.width = fontWidth;
                 fontDescription.height = fontHeight;
                 fontDescription.flags = Video::TextureDescription::Flags::Resource;
-                font = videoDevice->createTexture(fontDescription, pixels);
+                fontTexture = videoDevice->createTexture(fontDescription, pixels);
 
-                imGuiIo.Fonts->TexID = (Video::Object *)font.get();
+                imGuiIo.Fonts->TexID = (Video::Object *)fontTexture.get();
 
                 Video::SamplerStateInformation samplerStateInformation;
                 samplerStateInformation.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
@@ -793,7 +797,7 @@ namespace Gek
                 blendState = nullptr;
                 renderState = nullptr;
                 depthState = nullptr;
-                font = nullptr;
+                fontTexture = nullptr;
                 samplerState = nullptr;
                 vertexBuffer = nullptr;
                 indexBuffer = nullptr;
@@ -803,7 +807,6 @@ namespace Gek
                 resources = nullptr;
                 population = nullptr;
                 videoDevice = nullptr;
-                configuration.erase(L"editor");
                 JSON::Save(getContext()->getFileName(L"config.json"), configuration);
                 CoUninitialize();
             }
@@ -844,6 +847,11 @@ namespace Gek
             JSON::Object const &getConfiguration(void) const
             {
                 return configuration;
+            }
+
+            bool isEditorActive(void) const
+            {
+                return editorActive;
             }
 
             Plugin::Population * getPopulation(void) const
@@ -1073,8 +1081,6 @@ namespace Gek
                 return Result();
             }
 
-            bool showLoadLevel = false;
-            bool editorSelected = false;
             bool update(void)
             {
                 ImGuiIO &imGuiIo = ImGui::GetIO();
@@ -1098,155 +1104,80 @@ namespace Gek
                 // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
 
                 ImGui::NewFrame();
+                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+
+                const ImGuiWindowFlags flags = (ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, flags);
 
                 if (windowActive)
                 {
                     if (showCursor)
                     {
-                        // Start the frame
-                        if (ImGui::BeginMainMenuBar())
+                        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 0));
+                        ImGui::SetNextWindowPos(ImVec2(0, 0));
+                        ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+
+                        ImGui::PushItemWidth(350.0f);
+                        if (ImGui::Combo("Display Mode", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
                         {
-                            if (ImGui::BeginMenu("File", true))
-                            {
-                                ImGui::PushItemWidth(-1);
-                                if (ImGui::MenuItem("New Level", "N"))
-                                {
-                                    population->load(nullptr);
-                                }
-
-                                if (ImGui::MenuItem("Load Level", "L"))
-                                {
-                                    showLoadLevel = true;
-                                }
-
-                                if (ImGui::MenuItem("Quit", "Q"))
-                                {
-                                    engineRunning = false;
-                                }
-
-                                ImGui::PopItemWidth();
-                                ImGui::EndMenu();
-                            }
-
-                            if (ImGui::BeginMenu("Edit"))
-                            {
-                                ImGui::PushItemWidth(-1);
-                                if (ImGui::MenuItem("Options", "O"))
-                                {
-                                    showOptionsMenu = true;
-                                }
-
-                                if (ImGui::MenuItem("Selector", "S"))
-                                {
-                                    configuration[L"editor"][L"show_selector"] = true;
-                                }
-
-                                if (ImGui::MenuItem("Editor", "E", &editorSelected))
-                                {
-                                    bool enabled = configuration[L"editor"][L"enabled"].as_bool();
-                                    configuration[L"editor"][L"enabled"] = !enabled;
-                                }
-
-                                ImGui::PopItemWidth();
-                                ImGui::EndMenu();
-                            }
-
-                            ImGui::EndMainMenuBar();
+                            Core *core = static_cast<Core *>(data);
+                            auto &mode = core->displayModeStringList[index];
+                            (*text) = mode.c_str();
+                            return true;
+                        }, this, displayModeStringList.size(), 5))
+                        {
+                            configuration[L"display"][L"mode"] = currentDisplayMode;
+                            setDisplayMode(currentDisplayMode);
+                            showModeChange = true;
+                            modeChangeTimer = 5.0f;
                         }
 
-                        auto size = ImGui::GetIO().DisplaySize;
-                        ImGui::RootDock(ImVec2(0, 0), size);
-
-                        ImGui::SetNextWindowPosCenter(ImGuiSetCond_FirstUseEver);
-                        if (showLoadLevel && ImGui::BeginDock("Level Name", &showLoadLevel, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
+                        ImGui::PopItemWidth();
+                        ImGui::SameLine();
+                        if (ImGui::Checkbox("FullScreen", &fullScreen))
                         {
-                            String levelName;
-                            //ImGui::SetKeyboardFocusHere();
-                            if (ImGui::InputString("##Level Name", levelName, ImGuiInputTextFlags_EnterReturnsTrue))
+                            if (fullScreen)
                             {
-                                population->load(levelName);
-                                showLoadLevel = false;
+                                SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                            }
+
+                            videoDevice->setFullScreenState(fullScreen);
+                            onResize.emit();
+                            if (!fullScreen)
+                            {
+                                centerWindow();
+                            }
+                        }
+
+                        ImGui::SameLine();
+                        ImGui::Checkbox("Editor", &editorActive);
+                        ImGui::End();
+
+                        if (showModeChange)
+                        {
+                            ImGui::SetNextWindowPosCenter();
+                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                            ImGui::Text("Keep Display Mode?");
+
+                            if (ImGui::Button("Yes"))
+                            {
+                                showModeChange = false;
+                                previousDisplayMode = currentDisplayMode;
                             }
 
                             ImGui::SameLine();
-                            if (ImGui::Button("OK"))
+                            modeChangeTimer -= float(timer.getUpdateTime());
+                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
                             {
-                                population->load(levelName);
-                                showLoadLevel = false;
+                                showModeChange = false;
+                                setDisplayMode(previousDisplayMode);
                             }
 
-                            ImGui::EndDock();
+                            ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+
+                            ImGui::End();
                         }
 
-                        ImGui::SetNextWindowPos(ImVec2(0.0f, 20.0f));
-                        if (showOptionsMenu && ImGui::BeginDock("Options Menu", &showOptionsMenu, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
-                        {
-                            ImGui::Dummy(ImVec2(200, 0));
-
-                            ImGui::Text("Display Mode");
-                            ImGui::PushItemWidth(-1.0f);
-                            if (ImGui::ListBox("##Resolution", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
-                            {
-                                Core *core = static_cast<Core *>(data);
-                                auto &mode = core->displayModeStringList[index];
-                                (*text) = mode.c_str();
-                                return true;
-                            }, this, displayModeStringList.size(), 5))
-                            {
-                                configuration[L"display"][L"mode"] = currentDisplayMode;
-                                setDisplayMode(currentDisplayMode);
-								showModeChange = true;
-								modeChangeTimer = 5.0f;
-							}
-
-                            ImGui::PopItemWidth();
-                            if (ImGui::Checkbox("FullScreen", &fullScreen))
-                            {
-								if (fullScreen)
-								{
-									SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-								}
-
-                                videoDevice->setFullScreenState(fullScreen);
-                                onResize.emit();
-								if (!fullScreen)
-								{
-									centerWindow();
-								}
-							}
-
-							ImGui::Separator();
-							ImGui::PushItemWidth(-1.0f);
-							ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-							ImGui::PopItemWidth();
-
-                            ImGui::EndDock();
-                        }
-
-                        ImGui::SetNextWindowPosCenter();
-						if (showModeChange && ImGui::Begin("Keep Display Mode", &showModeChange, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding))
-						{
-							ImGui::Text("Keep Display Mode?");
-
-							if (ImGui::Button("Yes"))
-							{
-								showModeChange = false;
-								previousDisplayMode = currentDisplayMode;
-							}
-
-							ImGui::SameLine();
-                            modeChangeTimer -= float(timer.getUpdateTime());
-							if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-							{
-								showModeChange = false;
-								setDisplayMode(previousDisplayMode);
-							}
-
-							ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
-
-							ImGui::End();
-						}
-                        
                         population->update(0.0f);
                     }
                     else
@@ -1258,25 +1189,19 @@ namespace Gek
 
                 if (population->isLoading())
                 {
-                    bool loadingOpen = true;
                     ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("GEK Engine##Loading", &loadingOpen, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
-                    {
-                        ImGui::Dummy(ImVec2(200, 0));
-                        ImGui::Text("Loading...");
-                        ImGui::End();
-                    }
+                    ImGui::Begin("GEK Engine##Loading", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Dummy(ImVec2(200, 0));
+                    ImGui::Text("Loading...");
+                    ImGui::End();
                 }
                 else if (!windowActive)
                 {
-                    bool pausedOpen = true;
                     ImGui::SetNextWindowPosCenter();
-                    if (ImGui::Begin("GEK Engine##Paused", &pausedOpen, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove))
-                    {
-                        ImGui::Dummy(ImVec2(200, 0));
-                        ImGui::Text("Paused");
-                        ImGui::End();
-                    }
+                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Dummy(ImVec2(200, 0));
+                    ImGui::Text("Paused");
+                    ImGui::End();
                 }
 
                 if (windowActive && !showCursor)
@@ -1292,6 +1217,17 @@ namespace Gek
                 onInterface.emit(showCursor);
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
 
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 3));
+                ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 0));
+                ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 22));
+                ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+                ImGui::Image((Video::Object *)logoTexture.get(), ImVec2(16, 16));
+                ImGui::SameLine();
+                ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::End();
+                ImGui::PopStyleVar();
+
+                ImGui::End();
                 ImGui::Render();
                 
                 videoDevice->present(false);
