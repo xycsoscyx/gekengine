@@ -29,7 +29,6 @@ namespace Gek
             float headingAngle = 0.0f;
             float lookingAngle = 0.0f;
             Math::Float3 position = Math::Float3::Zero;
-            Math::Quaternion rotation = Math::Quaternion::Identity;
             bool moveForward = false;
             bool moveBackward = false;
             bool strafeLeft = false;
@@ -229,7 +228,8 @@ namespace Gek
                                     {
                                         if (core->isEditorActive())
                                         {
-                                            Math::Float4x4 viewMatrix(rotation, position);
+                                            Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                                            viewMatrix.translation.xyz = position;
                                             viewMatrix.invert();
 
                                             const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
@@ -308,7 +308,6 @@ namespace Gek
                 headingAngle = 0.0f;
                 lookingAngle = 0.0f;
                 position = Math::Float3::Zero;
-                rotation = Math::Quaternion::Identity;
                 moveForward = false;
                 moveBackward = false;
                 strafeLeft = false;

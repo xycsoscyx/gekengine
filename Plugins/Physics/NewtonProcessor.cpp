@@ -441,7 +441,7 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(newtonWorld);
 
-                if (!core->isEditorActive())
+                if (!core->isEditorActive() && population->getFrameTime() > 0.0f)
                 {
                     NewtonUpdate(newtonWorld, population->getFrameTime());
                     NewtonWaitForUpdateToFinish(newtonWorld);

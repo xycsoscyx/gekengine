@@ -10,7 +10,7 @@
 #include "GEK/Math/Matrix4x4.hpp"
 #include "GEK/Utility/String.hpp"
 #include <imgui.h>
-#include <imguidock.h>
+#include <ImGuizmo.h>
 
 namespace ImGui
 {

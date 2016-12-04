@@ -42,7 +42,7 @@
                 "rotation": "(0, pi/2, 0)"
             },
             "FirstPersonCamera": {
-                "FieldOfView": 70,
+                "FieldOfView": 60,
                 "NearClip": 0.5,
                 "FarClip": 200,
                 "filterList": "tonemap"

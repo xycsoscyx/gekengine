@@ -301,7 +301,7 @@ namespace Gek
                             loadLevel(populationName);
                         });
                     }
-                    else if (frameTime > 0.0f)
+                    else
                     {
                         Action action;
                         while (actionQueue.try_pop(action))

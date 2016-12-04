@@ -3,7 +3,6 @@
 #include "GEK/Engine/ComponentMixin.hpp"
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Utility/String.hpp"
-#include <ImGuizmo.h>
 
 namespace Gek
 {
