@@ -11,6 +11,7 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Renderer.hpp"
 #include <concurrent_queue.h>
+#include <imgui_internal.h>
 #include <queue>
 #include <ppl.h>
 
@@ -1089,6 +1090,7 @@ namespace Gek
                 uint32_t width = backBuffer->getDescription().width;
                 uint32_t height = backBuffer->getDescription().height;
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+                float barWidth = width;
 
                 timer.update();
                 imGuiIo.DeltaTime = float(timer.getUpdateTime());
@@ -1108,9 +1110,21 @@ namespace Gek
                 ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
                 if (windowActive)
                 {
+                    onDisplay.emit();
+                    onInterface.emit(showCursor);
+
+                    auto imGuiContext = ImGui::GetCurrentContext();
+                    for (auto &window : imGuiContext->Windows)
+                    {
+                        if (strcmp(window->Name, "Editor") == 0)
+                        {
+                            barWidth = (width - window->Size.x);
+                        }
+                    }
+
                     if (showCursor)
                     {
-                        ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 0));
+                        ImGui::SetNextWindowSize(ImVec2(barWidth, 0));
                         ImGui::SetNextWindowPos(ImVec2(0, 0));
                         ImGui::Begin("Options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
 
@@ -1210,17 +1224,17 @@ namespace Gek
 						int(Math::Interpolate(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
                 }
 
-                onDisplay.emit();
-                onInterface.emit(showCursor);
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
 
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 3));
-                ImGui::SetNextWindowSize(ImVec2(ImGui::GetIO().DisplaySize.x, 0));
+                //ImGui::SetNextWindowSize(ImVec2(barWidth, 0));
                 ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 22));
                 ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
                 ImGui::Image((Video::Object *)logoTexture.get(), ImVec2(16, 16));
                 ImGui::SameLine();
                 ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::SameLine();
+                ImGui::Spacing();
                 ImGui::End();
                 ImGui::PopStyleVar();
 

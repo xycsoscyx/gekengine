@@ -83,7 +83,7 @@ namespace Gek
                 {
                     ImGui::SetNextWindowSize(ImVec2(350, ImGui::GetIO().DisplaySize.y));
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 350, 0));
-                    ImGui::Begin("Entity List", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+                    ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
                     ImGui::PushItemWidth(-1.0f);
 
                     auto &entityMap = population->getEntityMap();
@@ -256,7 +256,7 @@ namespace Gek
                 {
                     ImGui::SetNextWindowSize(ImVec2(36, ImGui::GetIO().DisplaySize.y));
                     ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 36, 0));
-                    ImGui::Begin("Entity List", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+                    ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
                     if (ImGui::ImageButton((Video::Object *)showSideBar.get(), ImVec2(12, 12)))
                     {
                         showFullEditor = true;
