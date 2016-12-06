@@ -45,7 +45,7 @@
                 "FieldOfView": 60,
                 "NearClip": 0.5,
                 "FarClip": 200,
-                "filterList": "tonemap"
+                "filterList": "ambientocclusion, tonemap, antialias"
             },
             "Player": {
                 "height": 6,
