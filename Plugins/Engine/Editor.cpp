@@ -331,7 +331,12 @@ namespace Gek
                     const float height = float(backBuffer->getDescription().height);
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
-                    renderer->queueRenderCall(viewMatrix, projectionMatrix, 0.5f, 200.0f, nullptr, ResourceHandle());
+                    std::vector<String> filters = {
+                        L"tonemap",
+                        L"antialias"
+                    };
+
+                    renderer->queueRenderCall(viewMatrix, projectionMatrix, 0.5f, 200.0f, ResourceHandle());
                 }
             }
         };

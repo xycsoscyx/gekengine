@@ -1090,7 +1090,7 @@ namespace Gek
                 uint32_t width = backBuffer->getDescription().width;
                 uint32_t height = backBuffer->getDescription().height;
                 imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-                float barWidth = width;
+                float barWidth = float(width);
 
                 timer.update();
                 imGuiIo.DeltaTime = float(timer.getUpdateTime());
@@ -1249,7 +1249,7 @@ namespace Gek
             // ImGui
             void renderDrawData(ImDrawData *drawData)
             {
-                if (!vertexBuffer || vertexBuffer->getDescription().count < drawData->TotalVtxCount)
+                if (!vertexBuffer || vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::BufferDescription vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(ImDrawVert);
@@ -1259,7 +1259,7 @@ namespace Gek
                     vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                 }
 
-                if (!indexBuffer || indexBuffer->getDescription().count < drawData->TotalIdxCount)
+                if (!indexBuffer || indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
                 {
                     Video::BufferDescription vertexBufferDescription;
                     vertexBufferDescription.count = drawData->TotalIdxCount;
@@ -1289,7 +1289,7 @@ namespace Gek
                 {
                     if (videoDevice->mapBuffer(indexBuffer.get(), indexData))
                     {
-                        for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
+                        for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                         {
                             const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
                             std::copy(commandList->VtxBuffer.Data, (commandList->VtxBuffer.Data + commandList->VtxBuffer.Size), vertexData);
@@ -1331,10 +1331,10 @@ namespace Gek
 
                     uint32_t vertexOffset = 0;
                     uint32_t indexOffset = 0;
-                    for (uint32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
+                    for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                     {
                         const ImDrawList* commandList = drawData->CmdLists[commandListIndex];
-                        for (uint32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
+                        for (int32_t commandIndex = 0; commandIndex < commandList->CmdBuffer.Size; ++commandIndex)
                         {
                             const ImDrawCmd* command = &commandList->CmdBuffer[commandIndex];
                             if (command->UserCallback)
@@ -1344,8 +1344,10 @@ namespace Gek
                             else
                             {
                                 std::vector<Math::UInt4> scissorBoxList(1);
-                                scissorBoxList[0].minimum = Math::UInt2(command->ClipRect.x, command->ClipRect.y);
-                                scissorBoxList[0].maximum = Math::UInt2(command->ClipRect.z, command->ClipRect.w);
+                                scissorBoxList[0].minimum.x = uint32_t(command->ClipRect.x);
+                                scissorBoxList[0].minimum.y = uint32_t(command->ClipRect.y);
+                                scissorBoxList[0].maximum.x = uint32_t(command->ClipRect.z);
+                                scissorBoxList[0].maximum.y = uint32_t(command->ClipRect.w);
                                 videoContext->setScissorList(scissorBoxList);
 
                                 std::vector<Video::Object *> textureList(1);

@@ -50,14 +50,14 @@
                 "name": "roughness",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": ".5",
+                "parameters": 0.5,
                 "type": "Texture2D"
             },
             {
                 "name": "metallic",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": "0",
+                "parameters": 0,
                 "type": "Texture2D"
             }
         ]

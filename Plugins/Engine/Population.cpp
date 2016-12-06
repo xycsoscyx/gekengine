@@ -162,7 +162,7 @@ namespace Gek
                         }
                         else
                         {
-                            shuntingYard.setRandomSeed(std::time(nullptr));
+                            shuntingYard.setRandomSeed(uint32_t(std::time(nullptr) & 0xFFFFFFFF));
                         }
 
                         auto &templatesNode = worldNode[L"Templates"];

@@ -1,6 +1,5 @@
 #include "GEK/Engine/Shader.hpp"
 #include "GEK/Utility/String.hpp"
-#include "GEK/Utility/Evaluator.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include "GEK/Shapes/Sphere.hpp"
@@ -133,7 +132,7 @@ namespace Gek
                     throw InvalidParameter("Material must be an object");
                 }
 
-                std::unordered_map<String, std::pair<BindType, String>> globalDefinesMap;
+                std::unordered_map<String, std::pair<BindType, JSON::Object>> globalDefinesMap;
                 uint32_t displayWidth = backBuffer->getDescription().width;
                 uint32_t displayHeight = backBuffer->getDescription().height;
                 globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
@@ -163,7 +162,7 @@ namespace Gek
                     }
                 }
 
-                auto evaluate = [&](std::unordered_map<String, std::pair<BindType, String>> &definesMap, String value, BindType bindType = BindType::Float) -> String
+                auto evaluate = [&](std::unordered_map<String, std::pair<BindType, JSON::Object>> &definesMap, String value) -> String
                 {
                     bool foundDefine = true;
                     while (foundDefine)
@@ -171,91 +170,31 @@ namespace Gek
                         foundDefine = false;
                         for (auto &define : definesMap)
                         {
-                            foundDefine = (foundDefine | value.replace(define.first, define.second.second));
+                            auto &name = define.first;
+                            auto &data = define.second.second;
+                            if (data.is_array())
+                            {
+                                if (data.size() == 1)
+                                {
+                                    foundDefine = (foundDefine | value.replace(name, data.at(0).as_cstring()));
+                                }
+                                else
+                                {
+                                    throw InvalidParameter("Recursive defines only allowed with single values");
+                                }
+                            }
+                            else if (data.is_string())
+                            {
+                                foundDefine = (foundDefine | value.replace(name, data.as_cstring()));
+                            }
+                            else if (data.is<float>())
+                            {
+                                foundDefine = (foundDefine | value.replace(name, String::Format(L"%v", data.as<float>())));
+                            }
                         }
                     };
 
-                    String result;
-                    switch (bindType)
-                    {
-                    case BindType::Bool:
-                        result = (bool)value;
-                        break;
-
-                    case BindType::Int:
-                        result = Evaluator::Get<int32_t>(population->getShuntingYard(), value);
-                        break;
-
-                    case BindType::UInt:
-                        result = Evaluator::Get<uint32_t>(population->getShuntingYard(), value);
-                        break;
-
-                    case BindType::Float:
-                        result = Evaluator::Get<float>(population->getShuntingYard(), value);
-                        break;
-
-                    case BindType::Int2:
-                        if (true)
-                        {
-                            Math::Float2 vector = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
-                            result.format(L"(%v,%v)", (int32_t)vector.x, (int32_t)vector.y);
-                            break;
-                        }
-
-                    case BindType::UInt2:
-                        if (true)
-                        {
-                            Math::Float2 vector = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
-                            result.format(L"(%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y);
-                            break;
-                        }
-
-                    case BindType::Float2:
-                        result = Evaluator::Get<Math::Float2>(population->getShuntingYard(), value);
-                        break;
-
-                    case BindType::Int3:
-                        if (true)
-                        {
-                            Math::Float3 vector = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
-                            result.format(L"(%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z);
-                            break;
-                        }
-
-                    case BindType::UInt3:
-                        if (true)
-                        {
-                            Math::Float3 vector = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
-                            result.format(L"(%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z);
-                            break;
-                        }
-
-                    case BindType::Float3:
-                        result = Evaluator::Get<Math::Float3>(population->getShuntingYard(), value);
-                        break;
-
-                    case BindType::Int4:
-                        if (true)
-                        {
-                            Math::Float4 vector = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
-                            result.format(L"(%v,%v,%v,%v)", (int32_t)vector.x, (int32_t)vector.y, (int32_t)vector.z, (int32_t)vector.w);
-                            break;
-                        }
-
-                    case BindType::UInt4:
-                        if (true)
-                        {
-                            Math::Float4 vector = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
-                            result.format(L"(%v,%v,%v,%v)", (uint32_t)vector.x, (uint32_t)vector.y, (uint32_t)vector.z, (uint32_t)vector.w);
-                            break;
-                        }
-
-                    case BindType::Float4:
-                        result = Evaluator::Get<Math::Float4>(population->getShuntingYard(), value);
-                        break;
-                    };
-
-                    return result;
+                    return String::Format(L"%v", population->getShuntingYard().evaluate(value));
                 };
 
                 String inputData;
@@ -429,14 +368,26 @@ namespace Gek
                             description.height = displayHeight;
                             if (textureValue.has_member(L"size"))
                             {
-                                Math::Float2 size = evaluate(globalDefinesMap, textureValue.get(L"size").as_string(), BindType::UInt2);
-                                description.width = uint32_t(size.x);
-                                description.height = uint32_t(size.y);
+                                auto &size = textureValue.get(L"size");
+                                if (size.is_array())
+                                {
+                                    if (size.size() != 2)
+                                    {
+                                        throw InvalidParameter("Texture size array must have only 2 values");
+                                    }
+
+                                    description.width = evaluate(globalDefinesMap, size.at(0).as_cstring());
+                                    description.height = evaluate(globalDefinesMap, size.at(0).as_cstring());
+                                }
+                                else
+                                {
+                                    description.width = description.height = evaluate(globalDefinesMap, size.as_cstring());
+                                }
                             }
 
                             description.sampleCount = textureValue.get(L"sampleCount", 1).as_uint();
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
-                            description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string(), BindType::UInt);
+                            description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1").as_string());
                             resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
                             resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(description.width, description.height)));
                             type = (description.sampleCount > 1 ? MapType::Texture2DMS : MapType::Texture2D);
@@ -476,7 +427,7 @@ namespace Gek
                                 throw MissingParameter("Buffer must have a count value");
                             }
 
-                            uint32_t count = evaluate(globalDefinesMap, bufferValue.get(L"count").as_string(), BindType::UInt);
+                            uint32_t count = evaluate(globalDefinesMap, bufferValue.get(L"count").as_string());
                             uint32_t flags = getBufferFlags(bufferValue.get(L"flags", L"0").as_string());
                             if (bufferValue.has_member(L"stride") || bufferValue.has_member(L"structure"))
                             {
@@ -493,7 +444,7 @@ namespace Gek
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::BufferDescription::Type::Structured;
-                                description.stride = evaluate(globalDefinesMap, bufferValue.get(L"stride").as_string(), BindType::UInt);
+                                description.stride = evaluate(globalDefinesMap, bufferValue.get(L"stride").as_string());
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
                                 resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
                             }
@@ -556,7 +507,7 @@ namespace Gek
                     pass.lighting = passNode.get(L"lighting", false).as_bool();
                     lightingRequired |= pass.lighting;
 
-                    std::unordered_map<String, std::pair<BindType, String>> localDefinesMap(globalDefinesMap);
+                    std::unordered_map<String, std::pair<BindType, JSON::Object>> localDefinesMap(globalDefinesMap);
                     if (passNode.has_member(L"defines"))
                     {
                         auto &definesNode = passNode.get(L"defines");
@@ -584,20 +535,108 @@ namespace Gek
                     String definesData;
                     for (auto &define : localDefinesMap)
                     {
-                        String value(evaluate(localDefinesMap, define.second.second, define.second.first));
-                        String bindType(getBindType(define.second.first));
-                        switch (define.second.first)
+                        BindType bindType(define.second.first);
+                        String bindString(getBindType(define.second.first));
+                        auto &data = define.second.second;
+                        switch (bindType)
                         {
                         case BindType::Bool:
                         case BindType::Int:
                         case BindType::UInt:
                         case BindType::Half:
                         case BindType::Float:
-                            definesData.format(L"    static const %v %v = %v;\r\n", bindType, define.first, value);
+                            if (true)
+                            {
+                                String value(evaluate(localDefinesMap, data.as_cstring()));
+                                definesData.format(L"    static const %v %v = %v;\r\n", bindString, define.first, value);
+                            }
+
                             break;
 
-                        default:
-                            definesData.format(L"    static const %v %v = %v%v;\r\n", bindType, define.first, bindType, value);
+                        case BindType::Int2:
+                        case BindType::UInt2:
+                        case BindType::Half2:
+                        case BindType::Float2:
+                            if (data.is_array())
+                            {
+                                if (data.size() == 2)
+                                {
+                                    String value0(evaluate(localDefinesMap, data.at(0).as_cstring()));
+                                    String value1(evaluate(localDefinesMap, data.at(1).as_cstring()));
+                                    definesData.format(L"    static const %v %v = %v(%v, %v);\r\n", bindString, define.first, bindString, value0, value1);
+                                }
+                                else
+                                {
+                                    throw InvalidParameter("Invalid number of parameters for 2D define");
+                                }
+                            }
+                            else if (data.is_string())
+                            {
+                                String value(evaluate(localDefinesMap, data.as_cstring()));
+                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, value);
+                            }
+                            else if (data.is<float>())
+                            {
+                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, data.as<float>());
+                            }
+
+                        case BindType::Int3:
+                        case BindType::UInt3:
+                        case BindType::Half3:
+                        case BindType::Float3:
+                            if (data.is_array())
+                            {
+                                if (data.size() == 3)
+                                {
+                                    String value0(evaluate(localDefinesMap, data.at(0).as_cstring()));
+                                    String value1(evaluate(localDefinesMap, data.at(1).as_cstring()));
+                                    String value2(evaluate(localDefinesMap, data.at(2).as_cstring()));
+                                    definesData.format(L"    static const %v %v = %v(%v, %v, %v);\r\n", bindString, define.first, bindString, value0, value1, value2);
+                                }
+                                else
+                                {
+                                    throw InvalidParameter("Invalid number of parameters for 3D define");
+                                }
+                            }
+                            else if (data.is_string())
+                            {
+                                String value(evaluate(localDefinesMap, data.as_cstring()));
+                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, value);
+                            }
+                            else if (data.is<float>())
+                            {
+                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, data.as<float>());
+                            }
+
+                        case BindType::Int4:
+                        case BindType::UInt4:
+                        case BindType::Half4:
+                        case BindType::Float4:
+                            if (data.is_array())
+                            {
+                                if (data.size() == 4)
+                                {
+                                    String value0(evaluate(localDefinesMap, data.at(0).as_cstring()));
+                                    String value1(evaluate(localDefinesMap, data.at(1).as_cstring()));
+                                    String value2(evaluate(localDefinesMap, data.at(2).as_cstring()));
+                                    String value3(evaluate(localDefinesMap, data.at(3).as_cstring()));
+                                    definesData.format(L"    static const %v %v = %v(%v, %v, %v, %v);\r\n", bindString, define.first, bindString, value0, value1, value2, value3);
+                                }
+                                else
+                                {
+                                    throw InvalidParameter("Invalid number of parameters for 4D define");
+                                }
+                            }
+                            else if (data.is_string())
+                            {
+                                String value(evaluate(localDefinesMap, data.as_cstring()));
+                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, value);
+                            }
+                            else if (data.is<float>())
+                            {
+                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, data.as<float>());
+                            }
+
                             break;
                         };
                     }
@@ -641,13 +680,25 @@ namespace Gek
                             throw MissingParameter("Compute pass requires dispatch member");
                         }
 
+                        auto &dispatch = passNode.get(L"dispatch");
+                        if (dispatch.is_array())
+                        {
+                            if (dispatch.size() != 3)
+                            {
+                                throw InvalidParameter("Dispatch array must have only 3 values");
+                            }
+
+                            pass.dispatchWidth = evaluate(globalDefinesMap, dispatch.at(0).as_cstring());
+                            pass.dispatchHeight = evaluate(globalDefinesMap, dispatch.at(1).as_cstring());
+                            pass.dispatchDepth = evaluate(globalDefinesMap, dispatch.at(1).as_cstring());
+                        }
+                        else
+                        {
+                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(globalDefinesMap, dispatch.as_cstring());
+                        }
+
                         pass.width = float(displayWidth);
                         pass.height = float(displayHeight);
-
-                        Math::Float3 dispatch = evaluate(globalDefinesMap, passNode.get(L"dispatch").as_string(), BindType::UInt3);
-                        pass.dispatchWidth = std::max(uint32_t(dispatch.x), 1U);
-                        pass.dispatchHeight = std::max(uint32_t(dispatch.y), 1U);
-                        pass.dispatchDepth = std::max(uint32_t(dispatch.z), 1U);
                     }
                     else
                     {

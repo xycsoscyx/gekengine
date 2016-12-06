@@ -21,7 +21,6 @@ namespace Gek
             float nearClip = 1.0f;
             float farClip = 100.0f;
             String target;
-            std::vector<String> filterList;
         };
     };
 
@@ -42,7 +41,6 @@ namespace Gek
             componentData.set(L"nearClip", data->nearClip);
             componentData.set(L"farClip", data->farClip);
             componentData.set(L"target", data->target);
-            componentData.set(L"filterList", String::Join(data->filterList, L','));
         }
 
         void load(Components::FirstPersonCamera *data, const JSON::Object &componentData)
@@ -51,7 +49,6 @@ namespace Gek
             data->nearClip = getValue(componentData, L"nearClip", 1.0f);
             data->farClip = getValue(componentData, L"farClip", 100.0f);
             data->target = getValue(componentData, L"target", String());
-            data->filterList = getValue(componentData, L"filterList", String()).split(L',');
         }
 
         // Edit::Component
@@ -63,24 +60,6 @@ namespace Gek
             ImGui::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, flags);
             ImGui::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, flags);
             ImGui::InputString("Target", firstPersonCameraComponent.target, flags);
-            if (ImGui::ListBoxHeader("Filters", firstPersonCameraComponent.filterList.size(), 5))
-            {
-                ImGuiListClipper clipper(firstPersonCameraComponent.filterList.size(), ImGui::GetTextLineHeightWithSpacing());
-                while (clipper.Step())
-                {
-                    for (int filterIndex = clipper.DisplayStart; filterIndex < clipper.DisplayEnd; ++filterIndex)
-                    {
-                        ImGui::PushID(filterIndex);
-                        ImGui::PushItemWidth(-1);
-                        ImGui::InputString("##", firstPersonCameraComponent.filterList[filterIndex], flags);
-                        ImGui::PopItemWidth();
-                        ImGui::PopID();
-                    }
-                };
-
-                ImGui::ListBoxFooter();
-            }
-
             ImGui::SetCurrentContext(nullptr);
         }
 
@@ -211,7 +190,7 @@ namespace Gek
                     const float height = float(backBuffer->getDescription().height);
                     Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));
 
-                    renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, &cameraComponent.filterList, data.target);
+                    renderer->queueRenderCall(viewMatrix, projectionMatrix, cameraComponent.nearClip, cameraComponent.farClip, data.target);
                 });
             }
         }

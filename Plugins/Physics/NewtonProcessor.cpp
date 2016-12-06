@@ -3,7 +3,6 @@
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Utility/FileSystem.hpp"
-#include "GEK/Utility/Evaluator.hpp"
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/Hash.hpp"
 #include "GEK/Utility/JSON.hpp"

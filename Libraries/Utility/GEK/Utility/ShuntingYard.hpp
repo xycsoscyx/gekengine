@@ -23,7 +23,6 @@ namespace Gek
         GEK_ADD_EXCEPTION(UnknownTokenType, Exception);
         GEK_ADD_EXCEPTION(UnbalancedParenthesis, Exception);
         GEK_ADD_EXCEPTION(InvalidReturnType, Exception);
-        GEK_ADD_EXCEPTION(InvalidVector, Exception);
         GEK_ADD_EXCEPTION(InvalidEquation, Exception);
         GEK_ADD_EXCEPTION(InvalidOperator, Exception);
         GEK_ADD_EXCEPTION(InvalidOperand, Exception);
@@ -32,7 +31,6 @@ namespace Gek
         GEK_ADD_EXCEPTION(NotEnoughFunctionParameters, Exception);
         GEK_ADD_EXCEPTION(MissingFunctionParenthesis, Exception);
         GEK_ADD_EXCEPTION(MisplacedSeparator, Exception);
-        GEK_ADD_EXCEPTION(VectorUsedAsParameter, Exception);
 
     public:
         enum class Associations : uint8_t
@@ -51,7 +49,6 @@ namespace Gek
             RightParenthesis,
             Separator,
             Function,
-            Vector,
         };
 
         struct Token
@@ -105,43 +102,9 @@ namespace Gek
         ShuntingYard(void);
 
         void setRandomSeed(uint32_t seed);
-
         TokenList getTokenList(const wchar_t *expression);
-        uint32_t getReturnSize(const TokenList &rpnTokenList);
-
-        inline void evaluate(TokenList &rpnTokenList, float &value)
-        {
-            evaluateValue(rpnTokenList, &value, 1);
-        }
-
-        template <std::size_t SIZE>
-        void evaluate(TokenList &rpnTokenList, float(&value)[SIZE])
-        {
-            evaluateValue(rpnTokenList, value, SIZE);
-        }
-
-        template <class TYPE>
-        void evaluate(TokenList &rpnTokenList, TYPE &value)
-        {
-            evaluate(rpnTokenList, value.data);
-        }
-
-        inline void evaluate(const wchar_t *expression, float &value)
-        {
-            evaluateValue(expression, &value, 1);
-        }
-
-        template <std::size_t SIZE>
-        void evaluate(const wchar_t *expression, float(&value)[SIZE])
-        {
-            evaluateValue(expression, value, SIZE);
-        }
-
-        template <class TYPE>
-        void evaluate(const wchar_t *expression, TYPE &value)
-        {
-            evaluate(expression, value.data);
-        }
+        float evaluate(TokenList &rpnTokenList);
+        float evaluate(const wchar_t *expression);
 
     private:
         bool isNumber(const wchar_t *token);
@@ -161,15 +124,6 @@ namespace Gek
         void parseSubTokens(TokenList &infixTokenList, const String &token);
         TokenList convertExpressionToInfix(const String &expression);
         TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
-        void evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, uint32_t valueSize);
-
-        template <std::size_t SIZE>
-        void evaluateReversePolishNotation(const TokenList &rpnTokenList, float(&value)[SIZE])
-        {
-            evaluateReversePolishNotation(rpnTokenList, value, SIZE);
-        }
-
-        void evaluateValue(TokenList &rpnTokenList, float *value, uint32_t valueSize);
-        void evaluateValue(const wchar_t *expression, float *value, uint32_t valueSize);
+        float evaluateReversePolishNotation(const TokenList &rpnTokenList);
     };
 }; // namespace Gek

@@ -124,7 +124,6 @@ namespace Gek
                 Math::Float4x4 projectionMatrix;
                 float nearClip = 0.0f;
                 float farClip = 0.0f;
-                std::vector<String> filterList;
                 ResourceHandle cameraTarget;
 
                 RenderCall(void)
@@ -137,7 +136,6 @@ namespace Gek
                     , projectionMatrix(renderCall.projectionMatrix)
                     , nearClip(renderCall.nearClip)
                     , farClip(renderCall.farClip)
-                    , filterList(renderCall.filterList)
                     , cameraTarget(renderCall.cameraTarget)
                 {
                 }
@@ -497,8 +495,8 @@ namespace Gek
                 float rangeDepth = (range / (currentRenderCall.farClip - currentRenderCall.nearClip));
 
                 Math::Int2 depthBounds(
-                    std::floor((centerDepth - rangeDepth) * GridDepth),
-                    std::ceil((centerDepth + rangeDepth) * GridDepth)
+                    int32_t(std::floor((centerDepth - rangeDepth) * GridDepth)),
+                    int32_t(std::ceil((centerDepth + rangeDepth) * GridDepth))
                 );
 
                 depthBounds[0] = (depthBounds[0] < 0 ? 0 : depthBounds[0]);
@@ -512,7 +510,7 @@ namespace Gek
                         uint32_t ySlize = ((zSlice + y) * GridWidth);
                         for (auto x = gridBounds.minimum.x; x < gridBounds.maximum.x; x++)
                         {
-                            if (!isSeparated(x, y, z, position, range))
+                            if (!isSeparated(float(x), float(y), float(z), position, range))
                             {
                                 uint32_t gridIndex = (ySlize + x);
                                 auto &gridData = tileLightIndexList[gridIndex];
@@ -630,7 +628,7 @@ namespace Gek
                 }
             }
             
-            void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, const std::vector<String> *filterList, ResourceHandle cameraTarget)
+            void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
                 RenderCall renderCall;
                 renderCall.viewMatrix = viewMatrix;
@@ -638,11 +636,6 @@ namespace Gek
                 renderCall.viewFrustum.create(viewMatrix * projectionMatrix);
                 renderCall.nearClip = nearClip;
                 renderCall.farClip = farClip;
-                if (filterList)
-                {
-                    renderCall.filterList = (*filterList);
-                }
-
                 renderCall.cameraTarget = cameraTarget;
                 renderCallList.push(renderCall);
             }
@@ -799,8 +792,8 @@ namespace Gek
                                 auto &tileOffsetCount = tileOffsetCountList[tileIndex];
                                 auto &tileLightIndex = tileLightIndexList[tileIndex];
                                 tileOffsetCount.indexOffset = lightIndexList.size();
-                                tileOffsetCount.pointLightCount = tileLightIndex.pointLightList.size();
-                                tileOffsetCount.spotLightCount = tileLightIndex.spotLightList.size();
+                                tileOffsetCount.pointLightCount = uint16_t(tileLightIndex.pointLightList.size() & 0xFFFF);
+                                tileOffsetCount.spotLightCount = uint16_t(tileLightIndex.spotLightList.size() & 0xFFFF);
                                 lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.pointLightList), std::end(tileLightIndex.pointLightList));
                                 lightIndexList.insert(std::end(lightIndexList), std::begin(tileLightIndex.spotLightList), std::end(tileLightIndex.spotLightList));
                             }
@@ -989,7 +982,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (auto &filterName : currentRenderCall.filterList)
+                        for (auto &filterName : { L"tonemap", L"antiAlias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

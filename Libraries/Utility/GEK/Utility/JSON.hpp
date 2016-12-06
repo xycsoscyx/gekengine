@@ -15,6 +15,11 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, float>
     {
+        static bool is(const Json &object)
+        {
+            return object.is_double();
+        }
+
         static float as(const Json &object)
         {
             return float(object.as_double());

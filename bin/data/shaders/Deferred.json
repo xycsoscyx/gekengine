@@ -50,25 +50,17 @@
                 "name": "roughness",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": ".5",
+                "parameters": 0.5,
                 "type": "Texture2D"
             },
             {
                 "name": "metallic",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": "0",
+                "parameters": 0,
                 "type": "Texture2D"
             }
         ]
-    },
-    "defines": {
-        "gaussianRadius": {
-            "bind": "int",
-            "value": "3"
-        },
-        "gaussianSigma": "2.3",
-        "edgeSharpness": "0.1"
     },
     "textures": {
         "depthBuffer": {
@@ -90,16 +82,6 @@
             "bind": "float2",
             "flags": "target",
             "format": "R8G8_NORM"
-        },
-        "ambientBuffer": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R8_UNORM"
-        },
-        "gaussianBuffer": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R8_UNORM"
         }
     },
     "passes": [
@@ -122,111 +104,16 @@
             ]
         },
         {
-            "program": "AmbientCalculation",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "radius": "2",
-                "tapCount": {
-                    "bind": "int",
-                    "value": "24"
-                },
-                "spiralTurns": "13",
-                "intensity": "20",
-                "bias": "0.08",
-                "falloffFunction": {
-                    "bind": "int",
-                    "value": "0"
-                },
-                "epsilon": "0.001"
-            },
-            "resources": [
-                "normalBuffer",
-                "depthBuffer"
-            ],
-            "targets": [
-                "ambientBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(2,0)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "ambientBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "gaussianBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(0,2)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "gaussianBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "ambientBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(1,0)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "ambientBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "gaussianBuffer"
-            ]
-        },
-        {
-            "program": "AmbientBlur",
-            "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": "(0,1)"
-                }
-            },
-            "resources": [
-                "depthBuffer",
-                { "gaussianBuffer": "inputBuffer" }
-            ],
-            "targets": [
-                "ambientBuffer"
-            ]
-        },
-        {
             "program": "AccumulateLighting",
             "entry": "mainPixelProgram",
             "lighting": true,
             "defines": {
                 "useHalfLambert": {
                     "bind": "bool",
-                    "value": "true"
+                    "value": true
                 }
             },
             "resources": [
-                "ambientBuffer",
                 "albedoBuffer",
                 "materialBuffer",
                 "normalBuffer",

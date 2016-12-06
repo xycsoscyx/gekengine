@@ -494,7 +494,7 @@ namespace Gek
                 return nullptr;
             }
 
-            Video::TexturePtr createTextureData(const String &pattern, const String &parameters)
+            Video::TexturePtr createPatternData(const String &pattern, const JSON::Object &parameters)
             {
                 Video::TexturePtr texture;
                 if (pattern.compareNoCase(L"color") == 0)
@@ -503,48 +503,52 @@ namespace Gek
                     Video::TextureDescription description;
                     try
                     {
-                        auto rpnTokenList = shuntingYard.getTokenList(parameters);
-                        uint32_t colorSize = shuntingYard.getReturnSize(rpnTokenList);
-                        if (colorSize == 1)
+                        if (parameters.is_array())
                         {
-                            float color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            colorData[0] = uint8_t(color * 255.0f);
+                            switch (parameters.size())
+                            {
+                            case 1:
+                                colorData[0] = parameters.at(0).as_uint();
+                                description.format = Video::Format::R8_UNORM;
+                                break;
+
+                            case 2:
+                                colorData[0] = parameters.at(0).as_uint();
+                                colorData[1] = parameters.at(1).as_uint();
+                                description.format = Video::Format::R8G8_UNORM;
+                                break;
+
+                            case 3:
+                                colorData[0] = parameters.at(0).as_uint();
+                                colorData[1] = parameters.at(1).as_uint();
+                                colorData[2] = parameters.at(2).as_uint();
+                                colorData[3] = 0;
+                                description.format = Video::Format::R8G8B8A8_UNORM;
+                                break;
+
+                            case 4:
+                                colorData[0] = parameters.at(0).as_uint();
+                                colorData[1] = parameters.at(1).as_uint();
+                                colorData[2] = parameters.at(2).as_uint();
+                                colorData[3] = parameters.at(3).as_uint();
+                                description.format = Video::Format::R8G8B8A8_UNORM;
+                                break;
+                            };
+                        }
+                        else if (parameters.is<float>())
+                        {
+                            colorData[0] = uint8_t(parameters.as<float>() * 255.0f);
                             description.format = Video::Format::R8_UNORM;
                         }
-                        else if (colorSize == 2)
+                        else
                         {
-                            Math::Float2 color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            colorData[0] = uint8_t(color.x * 255.0f);
-                            colorData[1] = uint8_t(color.y * 255.0f);
-                            colorData[2] = 0;
-                            colorData[3] = 0;
-                            description.format = Video::Format::R8G8_UNORM;
-                        }
-                        else if (colorSize == 3)
-                        {
-                            Math::Float3 color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            colorData[0] = uint8_t(color.x * 255.0f);
-                            colorData[1] = uint8_t(color.y * 255.0f);
-                            colorData[2] = uint8_t(color.z * 255.0f);
-                            colorData[3] = 0;
-                            description.format = Video::Format::R8G8B8A8_UNORM;
-                        }
-                        else if (colorSize == 4)
-                        {
-                            Math::Float4 color;
-                            shuntingYard.evaluate(rpnTokenList, color);
-                            colorData[0] = uint8_t(color.x * 255.0f);
-                            colorData[1] = uint8_t(color.y * 255.0f);
-                            colorData[2] = uint8_t(color.z * 255.0f);
-                            colorData[3] = uint8_t(color.w * 255.0f);
-                            description.format = Video::Format::R8G8B8A8_UNORM;
+                            colorData[0] = parameters.as_uint();
+                            description.format = Video::Format::R8_UNORM;
                         }
                     }
-                    catch (const ShuntingYard::Exception &)
+                    catch (...)
                     {
+                        throw InvalidParameter("Unable to determine color texture type");
                     };
 
                     if (description.format == Video::Format::Unknown)
@@ -557,14 +561,12 @@ namespace Gek
                 }
                 else if (pattern.compareNoCase(L"normal") == 0)
                 {
-                    Math::Float3 normal;
-                    try
+                    Math::Float3 normal(Math::Float3::Zero);
+                    if (parameters.is_array() && parameters.size() == 3)
                     {
-                        shuntingYard.evaluate(parameters, normal);
-                    }
-                    catch (const ShuntingYard::Exception &)
-                    {
-                        normal.set(0.0f, 0.0f, 0.0f);
+                        normal.x = parameters.at(0).as<float>();
+                        normal.x = parameters.at(1).as<float>();
+                        normal.x = parameters.at(2).as<float>();
                     }
 
                     uint8_t normalData[4] =
@@ -582,37 +584,45 @@ namespace Gek
                 }
                 else if (pattern.compareNoCase(L"system") == 0)
                 {
-                    if (parameters.compareNoCase(L"debug") == 0)
+                    if (parameters.is_string())
                     {
-                        uint8_t data[] =
+                        String type(parameters.as_cstring());
+                        if (type.compareNoCase(L"debug") == 0)
                         {
-                            255, 0, 255, 255,
-                        };
+                            uint8_t data[] =
+                            {
+                                255, 0, 255, 255,
+                            };
 
-                        Video::TextureDescription description;
-                        description.format = Video::Format::R8G8B8A8_UNORM;
-                        description.flags = Video::TextureDescription::Flags::Resource;
-                        texture = videoDevice->createTexture(description, data);
-                    }
-                    else if (parameters.compareNoCase(L"flat") == 0)
-                    {
-                        Math::Float3 normal(0.0f, 0.0f, 1.0f);
-                        uint8_t normalData[4] =
+                            Video::TextureDescription description;
+                            description.format = Video::Format::R8G8B8A8_UNORM;
+                            description.flags = Video::TextureDescription::Flags::Resource;
+                            texture = videoDevice->createTexture(description, data);
+                        }
+                        else if (type.compareNoCase(L"flat") == 0)
                         {
-                            uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
-                            uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
-                            uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
-                            255,
-                        };
+                            Math::Float3 normal(0.0f, 0.0f, 1.0f);
+                            uint8_t normalData[4] =
+                            {
+                                uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
+                                uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
+                                uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
+                                255,
+                            };
 
-                        Video::TextureDescription description;
-                        description.format = Video::Format::R8G8B8A8_UNORM;
-                        description.flags = Video::TextureDescription::Flags::Resource;
-                        texture = videoDevice->createTexture(description, normalData);
+                            Video::TextureDescription description;
+                            description.format = Video::Format::R8G8B8A8_UNORM;
+                            description.flags = Video::TextureDescription::Flags::Resource;
+                            texture = videoDevice->createTexture(description, normalData);
+                        }
+                        else
+                        {
+                            throw InvalidParameter("Unknown system pattern encountered");
+                        }
                     }
                     else
                     {
-                        throw InvalidParameter("Unknown system pattern encountered");
+                        throw InvalidParameter("Unknown pattern attribute encountered");
                     }
                 }
                 else
@@ -787,14 +797,14 @@ namespace Gek
                 return dynamicCache.getHandle(hash, flags, std::move(load));
             }
 
-            ResourceHandle createTexture(const wchar_t *pattern, const wchar_t *parameters)
+            ResourceHandle createPattern(const wchar_t *pattern, const wchar_t *parameters)
             {
                 GEK_REQUIRE(pattern);
                 GEK_REQUIRE(parameters);
 
                 auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle)->Video::TexturePtr
                 {
-                    return createTextureData(pattern, parameters);
+                    return createPatternData(pattern, parameters);
                 };
 
                 auto hash = GetHash(pattern, parameters);

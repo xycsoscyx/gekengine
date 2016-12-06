@@ -12,58 +12,58 @@
     },
     "buffers": {
         "averageFocalDepth": {
-            "count": "1",
+            "count": 1,
             "flags": "unorderedAccess",
             "format": "R32_FLOAT"
         }
     },
     "defines": {
-        "focalRange": "20.0",
+        "focalRange": 20.0,
         "sampleCount": {
             "bind": "int",
-            "value": "4"
+            "value": 4
         },
         "ringCount": {
             "bind": "int",
-            "value": "7"
+            "value": 7
         },
-        "highlightThreshold": "0.5",
-        "highlightGain": "10.0",
-        "bokehEdgeBias": "0.4",
+        "highlightThreshold": 0.5,
+        "highlightGain": 10.0,
+        "bokehEdgeBias": 0.4,
         "enableChromaticAberation": {
             "bind": "bool",
-            "value": "true"
+            "value": true
         },
-        "bokehChromaticAberation": "0.75",
+        "bokehChromaticAberation": 0.75,
         "enableDithering": {
             "bind": "bool",
-            "value": "true"
+            "value": true
         },
-        "noiseStrength": "0.0001",
+        "noiseStrength": 0.0001,
         "enableDepthBlur": {
             "bind": "bool",
-            "value": "false"
+            "value": false
         },
-        "depthBlurSize": "2.0",
+        "depthBlurSize": 2.0,
         "enablePentagon": {
             "bind": "bool",
-            "value": "false"
+            "value": false
         },
-        "pentagonFeathering": "0.4",
+        "pentagonFeathering": 0.4,
         "gaussianRadius": {
             "bind": "int",
-            "value": "7"
+            "value": 7
         },
-        "gaussianSigma": "1"
+        "gaussianSigma": 1
     },
     "passes": [
         {
             "program": "AdaptFocalDepth",
             "entry": "mainComputeProgram",
             "mode": "compute",
-            "dispatch": "(1, 1, 1)",
+            "dispatch": [ 1, 1, 1 ],
             "defines": {
-                "adaptionRate": "5.0"
+                "adaptionRate": 5.0
             },
             "resources": [
                 "depthBuffer"

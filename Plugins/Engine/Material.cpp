@@ -97,7 +97,7 @@ namespace Gek
                                 }
                                 else if (resourceNode.has_member(L"pattern"))
                                 {
-                                    resourceHandle = resources->createTexture(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
+                                    resourceHandle = resources->createPattern(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
                                 }
                                 else if (resourceNode.has_member(L"name"))
                                 {
@@ -111,7 +111,7 @@ namespace Gek
 
                             if (!resourceHandle)
                             {
-                                resourceHandle = resources->createTexture(resource.pattern, resource.parameters);
+                                resourceHandle = resources->createPattern(resource.pattern, resource.parameters);
                             }
 
                             passData.resourceList.push_back(resourceHandle);

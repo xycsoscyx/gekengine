@@ -7,7 +7,6 @@
 /// Last Changed: $Date:   Wed Oct 19 17:38:40 2016 +0000 $
 #pragma once
 
-#include "GEK/Utility/Evaluator.hpp"
 #include "GEK/Engine/Component.hpp"
 #include "GEK/Engine/Population.hpp"
 #include <concurrent_unordered_map.h>
@@ -63,41 +62,81 @@ namespace Gek
             {
                 try
                 {
-                    if (data.is_bool())
+                    return data.as_bool();
+                }
+                catch (...)
+                {
+                    return defaultValue;
+                };
+            }
+
+            int32_t getValue(const JSON::Object &data, int32_t defaultValue)
+            {
+                try
+                {
+                    if (data.is_string())
                     {
-                        return data.as_bool();
+                        return int32_t(population->getShuntingYard().evaluate(data.as_cstring()));
                     }
-                    if (data.is_integer())
+                    else
                     {
-                        return (data.as_integer() ? true : false);
-                    }
-                    else if (data.is_string())
-                    {
-                        return Evaluator::Get<bool>(population->getShuntingYard(), data.as_cstring());
+                        return data.as_integer();
                     }
                 }
                 catch (...)
                 {
+                    return defaultValue;
                 };
+            }
 
-                return defaultValue;
+            uint32_t getValue(const JSON::Object &data, uint32_t defaultValue)
+            {
+                try
+                {
+                    if (data.is_string())
+                    {
+                        return uint32_t(population->getShuntingYard().evaluate(data.as_cstring()));
+                    }
+                    else
+                    {
+                        return data.as_uinteger();
+                    }
+                }
+                catch (...)
+                {
+                    return defaultValue;
+                };
             }
 
             float getValue(const JSON::Object &data, float defaultValue)
             {
                 try
                 {
-                    if (data.is_double())
+                    if (data.is_string())
                     {
-                        return float(data.as_double());
+                        return population->getShuntingYard().evaluate(data.as_cstring());
                     }
-                    if (data.is_integer())
+                    else
                     {
-                        return float(data.as_integer());
+                        return data.as<float>();
                     }
-                    else if (data.is_string())
+                }
+                catch (...)
+                {
+                    return defaultValue;
+                };
+            }
+
+            template <typename TYPE>
+            Math::Vector2<TYPE> getValue(const JSON::Object &data, const Math::Vector2<TYPE> &defaultValue)
+            {
+                try
+                {
+                    if (data.is_array() && data.size() == 2)
                     {
-                        return Evaluator::Get<float>(population->getShuntingYard(), data.as_cstring());
+                        return Math::Vector2<TYPE>(
+                            population->getShuntingYard().evaluate(data.at(0).as_cstring()),
+                            population->getShuntingYard().evaluate(data.at(1).as_cstring()));
                     }
                 }
                 catch (...)
@@ -108,20 +147,16 @@ namespace Gek
             }
 
             template <typename TYPE>
-            TYPE getValue(const JSON::Object &data, const TYPE &defaultValue)
+            Math::Vector3<TYPE> getValue(const JSON::Object &data, const Math::Vector3<TYPE> &defaultValue)
             {
                 try
                 {
-                    if (data.is_string())
+                    if (data.is_array() && data.size() == 3)
                     {
-                        return Evaluator::Get<TYPE>(population->getShuntingYard(), data.as_cstring());
-                    }
-                    else
-                    {
-                        // to_string returns with surrounding quoted
-                        auto string = data.to_string();
-                        string = string.substr(1, string.length() - 2);
-                        return Evaluator::Get<TYPE>(population->getShuntingYard(), string.c_str());
+                        return Math::Vector3<TYPE>(
+                            population->getShuntingYard().evaluate(data.at(0).as_cstring()),
+                            population->getShuntingYard().evaluate(data.at(1).as_cstring()),
+                            population->getShuntingYard().evaluate(data.at(2).as_cstring()));
                     }
                 }
                 catch (...)
@@ -129,6 +164,79 @@ namespace Gek
                 };
 
                 return defaultValue;
+            }
+
+            template <typename TYPE>
+            Math::Vector4<TYPE> getValue(const JSON::Object &data, const Math::Vector4<TYPE> &defaultValue)
+            {
+                try
+                {
+                    if (data.is_array())
+                    {
+                        if (data.size() == 3)
+                        {
+                            return Math::Vector4<TYPE>(
+                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(2).as_cstring()), 1.0f);
+                        }
+                        else if (data.size() == 4)
+                        {
+                            return Math::Vector4<TYPE>(
+                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(2).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(3).as_cstring()));
+                        }
+                    }
+                }
+                catch (...)
+                {
+                };
+
+                return defaultValue;
+            }
+
+            Math::Quaternion getValue(const JSON::Object &data, const Math::Quaternion &defaultValue)
+            {
+                try
+                {
+                    if (data.is_array())
+                    {
+                        if (data.size() == 3)
+                        {
+                            return Math::Quaternion::FromEuler(
+                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(2).as_cstring()));
+                        }
+                        else if (data.size() == 4)
+                        {
+                            return Math::Quaternion(
+                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(2).as_cstring()),
+                                population->getShuntingYard().evaluate(data.at(3).as_cstring()));
+                        }
+                    }
+                }
+                catch (...)
+                {
+                };
+
+                return defaultValue;
+            }
+
+            String getValue(const JSON::Object &data, const String &defaultValue)
+            {
+                try
+                {
+                    return data.as_cstring();
+                }
+                catch (...)
+                {
+                    return defaultValue;
+                };
             }
 
             template <typename TYPE>

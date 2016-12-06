@@ -8,7 +8,7 @@
     "defines": {
         "reduceMinimum": "1.0 / 128.0",
         "reduceMultiplier": "1.0 / 8.0",
-        "spanMaximum": "8.0"
+        "spanMaximum": 8.0
     },
     "passes": [
         {

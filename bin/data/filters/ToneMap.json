@@ -3,13 +3,13 @@
         "luminanceBuffer": {
             "bind": "float",
             "flags": "target",
-            "mipmaps": "0",
+            "mipmaps": 0,
             "format": "R16_FLOAT"
         }
     },
     "buffers": {
         "averageLuminanceBuffer": {
-            "count": "1",
+            "count": 1,
             "flags": "unorderedAccess",
             "format": "R32_FLOAT"
         }
@@ -29,9 +29,9 @@
             "program": "AdaptLuminance",
             "entry": "mainComputeProgram",
             "mode": "compute",
-            "dispatch": "(1, 1, 1)",
+            "dispatch": [ 1, 1, 1 ],
             "defines": {
-                "adaptionRate": "1.25"
+                "adaptionRate": 1.25
             },
             "generateMipMaps": [
                 "luminanceBuffer"
@@ -49,24 +49,24 @@
             "defines": {
                 "techniqueMode": {
                     "bind": "int",
-                    "value": "7"
+                    "value": 7
                 },
                 "autoExposureMode": {
                     "bind": "int",
-                    "value": "2"
+                    "value": 2
                 },
-                "luminanceSaturation": "1.0",
-                "keyValue": "0.18",
-                "exposure": "0.0",
-                "whiteLevel": "5.0",
-                "bias": "0.5",
-                "shoulderStrength": "0.2",
-                "linearStrength": "0.5",
-                "linearAngle": "0.42",
-                "toeStrength": "0.64",
-                "toeNumerator": "0.19",
-                "toeDenominator": "0.9",
-                "linearWhite": "11.2"
+                "luminanceSaturation": 1.0,
+                "keyValue": 0.18,
+                "exposure": 0.0,
+                "whiteLevel": 5.0,
+                "bias": 0.5,
+                "shoulderStrength": 0.2,
+                "linearStrength": 0.5,
+                "linearAngle": 0.42,
+                "toeStrength": 0.64,
+                "toeNumerator": 0.19,
+                "toeDenominator": 0.9,
+                "linearWhite": 11.2
             },
             "copy": {
                 "screenBuffer": "screen"

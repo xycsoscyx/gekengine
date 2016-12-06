@@ -163,26 +163,21 @@ namespace Gek
         mersineTwister.seed(seed);
     }
 
-    uint32_t ShuntingYard::getReturnSize(const TokenList &rpnTokenList)
-    {
-        return rpnTokenList.back().parameterCount;
-    }
-
     ShuntingYard::TokenList ShuntingYard::getTokenList(const wchar_t *expression)
     {
         TokenList infixTokenList = convertExpressionToInfix(expression);
         return convertInfixToReversePolishNotation(infixTokenList);
     }
 
-    void ShuntingYard::evaluateValue(TokenList &rpnTokenList, float *value, uint32_t valueSize)
+    float ShuntingYard::evaluate(TokenList &rpnTokenList)
     {
-        evaluateReversePolishNotation(rpnTokenList, value, valueSize);
+        return evaluateReversePolishNotation(rpnTokenList);
     }
 
-    void ShuntingYard::evaluateValue(const wchar_t *expression, float *value, uint32_t valueSize)
+    float ShuntingYard::evaluate(const wchar_t *expression)
     {
         TokenList rpnTokenList(getTokenList(expression));
-        evaluateReversePolishNotation(rpnTokenList, value, valueSize);
+        return evaluateReversePolishNotation(rpnTokenList);
     }
 
     bool ShuntingYard::isNumber(const wchar_t *token)
@@ -268,7 +263,6 @@ namespace Gek
         switch (token.type)
         {
         case TokenType::Number:
-        case TokenType::Vector:
         case TokenType::Function:
         case TokenType::UnaryOperation:
             return true;
@@ -481,29 +475,7 @@ namespace Gek
                 };
 
                 stack.pop();
-                if (stack.empty())
-                {
-                    if (hasVector)
-                    {
-                        throw VectorUsedAsParameter("Vectors can only be used as a final result");
-                    }
-
-                    hasVector = true;
-
-                    Token vector(TokenType::Vector);
-                    vector.parameterCount = parameterCountStack.popTop();
-                    if (parameterExistsStack.popTop())
-                    {
-                        vector.parameterCount++;
-                    }
-
-                    // don't push single value ()'s as vectors
-                    if (vector.parameterCount > 1)
-                    {
-                        rpnTokenList.push_back(vector);
-                    }
-                }
-                else if (stack.top().type == TokenType::Function)
+                if (stack.empty() && stack.top().type == TokenType::Function)
                 {
                     Token function = stack.popTop();
                     function.parameterCount = parameterCountStack.popTop();
@@ -573,10 +545,8 @@ namespace Gek
         return rpnTokenList;
     }
 
-    void ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList, float *value, uint32_t valueSize)
+    float ShuntingYard::evaluateReversePolishNotation(const TokenList &rpnTokenList)
     {
-        bool hasVector = false;
-
         Stack<Token> stack;
         for (auto &token : rpnTokenList)
         {
@@ -682,15 +652,6 @@ namespace Gek
                     break;
                 }
 
-            case TokenType::Vector:
-                if (hasVector)
-                {
-                    throw VectorUsedAsParameter("Vectors can only be used as a final result");
-                }
-
-                hasVector = true;
-                break;
-
             default:
                 throw UnknownTokenType("Unknown token type encountered");
             };
@@ -701,14 +662,11 @@ namespace Gek
             throw InvalidEquation("Empty equation encountered");
         }
 
-        if (stack.size() != valueSize)
+        if (stack.size() != 1)
         {
-            throw InvalidVector("Resulting vector size doesn't match requested size");
+            throw InvalidEquation("Too many values left in stack");
         }
 
-        for (uint32_t axis = valueSize; axis > 0; axis--)
-        {
-            value[axis - 1] = stack.popTop().value;
-        }
+        return stack.popTop().value;
     }
 }; // namespace Gek
