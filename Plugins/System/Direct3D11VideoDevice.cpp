@@ -1344,12 +1344,12 @@ namespace Gek
                     d3dDeviceContext->ClearUnorderedAccessViewFloat(getObject<UnorderedAccessView>(object), value.data);
                 }
 
-                void clearUnorderedAccess(Video::Object *object, const uint32_t value[4])
+                void clearUnorderedAccess(Video::Object *object, const Math::UInt4 &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
 
-                    d3dDeviceContext->ClearUnorderedAccessViewUint(getObject<UnorderedAccessView>(object), value);
+                    d3dDeviceContext->ClearUnorderedAccessViewUint(getObject<UnorderedAccessView>(object), value.data);
                 }
 
                 void clearRenderTarget(Video::Target *renderTarget, const Math::Float4 &clearColor)

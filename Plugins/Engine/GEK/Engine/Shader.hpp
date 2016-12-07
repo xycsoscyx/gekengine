@@ -56,8 +56,7 @@ namespace Gek
                 struct Resource
                 {
                     String name;
-                    String pattern;
-                    String parameters;
+                    ResourceHandle fallback;
                 };
 
                 uint32_t identifier = 0;

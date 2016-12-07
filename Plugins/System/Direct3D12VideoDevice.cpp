@@ -678,7 +678,7 @@ namespace Gek
             {
             }
 
-            void clearUnorderedAccess(Video::Object *object, const uint32_t value[4])
+            void clearUnorderedAccess(Video::Object *object, const Math::UInt4 &value)
             {
             }
 

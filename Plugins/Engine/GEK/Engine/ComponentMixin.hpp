@@ -135,8 +135,8 @@ namespace Gek
                     if (data.is_array() && data.size() == 2)
                     {
                         return Math::Vector2<TYPE>(
-                            population->getShuntingYard().evaluate(data.at(0).as_cstring()),
-                            population->getShuntingYard().evaluate(data.at(1).as_cstring()));
+                            getValue(data.at(0), defaultValue.x),
+                            getValue(data.at(1), defaultValue.y));
                     }
                 }
                 catch (...)
@@ -154,9 +154,9 @@ namespace Gek
                     if (data.is_array() && data.size() == 3)
                     {
                         return Math::Vector3<TYPE>(
-                            population->getShuntingYard().evaluate(data.at(0).as_cstring()),
-                            population->getShuntingYard().evaluate(data.at(1).as_cstring()),
-                            population->getShuntingYard().evaluate(data.at(2).as_cstring()));
+                            getValue(data.at(0), defaultValue.x),
+                            getValue(data.at(1), defaultValue.y),
+                            getValue(data.at(2), defaultValue.z));
                     }
                 }
                 catch (...)
@@ -176,17 +176,17 @@ namespace Gek
                         if (data.size() == 3)
                         {
                             return Math::Vector4<TYPE>(
-                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(2).as_cstring()), 1.0f);
+                                getValue(data.at(0), defaultValue.x),
+                                getValue(data.at(1), defaultValue.y),
+                                getValue(data.at(2), defaultValue.z), 1.0f);
                         }
                         else if (data.size() == 4)
                         {
                             return Math::Vector4<TYPE>(
-                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(2).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(3).as_cstring()));
+                                getValue(data.at(0), defaultValue.x),
+                                getValue(data.at(1), defaultValue.y),
+                                getValue(data.at(2), defaultValue.z),
+                                getValue(data.at(3), defaultValue.w));
                         }
                     }
                 }
@@ -206,17 +206,17 @@ namespace Gek
                         if (data.size() == 3)
                         {
                             return Math::Quaternion::FromEuler(
-                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(2).as_cstring()));
+                                getValue(data.at(0), defaultValue.x),
+                                getValue(data.at(1), defaultValue.y),
+                                getValue(data.at(2), defaultValue.z));
                         }
                         else if (data.size() == 4)
                         {
                             return Math::Quaternion(
-                                population->getShuntingYard().evaluate(data.at(0).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(1).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(2).as_cstring()),
-                                population->getShuntingYard().evaluate(data.at(3).as_cstring()));
+                                getValue(data.at(0), defaultValue.x),
+                                getValue(data.at(1), defaultValue.y),
+                                getValue(data.at(2), defaultValue.z),
+                                getValue(data.at(3), defaultValue.w));
                         }
                     }
                 }

@@ -1232,7 +1232,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const uint32_t value[4])
+            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::UInt4 &value)
             {
                 GEK_REQUIRE(videoContext);
 

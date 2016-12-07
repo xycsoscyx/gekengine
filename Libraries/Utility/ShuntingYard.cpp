@@ -41,6 +41,8 @@ namespace Gek
         variableMap[L"pi"] = Math::Pi;
         variableMap[L"tau"] = Math::Tau;
         variableMap[L"e"] = Math::E;
+        variableMap[L"true"] = 1.0f;
+        variableMap[L"false"] = 0.0f;
 
         operationsMap.insert({ L"^",{ 4, Associations::Right, nullptr, [](float valueLeft, float valueRight) -> float
         {
@@ -475,7 +477,7 @@ namespace Gek
                 };
 
                 stack.pop();
-                if (stack.empty() && stack.top().type == TokenType::Function)
+                if (!stack.empty() && stack.top().type == TokenType::Function)
                 {
                     Token function = stack.popTop();
                     function.parameterCount = parameterCountStack.popTop();

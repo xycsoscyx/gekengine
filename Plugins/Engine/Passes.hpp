@@ -50,23 +50,9 @@ namespace Gek
         MapType type;
         MapSource source;
         BindType binding;
-        uint32_t flags;
-        union
-        {
-            String fileName;
-            String resourceName;
-            String pattern;
-        };
+        ResourceHandle resource;
 
-        String parameters;
-
-        Map(MapType type, BindType binding, uint32_t flags, const String &fileName);
-        Map(MapType type, BindType binding, uint32_t flags, const String &pattern, const String &parameters);
-        Map(const String &resourceName);
-        Map(const Map &map);
-        ~Map(void);
-
-        Map & operator = (const Map &map);
+        Map(MapSource source, MapType type, BindType binding, ResourceHandle resource);
     };
 
     enum class ClearType : uint8_t
@@ -80,18 +66,10 @@ namespace Gek
     struct ClearData
     {
         ClearType type;
-        union
-        {
-            Math::Float4 color;
-            Math::Float4 value;
-            uint32_t uint[4];
-        };
+        Math::Float4 floats;
+        Math::UInt4 integers;
 
         ClearData(ClearType type, const String &data);
-        ClearData(const ClearData &clearData);
-        ~ClearData(void);
-
-        ClearData & operator = (const ClearData &clearData);
     };
 
     BindType getBindType(const String &bindType);

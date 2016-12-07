@@ -3,54 +3,12 @@
 
 namespace Gek
 {
-    Map::Map(MapType type, BindType binding, uint32_t flags, const String &fileName)
-        : source(MapSource::File)
+    Map::Map(MapSource source, MapType type, BindType binding, ResourceHandle resource)
+        : source(source)
         , type(type)
         , binding(binding)
-        , flags(flags)
-        , fileName(fileName)
+        , resource(resource)
     {
-    }
-
-    Map::Map(MapType type, BindType binding, uint32_t flags, const String &pattern, const String &parameters)
-        : source(MapSource::Pattern)
-        , type(type)
-        , binding(binding)
-        , flags(flags)
-        , pattern(pattern)
-        , parameters(parameters)
-    {
-    }
-
-    Map::Map(const String &resourceName)
-        : source(MapSource::Resource)
-        , resourceName(resourceName)
-    {
-    }
-
-    Map::Map(const Map &map)
-        : type(map.type)
-        , source(map.source)
-        , binding(map.binding)
-        , flags(map.flags)
-        , fileName(map.fileName)
-        , parameters(map.parameters)
-    {
-    }
-
-    Map::~Map(void)
-    {
-    }
-
-    Map & Map::operator = (const Map &map)
-    {
-        type = map.type;
-        source = map.source;
-        binding = map.binding;
-        flags = map.flags;
-        fileName = map.fileName;
-        parameters = map.parameters;
-        return *this;
     }
 
     ClearData::ClearData(ClearType type, const String &data)
@@ -59,67 +17,14 @@ namespace Gek
         switch (type)
         {
         case ClearType::Float:
-            color = data;
-            break;
-
         case ClearType::Target:
-            value = data;
+            floats = data;
             break;
             
         case ClearType::UInt:
-            uint[0] = uint[1] = uint[2] = uint[3] = data;
+            integers[0] = integers[1] = integers[2] = integers[3] = data;
             break;
         };
-    }
-
-    ClearData::ClearData(const ClearData &clearData)
-        : type(clearData.type)
-    {
-        switch (type)
-        {
-        case ClearType::Target:
-            color = clearData.color;
-            break;
-
-        case ClearType::Float:
-            value = clearData.value;
-            break;
-
-        case ClearType::UInt:
-            uint[0] = clearData.uint[0];
-            uint[1] = clearData.uint[1];
-            uint[2] = clearData.uint[2];
-            uint[3] = clearData.uint[3];
-            break;
-        };
-    }
-
-    ClearData::~ClearData(void)
-    {
-    }
-
-    ClearData & ClearData::operator = (const ClearData &clearData)
-    {
-        type = clearData.type;
-        switch (type)
-        {
-        case ClearType::Target:
-            color = clearData.color;
-            break;
-
-        case ClearType::Float:
-            value = clearData.value;
-            break;
-
-        case ClearType::UInt:
-            uint[0] = clearData.uint[0];
-            uint[1] = clearData.uint[1];
-            uint[2] = clearData.uint[2];
-            uint[3] = clearData.uint[3];
-            break;
-        };
-
-        return *this;
     }
 
     ClearType getClearType(const String &clearType)

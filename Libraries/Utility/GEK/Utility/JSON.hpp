@@ -36,7 +36,10 @@ namespace jsoncons
     {
         static Json to_json(const Gek::Math::Vector2<TYPE> &value)
         {
-            return Gek::String::Format(L"%v", value);
+            return Json::array {
+                value.x,
+                value.y
+            };
         }
     };
 
@@ -45,7 +48,11 @@ namespace jsoncons
     {
         static Json to_json(const Gek::Math::Vector3<TYPE> &value)
         {
-            return Gek::String::Format(L"%v", value);
+            return Json::array {
+                value.x,
+                value.y,
+                value.z
+            };
         }
     };
 
@@ -54,16 +61,12 @@ namespace jsoncons
     {
         static Json to_json(const Gek::Math::Vector4<TYPE> &value)
         {
-            return Gek::String::Format(L"%v", value);
-        }
-    };
-
-    template<class Json>
-    struct json_type_traits<Json, Gek::Math::Float4>
-    {
-        static Json to_json(const Gek::Math::Float4 &value)
-        {
-            return Gek::String::Format(L"%v", value);
+            return Json::array {
+                value.x,
+                value.y,
+                value.z,
+                value.w
+            };
         }
     };
 
@@ -72,7 +75,12 @@ namespace jsoncons
     {
         static Json to_json(const Gek::Math::Quaternion &value)
         {
-            return Gek::String::Format(L"%v", value);
+            return Json::array {
+                value.x,
+                value.y,
+                value.z,
+                value.w
+            };
         }
     };
 };

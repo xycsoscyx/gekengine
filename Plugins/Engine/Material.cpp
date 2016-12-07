@@ -111,7 +111,7 @@ namespace Gek
 
                             if (!resourceHandle)
                             {
-                                resourceHandle = resources->createPattern(resource.pattern, resource.parameters);
+                                resourceHandle = resource.fallback;
                             }
 
                             passData.resourceList.push_back(resourceHandle);
