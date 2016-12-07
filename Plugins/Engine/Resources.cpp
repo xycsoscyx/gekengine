@@ -797,17 +797,16 @@ namespace Gek
                 return dynamicCache.getHandle(hash, flags, std::move(load));
             }
 
-            ResourceHandle createPattern(const wchar_t *pattern, const wchar_t *parameters)
+            ResourceHandle createPattern(const wchar_t *pattern, const JSON::Object &parameters)
             {
                 GEK_REQUIRE(pattern);
-                GEK_REQUIRE(parameters);
 
-                auto load = [this, pattern = String(pattern), parameters = String(parameters)](ResourceHandle)->Video::TexturePtr
+                auto load = [this, pattern = String(pattern), parameters = parameters](ResourceHandle)->Video::TexturePtr
                 {
                     return createPatternData(pattern, parameters);
                 };
 
-                auto hash = GetHash(pattern, parameters);
+                auto hash = GetHash(pattern, parameters.to_string());
                 return dynamicCache.getHandle(hash, 0, std::move(load));
             }
 

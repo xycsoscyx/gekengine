@@ -1018,7 +1018,7 @@ namespace Gek
                             }
                             else if (resourceNode.has_member(L"pattern"))
                             {
-                                auto resource = resources->createPattern(resourceNode.get(L"pattern").as_cstring(), resourceNode.get(L"parameters").as_cstring());
+                                auto resource = resources->createPattern(resourceNode.get(L"pattern").as_cstring(), resourceNode.get(L"parameters"));
                                 materialMap.insert(std::make_pair(resourceName, Map(MapSource::Pattern, mapType, bindType, resource)));
                             }
                             else

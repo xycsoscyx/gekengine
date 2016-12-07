@@ -724,7 +724,7 @@ namespace Gek
                                         lightBufferDescription.stride = sizeof(DirectionalLightData);
                                         lightBufferDescription.count = directionalLightList.size();
                                         directionalLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                                        directionalLightDataBuffer->setName(L"renderer:directionalLightDataBuffer");
+                                        directionalLightDataBuffer->setName(String::Format(L"renderer:directionalLightDataBuffer:%v", directionalLightDataBuffer.get()));
                                     }
                                 }
                             });
@@ -750,7 +750,7 @@ namespace Gek
                                         lightBufferDescription.stride = sizeof(PointLightData);
                                         lightBufferDescription.count = pointLightList.size();
                                         pointLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                                        pointLightDataBuffer->setName(L"renderer:pointLightDataBuffer");
+                                        pointLightDataBuffer->setName(String::Format(L"renderer:pointLightDataBuffer:%v", pointLightDataBuffer.get()));
                                     }
                                 }
                             });
@@ -776,7 +776,7 @@ namespace Gek
                                         lightBufferDescription.stride = sizeof(SpotLightData);
                                         lightBufferDescription.count = spotLightList.size();
                                         spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
-                                        spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
+                                        spotLightDataBuffer->setName(String::Format(L"renderer:spotLightDataBuffer:%v", spotLightDataBuffer.get()));
                                     }
                                 }
                             });
@@ -863,7 +863,7 @@ namespace Gek
                                     tileBufferDescription.format = Video::Format::R16_UINT;
                                     tileBufferDescription.count = lightIndexList.size();
                                     lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
-                                    lightIndexBuffer->setName(L"renderer:lightIndexBuffer");
+                                    lightIndexBuffer->setName(String::Format(L"renderer:lightIndexBuffer:%v", lightIndexBuffer.get()));
                                 }
 
                                 uint16_t *lightIndexData = nullptr;

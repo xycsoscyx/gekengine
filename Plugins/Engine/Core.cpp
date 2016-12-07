@@ -513,18 +513,23 @@ namespace Gek
             std::list<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
 
-            Video::ObjectPtr vertexProgram;
-            Video::ObjectPtr inputLayout;
-            Video::BufferPtr constantBuffer;
-            Video::ObjectPtr pixelProgram;
-            Video::ObjectPtr blendState;
-            Video::ObjectPtr renderState;
-            Video::ObjectPtr depthState;
-            Video::TexturePtr fontTexture;
-            Video::ObjectPtr samplerState;
-            Video::BufferPtr vertexBuffer;
-            Video::BufferPtr indexBuffer;
-            Video::TexturePtr logoTexture;
+            struct Resources
+            {
+                Video::ObjectPtr vertexProgram;
+                Video::ObjectPtr inputLayout;
+                Video::BufferPtr constantBuffer;
+                Video::ObjectPtr pixelProgram;
+                Video::ObjectPtr blendState;
+                Video::ObjectPtr renderState;
+                Video::ObjectPtr depthState;
+                Video::TexturePtr fontTexture;
+                Video::ObjectPtr samplerState;
+                Video::BufferPtr vertexBuffer;
+                Video::BufferPtr indexBuffer;
+                Video::TexturePtr logoTexture;
+            };
+
+            std::unique_ptr<Resources> gui = std::make_unique<Resources>();
 
             bool showCursor = false;
             bool showOptionsMenu = false;
@@ -598,7 +603,7 @@ namespace Gek
                 });
 
                 String baseFileName(getContext()->getFileName(L"data\\gui"));
-                logoTexture = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"logo.png"), 0);
+                gui->logoTexture = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"logo.png"), 0);
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.Fonts->AddFontDefault();
@@ -662,8 +667,8 @@ namespace Gek
                     L"}";
 
                 auto &compiled = resources->compileProgram(Video::PipelineType::Vertex, L"uiVertexProgram", L"main", vertexShader);
-                vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
-				vertexProgram->setName(L"core:vertexProgram");
+                gui->vertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiled.data(), compiled.size());
+                gui->vertexProgram->setName(L"core:vertexProgram");
 
                 std::vector<Video::InputElement> elementList;
 
@@ -680,15 +685,15 @@ namespace Gek
                 element.semantic = Video::InputElement::Semantic::Color;
                 elementList.push_back(element);
 
-                inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
-				inputLayout->setName(L"core:inputLayout");
+                gui->inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
+                gui->inputLayout->setName(L"core:inputLayout");
 
                 Video::BufferDescription constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
                 constantBufferDescription.type = Video::BufferDescription::Type::Constant;
-                constantBuffer = videoDevice->createBuffer(constantBufferDescription);
-				constantBuffer->setName(L"core:constantBuffer");
+                gui->constantBuffer = videoDevice->createBuffer(constantBufferDescription);
+                gui->constantBuffer->setName(L"core:constantBuffer");
 
                 static const wchar_t *pixelShader =
                     L"struct PixelInput" \
@@ -707,8 +712,8 @@ namespace Gek
                     L"}";
 
                 compiled = resources->compileProgram(Video::PipelineType::Pixel, L"uiPixelProgram", L"main", pixelShader);
-                pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
-				pixelProgram->setName(L"core:pixelProgram");
+                gui->pixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiled.data(), compiled.size());
+                gui->pixelProgram->setName(L"core:pixelProgram");
 
                 Video::UnifiedBlendStateInformation blendStateInformation;
                 blendStateInformation.enable = true;
@@ -718,23 +723,23 @@ namespace Gek
                 blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
                 blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
                 blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
-                blendState = videoDevice->createBlendState(blendStateInformation);
-				blendState->setName(L"core:blendState");
+                gui->blendState = videoDevice->createBlendState(blendStateInformation);
+                gui->blendState->setName(L"core:blendState");
 
                 Video::RenderStateInformation renderStateInformation;
                 renderStateInformation.fillMode = Video::RenderStateInformation::FillMode::Solid;
                 renderStateInformation.cullMode = Video::RenderStateInformation::CullMode::None;
                 renderStateInformation.scissorEnable = true;
                 renderStateInformation.depthClipEnable = true;
-                renderState = videoDevice->createRenderState(renderStateInformation);
-				renderState->setName(L"core:renderState");
+                gui->renderState = videoDevice->createRenderState(renderStateInformation);
+                gui->renderState->setName(L"core:renderState");
 
                 Video::DepthStateInformation depthStateInformation;
                 depthStateInformation.enable = true;
                 depthStateInformation.comparisonFunction = Video::ComparisonFunction::LessEqual;
                 depthStateInformation.writeMask = Video::DepthStateInformation::Write::Zero;
-                depthState = videoDevice->createDepthState(depthStateInformation);
-				depthState->setName(L"core:depthState");
+                gui->depthState = videoDevice->createDepthState(depthStateInformation);
+                gui->depthState->setName(L"core:depthState");
 
                 uint8_t *pixels = nullptr;
                 int32_t fontWidth = 0, fontHeight = 0;
@@ -745,17 +750,17 @@ namespace Gek
                 fontDescription.width = fontWidth;
                 fontDescription.height = fontHeight;
                 fontDescription.flags = Video::TextureDescription::Flags::Resource;
-                fontTexture = videoDevice->createTexture(fontDescription, pixels);
+                gui->fontTexture = videoDevice->createTexture(fontDescription, pixels);
 
-                imGuiIo.Fonts->TexID = (Video::Object *)fontTexture.get();
+                imGuiIo.Fonts->TexID = (Video::Object *)gui->fontTexture.get();
 
                 Video::SamplerStateInformation samplerStateInformation;
                 samplerStateInformation.filterMode = Video::SamplerStateInformation::FilterMode::MinificationMagnificationMipMapPoint;
                 samplerStateInformation.addressModeU = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeV = Video::SamplerStateInformation::AddressMode::Wrap;
                 samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
-                samplerState = videoDevice->createSamplerState(samplerStateInformation);
-				depthState->setName(L"core:samplerState");
+                gui->samplerState = videoDevice->createSamplerState(samplerStateInformation);
+                gui->samplerState->setName(L"core:samplerState");
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -791,18 +796,7 @@ namespace Gek
                 ImGui::GetIO().Fonts->TexID = 0;
                 ImGui::Shutdown();
 
-                vertexProgram = nullptr;
-                inputLayout = nullptr;
-                constantBuffer = nullptr;
-                pixelProgram = nullptr;
-                blendState = nullptr;
-                renderState = nullptr;
-                depthState = nullptr;
-                fontTexture = nullptr;
-                samplerState = nullptr;
-                vertexBuffer = nullptr;
-                indexBuffer = nullptr;
-
+                gui = nullptr;
                 processorList.clear();
                 renderer = nullptr;
                 resources = nullptr;
@@ -1230,7 +1224,7 @@ namespace Gek
                 //ImGui::SetNextWindowSize(ImVec2(barWidth, 0));
                 ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 22));
                 ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-                ImGui::Image((Video::Object *)logoTexture.get(), ImVec2(16, 16));
+                ImGui::Image((Video::Object *)gui->logoTexture.get(), ImVec2(16, 16));
                 ImGui::SameLine();
                 ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::SameLine();
@@ -1249,17 +1243,18 @@ namespace Gek
             // ImGui
             void renderDrawData(ImDrawData *drawData)
             {
-                if (!vertexBuffer || vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
+                if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::BufferDescription vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(ImDrawVert);
                     vertexBufferDescription.count = drawData->TotalVtxCount;
                     vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
                     vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
-                    vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+                    gui->vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+                    gui->vertexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui->vertexBuffer.get()));
                 }
 
-                if (!indexBuffer || indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
+                if (!gui->indexBuffer || gui->indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
                 {
                     Video::BufferDescription vertexBufferDescription;
                     vertexBufferDescription.count = drawData->TotalIdxCount;
@@ -1279,15 +1274,16 @@ namespace Gek
                         throw InvalidIndexBufferFormat("Index buffer can only be 16bit or 32bit");
                     };
 
-                    indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+                    gui->indexBuffer = videoDevice->createBuffer(vertexBufferDescription);
+                    gui->indexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui->indexBuffer.get()));
                 }
 
                 bool dataUploaded = false;
                 ImDrawVert* vertexData = nullptr;
                 ImDrawIdx* indexData = nullptr;
-                if (videoDevice->mapBuffer(vertexBuffer.get(), vertexData))
+                if (videoDevice->mapBuffer(gui->vertexBuffer.get(), vertexData))
                 {
-                    if (videoDevice->mapBuffer(indexBuffer.get(), indexData))
+                    if (videoDevice->mapBuffer(gui->indexBuffer.get(), indexData))
                     {
                         for (int32_t commandListIndex = 0; commandListIndex < drawData->CmdListsCount; ++commandListIndex)
                         {
@@ -1299,10 +1295,10 @@ namespace Gek
                         }
 
                         dataUploaded = true;
-                        videoDevice->unmapBuffer(indexBuffer.get());
+                        videoDevice->unmapBuffer(gui->indexBuffer.get());
                     }
 
-                    videoDevice->unmapBuffer(vertexBuffer.get());
+                    videoDevice->unmapBuffer(gui->vertexBuffer.get());
                 }
 
                 if (dataUploaded)
@@ -1311,23 +1307,23 @@ namespace Gek
                     uint32_t width = backBuffer->getDescription().width;
                     uint32_t height = backBuffer->getDescription().height;
                     auto orthographic = Math::Float4x4::MakeOrthographic(0.0f, 0.0f, float(width), float(height), 0.0f, 1.0f);
-                    videoDevice->updateResource(constantBuffer.get(), &orthographic);
+                    videoDevice->updateResource(gui->constantBuffer.get(), &orthographic);
 
                     auto videoContext = videoDevice->getDefaultContext();
                     resources->setBackBuffer(videoContext, nullptr);
 
-                    videoContext->setInputLayout(inputLayout.get());
-                    videoContext->setVertexBufferList({ vertexBuffer.get() }, 0);
-                    videoContext->setIndexBuffer(indexBuffer.get(), 0);
+                    videoContext->setInputLayout(gui->inputLayout.get());
+                    videoContext->setVertexBufferList({ gui->vertexBuffer.get() }, 0);
+                    videoContext->setIndexBuffer(gui->indexBuffer.get(), 0);
                     videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
-                    videoContext->vertexPipeline()->setProgram(vertexProgram.get());
-                    videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 0);
-                    videoContext->pixelPipeline()->setProgram(pixelProgram.get());
-                    videoContext->pixelPipeline()->setSamplerStateList({ samplerState.get() }, 0);
+                    videoContext->vertexPipeline()->setProgram(gui->vertexProgram.get());
+                    videoContext->vertexPipeline()->setConstantBufferList({ gui->constantBuffer.get() }, 0);
+                    videoContext->pixelPipeline()->setProgram(gui->pixelProgram.get());
+                    videoContext->pixelPipeline()->setSamplerStateList({ gui->samplerState.get() }, 0);
 
-                    videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
-                    videoContext->setDepthState(depthState.get(), 0);
-                    videoContext->setRenderState(renderState.get());
+                    videoContext->setBlendState(gui->blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
+                    videoContext->setDepthState(gui->depthState.get(), 0);
+                    videoContext->setRenderState(gui->renderState.get());
 
                     uint32_t vertexOffset = 0;
                     uint32_t indexOffset = 0;

@@ -32,7 +32,7 @@ namespace Gek
             virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
 
             virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
-            virtual ResourceHandle createPattern(const wchar_t *pattern, const wchar_t *parameters) = 0;
+            virtual ResourceHandle createPattern(const wchar_t *pattern, const JSON::Object &parameters) = 0;
 
             virtual ResourceHandle createTexture(const wchar_t *textureName, const Video::TextureDescription &description) = 0;
             virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description) = 0;
