@@ -602,7 +602,10 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
-                onInitialized.emit();
+                for (auto &processor : processorList)
+                {
+                    processor->onInitialized();
+                }
 
                 String baseFileName(getContext()->getFileName(L"data\\gui"));
                 gui->logoTexture = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"logo.png"), 0);

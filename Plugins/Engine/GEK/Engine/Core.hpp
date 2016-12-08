@@ -35,7 +35,6 @@ namespace Gek
                 Debug,
             };
 
-            Nano::Signal<void(void)> onInitialized;
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(void)> onDisplay;
             Nano::Signal<void(bool showCursor)> onInterface;

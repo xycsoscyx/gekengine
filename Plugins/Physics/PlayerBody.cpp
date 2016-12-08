@@ -489,7 +489,7 @@ namespace Gek
                 float descreteTimeStep = frameTime * (1.0f / DiscreteMotionStepCount);
                 int prevContactCount = 0;
                 ConvexCastFilter castFilterData(newtonBody);
-                NewtonWorldConvexCastReturnInfo previousContactList[MaximumContactCount];
+                std::array<NewtonWorldConvexCastReturnInfo, MaximumContactCount> previousContactList;
 
                 const Math::Float3 &playerYAxis = matrix.ry.xyz;
 
@@ -514,8 +514,8 @@ namespace Gek
 
                     float impactTime;
                     Math::Float3 castTargetPosition(matrix.translation.xyz + (velocity * frameTime));
-                    NewtonWorldConvexCastReturnInfo currentContactList[MaximumContactCount];
-                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, castTargetPosition.data, newtonUpperBodyShape, &impactTime, &castFilterData, ConvexCastFilter::PreFilter, currentContactList, MaximumContactCount, threadHandle);
+                    std::array<NewtonWorldConvexCastReturnInfo, MaximumContactCount> currentContactList;
+                    int contactCount = NewtonWorldConvexCast(newtonWorld, matrix.data, castTargetPosition.data, newtonUpperBodyShape, &impactTime, &castFilterData, ConvexCastFilter::PreFilter, currentContactList.data(), MaximumContactCount, threadHandle);
                     if (contactCount)
                     {
                         matrix.translation.xyz += velocity * (impactTime * frameTime);
@@ -617,7 +617,7 @@ namespace Gek
                         }
 
                         prevContactCount = contactCount;
-                        memcpy(previousContactList, currentContactList, prevContactCount * sizeof(NewtonWorldConvexCastReturnInfo));
+                        std::copy(std::begin(currentContactList), std::next(std::begin(currentContactList), contactCount), std::begin(previousContactList));
 
                     }
                     else

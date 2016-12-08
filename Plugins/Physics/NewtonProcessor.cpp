@@ -102,7 +102,7 @@ namespace Gek
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, this, newtonOnAABBOverlap, newtonOnContactFriction);
 
-                core->onInitialized.connect<Processor, &Processor::onInitialized>(this);
+                core->onInterface.connect<Processor, &Processor::onInterface>(this);
                 population->onLoadBegin.connect<Processor, &Processor::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Processor, &Processor::onLoadSucceeded>(this);
                 population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
@@ -120,7 +120,7 @@ namespace Gek
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
                 population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
-                core->onInitialized.disconnect<Processor, &Processor::onInitialized>(this);
+                core->onInterface.disconnect<Processor, &Processor::onInterface>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -368,7 +368,7 @@ namespace Gek
                 }
             }
 
-            // Plugin::Core Slots
+            // Plugin::Processor
             void onInitialized(void)
             {
                 core->listProcessors([&](Plugin::Processor *processor) -> void
@@ -393,6 +393,11 @@ namespace Gek
                         NewtonBodySetMatrix(entitySearch->second->getNewtonBody(), transformComponent.getMatrix().data);
                     }
                 }
+            }
+
+            // Plugin::Core Slots
+            void onInterface(bool showCursor)
+            {
             }
 
             // Plugin::Population Slots
