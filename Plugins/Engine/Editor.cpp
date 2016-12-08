@@ -10,6 +10,7 @@
 #include "GEK/Engine/Entity.hpp"
 #include "GEK/Engine/Component.hpp"
 #include "GEK/Engine/ComponentMixin.hpp"
+#include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include <concurrent_vector.h>
 #include <ppl.h>
@@ -20,6 +21,7 @@ namespace Gek
     {
         GEK_CONTEXT_USER(Editor, Plugin::Core *)
             , public Plugin::Processor
+            , public Plugin::Editor
         {
         private:
             Plugin::Core *core = nullptr;
@@ -237,11 +239,14 @@ namespace Gek
                                             const float height = float(backBuffer->getDescription().height);
                                             auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
 
-                                            component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, componentData);
+                                            if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, entity, componentData))
+                                            {
+                                                onModified.emit(entity, entityComponentSearch->first);
+                                            }
                                         }
                                         else
                                         {
-                                            component->show(ImGui::GetCurrentContext(), componentData);
+                                            component->show(ImGui::GetCurrentContext(), entity, componentData);
                                         }
                                     }
                                 }

@@ -602,6 +602,8 @@ namespace Gek
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
+                onInitialized.emit();
+
                 String baseFileName(getContext()->getFileName(L"data\\gui"));
                 gui->logoTexture = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"logo.png"), 0);
 
@@ -867,6 +869,14 @@ namespace Gek
             ImGuiContext *getDefaultUIContext(void) const
             {
                 return ImGui::GetCurrentContext();
+            }
+
+            void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)
+            {
+                for (auto &processor : processorList)
+                {
+                    onProcessor(processor.get());
+                }
             }
 
             // Application

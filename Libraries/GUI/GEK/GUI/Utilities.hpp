@@ -13,6 +13,13 @@
 #include <imgui.h>
 #include <ImGuizmo.h>
 
+#ifndef NO_IMGUIHELPER_SERIALIZATION
+#define NO_IMGUIHELPER_SERIALIZATION 1
+#endif
+
+#include <imguihelper.h>
+#include <imguivariouscontrols.h>
+
 namespace ImGui
 {
     bool InputString(const char* label, Gek::String &string, ImGuiInputTextFlags flags = 0, ImGuiTextEditCallback callback = NULL, void* user_data = NULL);

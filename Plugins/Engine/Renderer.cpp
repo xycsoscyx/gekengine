@@ -982,7 +982,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (auto &filterName : { L"tonemap", L"antiAlias" })
+                        for (auto &filterName : { L"tonemap" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

@@ -43,25 +43,27 @@ namespace Gek
             }
 
             // Edit::Component
-            void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
+            bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
             {
                 ImGui::SetCurrentContext(guiContext);
                 auto &playerComponent = *dynamic_cast<Components::Player *>(data);
-                ImGui::InputFloat("Height", &playerComponent.height, 1.0f, 10.0f, 3, flags);
-                ImGui::InputFloat("Outer Radius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, flags);
-                ImGui::InputFloat("Inner Radius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, flags);
-                ImGui::InputFloat("Stair Step", &playerComponent.stairStep, 1.0f, 10.0f, 3, flags);
+                bool changed = 
+                    ImGui::InputFloat("Height", &playerComponent.height, 1.0f, 10.0f, 3, flags) |
+                    ImGui::InputFloat("Outer Radius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, flags) |
+                    ImGui::InputFloat("Inner Radius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, flags) |
+                    ImGui::InputFloat("Stair Step", &playerComponent.stairStep, 1.0f, 10.0f, 3, flags);
                 ImGui::SetCurrentContext(nullptr);
+                return changed;
             }
 
-            void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+            void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
             {
-                ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+                ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
             }
 
-            void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+            bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
             {
-                ui(guiContext, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+                return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             }
         };
 

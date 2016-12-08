@@ -19,6 +19,7 @@ namespace Gek
         GEK_PREDECLARE(Population);
         GEK_PREDECLARE(Resources);
         GEK_PREDECLARE(Renderer);
+        GEK_PREDECLARE(Processor);
 
         GEK_INTERFACE(Core)
         {
@@ -34,6 +35,7 @@ namespace Gek
                 Debug,
             };
 
+            Nano::Signal<void(void)> onInitialized;
             Nano::Signal<void(void)> onResize;
             Nano::Signal<void(void)> onDisplay;
             Nano::Signal<void(bool showCursor)> onInterface;
@@ -49,6 +51,8 @@ namespace Gek
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;
             virtual Plugin::Renderer * getRenderer(void) const = 0;
+
+            virtual void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) = 0;
         };
     }; // namespace Engine
 }; // namespace Gek

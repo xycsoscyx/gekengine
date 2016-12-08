@@ -53,23 +53,25 @@ namespace Gek
         }
 
         // Edit::Component
-        void ui(ImGuiContext *guiContext, Plugin::Component::Data *data, uint32_t flags)
+        bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
-            ImGui::InputString("Model", modelComponent.name, flags);
-            ImGui::InputString("Skin", modelComponent.skin, flags);
+            bool changed =
+                ImGui::InputString("Model", modelComponent.name, flags) |
+                ImGui::InputString("Skin", modelComponent.skin, flags);
             ImGui::SetCurrentContext(nullptr);
+            return changed;
         }
 
-        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
         {
-            ui(guiContext, data, ImGuiInputTextFlags_ReadOnly);
+            ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
         {
-            ui(guiContext, data, 0);
+            return ui(guiContext, entity, data, 0);
         }
     };
 

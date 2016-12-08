@@ -21,6 +21,8 @@ namespace Gek
 {
     namespace Plugin
     {
+        GEK_PREDECLARE(Entity);
+
         GEK_INTERFACE(Component)
         {
             struct Data
@@ -46,8 +48,8 @@ namespace Gek
         {
             virtual ~Component(void) = default;
             
-            virtual void show(ImGuiContext *guiContext, Plugin::Component::Data *data) = 0;
-            virtual void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data) = 0;
+            virtual void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data) = 0;
+            virtual bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data) = 0;
         };
     }; // namespace Edit
 }; // namespace Gek

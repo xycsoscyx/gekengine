@@ -10,6 +10,7 @@
 #include "GEK/Engine/Processor.hpp"
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Engine/Entity.hpp"
+#include "GEK/Engine/Editor.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Newton/Base.hpp"
 #include "GEK/Model/Base.hpp"
@@ -70,7 +71,7 @@ namespace Gek
         private:
             Plugin::Core *core = nullptr;
             Plugin::Population *population = nullptr;
-            uint32_t updateHandle = 0;
+            Plugin::Editor *editor = nullptr;
 
             NewtonWorld *newtonWorld = nullptr;
             NewtonCollision *newtonStaticScene = nullptr;
@@ -101,6 +102,7 @@ namespace Gek
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
                 NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, this, newtonOnAABBOverlap, newtonOnContactFriction);
 
+                core->onInitialized.connect<Processor, &Processor::onInitialized>(this);
                 population->onLoadBegin.connect<Processor, &Processor::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Processor, &Processor::onLoadSucceeded>(this);
                 population->onEntityDestroyed.connect<Processor, &Processor::onEntityDestroyed>(this);
@@ -109,10 +111,16 @@ namespace Gek
 
             ~Processor(void)
             {
+                if (editor)
+                {
+                    editor->onModified.disconnect<Processor, &Processor::onModified>(this);
+                }
+
                 population->onUpdate[50].disconnect<Processor, &Processor::onUpdate>(this);
                 population->onEntityDestroyed.disconnect<Processor, &Processor::onEntityDestroyed>(this);
                 population->onLoadSucceeded.disconnect<Processor, &Processor::onLoadSucceeded>(this);
                 population->onLoadBegin.disconnect<Processor, &Processor::onLoadBegin>(this);
+                core->onInitialized.disconnect<Processor, &Processor::onInitialized>(this);
 
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -357,6 +365,33 @@ namespace Gek
                 {
                     NewtonDestroyBody(entitySearch->second->getNewtonBody());
                     entityMap.unsafe_erase(entitySearch);
+                }
+            }
+
+            // Plugin::Core Slots
+            void onInitialized(void)
+            {
+                core->listProcessors([&](Plugin::Processor *processor) -> void
+                {
+                    editor = dynamic_cast<Plugin::Editor *>(processor);
+                    if (editor)
+                    {
+                        editor->onModified.connect<Processor, &Processor::onModified>(this);
+                    }                    
+                });
+            }
+
+            // Plugin::Editor Slots
+            void onModified(Plugin::Entity *entity, const std::type_index &type)
+            {
+                if (type == typeid(Components::Transform))
+                {
+                    auto entitySearch = entityMap.find(entity);
+                    if (entitySearch != std::end(entityMap))
+                    {
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
+                        NewtonBodySetMatrix(entitySearch->second->getNewtonBody(), transformComponent.getMatrix().data);
+                    }
                 }
             }
 

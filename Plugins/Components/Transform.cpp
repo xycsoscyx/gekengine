@@ -37,7 +37,7 @@ namespace Gek
         }
 
         // Edit::Component
-        void show(ImGuiContext *guiContext, Plugin::Component::Data *data)
+        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
@@ -46,7 +46,7 @@ namespace Gek
             ImGui::SetCurrentContext(nullptr);
         }
 
-        void edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Component::Data *data)
+        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
@@ -62,8 +62,8 @@ namespace Gek
             }
 
             ImGui::Separator();
-            ImGui::InputFloat3("Position", transformComponent.position.data, 4);
-            ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 4);
+            ImGui::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
+            ImGui::InputFloat4("Rotation", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Separator();
             ImGui::Checkbox("Snap", &useSnap);
@@ -92,10 +92,18 @@ namespace Gek
 
             ImGuizmo::BeginFrame();
             ImGuizmo::Manipulate(viewMatrix.data, projectionMatrix.data, currentGizmoOperation, ImGuizmo::WORLD, matrix.data, nullptr, snap);
-            transformComponent.rotation = matrix.getRotation();
-            transformComponent.position = matrix.translation.xyz;
-
             ImGui::SetCurrentContext(nullptr);
+
+            auto rotation(matrix.getRotation());
+            auto position(matrix.translation.xyz);
+            if (position != transformComponent.position || rotation != transformComponent.rotation)
+            {
+                transformComponent.rotation = rotation;
+                transformComponent.position = position;
+                return true;
+            }
+
+            return false;
         }
     };
 
