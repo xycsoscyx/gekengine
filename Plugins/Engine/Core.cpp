@@ -499,7 +499,6 @@ namespace Gek
             Video::DisplayModeList displayModeList;
             std::vector<StringUTF8> displayModeStringList;
             bool fullScreen = false;
-
            
             JSON::Object configuration;
             ShuntingYard shuntingYard;
@@ -526,7 +525,8 @@ namespace Gek
                 Video::ObjectPtr samplerState;
                 Video::BufferPtr vertexBuffer;
                 Video::BufferPtr indexBuffer;
-                Video::TexturePtr logoTexture;
+                Video::TexturePtr showStats;
+                Video::TexturePtr hideStats;
             };
 
             std::unique_ptr<Resources> gui = std::make_unique<Resources>();
@@ -536,6 +536,7 @@ namespace Gek
 			bool showModeChange = false;
 			float modeChangeTimer = 0.0f;
             bool editorActive = false;
+            bool consoleActive = false;
 
         public:
             Core(Context *context, HWND window)
@@ -544,9 +545,12 @@ namespace Gek
             {
                 GEK_REQUIRE(window);
 
+                log(L"Core", LogType::Message, L"Starting GEK Engine");
+
                 try
                 {
                     configuration = JSON::Load(getContext()->getFileName(L"config.json"));
+                    log(L"Core", LogType::Message, L"Configuration loaded");
                 }
                 catch (const std::exception &)
                 {
@@ -582,9 +586,11 @@ namespace Gek
                     case Video::DisplayMode::AspectRatio::_4x3:
                         displayModeString.append(" (4x3)");
                         break;
+
                     case Video::DisplayMode::AspectRatio::_16x9:
                         displayModeString.append(" (16x9)");
                         break;
+
                     case Video::DisplayMode::AspectRatio::_16x10:
                         displayModeString.append(" (16x10)");
                         break;
@@ -597,8 +603,11 @@ namespace Gek
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, videoDevice.get());
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this, videoDevice.get(), getPopulation(), resources.get());
+
+                log(L"Core", LogType::Message, L"Loading processor plugins");
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
+                    log(L"Core", LogType::Message, String::Format(L"Processor found: %v", className));
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
@@ -607,8 +616,11 @@ namespace Gek
                     processor->onInitialized();
                 }
 
+                log(L"Core", LogType::Message, L"Initializing UI");
+
                 String baseFileName(getContext()->getFileName(L"data\\gui"));
-                gui->logoTexture = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"logo.png"), 0);
+                gui->showStats = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"arrow_up.png"), 0);
+                gui->hideStats = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"arrow_down.png"), 0);
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.Fonts->AddFontDefault();
@@ -793,6 +805,7 @@ namespace Gek
                 windowActive = true;
                 engineRunning = true;
 
+                log(L"Core", LogType::Message, L"Starting engine");
                 population->load(L"demo");
             }
 
@@ -822,21 +835,42 @@ namespace Gek
 
 			void setDisplayMode(uint32_t displayMode)
 			{
+                auto &displayModeData = displayModeList[displayMode];
+                log(L"Core", LogType::Message, String::Format(L"Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
                 if (displayMode >= displayModeList.size())
                 {
                     throw InvalidDisplayMode("Invalid display mode encountered");
                 }
 
 				currentDisplayMode = displayMode;
-				videoDevice->setDisplayMode(displayModeList[displayMode]);
+				videoDevice->setDisplayMode(displayModeData);
 				centerWindow();
 				onResize.emit();
 			}
 
             // Plugin::Core
+            std::vector<std::tuple<String, LogType, String>> logList;
             void log(const wchar_t *system, LogType logType, const wchar_t *message)
             {
-                OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
+                logList.push_back(std::make_tuple(system, logType, message));
+                switch (logType)
+                {
+                case LogType::Message:
+                    OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
+                    break;
+
+                case LogType::Warning:
+                    OutputDebugString(String::Format(L"WARNING: (%v) %v\r\n", system, message));
+                    break;
+
+                case LogType::Error:
+                    OutputDebugString(String::Format(L"ERROR: (%v) %v\r\n", system, message));
+                    break;
+
+                case LogType::Debug:
+                    OutputDebugString(String::Format(L"DEBUG: (%v) %v\r\n", system, message));
+                    break;
+                };
             }
 
             JSON::Object &getConfiguration(void)
@@ -1169,6 +1203,9 @@ namespace Gek
 
                         ImGui::SameLine();
                         ImGui::Checkbox("Editor", &editorActive);
+
+                        ImGui::SameLine();
+                        ImGui::Checkbox("Console", &consoleActive);
                         ImGui::End();
 
                         if (showModeChange)
@@ -1231,23 +1268,70 @@ namespace Gek
 						int(Math::Interpolate(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
                 }
 
-                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
+                if (consoleActive)
+                {
+                    ImGui::SetNextWindowSize(ImVec2(barWidth, 200));
+                    ImGui::SetNextWindowPos(ImVec2(0, height - 200));
+                    ImGui::Begin("Console", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+
+                    auto logCount = logList.size();
+                    ImGui::PushItemWidth(-1.0f);
+                    if (ImGui::ListBoxHeader("##Log", logCount, 10))
+                    {
+                        ImGuiListClipper clipper(logCount, ImGui::GetTextLineHeightWithSpacing());
+                        while (clipper.Step())
+                        {
+                            for (int logIndex = clipper.DisplayStart; logIndex < clipper.DisplayEnd; ++logIndex)
+                            {
+                                auto &log = logList[logIndex];
+                                auto &system = std::get<0>(log);
+                                auto &type = std::get<1>(log);
+                                auto &message = std::get<2>(log);
+
+                                ImVec4 color;
+                                switch (type)
+                                {
+                                case LogType::Message:
+                                    color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
+                                    break;
+
+                                case LogType::Warning:
+                                    color = ImVec4(0.5f, 0.5f, 0.0f, 1.0f);
+                                    break;
+
+                                case LogType::Error:
+                                    color = ImVec4(0.5f, 0.0f, 0.0f, 1.0f);
+                                    break;
+
+                                case LogType::Debug:
+                                    color = ImVec4(0.0f, 0.5f, 0.5f, 1.0f);
+                                    break;
+                                };
+
+                                ImGui::PushID(logIndex);
+                                ImGui::TextColored(color, StringUTF8::Format("%v: %v", system, message));
+                                ImGui::PopID();
+                            }
+                        };
+
+                        ImGui::ListBoxFooter();
+                    }
+
+                    ImGui::PopItemWidth();
+                    ImGui::End();
+                }
 
                 ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(3, 3));
-                //ImGui::SetNextWindowSize(ImVec2(barWidth, 0));
-                ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 22));
-                ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-                ImGui::Image((Video::Object *)gui->logoTexture.get(), ImVec2(16, 16));
-                ImGui::SameLine();
-                ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-                ImGui::SameLine();
-                ImGui::Spacing();
+                ImGui::SetNextWindowPos(ImVec2(0, ImGui::GetIO().DisplaySize.y - 22 - (consoleActive ? 200 : 0)));
+                ImGui::Begin("Stats", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
+                ImGui::Text("  %.3f ms/frame (%.1f FPS)  ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
                 ImGui::End();
                 ImGui::PopStyleVar();
 
                 ImGui::End();
+
+                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
                 ImGui::Render();
-                
                 videoDevice->present(false);
 
                 return engineRunning;

@@ -192,6 +192,8 @@ namespace Gek
                 , resources(resources)
                 , threadPool(3)
             {
+                core->log(L"Renderer", Plugin::Core::LogType::Message, L"Initializing rendering system components");
+
                 core->onDisplay.connect<Renderer, &Renderer::onDisplay>(this);
                 population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
                 population->onLoadSucceeded.connect<Renderer, &Renderer::onLoadSucceeded>(this);
@@ -544,7 +546,7 @@ namespace Gek
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
 
-                    auto lightIndex = std::distance(pointLightList.begin(), lightIterator);
+                    auto lightIndex = std::distance(std::begin(pointLightList), lightIterator);
                     addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, true);
                 }
             }
@@ -567,7 +569,7 @@ namespace Gek
                     lightData.outerAngle = lightComponent.outerAngle;
                     lightData.coneFalloff = lightComponent.coneFalloff;
 
-                    auto lightIndex = std::distance(spotLightList.begin(), lightIterator);
+                    auto lightIndex = std::distance(std::begin(spotLightList), lightIterator);
                     addLightCluster(lightData.position, (lightData.radius + lightData.range), lightIndex, false);
                 }
             }

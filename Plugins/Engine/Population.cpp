@@ -119,19 +119,24 @@ namespace Gek
             {
                 GEK_REQUIRE(core);
 
+                core->log(L"Population", Plugin::Core::LogType::Message, L"Loading component plugins");
                 getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
                 {
+                    core->log(L"Population", Plugin::Core::LogType::Message, String::Format(L"Component found: %v", className));
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
                     auto componentSearch = componentMap.insert(std::make_pair(component->getIdentifier(), component));
                     if (componentSearch.second)
                     {
-                        if (!componentNamesMap.insert(std::make_pair(component->getName(), component->getIdentifier())).second)
+                        auto componentNameSearch = componentNamesMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
+                        if (!componentNameSearch.second)
                         {
+                            core->log(L"Population", Plugin::Core::LogType::Debug, String::Format(L"Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
                             componentMap.erase(componentSearch.first);
                         }
                     }
                     else
                     {
+                        core->log(L"Population", Plugin::Core::LogType::Debug, String::Format(L"Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name()));
                     }
                 });
             }
@@ -145,6 +150,8 @@ namespace Gek
 
             void loadLevel(const String &populationName)
             {
+                core->log(L"Population", Plugin::Core::LogType::Message, String::Format(L"Loading population: %v", populationName));
+
                 loading = true;
                 try
                 {
@@ -196,12 +203,12 @@ namespace Gek
 
                             for (auto &componentNode : entityNode.members())
                             {
-                                auto componentSearch = std::find_if(entityComponentList.begin(), entityComponentList.end(), [&](const JSON::Member &componentData) -> bool
+                                auto componentSearch = std::find_if(std::begin(entityComponentList), std::end(entityComponentList), [&](const JSON::Member &componentData) -> bool
                                 {
                                     return (componentData.name() == componentNode.name());
                                 });
 
-                                if (componentSearch == entityComponentList.end())
+                                if (componentSearch == std::end(entityComponentList))
                                 {
                                     entityComponentList.push_back(componentNode);
                                 }
@@ -218,7 +225,11 @@ namespace Gek
                             auto entity(std::make_shared<Entity>());
                             for (auto &componentData : entityComponentList)
                             {
-                                addComponent(entity.get(), componentData);
+                                if (componentData.name().compare(L"Name") != 0 &&
+                                    componentData.name().compare(L"Template") != 0)
+                                    {
+                                    addComponent(entity.get(), componentData);
+                                }
                             }
 
                             if (entityNode.has_member(L"Name"))
@@ -354,7 +365,10 @@ namespace Gek
                 onEntityCreated.emit(entity.get(), entityName);
                 entityQueue.push([this, entityName = String(entityName), entity](void) -> void
                 {
-                    entityMap.insert(std::make_pair((entityName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity));
+                    if (!entityMap.insert(std::make_pair((entityName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity)).second)
+                    {
+                        core->log(L"Population", Plugin::Core::LogType::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
+                    }
                 });
 
                 return entity.get();
@@ -399,6 +413,14 @@ namespace Gek
 
                         return true;
                     }
+                    else
+                    {
+                        core->log(L"Population", Plugin::Core::LogType::Error, String::Format(L"Entity contains unknown component identifier: %v", componentNameSearch->second.name()));
+                    }
+                }
+                else
+                {
+                    core->log(L"Population", Plugin::Core::LogType::Error, String::Format(L"Entity contains unknown component: %v", componentData.name()));
                 }
 
                 return false;

@@ -24,4 +24,4 @@
 	url = https://github.com/cginternals/glbinding.git
 [submodule "External/imgui-addons"]
 	path = External/imgui-addons
-	url = https://github.com/zhouxs1023/imgui-addons.git
+	url = https://github.com/Flix01/imgui.git

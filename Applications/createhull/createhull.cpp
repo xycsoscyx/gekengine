@@ -26,7 +26,8 @@ struct Header
 {
     uint32_t identifier = *(uint32_t *)"GEKX";
     uint16_t type = 1;
-    uint16_t version = 1;
+    uint16_t version = 2;
+    uint32_t newtonVersion = NewtonWorldGetVersion();
 };
 
 struct Parameters

@@ -60,8 +60,8 @@ namespace Gek
 
                 String baseFileName(getContext()->getFileName(L"data\\gui"));
                 deleteTexture = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
-                showSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"show.png"), 0);
-                hideSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"hide.png"), 0);
+                showSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"arrow_left.png"), 0);
+                hideSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"arrow_right.png"), 0);
             }
 
             ~Editor(void)

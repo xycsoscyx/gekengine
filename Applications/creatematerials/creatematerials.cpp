@@ -126,8 +126,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                             JSON::Object dataNode;
                             for(auto &mapSearch : fileMap)
                             {
-                                auto fileName = mapSearch.second.begin()->second.first;
-                                auto textureName = mapSearch.second.begin()->second.second;
+                                auto fileName = std::begin(mapSearch.second)->second.first;
+                                auto textureName = std::begin(mapSearch.second)->second.second;
 
                                 JSON::Object node;
                                 node[L"file"] = textureName;

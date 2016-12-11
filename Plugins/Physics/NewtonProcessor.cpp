@@ -33,9 +33,10 @@ namespace Gek
         public:
             struct Header
             {
-                uint32_t identifier;
-                uint16_t type;
-                uint16_t version;
+                uint32_t identifier = 0;
+                uint16_t type = 0;
+                uint16_t version =  0;
+                uint32_t newtonVersion = 0;
             };
 
 			struct HullHeader : public Header
@@ -100,7 +101,11 @@ namespace Gek
                 NewtonWorldAddPostListener(newtonWorld, "__gek_post_listener__", this, newtonWorldPostUpdate, nullptr);
 
                 int defaultMaterialID = NewtonMaterialGetDefaultGroupID(newtonWorld);
-                NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, this, newtonOnAABBOverlap, newtonOnContactFriction);
+#if NEWTON_MINOR_VERSION >= 14
+                NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, newtonOnAABBOverlap, newtonOnContactFriction);
+#else
+                NewtonMaterialSetCollisionCallback(newtonWorld, defaultMaterialID, defaultMaterialID, nullptr, newtonOnAABBOverlap, newtonOnContactFriction);
+#endif
 
                 core->onInterface.connect<Processor, &Processor::onInterface>(this);
                 population->onLoadBegin.connect<Processor, &Processor::onLoadBegin>(this);
@@ -247,9 +252,14 @@ namespace Gek
                         throw Newton::InvalidModelIdentifier("Unknown model file identifier encountered");
                     }
 
-                    if (header->version != 1)
+                    if (header->version != 2)
                     {
                         throw Newton::InvalidModelVersion("Unsupported model version encountered");
+                    }
+
+                    if (header->newtonVersion != NewtonWorldGetVersion())
+                    {
+                        throw Newton::InvalidModelVersion("Model created with different version of Newton Dynamics");
                     }
 
                     struct DeSerializationData
