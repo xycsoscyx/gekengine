@@ -11,7 +11,7 @@ set_property(TARGET ${ProjectID} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS True)
 
 target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_link_libraries(${ProjectID} Math Utility DirectXTex glbinding)
+target_link_libraries(${ProjectID} Math Utility nano-signal-slot DirectXTex glbinding)
 
 set_target_properties(${ProjectID}
     PROPERTIES
