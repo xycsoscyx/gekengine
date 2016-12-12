@@ -53,5 +53,11 @@ namespace ImGui
             ImGui::Text(label);
             return ImGui::InputString(::Gek::StringUTF8::Format("##%v", label), string, flags, callback, user_data);
         }
+
+        bool ListBox(const char* label, int* current_item, bool(*items_getter)(void* data, int idx, const char** out_text), void* data, int items_count, int height_in_items)
+        {
+            ImGui::Text(label);
+            return ImGui::ListBox(::Gek::StringUTF8::Format("##%v", label), current_item, items_getter, data, items_count, height_in_items);
+        }
     }; // namespace Gek
 }; // namespace ImGui

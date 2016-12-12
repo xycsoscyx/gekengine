@@ -48,10 +48,10 @@ namespace Gek
                 ImGui::SetCurrentContext(guiContext);
                 auto &playerComponent = *dynamic_cast<Components::Player *>(data);
                 bool changed = 
-                    ImGui::Gek::InputFloat("Height", &playerComponent.height, 1.0f, 10.0f, 3, flags) |
-                    ImGui::Gek::InputFloat("Outer Radius", &playerComponent.outerRadius, 1.0f, 10.0f, 3, flags) |
-                    ImGui::Gek::InputFloat("Inner Radius", &playerComponent.innerRadius, 1.0f, 10.0f, 3, flags) |
-                    ImGui::Gek::InputFloat("Stair Step", &playerComponent.stairStep, 1.0f, 10.0f, 3, flags);
+                    ImGui::Gek::InputFloat("Height", &playerComponent.height, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                    ImGui::Gek::InputFloat("Outer Radius", &playerComponent.outerRadius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                    ImGui::Gek::InputFloat("Inner Radius", &playerComponent.innerRadius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                    ImGui::Gek::InputFloat("Stair Step", &playerComponent.stairStep, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
                 ImGui::SetCurrentContext(nullptr);
                 return changed;
             }

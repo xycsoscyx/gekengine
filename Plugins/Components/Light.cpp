@@ -34,8 +34,8 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &pointLightComponent = *dynamic_cast<Components::PointLight *>(data);
             bool changed =
-                ImGui::Gek::InputFloat("Range", &pointLightComponent.range, 1.0f, 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Radius", &pointLightComponent.radius, 1.0f, 10.0f, 3, flags);
+                ImGui::Gek::InputFloat("Range", &pointLightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Radius", &pointLightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -86,11 +86,11 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &spotLightComponent = *dynamic_cast<Components::SpotLight *>(data);
             bool changed = 
-                ImGui::Gek::InputFloat("Range", &spotLightComponent.range, 1.0f, 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Radius", &spotLightComponent.radius, 1.0f, 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Inner Angle", &spotLightComponent.innerAngle, 1.0f, 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Outer Angle", &spotLightComponent.outerAngle, 1.0f, 10.0f, 3, flags) |
-                ImGui::Gek::InputFloat("Cone Falloff", &spotLightComponent.coneFalloff, 1.0f, 10.0f, 3, flags);
+                ImGui::Gek::InputFloat("Range", &spotLightComponent.range, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Radius", &spotLightComponent.radius, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Inner Angle", &spotLightComponent.innerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Outer Angle", &spotLightComponent.outerAngle, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Cone Falloff", &spotLightComponent.coneFalloff, (flags & ImGuiInputTextFlags_ReadOnly ? -1.0f : 1.0f), 10.0f, 3, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }

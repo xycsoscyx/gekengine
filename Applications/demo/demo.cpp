@@ -73,6 +73,8 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
             throw std::exception("Unable to register window class");
         }
 
+        auto windowFlags = (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX);
+
         RECT clientRectangle;
         clientRectangle.left = 0;
         clientRectangle.top = 0;
@@ -81,7 +83,7 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
         AdjustWindowRect(&clientRectangle, WS_OVERLAPPEDWINDOW, false);
         int windowWidth = (clientRectangle.right - clientRectangle.left);
         int windowHeight = (clientRectangle.bottom - clientRectangle.top);
-        HWND window = CreateWindow(windowClass.lpszClassName, L"GEKvX Application - Demo", WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
+        HWND window = CreateWindow(windowClass.lpszClassName, L"GEKvX Application - Demo", windowFlags, CW_USEDEFAULT, CW_USEDEFAULT, windowWidth, windowHeight, nullptr, nullptr, GetModuleHandle(nullptr), nullptr);
         if (window == nullptr)
         {
             throw std::exception("Unable to create window");

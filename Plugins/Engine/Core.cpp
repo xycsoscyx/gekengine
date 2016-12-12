@@ -153,25 +153,25 @@ namespace Gek
                 if (consolePanel)
                 {
                     consolePanel->addButtonAndWindow(
-                        ImGui::Toolbutton("Console", (Video::Object *)gui->consoleButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(24, 24)),
+                        ImGui::Toolbutton("Console", (Video::Object *)gui->consoleButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Console", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawConsole(windowData);
-                    }, this));
+                    }, this, ImGuiWindowFlags_NoScrollbar));
 
                     consolePanel->addButtonAndWindow(
-                        ImGui::Toolbutton("Performance", (Video::Object *)gui->performanceButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(24, 24)),
+                        ImGui::Toolbutton("Performance", (Video::Object *)gui->performanceButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Performance", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawPerformance(windowData);
-                    }, this));
+                    }, this, ImGuiWindowFlags_NoScrollbar));
 
                     consolePanel->addButtonAndWindow(
-                        ImGui::Toolbutton("Settings", (Video::Object *)gui->settingsButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(24, 24)),
+                        ImGui::Toolbutton("Settings", (Video::Object *)gui->settingsButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Settings", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawSettings(windowData);
-                    }, this));
+                    }, this, ImGuiWindowFlags_NoScrollbar));
                 }
 
                 setDisplayMode(currentDisplayMode);
@@ -421,10 +421,11 @@ namespace Gek
 
             void drawConsole(ImGui::PanelManagerWindowData &windowData)
             {
-                auto logCount = logList.size();
-                ImGui::PushItemWidth(-1.0f);
-                if (ImGui::ListBoxHeader("##Log", logCount, 10))
+                auto listBoxSize = (windowData.size - ImGui::GetStyle().WindowPadding);
+                listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
+                if (ImGui::ListBoxHeader("##empty", listBoxSize))
                 {
+                    auto logCount = logList.size();
                     ImGuiListClipper clipper(logCount, ImGui::GetTextLineHeightWithSpacing());
                     while (clipper.Step())
                     {
@@ -463,19 +464,17 @@ namespace Gek
 
                     ImGui::ListBoxFooter();
                 }
-
-                ImGui::PopItemWidth();
             }
 
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
-                ImGui::Text("  %.3f ms/frame (%.1f FPS)  ", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+                ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
             {
                 ImGui::PushItemWidth(350.0f);
-                if (ImGui::Combo("Display Mode", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
+                if (ImGui::Gek::ListBox("Display Mode", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
                 {
                     Core *core = static_cast<Core *>(data);
                     auto &mode = core->displayModeStringList[index];
@@ -486,7 +485,7 @@ namespace Gek
                     configuration[L"display"][L"mode"] = currentDisplayMode;
                     setDisplayMode(currentDisplayMode);
                     showModeChange = true;
-                    modeChangeTimer = 5.0f;
+                    modeChangeTimer = 10.0f;
                 }
 
                 ImGui::PopItemWidth();

@@ -61,7 +61,7 @@ namespace Gek
                 populationButton = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
 
                 core->getPanelManager()->getPane(ImGui::PanelManager::RIGHT)->addButtonAndWindow(
-                    ImGui::Toolbutton("Population", (Video::Object *)populationButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(24, 24)),
+                    ImGui::Toolbutton("Population", (Video::Object *)populationButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                     ImGui::PanelManagerPaneAssociatedWindow("Population", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                 {
                     ((Editor *)windowData.userData)->drawPopulation(windowData);
@@ -133,6 +133,11 @@ namespace Gek
                     Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
                     if (entity)
                     {
+                        if (entity->hasComponent<Components::Transform>())
+                        {
+                            auto &transformComponent = entity->getComponent<Components::Transform>();
+                        }
+
                         if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                         {
                             ImGui::OpenPopup("Select Component");
