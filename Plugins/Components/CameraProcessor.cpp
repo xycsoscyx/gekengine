@@ -57,10 +57,10 @@ namespace Gek
             ImGui::SetCurrentContext(guiContext);
             auto &firstPersonCameraComponent = *dynamic_cast<Components::FirstPersonCamera *>(data);
             bool changed =
-                ImGui::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, 1.0f, 10.0f, 3, flags) |
-                ImGui::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, flags) |
-                ImGui::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, flags) |
-                ImGui::InputString("Target", firstPersonCameraComponent.target, flags);
+                ImGui::Gek::InputFloat("Field of View", &firstPersonCameraComponent.fieldOfView, 1.0f, 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Near Clip", &firstPersonCameraComponent.nearClip, 1.0f, 10.0f, 3, flags) |
+                ImGui::Gek::InputFloat("Far Clip", &firstPersonCameraComponent.farClip, 1.0f, 10.0f, 3, flags) |
+                ImGui::Gek::InputString("Target", firstPersonCameraComponent.target, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }

@@ -42,6 +42,11 @@ namespace Gek
             };
 
         public:
+            inline static Quaternion FromEuler(const Math::Float3 &euler)
+            {
+                return FromEuler(euler.x, euler.y, euler.z);
+            }
+
             inline static Quaternion FromEuler(float pitch, float yaw, float roll)
             {
                 float sinPitch(std::sin(pitch * 0.5f));

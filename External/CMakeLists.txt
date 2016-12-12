@@ -22,8 +22,6 @@ SET(ASSIMP_BUILD_TESTS False CACHE BOOL "" FORCE)
 SET(ASSIMP_INSTALL_PDB False CACHE BOOL "" FORCE)
 add_subdirectory("assimp")
 
-add_definitions(-DNO_IMGUIHELPER_SERIALIZATION -DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
-
 if(WIN32)
     project(DirectXTex)
     file(GLOB SOURCES "DirectXTex/DirectXTex/*.cpp" "DirectXTex/DirectXTex/*.h")
@@ -33,15 +31,10 @@ if(WIN32)
 endif()
 
 project(imgui)
-add_definitions(-DIMGUI_DEFINE_MATH_OPERATORS -DIMGUI_DEFINE_PLACEMENT_NEW)
 file(GLOB SOURCES "imgui-addons/*.cpp" "imgui-addons/*.h"
-                  "imgui-addons/addons/imguihelper/*.*"
-                  "imgui-addons/addons/imguivariouscontrols/*.*"
                   "imguizmo/*.cpp" "imguizmo/*.h")
 add_library(imgui STATIC ${SOURCES})
 target_include_directories(imgui PUBLIC "${CMAKE_CURRENT_LIST_DIR}/imgui-addons"
-                                        "${CMAKE_CURRENT_LIST_DIR}/imgui-addons/addons/imguihelper"
-                                        "${CMAKE_CURRENT_LIST_DIR}/imgui-addons/addons/imguivariouscontrols"
                                         "${CMAKE_CURRENT_LIST_DIR}/imguizmo")
 
 project(nano-signal-slot)

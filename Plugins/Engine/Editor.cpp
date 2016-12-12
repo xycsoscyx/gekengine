@@ -40,8 +40,7 @@ namespace Gek
             uint32_t selectedComponent = 0;
 
             Video::TexturePtr deleteTexture;
-            Video::TexturePtr showSideBar;
-            Video::TexturePtr hideSideBar;
+            Video::TexturePtr populationButton;
 
         public:
             Editor(Context *context, Plugin::Core *core)
@@ -53,15 +52,20 @@ namespace Gek
                 GEK_REQUIRE(population);
                 GEK_REQUIRE(core);
 
-                core->onInterface.connect<Editor, &Editor::onInterface>(this);
                 population->onLoadBegin.connect<Editor, &Editor::onLoadBegin>(this);
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
                 String baseFileName(getContext()->getFileName(L"data\\gui"));
                 deleteTexture = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
-                showSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"arrow_left.png"), 0);
-                hideSideBar = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"arrow_right.png"), 0);
+                populationButton = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
+
+                core->getPanelManager()->getPane(ImGui::PanelManager::RIGHT)->addButtonAndWindow(
+                    ImGui::Toolbutton("Population", (Video::Object *)populationButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(24, 24)),
+                    ImGui::PanelManagerPaneAssociatedWindow("Population", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
+                {
+                    ((Editor *)windowData.userData)->drawPopulation(windowData);
+                }, this));
             }
 
             ~Editor(void)
@@ -69,206 +73,172 @@ namespace Gek
                 population->onUpdate[90].disconnect<Editor, &Editor::onUpdate>(this);
                 population->onAction.disconnect<Editor, &Editor::onAction>(this);
                 population->onLoadBegin.disconnect<Editor, &Editor::onLoadBegin>(this);
-                core->onInterface.disconnect<Editor, &Editor::onInterface>(this);
             }
 
-            // Plugin::Core Slots
-            bool showFullEditor = false;
-            void onInterface(bool showCursor)
+            void drawPopulation(ImGui::PanelManagerWindowData &windowData)
             {
-                if (population->isLoading())
+                ImGui::PushItemWidth(-1);
+                auto &entityMap = population->getEntityMap();
+                if (!entityMap.empty())
                 {
-                    return;
-                }
-
-                if(showFullEditor)
-                {
-                    ImGui::SetNextWindowSize(ImVec2(350, ImGui::GetIO().DisplaySize.y));
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 350, 0));
-                    ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-                    ImGui::PushItemWidth(-1.0f);
-
-                    auto &entityMap = population->getEntityMap();
-                    if (!entityMap.empty())
+                    if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                     {
-                        if (ImGui::ImageButton((Video::Object *)hideSideBar.get(), ImVec2(12, 12)))
+                        ImGui::OpenPopup("Entity Name");
+                    }
+
+                    if (ImGui::BeginPopup("Entity Name"))
+                    {
+                        String name;
+                        if (ImGui::Gek::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
                         {
-                            showFullEditor = false;
+                            population->createEntity(String(name));
+                            ImGui::CloseCurrentPopup();
                         }
 
-                        ImGui::SameLine();
-                        if (ImGui::Button("Create Entity", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                        {
-                            ImGui::OpenPopup("Entity Name");
-                        }
+                        ImGui::EndPopup();
+                    }
 
-                        if (ImGui::BeginPopup("Entity Name"))
+                    auto entityCount = entityMap.size();
+                    if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
+                    {
+                        ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
+                        while (clipper.Step())
                         {
-                            String name;
-                            if (ImGui::InputString("Name", name, ImGuiInputTextFlags_EnterReturnsTrue))
+                            auto entitySearch = std::begin(entityMap);
+                            std::advance(entitySearch, clipper.DisplayStart);
+                            for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
                             {
-                                population->createEntity(String(name));
-                                ImGui::CloseCurrentPopup();
+                                ImGui::PushID(entityIndex);
+                                if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
+                                {
+                                    population->killEntity(entitySearch->second.get());
+                                }
+
+                                ImGui::PopID();
+                                ImGui::SameLine();
+                                ImGui::SetItemAllowOverlap();
+                                if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
+                                {
+                                    selectedEntity = entityIndex;
+                                    selectedComponent = 0;
+                                }
+                            }
+                        };
+
+                        ImGui::ListBoxFooter();
+                    }
+
+                    auto entitySearch = std::begin(entityMap);
+                    std::advance(entitySearch, selectedEntity);
+                    Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
+                    if (entity)
+                    {
+                        if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
+                        {
+                            ImGui::OpenPopup("Select Component");
+                        }
+
+                        if (ImGui::BeginPopup("Select Component"))
+                        {
+                            auto &componentMap = population->getComponentMap();
+                            auto componentCount = componentMap.size();
+                            if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                            {
+                                ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                                while (clipper.Step())
+                                {
+                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                    {
+                                        auto componentSearch = std::begin(componentMap);
+                                        std::advance(componentSearch, componentIndex);
+                                        if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                        {
+                                            JSON::Member componentData(componentSearch->second->getName(), JSON::Object());
+                                            population->addComponent(entity, componentData);
+                                            ImGui::CloseCurrentPopup();
+                                        }
+                                    }
+                                };
+
+                                ImGui::ListBoxFooter();
                             }
 
                             ImGui::EndPopup();
                         }
 
-                        auto entityCount = entityMap.size();
-                        if (ImGui::ListBoxHeader("##Entities", entityCount, 7))
+                        auto &entityComponentMap = entity->getComponentMap();
+                        if (!entityComponentMap.empty())
                         {
-                            ImGuiListClipper clipper(entityCount, ImGui::GetTextLineHeightWithSpacing());
-                            while (clipper.Step())
+                            auto entityComponentsCount = entityComponentMap.size();
+                            if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
                             {
-                                auto entitySearch = std::begin(entityMap);
-                                std::advance(entitySearch, clipper.DisplayStart);
-                                for (int entityIndex = clipper.DisplayStart; entityIndex < clipper.DisplayEnd; ++entityIndex, ++entitySearch)
+                                std::vector<std::type_index> componentDeleteList;
+                                ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
+                                while (clipper.Step())
                                 {
-                                    ImGui::PushID(entityIndex);
-                                    if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
+                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                     {
-                                        population->killEntity(entitySearch->second.get());
-                                    }
+                                        auto entityComponentSearch = std::begin(entityComponentMap);
+                                        std::advance(entityComponentSearch, componentIndex);
 
-                                    ImGui::PopID();
-                                    ImGui::SameLine();
-                                    ImGui::SetItemAllowOverlap();
-                                    if (ImGui::Selectable(StringUTF8(entitySearch->first), (entityIndex == selectedEntity)))
-                                    {
-                                        selectedEntity = entityIndex;
-                                        selectedComponent = 0;
+                                        ImGui::PushID(componentIndex);
+                                        if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
+                                        {
+                                            componentDeleteList.push_back(entityComponentSearch->first);
+                                        }
+
+                                        ImGui::PopID();
+                                        ImGui::SameLine();
+                                        ImGui::SetItemAllowOverlap();
+                                        if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                        {
+                                            selectedComponent = componentIndex;
+                                        }
                                     }
+                                };
+
+                                ImGui::ListBoxFooter();
+                                for (auto &componentType : componentDeleteList)
+                                {
+                                    population->removeComponent(entity, componentType);
                                 }
-                            };
-
-                            ImGui::ListBoxFooter();
-                        }
-
-                        auto entitySearch = std::begin(entityMap);
-                        std::advance(entitySearch, selectedEntity);
-                        Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
-                        if (entity)
-                        {
-                            if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                            {
-                                ImGui::OpenPopup("Select Component");
                             }
 
-                            if (ImGui::BeginPopup("Select Component"))
+                            auto entityComponentSearch = std::begin(entityComponentMap);
+                            std::advance(entityComponentSearch, selectedComponent);
+                            if (entityComponentSearch != std::end(entityComponentMap))
                             {
-                                auto &componentMap = population->getComponentMap();
-                                auto componentCount = componentMap.size();
-                                if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                                Edit::Component *component = population->getComponent(entityComponentSearch->first);
+                                Plugin::Component::Data *componentData = entityComponentSearch->second.get();
+                                if (component && componentData)
                                 {
-                                    ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
-                                    while (clipper.Step())
+                                    if (core->isEditorActive())
                                     {
-                                        for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                        Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                                        viewMatrix.translation.xyz = position;
+                                        viewMatrix.invert();
+
+                                        const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                                        const float width = float(backBuffer->getDescription().width);
+                                        const float height = float(backBuffer->getDescription().height);
+                                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+
+                                        if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, entity, componentData))
                                         {
-                                            auto componentSearch = std::begin(componentMap);
-                                            std::advance(componentSearch, componentIndex);
-                                            if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                            {
-                                                JSON::Member componentData(componentSearch->second->getName(), JSON::Object());
-                                                population->addComponent(entity, componentData);
-                                                ImGui::CloseCurrentPopup();
-                                            }
+                                            onModified.emit(entity, entityComponentSearch->first);
                                         }
-                                    };
-
-                                    ImGui::ListBoxFooter();
-                                }
-
-                                ImGui::EndPopup();
-                            }
-
-                            auto &entityComponentMap = entity->getComponentMap();
-                            if (!entityComponentMap.empty())
-                            {
-                                auto entityComponentsCount = entityComponentMap.size();
-                                if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
-                                {
-                                    std::vector<std::type_index> componentDeleteList;
-                                    ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
-                                    while (clipper.Step())
-                                    {
-                                        for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                        {
-                                            auto entityComponentSearch = std::begin(entityComponentMap);
-                                            std::advance(entityComponentSearch, componentIndex);
-
-                                            ImGui::PushID(componentIndex);
-                                            if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
-                                            {
-                                                componentDeleteList.push_back(entityComponentSearch->first);
-                                            }
-
-                                            ImGui::PopID();
-                                            ImGui::SameLine();
-                                            ImGui::SetItemAllowOverlap();
-                                            if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                            {
-                                                selectedComponent = componentIndex;
-                                            }
-                                        }
-                                    };
-
-                                    ImGui::ListBoxFooter();
-                                    for (auto &componentType : componentDeleteList)
-                                    {
-                                        population->removeComponent(entity, componentType);
                                     }
-                                }
-
-                                auto entityComponentSearch = std::begin(entityComponentMap);
-                                std::advance(entityComponentSearch, selectedComponent);
-                                if (entityComponentSearch != std::end(entityComponentMap))
-                                {
-                                    Edit::Component *component = population->getComponent(entityComponentSearch->first);
-                                    Plugin::Component::Data *componentData = entityComponentSearch->second.get();
-                                    if (component && componentData)
+                                    else
                                     {
-                                        if (core->isEditorActive())
-                                        {
-                                            Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
-                                            viewMatrix.translation.xyz = position;
-                                            viewMatrix.invert();
-
-                                            const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
-                                            const float width = float(backBuffer->getDescription().width);
-                                            const float height = float(backBuffer->getDescription().height);
-                                            auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
-                                            if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, entity, componentData))
-                                            {
-                                                onModified.emit(entity, entityComponentSearch->first);
-                                            }
-                                        }
-                                        else
-                                        {
-                                            component->show(ImGui::GetCurrentContext(), entity, componentData);
-                                        }
+                                        component->show(ImGui::GetCurrentContext(), entity, componentData);
                                     }
                                 }
                             }
                         }
                     }
-
-                    ImGui::PopItemWidth();
-                    ImGui::End();
                 }
-                else
-                {
-                    ImGui::SetNextWindowSize(ImVec2(36, ImGui::GetIO().DisplaySize.y));
-                    ImGui::SetNextWindowPos(ImVec2(ImGui::GetIO().DisplaySize.x - 36, 0));
-                    ImGui::Begin("Editor", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoTitleBar);
-                    if (ImGui::ImageButton((Video::Object *)showSideBar.get(), ImVec2(12, 12)))
-                    {
-                        showFullEditor = true;
-                    }
 
-                    ImGui::End();
-                }
+                ImGui::PopItemWidth();
             }
 
             // Plugin::Population Slots

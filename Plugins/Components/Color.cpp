@@ -32,7 +32,7 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
-            bool changed = ImGui::ColorCombo("Color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth());
+            bool changed = ImGui::ColorCombo("##Color", (ImVec4 *)&colorComponent.value, true, ImGui::GetWindowContentRegionWidth());
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }

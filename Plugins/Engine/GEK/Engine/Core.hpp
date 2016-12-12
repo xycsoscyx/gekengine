@@ -11,6 +11,7 @@
 #include "GEK/Utility/JSON.hpp"
 #include <nano_signal_slot.hpp>
 #include <Windows.h>
+#include <imgui.h>
 
 namespace Gek
 {
@@ -50,6 +51,8 @@ namespace Gek
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;
             virtual Plugin::Renderer * getRenderer(void) const = 0;
+
+            virtual ImGui::PanelManager * getPanelManager(void) = 0;
 
             virtual void listProcessors(std::function<void(Plugin::Processor *)> onProcessor) = 0;
         };
