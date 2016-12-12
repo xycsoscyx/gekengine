@@ -2,12 +2,17 @@
 
 namespace Gek
 {
+    namespace Win32
+    {
+        GEK_DECLARE_CONTEXT_USER(Window);
+    };
+
     namespace DirectInput8
     {
         GEK_DECLARE_CONTEXT_USER(System);
     };
 
-	namespace DirectSound8
+    namespace DirectSound8
 	{
 		GEK_DECLARE_CONTEXT_USER(Device);
 	};
@@ -33,6 +38,7 @@ namespace Gek
     };
 
     GEK_CONTEXT_BEGIN(System);
+        GEK_CONTEXT_ADD_CLASS(Default::System::Window, Win32::Window);
         GEK_CONTEXT_ADD_CLASS(Default::System::Input, DirectInput8::System);
 		GEK_CONTEXT_ADD_CLASS(Default::Device::Audio, DirectSound8::Device);
         GEK_CONTEXT_ADD_CLASS(Default::Device::Video, Direct3D11::Device);

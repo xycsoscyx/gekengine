@@ -77,7 +77,14 @@ namespace Gek
 
             void drawPopulation(ImGui::PanelManagerWindowData &windowData)
             {
-                ImGui::PushItemWidth(-1);
+                ImGui::PushItemWidth(-1.0f);
+
+                bool editorActive = core->isEditorActive();
+                if (ImGui::Checkbox("Editor", &editorActive))
+                {
+                    core->setEditorState(editorActive);
+                }
+
                 auto &entityMap = population->getEntityMap();
                 if (!entityMap.empty())
                 {

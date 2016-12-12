@@ -46,6 +46,8 @@ namespace Gek
 
             virtual JSON::Object &getConfiguration(void) = 0;
             virtual JSON::Object const &getConfiguration(void) const = 0;
+
+            virtual void setEditorState(bool enabled) = 0;
             virtual bool isEditorActive(void) const = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;

@@ -15,6 +15,14 @@
 #include <queue>
 #include <ppl.h>
 
+#ifndef HID_USAGE_PAGE_GENERIC
+#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
+#endif
+
+#ifndef HID_USAGE_GENERIC_MOUSE
+#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
+#endif
+
 namespace Gek
 {
     namespace Implementation
@@ -221,9 +229,10 @@ namespace Gek
                 ImGuiStyle& style = ImGui::GetStyle();
                 //ImGui::SetupImGuiStyle(false, 0.9f);
                 ImGui::ResetStyle(ImGuiStyle_OSX, style);
-                style.WindowTitleAlign = ImGuiAlign_Center | ImGuiAlign_VCenter;
+                style.WindowTitleAlign = ImVec2(0.5f, 0.5f);
+                style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
                 style.WindowRounding = 0.0f;
-                style.FrameRounding = 1.0f;
+                style.FrameRounding = 3.0f;
 
                 static const wchar_t *vertexShader =
                     L"cbuffer vertexBuffer : register(b0)" \
@@ -358,14 +367,6 @@ namespace Gek
                     core->renderDrawData(drawData);
                 };
 
-#ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
-#endif
-
-#ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
-#endif
-
                 RAWINPUTDEVICE inputDevice;
                 inputDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
                 inputDevice.usUsage = HID_USAGE_GENERIC_MOUSE;
@@ -473,6 +474,21 @@ namespace Gek
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
             {
+                if (ImGui::Checkbox("FullScreen", &fullScreen))
+                {
+                    if (fullScreen)
+                    {
+                        SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                    }
+
+                    videoDevice->setFullScreenState(fullScreen);
+                    onResize.emit();
+                    if (!fullScreen)
+                    {
+                        centerWindow();
+                    }
+                }
+
                 ImGui::PushItemWidth(350.0f);
                 if (ImGui::Gek::ListBox("Display Mode", &currentDisplayMode, [](void *data, int index, const char **text) -> bool
                 {
@@ -489,22 +505,6 @@ namespace Gek
                 }
 
                 ImGui::PopItemWidth();
-
-                ImGui::SameLine();
-                if (ImGui::Checkbox("FullScreen", &fullScreen))
-                {
-                    if (fullScreen)
-                    {
-                        SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-                    }
-
-                    videoDevice->setFullScreenState(fullScreen);
-                    onResize.emit();
-                    if (!fullScreen)
-                    {
-                        centerWindow();
-                    }
-                }
             }
 
             // Plugin::Core
@@ -540,6 +540,11 @@ namespace Gek
             JSON::Object const &getConfiguration(void) const
             {
                 return configuration;
+            }
+
+            void setEditorState(bool enabled)
+            {
+                editorActive = enabled;
             }
 
             bool isEditorActive(void) const

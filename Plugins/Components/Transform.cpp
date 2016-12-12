@@ -84,18 +84,6 @@ namespace Gek
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
-            if (ImGui::RadioButton("Translate", currentGizmoOperation == ImGuizmo::TRANSLATE))
-            {
-                currentGizmoOperation = ImGuizmo::TRANSLATE;
-            }
-
-            ImGui::SameLine();
-            if (ImGui::RadioButton("Rotate", currentGizmoOperation == ImGuizmo::ROTATE))
-            {
-                currentGizmoOperation = ImGuizmo::ROTATE;
-            }
-
-            ImGui::Separator();
             ImGui::Gek::InputFloat3("Position", transformComponent.position.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Text("Rotation: ");
@@ -141,8 +129,19 @@ namespace Gek
             }
 
             ImGui::Separator();
-            ImGui::Checkbox("Snap", &useSnap);
-            ImGui::SameLine();
+            ImGui::Text("Gizmo Affects:");            
+            if (ImGui::RadioButton("Translation", currentGizmoOperation == ImGuizmo::TRANSLATE))
+            {
+                currentGizmoOperation = ImGuizmo::TRANSLATE;
+            }
+
+            if (ImGui::RadioButton("Rotation", currentGizmoOperation == ImGuizmo::ROTATE))
+            {
+                currentGizmoOperation = ImGuizmo::ROTATE;
+            }
+
+            ImGui::Separator();
+            ImGui::Checkbox("Enable Snap", &useSnap);
 
             float *snap = nullptr;
             switch (currentGizmoOperation)
