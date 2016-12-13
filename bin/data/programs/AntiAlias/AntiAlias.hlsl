@@ -3,6 +3,13 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
+namespace Defines
+{
+    static const float reduceMinimum = 1.0 / 128.0;
+    static const float reduceMultiplier = 1.0 / 8.0;
+    static const float spanMaximum = 8.0;
+}; // namespace Defines
+
 // https://github.com/mattdesl/glsl-fxaa
 //optimized version for mobile, where dependent 
 //texture reads can be a bottleneck

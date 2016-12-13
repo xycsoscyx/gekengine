@@ -1,12 +1,4 @@
 {
-    "defines": {
-        "gaussianRadius": {
-            "bind": "int",
-            "value": 4
-        },
-        "gaussianSigma": 1.75,
-        "edgeSharpness": 0.01
-    },
     "textures": {
         "depthBuffer": {
             "bind": "float",
@@ -31,21 +23,6 @@
         {
             "program": "AmbientCalculation",
             "entry": "mainPixelProgram",
-            "defines": {
-                "radius": 1,
-                "tapCount": {
-                    "bind": "int",
-                    "value": 24
-                },
-                "spiralTurns": 17,
-                "intensity": 2,
-                "bias": 0.2,
-                "falloffFunction": {
-                    "bind": "int",
-                    "value": 0
-                },
-                "epsilon": 0.001
-            },
             "resources": [
                 "normalBuffer",
                 "depthBuffer"
@@ -57,12 +34,7 @@
         {
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": [ 1, 0 ]
-                }
-            },
+            "engineData": "static const float2 blurAxis = float2(1,0);",
             "resources": [
                 "depthBuffer",
                 { "ambientBuffer": "inputBuffer" }
@@ -74,12 +46,7 @@
         {
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
-            "defines": {
-                "blurAxis": {
-                    "bind": "int2",
-                    "value": [ 0, 1 ]
-                }
-            },
+            "engineData": "static const float2 blurAxis = float2(0,1);",
             "resources": [
                 "depthBuffer",
                 { "gaussianBuffer": "inputBuffer" }

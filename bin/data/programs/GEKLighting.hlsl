@@ -1,3 +1,8 @@
+namespace Defines
+{
+    static const bool useHalfLambert = true;
+}; // namespace Defines
+
 float getFalloff(float distance, float range)
 {
     float denominator = (pow(distance, 2.0) + 1.0);

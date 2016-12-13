@@ -12,11 +12,18 @@
 
 namespace Defines
 {
+    static const float radius = 1;
     static const float radiusSquared = pow(Defines::radius, 2.0);
     static const float radiusCubed = pow(Defines::radius, 3.0);
+    static const uint tapCount = 24;
     static const float inverseTapCount = rcp(Defines::tapCount);
+    static const float spiralTurns = 17;
+    static const float intensity = 2;
     static const float intensityDivR6 = Defines::intensity / pow(Defines::radius, 6.0f);
-};
+    static const float bias = 0.2;
+    static const uint falloffFunction = HighQuality;
+    static const float epsilon = 0.001;
+}; // namespace Defines
 
 /** Returns a unit vector and a screen-space Defines::radius for the tap on a unit disk (the caller should scale by the actual disk Defines::radius) */
 float2 getTapLocation(int tapIndex, float spinAngle, out float tapRadius)

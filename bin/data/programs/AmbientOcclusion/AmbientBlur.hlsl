@@ -3,10 +3,18 @@
 #include <GEKGlobal.hlsl>
 #include <GEKUtility.hlsl>
 
+namespace Defines
+{
+    static const uint gaussianRadius = 4;
+    static const float gaussianSigma = 1.75;
+    static const float gaussianSigmaSquared = (gaussianSigma * gaussianSigma);
+    static const float edgeSharpness = 0.01;
+}; // namespace Defines
+
 float getGaussianWeight(float offset)
 {
     static const float numerator = (1.0 / (sqrt(Math::Tau) * Defines::gaussianSigma));
-    static const float denominator = (1.0 / (2.0 * Defines::gaussianSigma*Defines::gaussianSigma));
+    static const float denominator = (1.0 / (2.0 * Defines::gaussianSigmaSquared));
     return (numerator * exp(-(offset * offset) * denominator));
 }
 

@@ -132,103 +132,10 @@ namespace Gek
                     throw InvalidParameter("Material must be an object");
                 }
 
-                std::unordered_map<String, std::pair<BindType, JSON::Object>> globalDefinesMap;
-                if (shaderNode.has_member(L"defines"))
-                {
-                    auto &definesNode = shaderNode.get(L"defines");
-                    if (!definesNode.is_object())
-                    {
-                        throw InvalidParameterType("Global defines must be an object");
-                    }
-
-                    for (auto &defineNode : definesNode.members())
-                    {
-                        auto &defineName = defineNode.name();
-                        auto &defineValue = defineNode.value();
-                        if (defineValue.is_object())
-                        {
-                            if (defineValue.has_member(L"bind") && defineValue.has_member(L"value"))
-                            {
-                                BindType bindType = getBindType(defineValue.get(L"bind").as_string());
-                                globalDefinesMap[defineName] = std::make_pair(bindType, defineValue.get(L"value"));
-                            }
-                            else
-                            {
-                                throw InvalidParameter("Complex defines require a bind type and value");
-                            }
-                        }
-                        else if (defineValue.is_array())
-                        {
-                            BindType bindType;
-                            switch (defineValue.size())
-                            {
-                            case 1: bindType = BindType::Float; break;
-                            case 2: bindType = BindType::Float2; break;
-                            case 3: bindType = BindType::Float3; break;
-                            case 4: bindType = BindType::Float4; break;
-                            default: throw InvalidParameter("Unknown define bind size");
-                            };
-
-                            globalDefinesMap[defineName] = std::make_pair(bindType, defineValue);
-                        }
-                        else
-                        {
-                            globalDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue);
-                        }
-                    }
-                }
-
-                auto evaluate = [&](std::unordered_map<String, std::pair<BindType, JSON::Object>> &definesMap, const JSON::Object &data) -> float
+                auto evaluate = [&](const JSON::Object &data) -> float
                 {
                     String value(data.to_string());
                     value.trim([](wchar_t ch) { return (ch != L'\"'); });
-                    bool foundDefine = true;
-                    while (foundDefine)
-                    {
-                        foundDefine = false;
-                        for (auto &define : definesMap)
-                        {
-                            auto &name = define.first;
-                            if (value.find(name) != String::npos)
-                            {
-                                auto &data = define.second.second;
-                                if (data.is_array())
-                                {
-                                    if (data.size() == 1)
-                                    {
-                                        String dataValue;
-                                        if (data.at(0).is_string())
-                                        {
-                                            dataValue = data.at(0).as_cstring();
-                                        }
-                                        else if (data.at(0).is<float>())
-                                        {
-                                            dataValue = data.at(0).as<float>();
-                                        }
-                                        else
-                                        {
-                                            throw InvalidParameter("Recursively used single value array must be numeric value");
-                                        }
-
-                                        foundDefine = (foundDefine | value.replace(name, dataValue));
-                                    }
-                                    else
-                                    {
-                                        throw InvalidParameter("Recursive defines only allowed with single value arrays");
-                                    }
-                                }
-                                else if (data.is_string())
-                                {
-                                    foundDefine = (foundDefine | value.replace(name, data.as_cstring()));
-                                }
-                                else if (data.is<float>())
-                                {
-                                    foundDefine = (foundDefine | value.replace(name, String::Format(L"%v", data.as<float>())));
-                                }
-                            }
-                        }
-                    };
-
                     return population->getShuntingYard().evaluate(value);
                 };
 
@@ -406,13 +313,13 @@ namespace Gek
                                     switch (dimensions)
                                     {
                                     case 3:
-                                        description.depth = evaluate(globalDefinesMap, size.at(2));
+                                        description.depth = evaluate(size.at(2));
 
                                     case 2:
-                                        description.height = evaluate(globalDefinesMap, size.at(1));
+                                        description.height = evaluate(size.at(1));
 
                                     case 1:
-                                        description.width = evaluate(globalDefinesMap, size.at(0));
+                                        description.width = evaluate(size.at(0));
                                         break;
 
                                     default:
@@ -421,13 +328,13 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    description.width = evaluate(globalDefinesMap, size);
+                                    description.width = evaluate(size);
                                 }
                             }
 
                             description.sampleCount = textureValue.get(L"sampleCount", 1).as_uint();
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
-                            description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1"));
+                            description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"));
                             resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
                             type = (description.sampleCount > 1 ? MapType::Texture2DMS : MapType::Texture2D);
                         }
@@ -466,7 +373,7 @@ namespace Gek
                                 throw MissingParameter("Buffer must have a count value");
                             }
 
-                            uint32_t count = evaluate(globalDefinesMap, bufferValue.get(L"count"));
+                            uint32_t count = evaluate(bufferValue.get(L"count"));
                             uint32_t flags = getBufferFlags(bufferValue.get(L"flags", L"0").as_string());
                             if (bufferValue.has_member(L"stride") || bufferValue.has_member(L"structure"))
                             {
@@ -483,7 +390,7 @@ namespace Gek
                                 description.count = count;
                                 description.flags = flags;
                                 description.type = Video::Buffer::Description::Type::Structured;
-                                description.stride = evaluate(globalDefinesMap, bufferValue.get(L"stride"));
+                                description.stride = evaluate(bufferValue.get(L"stride"));
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
                                 resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
                             }
@@ -546,174 +453,18 @@ namespace Gek
                     pass.lighting = passNode.get(L"lighting", false).as_bool();
                     lightingRequired |= pass.lighting;
 
-                    std::unordered_map<String, std::pair<BindType, JSON::Object>> localDefinesMap(globalDefinesMap);
-                    if (passNode.has_member(L"defines"))
-                    {
-                        auto &definesNode = passNode.get(L"defines");
-                        if (!definesNode.is_object())
-                        {
-                            throw InvalidParameterType("Local defines must be an object");
-                        }
-
-                        for (auto &defineNode : definesNode.members())
-                        {
-                            auto &defineName = defineNode.name();
-                            auto &defineValue = defineNode.value();
-                            if (defineValue.is_object())
-                            {
-                                if (defineValue.has_member(L"bind") && defineValue.has_member(L"value"))
-                                {
-                                    BindType bindType = getBindType(defineValue.get(L"bind").as_string());
-                                    localDefinesMap[defineName] = std::make_pair(bindType, defineValue.get(L"value"));
-                                }
-                                else
-                                {
-                                    throw InvalidParameter("Complex defines require a bind type and value");
-                                }
-                            }
-                            else if (defineValue.is_array())
-                            {
-                                BindType bindType;
-                                switch (defineValue.size())
-                                {
-                                case 1: bindType = BindType::Float; break;
-                                case 2: bindType = BindType::Float2; break;
-                                case 3: bindType = BindType::Float3; break;
-                                case 4: bindType = BindType::Float4; break;
-                                default: throw InvalidParameter("Unknown define bind size");
-                                };
-
-                                localDefinesMap[defineName] = std::make_pair(bindType, defineValue);
-                            }
-                            else
-                            {
-                                localDefinesMap[defineName] = std::make_pair(BindType::Float, defineValue);
-                            }
-                        }
-                    }
-
-                    String definesData;
-                    for (auto &define : localDefinesMap)
-                    {
-                        BindType bindType(define.second.first);
-                        String bindString(getBindType(define.second.first));
-                        auto &data = define.second.second;
-                        switch (bindType)
-                        {
-                        case BindType::Bool:
-                        case BindType::Int:
-                        case BindType::UInt:
-                        case BindType::Half:
-                        case BindType::Float:
-                            if (true)
-                            {
-                                auto value = evaluate(localDefinesMap, data);
-                                definesData.format(L"    static const %v %v = %v;\r\n", bindString, define.first, value);
-                            }
-
-                            break;
-
-                        case BindType::Int2:
-                        case BindType::UInt2:
-                        case BindType::Half2:
-                        case BindType::Float2:
-                            if (data.is_array())
-                            {
-                                if (data.size() == 2)
-                                {
-                                    auto value0 = evaluate(localDefinesMap, data.at(0));
-                                    auto value1 = evaluate(localDefinesMap, data.at(1));
-                                    definesData.format(L"    static const %v %v = %v(%v, %v);\r\n", bindString, define.first, bindString, value0, value1);
-                                }
-                                else
-                                {
-                                    throw InvalidParameter("Invalid number of parameters for 2D define");
-                                }
-                            }
-                            else if (data.is_string())
-                            {
-                                auto value = evaluate(localDefinesMap, data);
-                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, value);
-                            }
-                            else if (data.is<float>())
-                            {
-                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, data.as<float>());
-                            }
-
-                            break;
-
-                        case BindType::Int3:
-                        case BindType::UInt3:
-                        case BindType::Half3:
-                        case BindType::Float3:
-                            if (data.is_array())
-                            {
-                                if (data.size() == 3)
-                                {
-                                    auto value0 = evaluate(localDefinesMap, data.at(0));
-                                    auto value1 = evaluate(localDefinesMap, data.at(1));
-                                    auto value2 = evaluate(localDefinesMap, data.at(2));
-                                    definesData.format(L"    static const %v %v = %v(%v, %v, %v);\r\n", bindString, define.first, bindString, value0, value1, value2);
-                                }
-                                else
-                                {
-                                    throw InvalidParameter("Invalid number of parameters for 3D define");
-                                }
-                            }
-                            else if (data.is_string())
-                            {
-                                auto value = evaluate(localDefinesMap, data);
-                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, value);
-                            }
-                            else if (data.is<float>())
-                            {
-                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, data.as<float>());
-                            }
-
-                            break;
-
-                        case BindType::Int4:
-                        case BindType::UInt4:
-                        case BindType::Half4:
-                        case BindType::Float4:
-                            if (data.is_array())
-                            {
-                                if (data.size() == 4)
-                                {
-                                    auto value0 = evaluate(localDefinesMap, data.at(0));
-                                    auto value1 = evaluate(localDefinesMap, data.at(1));
-                                    auto value2 = evaluate(localDefinesMap, data.at(2));
-                                    auto value3 = evaluate(localDefinesMap, data.at(3));
-                                    definesData.format(L"    static const %v %v = %v(%v, %v, %v, %v);\r\n", bindString, define.first, bindString, value0, value1, value2, value3);
-                                }
-                                else
-                                {
-                                    throw InvalidParameter("Invalid number of parameters for 4D define");
-                                }
-                            }
-                            else if (data.is_string())
-                            {
-                                auto value = evaluate(localDefinesMap, data);
-                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, value);
-                            }
-                            else if (data.is<float>())
-                            {
-                                definesData.format(L"    static const %v %v = %v(%v);\r\n", bindString, define.first, bindString, data.as<float>());
-                            }
-
-                            break;
-                        };
-                    }
-
                     String engineData;
-                    if (!definesData.empty())
+                    if (passNode.has_member(L"engineData"))
                     {
-                        engineData.format(
-                            L"namespace Defines\r\n" \
-                            L"{\r\n" \
-                            L"%v" \
-                            L"};\r\n" \
-                            L"\r\n", definesData);
+                        auto &engineDataNode = passNode.get(L"engineData");
+                        if (engineDataNode.is_string())
+                        {
+                            engineData = passNode.get(L"engineData").as_cstring();
+                        }
+                        else
+                        {
+                            throw MissingParameter("Engine data needs to be a regular string");
+                        }
                     }
 
                     if (passNode.has_member(L"mode"))
@@ -752,13 +503,13 @@ namespace Gek
                                 throw InvalidParameter("Dispatch array must have only 3 values");
                             }
 
-                            pass.dispatchWidth = evaluate(globalDefinesMap, dispatch.at(0));
-                            pass.dispatchHeight = evaluate(globalDefinesMap, dispatch.at(1));
-                            pass.dispatchDepth = evaluate(globalDefinesMap, dispatch.at(1));
+                            pass.dispatchWidth = evaluate(dispatch.at(0));
+                            pass.dispatchHeight = evaluate(dispatch.at(1));
+                            pass.dispatchDepth = evaluate(dispatch.at(1));
                         }
                         else
                         {
-                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(globalDefinesMap, dispatch);
+                            pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(dispatch);
                         }
                     }
                     else

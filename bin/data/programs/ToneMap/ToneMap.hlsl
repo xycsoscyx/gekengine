@@ -13,6 +13,24 @@
 #define TechniqueFilmicALU          6
 #define TechniqueFilmicU2           7
 
+namespace Defines
+{
+    static const uint techniqueMode = TechniqueFilmicU2;
+    static const uint autoExposureMode = 2;
+    static const float luminanceSaturation = 1.0;
+    static const float keyValue = 0.18;
+    static const float exposure = 0.0;
+    static const float whiteLevel = 5.0;
+    static const float bias = 0.5;
+    static const float shoulderStrength = 0.2;
+    static const float linearStrength = 0.5;
+    static const float linearAngle = 0.42;
+    static const float toeStrength = 0.64;
+    static const float toeNumerator = 0.19;
+    static const float toeDenominator = 0.9;
+    static const float linearWhite = 11.2;
+}; // namespace Defines
+
 float3 getExposedColor(float3 color, float averageLuminance, float threshold, out float exposure)
 {
     exposure = 0.0;

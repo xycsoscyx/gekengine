@@ -107,12 +107,6 @@
             "program": "AccumulateLighting",
             "entry": "mainPixelProgram",
             "lighting": true,
-            "defines": {
-                "useHalfLambert": {
-                    "bind": "bool",
-                    "value": true
-                }
-            },
             "resources": [
                 "albedoBuffer",
                 "materialBuffer",

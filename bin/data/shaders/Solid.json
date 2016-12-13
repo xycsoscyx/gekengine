@@ -81,12 +81,6 @@
             "mode": "forward",
             "material": "solid",
             "lighting": true,
-            "defines": {
-                "useHalfLambert": {
-                    "bind": "bool",
-                    "value": true
-                }
-            },
             "depthBuffer":  "depthBuffer",
             "depthState": {
                 "enable": true,
