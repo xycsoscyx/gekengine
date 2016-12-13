@@ -53,7 +53,7 @@ namespace Gek
 
             struct Material
             {
-                struct Resource
+                struct Initializer
                 {
                     String name;
                     ResourceHandle fallback;
@@ -61,7 +61,7 @@ namespace Gek
 
                 uint32_t identifier = 0;
                 RenderStateHandle renderState;
-                std::vector<Resource> resourceList;
+                std::vector<Initializer> initializerList;
 
                 Material(uint32_t identifier)
                     : identifier(identifier)

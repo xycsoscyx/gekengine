@@ -72,6 +72,8 @@ namespace Gek
         ClearData(ClearType type, const String &data);
     };
 
+    String getFormatSemantic(Video::Format format);
+
     BindType getBindType(const String &bindType);
     String getBindType(BindType bindType);
     const BindType getBindType(Video::Format format);

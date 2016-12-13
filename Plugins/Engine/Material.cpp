@@ -78,12 +78,12 @@ namespace Gek
                         }
 
                         auto &passDataNode = passValue.get(L"data");
-                        for (auto &resource : shaderMaterial->resourceList)
+                        for (auto &initializer : shaderMaterial->initializerList)
                         {
                             ResourceHandle resourceHandle;
-                            if (passDataNode.has_member(resource.name))
+                            if (passDataNode.has_member(initializer.name))
                             {
-                                auto &resourceNode = passDataNode.get(resource.name);
+                                auto &resourceNode = passDataNode.get(initializer.name);
                                 if (!resourceNode.is_object())
                                 {
                                     throw InvalidParameter("Resource list must be an object");
@@ -111,7 +111,7 @@ namespace Gek
 
                             if (!resourceHandle)
                             {
-                                resourceHandle = resource.fallback;
+                                resourceHandle = initializer.fallback;
                             }
 
                             passData.resourceList.push_back(resourceHandle);

@@ -34,31 +34,31 @@
         "solid": [
             {
                 "name": "albedo",
+                "type": "Texture2D",
                 "bind": "float4",
                 "pattern": "system",
-                "parameters": "debug",
-                "type": "Texture2D"
+                "parameters": "debug"
             },
             {
                 "name": "normal",
+                "type": "Texture2D",
                 "bind": "float2",
                 "pattern": "system",
-                "parameters": "flat",
-                "type": "Texture2D"
+                "parameters": "flat"
             },
             {
                 "name": "roughness",
+                "type": "Texture2D",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": 0.5,
-                "type": "Texture2D"
+                "parameters": 0.5
             },
             {
                 "name": "metallic",
+                "type": "Texture2D",
                 "bind": "float",
                 "pattern": "color",
-                "parameters": 0,
-                "type": "Texture2D"
+                "parameters": 0
             }
         ]
     },
