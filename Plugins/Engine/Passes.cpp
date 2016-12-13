@@ -259,19 +259,19 @@ namespace Gek
             flag.trim();
             if (flag.compareNoCase(L"target") == 0)
             {
-                flags |= Video::TextureDescription::Flags::RenderTarget;
+                flags |= Video::Texture::Description::Flags::RenderTarget;
             }
             else if (flag.compareNoCase(L"depth") == 0)
             {
-                flags |= Video::TextureDescription::Flags::DepthTarget;
+                flags |= Video::Texture::Description::Flags::DepthTarget;
             }
             else if (flag.compareNoCase(L"unorderedaccess") == 0)
             {
-                flags |= Video::TextureDescription::Flags::UnorderedAccess;
+                flags |= Video::Texture::Description::Flags::UnorderedAccess;
             }
         }
 
-        return (flags | Video::TextureDescription::Flags::Resource);
+        return (flags | Video::Texture::Description::Flags::Resource);
     }
 
     uint32_t getBufferFlags(const String &createFlags)
@@ -284,15 +284,15 @@ namespace Gek
             flag.trim();
             if (flag.compareNoCase(L"unorderedaccess") == 0)
             {
-                flags |= Video::BufferDescription::Flags::UnorderedAccess;
+                flags |= Video::Buffer::Description::Flags::UnorderedAccess;
             }
             else if (flag.compareNoCase(L"counter") == 0)
             {
-                flags |= Video::BufferDescription::Flags::Counter;
+                flags |= Video::Buffer::Description::Flags::Counter;
             }
         }
 
-        return (flags | Video::BufferDescription::Flags::Resource);
+        return (flags | Video::Buffer::Description::Flags::Resource);
     }
 
     std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, const wchar_t *name)

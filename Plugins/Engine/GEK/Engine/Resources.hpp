@@ -34,12 +34,12 @@ namespace Gek
             virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
             virtual ResourceHandle createPattern(const wchar_t *pattern, const JSON::Object &parameters) = 0;
 
-            virtual ResourceHandle createTexture(const wchar_t *textureName, const Video::TextureDescription &description) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, std::vector<uint8_t> &&staticData) = 0;
+            virtual ResourceHandle createTexture(const wchar_t *textureName, const Video::Texture::Description &description) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description) = 0;
+            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, const TYPE *staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
@@ -83,6 +83,8 @@ namespace Gek
             virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
             virtual Filter * const getFilter(const wchar_t *filterName) = 0;
+
+            virtual Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle) = 0;
 
             virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
             virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;

@@ -237,10 +237,10 @@ namespace Gek
                 depthState = videoDevice->createDepthState(depthStateInformation);
 				depthState->setName(L"renderer:depthState");
 
-                Video::BufferDescription constantBufferDescription;
+                Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(EngineConstantData);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 engineConstantBuffer->setName(L"renderer:engineConstantBuffer");
 
@@ -287,9 +287,9 @@ namespace Gek
                 deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
                 deferredPixelProgram->setName(L"renderer:deferredPixelProgram");
 
-                Video::BufferDescription lightBufferDescription;
-                lightBufferDescription.type = Video::BufferDescription::Type::Structured;
-                lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                Video::Buffer::Description lightBufferDescription;
+                lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
+                lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
 
                 directionalLightList.reserve(10);
                 lightBufferDescription.stride = sizeof(DirectionalLightData);
@@ -309,9 +309,9 @@ namespace Gek
                 spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
                 spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
 
-                Video::BufferDescription tileBufferDescription;
-                tileBufferDescription.type = Video::BufferDescription::Type::Raw;
-                tileBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                Video::Buffer::Description tileBufferDescription;
+                tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
+                tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
                 tileBufferDescription.format = Video::Format::R32G32_UINT;
                 tileBufferDescription.count = GridSize;
                 tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
@@ -720,9 +720,9 @@ namespace Gek
                                     {
                                         directionalLightDataBuffer = nullptr;
 
-                                        Video::BufferDescription lightBufferDescription;
-                                        lightBufferDescription.type = Video::BufferDescription::Type::Structured;
-                                        lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                                        Video::Buffer::Description lightBufferDescription;
+                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
+                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(DirectionalLightData);
                                         lightBufferDescription.count = directionalLightList.size();
                                         directionalLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
@@ -746,9 +746,9 @@ namespace Gek
                                     {
                                         pointLightDataBuffer = nullptr;
 
-                                        Video::BufferDescription lightBufferDescription;
-                                        lightBufferDescription.type = Video::BufferDescription::Type::Structured;
-                                        lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                                        Video::Buffer::Description lightBufferDescription;
+                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
+                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(PointLightData);
                                         lightBufferDescription.count = pointLightList.size();
                                         pointLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
@@ -772,9 +772,9 @@ namespace Gek
                                     {
                                         spotLightDataBuffer = nullptr;
 
-                                        Video::BufferDescription lightBufferDescription;
-                                        lightBufferDescription.type = Video::BufferDescription::Type::Structured;
-                                        lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                                        Video::Buffer::Description lightBufferDescription;
+                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
+                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(SpotLightData);
                                         lightBufferDescription.count = spotLightList.size();
                                         spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
@@ -859,9 +859,9 @@ namespace Gek
                                 {
                                     lightIndexBuffer = nullptr;
 
-                                    Video::BufferDescription tileBufferDescription;
-                                    tileBufferDescription.type = Video::BufferDescription::Type::Raw;
-                                    tileBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
+                                    Video::Buffer::Description tileBufferDescription;
+                                    tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
+                                    tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
                                     tileBufferDescription.format = Video::Format::R16_UINT;
                                     tileBufferDescription.count = lightIndexList.size();
                                     lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);

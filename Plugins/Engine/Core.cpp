@@ -127,7 +127,7 @@ namespace Gek
                     throw InitializationFailed("Failed call to CoInitialize");
                 }
 
-                Video::DeviceDescription deviceDescription;
+                Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, deviceDescription);
                 displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
                 for (auto &displayMode : displayModeList)
@@ -285,10 +285,10 @@ namespace Gek
                 gui->inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
                 gui->inputLayout->setName(L"core:inputLayout");
 
-                Video::BufferDescription constantBufferDescription;
+                Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 gui->constantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 gui->constantBuffer->setName(L"core:constantBuffer");
 
@@ -342,11 +342,11 @@ namespace Gek
                 int32_t fontWidth = 0, fontHeight = 0;
                 imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
 
-                Video::TextureDescription fontDescription;
+                Video::Texture::Description fontDescription;
                 fontDescription.format = Video::Format::R8G8B8A8_UNORM;
                 fontDescription.width = fontWidth;
                 fontDescription.height = fontHeight;
-                fontDescription.flags = Video::TextureDescription::Flags::Resource;
+                fontDescription.flags = Video::Texture::Description::Flags::Resource;
                 gui->fontTexture = videoDevice->createTexture(fontDescription, pixels);
 
                 imGuiIo.Fonts->TexID = (Video::Object *)gui->fontTexture.get();
@@ -907,21 +907,21 @@ namespace Gek
             {
                 if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
-                    Video::BufferDescription vertexBufferDescription;
+                    Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(ImDrawVert);
                     vertexBufferDescription.count = drawData->TotalVtxCount;
-                    vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
-                    vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
+                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
                     gui->vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                     gui->vertexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui->vertexBuffer.get()));
                 }
 
                 if (!gui->indexBuffer || gui->indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
                 {
-                    Video::BufferDescription vertexBufferDescription;
+                    Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.count = drawData->TotalIdxCount;
-                    vertexBufferDescription.type = Video::BufferDescription::Type::Index;
-                    vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
+                    vertexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
                     switch (sizeof(ImDrawIdx))
                     {
                     case 2:

@@ -430,67 +430,6 @@ namespace Gek
             uint32_t sourceIndex = 0;
         };
 
-        struct BufferDescription
-        {
-            struct Flags
-            {
-                enum
-                {
-                    Staging = 1 << 0,
-                    Mappable = 1 << 1,
-                    Resource = 1 << 2,
-                    UnorderedAccess = 1 << 3,
-                    Counter = 1 << 4,
-                };
-            }; // Flags
-
-            enum class Type : uint8_t
-            {
-                Raw = 0,
-                Vertex,
-                Index,
-                Constant,
-                Structured,
-            };
-
-            Video::Format format = Video::Format::Unknown;
-            uint32_t stride = 0;
-            uint32_t count = 0;
-            Type type = Type::Raw;
-            uint32_t flags = 0;
-        };
-
-        struct TextureDescription
-        {
-            struct Flags
-            {
-                enum
-                {
-                    RenderTarget = 1 << 0,
-                    DepthTarget = 1 << 1,
-                    Resource = 1 << 2,
-                    UnorderedAccess = 1 << 3,
-                };
-            }; // Flags
-
-            Video::Format format = Video::Format::Unknown;
-            uint32_t width = 1;
-            uint32_t height = 1;
-            uint32_t depth = 1;
-            uint32_t mipMapCount = 1;
-            uint32_t sampleCount = 1;
-            uint32_t sampleQuality = 0;
-            uint32_t flags = 0;
-        };
-
-        struct DeviceDescription
-        {
-            String device;
-            Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
-            uint32_t sampleCount = 1;
-            uint32_t sampleQuality = 0;
-        };
-
         GEK_INTERFACE(Object)
         {
             virtual ~Object(void) = default;
@@ -501,17 +440,70 @@ namespace Gek
         GEK_INTERFACE(Buffer)
             : virtual public Object
         {
+            struct Description
+            {
+                struct Flags
+                {
+                    enum
+                    {
+                        Staging = 1 << 0,
+                        Mappable = 1 << 1,
+                        Resource = 1 << 2,
+                        UnorderedAccess = 1 << 3,
+                        Counter = 1 << 4,
+                    };
+                }; // Flags
+
+                enum class Type : uint8_t
+                {
+                    Raw = 0,
+                    Vertex,
+                    Index,
+                    Constant,
+                    Structured,
+                };
+
+                Video::Format format = Video::Format::Unknown;
+                uint32_t stride = 0;
+                uint32_t count = 0;
+                Type type = Type::Raw;
+                uint32_t flags = 0;
+            };
+
             virtual ~Buffer(void) = default;
         
-            virtual const BufferDescription &getDescription(void) const = 0;
+            virtual const Buffer::Description &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Texture)
             : virtual public Object
         {
+            struct Description
+            {
+                struct Flags
+                {
+                    enum
+                    {
+                        RenderTarget = 1 << 0,
+                        DepthTarget = 1 << 1,
+                        Resource = 1 << 2,
+                        UnorderedAccess = 1 << 3,
+                    };
+                }; // Flags
+
+                Video::Format format = Video::Format::Unknown;
+                uint32_t width = 1;
+                uint32_t height = 1;
+                uint32_t depth = 1;
+                uint32_t mipMapCount = 1;
+                uint32_t sampleCount = 1;
+                uint32_t sampleQuality = 0;
+                uint32_t flags = 0;
+            };
+
             virtual ~Texture(void) = default;
         
-            virtual const TextureDescription &getDescription(void) const = 0;
+            virtual const Texture::Description &getDescription(void) const = 0;
         };
 
         GEK_INTERFACE(Target)
@@ -524,7 +516,15 @@ namespace Gek
 
         GEK_INTERFACE(Device)
         {
-			GEK_INTERFACE(Context)
+            struct Description
+            {
+                String device;
+                Format displayFormat = Format::R8G8B8A8_UNORM_SRGB;
+                uint32_t sampleCount = 1;
+                uint32_t sampleQuality = 0;
+            };
+
+            GEK_INTERFACE(Context)
             {
                 GEK_INTERFACE(Pipeline)
                 {
@@ -612,10 +612,10 @@ namespace Gek
             virtual ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState) = 0;
             virtual ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState) = 0;
 
-            virtual TexturePtr createTexture(const TextureDescription &description, const void *data = nullptr) = 0;
+            virtual TexturePtr createTexture(const Texture::Description &description, const void *data = nullptr) = 0;
             virtual TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags) = 0;
 
-            virtual BufferPtr createBuffer(const BufferDescription &description, const void *staticData = nullptr) = 0;
+            virtual BufferPtr createBuffer(const Buffer::Description &description, const void *staticData = nullptr) = 0;
 
             template <typename TYPE>
             bool mapBuffer(Buffer *buffer, TYPE *&data, Video::Map mapping = Video::Map::WriteDiscard)

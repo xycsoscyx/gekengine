@@ -37,8 +37,6 @@ namespace Gek
                 DepthStateHandle depthState;
                 Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
-                float width = 0.0f;
-                float height = 0.0f;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
@@ -99,10 +97,10 @@ namespace Gek
 
                 reload();
 
-                Video::BufferDescription constantBufferDescription;
+                Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(ShaderConstantData);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 shaderConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 shaderConstantBuffer->setName(String::Format(L"%v:shaderConstantBuffer", shaderName));
             }
@@ -111,8 +109,10 @@ namespace Gek
             {
                 uint32_t passIndex = 0;
                 forwardPassMap.clear();
+                passList.clear();
 
                 auto backBuffer = videoDevice->getBackBuffer();
+                auto &backBufferDescription = backBuffer->getDescription();
 
                 const JSON::Object shaderNode = JSON::Load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
                 if (!shaderNode.has_member(L"passes"))
@@ -133,11 +133,6 @@ namespace Gek
                 }
 
                 std::unordered_map<String, std::pair<BindType, JSON::Object>> globalDefinesMap;
-                uint32_t displayWidth = backBuffer->getDescription().width;
-                uint32_t displayHeight = backBuffer->getDescription().height;
-                globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
-                globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
-                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, JSON::Object::array{displayWidth, displayHeight});
                 if (shaderNode.has_member(L"defines"))
                 {
                     auto &definesNode = shaderNode.get(L"defines");
@@ -356,14 +351,12 @@ namespace Gek
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
-                std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 std::unordered_map<String, String> resourceStructuresMap;
                 std::unordered_set<Engine::Shader *> requiredShaderSet;
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
                 resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
-                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(displayWidth, displayHeight);
 
                 if (shaderNode.has_member(L"textures"))
                 {
@@ -397,31 +390,38 @@ namespace Gek
                         }
                         else
                         {
-                            Video::TextureDescription description;
+                            Video::Texture::Description description(backBufferDescription);
                             description.format = Video::getFormat(textureValue.get(L"format", L"").as_string());
                             if (description.format == Video::Format::Unknown)
                             {
                                 throw InvalidParameter("Invalid texture format specified");
                             }
 
-                            description.width = displayWidth;
-                            description.height = displayHeight;
                             if (textureValue.has_member(L"size"))
                             {
                                 auto &size = textureValue.get(L"size");
                                 if (size.is_array())
                                 {
-                                    if (size.size() != 2)
+                                    auto dimensions = size.size();
+                                    switch (dimensions)
                                     {
-                                        throw InvalidParameter("Texture size array must have only 2 values");
-                                    }
+                                    case 3:
+                                        description.depth = evaluate(globalDefinesMap, size.at(2));
 
-                                    description.width = evaluate(globalDefinesMap, size.at(0));
-                                    description.height = evaluate(globalDefinesMap, size.at(0));
+                                    case 2:
+                                        description.height = evaluate(globalDefinesMap, size.at(1));
+
+                                    case 1:
+                                        description.width = evaluate(globalDefinesMap, size.at(0));
+                                        break;
+
+                                    default:
+                                        throw InvalidParameter("Texture size array must be 1, 2, or 3 dimensions");
+                                    };
                                 }
                                 else
                                 {
-                                    description.width = description.height = evaluate(globalDefinesMap, size);
+                                    description.width = evaluate(globalDefinesMap, size);
                                 }
                             }
 
@@ -429,7 +429,6 @@ namespace Gek
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
                             description.mipMapCount = evaluate(globalDefinesMap, textureValue.get(L"mipmaps", L"1"));
                             resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
-                            resourceSizeMap.insert(std::make_pair(textureName, std::make_pair(description.width, description.height)));
                             type = (description.sampleCount > 1 ? MapType::Texture2DMS : MapType::Texture2D);
                         }
 
@@ -480,10 +479,10 @@ namespace Gek
                                     throw MissingParameter("Structured buffer required a structure name");
                                 }
 
-                                Video::BufferDescription description;
+                                Video::Buffer::Description description;
                                 description.count = count;
                                 description.flags = flags;
-                                description.type = Video::BufferDescription::Type::Structured;
+                                description.type = Video::Buffer::Description::Type::Structured;
                                 description.stride = evaluate(globalDefinesMap, bufferValue.get(L"stride"));
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
                                 resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
@@ -496,10 +495,10 @@ namespace Gek
                                     mapType = MapType::ByteAddressBuffer;
                                 }
 
-                                Video::BufferDescription description;
+                                Video::Buffer::Description description;
                                 description.count = count;
                                 description.flags = flags;
-                                description.type = Video::BufferDescription::Type::Raw;
+                                description.type = Video::Buffer::Description::Type::Raw;
                                 description.format = Video::getFormat(bufferValue.get(L"format").as_string());
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
 
@@ -761,9 +760,6 @@ namespace Gek
                         {
                             pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(globalDefinesMap, dispatch);
                         }
-
-                        pass.width = float(displayWidth);
-                        pass.height = float(displayHeight);
                     }
                     else
                     {
@@ -788,20 +784,8 @@ namespace Gek
                             L"\r\n";
 
                         std::unordered_map<String, String> renderTargetsMap = getAliasedMap(passNode, L"targets");
-                        if (renderTargetsMap.empty())
+                        if (!renderTargetsMap.empty())
                         {
-                            pass.width = float(backBuffer->getDescription().width);
-                            pass.height = float(backBuffer->getDescription().height);
-                        }
-                        else
-                        {
-                            auto resourceSearch = resourceSizeMap.find(std::begin(renderTargetsMap)->first);
-                            if (resourceSearch != std::end(resourceSizeMap))
-                            {
-                                pass.width = float(resourceSearch->second.first);
-                                pass.height = float(resourceSearch->second.second);
-                            }
-
                             for (auto &renderTarget : renderTargetsMap)
                             {
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
@@ -1252,8 +1236,16 @@ namespace Gek
                 resources->setProgram(videoPipeline, pass.program);
 
                 ShaderConstantData shaderConstantData;
-                shaderConstantData.targetSize.x = pass.width;
-                shaderConstantData.targetSize.y = pass.height;
+                if (!pass.renderTargetList.empty())
+                {
+                    auto description = resources->getTextureDescription(pass.renderTargetList.front());
+                    if (description)
+                    {
+                        shaderConstantData.targetSize.x = description->width;
+                        shaderConstantData.targetSize.y = description->height;
+                    }
+                }
+
                 videoDevice->updateResource(shaderConstantBuffer.get(), &shaderConstantData);
                 videoContext->geometryPipeline()->setConstantBufferList({ shaderConstantBuffer.get() }, 2);
                 videoContext->vertexPipeline()->setConstantBufferList({ shaderConstantBuffer.get() }, 2);
