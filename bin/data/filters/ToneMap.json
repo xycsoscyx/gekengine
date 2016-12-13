@@ -5,6 +5,15 @@
             "flags": "target",
             "mipmaps": 0,
             "format": "R16_FLOAT"
+        },
+        "finalBuffer": {
+            "source": "solid",
+            "bind": "float3"
+        },
+        "toneMappedBuffer": {
+            "bind": "float3",
+            "flags": "target",
+            "format": "R8G8B8A8_UNORM"
         }
     },
     "buffers": {
@@ -19,7 +28,7 @@
             "program": "CalculateLuminance",
             "entry": "mainPixelProgram",
             "resources": [
-                "screen"
+                "finalBuffer"
             ],
             "targets": [
                 "luminanceBuffer"
@@ -68,15 +77,12 @@
                 "toeDenominator": 0.9,
                 "linearWhite": 11.2
             },
-            "copy": {
-                "screenBuffer": "screen"
-            },
             "resources": [
                 "averageLuminanceBuffer",
-                "screenBuffer"
+                "finalBuffer"
             ],
             "targets": [
-                "screen"
+                "toneMappedBuffer"
             ]
         }
     ]

@@ -5,5 +5,5 @@
 
 float mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    return log(getLuminance(Resources::screen[inputPixel.screen.xy]));
+    return log(getLuminance(Resources::finalBuffer[inputPixel.screen.xy]));
 }

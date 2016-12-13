@@ -79,6 +79,8 @@ namespace Gek
                 Video::TexturePtr consoleButton;
                 Video::TexturePtr performanceButton;
                 Video::TexturePtr settingsButton;
+
+                Video::TargetPtr outputBuffer;
             };
 
             std::unique_ptr<Resources> gui = std::make_unique<Resources>();
@@ -127,7 +129,7 @@ namespace Gek
                     throw InitializationFailed("Failed call to CoInitialize");
                 }
 
-                Video::DeviceDescription deviceDescription;
+                Video::Device::Description deviceDescription;
                 videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, deviceDescription);
                 displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
                 for (auto &displayMode : displayModeList)
@@ -285,10 +287,10 @@ namespace Gek
                 gui->inputLayout = videoDevice->createInputLayout(elementList, compiled.data(), compiled.size());
                 gui->inputLayout->setName(L"core:inputLayout");
 
-                Video::BufferDescription constantBufferDescription;
+                Video::Buffer::Description constantBufferDescription;
                 constantBufferDescription.stride = sizeof(Math::Float4x4);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
+                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
                 gui->constantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 gui->constantBuffer->setName(L"core:constantBuffer");
 
@@ -317,7 +319,7 @@ namespace Gek
                 blendStateInformation.colorSource = Video::BlendStateInformation::Source::SourceAlpha;
                 blendStateInformation.colorDestination = Video::BlendStateInformation::Source::InverseSourceAlpha;
                 blendStateInformation.colorOperation = Video::BlendStateInformation::Operation::Add;
-                blendStateInformation.alphaSource = Video::BlendStateInformation::Source::InverseSourceAlpha;
+                blendStateInformation.alphaSource = Video::BlendStateInformation::Source::SourceAlpha;
                 blendStateInformation.alphaDestination = Video::BlendStateInformation::Source::Zero;
                 blendStateInformation.alphaOperation = Video::BlendStateInformation::Operation::Add;
                 gui->blendState = videoDevice->createBlendState(blendStateInformation);
@@ -342,11 +344,11 @@ namespace Gek
                 int32_t fontWidth = 0, fontHeight = 0;
                 imGuiIo.Fonts->GetTexDataAsRGBA32(&pixels, &fontWidth, &fontHeight);
 
-                Video::TextureDescription fontDescription;
+                Video::Texture::Description fontDescription;
                 fontDescription.format = Video::Format::R8G8B8A8_UNORM;
                 fontDescription.width = fontWidth;
                 fontDescription.height = fontHeight;
-                fontDescription.flags = Video::TextureDescription::Flags::Resource;
+                fontDescription.flags = Video::Texture::Description::Flags::Resource;
                 gui->fontTexture = videoDevice->createTexture(fontDescription, pixels);
 
                 imGuiIo.Fonts->TexID = (Video::Object *)gui->fontTexture.get();
@@ -358,6 +360,15 @@ namespace Gek
                 samplerStateInformation.addressModeW = Video::SamplerStateInformation::AddressMode::Wrap;
                 gui->samplerState = videoDevice->createSamplerState(samplerStateInformation);
                 gui->samplerState->setName(L"core:samplerState");
+
+                auto &displayModeData = displayModeList[currentDisplayMode];
+                Video::Texture::Description outputDescription;
+                outputDescription.format = Video::Format::R8G8B8A8_UNORM;
+                outputDescription.width = displayModeData.width;
+                outputDescription.height = displayModeData.height;
+                outputDescription.flags = (Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource);
+                gui->outputBuffer = std::dynamic_pointer_cast<Video::Target>(videoDevice->createTexture(outputDescription));
+                gui->outputBuffer->setName(L"core:outputBuffer");
 
                 imGuiIo.UserData = this;
                 imGuiIo.RenderDrawListsFn = [](ImDrawData *drawData)
@@ -894,9 +905,8 @@ namespace Gek
                 gui->panelManager.render();
 
                 ImGui::End();
-
-                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
                 ImGui::Render();
+
                 videoDevice->present(false);
 
                 return engineRunning;
@@ -907,21 +917,21 @@ namespace Gek
             {
                 if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
-                    Video::BufferDescription vertexBufferDescription;
+                    Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.stride = sizeof(ImDrawVert);
                     vertexBufferDescription.count = drawData->TotalVtxCount;
-                    vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
-                    vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
+                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
                     gui->vertexBuffer = videoDevice->createBuffer(vertexBufferDescription);
                     gui->vertexBuffer->setName(String::Format(L"core:vertexBuffer:%v", gui->vertexBuffer.get()));
                 }
 
                 if (!gui->indexBuffer || gui->indexBuffer->getDescription().count < uint32_t(drawData->TotalIdxCount))
                 {
-                    Video::BufferDescription vertexBufferDescription;
+                    Video::Buffer::Description vertexBufferDescription;
                     vertexBufferDescription.count = drawData->TotalIdxCount;
-                    vertexBufferDescription.type = Video::BufferDescription::Type::Index;
-                    vertexBufferDescription.flags = Video::BufferDescription::Flags::Mappable;
+                    vertexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                    vertexBufferDescription.flags = Video::Buffer::Description::Flags::Mappable;
                     switch (sizeof(ImDrawIdx))
                     {
                     case 2:
@@ -972,8 +982,9 @@ namespace Gek
                     videoDevice->updateResource(gui->constantBuffer.get(), &orthographic);
 
                     auto videoContext = videoDevice->getDefaultContext();
-                    resources->setBackBuffer(videoContext, nullptr);
-
+                    videoContext->clearRenderTarget(gui->outputBuffer.get(), Math::Float4(0.0f, 0.0f, 0.0f, 1.0f));
+                    videoContext->setRenderTargetList({ gui->outputBuffer.get() }, nullptr);
+                    videoContext->setViewportList({ gui->outputBuffer->getViewPort() });
                     videoContext->setInputLayout(gui->inputLayout.get());
                     videoContext->setVertexBufferList({ gui->vertexBuffer.get() }, 0);
                     videoContext->setIndexBuffer(gui->indexBuffer.get(), 0);

@@ -67,6 +67,10 @@
             "source": "solid",
             "bind": "float"
         },
+        "finalBuffer": {
+            "source": "solid",
+            "bind": "float3"
+        },
         "glassBuffer": {
             "bind": "float3",
             "flags": "target",
@@ -94,7 +98,7 @@
                 "writeMask": "All"
             },
             "copy": {
-                "glassBuffer": "screen"
+                "glassBuffer": "finalBuffer"
             },
             "generateMipMaps": [
                 "glassBuffer"
@@ -103,7 +107,7 @@
                 "glassBuffer"
             ],
             "targets": [
-                "screen"
+                "finalBuffer"
             ]            
         }
     ]

@@ -2,7 +2,7 @@
     "textures": {
         "depthBuffer": {
             "bind": "float",
-            "source": "Solid"
+            "source": "solid"
         },
         "circleOfConfusion": {
             "bind": "float",
@@ -79,7 +79,7 @@
                 "averageFocalDepth",
                 "depthBuffer",
                 "screen"
-            ]
+            ],
             "targets": [
                 "circleOfConfusion",
                 "screenBuffer"

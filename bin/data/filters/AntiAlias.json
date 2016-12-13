@@ -2,7 +2,7 @@
     "textures": {
         "depthBuffer": {
             "bind": "float",
-            "source": "Solid"
+            "source": "solid"
         }
     },
     "defines": {
