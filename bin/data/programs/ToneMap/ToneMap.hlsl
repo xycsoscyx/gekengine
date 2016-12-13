@@ -152,7 +152,7 @@ float3 getToneMappedColor(float3 color, float averageLuminance, float threshold,
 
 float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
 {
-    const float3 baseColor = Resources::finalBuffer[inputPixel.screen.xy];
+    const float3 baseColor = Resources::screenBuffer[inputPixel.screen.xy];
     const float averageLuminance = Resources::averageLuminanceBuffer.Load(0);
 
     float exposure = 0.0;

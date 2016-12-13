@@ -67,13 +67,8 @@
             "bind": "float",
             "flags": "depth",
             "format": "D32_FLOAT"
-        },
+         },
         "normalBuffer": {
-            "bind": "float3",
-            "flags": "target",
-            "format": "R11G11B10_FLOAT"
-        },
-        "finalBuffer": {
             "bind": "float3",
             "flags": "target",
             "format": "R11G11B10_FLOAT"
@@ -100,7 +95,7 @@
                 "clear": 1
             },
             "targets": [
-                "finalBuffer",
+                "screen",
                 "normalBuffer"
             ]
         }

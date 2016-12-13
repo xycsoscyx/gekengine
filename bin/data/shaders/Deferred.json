@@ -82,11 +82,6 @@
             "bind": "float2",
             "flags": "target",
             "format": "R8G8_NORM"
-        },
-        "finalBuffer": {
-            "bind": "float3",
-            "flags": "target",
-            "format": "R11G11B10_FLOAT"
         }
     },
     "passes": [
@@ -125,7 +120,7 @@
                 "depthBuffer"
             ],
             "targets": [
-                "finalBuffer"
+                "screen"
             ]
         }
     ]

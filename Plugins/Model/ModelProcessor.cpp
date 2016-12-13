@@ -166,11 +166,11 @@ namespace Gek
 
             visual = resources->loadVisual(L"model");
 
-            Video::Buffer::Description description;
+            Video::BufferDescription description;
             description.stride = sizeof(Math::Float4x4);
             description.count = 1;
-            description.type = Video::Buffer::Description::Type::Constant;
-            description.flags = Video::Buffer::Description::Flags::Mappable;
+            description.type = Video::BufferDescription::Type::Constant;
+            description.flags = Video::BufferDescription::Flags::Mappable;
             constantBuffer = renderer->getVideoDevice()->createBuffer(description);
         }
 
@@ -236,17 +236,17 @@ namespace Gek
                                     material.material = resources->loadMaterial(materialHeader.name);
                                 }
 
-                                Video::Buffer::Description indexBufferDescription;
+                                Video::BufferDescription indexBufferDescription;
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = materialHeader.indexCount;
-                                indexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                                indexBufferDescription.type = Video::BufferDescription::Type::Index;
                                 material.indexBuffer = resources->createBuffer(String::Format(L"model:index:%v:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                 bufferData += (sizeof(uint16_t) * materialHeader.indexCount);
 
-                                Video::Buffer::Description vertexBufferDescription;
+                                Video::BufferDescription vertexBufferDescription;
                                 vertexBufferDescription.stride = sizeof(Vertex);
                                 vertexBufferDescription.count = materialHeader.vertexCount;
-                                vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                                vertexBufferDescription.type = Video::BufferDescription::Type::Vertex;
                                 material.vertexBuffer = resources->createBuffer(String::Format(L"model:vertex:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Vertex *>(bufferData));
                                 bufferData += (sizeof(Vertex) * materialHeader.vertexCount);
 

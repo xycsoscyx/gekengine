@@ -29,6 +29,8 @@ namespace Gek
                 Pass::Mode mode = Pass::Mode::Deferred;
                 Math::Float4 blendFactor = Math::Float4::Zero;
                 BlendStateHandle blendState;
+				float width = 0.0f;
+				float height = 0.0f;
                 std::vector<ResourceHandle> resourceList;
                 std::vector<ResourceHandle> unorderedAccessList;
                 std::vector<ResourceHandle> renderTargetList;
@@ -76,10 +78,10 @@ namespace Gek
 
                 reload();
 
-                Video::Buffer::Description constantBufferDescription;
+                Video::BufferDescription constantBufferDescription;
                 constantBufferDescription.stride = sizeof(FilterConstantData);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
+                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
                 filterConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 filterConstantBuffer->setName(String::Format(L"%v:filterConstantBuffer", filterName));
             }
@@ -87,9 +89,6 @@ namespace Gek
             void reload(void)
             {
                 passList.clear();
-
-                auto backBuffer = videoDevice->getBackBuffer();
-                auto &backBufferDescription = backBuffer->getDescription();
 
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
@@ -107,6 +106,11 @@ namespace Gek
                 }
 
                 std::unordered_map<String, std::pair<BindType, JSON::Object>> globalDefinesMap;
+                uint32_t displayWidth = videoDevice->getBackBuffer()->getDescription().width;
+                uint32_t displayHeight = videoDevice->getBackBuffer()->getDescription().height;
+                globalDefinesMap[L"displayWidth"] = std::make_pair(BindType::UInt, displayWidth);
+                globalDefinesMap[L"displayHeight"] = std::make_pair(BindType::UInt, displayHeight);
+                globalDefinesMap[L"displaySize"] = std::make_pair(BindType::UInt2, JSON::Object::array{displayWidth, displayHeight});
                 if (filterNode.has_member(L"defines"))
                 {
                     auto &definesNode = filterNode.get(L"defines");
@@ -210,6 +214,12 @@ namespace Gek
                 std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
                 std::unordered_map<String, std::pair<uint32_t, uint32_t>> resourceSizeMap;
                 std::unordered_map<String, String> resourceStructuresMap;
+
+                resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
+                resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
+                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
+                resourceSizeMap[L"screen"] = resourceSizeMap[L"screenBuffer"] = std::make_pair(videoDevice->getBackBuffer()->getDescription().width, videoDevice->getBackBuffer()->getDescription().height);
+
                 if (filterNode.has_member(L"textures"))
                 {
                     auto &texturesNode = filterNode.get(L"textures");
@@ -242,13 +252,15 @@ namespace Gek
                         }
                         else
                         {
-                            Video::Texture::Description description(backBufferDescription);
+                            Video::TextureDescription description;
                             description.format = Video::getFormat(textureValue.get(L"format", L"").as_string());
                             if (description.format == Video::Format::Unknown)
                             {
                                 throw InvalidParameter("Invalid texture format specified");
                             }
 
+                            description.width = displayWidth;
+                            description.height = displayHeight;
                             if (textureValue.has_member(L"size"))
                             {
                                 auto &size = textureValue.get(L"size");
@@ -323,10 +335,10 @@ namespace Gek
                                     throw MissingParameter("Structured buffer required a structure name");
                                 }
 
-                                Video::Buffer::Description description;
+                                Video::BufferDescription description;
                                 description.count = count;
                                 description.flags = flags;
-                                description.type = Video::Buffer::Description::Type::Structured;
+                                description.type = Video::BufferDescription::Type::Structured;
                                 description.stride = evaluate(globalDefinesMap, bufferValue.get(L"stride"));
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
                                 resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
@@ -339,10 +351,10 @@ namespace Gek
                                     mapType = MapType::ByteAddressBuffer;
                                 }
 
-                                Video::Buffer::Description description;
+                                Video::BufferDescription description;
                                 description.count = count;
                                 description.flags = flags;
-                                description.type = Video::Buffer::Description::Type::Raw;
+                                description.type = Video::BufferDescription::Type::Raw;
                                 description.format = Video::getFormat(bufferValue.get(L"format").as_string());
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
 
@@ -591,6 +603,9 @@ namespace Gek
                         {
                             pass.dispatchWidth = pass.dispatchHeight = pass.dispatchDepth = evaluate(globalDefinesMap, dispatch);
                         }
+
+                        pass.width = float(displayWidth);
+                        pass.height = float(displayHeight);
                     }
                     else
                     {
@@ -603,8 +618,20 @@ namespace Gek
                             L"\r\n";
 
                         std::unordered_map<String, String> renderTargetsMap = getAliasedMap(passNode, L"targets");
-                        if (!renderTargetsMap.empty())
+                        if (renderTargetsMap.empty())
                         {
+                            pass.width = 0.0f;
+                            pass.height = 0.0f;
+                        }
+                        else
+                        {
+                            auto resourceSearch = resourceSizeMap.find(std::begin(renderTargetsMap)->first);
+                            if (resourceSearch != std::end(resourceSizeMap))
+                            {
+                                pass.width = float(resourceSearch->second.first);
+                                pass.height = float(resourceSearch->second.second);
+                            }
+
                             for (auto &renderTarget : renderTargetsMap)
                             {
                                 auto resourceSearch = resourceMap.find(renderTarget.first);
@@ -903,23 +930,8 @@ namespace Gek
                 resources->setProgram(videoPipeline, pass.program);
 
                 FilterConstantData filterConstantData;
-                if (pass.renderTargetList.empty())
-                {
-                    auto backBuffer = videoDevice->getBackBuffer();
-                    auto &description = backBuffer->getDescription();
-                    filterConstantData.targetSize.x = description.width;
-                    filterConstantData.targetSize.y = description.height;
-                }
-                else
-                {
-                    auto description = resources->getTextureDescription(pass.renderTargetList.front());
-                    if (description)
-                    {
-                        filterConstantData.targetSize.x = description->width;
-                        filterConstantData.targetSize.y = description->height;
-                    }
-                }
-
+                filterConstantData.targetSize.x = pass.width;
+                filterConstantData.targetSize.y = pass.height;
                 videoDevice->updateResource(filterConstantBuffer.get(), &filterConstantData);
                 videoContext->geometryPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);
                 videoContext->vertexPipeline()->setConstantBufferList({ filterConstantBuffer.get() }, 2);

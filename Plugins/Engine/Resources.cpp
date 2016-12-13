@@ -71,21 +71,10 @@ namespace Gek
                 resourceMap.clear();
             }
 
-            void setResource(HANDLE handle, std::function<TypePtr(HANDLE)> &&load)
+            void setResource(HANDLE handle, const TypePtr &data)
             {
-                try
-                {
-                    auto data = load(handle);
-                    auto &resource = resourceMap.insert(std::make_pair(handle, nullptr)).first->second;
-                    std::atomic_exchange(&resource, data);
-                }
-                catch (const std::exception &exception)
-                {
-                    throw exception;
-                }
-                catch (...)
-                {
-                };
+                auto &resource = resourceMap.insert(std::make_pair(handle, nullptr)).first->second;
+                std::atomic_exchange(&resource, data);
             }
 
             virtual TYPE * const getResource(HANDLE handle) const
@@ -143,9 +132,9 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-                    resources->addRequest([this, handle, load = move(load)](void) mutable -> void
+                    resources->addRequest([this, handle, load = move(load)](void) -> void
                     {
-                        setResource(handle, std::move(load));
+                        setResource(handle, load(handle));
                     });
                 }
 
@@ -201,9 +190,9 @@ namespace Gek
                         if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                         {
                             loadParameters[handle] = parameters;
-                            resources->addRequest([this, handle, load = move(load)](void) mutable -> void
+                            resources->addRequest([this, handle, load = move(load)](void) -> void
                             {
-                                setResource(handle, std::move(load));
+                                setResource(handle, load(handle));
                             });
                         }
                     }
@@ -214,9 +203,9 @@ namespace Gek
                     handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
-                    resources->addRequest([this, handle, load = move(load)](void) mutable -> void
+                    resources->addRequest([this, handle, load = move(load)](void) -> void
                     {
-                        setResource(handle, std::move(load));
+                        setResource(handle, load(handle));
                     });
                 }
 
@@ -252,9 +241,9 @@ namespace Gek
             {
                 HANDLE handle;
                 handle = getNextHandle();
-                resources->addRequest([this, handle, load = move(load)](void) mutable -> void
+                resources->addRequest([this, handle, load = move(load)](void) -> void
                 {
-                    setResource(handle, std::move(load));
+                    setResource(handle, load(handle));
                 });
 
                 return handle;
@@ -308,7 +297,7 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-                    setResource(handle, std::move(load));
+                    setResource(handle, load(handle));
                 }
 
                 return handle;
@@ -395,26 +384,6 @@ namespace Gek
             , public Engine::Resources
             , public ResourceRequester
         {
-            struct Validate
-            {
-                bool state;
-                Validate(void)
-                    : state(false)
-                {
-                }
-
-                operator bool()
-                {
-                    return state;
-                }
-
-                bool operator = (bool state)
-                {
-                    this->state = state;
-                    return state;
-                }
-            };
-
         private:
             Plugin::Core *core = nullptr;
             Video::Device *videoDevice = nullptr;
@@ -433,7 +402,26 @@ namespace Gek
             GeneralResourceCache<BlendStateHandle, Video::Object> blendStateCache;
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
-            concurrency::concurrent_unordered_map<ResourceHandle, Video::Texture::Description> textureDescriptionMap;
+
+            struct Validate
+            {
+                bool state;
+                Validate(void)
+                    : state(false)
+                {
+                }
+
+                operator bool ()
+                {
+                    return state;
+                }
+
+                bool operator = (bool state)
+                {
+                    this->state = state;
+                    return state;
+                }
+            };
 
             Validate drawPrimitiveValid;
             Validate dispatchValid;
@@ -512,7 +500,7 @@ namespace Gek
                 if (pattern.compareNoCase(L"color") == 0)
                 {
                     uint8_t colorData[4];
-                    Video::Texture::Description description;
+                    Video::TextureDescription description;
                     try
                     {
                         if (parameters.is_array())
@@ -568,7 +556,7 @@ namespace Gek
                         throw InvalidParameter("Invalid color format encountered");
                     }
 
-                    description.flags = Video::Texture::Description::Flags::Resource;
+                    description.flags = Video::TextureDescription::Flags::Resource;
                     texture = videoDevice->createTexture(description, colorData);
                 }
                 else if (pattern.compareNoCase(L"normal") == 0)
@@ -589,9 +577,9 @@ namespace Gek
                         255,
                     };
 
-                    Video::Texture::Description description;
+                    Video::TextureDescription description;
                     description.format = Video::Format::R8G8B8A8_UNORM;
-                    description.flags = Video::Texture::Description::Flags::Resource;
+                    description.flags = Video::TextureDescription::Flags::Resource;
                     texture = videoDevice->createTexture(description, normalData);
                 }
                 else if (pattern.compareNoCase(L"system") == 0)
@@ -606,9 +594,9 @@ namespace Gek
                                 255, 0, 255, 255,
                             };
 
-                            Video::Texture::Description description;
+                            Video::TextureDescription description;
                             description.format = Video::Format::R8G8B8A8_UNORM;
-                            description.flags = Video::Texture::Description::Flags::Resource;
+                            description.flags = Video::TextureDescription::Flags::Resource;
                             texture = videoDevice->createTexture(description, data);
                         }
                         else if (type.compareNoCase(L"flat") == 0)
@@ -622,9 +610,9 @@ namespace Gek
                                 255,
                             };
 
-                            Video::Texture::Description description;
+                            Video::TextureDescription description;
                             description.format = Video::Format::R8G8B8A8_UNORM;
-                            description.flags = Video::Texture::Description::Flags::Resource;
+                            description.flags = Video::TextureDescription::Flags::Resource;
                             texture = videoDevice->createTexture(description, normalData);
                         }
                         else
@@ -740,11 +728,11 @@ namespace Gek
                 filterCache.reload();
 
                 auto backBuffer = videoDevice->getBackBuffer();
-                Video::Texture::Description description;
+                Video::TextureDescription description;
                 description.format = Video::Format::R11G11B10_FLOAT;
                 description.width = backBuffer->getDescription().width;
                 description.height = backBuffer->getDescription().height;
-                description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
+                description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
                 createTexture(L"screen", description);
                 createTexture(L"screenBuffer", description);
             }
@@ -822,7 +810,7 @@ namespace Gek
                 return dynamicCache.getHandle(hash, 0, std::move(load));
             }
 
-            ResourceHandle createTexture(const wchar_t *textureName, const Video::Texture::Description &description)
+            ResourceHandle createTexture(const wchar_t *textureName, const Video::TextureDescription &description)
             {
                 GEK_REQUIRE(textureName);
 
@@ -835,12 +823,10 @@ namespace Gek
 
                 auto hash = GetHash(textureName);
                 auto parameters = GetStructHash(description);
-                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
-                textureDescriptionMap[resource] = description;
-                return resource;
+                return dynamicCache.getHandle(hash, parameters, std::move(load));
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description)
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description)
             {
                 GEK_REQUIRE(bufferName);
                 GEK_REQUIRE(description.count > 0);
@@ -857,7 +843,7 @@ namespace Gek
                 return dynamicCache.getHandle(hash, parameters, std::move(load));
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
+            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::BufferDescription &description, std::vector<uint8_t> &&staticData)
             {
                 GEK_REQUIRE(bufferName);
                 GEK_REQUIRE(description.count > 0);
@@ -1024,7 +1010,6 @@ namespace Gek
             // Engine::Resources
             void clear(void)
             {
-                textureDescriptionMap.clear();
                 loadPool.clear();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -1037,11 +1022,11 @@ namespace Gek
                 blendStateCache.clear();
 
                 auto backBuffer = videoDevice->getBackBuffer();
-                Video::Texture::Description description;
+                Video::TextureDescription description;
                 description.format = Video::Format::R11G11B10_FLOAT;
                 description.width = backBuffer->getDescription().width;
                 description.height = backBuffer->getDescription().height;
-                description.flags = Video::Texture::Description::Flags::RenderTarget | Video::Texture::Description::Flags::Resource;
+                description.flags = Video::TextureDescription::Flags::RenderTarget | Video::TextureDescription::Flags::Resource;
                 createTexture(L"screen", description);
                 createTexture(L"screenBuffer", description);
             }
@@ -1101,19 +1086,6 @@ namespace Gek
                 auto hash = GetHash(filterName);
                 ResourceHandle filter = filterCache.getHandle(hash, std::move(load));
                 return filterCache.getResource(filter);
-            }
-
-            Video::Texture::Description * const getTextureDescription(ResourceHandle resource)
-            {
-                auto descriptionSearch = textureDescriptionMap.find(resource);
-                if (descriptionSearch != textureDescriptionMap.end())
-                {
-                    return &descriptionSearch->second;
-                }
-                else
-                {
-                    return nullptr;
-                }
             }
 
             std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
@@ -1402,6 +1374,20 @@ namespace Gek
                     videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? dynamicCache.getResource(*depthBuffer) : nullptr));
                     videoContext->setViewportList(viewPortCache);
                 }
+            }
+
+            void setBackBuffer(Video::Device::Context *videoContext, ResourceHandle *depthBuffer)
+            {
+                GEK_REQUIRE(videoContext);
+                
+                auto &renderTargetList = renderTargetCache.get();
+                renderTargetList.resize(1);
+                renderTargetList[0] = videoDevice->getBackBuffer();
+                videoContext->setRenderTargetList(renderTargetList, (depthBuffer ? dynamicCache.getResource(*depthBuffer) : nullptr));
+
+                viewPortCache.resize(1);
+                viewPortCache[0] = renderTargetList[0]->getViewPort();
+                videoContext->setViewportList(viewPortCache);
             }
 
             void clearRenderTargetList(Video::Device::Context *videoContext, int32_t count, bool depthBuffer)

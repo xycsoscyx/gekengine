@@ -153,7 +153,8 @@ namespace Gek
             Video::BufferPtr engineConstantBuffer;
             Video::BufferPtr cameraConstantBuffer;
 
-            Video::ObjectPtr screenVertexProgram;
+            Video::ObjectPtr deferredVertexProgram;
+            Video::ObjectPtr deferredPixelProgram;
             Video::ObjectPtr blendState;
             Video::ObjectPtr renderState;
             Video::ObjectPtr depthState;
@@ -236,10 +237,10 @@ namespace Gek
                 depthState = videoDevice->createDepthState(depthStateInformation);
 				depthState->setName(L"renderer:depthState");
 
-                Video::Buffer::Description constantBufferDescription;
+                Video::BufferDescription constantBufferDescription;
                 constantBufferDescription.stride = sizeof(EngineConstantData);
                 constantBufferDescription.count = 1;
-                constantBufferDescription.type = Video::Buffer::Description::Type::Constant;
+                constantBufferDescription.type = Video::BufferDescription::Type::Constant;
                 engineConstantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 engineConstantBuffer->setName(L"renderer:engineConstantBuffer");
 
@@ -264,15 +265,31 @@ namespace Gek
                     L"    output.texCoord = float2((vertexID << 1) & 2, vertexID & 2);" \
                     L"    output.screen = float4(output.texCoord * float2(2.0f, -2.0f) + float2(-1.0f, 1.0f), 0.0f, 1.0f);" \
                     L"    return output;" \
+                    L"}" \
+                    L"" \
+                    L"struct Input" \
+                    L"{" \
+                    L"    float4 screen : SV_POSITION;\r\n" \
+                    L"    float2 texCoord : TEXCOORD0;" \
+                    L"};" \
+                    L"" \
+                    L"Texture2D<float3> inputBuffer : register(t0);" \
+                    L"float3 mainPixelProgram(in Input input) : SV_TARGET0" \
+                    L"{" \
+                    L"    return inputBuffer[input.screen.xy];" \
                     L"}";
 
-                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"screenVertexProgram", L"mainVertexProgram", program);
-                screenVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
-                screenVertexProgram->setName(L"renderer:screenVertexProgram");
+                auto compiledVertexProgram = resources->compileProgram(Video::PipelineType::Vertex, L"deferredVertexProgram", L"mainVertexProgram", program);
+                deferredVertexProgram = videoDevice->createProgram(Video::PipelineType::Vertex, compiledVertexProgram.data(), compiledVertexProgram.size());
+                deferredVertexProgram->setName(L"renderer:deferredVertexProgram");
 
-                Video::Buffer::Description lightBufferDescription;
-                lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                auto compiledPixelProgram = resources->compileProgram(Video::PipelineType::Pixel, L"deferredPixelProgram", L"mainPixelProgram", program);
+                deferredPixelProgram = videoDevice->createProgram(Video::PipelineType::Pixel, compiledPixelProgram.data(), compiledPixelProgram.size());
+                deferredPixelProgram->setName(L"renderer:deferredPixelProgram");
+
+                Video::BufferDescription lightBufferDescription;
+                lightBufferDescription.type = Video::BufferDescription::Type::Structured;
+                lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
 
                 directionalLightList.reserve(10);
                 lightBufferDescription.stride = sizeof(DirectionalLightData);
@@ -292,9 +309,9 @@ namespace Gek
                 spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
                 spotLightDataBuffer->setName(L"renderer:spotLightDataBuffer");
 
-                Video::Buffer::Description tileBufferDescription;
-                tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
-                tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                Video::BufferDescription tileBufferDescription;
+                tileBufferDescription.type = Video::BufferDescription::Type::Raw;
+                tileBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                 tileBufferDescription.format = Video::Format::R32G32_UINT;
                 tileBufferDescription.count = GridSize;
                 tileOffsetCountBuffer = videoDevice->createBuffer(tileBufferDescription);
@@ -703,9 +720,9 @@ namespace Gek
                                     {
                                         directionalLightDataBuffer = nullptr;
 
-                                        Video::Buffer::Description lightBufferDescription;
-                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                                        Video::BufferDescription lightBufferDescription;
+                                        lightBufferDescription.type = Video::BufferDescription::Type::Structured;
+                                        lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(DirectionalLightData);
                                         lightBufferDescription.count = directionalLightList.size();
                                         directionalLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
@@ -729,9 +746,9 @@ namespace Gek
                                     {
                                         pointLightDataBuffer = nullptr;
 
-                                        Video::Buffer::Description lightBufferDescription;
-                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                                        Video::BufferDescription lightBufferDescription;
+                                        lightBufferDescription.type = Video::BufferDescription::Type::Structured;
+                                        lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(PointLightData);
                                         lightBufferDescription.count = pointLightList.size();
                                         pointLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
@@ -755,9 +772,9 @@ namespace Gek
                                     {
                                         spotLightDataBuffer = nullptr;
 
-                                        Video::Buffer::Description lightBufferDescription;
-                                        lightBufferDescription.type = Video::Buffer::Description::Type::Structured;
-                                        lightBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                                        Video::BufferDescription lightBufferDescription;
+                                        lightBufferDescription.type = Video::BufferDescription::Type::Structured;
+                                        lightBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                         lightBufferDescription.stride = sizeof(SpotLightData);
                                         lightBufferDescription.count = spotLightList.size();
                                         spotLightDataBuffer = videoDevice->createBuffer(lightBufferDescription);
@@ -842,9 +859,9 @@ namespace Gek
                                 {
                                     lightIndexBuffer = nullptr;
 
-                                    Video::Buffer::Description tileBufferDescription;
-                                    tileBufferDescription.type = Video::Buffer::Description::Type::Raw;
-                                    tileBufferDescription.flags = Video::Buffer::Description::Flags::Mappable | Video::Buffer::Description::Flags::Resource;
+                                    Video::BufferDescription tileBufferDescription;
+                                    tileBufferDescription.type = Video::BufferDescription::Type::Raw;
+                                    tileBufferDescription.flags = Video::BufferDescription::Flags::Mappable | Video::BufferDescription::Flags::Resource;
                                     tileBufferDescription.format = Video::Format::R16_UINT;
                                     tileBufferDescription.count = lightIndexList.size();
                                     lightIndexBuffer = videoDevice->createBuffer(tileBufferDescription);
@@ -917,18 +934,12 @@ namespace Gek
                             }, 0);
                         }
 
-                        ResourceHandle output;
-                        if (currentRenderCall.cameraTarget)
-                        {
-                            output = currentRenderCall.cameraTarget;
-                        }
-
                         for (auto &shaderDrawCallList : drawCallSetMap)
                         {
                             for (auto &shaderDrawCall : shaderDrawCallList.second)
                             {
                                 auto &shader = shaderDrawCall.shader;
-                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum, output); pass; pass = pass->next())
+                                for (auto pass = shader->begin(videoContext, cameraConstantData.viewMatrix, currentRenderCall.viewFrustum); pass; pass = pass->next())
                                 {
                                     resources->startResourceBlock();
                                     switch (pass->prepare())
@@ -959,7 +970,7 @@ namespace Gek
                                         break;
 
                                     case Engine::Shader::Pass::Mode::Deferred:
-                                        videoContext->vertexPipeline()->setProgram(screenVertexProgram.get());
+                                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                                         resources->drawPrimitive(videoContext, 3, 0);
                                         break;
 
@@ -972,7 +983,7 @@ namespace Gek
                             }
                         }
 
-                        videoContext->vertexPipeline()->setProgram(screenVertexProgram.get());
+                        videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
                         for (auto &filterName : { L"tonemap" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
@@ -999,8 +1010,37 @@ namespace Gek
                         videoContext->vertexPipeline()->clearConstantBufferList(2, 0);
                         videoContext->pixelPipeline()->clearConstantBufferList(2, 0);
                         videoContext->computePipeline()->clearConstantBufferList(2, 0);
+                        if (currentRenderCall.cameraTarget)
+                        {
+                            renderOverlay(videoContext, resources->getResourceHandle(L"screen"), currentRenderCall.cameraTarget);
+                        }
                     }
                 };
+            }
+
+            void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target)
+            {
+                videoContext->setBlendState(blendState.get(), Math::Float4::Black, 0xFFFFFFFF);
+                videoContext->setDepthState(depthState.get(), 0);
+                videoContext->setRenderState(renderState.get());
+
+                videoContext->setPrimitiveType(Video::PrimitiveType::TriangleList);
+
+                resources->startResourceBlock();
+                resources->setResourceList(videoContext->pixelPipeline(), { input }, 0);
+
+                videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
+                videoContext->pixelPipeline()->setProgram(deferredPixelProgram.get());
+                if (target)
+                {
+                    resources->setRenderTargetList(videoContext, { target }, nullptr);
+                }
+                else
+                {
+                    resources->setBackBuffer(videoContext, nullptr);
+                }
+
+                resources->drawPrimitive(videoContext, 3, 0);
             }
         };
 

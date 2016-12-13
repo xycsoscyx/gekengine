@@ -231,10 +231,10 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            Video::Buffer::Description description;
+            Video::BufferDescription description;
 
         public:
-            Buffer(const Video::Buffer::Description &description)
+            Buffer(const Video::BufferDescription &description)
                 : Resource()
                 , ShaderResourceView()
                 , UnorderedAccessView()
@@ -249,7 +249,7 @@ namespace Gek
             }
 
             // Video::Buffer
-            const Video::Buffer::Description &getDescription(void) const
+            const Video::BufferDescription &getDescription(void) const
             {
                 return description;
             }
@@ -259,10 +259,10 @@ namespace Gek
             : virtual public Video::Texture
         {
         public:
-            Video::Texture::Description description;
+            Video::TextureDescription description;
 
         public:
-            Texture(const Video::Texture::Description &description)
+            Texture(const Video::TextureDescription &description)
                 : description(description)
             {
             }
@@ -270,7 +270,7 @@ namespace Gek
             virtual ~Texture(void) = default;
 
             // Video::Texture
-            const Video::Texture::Description &getDescription(void) const
+            const Video::TextureDescription &getDescription(void) const
             {
                 return description;
             }
@@ -283,7 +283,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ViewTexture(const Video::Texture::Description &description)
+            ViewTexture(const Video::TextureDescription &description)
                 : Texture(description)
                 , Resource()
                 , ShaderResourceView()
@@ -300,11 +300,11 @@ namespace Gek
             : virtual public Video::Target
         {
         public:
-            Video::Texture::Description description;
+            Video::TextureDescription description;
             Video::ViewPort viewPort;
 
         public:
-            Target(const Video::Texture::Description &description)
+            Target(const Video::TextureDescription &description)
                 : description(description)
                 , viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
             {
@@ -313,7 +313,7 @@ namespace Gek
             virtual ~Target(void) = default;
 
             // Video::Texture
-            const Video::Texture::Description &getDescription(void) const
+            const Video::TextureDescription &getDescription(void) const
             {
                 return description;
             }
@@ -331,7 +331,7 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(const Video::Texture::Description &description)
+            TargetTexture(const Video::TextureDescription &description)
                 : Target(description)
                 , Resource()
                 , RenderTargetView()
@@ -351,7 +351,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            TargetViewTexture(const Video::Texture::Description &description)
+            TargetViewTexture(const Video::TextureDescription &description)
                 : TargetTexture(description)
                 , ShaderResourceView()
                 , UnorderedAccessView()
@@ -374,7 +374,7 @@ namespace Gek
         public:
 
         public:
-            DepthTexture(const Video::Texture::Description &description)
+            DepthTexture(const Video::TextureDescription &description)
                 : Texture(description)
                 , Resource()
                 , ShaderResourceView()
@@ -821,7 +821,7 @@ namespace Gek
             {
                 if (!backBuffer)
                 {
-                    backBuffer = std::make_shared<TargetTexture>(Video::Texture::Description());
+                    backBuffer = std::make_shared<TargetTexture>(Video::TextureDescription());
                 }
 
                 return backBuffer.get();
@@ -878,7 +878,7 @@ namespace Gek
                 return std::make_shared<SamplerState>();
             }
 
-            Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)
+            Video::BufferPtr createBuffer(const Video::BufferDescription &description, const void *data)
             {
                 uint32_t stride = 0;// DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
                 return std::make_shared<Buffer>(description);
@@ -917,13 +917,13 @@ namespace Gek
                 return std::vector<uint8_t>();
             }
 
-            Video::TexturePtr createTexture(const Video::Texture::Description &description, const void *data)
+            Video::TexturePtr createTexture(const Video::TextureDescription &description, const void *data)
             {
-                if (description.flags & Video::Texture::Description::Flags::RenderTarget)
+                if (description.flags & Video::TextureDescription::Flags::RenderTarget)
                 {
                     return std::make_shared<TargetViewTexture>(description);
                 }
-                else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                else if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                 {
                     return std::make_shared<DepthTexture>(description);
                 }
@@ -935,7 +935,7 @@ namespace Gek
 
             Video::TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
             {
-                return std::make_shared<ViewTexture>(Video::Texture::Description());
+                return std::make_shared<ViewTexture>(Video::TextureDescription());
             }
 
             void executeCommandList(Video::Object *commandList)

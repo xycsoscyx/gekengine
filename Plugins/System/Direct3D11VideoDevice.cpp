@@ -681,10 +681,10 @@ namespace Gek
         {
         public:
             CComPtr<ID3D11Buffer> d3dObject;
-            Video::Buffer::Description description;
+            Video::BufferDescription description;
 
         public:
-            Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Buffer::Description &description)
+            Buffer(ID3D11Buffer *d3dBuffer, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::BufferDescription &description)
                 : Resource(d3dBuffer)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
@@ -704,7 +704,7 @@ namespace Gek
             }
 
             // Video::Buffer
-            const Video::Buffer::Description &getDescription(void) const
+            const Video::BufferDescription &getDescription(void) const
             {
                 return description;
             }
@@ -713,10 +713,10 @@ namespace Gek
         class BaseTexture
         {
         public:
-            Video::Texture::Description description;
+            Video::TextureDescription description;
 
         public:
-            BaseTexture(const Video::Texture::Description &description)
+            BaseTexture(const Video::TextureDescription &description)
                 : description(description)
             {
             }
@@ -727,7 +727,7 @@ namespace Gek
             , public BaseTexture
         {
         public:
-            Texture(const Video::Texture::Description &description)
+            Texture(const Video::TextureDescription &description)
                 : BaseTexture(description)
             {
             }
@@ -735,7 +735,7 @@ namespace Gek
             virtual ~Texture(void) = default;
 
             // Video::Texture
-            const Video::Texture::Description &getDescription(void) const
+            const Video::TextureDescription &getDescription(void) const
             {
                 return description;
             }
@@ -748,7 +748,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Texture::Description &description)
+            ViewTexture(ID3D11Resource *d3dResource, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::TextureDescription &description)
                 : Texture(description)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
@@ -772,7 +772,7 @@ namespace Gek
             Video::ViewPort viewPort;
 
         public:
-            Target(const Video::Texture::Description &description)
+            Target(const Video::TextureDescription &description)
                 : BaseTexture(description)
 				, viewPort(Math::Float2(0.0f, 0.0f), Math::Float2(float(description.width), float(description.height)), 0.0f, 1.0f)
 			{
@@ -781,7 +781,7 @@ namespace Gek
             virtual ~Target(void) = default;
 
             // Video::Texture
-            const Video::Texture::Description &getDescription(void) const
+            const Video::TextureDescription &getDescription(void) const
             {
                 return description;
             }
@@ -799,7 +799,7 @@ namespace Gek
             , public RenderTargetView
         {
         public:
-            TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, const Video::Texture::Description &description)
+            TargetTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, const Video::TextureDescription &description)
                 : Target(description)
                 , Resource(d3dResource)
                 , RenderTargetView(d3dRenderTargetView)
@@ -821,7 +821,7 @@ namespace Gek
             , public UnorderedAccessView
         {
         public:
-            TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Texture::Description &description)
+            TargetViewTexture(ID3D11Resource *d3dResource, ID3D11RenderTargetView *d3dRenderTargetView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::TextureDescription &description)
                 : TargetTexture(d3dResource, d3dRenderTargetView, description)
                 , ShaderResourceView(d3dShaderResourceView)
                 , UnorderedAccessView(d3dUnorderedAccessView)
@@ -849,7 +849,7 @@ namespace Gek
             CComPtr<ID3D11DepthStencilView> d3dObject;
 
         public:
-            DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::Texture::Description &description)
+            DepthTexture(ID3D11Resource *d3dResource, ID3D11DepthStencilView *d3dDepthStencilView, ID3D11ShaderResourceView *d3dShaderResourceView, ID3D11UnorderedAccessView *d3dUnorderedAccessView, const Video::TextureDescription &description)
                 : Texture(description)
                 , Resource(d3dResource)
                 , ShaderResourceView(d3dShaderResourceView)
@@ -869,7 +869,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, Video::Device::Description)
+        GEK_CONTEXT_USER(Device, HWND, Video::DeviceDescription)
             , public Video::Debug::Device
         {
             class Context
@@ -1534,7 +1534,7 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, Video::Device::Description deviceDescription)
+            Device(Gek::Context *context, HWND window, Video::DeviceDescription deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent(window) != nullptr)
@@ -1794,7 +1794,7 @@ namespace Gek
                     D3D11_TEXTURE2D_DESC textureDescription;
                     d3dRenderTarget->GetDesc(&textureDescription);
 
-                    Video::Texture::Description description;
+                    Video::TextureDescription description;
                     description.width = textureDescription.Width;
                     description.height = textureDescription.Height;
                     description.format = DirectX::getFormat(textureDescription.Format);
@@ -2043,7 +2043,7 @@ namespace Gek
                 return std::make_shared<SamplerState>(d3dStates);
             }
 
-            Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)
+            Video::BufferPtr createBuffer(const Video::BufferDescription &description, const void *data)
             {
                 GEK_REQUIRE(d3dDevice);
                 GEK_REQUIRE(description.count > 0);
@@ -2070,7 +2070,7 @@ namespace Gek
                 bufferDescription.ByteWidth = (stride * description.count);
                 switch (description.type)
                 {
-                case Video::Buffer::Description::Type::Structured:
+                case Video::BufferDescription::Type::Structured:
                     bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
                     bufferDescription.StructureByteStride = stride;
                     bufferDescription.BindFlags = 0;
@@ -2081,15 +2081,15 @@ namespace Gek
                     bufferDescription.StructureByteStride = 0;
                     switch (description.type)
                     {
-                    case Video::Buffer::Description::Type::Vertex:
+                    case Video::BufferDescription::Type::Vertex:
                         bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
                         break;
 
-                    case Video::Buffer::Description::Type::Index:
+                    case Video::BufferDescription::Type::Index:
                         bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
                         break;
 
-                    case Video::Buffer::Description::Type::Constant:
+                    case Video::BufferDescription::Type::Constant:
                         bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
                         break;
 
@@ -2104,12 +2104,12 @@ namespace Gek
                     bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
                     bufferDescription.CPUAccessFlags = 0;
                 }
-                else if (description.flags & Video::Buffer::Description::Flags::Staging)
+                else if (description.flags & Video::BufferDescription::Flags::Staging)
                 {
                     bufferDescription.Usage = D3D11_USAGE_STAGING;
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
                 }
-                else if (description.flags & Video::Buffer::Description::Flags::Mappable)
+                else if (description.flags & Video::BufferDescription::Flags::Mappable)
                 {
                     bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
                     bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
@@ -2120,12 +2120,12 @@ namespace Gek
                     bufferDescription.CPUAccessFlags = 0;
                 }
 
-                if (description.flags & Video::Buffer::Description::Flags::Resource)
+                if (description.flags & Video::BufferDescription::Flags::Resource)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (description.flags & Video::Buffer::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::BufferDescription::Flags::UnorderedAccess)
                 {
                     bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2153,7 +2153,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Video::Buffer::Description::Flags::Resource)
+                if (description.flags & Video::BufferDescription::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
@@ -2168,14 +2168,14 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Video::Buffer::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::BufferDescription::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
                     viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
                     viewDescription.Buffer.FirstElement = 0;
                     viewDescription.Buffer.NumElements = description.count;
-                    viewDescription.Buffer.Flags = (description.flags & Video::Buffer::Description::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
+                    viewDescription.Buffer.Flags = (description.flags & Video::BufferDescription::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
 
                     HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
                     if (FAILED(resultValue) || !d3dUnorderedAccessView)
@@ -2395,7 +2395,7 @@ namespace Gek
                 throw Video::CreateObjectFailed("Unknown program pipline encountered");
             }
 
-            Video::TexturePtr createTexture(const Video::Texture::Description &description, const void *data)
+            Video::TexturePtr createTexture(const Video::TextureDescription &description, const void *data)
             {
                 GEK_REQUIRE(d3dDevice);
                 GEK_REQUIRE(description.format != Video::Format::Unknown);
@@ -2404,9 +2404,9 @@ namespace Gek
                 GEK_REQUIRE(description.depth != 0);
 
                 uint32_t bindFlags = 0;
-                if (description.flags & Video::Texture::Description::Flags::RenderTarget)
+                if (description.flags & Video::TextureDescription::Flags::RenderTarget)
                 {
-                    if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                    if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                     {
                         throw Video::InvalidParameter("Cannot create render target when depth target flag also specified");
                     }
@@ -2414,7 +2414,7 @@ namespace Gek
                     bindFlags |= D3D11_BIND_RENDER_TARGET;
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                 {
                     if (description.depth > 1)
                     {
@@ -2424,12 +2424,12 @@ namespace Gek
                     bindFlags |= D3D11_BIND_DEPTH_STENCIL;
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::Resource)
+                if (description.flags & Video::TextureDescription::Flags::Resource)
                 {
                     bindFlags |= D3D11_BIND_SHADER_RESOURCE;
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::TextureDescription::Flags::UnorderedAccess)
                 {
                     bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                 }
@@ -2507,7 +2507,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Video::Texture::Description::Flags::Resource)
+                if (description.flags & Video::TextureDescription::Flags::Resource)
                 {
                     D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2532,7 +2532,7 @@ namespace Gek
                 }
 
                 CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Video::Texture::Description::Flags::UnorderedAccess)
+                if (description.flags & Video::TextureDescription::Flags::UnorderedAccess)
                 {
                     D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
                     viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2556,7 +2556,7 @@ namespace Gek
                     }
                 }
 
-                if (description.flags & Video::Texture::Description::Flags::RenderTarget)
+                if (description.flags & Video::TextureDescription::Flags::RenderTarget)
                 {
                     D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
                     renderViewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
@@ -2582,7 +2582,7 @@ namespace Gek
 
                     return std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
-                else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
+                else if (description.flags & Video::TextureDescription::Flags::DepthTarget)
                 {
                     D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
                     depthStencilDescription.Format = DirectX::DepthFormatList[static_cast<uint8_t>(description.format)];
@@ -2662,7 +2662,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to get texture resource");
                 }
 
-                Video::Texture::Description description;
+                Video::TextureDescription description;
                 description.width = image.GetMetadata().width;
                 description.height = image.GetMetadata().height;
                 description.depth = image.GetMetadata().depth;
