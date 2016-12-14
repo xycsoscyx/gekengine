@@ -64,14 +64,12 @@
     },
     "textures": {
         "depthBuffer": {
-            "bind": "float",
-            "flags": "depth",
-            "format": "D32_FLOAT"
-         },
+            "format": "D32_FLOAT",
+            "flags": "depth"
+        },
         "normalBuffer": {
-            "bind": "float3",
-            "flags": "target",
-            "format": "R11G11B10_FLOAT"
+            "format": "R11G11B10_FLOAT",
+            "flags": "target"
         }
     },
     "passes": [
@@ -81,7 +79,7 @@
             "mode": "forward",
             "material": "solid",
             "lighting": true,
-            "depthBuffer":  "depthBuffer",
+            "depthBuffer": "depthBuffer",
             "depthState": {
                 "enable": true,
                 "comparisonFunction": "LessEqual",

@@ -1,17 +1,16 @@
 {
     "textures": {
         "luminanceBuffer": {
-            "bind": "float",
+            "format": "R16_FLOAT",
             "flags": "target",
-            "mipmaps": 0,
-            "format": "R16_FLOAT"
+            "mipmaps": 0
         }
     },
     "buffers": {
         "averageLuminanceBuffer": {
-            "count": 1,
+            "format": "R32_FLOAT",
             "flags": "unorderedAccess",
-            "format": "R32_FLOAT"
+            "count": 1
         }
     },
     "passes": [

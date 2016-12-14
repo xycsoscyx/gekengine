@@ -1,7 +1,6 @@
 {
     "textures": {
         "depthBuffer": {
-            "bind": "float",
             "source": "Solid"
         }
     },

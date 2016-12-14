@@ -1,22 +1,18 @@
 {
     "textures": {
         "depthBuffer": {
-            "bind": "float",
             "source": "solid"
         },
         "normalBuffer": {
-            "bind": "float3",
             "source": "solid"
         },
         "ambientBuffer": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R8_UNORM"
+            "format": "R8_UNORM",
+            "flags": "target"
         },
         "gaussianBuffer": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R8_UNORM"
+            "format": "R8_UNORM",
+            "flags": "target"
         }
     },
     "passes": [

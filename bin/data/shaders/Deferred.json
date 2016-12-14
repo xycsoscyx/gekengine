@@ -64,24 +64,20 @@
     },
     "textures": {
         "depthBuffer": {
-            "bind": "float",
-            "flags": "depth",
-            "format": "D32_FLOAT"
+            "format": "D32_FLOAT",
+            "flags": "depth"
         },
         "albedoBuffer": {
-            "bind": "float3",
-            "flags": "target",
-            "format": "R11G11B10_FLOAT"
+            "format": "R11G11B10_FLOAT",
+            "flags": "target"
         },
         "materialBuffer": {
-            "bind": "float2",
-            "flags": "target",
-            "format": "R8G8_UNORM"
+            "format": "R8G8_UNORM",
+            "flags": "target"
         },
         "normalBuffer": {
-            "bind": "float2",
-            "flags": "target",
-            "format": "R8G8_NORM"
+            "format": "R8G8_NORM",
+            "flags": "target"
         }
     },
     "passes": [
@@ -90,7 +86,7 @@
             "entry": "mainPixelProgram",
             "mode": "forward",
             "material": "solid",
-            "depthBuffer":  "depthBuffer",
+            "depthBuffer": "depthBuffer",
             "depthState": {
                 "enable": true,
                 "comparisonFunction": "LessEqual",

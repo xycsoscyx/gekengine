@@ -1,20 +1,18 @@
 {
     "textures": {
         "depthBuffer": {
-            "bind": "float",
             "source": "Solid"
         },
         "circleOfConfusion": {
-            "bind": "float",
-            "flags": "target",
-            "format": "R16_FLOAT"
+            "format": "R16_FLOAT",
+            "flags": "target"
         }
     },
     "buffers": {
         "averageFocalDepth": {
-            "count": 1,
+            "format": "R32_FLOAT",
             "flags": "unorderedAccess",
-            "format": "R32_FLOAT"
+            "count": 1
         }
     },
     "defines": {

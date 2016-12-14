@@ -14,6 +14,7 @@
 #include "GEK/Components/Light.hpp"
 #include "GEK/Components/Color.hpp"
 #include "Passes.hpp"
+#include <unordered_set>
 #include <ppl.h>
 
 namespace Gek
@@ -114,12 +115,13 @@ namespace Gek
                 };
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
-                std::unordered_map<String, std::pair<MapType, BindType>> resourceMappingsMap;
-                std::unordered_map<String, String> resourceStructuresMap;
+                std::unordered_map<String, String> resourceSemanticsMap;
+                std::unordered_set<Engine::Shader *> requiredShaderSet;
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
-                resourceMappingsMap[L"screen"] = resourceMappingsMap[L"screenBuffer"] = std::make_pair(MapType::Texture2D, BindType::Float3);
+                resourceSemanticsMap[L"screen"] = resourceSemanticsMap[L"screenBuffer"] = L"Texture2D<float3>";
+
                 if (filterNode.has_member(L"textures"))
                 {
                     auto &texturesNode = filterNode.get(L"textures");
@@ -137,18 +139,12 @@ namespace Gek
                             throw ResourceAlreadyListed("Texture name same as already listed resource");
                         }
 
-                        BindType bindType = getBindType(textureValue.get(L"bind", L"").as_string());
-                        if (bindType == BindType::Unknown)
-                        {
-                            throw InvalidParameter("Invalid exture bind type encountered");
-                        }
-
-                        MapType type = MapType::Texture2D;
+                        ResourceHandle resource;
                         if (textureValue.has_member(L"source"))
                         {
                             String textureSource(textureValue.get(L"source").as_string());
                             resources->getShader(textureSource, MaterialHandle());
-                            resourceMap[textureName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
+                            resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
                         }
                         else
                         {
@@ -190,11 +186,26 @@ namespace Gek
                             description.sampleCount = textureValue.get(L"sampleCount", 1).as_uint();
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
                             description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"));
-                            resourceMap[textureName] = resources->createTexture(String::Format(L"%v:%v:resource", textureName, filterName), description);
-                            type = (description.sampleCount > 1 ? MapType::Texture2DMS : MapType::Texture2D);
+                            resource = resources->createTexture(String::Format(L"%v:%v:resource", textureName, filterName), description);
                         }
 
-                        resourceMappingsMap[textureName] = std::make_pair(type, bindType);
+                        resourceMap[textureName] = resource;
+                        auto description = resources->getTextureDescription(resource);
+                        if (description)
+                        {
+                            if (description->depth > 1)
+                            {
+                                resourceSemanticsMap[textureName] = String::Format(L"Texture3D<%v>", getFormatSemantic(description->format));
+                            }
+                            else if (description->height > 1)
+                            {
+                                resourceSemanticsMap[textureName] = String::Format(L"Texture2D<%v>", getFormatSemantic(description->format));
+                            }
+                            else
+                            {
+                                resourceSemanticsMap[textureName] = String::Format(L"Texture1D<%v>", getFormatSemantic(description->format));
+                            }
+                        }
                     }
                 }
 
@@ -218,7 +229,7 @@ namespace Gek
                         if (bufferValue.has_member(L"source"))
                         {
                             String bufferSource(bufferValue.get(L"source").as_string());
-                            resources->getShader(bufferSource, MaterialHandle());
+                            requiredShaderSet.insert(resources->getShader(bufferSource, MaterialHandle()));
                             resourceMap[bufferName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", bufferName, bufferSource));
                         }
                         else
@@ -234,7 +245,7 @@ namespace Gek
                             {
                                 if (!bufferValue.has_member(L"stride"))
                                 {
-                                    throw MissingParameter("Structured buffer required a structure stride");
+                                    throw MissingParameter("Structured buffer required a stride size");
                                 }
                                 else if (!bufferValue.has_member(L"structure"))
                                 {
@@ -247,16 +258,19 @@ namespace Gek
                                 description.type = Video::Buffer::Description::Type::Structured;
                                 description.stride = evaluate(bufferValue.get(L"stride"));
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
-                                resourceStructuresMap[bufferName] = bufferValue.get(L"structure").as_string();
+                                resourceSemanticsMap[bufferName].format(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
+                            }
+                            else if (bufferValue.has_member(L"stride"))
+                            {
+                                Video::Buffer::Description description;
+                                description.count = count;
+                                description.flags = flags;
+                                description.type = Video::Buffer::Description::Type::Structured;
+                                description.stride = evaluate(bufferValue.get(L"stride"));
+                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
                             }
                             else if (bufferValue.has_member(L"format"))
                             {
-                                MapType mapType = MapType::Buffer;
-                                if (bufferValue.get(L"byteaddress", false).as_bool())
-                                {
-                                    mapType = MapType::ByteAddressBuffer;
-                                }
-
                                 Video::Buffer::Description description;
                                 description.count = count;
                                 description.flags = flags;
@@ -264,17 +278,14 @@ namespace Gek
                                 description.format = Video::getFormat(bufferValue.get(L"format").as_string());
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
 
-                                BindType bindType;
-                                if (bufferValue.has_member(L"bind"))
+                                if (bufferValue.get(L"byteaddress", false).as_bool())
                                 {
-                                    bindType = getBindType(bufferValue.get(L"bind").as_string());
+                                    resourceSemanticsMap[bufferName] = L"ByteAddressBuffer";
                                 }
                                 else
                                 {
-                                    bindType = getBindType(description.format);
+                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", getFormatSemantic(description.format));
                                 }
-
-                                resourceMappingsMap[bufferName] = std::make_pair(mapType, bindType);
                             }
                             else
                             {
@@ -364,6 +375,8 @@ namespace Gek
                             L"};\r\n" \
                             L"\r\n";
 
+                        String outputData;
+                        uint32_t currentStage = 0;
                         std::unordered_map<String, String> renderTargetsMap = getAliasedMap(passNode, L"targets");
                         if (!renderTargetsMap.empty())
                         {
@@ -376,20 +389,12 @@ namespace Gek
                                 }
 
                                 pass.renderTargetList.push_back(resourceSearch->second);
+                                auto description = resources->getTextureDescription(resourceSearch->second);
+                                if (description)
+                                {
+                                    outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                }
                             }
-                        }
-
-                        String outputData;
-                        uint32_t currentStage = 0;
-                        for (auto &resourcePair : renderTargetsMap)
-                        {
-                            auto resourceSearch = resourceMappingsMap.find(resourcePair.first);
-                            if (resourceSearch == std::end(resourceMappingsMap))
-                            {
-                                throw UnlistedRenderTarget("Missing render target encountered");
-                            }
-
-                            outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getBindType(resourceSearch->second.second), resourcePair.second, currentStage++);
                         }
 
                         if (!outputData.empty())
@@ -517,28 +522,10 @@ namespace Gek
                         }
 
                         uint32_t currentStage = nextResourceStage++;
-                        auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != std::end(resourceMappingsMap))
+                        auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
+                        if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            auto &resource = resourceMapSearch->second;
-                            if (resource.first == MapType::ByteAddressBuffer)
-                            {
-                                resourceData.format(L"    %v %v : register(t%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
-                            }
-                            else
-                            {
-                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
-                            }
-
-                            continue;
-                        }
-
-                        auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                        if (structureSearch != std::end(resourceStructuresMap))
-                        {
-                            auto &structure = structureSearch->second;
-                            resourceData.format(L"    StructuredBuffer<%v> %v : register(t%v);\r\n", structure, resourcePair.second, currentStage);
-                            continue;
+                            resourceData.format(L"    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 
@@ -569,27 +556,10 @@ namespace Gek
                         }
 
                         uint32_t currentStage = nextUnorderedStage++;
-                        auto resourceMapSearch = resourceMappingsMap.find(resourcePair.first);
-                        if (resourceMapSearch != std::end(resourceMappingsMap))
+                        auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
+                        if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            auto &resource = resourceMapSearch->second;
-                            if (resource.first == MapType::ByteAddressBuffer)
-                            {
-                                unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", getMapType(resource.first), resourcePair.second, currentStage);
-                            }
-                            else
-                            {
-                                unorderedAccessData.format(L"    RW%v<%v> %v : register(u%v);\r\n", getMapType(resource.first), getBindType(resource.second), resourcePair.second, currentStage);
-                            }
-                        }
-                        else
-                        {
-                            auto structureSearch = resourceStructuresMap.find(resourcePair.first);
-                            if (structureSearch != std::end(resourceStructuresMap))
-                            {
-                                auto &structure = structureSearch->second;
-                                unorderedAccessData.format(L"    RWStructuredBuffer<%v> %v : register(u%v);\r\n", structure, resourcePair.second, currentStage);
-                            }
+                            unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 

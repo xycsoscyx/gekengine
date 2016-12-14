@@ -64,13 +64,11 @@
     },
     "textures": {
         "depthBuffer": {
-            "source": "solid",
-            "bind": "float"
+            "source": "solid"
         },
         "glassBuffer": {
-            "bind": "float3",
-            "flags": "target",
             "format": "R11G11B10_FLOAT",
+            "flags": "target",
             "mipmaps": 6
         }
     },
@@ -81,7 +79,7 @@
             "mode": "forward",
             "material": "solid",
             "lighting": true,
-            "depthBuffer":  "depthBuffer",
+            "depthBuffer": "depthBuffer",
             "depthState": {
                 "enable": true,
                 "comparisonFunction": "LessEqual",
@@ -98,7 +96,7 @@
             ],
             "targets": [
                 "screen"
-            ]            
+            ]
         }
     ]
 }

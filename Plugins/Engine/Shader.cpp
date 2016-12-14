@@ -257,8 +257,8 @@ namespace Gek
                     L"\r\n";
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
-                std::unordered_set<Engine::Shader *> requiredShaderSet;
                 std::unordered_map<String, String> resourceSemanticsMap;
+                std::unordered_set<Engine::Shader *> requiredShaderSet;
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
@@ -404,7 +404,7 @@ namespace Gek
                                 description.type = Video::Buffer::Description::Type::Structured;
                                 description.stride = evaluate(bufferValue.get(L"stride"));
                                 resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, shaderName), description);
-                                resourceSemanticsMap[bufferName] = String::Format(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
+                                resourceSemanticsMap[bufferName].format(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
                             }
                             else if (bufferValue.has_member(L"stride"))
                             {
@@ -430,7 +430,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    resourceSemanticsMap[bufferName] = String::Format(L"Buffer<%v>", getFormatSemantic(description.format));
+                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", getFormatSemantic(description.format));
                                 }
                             }
                             else
