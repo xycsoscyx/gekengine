@@ -146,10 +146,15 @@ namespace Gek
                             resources->getShader(textureSource, MaterialHandle());
                             resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
                         }
-                        else
+                        else if (textureValue.has_member(L"file"))
+                        {
+                            uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
+                            resource = resources->loadTexture(textureValue.get(L"file").as_cstring(), flags);
+                        }
+                        else if (textureValue.has_member(L"format"))
                         {
                             Video::Texture::Description description(backBufferDescription);
-                            description.format = Video::getFormat(textureValue.get(L"format", L"").as_string());
+                            description.format = Video::getFormat(textureValue.get(L"format").as_string());
                             if (description.format == Video::Format::Unknown)
                             {
                                 throw InvalidParameter("Invalid texture format specified");
@@ -187,6 +192,10 @@ namespace Gek
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
                             description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"));
                             resource = resources->createTexture(String::Format(L"%v:%v:resource", textureName, filterName), description);
+                        }
+                        else
+                        {
+                            throw InvalidParameter("Texture must contain a source, a filename, or a format");
                         }
 
                         resourceMap[textureName] = resource;

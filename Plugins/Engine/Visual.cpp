@@ -33,14 +33,30 @@ namespace Gek
 
 				String inputVertexData;
 				std::vector<Video::InputElement> elementList;
-                auto inputNode = visualNode[L"input"];
+                const auto &inputNode = visualNode[L"input"];
                 if (inputNode.is_array())
 				{
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : inputNode.elements())
 					{
-                        String elementName(elementNode[L"name"].as_string());
-						if (elementNode.has_member(L"system"))
+                        if (!elementNode.has_member(L"name"))
+                        {
+                            throw MissingParameter("Input elements require a name");
+                        }
+
+                        if (!elementNode.has_member(L"format"))
+                        {
+                            throw MissingParameter("Input elements require a format");
+                        }
+
+                        String elementName(elementNode.get(L"name").as_string());
+                        Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
+                        if (format == Video::Format::Unknown)
+                        {
+                            throw InvalidParameter("Unknown input element format specified");
+                        }
+
+                        if (elementNode.has_member(L"system"))
 						{
                             String system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"InstanceIndex") == 0)
@@ -53,41 +69,24 @@ namespace Gek
 							}
 							else if (system.compareNoCase(L"IsFrontFacing") == 0)
 							{
-								String format(elementNode.get(L"format", L"bool").as_string());
-								if (format.compareNoCase(L"int") == 0)
-								{
-									inputVertexData.format(L"    int %v : SV_IsFrontFace;\r\n", elementName);
-								}
-                                else if (format.compareNoCase(L"uint") == 0)
-                                {
-                                    inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementName);
-                                }
-                                else if (format.compareNoCase(L"bool") == 0)
-                                {
-                                    inputVertexData.format(L"    bool %v : SV_IsFrontFace;\r\n", elementName);
-                                }
-                                else
-                                {
-                                    throw InvalidElementType("Invalid system format encountered");
-                                }
+								inputVertexData.format(L"    %v %v : SV_IsFrontFace;\r\n", getFormatSemantic(format), elementName);
                             }
 						}
 						else
 						{
-							Video::InputElement element;
-                            String bindType(elementNode[L"bind"].as_string());
-							element.format = getBindFormat(getBindType(bindType));
-							if (element.format == Video::Format::Unknown)
-							{
-								throw InvalidElementType("Invalid vertex data format encountered");
-							}
+                            if (!elementNode.has_member(L"semantic"))
+                            {
+                                throw MissingParameter("Input elements require a semantic");
+                            }
 
-							element.semantic = getElementSemantic(elementNode[L"semantic"].as_string());
-							element.source = getElementSource(elementNode[L"source"].as_string());
+                            Video::InputElement element;
+                            element.format = format;
+							element.semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
+							element.source = Video::InputElement::getSource(elementNode.get(L"source", L"vertex").as_string());
                             element.sourceIndex = elementNode.get(L"sourceIndex", 0).as_uint();
 
 							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
-							inputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
+							inputVertexData.format(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
 							elementList.push_back(element);
 						}
 					}
@@ -100,17 +99,26 @@ namespace Gek
 					uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
 					for (auto &elementNode : outputNode.elements())
 					{
-                        String elementName(elementNode[L"name"].as_string());
-                        String bindType(elementNode[L"bind"].as_string());
-						auto bindFormat = getBindFormat(getBindType(bindType));
-						if (bindFormat == Video::Format::Unknown)
-						{
-                            throw InvalidElementType("Invalid vertex data format encountered");
+                        if (!elementNode.has_member(L"name"))
+                        {
+                            throw MissingParameter("Output elements require a name");
                         }
 
-						auto semantic = getElementSemantic(elementNode[L"semantic"].as_string());
+                        if (!elementNode.has_member(L"format"))
+                        {
+                            throw MissingParameter("Output elements require a format");
+                        }
+
+                        if (!elementNode.has_member(L"semantic"))
+                        {
+                            throw MissingParameter("Output elements require a semantic");
+                        }
+
+                        String elementName(elementNode.get(L"name").as_string());
+                        Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
+						auto semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
 						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-						outputVertexData.format(L"    %v %v : %v%v;\r\n", bindType, elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+						outputVertexData.format(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 					}
 				}
 

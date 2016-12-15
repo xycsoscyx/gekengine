@@ -424,6 +424,9 @@ namespace Gek
 				Count,
 			};
 
+            static Source getSource(const String &elementSource);
+            static Semantic getSemantic(const String &semantic);
+
             Video::Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
 			Source source = Source::Vertex;

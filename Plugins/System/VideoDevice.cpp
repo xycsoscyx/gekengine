@@ -4,6 +4,22 @@ namespace Gek
 {
     namespace Video
     {
+        InputElement::Source InputElement::getSource(const String &elementSource)
+        {
+            if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
+            else return Source::Vertex;
+        }
+
+        InputElement::Semantic InputElement::getSemantic(const String &semantic)
+        {
+            if (semantic.compareNoCase(L"Position") == 0) return Semantic::Position;
+            else if (semantic.compareNoCase(L"Tangent") == 0) return Semantic::Tangent;
+            else if (semantic.compareNoCase(L"BiTangent") == 0) return Semantic::BiTangent;
+            else if (semantic.compareNoCase(L"Normal") == 0) return Semantic::Normal;
+            else if (semantic.compareNoCase(L"Color") == 0) return Semantic::Color;
+            else return Semantic::TexCoord;
+        }
+
         Format getFormat(const String &format)
         {
             if (format.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;

@@ -156,29 +156,24 @@ namespace Gek
                             throw InvalidParameter("Vertex input element must name a name");
                         }
 
+                        if (!elementNode.has_member(L"format"))
+                        {
+                            throw MissingParameter("Input elements require a format");
+                        }
+
                         String name(elementNode.get(L"name").as_string());
+                        Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
+                        if (format == Video::Format::Unknown)
+                        {
+                            throw InvalidParameter("Unknown input element format specified");
+                        }
+
                         if (elementNode.has_member(L"system"))
                         {
                             String system(elementNode.get(L"system").as_string());
                             if (system.compareNoCase(L"IsFrontFacing") == 0)
                             {
-                                String format(elementNode.get(L"format", L"bool").as_string());
-                                if (format.compareNoCase(L"int") == 0)
-                                {
-                                    inputData.format(L"    int %v : SV_IsFrontFace;\r\n", name);
-                                }
-                                else if (format.compareNoCase(L"uint") == 0)
-                                {
-                                    inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", name);
-                                }
-                                else if (format.compareNoCase(L"bool") == 0)
-                                {
-                                    inputData.format(L"    bool %v : SV_IsFrontFace;\r\n", name);
-                                }
-                                else
-                                {
-                                    throw InvalidElementType("Invalid isFrontFacing element format encountered");
-                                }
+                                inputData.format(L"    %v %v : SV_IsFrontFace;\r\n", getFormatSemantic(format), name);
                             }
                             else if (system.compareNoCase(L"SampleIndex") == 0)
                             {
@@ -192,16 +187,9 @@ namespace Gek
                                 throw InvalidParameter("Vertex input element required semantic type");
                             }
 
-                            String bindType(elementNode.get(L"bind", L"").as_string());
-                            auto bindFormat = getBindFormat(getBindType(bindType));
-                            if (bindFormat == Video::Format::Unknown)
-                            {
-                                throw InvalidElementType("Invalid vedtex element format encountered");
-                            }
-
-                            auto semantic = getElementSemantic(elementNode.get(L"semantic").as_string());
+                            auto semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
                             auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-                            inputData.format(L"    %v %v : %v%v;\r\n", bindType, name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                            inputData.format(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                         }
                     }
                 }
@@ -292,7 +280,12 @@ namespace Gek
                                 resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
                             }
                         }
-                        else
+                        else if (textureValue.has_member(L"file"))
+                        {
+                            uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
+                            resource = resources->loadTexture(textureValue.get(L"file").as_cstring(), flags);
+                        }
+                        else if (textureValue.has_member(L"format"))
                         {
                             Video::Texture::Description description(backBufferDescription);
                             description.format = Video::getFormat(textureValue.get(L"format", L"").as_string());
@@ -333,6 +326,10 @@ namespace Gek
                             description.flags = getTextureFlags(textureValue.get(L"flags", L"0").as_string());
                             description.mipMapCount = evaluate(textureValue.get(L"mipmaps", L"1"));
                             resource = resources->createTexture(String::Format(L"%v:%v:resource", textureName, shaderName), description);
+                        }
+                        else
+                        {
+                            throw InvalidParameter("Texture must contain a source, a filename, or a format");
                         }
 
                         resourceMap[textureName] = resource;
@@ -740,7 +737,7 @@ namespace Gek
 
                         forwardPassMap[passMaterial] = &pass;
 
-                        std::unordered_map<String, Map> materialMap;
+                        std::unordered_map<String, ResourceHandle> materialMap;
                         for (auto &resourceNode : namedMaterialNode.elements())
                         {
                             if (!resourceNode.has_member(L"name"))
@@ -748,61 +745,49 @@ namespace Gek
                                 throw MissingParameter("Material resource requires a name");
                             }
 
+                            if (!resourceNode.has_member(L"pattern"))
+                            {
+                                throw MissingParameter("Material fallback must contain a pattern");
+                            }
+
+                            if (!resourceNode.has_member(L"pattern"))
+                            {
+                                throw MissingParameter("Material pattern must contain a parameters");
+                            }
+
                             String resourceName(resourceNode.get(L"name").as_string());
-                            MapType mapType = getMapType(resourceNode.get(L"type", L"").as_string());
-                            BindType bindType = getBindType(resourceNode.get(L"bind", L"").as_string());
-                            if (resourceNode.has_member(L"file"))
-                            {
-                                uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
-                                auto resource = resources->loadTexture(resourceNode.get(L"file").as_cstring(), flags);
-                                materialMap.insert(std::make_pair(resourceName, Map(MapSource::File, mapType, bindType, resource)));
-                            }
-                            else if (resourceNode.has_member(L"pattern"))
-                            {
-                                auto resource = resources->createPattern(resourceNode.get(L"pattern").as_cstring(), resourceNode.get(L"parameters"));
-                                materialMap.insert(std::make_pair(resourceName, Map(MapSource::Pattern, mapType, bindType, resource)));
-                            }
-                            else
-                            {
-                                throw UnknownMaterialType("Material must be either a file or a pattern");
-                            }
+                            auto resource = resources->createPattern(resourceNode.get(L"pattern").as_cstring(), resourceNode.get(L"parameters"));
+                            materialMap.insert(std::make_pair(resourceName, resource));
                         }
 
                         pass.initializerList.reserve(materialMap.size());
                         for (auto &resourcePair : materialMap)
                         {
-                            auto &resourceName = resourcePair.first;
-                            auto &map = resourcePair.second;
-                            if (map.source != MapSource::Pattern)
-                            {
-                                throw MissingParameter("Material fallback must be a pattern");
-                            }
-
                             Material::Initializer initializer;
-                            initializer.name = resourceName;
-                            initializer.fallback = map.resource;
+                            initializer.name = resourcePair.first;
+                            initializer.fallback = resourcePair.second;
                             pass.initializerList.push_back(initializer);
 
                             uint32_t currentStage = nextResourceStage++;
-                            switch (map.source)
+                            auto description = resources->getTextureDescription(initializer.fallback);
+                            if (description)
                             {
-                            case MapSource::File:
-                            case MapSource::Pattern:
-                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", getMapType(map.type), getBindType(map.binding), resourceName, currentStage);
-                                break;
-
-                            case MapSource::Resource:
-                                if (true)
+                                String textureType;
+                                if (description->depth > 1)
                                 {
-                                    auto semanticsSearch = resourceSemanticsMap.find(resourceName);
-                                    if (semanticsSearch != std::end(resourceSemanticsMap))
-                                    {
-                                        resourceData.format(L"    %v %v : register(t%v);\r\n", semanticsSearch->second, resourceName, currentStage);
-                                    }
+                                    textureType = L"Texture3D<%v>", getFormatSemantic(description->format);
+                                }
+                                else if (description->height > 1)
+                                {
+                                    textureType = L"Texture2D<%v>", getFormatSemantic(description->format);
+                                }
+                                else
+                                {
+                                    textureType = L"Texture1D<%v>", getFormatSemantic(description->format);
                                 }
 
-                                break;
-                            };
+                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);
+                            }
                         }
                     }
 
