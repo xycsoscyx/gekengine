@@ -22,7 +22,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float3 surfaceNormal;
     // assume normals are stored as 3Dc format, so generate the Z value
-    surfaceNormal.xy = Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    surfaceNormal.xy = Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord).xy;
     surfaceNormal.xy = ((surfaceNormal.xy * 2.0) - 1.0);
     surfaceNormal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     surfaceNormal.z = sqrt(1.0 - dot(surfaceNormal.xy, surfaceNormal.xy));

@@ -156,24 +156,13 @@ namespace Gek
                             throw InvalidParameter("Vertex input element must name a name");
                         }
 
-                        if (!elementNode.has_member(L"format"))
-                        {
-                            throw MissingParameter("Input elements require a format");
-                        }
-
                         String name(elementNode.get(L"name").as_string());
-                        Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
-                        if (format == Video::Format::Unknown)
-                        {
-                            throw InvalidParameter("Unknown input element format specified");
-                        }
-
                         if (elementNode.has_member(L"system"))
                         {
                             String system(elementNode.get(L"system").as_string());
                             if (system.compareNoCase(L"IsFrontFacing") == 0)
                             {
-                                inputData.format(L"    %v %v : SV_IsFrontFace;\r\n", getFormatSemantic(format), name);
+                                inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", name);
                             }
                             else if (system.compareNoCase(L"SampleIndex") == 0)
                             {
@@ -184,7 +173,18 @@ namespace Gek
                         {
                             if (!elementNode.has_member(L"semantic"))
                             {
-                                throw InvalidParameter("Vertex input element required semantic type");
+                                throw InvalidParameter("Input elements require semantic type");
+                            }
+
+                            if (!elementNode.has_member(L"format"))
+                            {
+                                throw MissingParameter("Input elements require a format");
+                            }
+
+                            Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
+                            if (format == Video::Format::Unknown)
+                            {
+                                throw InvalidParameter("Unknown input element format specified");
                             }
 
                             auto semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
@@ -340,7 +340,7 @@ namespace Gek
                             {
                                 resourceSemanticsMap[textureName] = String::Format(L"Texture3D<%v>", getFormatSemantic(description->format));
                             }
-                            else if (description->height > 1)
+                            else if (description->height > 1 || description->width == 1)
                             {
                                 resourceSemanticsMap[textureName] = String::Format(L"Texture2D<%v>", getFormatSemantic(description->format));
                             }
@@ -775,15 +775,15 @@ namespace Gek
                                 String textureType;
                                 if (description->depth > 1)
                                 {
-                                    textureType = L"Texture3D<%v>", getFormatSemantic(description->format);
+                                    textureType = L"Texture3D";
                                 }
-                                else if (description->height > 1)
+                                else if (description->height > 1 || description->width == 1)
                                 {
-                                    textureType = L"Texture2D<%v>", getFormatSemantic(description->format);
+                                    textureType = L"Texture2D";
                                 }
                                 else
                                 {
-                                    textureType = L"Texture1D<%v>", getFormatSemantic(description->format);
+                                    textureType = L"Texture1D";
                                 }
 
                                 resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);

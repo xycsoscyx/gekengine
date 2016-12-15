@@ -44,18 +44,7 @@ namespace Gek
                             throw MissingParameter("Input elements require a name");
                         }
 
-                        if (!elementNode.has_member(L"format"))
-                        {
-                            throw MissingParameter("Input elements require a format");
-                        }
-
                         String elementName(elementNode.get(L"name").as_string());
-                        Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
-                        if (format == Video::Format::Unknown)
-                        {
-                            throw InvalidParameter("Unknown input element format specified");
-                        }
-
                         if (elementNode.has_member(L"system"))
 						{
                             String system(elementNode[L"system"].as_string());
@@ -69,7 +58,7 @@ namespace Gek
 							}
 							else if (system.compareNoCase(L"IsFrontFacing") == 0)
 							{
-								inputVertexData.format(L"    %v %v : SV_IsFrontFace;\r\n", getFormatSemantic(format), elementName);
+								inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementName);
                             }
 						}
 						else
@@ -77,6 +66,18 @@ namespace Gek
                             if (!elementNode.has_member(L"semantic"))
                             {
                                 throw MissingParameter("Input elements require a semantic");
+                            }
+
+                            if (!elementNode.has_member(L"format"))
+                            {
+                                throw MissingParameter("Input elements require a format");
+                            }
+
+                            String elementName(elementNode.get(L"name").as_string());
+                            Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
+                            if (format == Video::Format::Unknown)
+                            {
+                                throw InvalidParameter("Unknown input element format specified");
                             }
 
                             Video::InputElement element;

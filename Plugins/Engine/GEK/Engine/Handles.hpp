@@ -16,9 +16,9 @@ namespace Gek
     {
         TYPE identifier = 0;
 
-        void operator = (TYPE identifier)
+        Handle(uint32_t identifier = 0)
+            : identifier(TYPE(identifier))
         {
-            this->identifier = identifier;
         }
 
         operator bool() const

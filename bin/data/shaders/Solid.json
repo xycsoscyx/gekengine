@@ -2,31 +2,32 @@
     "input": [
         {
             "name": "position",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "POSITION"
         },
         {
             "name": "texCoord",
-            "bind": "float2",
+            "format": "R32G32_FLOAT",
             "semantic": "TEXCOORD"
         },
         {
             "name": "tangent",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "TANGENT"
         },
         {
             "name": "biTangent",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "BITANGENT"
         },
         {
             "name": "normal",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "NORMAL"
         },
         {
             "name": "isFrontFacing",
+            "format": "R32_INT",
             "system": "isFrontFacing"
         }
     ],
@@ -34,29 +35,21 @@
         "solid": [
             {
                 "name": "albedo",
-                "type": "Texture2D",
-                "bind": "float4",
                 "pattern": "system",
                 "parameters": "debug"
             },
             {
                 "name": "normal",
-                "type": "Texture2D",
-                "bind": "float2",
                 "pattern": "system",
                 "parameters": "flat"
             },
             {
                 "name": "roughness",
-                "type": "Texture2D",
-                "bind": "float",
                 "pattern": "color",
                 "parameters": 0.5
             },
             {
                 "name": "metallic",
-                "type": "Texture2D",
-                "bind": "float",
                 "pattern": "color",
                 "parameters": 0
             }

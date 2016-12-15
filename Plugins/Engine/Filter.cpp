@@ -206,7 +206,7 @@ namespace Gek
                             {
                                 resourceSemanticsMap[textureName] = String::Format(L"Texture3D<%v>", getFormatSemantic(description->format));
                             }
-                            else if (description->height > 1)
+                            else if (description->height > 1 || description->width == 1)
                             {
                                 resourceSemanticsMap[textureName] = String::Format(L"Texture2D<%v>", getFormatSemantic(description->format));
                             }

@@ -2,35 +2,35 @@
     "input": [
         {
             "name": "position",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "POSITION",
             "source": "vertex",
             "sourceindex": "0"
         },
         {
             "name": "texCoord",
-            "bind": "float2",
+            "format": "R32G32_FLOAT",
             "semantic": "TEXCOORD",
             "source": "vertex",
             "sourceindex": "0"
         },
         {
             "name": "tangent",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "TANGENT",
             "source": "vertex",
             "sourceindex": "0"
         },
         {
             "name": "biTangent",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "BITANGENT",
             "source": "vertex",
             "sourceindex": "0"
         },
         {
             "name": "normal",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "NORMAL",
             "source": "vertex",
             "sourceindex": "0"
@@ -39,27 +39,27 @@
     "output": [
         {
             "name": "position",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "POSITION"
         },
         {
             "name": "texCoord",
-            "bind": "float2",
+            "format": "R32G32_FLOAT",
             "semantic": "TEXCOORD"
         },
         {
             "name": "tangent",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "TANGENT"
         },
         {
             "name": "biTangent",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "BITANGENT"
         },
         {
             "name": "normal",
-            "bind": "float3",
+            "format": "R32G32B32_FLOAT",
             "semantic": "NORMAL"
         }
     ],

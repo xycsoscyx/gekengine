@@ -116,29 +116,30 @@ namespace Gek
                 ResourceCache::clear();
             }
 
-            HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
             {
-                HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
                 {
                     auto resourceSearch = resourceHandleMap.find(hash);
                     if (resourceSearch != std::end(resourceHandleMap))
                     {
-                        handle = resourceSearch->second;
+                        return std::make_pair(false, resourceSearch->second);
                     }
                 }
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    handle = getNextHandle();
+                    HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     resources->addRequest([this, handle, load = move(load)](void) -> void
                     {
                         setResource(handle, load(handle));
                     });
+
+                    return std::make_pair(true, handle);
                 }
 
-                return handle;
+                return std::make_pair(false, HANDLE());
             }
 
             HANDLE getHandle(std::size_t hash) const
@@ -177,7 +178,7 @@ namespace Gek
                 ResourceCache::clear();
             }
 
-            HANDLE getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::size_t parameters, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -185,7 +186,7 @@ namespace Gek
                     auto resourceSearch = resourceHandleMap.find(hash);
                     if (resourceSearch != std::end(resourceHandleMap))
                     {
-                        handle = resourceSearch->second;
+                        HANDLE handle = resourceSearch->second;
                         auto loadParametersSearch = loadParameters.find(handle);
                         if (loadParametersSearch == std::end(loadParameters) || loadParametersSearch->second != parameters)
                         {
@@ -195,21 +196,25 @@ namespace Gek
                                 setResource(handle, load(handle));
                             });
                         }
+
+                        return std::make_pair(false, handle);
                     }
                 }
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    handle = getNextHandle();
+                    HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     loadParameters[handle] = parameters;
                     resources->addRequest([this, handle, load = move(load)](void) -> void
                     {
                         setResource(handle, load(handle));
                     });
+
+                    return std::make_pair(true, handle);
                 }
 
-                return handle;
+                return std::make_pair(false, HANDLE());
             }
 
             HANDLE getHandle(std::size_t hash) const
@@ -281,7 +286,7 @@ namespace Gek
                 ResourceCache::clear();
             }
 
-            HANDLE getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
+            std::pair<bool, HANDLE> getHandle(std::size_t hash, std::function<TypePtr(HANDLE)> &&load)
             {
                 HANDLE handle;
                 if (requestedLoadSet.count(hash) > 0)
@@ -289,18 +294,19 @@ namespace Gek
                     auto resourceSearch = resourceHandleMap.find(hash);
                     if (resourceSearch != std::end(resourceHandleMap))
                     {
-                        handle = resourceSearch->second;
+                        return std::make_pair(false, resourceSearch->second);
                     }
                 }
                 else
                 {
                     requestedLoadSet.insert(hash);
-                    handle = getNextHandle();
+                    HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
                     setResource(handle, load(handle));
+                    return std::make_pair(true, handle);
                 }
 
-                return handle;
+                return std::make_pair(false, HANDLE());
             }
 
             HANDLE getHandle(std::size_t hash) const
@@ -496,146 +502,6 @@ namespace Gek
                 return nullptr;
             }
 
-            Video::TexturePtr createPatternData(const String &pattern, const JSON::Object &parameters)
-            {
-                Video::TexturePtr texture;
-                if (pattern.compareNoCase(L"color") == 0)
-                {
-                    uint8_t colorData[4];
-                    Video::Texture::Description description;
-                    try
-                    {
-                        if (parameters.is_array())
-                        {
-                            switch (parameters.size())
-                            {
-                            case 1:
-                                colorData[0] = parameters.at(0).as_uint();
-                                description.format = Video::Format::R8_UNORM;
-                                break;
-
-                            case 2:
-                                colorData[0] = parameters.at(0).as_uint();
-                                colorData[1] = parameters.at(1).as_uint();
-                                description.format = Video::Format::R8G8_UNORM;
-                                break;
-
-                            case 3:
-                                colorData[0] = parameters.at(0).as_uint();
-                                colorData[1] = parameters.at(1).as_uint();
-                                colorData[2] = parameters.at(2).as_uint();
-                                colorData[3] = 0;
-                                description.format = Video::Format::R8G8B8A8_UNORM;
-                                break;
-
-                            case 4:
-                                colorData[0] = parameters.at(0).as_uint();
-                                colorData[1] = parameters.at(1).as_uint();
-                                colorData[2] = parameters.at(2).as_uint();
-                                colorData[3] = parameters.at(3).as_uint();
-                                description.format = Video::Format::R8G8B8A8_UNORM;
-                                break;
-                            };
-                        }
-                        else if (parameters.is<float>())
-                        {
-                            colorData[0] = uint8_t(parameters.as<float>() * 255.0f);
-                            description.format = Video::Format::R8_UNORM;
-                        }
-                        else
-                        {
-                            colorData[0] = parameters.as_uint();
-                            description.format = Video::Format::R8_UNORM;
-                        }
-                    }
-                    catch (...)
-                    {
-                        throw InvalidParameter("Unable to determine color texture type");
-                    };
-
-                    if (description.format == Video::Format::Unknown)
-                    {
-                        throw InvalidParameter("Invalid color format encountered");
-                    }
-
-                    description.flags = Video::Texture::Description::Flags::Resource;
-                    texture = videoDevice->createTexture(description, colorData);
-                }
-                else if (pattern.compareNoCase(L"normal") == 0)
-                {
-                    Math::Float3 normal(Math::Float3::Zero);
-                    if (parameters.is_array() && parameters.size() == 3)
-                    {
-                        normal.x = parameters.at(0).as<float>();
-                        normal.x = parameters.at(1).as<float>();
-                        normal.x = parameters.at(2).as<float>();
-                    }
-
-                    uint8_t normalData[4] =
-                    {
-                        uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
-                        uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
-                        uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
-                        255,
-                    };
-
-                    Video::Texture::Description description;
-                    description.format = Video::Format::R8G8B8A8_UNORM;
-                    description.flags = Video::Texture::Description::Flags::Resource;
-                    texture = videoDevice->createTexture(description, normalData);
-                }
-                else if (pattern.compareNoCase(L"system") == 0)
-                {
-                    if (parameters.is_string())
-                    {
-                        String type(parameters.as_cstring());
-                        if (type.compareNoCase(L"debug") == 0)
-                        {
-                            uint8_t data[] =
-                            {
-                                255, 0, 255, 255,
-                            };
-
-                            Video::Texture::Description description;
-                            description.format = Video::Format::R8G8B8A8_UNORM;
-                            description.flags = Video::Texture::Description::Flags::Resource;
-                            texture = videoDevice->createTexture(description, data);
-                        }
-                        else if (type.compareNoCase(L"flat") == 0)
-                        {
-                            Math::Float3 normal(0.0f, 0.0f, 1.0f);
-                            uint8_t normalData[4] =
-                            {
-                                uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
-                                uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
-                                uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
-                                255,
-                            };
-
-                            Video::Texture::Description description;
-                            description.format = Video::Format::R8G8B8A8_UNORM;
-                            description.flags = Video::Texture::Description::Flags::Resource;
-                            texture = videoDevice->createTexture(description, normalData);
-                        }
-                        else
-                        {
-                            throw InvalidParameter("Unknown system pattern encountered");
-                        }
-                    }
-                    else
-                    {
-                        throw InvalidParameter("Unknown pattern attribute encountered");
-                    }
-                }
-                else
-                {
-                    throw InvalidParameter("Unknown texture pattern encountered");
-                }
-
-                texture->setName(String::Format(L"%v:%v", pattern, parameters));
-                return texture;
-            }
-
             String getFullProgram(const wchar_t *name, const wchar_t *engineData)
             {
                 GEK_REQUIRE(name);
@@ -770,7 +636,7 @@ namespace Gek
                 };
 
                 auto hash = GetHash(visualName);
-                return visualCache.getHandle(hash, std::move(load));
+                return visualCache.getHandle(hash, std::move(load)).second;
             }
 
             MaterialHandle loadMaterial(const wchar_t *materialName)
@@ -783,7 +649,7 @@ namespace Gek
                 };
 
                 auto hash = GetHash(materialName);
-                return materialCache.getHandle(hash, std::move(load));
+                return materialCache.getHandle(hash, std::move(load)).second;
             }
 
             ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
@@ -816,8 +682,12 @@ namespace Gek
 
                         auto hash = GetHash(textureName);
                         auto resource = dynamicCache.getHandle(hash, flags, std::move(load));
-                        textureDescriptionMap[resource] = videoDevice->loadTextureDescription(fileName);
-                        return resource;
+                        if (resource.first)
+                        {
+                            textureDescriptionMap[resource.second] = videoDevice->loadTextureDescription(fileName);
+                        }
+
+                        return resource.second;
                     }
                 }
 
@@ -828,13 +698,140 @@ namespace Gek
             {
                 GEK_REQUIRE(pattern);
 
-                auto load = [this, pattern = String(pattern), parameters = parameters](ResourceHandle)->Video::TexturePtr
+                std::vector<uint8_t> data;
+                Video::Texture::Description description;
+                if (wcsicmp(pattern, L"color") == 0)
                 {
-                    return createPatternData(pattern, parameters);
+                    try
+                    {
+                        if (parameters.is_array())
+                        {
+                            switch (parameters.size())
+                            {
+                            case 1:
+                                data.push_back(parameters.at(0).as_uint());
+                                description.format = Video::Format::R8_UNORM;
+                                break;
+
+                            case 2:
+                                data.push_back(parameters.at(0).as_uint());
+                                data.push_back(parameters.at(1).as_uint());
+                                description.format = Video::Format::R8G8_UNORM;
+                                break;
+
+                            case 3:
+                                data.push_back(parameters.at(0).as_uint());
+                                data.push_back(parameters.at(1).as_uint());
+                                data.push_back(parameters.at(2).as_uint());
+                                data.push_back(0);
+                                description.format = Video::Format::R8G8B8A8_UNORM;
+                                break;
+
+                            case 4:
+                                data.push_back(parameters.at(0).as_uint());
+                                data.push_back(parameters.at(1).as_uint());
+                                data.push_back(parameters.at(2).as_uint());
+                                data.push_back(parameters.at(3).as_uint());
+                                description.format = Video::Format::R8G8B8A8_UNORM;
+                                break;
+                            };
+                        }
+                        else if (parameters.is<float>())
+                        {
+                            data.push_back(uint8_t(parameters.as<float>() * 255.0f));
+                            description.format = Video::Format::R8_UNORM;
+                        }
+                        else
+                        {
+                            data.push_back(parameters.as_uint());
+                            description.format = Video::Format::R8_UNORM;
+                        }
+                    }
+                    catch (...)
+                    {
+                        throw InvalidParameter("Unable to determine color texture type");
+                    };
+                }
+                else if (wcsicmp(pattern, L"normal") == 0)
+                {
+                    Math::Float3 normal(Math::Float3::Zero);
+                    if (parameters.is_array() && parameters.size() == 3)
+                    {
+                        normal.x = parameters.at(0).as<float>();
+                        normal.x = parameters.at(1).as<float>();
+                        normal.x = parameters.at(2).as<float>();
+                    }
+
+                    data.push_back(uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f));
+                    data.push_back(uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f));
+                    data.push_back(uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f));
+                    data.push_back(255);
+
+                    description.format = Video::Format::R8G8B8A8_UNORM;
+                }
+                else if (wcsicmp(pattern, L"system") == 0)
+                {
+                    if (parameters.is_string())
+                    {
+                        String type(parameters.as_cstring());
+                        if (type.compareNoCase(L"debug") == 0)
+                        {
+                            data.push_back(255);
+                            data.push_back(0);
+                            data.push_back(255);
+                            data.push_back(255);
+                            description.format = Video::Format::R8G8B8A8_UNORM;
+                        }
+                        else if (type.compareNoCase(L"flat") == 0)
+                        {
+                            Math::Float3 normal(0.0f, 0.0f, 1.0f);
+                            uint8_t normalData[4] =
+                            {
+                                uint8_t(((normal.x + 1.0f) * 0.5f) * 255.0f),
+                                uint8_t(((normal.y + 1.0f) * 0.5f) * 255.0f),
+                                uint8_t(((normal.z + 1.0f) * 0.5f) * 255.0f),
+                                255,
+                            };
+
+                            description.format = Video::Format::R8G8B8A8_UNORM;
+                        }
+                        else
+                        {
+                            throw InvalidParameter("Unknown system pattern encountered");
+                        }
+                    }
+                    else
+                    {
+                        throw InvalidParameter("Unknown pattern attribute encountered");
+                    }
+                }
+                else
+                {
+                    throw InvalidParameter("Unknown texture pattern encountered");
+                }
+
+                if (description.format == Video::Format::Unknown)
+                {
+                    throw InvalidParameter("Invalid color format encountered");
+                }
+
+                String name(String::Format(L"%v:%v", pattern, parameters.to_string()));
+                description.flags = Video::Texture::Description::Flags::Resource;
+                auto load = [this, name = String(name), description, data = move(data)](ResourceHandle) mutable -> Video::TexturePtr
+                {
+                    auto texture = videoDevice->createTexture(description, data.data());
+                    texture->setName(name);
+                    return texture;
                 };
 
-                auto hash = GetHash(pattern, parameters.to_string());
-                return dynamicCache.getHandle(hash, 0, std::move(load));
+                auto hash = GetHash(name);
+                auto resource = dynamicCache.getHandle(hash, 0, std::move(load));
+                if (resource.first)
+                {
+                    textureDescriptionMap[resource.second] = description;
+                }
+
+                return resource.second;
             }
 
             ResourceHandle createTexture(const wchar_t *textureName, const Video::Texture::Description &description)
@@ -851,8 +848,12 @@ namespace Gek
                 auto hash = GetHash(textureName);
                 auto parameters = GetStructHash(description);
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
-                textureDescriptionMap[resource] = description;
-                return resource;
+                if (resource.first)
+                {
+                    textureDescriptionMap[resource.second] = description;
+                }
+
+                return resource.second;
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description)
@@ -870,8 +871,12 @@ namespace Gek
                 auto hash = GetHash(bufferName);
                 auto parameters = GetStructHash(description);
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
-                bufferDescriptionMap[resource] = description;
-                return resource;
+                if (resource.first)
+                {
+                    bufferDescriptionMap[resource.second] = description;
+                }
+
+                return resource.second;
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
@@ -890,8 +895,12 @@ namespace Gek
                 auto hash = GetHash(bufferName);
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
-                bufferDescriptionMap[resource] = description;
-                return resource;
+                if (resource.first)
+                {
+                    bufferDescriptionMap[resource.second] = description;
+                }
+
+                return resource.second;
             }
 
             void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset)
@@ -1100,13 +1109,13 @@ namespace Gek
                 };
 
                 auto hash = GetHash(shaderName);
-                ShaderHandle shader = shaderCache.getHandle(hash, std::move(load));
+                auto resource = shaderCache.getHandle(hash, std::move(load));
                 if (material)
                 {
-                    materialShaderMap[material] = shader;
+                    materialShaderMap[material] = resource.second;
                 }
 
-                return shaderCache.getResource(shader);
+                return shaderCache.getResource(resource.second);
             }
 
             Engine::Filter * const getFilter(const wchar_t *filterName)
@@ -1119,8 +1128,8 @@ namespace Gek
                 };
 
                 auto hash = GetHash(filterName);
-                ResourceHandle filter = filterCache.getHandle(hash, std::move(load));
-                return filterCache.getResource(filter);
+                auto resource = filterCache.getHandle(hash, std::move(load));
+                return filterCache.getResource(resource.second);
             }
 
             Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle)
@@ -1208,7 +1217,7 @@ namespace Gek
                 };
 
                 auto hash = GetStructHash(renderState);
-                return renderStateCache.getHandle(hash, std::move(load));
+                return renderStateCache.getHandle(hash, std::move(load)).second;
             }
 
             DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState)
@@ -1221,7 +1230,7 @@ namespace Gek
 				};
 
                 auto hash = GetStructHash(depthState);
-                return depthStateCache.getHandle(hash, std::move(load));
+                return depthStateCache.getHandle(hash, std::move(load)).second;
             }
 
             BlendStateHandle createBlendState(const Video::UnifiedBlendStateInformation &blendState)
@@ -1234,7 +1243,7 @@ namespace Gek
 				};
 
                 auto hash = GetStructHash(blendState);
-                return blendStateCache.getHandle(hash, std::move(load));
+                return blendStateCache.getHandle(hash, std::move(load)).second;
             }
 
             BlendStateHandle createBlendState(const Video::IndependentBlendStateInformation &blendState)
@@ -1247,7 +1256,7 @@ namespace Gek
 				};
 
                 auto hash = GetStructHash(blendState);
-                return blendStateCache.getHandle(hash, std::move(load));
+                return blendStateCache.getHandle(hash, std::move(load)).second;
             }
 
             void generateMipMaps(Video::Device::Context *videoContext, ResourceHandle resourceHandle)

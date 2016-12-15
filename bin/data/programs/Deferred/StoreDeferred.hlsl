@@ -19,7 +19,7 @@ OutputPixel mainPixelProgram(InputPixel inputPixel)
 
     float3 normal;
     // assume normals are stored as 3Dc format, so generate the Z value
-    normal.xy = Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord);
+    normal.xy = Resources::normal.Sample(Global::LinearWrapSampler, inputPixel.texCoord).xy;
     normal.xy = ((normal.xy * 2.0) - 1.0);
 	normal.y *= -1.0; // grrr, inverted y axis, WHY?!?
     normal.z = sqrt(1.0 - dot(normal.xy, normal.xy));
