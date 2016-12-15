@@ -14,7 +14,6 @@
 #include "GEK/Components/Light.hpp"
 #include "GEK/Components/Color.hpp"
 #include "Passes.hpp"
-#include <unordered_set>
 #include <ppl.h>
 
 namespace Gek
@@ -116,7 +115,6 @@ namespace Gek
 
                 std::unordered_map<String, ResourceHandle> resourceMap;
                 std::unordered_map<String, String> resourceSemanticsMap;
-                std::unordered_set<Engine::Shader *> requiredShaderSet;
 
                 resourceMap[L"screen"] = resources->getResourceHandle(L"screen");
                 resourceMap[L"screenBuffer"] = resources->getResourceHandle(L"screenBuffer");
@@ -144,6 +142,7 @@ namespace Gek
                         {
                             String textureSource(textureValue.get(L"source").as_string());
                             resources->getShader(textureSource, MaterialHandle());
+                            resources->getFilter(textureSource);
                             resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
                         }
                         else if (textureValue.has_member(L"file"))
@@ -239,7 +238,8 @@ namespace Gek
                         if (bufferValue.has_member(L"source"))
                         {
                             String bufferSource(bufferValue.get(L"source").as_string());
-                            requiredShaderSet.insert(resources->getShader(bufferSource, MaterialHandle()));
+                            resources->getShader(bufferSource, MaterialHandle());
+                            resources->getFilter(bufferSource);
                             resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", bufferName, bufferSource));
                         }
                         else

@@ -30,10 +30,15 @@ namespace Gek
 
                 const JSON::Object materialNode = JSON::Load(getContext()->getFileName(L"data\\materials", materialName).append(L".json"));
 
-                auto &shaderNode = materialNode[L"shader"];
+                if (!materialNode.has_member(L"shader"))
+                {
+                    throw InvalidParameter("Missing shader node encountered");
+                }
+
+                auto &shaderNode = materialNode.get(L"shader");
                 if (!shaderNode.is_object())
                 {
-                    throw InvalidParameter("Shader block must be an object");
+                    throw InvalidParameter("Shader node must be an object");
                 }
 
                 if (!shaderNode.has_member(L"name"))
@@ -91,21 +96,17 @@ namespace Gek
 
                                 if (resourceNode.has_member(L"file"))
                                 {
-                                    String resourceFileName(resourceNode[L"file"].as_string());
+                                    String resourceFileName(resourceNode.get(L"file").as_string());
                                     uint32_t flags = getTextureLoadFlags(resourceNode.get(L"flags", L"0").as_string());
                                     resourceHandle = resources->loadTexture(resourceFileName, flags);
                                 }
-                                else if (resourceNode.has_member(L"pattern"))
+                                else if (resourceNode.has_member(L"source"))
                                 {
-                                    resourceHandle = resources->createPattern(resourceNode[L"pattern"].as_cstring(), resourceNode[L"parameters"].as_cstring());
-                                }
-                                else if (resourceNode.has_member(L"name"))
-                                {
-                                    resourceHandle = resources->getResourceHandle(resourceNode[L"name"].as_cstring());
+                                    resourceHandle = resources->getResourceHandle(resourceNode.get(L"source").as_cstring());
                                 }
                                 else
                                 {
-                                    throw InvalidParameter("Resource list must have a filename, pattern, or reference value");
+                                    throw InvalidParameter("Resource list must have a filename or source value");
                                 }
                             }
 
