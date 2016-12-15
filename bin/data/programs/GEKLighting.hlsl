@@ -1,6 +1,6 @@
 namespace Defines
 {
-    static const bool useHalfLambert = true;
+    static const bool UseHalfLambert = true;
 }; // namespace Defines
 
 float getFalloff(float distance, float range)
@@ -76,7 +76,7 @@ float3 getSurfaceIrradiance(
     float LdotN = saturate(dot(surfaceNormal, lightDirection));
 
     float lambert;
-    if (Defines::useHalfLambert)
+    if (Defines::UseHalfLambert)
     {
         // http://developer.valvesoftware.com/wiki/Half_Lambert
         float halfLdotN = ((dot(surfaceNormal, lightDirection) * 0.5) + 0.5);

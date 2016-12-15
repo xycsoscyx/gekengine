@@ -403,6 +403,7 @@ namespace Gek
 
             concurrency::concurrent_unordered_map<MaterialHandle, ShaderHandle> materialShaderMap;
             concurrency::concurrent_unordered_map<ResourceHandle, Video::Texture::Description> textureDescriptionMap;
+            concurrency::concurrent_unordered_map<ResourceHandle, Video::Buffer::Description> bufferDescriptionMap;
 
             struct Validate
             {
@@ -789,13 +790,38 @@ namespace Gek
             {
                 GEK_REQUIRE(textureName);
 
-                auto load = [this, textureName = String(textureName), flags](ResourceHandle)->Video::TexturePtr
+                // iterate over formats in case the texture name has no extension
+                static const String formatList[] =
                 {
-                    return loadTextureData(textureName, flags);
+                    L"",
+                    L".dds",
+                    L".tga",
+                    L".png",
+                    L".jpg",
+                    L".bmp",
                 };
 
-                auto hash = GetHash(textureName);
-                return dynamicCache.getHandle(hash, flags, std::move(load));
+                String baseFileName(getContext()->getFileName(L"data\\textures", textureName));
+                for (auto &format : formatList)
+                {
+                    String fileName(baseFileName);
+                    fileName.append(format);
+
+                    if (FileSystem::IsFile(fileName))
+                    {
+                        auto load = [this, textureName = String(textureName), fileName = String(fileName), flags](ResourceHandle)->Video::TexturePtr
+                        {
+                            return loadTextureData(textureName, flags);
+                        };
+
+                        auto hash = GetHash(textureName);
+                        auto resource = dynamicCache.getHandle(hash, flags, std::move(load));
+                        textureDescriptionMap[resource] = videoDevice->loadTextureDescription(fileName);
+                        return resource;
+                    }
+                }
+
+                return ResourceHandle();
             }
 
             ResourceHandle createPattern(const wchar_t *pattern, const JSON::Object &parameters)
@@ -843,7 +869,9 @@ namespace Gek
 
                 auto hash = GetHash(bufferName);
                 auto parameters = GetStructHash(description);
-                return dynamicCache.getHandle(hash, parameters, std::move(load));
+                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
+                bufferDescriptionMap[resource] = description;
+                return resource;
             }
 
             ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
@@ -861,7 +889,9 @@ namespace Gek
 
                 auto hash = GetHash(bufferName);
                 auto parameters = reinterpret_cast<std::size_t>(staticData.data());
-                return dynamicCache.getHandle(hash, parameters, std::move(load));
+                auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
+                bufferDescriptionMap[resource] = description;
+                return resource;
             }
 
             void setIndexBuffer(Video::Device::Context *videoContext, ResourceHandle resourceHandle, uint32_t offset)
@@ -1014,6 +1044,7 @@ namespace Gek
             void clear(void)
             {
                 textureDescriptionMap.clear();
+                bufferDescriptionMap.clear();
                 loadPool.clear();
                 materialShaderMap.clear();
                 programCache.clear();
@@ -1096,6 +1127,19 @@ namespace Gek
             {
                 auto descriptionSearch = textureDescriptionMap.find(resourceHandle);
                 if (descriptionSearch != textureDescriptionMap.end())
+                {
+                    return &descriptionSearch->second;
+                }
+                else
+                {
+                    return nullptr;
+                }
+            }
+
+            Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle)
+            {
+                auto descriptionSearch = bufferDescriptionMap.find(resourceHandle);
+                if (descriptionSearch != bufferDescriptionMap.end())
                 {
                     return &descriptionSearch->second;
                 }

@@ -226,11 +226,12 @@ namespace Gek
                             throw ResourceAlreadyListed("Buffer name same as already listed resource");
                         }
 
+                        ResourceHandle resource;
                         if (bufferValue.has_member(L"source"))
                         {
                             String bufferSource(bufferValue.get(L"source").as_string());
                             requiredShaderSet.insert(resources->getShader(bufferSource, MaterialHandle()));
-                            resourceMap[bufferName] = resources->getResourceHandle(String::Format(L"%v:%v:resource", bufferName, bufferSource));
+                            resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", bufferName, bufferSource));
                         }
                         else
                         {
@@ -257,17 +258,7 @@ namespace Gek
                                 description.flags = flags;
                                 description.type = Video::Buffer::Description::Type::Structured;
                                 description.stride = evaluate(bufferValue.get(L"stride"));
-                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
-                                resourceSemanticsMap[bufferName].format(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
-                            }
-                            else if (bufferValue.has_member(L"stride"))
-                            {
-                                Video::Buffer::Description description;
-                                description.count = count;
-                                description.flags = flags;
-                                description.type = Video::Buffer::Description::Type::Structured;
-                                description.stride = evaluate(bufferValue.get(L"stride"));
-                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
+                                resource = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
                             }
                             else if (bufferValue.has_member(L"format"))
                             {
@@ -276,20 +267,29 @@ namespace Gek
                                 description.flags = flags;
                                 description.type = Video::Buffer::Description::Type::Raw;
                                 description.format = Video::getFormat(bufferValue.get(L"format").as_string());
-                                resourceMap[bufferName] = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
-
-                                if (bufferValue.get(L"byteaddress", false).as_bool())
-                                {
-                                    resourceSemanticsMap[bufferName] = L"ByteAddressBuffer";
-                                }
-                                else
-                                {
-                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", getFormatSemantic(description.format));
-                                }
+                                resource = resources->createBuffer(String::Format(L"%v:%v:buffer", bufferName, filterName), description);
                             }
                             else
                             {
                                 throw MissingParameter("Buffer must be either be fixed format or structured, or referenced from another shader");
+                            }
+
+                            resourceMap[bufferName] = resource;
+                            auto description = resources->getBufferDescription(resource);
+                            if (description)
+                            {
+                                if (bufferValue.get(L"byteaddress", false).as_bool())
+                                {
+                                    resourceSemanticsMap[bufferName] = L"ByteAddressBuffer";
+                                }
+                                else if (bufferValue.has_member(L"structure"))
+                                {
+                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
+                                }
+                                else
+                                {
+                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", getFormatSemantic(description->format));
+                                }
                             }
                         }
                     }

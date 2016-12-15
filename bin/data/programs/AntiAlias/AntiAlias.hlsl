@@ -5,9 +5,9 @@
 
 namespace Defines
 {
-    static const float reduceMinimum = 1.0 / 128.0;
-    static const float reduceMultiplier = 1.0 / 8.0;
-    static const float spanMaximum = 8.0;
+    static const float ReduceMinimum = 1.0 / 128.0;
+    static const float ReduceMultiplier = 1.0 / 8.0;
+    static const float SpanMaximum = 8.0;
 }; // namespace Defines
 
 // https://github.com/mattdesl/glsl-fxaa
@@ -32,10 +32,10 @@ float3 mainPixelProgram(InputPixel inputPixel) : SV_TARGET0
     float2 direection;
     direection.x = -((luminanceNW + luminanceNE) - (luminanceSW + luminanceSE));
     direection.y = ((luminanceNW + luminanceSW) - (luminanceNE + luminanceSE));
-    const float dirReduce = max((luminanceNW + luminanceNE + luminanceSW + luminanceSE) * (0.25 * Defines::reduceMultiplier), Defines::reduceMinimum);
+    const float dirReduce = max((luminanceNW + luminanceNE + luminanceSW + luminanceSE) * (0.25 * Defines::ReduceMultiplier), Defines::ReduceMinimum);
 
     const float recipricalDirection = 1.0 / (min(abs(direection.x), abs(direection.y)) + dirReduce);
-    direection = min(Defines::spanMaximum, max(-Defines::spanMaximum, direection * recipricalDirection)) * Shader::TargetPixelSize;
+    direection = min(Defines::SpanMaximum, max(-Defines::SpanMaximum, direection * recipricalDirection)) * Shader::TargetPixelSize;
 
     float3 colorA = Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord + direection * (1.0 / 3.0 - 0.5), 0);
     colorA += Resources::screenBuffer.SampleLevel(Global::PointSampler, inputPixel.texCoord + direection * (2.0 / 3.0 - 0.5), 0);

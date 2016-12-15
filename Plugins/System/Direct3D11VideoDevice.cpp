@@ -2671,6 +2671,56 @@ namespace Gek
                 return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
             }
 
+            Texture::Description loadTextureDescription(const wchar_t *fileName)
+            {
+                std::vector<uint8_t> buffer;
+                FileSystem::Load(fileName, buffer, 1024 * 4);
+
+                String extension(FileSystem::GetExtension(fileName));
+                std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
+                if (extension.compareNoCase(L".dds") == 0)
+                {
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromDDSMemory(buffer.data(), buffer.size(), 0, metadata); };
+                }
+                else if (extension.compareNoCase(L".tga") == 0)
+                {
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromTGAMemory(buffer.data(), buffer.size(), metadata); };
+                }
+                else if (extension.compareNoCase(L".png") == 0)
+                {
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, metadata); };
+                }
+                else if (extension.compareNoCase(L".bmp") == 0)
+                {
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, metadata); };
+                }
+                else if (extension.compareNoCase(L".jpg") == 0 ||
+                    extension.compareNoCase(L".jpeg") == 0)
+                {
+                    getMetadata = [](const std::vector<uint8_t> &buffer, ::DirectX::TexMetadata &metadata) -> HRESULT { return ::DirectX::GetMetadataFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, metadata); };
+                }
+
+                if (!getMetadata)
+                {
+                    throw Video::InvalidFileType("Unknown texture extension encountered");
+                }
+
+                ::DirectX::TexMetadata metadata;
+                HRESULT resultValue = getMetadata(buffer, metadata);
+                if (FAILED(resultValue))
+                {
+                    throw Video::LoadFileFailed("Unable to get metadata from file");
+                }
+
+                Texture::Description description;
+                description.width = metadata.width;
+                description.height = metadata.height;
+                description.depth = metadata.depth;
+                description.mipMapCount = metadata.mipLevels;
+                description.format = DirectX::getFormat(metadata.format);
+                return description;
+            }
+
             void executeCommandList(Video::Object *commandList)
             {
                 GEK_REQUIRE(d3dDeviceContext);

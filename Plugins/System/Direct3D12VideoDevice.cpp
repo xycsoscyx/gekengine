@@ -938,6 +938,11 @@ namespace Gek
                 return std::make_shared<ViewTexture>(Video::Texture::Description());
             }
 
+            Texture::Description loadTextureDescription(const wchar_t *fileName)
+            {
+                return Texture::Description();
+            }
+
             void executeCommandList(Video::Object *commandList)
             {
             }

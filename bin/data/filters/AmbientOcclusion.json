@@ -30,7 +30,7 @@
         {
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
-            "engineData": "static const float2 blurAxis = float2(1,0);",
+            "engineData": "namespace Defines { static const float2 BlurAxis = float2(1,0); };",
             "resources": [
                 "depthBuffer",
                 { "ambientBuffer": "inputBuffer" }
@@ -42,7 +42,7 @@
         {
             "program": "AmbientBlur",
             "entry": "mainPixelProgram",
-            "engineData": "static const float2 blurAxis = float2(0,1);",
+            "engineData": "namespace Defines { static const float2 BlurAxis = float2(0,1); };",
             "resources": [
                 "depthBuffer",
                 { "gaussianBuffer": "inputBuffer" }

@@ -85,6 +85,7 @@ namespace Gek
             virtual Filter * const getFilter(const wchar_t *filterName) = 0;
 
             virtual Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle) = 0;
+            virtual Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle) = 0;
 
             virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
             virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
