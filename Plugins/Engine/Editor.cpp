@@ -57,8 +57,8 @@ namespace Gek
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
                 String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
-                deleteTexture = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
-                populationButton = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
+                deleteTexture = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
+                populationButton = core->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
 
                 core->getPanelManager()->getPane(ImGui::PanelManager::RIGHT)->addButtonAndWindow(
                     ImGui::Toolbutton("Population", (Video::Object *)populationButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
@@ -230,7 +230,7 @@ namespace Gek
                                         viewMatrix.translation.xyz = position;
                                         viewMatrix.invert();
 
-                                        const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                                        const auto backBuffer = core->getVideoDevice()->getBackBuffer();
                                         const float width = float(backBuffer->getDescription().width);
                                         const float height = float(backBuffer->getDescription().height);
                                         auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
@@ -313,7 +313,7 @@ namespace Gek
                     viewMatrix.translation.xyz = position;
                     viewMatrix.invert();
 
-                    const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                    const auto backBuffer = core->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getDescription().width);
                     const float height = float(backBuffer->getDescription().height);
                     auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));

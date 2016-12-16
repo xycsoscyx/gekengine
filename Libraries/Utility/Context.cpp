@@ -3,8 +3,8 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include <Windows.h>
 #include <unordered_map>
+#include <Windows.h>
 #include <list>
 
 namespace Gek
@@ -111,4 +111,4 @@ namespace Gek
     {
         return std::make_shared<ContextImplementation>(rootPath, searchPathList);
     }
-};
+}; // namespace Gek

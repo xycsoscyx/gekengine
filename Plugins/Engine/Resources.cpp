@@ -410,7 +410,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Resources, Plugin::Core *, Video::Device *)
+        GEK_CONTEXT_USER(Resources, Plugin::Core *)
             , public Engine::Resources
             , public ResourceRequester
         {
@@ -459,10 +459,10 @@ namespace Gek
             Validate dispatchValid;
 
         public:
-            Resources(Context *context, Plugin::Core *core, Video::Device *videoDevice)
+            Resources(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , videoDevice(videoDevice)
+                , videoDevice(core->getVideoDevice())
                 , programCache(this)
                 , visualCache(this)
                 , materialCache(this)

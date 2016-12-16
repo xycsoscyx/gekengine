@@ -29,7 +29,7 @@ namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Renderer, Plugin::Core *, Video::Device *, Plugin::Population *, Engine::Resources *)
+        GEK_CONTEXT_USER(Renderer, Plugin::Core *)
             , public Plugin::Renderer
         {
         public:
@@ -184,12 +184,12 @@ namespace Gek
             RenderCall currentRenderCall;
 
         public:
-            Renderer(Context *context, Plugin::Core *core, Video::Device *videoDevice, Plugin::Population *population, Engine::Resources *resources)
+            Renderer(Context *context, Plugin::Core *core)
                 : ContextRegistration(context)
                 , core(core)
-                , videoDevice(videoDevice)
-                , population(population)
-                , resources(resources)
+                , videoDevice(core->getVideoDevice())
+                , population(core->getPopulation())
+                , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
                 , threadPool(3)
             {
                 core->log(L"Renderer", Plugin::Core::LogType::Message, L"Initializing rendering system components");
@@ -613,11 +613,6 @@ namespace Gek
             }
 
             // Renderer
-            Video::Device * getVideoDevice(void) const
-            {
-                return videoDevice;
-            }
-
             void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *videoContext)> &&draw)
             {
                 if (plugin && material && draw)
@@ -984,7 +979,7 @@ namespace Gek
                         }
 
                         videoContext->vertexPipeline()->setProgram(deferredVertexProgram.get());
-                        for (auto &filterName : { L"ambientocclusion", L"tonemap", L"antialias" })
+                        for (auto &filterName : { L"tonemap", L"antialias" })
                         {
                             Engine::Filter * const filter = resources->getFilter(filterName);
                             if (filter)

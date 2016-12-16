@@ -130,7 +130,7 @@ namespace Gek
             {
                 if (!cameraComponent.target.empty())
                 {
-                    auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                    auto backBuffer = core->getVideoDevice()->getBackBuffer();
                     Video::Texture::Description description;
                     description.format = Video::Format::R8G8B8A8_UNORM_SRGB;
                     description.width = backBuffer->getDescription().width;
@@ -187,7 +187,7 @@ namespace Gek
                 {
                     auto viewMatrix(transformComponent.getMatrix().getInverse());
 
-                    const auto backBuffer = renderer->getVideoDevice()->getBackBuffer();
+                    const auto backBuffer = core->getVideoDevice()->getBackBuffer();
                     const float width = float(backBuffer->getDescription().width);
                     const float height = float(backBuffer->getDescription().height);
                     Math::Float4x4 projectionMatrix(Math::Float4x4::MakePerspective(cameraComponent.fieldOfView, (width / height), cameraComponent.nearClip, cameraComponent.farClip));

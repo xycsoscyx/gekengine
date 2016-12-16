@@ -134,6 +134,7 @@ namespace Gek
         };
 
     private:
+        Video::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
         Plugin::Resources *resources = nullptr;
         Plugin::Renderer *renderer = nullptr;
@@ -147,11 +148,13 @@ namespace Gek
     public:
         ModelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
+            , videoDevice(core->getVideoDevice())
             , population(core->getPopulation())
             , resources(core->getResources())
             , renderer(core->getRenderer())
             , loadPool(1)
         {
+            GEK_REQUIRE(videoDevice);
             GEK_REQUIRE(population);
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
@@ -171,7 +174,7 @@ namespace Gek
             description.count = 1;
             description.type = Video::Buffer::Description::Type::Constant;
             description.flags = Video::Buffer::Description::Flags::Mappable;
-            constantBuffer = renderer->getVideoDevice()->createBuffer(description);
+            constantBuffer = videoDevice->createBuffer(description);
         }
 
         ~ModelProcessor(void)
@@ -319,10 +322,10 @@ namespace Gek
                         renderer->queueDrawCall(visual, (material.skin ? data.skin : material.material), std::move([this, modelViewMatrix, material](Video::Device::Context *videoContext) -> void
                         {
                             Math::Float4x4 *constantData = nullptr;
-                            if (renderer->getVideoDevice()->mapBuffer(constantBuffer.get(), constantData))
+                            if (videoDevice->mapBuffer(constantBuffer.get(), constantData))
                             {
                                 memcpy(constantData, &modelViewMatrix, sizeof(Math::Float4x4));
-                                renderer->getVideoDevice()->unmapBuffer(constantBuffer.get());
+                                videoDevice->unmapBuffer(constantBuffer.get());
 
                                 videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 4);
                                 resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);

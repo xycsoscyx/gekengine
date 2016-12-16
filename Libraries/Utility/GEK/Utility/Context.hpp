@@ -32,6 +32,12 @@ namespace Gek
 
         virtual const wchar_t *getRootPath(void) const = 0;
 
+        template <typename... PARAMETERS>
+        String getRootFileName(PARAMETERS... nameList)
+        {
+            return FileSystem::GetFileName(getRootPath(), { nameList... });
+        }
+
         virtual ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const = 0;
 
         template <typename TYPE, typename... PARAMETERS>
@@ -44,12 +50,5 @@ namespace Gek
         }
 
         virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const = 0;
-
-        template <typename... PARAMETERS>
-        String getRootFileName(PARAMETERS... nameList)
-        {
-            return FileSystem::GetFileName(getRootPath(), { nameList... });
-        }
-
     };
 }; // namespace Gek

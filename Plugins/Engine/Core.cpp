@@ -4,7 +4,6 @@
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/System/AudioDevice.hpp"
 #include "GEK/Engine/Application.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Population.hpp"
@@ -184,8 +183,8 @@ namespace Gek
 
                 setDisplayMode(currentDisplayMode);
                 population = getContext()->createClass<Plugin::Population>(L"Engine::Population", (Plugin::Core *)this);
-                resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this, videoDevice.get());
-                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this, videoDevice.get(), getPopulation(), resources.get());
+                resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this);
+                renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
 
                 log(L"Core", LogType::Message, L"Loading processor plugins");
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
@@ -422,7 +421,7 @@ namespace Gek
 
             void drawConsole(ImGui::PanelManagerWindowData &windowData)
             {
-                auto listBoxSize = (windowData.size - ImGui::GetStyle().WindowPadding);
+                auto listBoxSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
                 listBoxSize.y -= ImGui::GetTextLineHeightWithSpacing();
                 if (ImGui::ListBoxHeader("##empty", listBoxSize))
                 {
@@ -469,7 +468,6 @@ namespace Gek
 
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
-                ImGui::Text("%.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
@@ -550,6 +548,11 @@ namespace Gek
             bool isEditorActive(void) const
             {
                 return editorActive;
+            }
+
+            Video::Device * getVideoDevice(void) const
+            {
+                return videoDevice.get();
             }
 
             Plugin::Population * getPopulation(void) const

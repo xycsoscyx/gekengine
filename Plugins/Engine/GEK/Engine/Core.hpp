@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
+#include "GEK/System/VideoDevice.hpp"
 #include <nano_signal_slot.hpp>
 #include <Windows.h>
 #include <imgui.h>
@@ -49,6 +50,8 @@ namespace Gek
 
             virtual void setEditorState(bool enabled) = 0;
             virtual bool isEditorActive(void) const = 0;
+
+            virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;
             virtual Plugin::Resources * getResources(void) const = 0;
