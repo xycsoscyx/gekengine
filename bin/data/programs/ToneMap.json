@@ -6,6 +6,9 @@
             "mipmaps": 0
         }
     },
+    "options": {
+
+    },
     "buffers": {
         "averageLuminanceBuffer": {
             "format": "R32_FLOAT",
