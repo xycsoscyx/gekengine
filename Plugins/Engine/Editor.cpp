@@ -56,7 +56,7 @@ namespace Gek
                 population->onAction.connect<Editor, &Editor::onAction>(this);
                 population->onUpdate[90].connect<Editor, &Editor::onUpdate>(this);
 
-                String baseFileName(getContext()->getFileName(L"data\\gui"));
+                String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
                 deleteTexture = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"delete.png"), 0);
                 populationButton = core->getRenderer()->getVideoDevice()->loadTexture(FileSystem::GetFileName(baseFileName, L"population.png"), 0);
 

@@ -43,25 +43,33 @@ namespace Gek
         return 0;
     }
 
-    template <typename STRUCT>
-    size_t GetStructHash(const STRUCT &data)
-    {
-        const uint8_t *rawData = (const uint8_t *)&data;
-        size_t hash = GetHash(rawData[0]);
-        size_t size = sizeof(STRUCT);
-        for (size_t index = 1; index < size; index++)
-        {
-            hash = CombineHashes(hash, GetHash(rawData[index]));
-        }
-
-        return hash;
-    }
-
     template <typename TYPE, typename... PARAMETERS>
     size_t GetHash(const TYPE &value, const PARAMETERS&... arguments)
     {
         size_t seed = std::hash<TYPE>()(value);
         size_t remainder = GetHash(arguments...);
         return CombineHashes(seed, remainder);
+    }
+
+    template <typename STRUCT>
+    size_t GetStructHash(const STRUCT &data)
+    {
+        size_t hash = 0;
+
+        size_t remainder = (sizeof(STRUCT) % 4);
+        const uint8_t *rawBytes = (const uint8_t *)&data;
+        for (size_t index = 0; index < remainder; index++)
+        {
+            hash = CombineHashes(hash, GetHash(rawBytes++));
+        }
+
+        size_t size = (sizeof(STRUCT) / 4);
+        const uint32_t *rawIntegers = (const uint32_t *)rawBytes;
+        for (size_t index = 0; index < size; index++)
+        {
+            hash = CombineHashes(hash, GetHash(rawIntegers++));
+        }
+
+        return hash;
     }
 };

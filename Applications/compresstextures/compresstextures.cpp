@@ -182,13 +182,13 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
 #ifdef _DEBUG
 		SetCurrentDirectory(FileSystem::GetFileName(rootPath, L"Debug"));
-		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Debug\\Plugins"));
+		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Debug", L"Plugins"));
 #else
 		SetCurrentDirectory(FileSystem::GetFileName(rootPath, L"Release"));
-		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Release\\Plugins"));
+		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Release", L"Plugins"));
 #endif
 
-		String texturesPath(FileSystem::GetFileName(rootPath, L"Data\\Textures").getLower());
+		String texturesPath(FileSystem::GetFileName(rootPath, L"Data", L"Textures").getLower());
 
 		WNDCLASS windowClass;
 		windowClass.style = 0;

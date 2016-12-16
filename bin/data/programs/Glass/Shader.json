@@ -65,7 +65,8 @@
     },
     "textures": {
         "depthBuffer": {
-            "source": "solid"
+            "external": "shader",
+            "name":  "solid"
         },
         "glassBuffer": {
             "format": "R11G11B10_FLOAT",

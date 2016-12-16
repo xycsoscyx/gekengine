@@ -1,10 +1,12 @@
 {
     "textures": {
         "depthBuffer": {
-            "source": "solid"
+            "external": "shader",
+            "name":  "solid"
         },
         "normalBuffer": {
-            "source": "solid"
+            "external": "shader",
+            "name":  "solid"
         },
         "ambientBuffer": {
             "format": "R8_UNORM",

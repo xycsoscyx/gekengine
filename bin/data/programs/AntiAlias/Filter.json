@@ -1,7 +1,8 @@
 {
     "textures": {
         "depthBuffer": {
-            "source": "Solid"
+            "external": "shader",
+            "name":  "solid"
         }
     },
     "passes": [

@@ -46,7 +46,7 @@ namespace Gek
         virtual void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const = 0;
 
         template <typename... PARAMETERS>
-        String getFileName(PARAMETERS... nameList)
+        String getRootFileName(PARAMETERS... nameList)
         {
             return FileSystem::GetFileName(getRootPath(), { nameList... });
         }

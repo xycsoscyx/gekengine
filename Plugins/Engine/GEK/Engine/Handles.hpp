@@ -8,13 +8,14 @@
 #pragma once
 
 #include "GEK/Utility/Hash.hpp"
+#include <atomic>
 
 namespace Gek
 {
     template <typename TYPE, uint8_t UNIQUE>
     struct Handle
     {
-        TYPE identifier = 0;
+        TYPE identifier;
 
         Handle(uint32_t identifier = 0)
             : identifier(TYPE(identifier))
@@ -28,7 +29,7 @@ namespace Gek
 
         operator std::size_t() const
         {
-            return identifier;
+            return identifier.load();
         }
 
         bool operator == (const typename Handle<TYPE, UNIQUE> &handle) const

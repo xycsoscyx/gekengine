@@ -101,7 +101,7 @@ namespace Gek
 
                 try
                 {
-                    configuration = JSON::Load(getContext()->getFileName(L"config.json"));
+                    configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
                     log(L"Core", LogType::Message, L"Configuration loaded");
                 }
                 catch (const std::exception &)
@@ -151,7 +151,7 @@ namespace Gek
                     displayModeStringList.push_back(displayModeString);
                 }
 
-                String baseFileName(getContext()->getFileName(L"data\\gui"));
+                String baseFileName(getContext()->getRootFileName(L"data", L"gui"));
                 gui->consoleButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"console.png"), 0);
                 gui->performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
                 gui->settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
@@ -392,7 +392,7 @@ namespace Gek
                 resources = nullptr;
                 population = nullptr;
                 videoDevice = nullptr;
-                JSON::Save(getContext()->getFileName(L"config.json"), configuration);
+                JSON::Save(getContext()->getRootFileName(L"config.json"), configuration);
                 CoUninitialize();
             }
 

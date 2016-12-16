@@ -35,6 +35,8 @@ namespace Gek
 
         GEK_INTERFACE(ResourceRequester)
         {
+            virtual void log(const wchar_t *system, Plugin::Core::LogType logType, const wchar_t *message) = 0;
+
             virtual void addRequest(std::function<void(void)> &&load) = 0;
         };
 
@@ -275,7 +277,18 @@ namespace Gek
                     auto &resource = std::atomic_load(&resourceSearch.second);
                     if (resource)
                     {
-                        resource->reload();
+                        try
+                        {
+                            resource->reload();
+                        }
+                        catch (const std::exception &exception)
+                        {
+                            resources->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"Error occurred trying to reload an external resource: %v", exception.what()));
+                        }
+                        catch (...)
+                        {
+                            resources->log(L"Resources", Plugin::Core::LogType::Error, L"Unknown error occurred trying to reload an external resource");
+                        };
                     }
                 }
             }
@@ -302,8 +315,19 @@ namespace Gek
                     requestedLoadSet.insert(hash);
                     HANDLE handle = getNextHandle();
                     resourceHandleMap[hash] = handle;
-                    setResource(handle, load(handle));
-                    return std::make_pair(true, handle);
+                    try
+                    {
+                        setResource(handle, load(handle));
+                        return std::make_pair(true, handle);
+                    }
+                    catch (const std::exception &exception)
+                    {
+                        resources->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"Error occurred trying to load an external resource: %v", exception.what()));
+                    }
+                    catch (...)
+                    {
+                        resources->log(L"Resources", Plugin::Core::LogType::Error, L"Unknown error occurred trying to load an external resource");
+                    };
                 }
 
                 return std::make_pair(false, HANDLE());
@@ -485,7 +509,7 @@ namespace Gek
                     L".bmp",
                 };
 
-                String baseFileName(getContext()->getFileName(L"data\\textures", textureName));
+                String baseFileName(getContext()->getRootFileName(L"data", L"textures", textureName));
                 for (auto &format : formatList)
                 {
                     String fileName(baseFileName);
@@ -507,7 +531,7 @@ namespace Gek
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(engineData);
 
-                String rootProgramsDirectory(getContext()->getFileName(L"data\\programs"));
+                String rootProgramsDirectory(getContext()->getRootFileName(L"data", L"programs"));
                 String fileName(FileSystem::GetFileName(rootProgramsDirectory, name));
                 if (FileSystem::IsFile(fileName))
                 {
@@ -606,6 +630,11 @@ namespace Gek
             }
 
             // ResourceRequester
+            void log(const wchar_t *system, Plugin::Core::LogType logType, const wchar_t *message)
+            {
+                core->log(system, logType, message);
+            }
+
             void addRequest(std::function<void(void)> &&load)
             {
                 loadPool.enqueue([this, load = move(load)](void) -> void
@@ -616,7 +645,7 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"error occurred trying to load an external resource: %v", exception.what()));
+                        core->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"Error occurred trying to load an external resource: %v", exception.what()));
                     }
                     catch (...)
                     {
@@ -667,7 +696,7 @@ namespace Gek
                     L".bmp",
                 };
 
-                String baseFileName(getContext()->getFileName(L"data\\textures", textureName));
+                String baseFileName(getContext()->getRootFileName(L"data", L"textures", textureName));
                 for (auto &format : formatList)
                 {
                     String fileName(baseFileName);
@@ -684,7 +713,8 @@ namespace Gek
                         auto resource = dynamicCache.getHandle(hash, flags, std::move(load));
                         if (resource.first)
                         {
-                            textureDescriptionMap[resource.second] = videoDevice->loadTextureDescription(fileName);
+                            auto description = videoDevice->loadTextureDescription(fileName);
+                            textureDescriptionMap.insert(std::make_pair(resource.second, description));
                         }
 
                         return resource.second;
@@ -828,7 +858,7 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, 0, std::move(load));
                 if (resource.first)
                 {
-                    textureDescriptionMap[resource.second] = description;
+                    textureDescriptionMap.insert(std::make_pair(resource.second, description));
                 }
 
                 return resource.second;
@@ -850,7 +880,7 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
                 if (resource.first)
                 {
-                    textureDescriptionMap[resource.second] = description;
+                    textureDescriptionMap.insert(std::make_pair(resource.second, description));
                 }
 
                 return resource.second;
@@ -873,7 +903,7 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
                 if (resource.first)
                 {
-                    bufferDescriptionMap[resource.second] = description;
+                    bufferDescriptionMap.insert(std::make_pair(resource.second, description));
                 }
 
                 return resource.second;
@@ -897,7 +927,7 @@ namespace Gek
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
                 if (resource.first)
                 {
-                    bufferDescriptionMap[resource.second] = description;
+                    bufferDescriptionMap.insert(std::make_pair(resource.second, description));
                 }
 
                 return resource.second;
@@ -1110,7 +1140,7 @@ namespace Gek
 
                 auto hash = GetHash(shaderName);
                 auto resource = shaderCache.getHandle(hash, std::move(load));
-                if (material)
+                if (material && resource.second)
                 {
                     materialShaderMap[material] = resource.second;
                 }
@@ -1168,7 +1198,7 @@ namespace Gek
 
                 auto hash = GetHash(uncompiledProgram);
                 auto cache = String::Format(L".%v.bin", hash);
-                String cacheFileName(FileSystem::ReplaceExtension(getContext()->getFileName(L"data\\cache", name), cache));
+                String cacheFileName(FileSystem::ReplaceExtension(getContext()->getRootFileName(L"data", L"cache", name), cache));
 
 				std::vector<uint8_t> compiledProgram;
                 if (FileSystem::IsFile(cacheFileName))
@@ -1180,7 +1210,7 @@ namespace Gek
                 {
 #ifdef _DEBUG
 					auto debug = String::Format(L".%v.hlsl", hash);
-					String debugFileName(FileSystem::ReplaceExtension(getContext()->getFileName(L"data\\cache", name), debug));
+					String debugFileName(FileSystem::ReplaceExtension(getContext()->getRootFileName(L"data", L"cache", name), debug));
 					FileSystem::Save(debugFileName, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);

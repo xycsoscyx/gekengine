@@ -114,7 +114,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                const JSON::Object shaderNode = JSON::Load(getContext()->getFileName(L"data\\shaders", shaderName).append(L".json"));
+                const JSON::Object shaderNode = JSON::Load(getContext()->getRootFileName(L"data", L"programs", shaderName, L"shader.json"));
                 if (!shaderNode.has_member(L"passes"))
                 {
                     throw MissingParameter("Shader requires pass list");
@@ -270,20 +270,38 @@ namespace Gek
                         }
 
                         ResourceHandle resource;
-                        if (textureValue.has_member(L"source"))
+                        if (textureValue.has_member(L"external"))
                         {
-                            String textureSource(textureValue.get(L"source").as_string());
-                            auto requiredShader = resources->getShader(textureSource, MaterialHandle());
-                            if (requiredShader)
+                            if (!textureValue.has_member(L"name"))
                             {
-                                requiredShaderSet.insert(resources->getShader(textureSource, MaterialHandle()));
-                                resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
+                                throw MissingParameter("External texture requires a name");
                             }
-                        }
-                        else if (textureValue.has_member(L"file"))
-                        {
-                            uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
-                            resource = resources->loadTexture(textureValue.get(L"file").as_cstring(), flags);
+
+                            String externalSource(textureValue.get(L"external").as_string());
+                            String externalName(textureValue.get(L"name").as_string());
+                            if (externalSource.compareNoCase(L"shader") == 0)
+                            {
+                                auto requiredShader = resources->getShader(externalName, MaterialHandle());
+                                if (requiredShader)
+                                {
+                                    requiredShaderSet.insert(resources->getShader(externalName, MaterialHandle()));
+                                    resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, externalName));
+                                }
+                            }
+                            else if (externalSource.compareNoCase(L"filter") == 0)
+                            {
+                                resources->getFilter(externalName);
+                                resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, externalName));
+                            }
+                            else if (externalSource.compareNoCase(L"file") == 0)
+                            {
+                                uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
+                                resource = resources->loadTexture(externalName, flags);
+                            }
+                            else
+                            {
+                                throw InvalidParameter("Unknown source for external texture");
+                            }
                         }
                         else if (textureValue.has_member(L"format"))
                         {

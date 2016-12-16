@@ -94,7 +94,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                const JSON::Object filterNode = JSON::Load(getContext()->getFileName(L"data\\filters", filterName).append(L".json"));
+                const JSON::Object filterNode = JSON::Load(getContext()->getRootFileName(L"data", L"programs", filterName, L"filter.json"));
                 if (!filterNode.has_member(L"passes"))
                 {
                     throw MissingParameter("Shader requiredspass list");
@@ -138,12 +138,34 @@ namespace Gek
                         }
 
                         ResourceHandle resource;
-                        if (textureValue.has_member(L"source"))
+                        if (textureValue.has_member(L"external"))
                         {
-                            String textureSource(textureValue.get(L"source").as_string());
-                            resources->getShader(textureSource, MaterialHandle());
-                            resources->getFilter(textureSource);
-                            resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, textureSource));
+                            if (!textureValue.has_member(L"name"))
+                            {
+                                throw MissingParameter("External texture requires a name");
+                            }
+
+                            String externalSource(textureValue.get(L"external").as_string());
+                            String externalName(textureValue.get(L"name").as_string());
+                            if (externalSource.compareNoCase(L"shader") == 0)
+                            {
+                                resources->getShader(externalName, MaterialHandle());
+                                resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, externalName));
+                            }
+                            else if (externalSource.compareNoCase(L"filter") == 0)
+                            {
+                                resources->getFilter(externalName);
+                                resource = resources->getResourceHandle(String::Format(L"%v:%v:resource", textureName, externalName));
+                            }
+                            else if (externalSource.compareNoCase(L"file") == 0)
+                            {
+                                uint32_t flags = getTextureLoadFlags(textureValue.get(L"flags", L"0").as_string());
+                                resource = resources->loadTexture(externalName, flags);
+                            }
+                            else
+                            {
+                                throw InvalidParameter("Unknown source for external texture");
+                            }
                         }
                         else if (textureValue.has_member(L"file"))
                         {

@@ -161,7 +161,7 @@ namespace Gek
                     onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
-                        const JSON::Object worldNode = JSON::Load(getContext()->getFileName(L"data\\scenes", populationName).append(L".json"));
+                        const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName(L"data", L"scenes", populationName).append(L".json"));
 
                         if (worldNode.has_member(L"Seed"))
                         {
