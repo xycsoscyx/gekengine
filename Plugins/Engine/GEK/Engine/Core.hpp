@@ -44,6 +44,9 @@ namespace Gek
             virtual ~Core(void) = default;
 
             virtual void log(const wchar_t *system, LogType logType, const wchar_t *message) = 0;
+            virtual void beginEvent(const wchar_t *name) = 0;
+            virtual void endEvent(const wchar_t *name) = 0;
+            virtual void addCount(const wchar_t *name, float value) = 0;
 
             virtual JSON::Object &getConfiguration(void) = 0;
             virtual JSON::Object const &getConfiguration(void) const = 0;

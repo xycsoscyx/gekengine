@@ -32,20 +32,25 @@ namespace Gek
         }
         else if (!state && pausedState)
         {
-            auto kTime = clock.now();
-            auto kPaused = (kTime - pausedTime);
-            startTime += kPaused;
+            auto pauseTime = clock.now();
+            auto pauseElapse = (pauseTime - pausedTime);
+            startTime += pauseElapse;
             pausedState = false;
         }
     }
 
     double Timer::getUpdateTime(void) const
     {
-        return (std::chrono::duration<double, std::milli>(currentTime - previousTime).count() * 0.001);
+        return std::chrono::duration<double>(currentTime - previousTime).count();
     }
 
     double Timer::getAbsoluteTime(void) const
     {
-        return (std::chrono::duration<double, std::milli>(currentTime - startTime).count() * 0.001);
+        return std::chrono::duration<double>(currentTime - startTime).count();
+    }
+
+    double Timer::getImmediateTime(void) const
+    {
+        return std::chrono::duration<double>(clock.now().time_since_epoch()).count();
     }
 }; // namespace Gek

@@ -8,7 +8,8 @@
             },
             "PointLight": {
                 "radius": "random(0.5, 2.0)",
-                "range": "random(10, 20)"
+                "range": "random(10, 20)",
+                "intensity": "random(1, 10)"
             },
             "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ]
         },
@@ -21,7 +22,8 @@
                 "range": "random(10, 20)",
                 "innerAngle": "random(30,60)",
                 "outerAngle": "random(75,120)",
-                "coneFalloff": "random(0.5, 4.0)"
+                "coneFalloff": "random(0.5, 4.0)",
+                "intensity": "random(1, 10)"
             },
             "Color": [ "random(0, 1)", "random(0, 1)", "random(0, 1)" ],
             "Spin": { }

@@ -9,7 +9,8 @@
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Renderer.hpp"
-#include <concurrent_queue.h>
+#include <concurrent_unordered_map.h>
+#include <concurrent_vector.h>
 #include <imgui_internal.h>
 #include <queue>
 #include <ppl.h>
@@ -530,6 +531,18 @@ namespace Gek
                 };
             }
 
+            void beginEvent(const wchar_t *name)
+            {
+            }
+
+            void endEvent(const wchar_t *name)
+            {
+            }
+
+            void addCount(const wchar_t *name, float value)
+            {
+            }
+
             JSON::Object &getConfiguration(void)
             {
                 return configuration;
@@ -792,6 +805,8 @@ namespace Gek
 
             bool update(void)
             {
+                beginEvent(__FUNCTIONW__);
+
                 ImGuiIO &imGuiIo = ImGui::GetIO();
 
                 auto backBuffer = videoDevice->getBackBuffer();
@@ -901,6 +916,10 @@ namespace Gek
                 renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
                 ImGui::Render();
                 videoDevice->present(false);
+
+                endEvent(__FUNCTIONW__);
+                addCount(L"Frame Time", timer.getUpdateTime());
+                addCount(L"Frame Rate", 1.0f / timer.getUpdateTime());
 
                 return engineRunning;
             }

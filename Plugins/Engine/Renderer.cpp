@@ -541,7 +541,7 @@ namespace Gek
 
                     auto lightIterator = pointLightList.grow_by(1);
                     PointLightData &lightData = (*lightIterator);
-                    lightData.radiance = colorComponent.value.xyz;
+                    lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                     lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
@@ -560,7 +560,7 @@ namespace Gek
 
                     auto lightIterator = spotLightList.grow_by(1);
                     SpotLightData &lightData = (*lightIterator);
-                    lightData.radiance = colorComponent.value.xyz;
+                    lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                     lightData.position = currentRenderCall.viewMatrix.transform(transformComponent.position);
                     lightData.radius = lightComponent.radius;
                     lightData.range = lightComponent.range;
@@ -704,7 +704,7 @@ namespace Gek
                                     auto &lightComponent = entity->getComponent<Components::DirectionalLight>();
 
                                     DirectionalLightData lightData;
-                                    lightData.radiance = colorComponent.value.xyz;
+                                    lightData.radiance = (colorComponent.value.xyz * lightComponent.intensity);
                                     lightData.direction = currentRenderCall.viewMatrix.rotate(getLightDirection(transformComponent.rotation));
                                     directionalLightList.push_back(lightData);
                                 }

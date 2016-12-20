@@ -77,6 +77,8 @@ namespace Gek
                 ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
             }
 
+            ImGui::Gek::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_ReadOnly);
+
             ImGui::SetCurrentContext(nullptr);
         }
 
@@ -111,7 +113,7 @@ namespace Gek
                     euler.z = Math::RadiansToDegrees(euler.z);
                 }
 
-                if (ImGui::InputFloat3("##RotationEuler", euler.data, 4, ImGuiInputTextFlags_ReadOnly))
+                if (ImGui::InputFloat3("##RotationEuler", euler.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank))
                 {
                     if (!showRadians)
                     {
@@ -125,7 +127,7 @@ namespace Gek
             }
             else
             {
-                ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_ReadOnly);
+                ImGui::InputFloat4("##RotationQuaternion", transformComponent.rotation.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             }
 
             ImGui::Separator();
@@ -139,6 +141,8 @@ namespace Gek
             {
                 currentGizmoOperation = ImGuizmo::ROTATE;
             }
+
+            ImGui::Gek::InputFloat3("Scale", transformComponent.scale.data, 4, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
 
             ImGui::Separator();
             ImGui::Checkbox("Enable Snap", &useSnap);

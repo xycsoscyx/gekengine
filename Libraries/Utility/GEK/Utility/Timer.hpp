@@ -32,5 +32,6 @@ namespace Gek
 
         double getUpdateTime(void) const;
         double getAbsoluteTime(void) const;
+        double getImmediateTime(void) const;
     };
 }; // namespace Gek
