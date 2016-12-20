@@ -876,20 +876,22 @@ namespace Gek
                 {
                     concurrency::parallel_for_each(std::begin(performanceMap), std::end(performanceMap), [&](PerformanceMap::value_type &frame) -> void
                     {
-                        auto &history = performanceHistory[frame.first];
-                        auto adapt = [](float current, float target, float frameTime) -> float
+                        static const auto adapt = [](float current, float target, float frameTime) -> float
                         {
-                            return target + (current - target) * (1.0f - std::exp(frameTime * 1.25f));
+                            return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
                         };
 
-                        history.minimum = adapt(history.minimum, frame.second, -frameTime);
-                        history.maximum = adapt(history.maximum, frame.second, -frameTime);
+                        auto &history = performanceHistory[frame.first];
                         history.data.push_back(frame.second);
                         if (history.data.size() > HistoryLength)
                         {
                             history.data.pop_front();
                         }
 
+                        auto minimum = (history.data.empty() ? 0.0f : *std::min_element(std::begin(history.data), std::end(history.data)));
+                        auto maximum = (history.data.empty() ? 0.0f : *std::max_element(std::begin(history.data), std::end(history.data)));
+                        history.minimum = adapt(history.minimum, minimum, frameTime);
+                        history.maximum = adapt(history.maximum, maximum, frameTime);
                         frame.second = 0.0f;
                     });
                 }
@@ -908,7 +910,6 @@ namespace Gek
                 gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
 
                 imGuiIo.DeltaTime = frameTime;
-                addValue("Frame Time", frameTime);
                 addValue("Frame Rate", (1.0f / frameTime));
 
                 // Read keyboard modifiers inputs

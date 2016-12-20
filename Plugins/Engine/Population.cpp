@@ -314,6 +314,8 @@ namespace Gek
                     }
                     else
                     {
+                        Plugin::Core::Event function(core, __FUNCTION__);
+
                         Action action;
                         while (actionQueue.try_pop(action))
                         {

@@ -645,6 +645,8 @@ namespace Gek
 
                 while (renderCallList.try_pop(currentRenderCall))
                 {
+                    Plugin::Core::Event function(core, __FUNCTION__);
+
                     drawCallList.clear();
                     onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix);
                     if (!drawCallList.empty())
