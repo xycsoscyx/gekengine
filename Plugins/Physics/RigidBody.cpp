@@ -45,7 +45,6 @@ namespace Gek
 
             ~RigidBody(void)
             {
-                NewtonDestroyBody(newtonBody);
             }
 
             // Newton::Entity

@@ -339,7 +339,7 @@ namespace Gek
                     else
                     {
                         NewtonCollision *newtonCollision = nullptr;
-                        if (entity->hasComponents<Components::Model>())
+                        if (entity->hasComponent<Components::Model>())
                         {
                             const auto &modelComponent = entity->getComponent<Components::Model>();
                             newtonCollision = loadCollision(modelComponent);
@@ -482,7 +482,10 @@ namespace Gek
 
             void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
             {
-                removeEntity(entity);
+                if (!entity->hasComponents<Components::Transform, Components::Physical>())
+                {
+                    removeEntity(entity);
+                }
             }
 
             void onUpdate(void)

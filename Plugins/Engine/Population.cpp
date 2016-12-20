@@ -364,10 +364,13 @@ namespace Gek
                     addComponent(entity.get(), componentData);
                 }
 
-                onEntityCreated.emit(entity.get(), entityName);
-                entityQueue.push([this, entityName = String(entityName), entity](void) -> void
+                entityQueue.push([this, entityName = String(entityName), entity = std::move(entity)](void) -> void
                 {
-                    if (!entityMap.insert(std::make_pair((entityName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity)).second)
+                    if (entityMap.insert(std::make_pair((entityName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity)).second)
+                    {
+                        onEntityCreated.emit(entity.get(), entityName);
+                    }
+                    else
                     {
                         core->log(L"Population", Plugin::Core::LogType::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
                     }
@@ -378,8 +381,7 @@ namespace Gek
 
             void killEntity(Plugin::Entity *entity)
             {
-                onEntityDestroyed.emit(entity);
-                entityQueue.push([this, entity](void) -> void
+                entityQueue.push([this, entity = std::move(entity)](void) -> void
                 {
                     auto entitySearch = std::find_if(std::begin(entityMap), std::end(entityMap), [entity](const EntityMap::value_type &entitySearch) -> bool
                     {
@@ -388,6 +390,7 @@ namespace Gek
 
                     if (entitySearch != std::end(entityMap))
                     {
+                        onEntityDestroyed.emit(entity);
                         entityMap.erase(entitySearch);
                     }
                 });

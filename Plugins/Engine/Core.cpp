@@ -888,10 +888,9 @@ namespace Gek
                             history.data.pop_front();
                         }
 
-                        auto minimum = (history.data.empty() ? 0.0f : *std::min_element(std::begin(history.data), std::end(history.data)));
-                        auto maximum = (history.data.empty() ? 0.0f : *std::max_element(std::begin(history.data), std::end(history.data)));
-                        history.minimum = adapt(history.minimum, minimum, frameTime);
-                        history.maximum = adapt(history.maximum, maximum, frameTime);
+                        auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
+                        history.minimum = adapt(history.minimum, *minmax.first, frameTime);
+                        history.maximum = adapt(history.maximum, *minmax.second, frameTime);
                         frame.second = 0.0f;
                     });
                 }
