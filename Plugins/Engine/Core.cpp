@@ -10,8 +10,8 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Engine/Renderer.hpp"
 #include <concurrent_unordered_map.h>
-#include <concurrent_vector.h>
 #include <imgui_internal.h>
+#include <algorithm>
 #include <queue>
 #include <ppl.h>
 
@@ -89,6 +89,20 @@ namespace Gek
 			float modeChangeTimer = 0.0f;
             bool editorActive = false;
             bool consoleActive = false;
+
+            struct History
+            {
+                float minimum = 0.0f;
+                float maximum = 0.0f;
+                std::list<float> data;
+            };
+
+            static const uint32_t HistoryLength = 200;
+            using PerformanceMap = concurrency::concurrent_unordered_map<const char *, float>;
+            using PerformanceHistory = concurrency::concurrent_unordered_map<const char *, History>;
+
+            PerformanceMap performanceMap;
+            PerformanceHistory performanceHistory;
 
         public:
             Core(Context *context, HWND window)
@@ -467,8 +481,55 @@ namespace Gek
                 }
             }
 
+            int currentSelectedEvent = 0;
             void drawPerformance(ImGui::PanelManagerWindowData &windowData)
             {
+                auto selected = std::next(std::begin(performanceHistory), currentSelectedEvent);
+
+                auto clientSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
+                clientSize.y -= ImGui::GetTextLineHeightWithSpacing();
+
+                auto eventSize = clientSize;
+                eventSize.x = 300.0f;
+                if (ImGui::ListBoxHeader("##events", eventSize))
+                {
+                    ImGuiListClipper clipper(performanceHistory.size(), ImGui::GetTextLineHeightWithSpacing());
+                    while (clipper.Step())
+                    {
+                        auto begin = std::next(std::begin(performanceHistory), clipper.DisplayStart);
+                        auto end = std::next(std::begin(performanceHistory), clipper.DisplayEnd);
+                        for (auto data = begin; data != end; data++)
+                        {
+                            bool isSelected = (data == selected);
+                            if (ImGui::Selectable(data->first, &isSelected))
+                            {
+                                selected = data;
+                                currentSelectedEvent = std::distance(std::begin(performanceHistory), data);
+                            }
+                        }
+                    };
+
+                    ImGui::ListBoxFooter();
+                }
+
+                auto &history = selected->second;
+
+                ImGui::SameLine();
+                auto historySize = clientSize;
+                historySize.x -= 300.0f;
+                historySize.x -= ImGui::GetStyle().WindowPadding.x;
+                ImGui::PlotHistogram("##history", [](void *data, int index) -> float
+                {
+                    auto &history = *(std::list<float> *)data;
+                    if (index < history.size())
+                    {
+                        return *std::next(std::begin(history), index);
+                    }
+                    else
+                    {
+                        return 0.0f;
+                    }
+                }, &history.data, HistoryLength, 0, nullptr, 0.0f, history.maximum, historySize);
             }
 
             void drawSettings(ImGui::PanelManagerWindowData &windowData)
@@ -531,16 +592,20 @@ namespace Gek
                 };
             }
 
-            void beginEvent(const wchar_t *name)
+            void beginEvent(const char *name)
             {
+                performanceMap[name] = timer.getImmediateTime();
             }
 
-            void endEvent(const wchar_t *name)
+            void endEvent(const char *name)
             {
+                auto &time = performanceMap[name];
+                time = (timer.getImmediateTime() - time);
             }
 
-            void addCount(const wchar_t *name, float value)
+            void addValue(const char *name, float value)
             {
+                performanceMap[name] += value;
             }
 
             JSON::Object &getConfiguration(void)
@@ -597,25 +662,25 @@ namespace Gek
             }
 
             // Application
-            Result windowEvent(const Event &eventData)
+            Result sendMessage(const Message &message)
             {
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                switch (eventData.message)
+                switch (message.identifier)
                 {
                 case WM_CLOSE:
                     engineRunning = false;
                     return 0;
 
                 case WM_ACTIVATE:
-                    if (HIWORD(eventData.wParam))
+                    if (HIWORD(message.wParam))
                     {
                         windowActive = false;
                     }
                     else
                     {
-                        switch (LOWORD(eventData.wParam))
+                        switch (LOWORD(message.wParam))
                         {
                         case WA_ACTIVE:
                         case WA_CLICKACTIVE:
@@ -631,7 +696,7 @@ namespace Gek
                     return 0;
 
                 case WM_SIZE:
-                    if (eventData.wParam != SIZE_MINIMIZED)
+                    if (message.wParam != SIZE_MINIMIZED)
                     {
                         videoDevice->handleResize();
                         onResize.emit();
@@ -643,10 +708,10 @@ namespace Gek
                 if (showCursor)
                 {
                     ImGuiIO &imGuiIo = ImGui::GetIO();
-                    switch (eventData.message)
+                    switch (message.identifier)
                     {
                     case WM_SETCURSOR:
-                        if (LOWORD(eventData.lParam) == HTCLIENT)
+                        if (LOWORD(message.lParam) == HTCLIENT)
                         {
                             ShowCursor(false);
                             imGuiIo.MouseDrawCursor = true;
@@ -684,41 +749,41 @@ namespace Gek
                         return 0;
 
                     case WM_MOUSEWHEEL:
-                        imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.wParam) > 0 ? +1.0f : -1.0f;
+                        imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(message.wParam) > 0 ? +1.0f : -1.0f;
                         return 0;
 
                     case WM_MOUSEMOVE:
-                        imGuiIo.MousePos.x = (int16_t)(eventData.lParam);
-                        imGuiIo.MousePos.y = (int16_t)(eventData.lParam >> 16);
+                        imGuiIo.MousePos.x = (int16_t)(message.lParam);
+                        imGuiIo.MousePos.y = (int16_t)(message.lParam >> 16);
                         return 0;
 
                     case WM_KEYDOWN:
-                        if (eventData.wParam < 256)
+                        if (message.wParam < 256)
                         {
-                            imGuiIo.KeysDown[eventData.wParam] = 1;
+                            imGuiIo.KeysDown[message.wParam] = 1;
                         }
 
                         return 0;
 
                     case WM_KEYUP:
-                        if (eventData.wParam == VK_ESCAPE)
+                        if (message.wParam == VK_ESCAPE)
                         {
                             imGuiIo.MouseDrawCursor = false;
                             showCursor = false;
                         }
 
-                        if (eventData.wParam < 256)
+                        if (message.wParam < 256)
                         {
-                            imGuiIo.KeysDown[eventData.wParam] = 0;
+                            imGuiIo.KeysDown[message.wParam] = 0;
                         }
 
                         return 0;
 
                     case WM_CHAR:
                         // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-                        if (eventData.wParam > 0 && eventData.wParam < 0x10000)
+                        if (message.wParam > 0 && message.wParam < 0x10000)
                         {
-                            imGuiIo.AddInputCharacter((uint16_t)eventData.wParam);
+                            imGuiIo.AddInputCharacter((uint16_t)message.wParam);
                         }
 
                         return 0;
@@ -760,19 +825,19 @@ namespace Gek
                         };
                     };
 
-                    switch (eventData.message)
+                    switch (message.identifier)
                     {
                     case WM_SETCURSOR:
                         ShowCursor(false);
                         return 0;
 
                     case WM_KEYDOWN:
-                        addAction(eventData.wParam, true);
+                        addAction(message.wParam, true);
                         return 0;
 
                     case WM_KEYUP:
-                        addAction(eventData.wParam, false);
-                        if (eventData.wParam == VK_ESCAPE)
+                        addAction(message.wParam, false);
+                        if (message.wParam == VK_ESCAPE)
                         {
                             showCursor = true;
                         }
@@ -784,7 +849,7 @@ namespace Gek
                         {
                             UINT inputSize = 40;
                             static BYTE rawInputBuffer[40];
-                            GetRawInputData((HRAWINPUT)eventData.lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
+                            GetRawInputData((HRAWINPUT)message.lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
 
                             RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
                             if (rawInput->header.dwType == RIM_TYPEMOUSE)
@@ -805,7 +870,32 @@ namespace Gek
 
             bool update(void)
             {
-                beginEvent(__FUNCTIONW__);
+                timer.update();
+                float frameTime = timer.getUpdateTime();
+                if (windowActive)
+                {
+                    concurrency::parallel_for_each(std::begin(performanceMap), std::end(performanceMap), [&](PerformanceMap::value_type &frame) -> void
+                    {
+                        auto &history = performanceHistory[frame.first];
+                        auto adapt = [](float current, float target, float frameTime) -> float
+                        {
+                            return target + (current - target) * (1.0f - std::exp(frameTime * 1.25f));
+                        };
+
+                        history.minimum = adapt(history.minimum, frame.second, -frameTime);
+                        history.maximum = adapt(history.maximum, frame.second, -frameTime);
+                        history.data.push_back(frame.second);
+                        if (history.data.size() > HistoryLength)
+                        {
+                            history.data.pop_front();
+                        }
+
+                        frame.second = 0.0f;
+                    });
+                }
+
+                performanceMap.clear();
+                Core::Event function(this, __FUNCTION__);
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
 
@@ -817,8 +907,9 @@ namespace Gek
 
                 gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
 
-                timer.update();
-                imGuiIo.DeltaTime = float(timer.getUpdateTime());
+                imGuiIo.DeltaTime = frameTime;
+                addValue("Frame Time", frameTime);
+                addValue("Frame Rate", (1.0f / frameTime));
 
                 // Read keyboard modifiers inputs
                 imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
@@ -862,7 +953,7 @@ namespace Gek
                             }
 
                             ImGui::SameLine();
-                            modeChangeTimer -= float(timer.getUpdateTime());
+                            modeChangeTimer -= frameTime;
                             if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
                             {
                                 showModeChange = false;
@@ -878,7 +969,6 @@ namespace Gek
                     }
                     else
                     {
-                        float frameTime = float(timer.getUpdateTime());
                         population->update(frameTime);
                     }
                 }
@@ -917,16 +1007,13 @@ namespace Gek
                 ImGui::Render();
                 videoDevice->present(false);
 
-                endEvent(__FUNCTIONW__);
-                addCount(L"Frame Time", timer.getUpdateTime());
-                addCount(L"Frame Rate", 1.0f / timer.getUpdateTime());
-
                 return engineRunning;
             }
 
             // ImGui
             void renderDrawData(ImDrawData *drawData)
             {
+                Core::Event function(this, __FUNCTION__);
                 if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;

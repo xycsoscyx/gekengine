@@ -29,6 +29,23 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidDisplayMode);
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
+            struct Event
+            {
+                Core *core = nullptr;
+                const char *name = nullptr;
+                Event(Core *core, const char *name)
+                    : core(core)
+                    , name(name)
+                {
+                    core->beginEvent(name);
+                }
+
+                ~Event(void)
+                {
+                    core->endEvent(name);
+                }
+            };
+
             enum class LogType : uint8_t
             {
                 Message = 0,
@@ -44,9 +61,9 @@ namespace Gek
             virtual ~Core(void) = default;
 
             virtual void log(const wchar_t *system, LogType logType, const wchar_t *message) = 0;
-            virtual void beginEvent(const wchar_t *name) = 0;
-            virtual void endEvent(const wchar_t *name) = 0;
-            virtual void addCount(const wchar_t *name, float value) = 0;
+            virtual void beginEvent(const char *name) = 0;
+            virtual void endEvent(const char *name) = 0;
+            virtual void addValue(const char *name, float value) = 0;
 
             virtual JSON::Object &getConfiguration(void) = 0;
             virtual JSON::Object const &getConfiguration(void) const = 0;

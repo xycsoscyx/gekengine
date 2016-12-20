@@ -14,14 +14,14 @@ namespace Gek
 {
     GEK_INTERFACE(Application)
     {
-        struct Event
+        struct Message
         {
-            uint32_t message;
+            uint32_t identifier;
             WPARAM wParam;
             LPARAM lParam;
 
-            Event(uint32_t message, WPARAM wParam, LPARAM lParam)
-                : message(message)
+            Message(uint32_t identifier, WPARAM wParam, LPARAM lParam)
+                : identifier(identifier)
                 , wParam(wParam)
                 , lParam(lParam)
             {
@@ -46,7 +46,7 @@ namespace Gek
 
         virtual ~Application(void) = default;
 
-        virtual Result windowEvent(const Event &eventData) = 0;
+        virtual Result sendMessage(const Message &message) = 0;
 
         virtual bool update(void) = 0;
     };

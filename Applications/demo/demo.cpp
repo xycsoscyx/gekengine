@@ -11,26 +11,26 @@
 
 using namespace Gek;
 
-LRESULT CALLBACK WindowProc(HWND window, uint32_t message, WPARAM wParam, LPARAM lParam)
+LRESULT CALLBACK WindowProc(HWND window, uint32_t identifier, WPARAM wParam, LPARAM lParam)
 {
-    if (message == WM_DESTROY)
+    if (identifier == WM_DESTROY)
     {
         PostQuitMessage(0);
         return 0;
     }
 
-    Application::Event eventData(message, wParam, lParam);
+    Application::Message message(identifier, wParam, lParam);
     Application *application = reinterpret_cast<Application *>(GetWindowLongPtr(window, GWLP_USERDATA));
     if (application)
     {
-        auto resultValue = application->windowEvent(eventData);
+        auto resultValue = application->sendMessage(message);
         if (resultValue.handled)
         {
             return resultValue.result;
         }
     }
 
-    return DefWindowProc(window, message, wParam, lParam);
+    return DefWindowProc(window, identifier, wParam, lParam);
 }
 
 int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance, _In_ wchar_t *strCommandLine, _In_ int nCmdShow)
