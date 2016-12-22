@@ -76,8 +76,9 @@ void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 		inputName.endsWith(L"diffuse") ||
 		inputName.endsWith(L"albedo") ||
 		inputName.endsWith(L"alb") ||
-		inputName.endsWith(L"_d"))
-	{
+        inputName.endsWith(L"_d") ||
+        inputName.endsWith(L"_C"))
+{
 		useDevice = true;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_IN;
 		//flags |= ::DirectX::TEX_COMPRESS_SRGB_OUT;
@@ -163,30 +164,24 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
     try
     {
-		String rootPath;
-		String currentModuleName((MAX_PATH + 1), L' ');
-		GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-		currentModuleName.trimRight();
+        String currentModuleName((MAX_PATH + 1), L' ');
+        GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
+        currentModuleName.trimRight();
 
-		String fullModuleName((MAX_PATH + 1), L' ');
-		GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-		fullModuleName.trimRight();
+        String fullModuleName((MAX_PATH + 1), L' ');
+        GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
+        fullModuleName.trimRight();
 
-		std::experimental::filesystem::path fullModulePath(fullModuleName);
-		fullModulePath.remove_filename();
-		fullModulePath.remove_filename();
+        std::experimental::filesystem::path fullModulePath(fullModuleName);
+        fullModulePath.remove_filename();
+        String pluginPath(fullModulePath.wstring());
 
-		rootPath = fullModulePath.wstring();
+        SetCurrentDirectory(pluginPath);
+        std::vector<String> searchPathList;
+        searchPathList.push_back(pluginPath);
 
-		std::vector<String> searchPathList;
-
-#ifdef _DEBUG
-		SetCurrentDirectory(FileSystem::GetFileName(rootPath, L"Debug"));
-		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Debug", L"Plugins"));
-#else
-		SetCurrentDirectory(FileSystem::GetFileName(rootPath, L"Release"));
-		searchPathList.push_back(FileSystem::GetFileName(rootPath, L"Release", L"Plugins"));
-#endif
+        fullModulePath.remove_filename();
+        String rootPath(fullModulePath.wstring());
 
 		String texturesPath(FileSystem::GetFileName(rootPath, L"Data", L"Textures").getLower());
 
@@ -214,7 +209,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		}
 
 		ContextPtr context(Context::Create(rootPath, searchPathList));
-		Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window, Video::Format::R8G8B8A8_UNORM_SRGB, String(L"default")));
+        
+        Video::Device::Description deviceDescription;
+        Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window, deviceDescription));
 
 		std::function<bool(const wchar_t *)> searchDirectory;
 		searchDirectory = [&](const wchar_t *fileName) -> bool

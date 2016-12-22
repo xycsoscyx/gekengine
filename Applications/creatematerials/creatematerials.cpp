@@ -95,8 +95,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                                 textureName.endsWith(L"diffuse") ||
                                 textureName.endsWith(L"albedo") ||
                                 textureName.endsWith(L"alb") ||
-                                textureName.endsWith(L"_d"))
-                            {
+                                textureName.endsWith(L"_d") ||
+                                textureName.endsWith(L"_c"))
+                        {
                                 fileMap[L"albedo"][extensionImportance] = std::make_pair(fileName, textureName);
                             }
                             else if (textureName.endsWith(L"normal") ||

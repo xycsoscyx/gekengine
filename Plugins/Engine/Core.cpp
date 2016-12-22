@@ -170,25 +170,32 @@ namespace Gek
                 gui->performanceButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"performance.png"), 0);
                 gui->settingsButton = videoDevice->loadTexture(FileSystem::GetFileName(baseFileName, L"settings.png"), 0);
 
-                gui->panelManager.addPane(ImGui::PanelManager::RIGHT, "PropertiesPanel##PropertiesPanel");
-                auto consolePanel = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
-                if (consolePanel)
+                auto propertiesPane = gui->panelManager.addPane(ImGui::PanelManager::RIGHT, "PropertiesPanel##PropertiesPanel");
+                if (propertiesPane)
                 {
-                    consolePanel->addButtonAndWindow(
+                    propertiesPane->previewOnHover = false;
+                }
+
+                auto consolePane = gui->panelManager.addPane(ImGui::PanelManager::BOTTOM, "ConsolePanel##ConsolePanel");
+                if (consolePane)
+                {
+                    consolePane->previewOnHover = false;
+
+                    consolePane->addButtonAndWindow(
                         ImGui::Toolbutton("Console", (Video::Object *)gui->consoleButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Console", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawConsole(windowData);
                     }, this, ImGuiWindowFlags_NoScrollbar));
 
-                    consolePanel->addButtonAndWindow(
+                    consolePane->addButtonAndWindow(
                         ImGui::Toolbutton("Performance", (Video::Object *)gui->performanceButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Performance", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {
                         ((Core *)windowData.userData)->drawPerformance(windowData);
                     }, this, ImGuiWindowFlags_NoScrollbar));
 
-                    consolePanel->addButtonAndWindow(
+                    consolePane->addButtonAndWindow(
                         ImGui::Toolbutton("Settings", (Video::Object *)gui->settingsButton.get(), ImVec2(0, 0), ImVec2(1, 1), ImVec2(32, 32)),
                         ImGui::PanelManagerPaneAssociatedWindow("Settings", -1, [](ImGui::PanelManagerWindowData &windowData) -> void
                     {

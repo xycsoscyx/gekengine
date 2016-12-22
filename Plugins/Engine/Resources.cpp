@@ -1035,6 +1035,7 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
+                    core->addValue("Draw Calls", 1.0f);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -1043,6 +1044,7 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
+                    core->addValue("Draw Calls", 1.0f);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -1055,6 +1057,7 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
+                    core->addValue("Draw Calls", 1.0f);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1065,6 +1068,7 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
+                    core->addValue("Draw Calls", 1.0f);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1075,6 +1079,7 @@ namespace Gek
 
                 if (dispatchValid)
                 {
+                    core->addValue("Dispatch Calls", 1.0f);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }

@@ -33,7 +33,7 @@
         {
             "Transform": { },
             "Model": {
-                "name": "sponza"
+                "name": "demo"
             },
             "Physical": { }
         },
