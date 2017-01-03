@@ -37,6 +37,14 @@ namespace Gek
                 }
             }
 
+            void listComponents(std::function<void(const std::type_index &, const Plugin::Component::Data *)> onComponent)
+            {
+                for (const auto &component : componentMap)
+                {
+                    onComponent(component.first, component.second.get());
+                }
+            }
+
             // Edit::Entity
             ComponentMap &getComponentMap(void)
             {
@@ -100,7 +108,8 @@ namespace Gek
             ShuntingYard shuntingYard;
             concurrency::concurrent_queue<Action> actionQueue;
 
-            std::unordered_map<String, std::type_index> componentNamesMap;
+            std::unordered_map<String, std::type_index> componentTypeNameMap;
+            std::unordered_map<std::type_index, String> componentNameTypeMap;
             ComponentMap componentMap;
 
             ThreadPool loadPool;
@@ -127,7 +136,8 @@ namespace Gek
                     auto componentSearch = componentMap.insert(std::make_pair(component->getIdentifier(), component));
                     if (componentSearch.second)
                     {
-                        auto componentNameSearch = componentNamesMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
+                        componentNameTypeMap.insert(std::make_pair(component->getIdentifier(), component->getName()));
+                        auto componentNameSearch = componentTypeNameMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
                         if (!componentNameSearch.second)
                         {
                             core->log(L"Population", Plugin::Core::LogType::Debug, String::Format(L"Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
@@ -144,7 +154,7 @@ namespace Gek
             ~Population(void)
             {
                 entityMap.clear();
-                componentNamesMap.clear();
+                componentTypeNameMap.clear();
                 componentMap.clear();
             }
 
@@ -156,29 +166,38 @@ namespace Gek
                 try
                 {
                     actionQueue.clear();
-                    entityMap.clear();
                     entityQueue.clear();
+                    entityMap.clear();
+
                     onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
                         const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName(L"data", L"scenes", populationName).append(L".json"));
+                        if (!worldNode.has_member(L"Population"))
+                        {
+                            throw InvalidPopulationBlock("Scene must contain a population list");
+                        }
 
                         if (worldNode.has_member(L"Seed"))
                         {
-                            shuntingYard.setRandomSeed(worldNode.get(L"Seed", 0).as_uint());
+                            shuntingYard.setRandomSeed(worldNode.get(L"Seed", std::mt19937::default_seed).as_uint());
                         }
                         else
                         {
                             shuntingYard.setRandomSeed(uint32_t(std::time(nullptr) & 0xFFFFFFFF));
                         }
 
-                        auto &templatesNode = worldNode[L"Templates"];
-                        if (!templatesNode.is_object())
+                        JSON::Object templatesNode;
+                        if (worldNode.has_member(L"Templates"))
                         {
-                            throw InvalidPrefabsBlock("Scene Templates must be an object");
+                            templatesNode = worldNode.get(L"Templates");
+                            if (!templatesNode.is_object())
+                            {
+                                throw InvalidTemplatesBlock("Scene Templates must be an object");
+                            }
                         }
 
-                        auto &populationNode = worldNode[L"Population"];
+                        auto &populationNode = worldNode.get(L"Population");
                         if (!populationNode.is_array())
                         {
                             throw InvalidPopulationBlock("Scene Population must be an array");
@@ -354,6 +373,40 @@ namespace Gek
             void save(const wchar_t *populationName)
             {
                 GEK_REQUIRE(populationName);
+
+                JSON::Array population;
+                for (auto &entityPair : entityMap)
+                {
+                    JSON::Object entityData;
+                    entityData.set(L"Name", entityPair.first);
+
+                    Entity *entity = static_cast<Entity *>(entityPair.second.get());
+                    entity->listComponents([&](const std::type_index &type, const Plugin::Component::Data *data) -> void
+                    {
+                        auto componentName = componentNameTypeMap.find(type);
+                        if (componentName == std::end(componentNameTypeMap))
+                        {
+                            throw FatalError("Unknown component name found when trying to save population");
+                        }
+
+                        auto component = componentMap.find(type);
+                        if (component == std::end(componentMap))
+                        {
+                            throw FatalError("Unknown component type found when trying to save population");
+                        }
+
+                        JSON::Object componentData;
+                        component->second->save(data, componentData);
+                        entityData.set(componentName->second, componentData);
+                    });
+
+                    population.add(entityData);
+                }
+
+                JSON::Object scene;
+                scene.set(L"Population", population);
+                scene.set(L"Seed", shuntingYard.getRandomSeed());
+                JSON::Save(getContext()->getRootFileName(L"data", L"scenes", populationName).append(L".json"), scene);
             }
 
             Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Member> &componentList)
@@ -400,8 +453,8 @@ namespace Gek
             {
                 GEK_REQUIRE(entity);
 
-                auto componentNameSearch = componentNamesMap.find(componentData.name());
-                if (componentNameSearch != std::end(componentNamesMap))
+                auto componentNameSearch = componentTypeNameMap.find(componentData.name());
+                if (componentNameSearch != std::end(componentTypeNameMap))
                 {
                     auto componentSearch = componentMap.find(componentNameSearch->second);
                     if (componentSearch != std::end(componentMap))

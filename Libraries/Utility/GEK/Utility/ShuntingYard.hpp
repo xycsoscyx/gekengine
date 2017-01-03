@@ -97,11 +97,14 @@ namespace Gek
         std::unordered_map<String, Operation> operationsMap;
         std::unordered_map<String, Function> functionsMap;
         std::mt19937 mersineTwister;
+        uint32_t seed = std::mt19937::default_seed;
 
     public:
         ShuntingYard(void);
 
         void setRandomSeed(uint32_t seed);
+        uint32_t getRandomSeed(void);
+
         TokenList getTokenList(const wchar_t *expression);
         float evaluate(TokenList &rpnTokenList);
         float evaluate(const wchar_t *expression);

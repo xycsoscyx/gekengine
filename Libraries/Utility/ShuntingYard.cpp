@@ -162,7 +162,13 @@ namespace Gek
 
     void ShuntingYard::setRandomSeed(uint32_t seed)
     {
+        this->seed = seed;
         mersineTwister.seed(seed);
+    }
+
+    uint32_t ShuntingYard::getRandomSeed()
+    {
+        return seed;
     }
 
     ShuntingYard::TokenList ShuntingYard::getTokenList(const wchar_t *expression)

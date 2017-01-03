@@ -91,6 +91,7 @@ namespace Gek
     {
         using Object = jsoncons::wjson;
         using Member = Object::member_type;
+        using Array = Object::array;
 
         Object Load(const wchar_t *fileName);
         void Save(const wchar_t *fileName, const Object &object);

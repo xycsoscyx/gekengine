@@ -79,7 +79,8 @@ namespace Gek
 		public:
 			void onEnter(PlayerBody *player);
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-		};
+            StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter);
+        };
 
 		class PlayerBody
 			: public Newton::Entity
@@ -172,7 +173,9 @@ namespace Gek
                 NewtonCompoundCollisionEndAddRemove(playerShape);
 
                 // create the kinematic body
-                newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, transformComponent.getMatrix().data);
+                auto matrix(transformComponent.getMatrix());
+                matrix.translation.xyz -= (matrix.ry.xyz * playerComponent.height);
+                newtonBody = NewtonCreateKinematicBody(newtonWorld, playerShape, matrix.data);
                 NewtonBodySetUserData(newtonBody, static_cast<Newton::Entity *>(this));
 
                 // players must have weight, otherwise they are infinitely strong when they collide
@@ -721,7 +724,7 @@ namespace Gek
 
 		void JumpingState::onEnter(PlayerBody *player)
 		{
-            player->verticalSpeed += 10.0f;
+            player->verticalSpeed += 20.0f;
             player->touchingSurface = false;
 		}
 
@@ -742,7 +745,17 @@ namespace Gek
 			return nullptr;
 		}
 
-		Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
+        StatePtr JumpingState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
+        {
+            if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
+            {
+                return std::make_shared<JumpingState>();
+            }
+
+            return nullptr;
+        }
+
+        Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
 		{
 			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(core, population, newtonWorld, entity));
             population->onAction.connect<PlayerBody, &PlayerBody::onAction>(player.get());

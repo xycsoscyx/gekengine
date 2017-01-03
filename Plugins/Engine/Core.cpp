@@ -710,6 +710,16 @@ namespace Gek
                     }
 
                     return 0;
+
+                case WM_KEYUP:
+                    if (message.wParam == VK_F1)
+                    {
+                        population->save(L"autosave");
+                    }
+                    else if (message.wParam == VK_F2)
+                    {
+                        population->load(L"autosave");
+                    }
                 };
 
                 if (showCursor)
