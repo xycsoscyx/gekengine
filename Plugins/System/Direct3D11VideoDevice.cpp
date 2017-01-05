@@ -5,6 +5,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/Window.hpp"
 #include <atlbase.h>
 #include <d3d11.h>
 #include <dxgi1_3.h>
@@ -869,7 +870,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, Video::Device::Description)
+        GEK_CONTEXT_USER(Device, Window *, Video::Device::Description)
             , public Video::Debug::Device
         {
             class Context
@@ -1523,7 +1524,7 @@ namespace Gek
             };
 
         public:
-            HWND window = nullptr;
+            Window *window = nullptr;
             bool isChildWindow = false;
 
             CComPtr<ID3D11Device> d3dDevice;
@@ -1534,10 +1535,10 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, Video::Device::Description deviceDescription)
+            Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
-                , isChildWindow(GetParent(window) != nullptr)
+                , isChildWindow(GetParent((HWND)window->getPrivateData()) != nullptr)
             {
                 GEK_REQUIRE(window);
 
@@ -1583,13 +1584,13 @@ namespace Gek
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
                 swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
                 swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, window, &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
+                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getPrivateData(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
                     throw Video::InitializationFailed("Unable to create swap chain for window");
                 }
 
-                dxgiFactory->MakeWindowAssociation(window, 0);
+                dxgiFactory->MakeWindowAssociation((HWND)window->getPrivateData(), 0);
 
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);

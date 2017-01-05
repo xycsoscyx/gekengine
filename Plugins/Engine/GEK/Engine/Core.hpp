@@ -9,6 +9,7 @@
 
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/JSON.hpp"
+#include "GEK/System/Window.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include <nano_signal_slot.hpp>
 #include <Windows.h>
@@ -29,18 +30,18 @@ namespace Gek
             GEK_ADD_EXCEPTION(InvalidDisplayMode);
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
 
-            struct Event
+            struct Scope
             {
                 Core *core = nullptr;
                 const char *name = nullptr;
-                Event(Core *core, const char *name)
+                Scope(Core *core, const char *name)
                     : core(core)
                     , name(name)
                 {
                     core->beginEvent(name);
                 }
 
-                ~Event(void)
+                ~Scope(void)
                 {
                     core->endEvent(name);
                 }
@@ -60,6 +61,8 @@ namespace Gek
 
             virtual ~Core(void) = default;
 
+            virtual bool update(void) = 0;
+
             virtual void log(const wchar_t *system, LogType logType, const wchar_t *message) = 0;
             virtual void beginEvent(const char *name) = 0;
             virtual void endEvent(const char *name) = 0;
@@ -71,6 +74,7 @@ namespace Gek
             virtual void setEditorState(bool enabled) = 0;
             virtual bool isEditorActive(void) const = 0;
 
+            virtual Window * getWindow(void) const = 0;
             virtual Video::Device * getVideoDevice(void) const = 0;
 
             virtual Plugin::Population * getPopulation(void) const = 0;

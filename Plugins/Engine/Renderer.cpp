@@ -643,7 +643,7 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Event function(core, __FUNCTION__);
+                Plugin::Core::Scope function(core, __FUNCTION__);
                 core->addValue("Cameras", renderCallList.unsafe_size());
                 while (renderCallList.try_pop(currentRenderCall))
                 {

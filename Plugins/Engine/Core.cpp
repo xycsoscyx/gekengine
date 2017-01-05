@@ -15,19 +15,11 @@
 #include <queue>
 #include <ppl.h>
 
-#ifndef HID_USAGE_PAGE_GENERIC
-#define HID_USAGE_PAGE_GENERIC         ((USHORT) 0x01)
-#endif
-
-#ifndef HID_USAGE_GENERIC_MOUSE
-#define HID_USAGE_GENERIC_MOUSE        ((USHORT) 0x02)
-#endif
-
 namespace Gek
 {
     namespace Implementation
     {
-        GEK_CONTEXT_USER(Core, HWND)
+        GEK_CONTEXT_USER(Core, Window *)
             , public Application
             , public Plugin::Core
         {
@@ -39,7 +31,7 @@ namespace Gek
             };
 
         private:
-            HWND window;
+            WindowPtr window;
             bool windowActive = false;
             bool engineRunning = false;
 
@@ -105,13 +97,19 @@ namespace Gek
             PerformanceHistory performanceHistory;
 
         public:
-            Core(Context *context, HWND window)
+            Core(Context *context, Window *_window)
                 : ContextRegistration(context)
-                , window(window)
+                , window(_window)
             {
-                GEK_REQUIRE(window);
-
                 log(L"Core", LogType::Message, L"Starting GEK Engine");
+
+                if (!window)
+                {
+                    Window::Description description;
+                    description.className = L"GEK_Engine_Demo";
+                    description.windowName = L"GEK Engine Demo";
+                    window = getContext()->createClass<Window>(L"Default::System::Window", description);
+                }
 
                 try
                 {
@@ -142,7 +140,7 @@ namespace Gek
                 }
 
                 Video::Device::Description deviceDescription;
-                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window, deviceDescription);
+                videoDevice = getContext()->createClass<Video::Device>(L"Default::Device::Video", window.get(), deviceDescription);
                 displayModeList = videoDevice->getDisplayModeList(deviceDescription.displayFormat);
                 for (auto &displayMode : displayModeList)
                 {
@@ -245,7 +243,6 @@ namespace Gek
                 imGuiIo.KeyMap[ImGuiKey_X] = 'X';
                 imGuiIo.KeyMap[ImGuiKey_Y] = 'Y';
                 imGuiIo.KeyMap[ImGuiKey_Z] = 'Z';
-                imGuiIo.ImeWindowHandle = window;
 
                 ImGuiStyle& style = ImGui::GetStyle();
                 //ImGui::SetupImGuiStyle(false, 0.9f);
@@ -388,22 +385,18 @@ namespace Gek
                     core->renderDrawData(drawData);
                 };
 
-                RAWINPUTDEVICE inputDevice;
-                inputDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
-                inputDevice.usUsage = HID_USAGE_GENERIC_MOUSE;
-                inputDevice.dwFlags = 0;
-                inputDevice.hwndTarget = window;
-                RegisterRawInputDevices(&inputDevice, 1, sizeof(RAWINPUTDEVICE));
-
                 windowActive = true;
                 engineRunning = true;
 
+                window->onEvent.connect<Core, &Core::onEvent>(this);
                 log(L"Core", LogType::Message, L"Starting engine");
                 population->load(L"demo");
             }
 
             ~Core(void)
             {
+                window->onEvent.disconnect<Core, &Core::onEvent>(this);
+
                 gui = nullptr;
                 ImGui::GetIO().Fonts->TexID = 0;
                 ImGui::Shutdown();
@@ -413,18 +406,10 @@ namespace Gek
                 resources = nullptr;
                 population = nullptr;
                 videoDevice = nullptr;
+                window = nullptr;
                 JSON::Save(getContext()->getRootFileName(L"config.json"), configuration);
                 CoUninitialize();
             }
-
-			void centerWindow(void)
-			{
-				RECT clientRectangle;
-				GetWindowRect(window, &clientRectangle);
-				int xPosition = ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2);
-				int yPosition = ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2);
-				SetWindowPos(window, nullptr, xPosition, yPosition, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
-			}
 
 			void setDisplayMode(uint32_t displayMode)
 			{
@@ -437,10 +422,11 @@ namespace Gek
 
 				currentDisplayMode = displayMode;
 				videoDevice->setDisplayMode(displayModeData);
-				centerWindow();
+                window->move();
 				onResize.emit();
 			}
 
+            // ImGui
             void drawConsole(ImGui::PanelManagerWindowData &windowData)
             {
                 auto listBoxSize = (windowData.size - (ImGui::GetStyle().WindowPadding * 2.0f));
@@ -545,14 +531,14 @@ namespace Gek
                 {
                     if (fullScreen)
                     {
-                        SetWindowPos(window, 0, 0, 0, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                        window->move(0, 0);
                     }
 
                     videoDevice->setFullScreenState(fullScreen);
                     onResize.emit();
                     if (!fullScreen)
                     {
-                        centerWindow();
+                        window->move();
                     }
                 }
 
@@ -574,463 +560,9 @@ namespace Gek
                 ImGui::PopItemWidth();
             }
 
-            // Plugin::Core
-            std::vector<std::tuple<String, LogType, String>> logList;
-            void log(const wchar_t *system, LogType logType, const wchar_t *message)
-            {
-                logList.push_back(std::make_tuple(system, logType, message));
-                switch (logType)
-                {
-                case LogType::Message:
-                    OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
-                    break;
-
-                case LogType::Warning:
-                    OutputDebugString(String::Format(L"WARNING: (%v) %v\r\n", system, message));
-                    break;
-
-                case LogType::Error:
-                    OutputDebugString(String::Format(L"ERROR: (%v) %v\r\n", system, message));
-                    break;
-
-                case LogType::Debug:
-                    OutputDebugString(String::Format(L"DEBUG: (%v) %v\r\n", system, message));
-                    break;
-                };
-            }
-
-            void beginEvent(const char *name)
-            {
-                performanceMap[name] = timer.getImmediateTime();
-            }
-
-            void endEvent(const char *name)
-            {
-                auto &time = performanceMap[name];
-                time = (timer.getImmediateTime() - time);
-            }
-
-            void addValue(const char *name, float value)
-            {
-                performanceMap[name] += value;
-            }
-
-            JSON::Object &getConfiguration(void)
-            {
-                return configuration;
-            }
-
-            JSON::Object const &getConfiguration(void) const
-            {
-                return configuration;
-            }
-
-            void setEditorState(bool enabled)
-            {
-                editorActive = enabled;
-            }
-
-            bool isEditorActive(void) const
-            {
-                return editorActive;
-            }
-
-            Video::Device * getVideoDevice(void) const
-            {
-                return videoDevice.get();
-            }
-
-            Plugin::Population * getPopulation(void) const
-            {
-                return population.get();
-            }
-
-            Plugin::Resources * getResources(void) const
-            {
-                return resources.get();
-            }
-
-            Plugin::Renderer * getRenderer(void) const
-            {
-                return renderer.get();
-            }
-
-            ImGui::PanelManager * getPanelManager(void)
-            {
-                return &gui->panelManager;
-            }
-
-            void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)
-            {
-                for (auto &processor : processorList)
-                {
-                    onProcessor(processor.get());
-                }
-            }
-
-            // Application
-            Result sendMessage(const Message &message)
-            {
-                GEK_REQUIRE(videoDevice);
-                GEK_REQUIRE(population);
-
-                switch (message.identifier)
-                {
-                case WM_CLOSE:
-                    engineRunning = false;
-                    return 0;
-
-                case WM_ACTIVATE:
-                    if (HIWORD(message.wParam))
-                    {
-                        windowActive = false;
-                    }
-                    else
-                    {
-                        switch (LOWORD(message.wParam))
-                        {
-                        case WA_ACTIVE:
-                        case WA_CLICKACTIVE:
-                            windowActive = true;
-                            break;
-
-                        case WA_INACTIVE:
-                            windowActive = false;
-                            break;
-                        };
-                    }
-
-                    return 0;
-
-                case WM_SIZE:
-                    if (message.wParam != SIZE_MINIMIZED)
-                    {
-                        videoDevice->handleResize();
-                        onResize.emit();
-                    }
-
-                    return 0;
-
-                case WM_KEYUP:
-                    if (message.wParam == VK_F1)
-                    {
-                        population->save(L"autosave");
-                    }
-                    else if (message.wParam == VK_F2)
-                    {
-                        population->load(L"autosave");
-                    }
-                };
-
-                if (showCursor)
-                {
-                    ImGuiIO &imGuiIo = ImGui::GetIO();
-                    switch (message.identifier)
-                    {
-                    case WM_SETCURSOR:
-                        if (LOWORD(message.lParam) == HTCLIENT)
-                        {
-                            ShowCursor(false);
-                            imGuiIo.MouseDrawCursor = true;
-                        }
-                        else
-                        {
-                            ShowCursor(true);
-                            imGuiIo.MouseDrawCursor = false;
-                        }
-
-                        return 0;
-
-                    case WM_LBUTTONDOWN:
-                        imGuiIo.MouseDown[0] = true;
-                        return 0;
-
-                    case WM_LBUTTONUP:
-                        imGuiIo.MouseDown[0] = false;
-                        return 0;
-
-                    case WM_RBUTTONDOWN:
-                        imGuiIo.MouseDown[1] = true;
-                        return 0;
-
-                    case WM_RBUTTONUP:
-                        imGuiIo.MouseDown[1] = false;
-                        return 0;
-
-                    case WM_MBUTTONDOWN:
-                        imGuiIo.MouseDown[2] = true;
-                        return 0;
-
-                    case WM_MBUTTONUP:
-                        imGuiIo.MouseDown[2] = false;
-                        return 0;
-
-                    case WM_MOUSEWHEEL:
-                        imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(message.wParam) > 0 ? +1.0f : -1.0f;
-                        return 0;
-
-                    case WM_MOUSEMOVE:
-                        imGuiIo.MousePos.x = (int16_t)(message.lParam);
-                        imGuiIo.MousePos.y = (int16_t)(message.lParam >> 16);
-                        return 0;
-
-                    case WM_KEYDOWN:
-                        if (message.wParam < 256)
-                        {
-                            imGuiIo.KeysDown[message.wParam] = 1;
-                        }
-
-                        return 0;
-
-                    case WM_KEYUP:
-                        if (message.wParam == VK_ESCAPE)
-                        {
-                            imGuiIo.MouseDrawCursor = false;
-                            showCursor = false;
-                        }
-
-                        if (message.wParam < 256)
-                        {
-                            imGuiIo.KeysDown[message.wParam] = 0;
-                        }
-
-                        return 0;
-
-                    case WM_CHAR:
-                        // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-                        if (message.wParam > 0 && message.wParam < 0x10000)
-                        {
-                            imGuiIo.AddInputCharacter((uint16_t)message.wParam);
-                        }
-
-                        return 0;
-                    };
-                }
-                else
-                {
-                    auto addAction = [this](WPARAM wParam, bool state) -> void
-                    {
-                        switch (wParam)
-                        {
-                        case 'W':
-                        case VK_UP:
-                            population->action(L"move_forward", state);
-                            break;
-
-                        case 'S':
-                        case VK_DOWN:
-                            population->action(L"move_backward", state);
-                            break;
-
-                        case 'A':
-                        case VK_LEFT:
-                            population->action(L"strafe_left", state);
-                            break;
-
-                        case 'D':
-                        case VK_RIGHT:
-                            population->action(L"strafe_right", state);
-                            break;
-
-                        case VK_SPACE:
-                            population->action(L"jump", state);
-                            break;
-
-                        case VK_LCONTROL:
-                            population->action(L"crouch", state);
-                            break;
-                        };
-                    };
-
-                    switch (message.identifier)
-                    {
-                    case WM_SETCURSOR:
-                        ShowCursor(false);
-                        return 0;
-
-                    case WM_KEYDOWN:
-                        addAction(message.wParam, true);
-                        return 0;
-
-                    case WM_KEYUP:
-                        addAction(message.wParam, false);
-                        if (message.wParam == VK_ESCAPE)
-                        {
-                            showCursor = true;
-                        }
-
-                        return 0;
-
-                    case WM_INPUT:
-                        if (population)
-                        {
-                            UINT inputSize = 40;
-                            static BYTE rawInputBuffer[40];
-                            GetRawInputData((HRAWINPUT)message.lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
-
-                            RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
-                            if (rawInput->header.dwType == RIM_TYPEMOUSE)
-                            {
-                                float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
-                                float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
-                                population->action(L"turn", xMovement);
-                                population->action(L"tilt", yMovement);
-                            }
-
-                            return 0;
-                        }
-                    };
-                }
-
-                return Result();
-            }
-
-            bool update(void)
-            {
-                timer.update();
-                float frameTime = timer.getUpdateTime();
-                if (windowActive)
-                {
-                    concurrency::parallel_for_each(std::begin(performanceMap), std::end(performanceMap), [&](PerformanceMap::value_type &frame) -> void
-                    {
-                        static const auto adapt = [](float current, float target, float frameTime) -> float
-                        {
-                            return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
-                        };
-
-                        auto &history = performanceHistory[frame.first];
-                        history.data.push_back(frame.second);
-                        if (history.data.size() > HistoryLength)
-                        {
-                            history.data.pop_front();
-                        }
-
-                        auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
-                        history.minimum = adapt(history.minimum, *minmax.first, frameTime);
-                        history.maximum = adapt(history.maximum, *minmax.second, frameTime);
-                        frame.second = 0.0f;
-                    });
-                }
-
-                performanceMap.clear();
-                Core::Event function(this, __FUNCTION__);
-
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-
-                auto backBuffer = videoDevice->getBackBuffer();
-                uint32_t width = backBuffer->getDescription().width;
-                uint32_t height = backBuffer->getDescription().height;
-                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
-                float barWidth = float(width);
-
-                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
-
-                imGuiIo.DeltaTime = frameTime;
-                addValue("Frame Rate", (1.0f / frameTime));
-
-                // Read keyboard modifiers inputs
-                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
-                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
-                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
-                imGuiIo.KeySuper = false;
-                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
-                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
-                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
-                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
-
-                ImGui::NewFrame();
-                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
-                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
-                if (windowActive)
-                {
-                    onDisplay.emit();
-                    onInterface.emit(showCursor);
-
-                    auto imGuiContext = ImGui::GetCurrentContext();
-                    for (auto &window : imGuiContext->Windows)
-                    {
-                        if (strcmp(window->Name, "Editor") == 0)
-                        {
-                            barWidth = (width - window->Size.x);
-                        }
-                    }
-
-                    if (showCursor)
-                    {
-                        if (showModeChange)
-                        {
-                            ImGui::SetNextWindowPosCenter();
-                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
-                            ImGui::Text("Keep Display Mode?");
-
-                            if (ImGui::Button("Yes"))
-                            {
-                                showModeChange = false;
-                                previousDisplayMode = currentDisplayMode;
-                            }
-
-                            ImGui::SameLine();
-                            modeChangeTimer -= frameTime;
-                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
-                            {
-                                showModeChange = false;
-                                setDisplayMode(previousDisplayMode);
-                            }
-
-                            ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
-
-                            ImGui::End();
-                        }
-
-                        population->update(0.0f);
-                    }
-                    else
-                    {
-                        population->update(frameTime);
-                    }
-                }
-
-                if (population->isLoading())
-                {
-                    ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Loading", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Loading...");
-                    ImGui::End();
-                }
-                else if (!windowActive)
-                {
-                    ImGui::SetNextWindowPosCenter();
-                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
-                    ImGui::Dummy(ImVec2(200, 0));
-                    ImGui::Text("Paused");
-                    ImGui::End();
-                }
-
-                if (windowActive && !showCursor)
-                {
-                    RECT windowRectangle;
-                    GetWindowRect(window, &windowRectangle);
-					SetCursorPos(
-                        int(Math::Interpolate(float(windowRectangle.left), float(windowRectangle.right), 0.5f)),
-						int(Math::Interpolate(float(windowRectangle.top), float(windowRectangle.bottom), 0.5f)));
-                }
-
-                gui->panelManager.render();
-
-                ImGui::End();
-
-                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
-                ImGui::Render();
-                videoDevice->present(false);
-
-                return engineRunning;
-            }
-
-            // ImGui
             void renderDrawData(ImDrawData *drawData)
             {
-                Core::Event function(this, __FUNCTION__);
+                Core::Scope function(this, __FUNCTION__);
                 if (!gui->vertexBuffer || gui->vertexBuffer->getDescription().count < uint32_t(drawData->TotalVtxCount))
                 {
                     Video::Buffer::Description vertexBufferDescription;
@@ -1146,6 +678,461 @@ namespace Gek
 
                         vertexOffset += commandList->VtxBuffer.Size;
                     }
+                }
+            }
+
+            // Window slots
+            void onEvent(Window::Event &eventData)
+            {
+                GEK_REQUIRE(videoDevice);
+                GEK_REQUIRE(population);
+
+                switch (eventData.message)
+                {
+                case WM_CLOSE:
+                    engineRunning = false;
+                    return;
+
+                case WM_ACTIVATE:
+                    if (HIWORD(eventData.unsignedParameter))
+                    {
+                        windowActive = false;
+                    }
+                    else
+                    {
+                        switch (LOWORD(eventData.unsignedParameter))
+                        {
+                        case WA_ACTIVE:
+                        case WA_CLICKACTIVE:
+                            windowActive = true;
+                            break;
+
+                        case WA_INACTIVE:
+                            windowActive = false;
+                            break;
+                        };
+                    }
+
+                    return;
+
+                case WM_SIZE:
+                    if (eventData.unsignedParameter != SIZE_MINIMIZED)
+                    {
+                        videoDevice->handleResize();
+                        onResize.emit();
+                    }
+
+                    return;
+
+                case WM_KEYUP:
+                    if (eventData.unsignedParameter == VK_F1)
+                    {
+                        population->save(L"autosave");
+                    }
+                    else if (eventData.unsignedParameter == VK_F2)
+                    {
+                        population->load(L"autosave");
+                    }
+                };
+
+                if (showCursor)
+                {
+                    ImGuiIO &imGuiIo = ImGui::GetIO();
+                    switch (eventData.message)
+                    {
+                    case WM_SETCURSOR:
+                        if (LOWORD(eventData.signedParameter) == HTCLIENT)
+                        {
+                            ShowCursor(false);
+                            imGuiIo.MouseDrawCursor = true;
+                        }
+                        else
+                        {
+                            ShowCursor(true);
+                            imGuiIo.MouseDrawCursor = false;
+                        }
+
+                        return;
+
+                    case WM_LBUTTONDOWN:
+                        imGuiIo.MouseDown[0] = true;
+                        return;
+
+                    case WM_LBUTTONUP:
+                        imGuiIo.MouseDown[0] = false;
+                        return;
+
+                    case WM_RBUTTONDOWN:
+                        imGuiIo.MouseDown[1] = true;
+                        return;
+
+                    case WM_RBUTTONUP:
+                        imGuiIo.MouseDown[1] = false;
+                        return;
+
+                    case WM_MBUTTONDOWN:
+                        imGuiIo.MouseDown[2] = true;
+                        return;
+
+                    case WM_MBUTTONUP:
+                        imGuiIo.MouseDown[2] = false;
+                        return;
+
+                    case WM_MOUSEWHEEL:
+                        imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.unsignedParameter) > 0 ? +1.0f : -1.0f;
+                        return;
+
+                    case WM_MOUSEMOVE:
+                        imGuiIo.MousePos.x = (int16_t)(eventData.signedParameter);
+                        imGuiIo.MousePos.y = (int16_t)(eventData.signedParameter >> 16);
+                        return;
+
+                    case WM_KEYDOWN:
+                        if (eventData.unsignedParameter < 256)
+                        {
+                            imGuiIo.KeysDown[eventData.unsignedParameter] = 1;
+                        }
+
+                        return;
+
+                    case WM_KEYUP:
+                        if (eventData.unsignedParameter == VK_ESCAPE)
+                        {
+                            imGuiIo.MouseDrawCursor = false;
+                            showCursor = false;
+                        }
+
+                        if (eventData.unsignedParameter < 256)
+                        {
+                            imGuiIo.KeysDown[eventData.unsignedParameter] = 0;
+                        }
+
+                        return;
+
+                    case WM_CHAR:
+                        // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
+                        if (eventData.unsignedParameter > 0 && eventData.unsignedParameter < 0x10000)
+                        {
+                            imGuiIo.AddInputCharacter((uint16_t)eventData.unsignedParameter);
+                        }
+
+                        return;
+                    };
+                }
+                else
+                {
+                    auto addAction = [this](uint32_t parameter, bool state) -> void
+                    {
+                        switch (parameter)
+                        {
+                        case 'W':
+                        case VK_UP:
+                            population->action(L"move_forward", state);
+                            break;
+
+                        case 'S':
+                        case VK_DOWN:
+                            population->action(L"move_backward", state);
+                            break;
+
+                        case 'A':
+                        case VK_LEFT:
+                            population->action(L"strafe_left", state);
+                            break;
+
+                        case 'D':
+                        case VK_RIGHT:
+                            population->action(L"strafe_right", state);
+                            break;
+
+                        case VK_SPACE:
+                            population->action(L"jump", state);
+                            break;
+
+                        case VK_LCONTROL:
+                            population->action(L"crouch", state);
+                            break;
+                        };
+                    };
+
+                    switch (eventData.message)
+                    {
+                    case WM_SETCURSOR:
+                        ShowCursor(false);
+                        return;
+
+                    case WM_KEYDOWN:
+                        addAction(eventData.unsignedParameter, true);
+                        return;
+
+                    case WM_KEYUP:
+                        addAction(eventData.unsignedParameter, false);
+                        if (eventData.unsignedParameter == VK_ESCAPE)
+                        {
+                            showCursor = true;
+                        }
+
+                        return;
+
+                    case WM_INPUT:
+                        if (population)
+                        {
+                            UINT inputSize = 40;
+                            static BYTE rawInputBuffer[40];
+                            GetRawInputData((HRAWINPUT)eventData.signedParameter, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
+
+                            RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
+                            if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                            {
+                                float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
+                                float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
+                                population->action(L"turn", xMovement);
+                                population->action(L"tilt", yMovement);
+                            }
+
+                            return;
+                        }
+                    };
+                }
+            }
+
+            // Plugin::Core
+            bool update(void)
+            {
+                timer.update();
+                float frameTime = timer.getUpdateTime();
+                if (windowActive)
+                {
+                    concurrency::parallel_for_each(std::begin(performanceMap), std::end(performanceMap), [&](PerformanceMap::value_type &frame) -> void
+                    {
+                        static const auto adapt = [](float current, float target, float frameTime) -> float
+                        {
+                            return (current + ((target - current) * (1.0 - exp(-frameTime * 1.25f))));
+                        };
+
+                        auto &history = performanceHistory[frame.first];
+                        history.data.push_back(frame.second);
+                        if (history.data.size() > HistoryLength)
+                        {
+                            history.data.pop_front();
+                        }
+
+                        auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
+                        history.minimum = adapt(history.minimum, *minmax.first, frameTime);
+                        history.maximum = adapt(history.maximum, *minmax.second, frameTime);
+                        frame.second = 0.0f;
+                    });
+                }
+
+                performanceMap.clear();
+                Core::Scope function(this, __FUNCTION__);
+
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+
+                auto backBuffer = videoDevice->getBackBuffer();
+                uint32_t width = backBuffer->getDescription().width;
+                uint32_t height = backBuffer->getDescription().height;
+                imGuiIo.DisplaySize = ImVec2(float(width), float(height));
+                float barWidth = float(width);
+
+                gui->panelManager.setDisplayPortion(ImVec4(0, 0, width, height));
+
+                imGuiIo.DeltaTime = frameTime;
+                addValue("Frame Rate", (1.0f / frameTime));
+
+                // Read keyboard modifiers inputs
+                imGuiIo.KeyCtrl = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+                imGuiIo.KeyShift = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
+                imGuiIo.KeyAlt = (GetKeyState(VK_MENU) & 0x8000) != 0;
+                imGuiIo.KeySuper = false;
+                // imGuiIo.KeysDown : filled by WM_KEYDOWN/WM_KEYUP events
+                // imGuiIo.MousePos : filled by WM_MOUSEMOVE events
+                // imGuiIo.MouseDown : filled by WM_*BUTTON* events
+                // imGuiIo.MouseWheel : filled by WM_MOUSEWHEEL events
+
+                ImGui::NewFrame();
+                ImGui::SetNextWindowSize(ImGui::GetIO().DisplaySize);
+                ImGui::Begin("GEK Engine", nullptr, ImVec2(0, 0), 0.0f, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoTitleBar);
+                if (windowActive)
+                {
+                    onDisplay.emit();
+                    onInterface.emit(showCursor);
+
+                    auto imGuiContext = ImGui::GetCurrentContext();
+                    for (auto &window : imGuiContext->Windows)
+                    {
+                        if (strcmp(window->Name, "Editor") == 0)
+                        {
+                            barWidth = (width - window->Size.x);
+                        }
+                    }
+
+                    if (showCursor)
+                    {
+                        if (showModeChange)
+                        {
+                            ImGui::SetNextWindowPosCenter();
+                            ImGui::Begin("Keep Display Mode", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding);
+                            ImGui::Text("Keep Display Mode?");
+
+                            if (ImGui::Button("Yes"))
+                            {
+                                showModeChange = false;
+                                previousDisplayMode = currentDisplayMode;
+                            }
+
+                            ImGui::SameLine();
+                            modeChangeTimer -= frameTime;
+                            if (modeChangeTimer <= 0.0f || ImGui::Button("No"))
+                            {
+                                showModeChange = false;
+                                setDisplayMode(previousDisplayMode);
+                            }
+
+                            ImGui::Text(StringUTF8::Format("(Revert in %v seconds)", uint32_t(modeChangeTimer)));
+
+                            ImGui::End();
+                        }
+
+                        population->update(0.0f);
+                    }
+                    else
+                    {
+                        population->update(frameTime);
+                    }
+                }
+
+                if (population->isLoading())
+                {
+                    ImGui::SetNextWindowPosCenter();
+                    ImGui::Begin("GEK Engine##Loading", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Dummy(ImVec2(200, 0));
+                    ImGui::Text("Loading...");
+                    ImGui::End();
+                }
+                else if (!windowActive)
+                {
+                    ImGui::SetNextWindowPosCenter();
+                    ImGui::Begin("GEK Engine##Paused", nullptr, ImGuiWindowFlags_ShowBorders | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysUseWindowPadding | ImGuiWindowFlags_NoCollapse);
+                    ImGui::Dummy(ImVec2(200, 0));
+                    ImGui::Text("Paused");
+                    ImGui::End();
+                }
+
+                if (windowActive && !showCursor)
+                {
+                    auto rectangle = window->getScreenRectangle();
+                    window->setCursorPosition(Math::Int2(
+                        int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.minimum.y), 0.5f)),
+                        int(Math::Interpolate(float(rectangle.maximum.x), float(rectangle.maximum.y), 0.5f))));
+                }
+
+                gui->panelManager.render();
+
+                ImGui::End();
+
+                renderer->renderOverlay(videoDevice->getDefaultContext(), resources->getResourceHandle(L"screen"), ResourceHandle());
+                ImGui::Render();
+                videoDevice->present(false);
+
+                return engineRunning;
+            }
+
+            std::vector<std::tuple<String, LogType, String>> logList;
+            void log(const wchar_t *system, LogType logType, const wchar_t *message)
+            {
+                logList.push_back(std::make_tuple(system, logType, message));
+                switch (logType)
+                {
+                case LogType::Message:
+                    OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
+                    break;
+
+                case LogType::Warning:
+                    OutputDebugString(String::Format(L"WARNING: (%v) %v\r\n", system, message));
+                    break;
+
+                case LogType::Error:
+                    OutputDebugString(String::Format(L"ERROR: (%v) %v\r\n", system, message));
+                    break;
+
+                case LogType::Debug:
+                    OutputDebugString(String::Format(L"DEBUG: (%v) %v\r\n", system, message));
+                    break;
+                };
+            }
+
+            void beginEvent(const char *name)
+            {
+                performanceMap[name] = timer.getImmediateTime();
+            }
+
+            void endEvent(const char *name)
+            {
+                auto &time = performanceMap[name];
+                time = (timer.getImmediateTime() - time);
+            }
+
+            void addValue(const char *name, float value)
+            {
+                performanceMap[name] += value;
+            }
+
+            JSON::Object &getConfiguration(void)
+            {
+                return configuration;
+            }
+
+            JSON::Object const &getConfiguration(void) const
+            {
+                return configuration;
+            }
+
+            void setEditorState(bool enabled)
+            {
+                editorActive = enabled;
+            }
+
+            bool isEditorActive(void) const
+            {
+                return editorActive;
+            }
+
+            Window * getWindow(void) const
+            {
+                return window.get();
+            }
+
+            Video::Device * getVideoDevice(void) const
+            {
+                return videoDevice.get();
+            }
+
+            Plugin::Population * getPopulation(void) const
+            {
+                return population.get();
+            }
+
+            Plugin::Resources * getResources(void) const
+            {
+                return resources.get();
+            }
+
+            Plugin::Renderer * getRenderer(void) const
+            {
+                return renderer.get();
+            }
+
+            ImGui::PanelManager * getPanelManager(void)
+            {
+                return &gui->panelManager;
+            }
+
+            void listProcessors(std::function<void(Plugin::Processor *)> onProcessor)
+            {
+                for (auto &processor : processorList)
+                {
+                    onProcessor(processor.get());
                 }
             }
         };

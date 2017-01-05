@@ -5,7 +5,7 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
-#include <Windows.h>
+#include "GEK/System/Window.hpp"
 
 namespace Gek
 {
@@ -389,7 +389,7 @@ namespace Gek
             }
         };
 
-        GEK_CONTEXT_USER(Device, HWND, Video::Format, String)
+        GEK_CONTEXT_USER(Device, Window *, Video::Device::Description)
             , public Video::Device
         {
             class Context
@@ -769,7 +769,7 @@ namespace Gek
         };
 
         public:
-            HWND window;
+            Window *window = nullptr;
 
             Video::DisplayModeList displayModeList;
 
@@ -777,7 +777,7 @@ namespace Gek
             Video::TargetPtr backBuffer;
 
         public:
-            Device(Gek::Context *context, HWND window, Video::Format format, String device)
+            Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
             {
