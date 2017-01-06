@@ -48,7 +48,7 @@ struct Parameters
     float feetPerUnit = 1.0f;
 };
 
-void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<StringUTF8, std::list<Model>> &albedoMap, Shapes::AlignedBox &boundingBox)
+void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode *node, std::unordered_map<FileSystem::Path, std::list<Model>> &modelAlbedoMap, Shapes::AlignedBox &boundingBox)
 {
     if (node == nullptr)
     {
@@ -114,8 +114,8 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                 aiString sceneDiffuseMaterial;
                 const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
-                StringUTF8 material(sceneDiffuseMaterial.C_Str());
-                albedoMap[material].push_back(model);
+                FileSystem::Path materialPath(sceneDiffuseMaterial.C_Str());
+                modelAlbedoMap[materialPath].push_back(model);
             }
         }
     }
@@ -129,7 +129,7 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
 
         for (uint32_t childIndex = 0; childIndex < node->mNumChildren; ++childIndex)
         {
-            getMeshes(parameters, scene, node->mChildren[childIndex], albedoMap, boundingBox);
+            getMeshes(parameters, scene, node->mChildren[childIndex], modelAlbedoMap, boundingBox);
         }
     }
 }
@@ -249,46 +249,34 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
 		Shapes::AlignedBox boundingBox;
-        std::unordered_map<StringUTF8, std::list<Model>> albedoMap;
-        getMeshes(parameters, scene, scene->mRootNode, albedoMap, boundingBox);
+        std::unordered_map<FileSystem::Path, std::list<Model>> modelAlbedoMap;
+        getMeshes(parameters, scene, scene->mRootNode, modelAlbedoMap, boundingBox);
 
         aiReleasePropertyStore(propertyStore);
         aiReleaseImport(scene);
 
-        String rootPath;
-        String currentModuleName((MAX_PATH + 1), L' ');
-        GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-        currentModuleName.trimRight();
+        auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
+        auto dataPath(FileSystem::GetFileName(rootPath, L"Data"));
 
-        String fullModuleName((MAX_PATH + 1), L' ');
-        GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-        fullModuleName.trimRight();
+        String texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
+        texturesPath.toLower();
 
-        std::experimental::filesystem::path fullModulePath(fullModuleName);
-        fullModulePath.remove_filename();
-        fullModulePath.remove_filename();
-        rootPath = fullModulePath.append(L"Data").wstring();
+        String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
+        materialsPath.toLower();
 
-        String texturesPath(FileSystem::GetFileName(rootPath, L"Textures").getLower());
-        String materialsPath(FileSystem::GetFileName(rootPath, L"Materials").getLower());
-
-        std::map<String, String> materialAlbedoMap;
-
-        std::function<bool(const wchar_t *)> findMaterials;
-        findMaterials = [&](const wchar_t *fileName) -> bool
+        std::map<FileSystem::Path, String> materialAlbedoMap;
+        std::function<bool(const FileSystem::Path &)> findMaterials;
+        findMaterials = [&](const FileSystem::Path &filePath) -> bool
         {
-            if (FileSystem::IsDirectory(fileName))
+            if (filePath.isDirectory())
             {
-                FileSystem::Find(fileName, findMaterials);
+                FileSystem::Find(filePath, findMaterials);
             }
-            else if (FileSystem::IsFile(fileName))
+            else if (filePath.isFile())
             {
                 try
                 {
-                    String materialName(FileSystem::ReplaceExtension(fileName).getLower());
-                    materialName.replace((materialsPath + L"\\"), L"");
-
-                    const JSON::Object materialNode = JSON::Load(fileName);
+                    const JSON::Object materialNode = JSON::Load(filePath);
                     auto &shaderNode = materialNode[L"shader"];
                     auto &passesNode = shaderNode[L"passes"];
                     auto &solidNode = passesNode[L"solid"];
@@ -298,7 +286,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                     {
                         if (albedoNode.has_member(L"file"))
                         {
-                            materialAlbedoMap[albedoNode[L"file"].as_string()] = materialName;
+                            String materialName(filePath.withoutExtension());
+                            materialName = materialName.subString(materialsPath.size() + 1);
+                            materialName.toLower();
+
+                            FileSystem::Path albedoPath(albedoNode[L"file"].as_string());
+                            materialAlbedoMap[albedoPath] = materialName;
+
+                            //printf("Material %S with %S albedo\r\n", materialName.c_str(), albedoPath.c_str());
                         }
                     }
                 }
@@ -318,12 +313,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         }
 
         FileSystem::Find(materialsPath, findMaterials);
-        std::unordered_map<String, std::list<Model>> materialMultiMap;
-        for (auto &albedo : albedoMap)
+        std::unordered_map<FileSystem::Path, std::list<Model>> materialMultiMap;
+        for (auto &modelAlbedo : modelAlbedoMap)
         {
-            String albedoName(albedo.first.getLower());
-            albedoName.replace(L"/", L"\\");
-            albedoName = FileSystem::ReplaceExtension(albedoName);
+            String albedoName(modelAlbedo.first.withoutExtension());
+            albedoName.toLower();
+
             if (albedoName.find(L"textures\\") == 0)
             {
                 albedoName = albedoName.subString(9);
@@ -341,7 +336,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                 }
             }
 
-            //printf("FileName: %s\r\n", albedo.first.c_str());
+            //printf("FileName: %S\r\n", modelAlbedo.first.c_str());
             //printf("Albedo: %S\r\n", albedoName.c_str());
 
             auto materialAlebedoSearch = materialAlbedoMap.find(albedoName);
@@ -351,12 +346,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             }
             else
             {
-                materialMultiMap[materialAlebedoSearch->second] = albedo.second;
+                materialMultiMap[materialAlebedoSearch->second] = modelAlbedo.second;
                 //printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
             }
         }
 
-        std::unordered_map<String, Model> materialMap;
+        std::unordered_map<FileSystem::Path, Model> materialMap;
         for (auto &multiMaterial : materialMultiMap)
         {
             Model &material = materialMap[multiMaterial.first];

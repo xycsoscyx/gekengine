@@ -172,7 +172,7 @@ namespace Gek
                     onLoadBegin.emit(populationName);
                     if (!populationName.empty())
                     {
-                        const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName(L"data", L"scenes", populationName).append(L".json"));
+                        const JSON::Object worldNode = JSON::Load(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"));
                         if (!worldNode.has_member(L"Population"))
                         {
                             throw InvalidPopulationBlock("Scene must contain a population list");
@@ -406,7 +406,7 @@ namespace Gek
                 JSON::Object scene;
                 scene.set(L"Population", population);
                 scene.set(L"Seed", shuntingYard.getRandomSeed());
-                JSON::Save(getContext()->getRootFileName(L"data", L"scenes", populationName).append(L".json"), scene);
+                JSON::Save(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"), scene);
             }
 
             Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Member> &componentList)

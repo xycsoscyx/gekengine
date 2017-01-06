@@ -28,12 +28,12 @@ namespace Gek
         GEK_ADD_EXCEPTION(InvalidPlugin);
         GEK_ADD_EXCEPTION(ClassNotFound);
 
-        static ContextPtr Create(const wchar_t *rootPath, const std::vector<String> &searchPathList);
+        static ContextPtr Create(const FileSystem::Path &rootPath, const std::vector<FileSystem::Path> &searchPathList);
 
-        virtual const wchar_t *getRootPath(void) const = 0;
+        virtual const FileSystem::Path &getRootPath(void) const = 0;
 
         template <typename... PARAMETERS>
-        String getRootFileName(PARAMETERS... nameList)
+        FileSystem::Path getRootFileName(PARAMETERS... nameList)
         {
             return FileSystem::GetFileName(getRootPath(), { nameList... });
         }

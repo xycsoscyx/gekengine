@@ -4,7 +4,6 @@
 #include "GEK/Utility/Timer.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/GUI/Utilities.hpp"
-#include "GEK/Engine/Application.hpp"
 #include "GEK/Engine/Core.hpp"
 #include "GEK/Engine/Population.hpp"
 #include "GEK/Engine/Resources.hpp"
@@ -20,7 +19,6 @@ namespace Gek
     namespace Implementation
     {
         GEK_CONTEXT_USER(Core, Window *)
-            , public Application
             , public Plugin::Core
         {
         public:
@@ -110,6 +108,8 @@ namespace Gek
                     description.windowName = L"GEK Engine Demo";
                     window = getContext()->createClass<Window>(L"Default::System::Window", description);
                 }
+
+                window->onEvent.connect<Core, &Core::onEvent>(this);
 
                 try
                 {
@@ -388,8 +388,10 @@ namespace Gek
                 windowActive = true;
                 engineRunning = true;
 
-                window->onEvent.connect<Core, &Core::onEvent>(this);
+                window->setVisibility(true);
+
                 log(L"Core", LogType::Message, L"Starting engine");
+
                 population->load(L"demo");
             }
 
@@ -684,9 +686,6 @@ namespace Gek
             // Window slots
             void onEvent(Window::Event &eventData)
             {
-                GEK_REQUIRE(videoDevice);
-                GEK_REQUIRE(population);
-
                 switch (eventData.message)
                 {
                 case WM_CLOSE:
@@ -716,22 +715,28 @@ namespace Gek
                     return;
 
                 case WM_SIZE:
-                    if (eventData.unsignedParameter != SIZE_MINIMIZED)
+                    if (videoDevice)
                     {
-                        videoDevice->handleResize();
-                        onResize.emit();
+                        if (eventData.unsignedParameter != SIZE_MINIMIZED)
+                        {
+                            videoDevice->handleResize();
+                            onResize.emit();
+                        }
                     }
 
                     return;
 
                 case WM_KEYUP:
-                    if (eventData.unsignedParameter == VK_F1)
+                    if (population)
                     {
-                        population->save(L"autosave");
-                    }
-                    else if (eventData.unsignedParameter == VK_F2)
-                    {
-                        population->load(L"autosave");
+                        if (eventData.unsignedParameter == VK_F1)
+                        {
+                            population->save(L"autosave");
+                        }
+                        else if (eventData.unsignedParameter == VK_F2)
+                        {
+                            population->load(L"autosave");
+                        }
                     }
                 };
 
@@ -819,7 +824,7 @@ namespace Gek
                         return;
                     };
                 }
-                else
+                else if (population)
                 {
                     auto addAction = [this](uint32_t parameter, bool state) -> void
                     {
@@ -892,6 +897,26 @@ namespace Gek
 
                             return;
                         }
+                    };
+                }
+                else
+                {
+                    switch (eventData.message)
+                    {
+                    case WM_SETCURSOR:
+                        ShowCursor(false);
+                        return;
+
+                    case WM_KEYDOWN:
+                        return;
+
+                    case WM_KEYUP:
+                        if (eventData.unsignedParameter == VK_ESCAPE)
+                        {
+                            showCursor = true;
+                        }
+
+                        return;
                     };
                 }
             }

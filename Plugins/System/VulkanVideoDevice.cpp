@@ -933,12 +933,12 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
+            Video::TexturePtr loadTexture(const FileSystem::Path &filePath, uint32_t flags)
             {
                 return std::make_shared<ViewTexture>(Video::Texture::Description());
             }
 
-            Texture::Description loadTextureDescription(const wchar_t *fileName)
+            Texture::Description loadTextureDescription(const FileSystem::Path &filePath)
             {
                 return Texture::Description();
             }

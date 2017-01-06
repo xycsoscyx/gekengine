@@ -1,5 +1,4 @@
 #include "GEK/Utility/FileSystem.hpp"
-#include <experimental\filesystem>
 #include <fstream>
 #include <Windows.h>
 
@@ -7,56 +6,146 @@ namespace Gek
 {
 	namespace FileSystem
 	{
-		String GetFileName(const wchar_t *rootDirectory, const std::vector<String> &list)
-		{
-            String fileName(rootDirectory);
-            fileName.join(list, std::experimental::filesystem::path::preferred_separator);
-            return fileName;
-		}
-
-		String ReplaceExtension(const wchar_t *fileName, const wchar_t *extension)
-		{
-			std::experimental::filesystem::path filePath(fileName);
-			filePath.replace_extension(extension ? extension : L"");
-			return filePath.wstring();
-		}
-
-		String GetExtension(const wchar_t *fileName)
+        Path::Path(void)
         {
-            std::experimental::filesystem::path filePath(fileName);
-            return filePath.extension().wstring();
         }
 
-		String GetFileName(const wchar_t *fileName)
+        Path::Path(const wchar_t *path)
+            : std::experimental::filesystem::path(path)
+        {
+            make_preferred();
+        }
+
+        Path::Path(const String &path)
+            : std::experimental::filesystem::path(path)
+        {
+            make_preferred();
+        }
+
+        Path::Path(const Path &path)
+            : std::experimental::filesystem::path(path)
+        {
+            make_preferred();
+        }
+
+        void Path::operator = (const wchar_t *path)
+        {
+            assign(path);
+        }
+
+        void Path::operator = (const String &path)
+        {
+            assign(path);
+        }
+
+        void Path::operator = (const Path &path)
+        {
+            assign(path);
+        }
+
+        Path::operator const wchar_t * (void) const
+        {
+            return c_str();
+        }
+
+        void Path::removeFileName(void)
+        {
+            remove_filename();
+        }
+
+        void Path::removeExtension(void)
+        {
+            replace_extension(L"");
+        }
+
+        void Path::replaceFileName(const wchar_t *fileName)
+        {
+            replace_filename(fileName);
+        }
+
+        void Path::replaceExtension(const wchar_t *extension)
+        {
+            replace_extension(extension);
+        }
+
+        Path Path::withExtension(const wchar_t *extension) const
+        {
+            Path path(*this);
+            path.replace_extension(extension);
+            return path;
+        }
+
+        Path Path::withoutExtension(void) const
+        {
+            Path path(*this);
+            path.replace_extension(L"");
+            return path;
+        }
+
+        Path Path::getParentPath(void) const
+        {
+            return parent_path().native();
+        }
+
+        String Path::getFileName(void) const
+        {
+            return filename().native();
+        }
+
+        String Path::getExtension(void) const
+        {
+            return extension().native();
+        }
+
+        bool Path::isFile(void) const
+        {
+            return std::experimental::filesystem::is_regular_file(*this);
+        }
+
+        bool Path::isDirectory(void) const
+        {
+            return std::experimental::filesystem::is_directory(*this);
+        }
+
+        bool Path::isNewerThan(const Path &path) const
+        {
+            auto thisWriteTime = std::experimental::filesystem::last_write_time(*this);
+            auto thatWriteTime = std::experimental::filesystem::last_write_time(path);
+            return (thisWriteTime > thatWriteTime);
+        }
+
+        Path GetModuleFilePath(void)
+        {
+#ifdef _WIN32
+            String relativeName((MAX_PATH + 1), L' ');
+            GetModuleFileName(nullptr, &relativeName.at(0), MAX_PATH);
+            relativeName.trimRight();
+
+            String absoluteName((MAX_PATH + 1), L' ');
+            GetFullPathName(relativeName, MAX_PATH, &absoluteName.at(0), nullptr);
+            absoluteName.trimRight();
+#else
+            StringUTF8 processName(StringUTF8::Format("/proc/%v/exe", getpid()));
+            String absoluteName((MAX_PATH + 1), L'\0');
+            readlink(processName, &absoluteName.at(0), MAX_PATH);
+            absoluteName.trimRight();
+#endif
+            return absoluteName;
+        }
+
+        Path GetFileName(const Path &rootDirectory, const std::vector<String> &list)
 		{
-			std::experimental::filesystem::path filePath(fileName);
-			return filePath.filename().wstring();
+            String filePath(rootDirectory);
+            filePath.join(list, std::experimental::filesystem::path::preferred_separator);
+            return filePath;
 		}
 
-		String GetDirectory(const wchar_t *fileName)
+        void MakeDirectoryChain(const Path &filePath)
         {
-            std::experimental::filesystem::path filePath(fileName);
-            return filePath.parent_path().wstring();
+            std::experimental::filesystem::create_directories(filePath);
         }
 
-        bool IsFile(const wchar_t *fileName)
-        {
-            return std::experimental::filesystem::is_regular_file(fileName);
-        }
-
-        bool IsDirectory(const wchar_t *fileName)
-        {
-            return std::experimental::filesystem::is_directory(fileName);
-        }
-
-		bool IsFileNewer(const wchar_t *newFile, const wchar_t *oldFile)
-		{
-			auto newFileTime = std::experimental::filesystem::last_write_time(newFile);
-			auto oldFileTime = std::experimental::filesystem::last_write_time(oldFile);
-			return (newFileTime > oldFileTime);
-		}
-
-		void Find(const wchar_t *rootDirectory, std::function<bool(const wchar_t *)> onFileFound)
+        void Find(const Path &rootDirectory, std::function<bool(const Path &)> onFileFound)
 		{
 			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
@@ -64,81 +153,72 @@ namespace Gek
 			}
 		}
 
-		void Load(const wchar_t *fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
+		void Load(const Path &filePath, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
-			HANDLE file = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
-			if(file == INVALID_HANDLE_VALUE)
+            FILE *file = fopen(StringUTF8(filePath.native()), "rb");
+            if (file == nullptr)
             {
                 throw FileNotFound("Unable to open file for reading");
             }
 
-			buffer.resize(GetFileSize(file, nullptr));
+            auto size = std::experimental::filesystem::file_size(filePath);
+            size = std::min(size, limitReadSize);
+			buffer.resize(size);
 
-			DWORD bytesRead = 0;
-			ReadFile(file, buffer.data(), DWORD(buffer.size()), &bytesRead, nullptr);
-			CloseHandle(file);
+            auto read = fread(buffer.data(), size, 1, file);
+            fclose(file);
 
-			if (bytesRead != buffer.size())
+            if (read != size)
 			{
 				throw FileReadError("Unable to read file contents");
 			}
 		}
 
-		void Load(const wchar_t *fileName, StringUTF8 &string)
+		void Load(const Path &filePath, StringUTF8 &string)
 		{
 			std::vector<uint8_t> buffer;
-			Load(fileName, buffer);
+			Load(filePath, buffer);
 			buffer.push_back('\0');
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-		void Load(const wchar_t *fileName, String &string)
+		void Load(const Path &filePath, String &string)
 		{
 			std::vector<uint8_t> buffer;
-			Load(fileName, buffer);
+			Load(filePath, buffer);
 			buffer.push_back('\0');
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-        void CreateDirectory(const wchar_t *fileName)
+        void Save(const Path &filePath, const std::vector<uint8_t> &buffer)
         {
-            auto directory = GetDirectory(fileName);
-            if (!directory.empty())
-            {
-                CreateDirectory(directory);
-                ::CreateDirectory(directory, nullptr);
-            }
-        }
+            MakeDirectoryChain(filePath);
 
-        void Save(const wchar_t *fileName, const std::vector<uint8_t> &buffer)
-        {
-            CreateDirectory(fileName);
-            HANDLE file = CreateFile(fileName, GENERIC_WRITE, 0, nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
-			if (file == INVALID_HANDLE_VALUE)
+            FILE *file = fopen(StringUTF8(filePath.native()), "w+b");
+			if (file == nullptr)
 			{
 				throw FileNotFound("Unable to open file for writing");
 			}
 
-			DWORD bytesWritten = 0;
-			WriteFile(file, buffer.data(), DWORD(buffer.size()), &bytesWritten, nullptr);
-			CloseHandle(file);
+            auto wrote = fwrite(buffer.data(), buffer.size(), 1, file);
+            fclose(file);
 
-			if (bytesWritten != buffer.size())
+			if (wrote != buffer.size())
 			{
 				throw FileWriteError("Unable to write contents to file");
 			}
         }
 
-        void Save(const wchar_t *fileName, const StringUTF8 &string)
+        void Save(const Path &filePath, const StringUTF8 &string)
         {
             std::vector<uint8_t> buffer(string.length());
             std::copy(std::begin(string), std::end(string), std::begin(buffer));
-            Save(fileName, buffer);
+            Save(filePath, buffer);
         }
 
-        void Save(const wchar_t *fileName, const String &string)
+        void Save(const Path &filePath, const String &string)
         {
-            Save(fileName, StringUTF8(string));
+            Save(filePath, StringUTF8(string));
         }
     } // namespace FileSystem
 }; // namespace Gek

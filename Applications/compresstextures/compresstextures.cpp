@@ -3,6 +3,7 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
+#include "GEK/System/Window.hpp"
 #include <experimental\filesystem>
 #include <algorithm>
 #include <map>
@@ -11,26 +12,26 @@
 
 using namespace Gek;
 
-void compressTexture(Video::Debug::Device *device, const String &inputFileName)
+void compressTexture(Video::Debug::Device *device, const FileSystem::Path &inputFilePath)
 {
-	if (!FileSystem::IsFile(inputFileName))
+	if (!inputFilePath.isFile())
 	{
 		throw std::exception("Input file not found");
 	}
 
-	String outputFileName(FileSystem::ReplaceExtension(inputFileName, L".dds"));
-	if (FileSystem::IsFile(outputFileName) && FileSystem::IsFileNewer(outputFileName, inputFileName))
+    auto outputFilePath(inputFilePath.withExtension(L".dds"));
+	if (outputFilePath.isFile() && outputFilePath.isNewerThan(inputFilePath))
 	{
 		throw std::exception("Input file hasn't changed since last compression");
 	}
 
-	printf("Compressing: -> %S\r\n", inputFileName.c_str());
-	printf("             <- %S\r\n", outputFileName.c_str());
+	printf("Compressing: -> %S\r\n", inputFilePath.c_str());
+	printf("             <- %S\r\n", outputFilePath.c_str());
 
 	std::vector<uint8_t> buffer;
-	FileSystem::Load(inputFileName, buffer);
+	FileSystem::Load(inputFilePath, buffer);
 
-	String extension(FileSystem::GetExtension(inputFileName));
+	String extension(inputFilePath.getExtension());
 	std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
 	if (extension.compareNoCase(L".tga") == 0)
 	{
@@ -67,8 +68,10 @@ void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 		throw std::exception("Unable to load input file");
 	}
 
-	bool useDevice = false;
-	String inputName(FileSystem::ReplaceExtension(inputFileName));
+    String inputName(inputFilePath.withoutExtension());
+    inputName.toLower();
+    
+    bool useDevice = false;
 	uint32_t flags = ::DirectX::TEX_COMPRESS_PARALLEL;
 	DXGI_FORMAT outputFormat = DXGI_FORMAT_UNKNOWN;
 	if (inputName.endsWith(L"basecolor") ||
@@ -149,7 +152,7 @@ void compressTexture(Video::Debug::Device *device, const String &inputFileName)
 
 	printf(".compressed.");
 
-	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFileName);
+	resultValue = ::DirectX::SaveToDDSFile(output.GetImages(), output.GetImageCount(), output.GetMetadata(), ::DirectX::DDS_FLAGS_FORCE_DX10_EXT, outputFilePath);
 	if (FAILED(resultValue))
 	{
 		throw std::exception("Unable to save image");
@@ -164,71 +167,37 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
     try
     {
-        String currentModuleName((MAX_PATH + 1), L' ');
-        GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-        currentModuleName.trimRight();
-
-        String fullModuleName((MAX_PATH + 1), L' ');
-        GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-        fullModuleName.trimRight();
-
-        std::experimental::filesystem::path fullModulePath(fullModuleName);
-        fullModulePath.remove_filename();
-        String pluginPath(fullModulePath.wstring());
-
-        SetCurrentDirectory(pluginPath);
-        std::vector<String> searchPathList;
+        auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+        std::vector<FileSystem::Path> searchPathList;
         searchPathList.push_back(pluginPath);
 
-        fullModulePath.remove_filename();
-        String rootPath(fullModulePath.wstring());
+        auto rootPath(pluginPath.getParentPath());
+        ContextPtr context(Context::Create(rootPath, searchPathList));
 
-		String texturesPath(FileSystem::GetFileName(rootPath, L"Data", L"Textures").getLower());
+        Window::Description description;
+        description.className = L"GEK_Engine_Textures";
+        description.windowName = L"GEK Engine Textures";
+        WindowPtr window(context->createClass<Window>(L"Default::System::Window", description));
 
-		WNDCLASS windowClass;
-		windowClass.style = 0;
-		windowClass.lpfnWndProc = DefWindowProc;
-		windowClass.cbClsExtra = 0;
-		windowClass.cbWndExtra = 0;
-		windowClass.hInstance = GetModuleHandle(nullptr);
-		windowClass.hIcon = LoadIcon(GetModuleHandle(nullptr), MAKEINTRESOURCE(103));
-		windowClass.hCursor = nullptr;
-		windowClass.hbrBackground = (HBRUSH)GetStockObject(BLACK_BRUSH);
-		windowClass.lpszMenuName = nullptr;
-		windowClass.lpszClassName = L"GEKvX_Engine_Texture_Compressor";
-		ATOM classAtom = RegisterClass(&windowClass);
-		if (!classAtom)
-		{
-			throw std::exception("Unable to register window class");
-		}
-
-		HWND window = CreateWindow(L"GEKvX_Engine_Texture_Compressor", L"GEKvX Application - Texture Compressor", WS_SYSMENU | WS_BORDER | WS_MINIMIZEBOX, 0, 0, 1, 1, 0, nullptr, GetModuleHandle(nullptr), 0);
-		if (window == nullptr)
-		{
-			throw std::exception("Unable to create window");
-		}
-
-		ContextPtr context(Context::Create(rootPath, searchPathList));
-        
         Video::Device::Description deviceDescription;
-        Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window, deviceDescription));
+        Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window.get(), deviceDescription));
 
-		std::function<bool(const wchar_t *)> searchDirectory;
-		searchDirectory = [&](const wchar_t *fileName) -> bool
+        std::function<bool(const wchar_t *)> searchDirectory;
+		searchDirectory = [&](const FileSystem::Path &filePath) -> bool
 		{
-			if (FileSystem::IsDirectory(fileName))
+			if (filePath.isDirectory())
 			{
-				FileSystem::Find(fileName, searchDirectory);
+				FileSystem::Find(filePath, searchDirectory);
 			}
-			else if (FileSystem::IsFile(fileName) && FileSystem::GetExtension(fileName).compareNoCase(L".dds") != 0)
+			else if (filePath.isFile() && filePath.getExtension().compareNoCase(L".dds") != 0)
 			{
 				try
 				{
-					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String(fileName).getLower());
+					compressTexture(dynamic_cast<Video::Debug::Device *>(device.get()), String(filePath).getLower());
 				}
 				catch (...)
 				{
-					printf("[warning] Error trying to compress file: %S\r\n", fileName);
+					printf("[warning] Error trying to compress file: %S\r\n", filePath.c_str());
 				};
 			}
 
@@ -236,10 +205,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		};
 
 		CoInitialize(nullptr);
-		FileSystem::Find(texturesPath, searchDirectory);
+		FileSystem::Find(FileSystem::GetFileName(rootPath, L"Data", L"Textures"), searchDirectory);
 		CoUninitialize();
-	
-		DestroyWindow(window);
 	}
     catch (const std::exception &exception)
     {

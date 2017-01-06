@@ -13,48 +13,40 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
     {
         printf("GEK Material Creator\r\n");
 
-		String rootPath;
-		String currentModuleName((MAX_PATH + 1), L' ');
-		GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-		currentModuleName.trimRight();
+        auto rootPath(FileSystem::GetModuleFilePath().getParentPath().getParentPath());
+        auto dataPath(FileSystem::GetFileName(rootPath, L"Data"));
 
-		String fullModuleName((MAX_PATH + 1), L' ');
-		GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-		fullModuleName.trimRight();
+        String texturesPath(FileSystem::GetFileName(dataPath, L"Textures"));
+        texturesPath.toLower();
 
-		std::experimental::filesystem::path fullModulePath(fullModuleName);
-		fullModulePath.remove_filename();
-		fullModulePath.remove_filename();
-		rootPath = fullModulePath.append(L"Data").wstring();
-
-		String texturesPath(FileSystem::GetFileName(rootPath, L"Textures").getLower());
-		String materialsPath(FileSystem::GetFileName(rootPath, L"Materials").getLower());
+        String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
+        materialsPath.toLower();
 
 		std::function<bool(const wchar_t *)> findMaterials;
-		findMaterials = [&](const wchar_t *setDirectoryName) -> bool
+		findMaterials = [&](const FileSystem::Path &materialCollectionPath) -> bool
 		{
-			if (FileSystem::IsDirectory(setDirectoryName))
+			if (materialCollectionPath.isDirectory())
 			{
-				printf("Set Found: %S\r\n", setDirectoryName);
-				FileSystem::Find(setDirectoryName, [&](const wchar_t *textureSetPath) -> bool
+				printf("Collection Found: %S\r\n", materialCollectionPath.c_str());
+				FileSystem::Find(materialCollectionPath, [&](const FileSystem::Path &textureSetPath) -> bool
 				{
-					if (FileSystem::IsDirectory(textureSetPath))
+					if (textureSetPath.isDirectory())
 					{
 						String materialName(textureSetPath);
-						materialName.replace((texturesPath + L"\\"), L"");
+                        materialName = materialName.subString(texturesPath.size() + 1);
 						printf("> Material Found: %S\r\n", materialName.c_str());
 
                         JSON::Object renderState;
-                        std::map<String, std::map<uint32_t, std::pair<String, String>>> fileMap;
-                        FileSystem::Find(textureSetPath, [&](const wchar_t *fileName) -> bool
+                        std::map<String, std::map<uint32_t, std::pair<FileSystem::Path, String>>> fileMap;
+                        FileSystem::Find(textureSetPath, [&](const FileSystem::Path &filePath) -> bool
                         {
                             uint32_t extensionImportance = 0;
-                            String extension(FileSystem::GetExtension(fileName));
+                            String extension(filePath.getExtension());
                             if (extension.compareNoCase(L".json") == 0)
                             {
                                 try
                                 {
-                                    renderState = JSON::Load(fileName);
+                                    renderState = JSON::Load(filePath);
                                 }
                                 catch (...)
                                 {
@@ -86,8 +78,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                                 return true;
                             }
 
-                            String textureName(FileSystem::ReplaceExtension(fileName).getLower());
-                            textureName.replace((texturesPath + L"\\"), L"");
+                            String textureName(filePath.withoutExtension());
+                            textureName = textureName.subString(texturesPath.size() + 1);
                             textureName.toLower();
 
                             if (textureName.endsWith(L"basecolor") ||
@@ -97,26 +89,26 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                                 textureName.endsWith(L"alb") ||
                                 textureName.endsWith(L"_d") ||
                                 textureName.endsWith(L"_c"))
-                        {
-                                fileMap[L"albedo"][extensionImportance] = std::make_pair(fileName, textureName);
+                            {
+                                fileMap[L"albedo"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
                             else if (textureName.endsWith(L"normal") ||
                                 textureName.endsWith(L"_n"))
                             {
-                                fileMap[L"normal"][extensionImportance] = std::make_pair(fileName, textureName);
+                                fileMap[L"normal"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
                             else if (textureName.endsWith(L"roughness") ||
                                 textureName.endsWith(L"rough") ||
                                 textureName.endsWith(L"_r"))
                             {
-                                fileMap[L"roughness"][extensionImportance] = std::make_pair(fileName, textureName);
+                                fileMap[L"roughness"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
                             else if (textureName.endsWith(L"metalness") ||
                                 textureName.endsWith(L"metallic") ||
                                 textureName.endsWith(L"metal") ||
                                 textureName.endsWith(L"_m"))
                             {
-                                fileMap[L"metallic"][extensionImportance] = std::make_pair(fileName, textureName);
+                                fileMap[L"metallic"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
 
                             return true;
@@ -127,11 +119,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                             JSON::Object dataNode;
                             for(auto &mapSearch : fileMap)
                             {
-                                auto fileName = std::begin(mapSearch.second)->second.first;
-                                auto textureName = std::begin(mapSearch.second)->second.second;
-
                                 JSON::Object node;
-                                node[L"file"] = textureName;
+                                node[L"file"] = std::begin(mapSearch.second)->second.second;
                                 if (mapSearch.first.compareNoCase(L"albedo") == 0)
                                 {
                                     node[L"flags"] = L"sRGB";
@@ -140,18 +129,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                                 dataNode.set(mapSearch.first, node);
                             }
 
-                            std::function<void(const wchar_t *)> createParent;
-                            createParent = [&](const wchar_t *directory) -> void
-                            {
-                                if (!FileSystem::IsDirectory(directory))
-                                {
-                                    createParent(FileSystem::GetDirectory(directory));
-                                    CreateDirectory(directory, nullptr);
-                                }
-                            };
-
-                            String materialPath(FileSystem::GetFileName(materialsPath, materialName).append(L".json"));
-                            createParent(FileSystem::GetDirectory(materialPath));
+                            auto materialPath(FileSystem::GetFileName(materialsPath, materialName).withExtension(L".json"));
+                            FileSystem::MakeDirectoryChain(materialPath.getParentPath());
 
                             JSON::Object solidNode;
                             solidNode.set(L"data", dataNode);

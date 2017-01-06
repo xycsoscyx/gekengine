@@ -494,36 +494,11 @@ namespace Gek
                 return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
-            Video::TexturePtr loadTextureData(const wchar_t *textureName, uint32_t flags)
+            Video::TexturePtr loadTextureData(const FileSystem::Path &filePath, const wchar_t *textureName, uint32_t flags)
             {
-                GEK_REQUIRE(textureName);
-
-                // iterate over formats in case the texture name has no extension
-                static const String formatList[] =
-                {
-                    L"",
-                    L".dds",
-                    L".tga",
-                    L".png",
-                    L".jpg",
-                    L".bmp",
-                };
-
-                String baseFileName(getContext()->getRootFileName(L"data", L"textures", textureName));
-                for (auto &format : formatList)
-                {
-                    String fileName(baseFileName);
-                    fileName.append(format);
-
-                    if (FileSystem::IsFile(fileName))
-                    {
-                        auto texture = videoDevice->loadTexture(fileName, flags);
-                        texture->setName(fileName);
-                        return texture;
-                    }
-                }
-
-                return nullptr;
+                auto texture = videoDevice->loadTexture(filePath, flags);
+                texture->setName(textureName);
+                return texture;
             }
 
             String getFullProgram(const wchar_t *name, const wchar_t *engineData)
@@ -531,14 +506,14 @@ namespace Gek
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(engineData);
 
-                String rootProgramsDirectory(getContext()->getRootFileName(L"data", L"programs"));
-                String fileName(FileSystem::GetFileName(rootProgramsDirectory, name));
-                if (FileSystem::IsFile(fileName))
+                auto programsPath(getContext()->getRootFileName(L"data", L"programs"));
+                auto filePath(FileSystem::GetFileName(programsPath, name));
+                if (filePath.isFile())
                 {
-                    String programDirectory(FileSystem::GetDirectory(fileName));
+                    String programDirectory(filePath.getParentPath());
 
                     String baseProgram;
-                    FileSystem::Load(fileName, baseProgram);
+                    FileSystem::Load(filePath, baseProgram);
                     baseProgram.replace(L"\r", L"$");
                     baseProgram.replace(L"\n", L"$");
                     baseProgram.replace(L"$$", L"$");
@@ -573,18 +548,18 @@ namespace Gek
                                     includeName = includeName.subString(1, includeName.length() - 2);
                                     if (includeType == L'\"')
                                     {
-                                        String localFileName(FileSystem::GetFileName(programDirectory, includeName));
-                                        if (FileSystem::IsFile(localFileName))
+                                        auto localPath(FileSystem::GetFileName(programDirectory, includeName));
+                                        if (localPath.isFile())
                                         {
-                                            FileSystem::Load(localFileName, includeData);
+                                            FileSystem::Load(localPath, includeData);
                                         }
                                     }
                                     else if (includeType == L'<')
                                     {
-                                        String rootFileName(FileSystem::GetFileName(rootProgramsDirectory, includeName));
-                                        if (FileSystem::IsFile(rootFileName))
+                                        auto rootPath(FileSystem::GetFileName(programsPath, includeName));
+                                        if (rootPath.isFile())
                                         {
-                                            FileSystem::Load(rootFileName, includeData);
+                                            FileSystem::Load(rootPath, includeData);
                                         }
                                     }
                                     else
@@ -696,24 +671,22 @@ namespace Gek
                     L".bmp",
                 };
 
-                String baseFileName(getContext()->getRootFileName(L"data", L"textures", textureName));
+                auto texturePath(getContext()->getRootFileName(L"data", L"textures", textureName));
                 for (auto &format : formatList)
                 {
-                    String fileName(baseFileName);
-                    fileName.append(format);
-
-                    if (FileSystem::IsFile(fileName))
+                    auto filePath(texturePath.withExtension(format));
+                    if (filePath.isFile())
                     {
-                        auto load = [this, textureName = String(textureName), fileName = String(fileName), flags](ResourceHandle)->Video::TexturePtr
+                        auto load = [this, filePath = FileSystem::Path(filePath), textureName = String(textureName), flags](ResourceHandle)->Video::TexturePtr
                         {
-                            return loadTextureData(textureName, flags);
+                            return loadTextureData(filePath, textureName, flags);
                         };
 
                         auto hash = GetHash(textureName);
                         auto resource = dynamicCache.getHandle(hash, flags, std::move(load));
                         if (resource.first)
                         {
-                            auto description = videoDevice->loadTextureDescription(fileName);
+                            auto description = videoDevice->loadTextureDescription(filePath);
                             textureDescriptionMap.insert(std::make_pair(resource.second, description));
                         }
 
@@ -1202,24 +1175,24 @@ namespace Gek
                 auto uncompiledProgram = getFullProgram(name, engineData);
 
                 auto hash = GetHash(uncompiledProgram);
-                auto cache = String::Format(L".%v.bin", hash);
-                String cacheFileName(FileSystem::ReplaceExtension(getContext()->getRootFileName(L"data", L"cache", name), cache));
+                auto cacheExtension = String::Format(L".%v.bin", hash);
+                auto cachePath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(cacheExtension));
 
 				std::vector<uint8_t> compiledProgram;
-                if (FileSystem::IsFile(cacheFileName))
+                if (cachePath.isFile())
                 {
-                    FileSystem::Load(cacheFileName, compiledProgram);
+                    FileSystem::Load(cachePath, compiledProgram);
                 }
                 
                 if (compiledProgram.empty())
                 {
 #ifdef _DEBUG
-					auto debug = String::Format(L".%v.hlsl", hash);
-					String debugFileName(FileSystem::ReplaceExtension(getContext()->getRootFileName(L"data", L"cache", name), debug));
-					FileSystem::Save(debugFileName, uncompiledProgram);
+					auto debugExtension = String::Format(L".%v.hlsl", hash);
+					String debugPath(getContext()->getRootFileName(L"data", L"cache", name).withExtension(debugExtension));
+					FileSystem::Save(debugPath, uncompiledProgram);
 #endif
 					compiledProgram = videoDevice->compileProgram(pipelineType, name, uncompiledProgram, entryFunction);
-                    FileSystem::Save(cacheFileName, compiledProgram);
+                    FileSystem::Save(cachePath, compiledProgram);
                 }
 
                 return compiledProgram;

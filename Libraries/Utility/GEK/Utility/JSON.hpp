@@ -8,6 +8,7 @@
 #pragma once
 
 #include "GEK/Utility/String.hpp"
+#include "GEK/Utility/FileSystem.hpp"
 #include <jsoncons/json.hpp>
 
 namespace jsoncons
@@ -93,7 +94,7 @@ namespace Gek
         using Member = Object::member_type;
         using Array = Object::array;
 
-        Object Load(const wchar_t *fileName);
-        void Save(const wchar_t *fileName, const Object &object);
+        Object Load(const FileSystem::Path &filePath);
+        void Save(const FileSystem::Path &filePath, const Object &object);
 	}; // namespace JSON
 }; // namespace Gek

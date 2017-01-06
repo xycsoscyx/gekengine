@@ -12,7 +12,6 @@
 #include "GEK/System/Window.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include <nano_signal_slot.hpp>
-#include <Windows.h>
 #include <imgui.h>
 
 namespace Gek

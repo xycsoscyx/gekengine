@@ -4,14 +4,9 @@
 #include "GEK/Shapes/AlignedBox.hpp"
 #include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <Windows.h>
-#include <experimental\filesystem>
-#include <unordered_map>
 #include <algorithm>
 #include <vector>
-#include <map>
 
 #include <Newton.h>
 

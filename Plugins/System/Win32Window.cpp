@@ -28,7 +28,7 @@ namespace Gek
                 windowClass.style = CS_HREDRAW | CS_VREDRAW | (description.hasOwnContext ? CS_OWNDC : 0);
                 windowClass.lpfnWndProc = [](HWND handle, uint32_t message, WPARAM wParam, LPARAM lParam) -> LRESULT
                 {
-                    Gek::Window *window = reinterpret_cast<Gek::Window *>(GetWindowLongPtr(handle, GWLP_USERDATA));
+                    Window *window = reinterpret_cast<Window *>(GetWindowLongPtr(handle, GWLP_USERDATA));
                     if (window)
                     {
                         Gek::Window::Event data(message, wParam, lParam);
@@ -72,6 +72,7 @@ namespace Gek
                     throw std::exception("Unable to create window");
                 }
 
+                SetWindowLongPtr(window, GWLP_USERDATA, LONG_PTR(this));
                 if (description.getRawInput)
                 {
                     RAWINPUTDEVICE inputDevice;
@@ -108,7 +109,7 @@ namespace Gek
                 return SendMessage(window, eventData.message, eventData.unsignedParameter, eventData.signedParameter);
             }
 
-            void *getPrivateData(void) const
+            void *getBaseWindow(void) const
             {
                 return window;
             }
@@ -137,6 +138,12 @@ namespace Gek
             void setCursorPosition(const Math::Int2 &position)
             {
                 SetCursorPos(position.x, position.y);
+            }
+
+            void setVisibility(bool isVisible)
+            {
+                ShowWindow(window, (isVisible ? SW_SHOW : SW_HIDE));
+                UpdateWindow(window);
             }
 
             void move(int32_t xPosition, int32_t yPosition)

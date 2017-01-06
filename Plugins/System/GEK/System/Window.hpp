@@ -63,7 +63,7 @@ namespace Gek
         virtual void readEvents(void) = 0;
         virtual Event::Result sendEvent(const Event &eventData) = 0;
 
-        virtual void *getPrivateData(void) const = 0;
+        virtual void *getBaseWindow(void) const = 0;
 
         virtual Math::Int4 getClientRectangle(void) const = 0;
         virtual Math::Int4 getScreenRectangle(void) const = 0;
@@ -71,6 +71,7 @@ namespace Gek
         virtual Math::Int2 getCursorPosition(void) const = 0;
         virtual void setCursorPosition(const Math::Int2 &position) = 0;
 
+        virtual void setVisibility(bool isVisible) = 0;
         virtual void move(int32_t xPosition = -1, int32_t yPosition = -1) = 0;
     };
 }; // namespace Gek

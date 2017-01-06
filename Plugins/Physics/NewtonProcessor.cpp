@@ -244,7 +244,7 @@ namespace Gek
                     collisionMap[hash] = nullptr;
 
                     std::vector<uint8_t> buffer;
-                    FileSystem::Load(getContext()->getRootFileName(L"data", L"models", modelComponent.name).append(L".bin"), buffer);
+                    FileSystem::Load(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".bin"), buffer);
 
                     Header *header = (Header *)buffer.data();
                     if (header->identifier != *(uint32_t *)"GEKX")
@@ -522,7 +522,7 @@ namespace Gek
                     surfaceIndexMap[hash] = 0;
                     try
                     {
-                        const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName(L"data", L"materials", surfaceName).append(L".json"));
+                        const JSON::Object materialNode = JSON::Load(getContext()->getRootFileName(L"data", L"materials", surfaceName).withExtension(L".json"));
 
                         auto &surfaceNode = materialNode.get(L"surface");
                         if (surfaceNode.is_object())

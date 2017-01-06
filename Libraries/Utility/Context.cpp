@@ -13,23 +13,25 @@ namespace Gek
         : public Context
     {
     private:
-        String rootPath;
+        FileSystem::Path rootPath;
         std::list<HMODULE> moduleList;
         std::unordered_map<String, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
         std::unordered_multimap<String, String> typeMap;
 
     public:
-        ContextImplementation(const wchar_t *rootPath, std::vector<String> searchPathList)
+        ContextImplementation(const FileSystem::Path &rootPath, std::vector<FileSystem::Path> searchPathList)
             : rootPath(rootPath)
         {
-			searchPathList.push_back(rootPath);
+            SetCurrentDirectory(rootPath);
+            
+            searchPathList.push_back(rootPath);
             for (auto &searchPath : searchPathList)
             {
-                FileSystem::Find(searchPath, [&](const wchar_t *fileName) -> bool
+                FileSystem::Find(searchPath, [&](const FileSystem::Path &filePath) -> bool
                 {
-					if (FileSystem::IsFile(fileName) && FileSystem::GetExtension(fileName).compareNoCase(L".dll") == 0)
+					if (filePath.isFile() && filePath.getExtension().compareNoCase(L".dll") == 0)
 					{
-						HMODULE module = LoadLibrary(fileName);
+						HMODULE module = LoadLibrary(filePath);
 						if (module)
 						{
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
@@ -79,9 +81,9 @@ namespace Gek
         }
 
         // Context
-        const wchar_t *getRootPath(void) const
+        const FileSystem::Path &getRootPath(void) const
         {
-            return rootPath.data();
+            return rootPath;
         }
 
         ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
@@ -107,7 +109,7 @@ namespace Gek
         }
     };
 
-    ContextPtr Context::Create(const wchar_t *rootPath, const std::vector<String> &searchPathList)
+    ContextPtr Context::Create(const FileSystem::Path &rootPath, const std::vector<FileSystem::Path> &searchPathList)
     {
         return std::make_shared<ContextImplementation>(rootPath, searchPathList);
     }

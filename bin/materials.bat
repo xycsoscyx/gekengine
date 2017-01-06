@@ -1,3 +1,3 @@
-.\release\creatematerials.exe
+.\debug\creatematerials.exe
 
 pause

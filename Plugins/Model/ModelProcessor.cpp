@@ -192,7 +192,7 @@ namespace Gek
         {
             ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
-                String fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).append(L".gek"));
+                String fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
                 auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
                 if (pair.second)
                 {

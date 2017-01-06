@@ -1538,7 +1538,7 @@ namespace Gek
             Device(Gek::Context *context, Window *window, Video::Device::Description deviceDescription)
                 : ContextRegistration(context)
                 , window(window)
-                , isChildWindow(GetParent((HWND)window->getPrivateData()) != nullptr)
+                , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
             {
                 GEK_REQUIRE(window);
 
@@ -1584,13 +1584,13 @@ namespace Gek
                 swapChainDescription.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
                 swapChainDescription.AlphaMode = DXGI_ALPHA_MODE_UNSPECIFIED;
                 swapChainDescription.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH;
-                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getPrivateData(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
+                resultValue = dxgiFactory->CreateSwapChainForHwnd(d3dDevice, (HWND)window->getBaseWindow(), &swapChainDescription, nullptr, nullptr, &dxgiSwapChain);
                 if (FAILED(resultValue) || !dxgiSwapChain)
                 {
                     throw Video::InitializationFailed("Unable to create swap chain for window");
                 }
 
-                dxgiFactory->MakeWindowAssociation((HWND)window->getPrivateData(), 0);
+                dxgiFactory->MakeWindowAssociation((HWND)window->getBaseWindow(), 0);
 
 #ifdef _DEBUG
                 CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
@@ -2606,14 +2606,14 @@ namespace Gek
                 }
             }
 
-            Video::TexturePtr loadTexture(const wchar_t *fileName, uint32_t flags)
+            Video::TexturePtr loadTexture(const FileSystem::Path &filePath, uint32_t flags)
             {
                 GEK_REQUIRE(d3dDevice);
 
                 std::vector<uint8_t> buffer;
-                FileSystem::Load(fileName, buffer);
+                FileSystem::Load(filePath, buffer);
 
-                String extension(FileSystem::GetExtension(fileName));
+                String extension(filePath.getExtension());
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
                 if (extension.compareNoCase(L".dds") == 0)
                 {
@@ -2672,12 +2672,12 @@ namespace Gek
                 return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
             }
 
-            Texture::Description loadTextureDescription(const wchar_t *fileName)
+            Texture::Description loadTextureDescription(const FileSystem::Path &filePath)
             {
                 std::vector<uint8_t> buffer;
-                FileSystem::Load(fileName, buffer, 1024 * 4);
+                FileSystem::Load(filePath, buffer, 1024 * 4);
 
-                String extension(FileSystem::GetExtension(fileName));
+                String extension(filePath.getExtension());
                 std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::TexMetadata &)> getMetadata;
                 if (extension.compareNoCase(L".dds") == 0)
                 {

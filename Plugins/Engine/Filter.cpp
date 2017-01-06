@@ -605,7 +605,7 @@ namespace Gek
                     }
 
                     String entryPoint(passNode.get(L"entry").as_string());
-                    String name(FileSystem::GetFileName(filterName, passNode.get(L"program").as_cstring()).append(L".hlsl"));
+                    String name(FileSystem::GetFileName(filterName, passNode.get(L"program").as_cstring()).withExtension(L".hlsl"));
                     Video::PipelineType pipelineType = (pass.mode == Pass::Mode::Compute ? Video::PipelineType::Compute : Video::PipelineType::Pixel);
                     pass.program = resources->loadProgram(pipelineType, name, entryPoint, engineData);
                 }

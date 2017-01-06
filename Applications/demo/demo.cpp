@@ -12,25 +12,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
 {
     try
     {
-        String currentModuleName((MAX_PATH + 1), L' ');
-        GetModuleFileName(nullptr, &currentModuleName.at(0), MAX_PATH);
-        currentModuleName.trimRight();
-
-        String fullModuleName((MAX_PATH + 1), L' ');
-        GetFullPathName(currentModuleName, MAX_PATH, &fullModuleName.at(0), nullptr);
-        fullModuleName.trimRight();
-
-        std::experimental::filesystem::path fullModulePath(fullModuleName);
-        fullModulePath.remove_filename();
-        String pluginPath(fullModulePath.wstring());
-
-        SetCurrentDirectory(pluginPath);
-        std::vector<String> searchPathList;
+        auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+        std::vector<FileSystem::Path> searchPathList;
         searchPathList.push_back(pluginPath);
 
-        fullModulePath.remove_filename();
-        String rootPath(fullModulePath.wstring());
-
+        auto rootPath(pluginPath.getParentPath());
         ContextPtr context(Context::Create(rootPath, searchPathList));
         if (true)
         {

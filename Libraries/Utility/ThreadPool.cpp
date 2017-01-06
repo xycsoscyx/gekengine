@@ -1,5 +1,8 @@
 #include "GEK/Utility/ThreadPool.hpp"
+
+#ifdef _WIN32
 #include <Windows.h>
+#endif
 
 namespace Gek
 {
@@ -11,7 +14,9 @@ namespace Gek
             // Worker execution loop
             workerList.emplace_back([this](void) -> void
             {
+#ifdef _WIN32
                 CoInitialize(nullptr);
+#endif
                 for (;;)
                 {
                     // Task to execute
@@ -42,7 +47,9 @@ namespace Gek
                     task();
                 }
 
+#ifdef _WIN32
                 CoUninitialize();
+#endif
             });
         }
     }
