@@ -155,23 +155,25 @@ namespace Gek
 
 		void Load(const Path &filePath, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
-            FILE *file = fopen(StringUTF8(filePath.native()), "rb");
-            if (file == nullptr)
-            {
-                throw FileNotFound("Unable to open file for reading");
-            }
-
             auto size = std::experimental::filesystem::file_size(filePath);
-            size = std::min(size, limitReadSize);
-			buffer.resize(size);
+            size = (limitReadSize == 0 ? size : std::min(size, limitReadSize));
+            if (size > 0)
+            {
+                FILE *file = fopen(StringUTF8(filePath.native()), "rb");
+                if (file == nullptr)
+                {
+                    throw FileNotFound("Unable to open file for reading");
+                }
 
-            auto read = fread(buffer.data(), size, 1, file);
-            fclose(file);
+                buffer.resize(size);
+                auto read = fread(buffer.data(), size, 1, file);
+                fclose(file);
 
-            if (read != size)
-			{
-				throw FileReadError("Unable to read file contents");
-			}
+                if (read != 1)
+                {
+                    throw FileReadError("Unable to read file contents");
+                }
+            }
 		}
 
 		void Load(const Path &filePath, StringUTF8 &string)
@@ -192,7 +194,7 @@ namespace Gek
 
         void Save(const Path &filePath, const std::vector<uint8_t> &buffer)
         {
-            MakeDirectoryChain(filePath);
+            MakeDirectoryChain(filePath.getParentPath());
 
             FILE *file = fopen(StringUTF8(filePath.native()), "w+b");
 			if (file == nullptr)
@@ -203,7 +205,7 @@ namespace Gek
             auto wrote = fwrite(buffer.data(), buffer.size(), 1, file);
             fclose(file);
 
-			if (wrote != buffer.size())
+			if (wrote != 1)
 			{
 				throw FileWriteError("Unable to write contents to file");
 			}

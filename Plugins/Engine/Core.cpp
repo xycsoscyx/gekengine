@@ -384,7 +384,7 @@ namespace Gek
                     Core *core = static_cast<Core *>(imGuiIo.UserData);
                     core->renderDrawData(drawData);
                 };
-
+                
                 windowActive = true;
                 engineRunning = true;
 
@@ -683,6 +683,158 @@ namespace Gek
                 }
             }
 
+            void onCursorEvent(Window::Event &eventData)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                switch (eventData.message)
+                {
+                case WM_SETCURSOR:
+                    if (LOWORD(eventData.signedParameter) == HTCLIENT)
+                    {
+                        ShowCursor(false);
+                        imGuiIo.MouseDrawCursor = true;
+                    }
+                    else
+                    {
+                        ShowCursor(true);
+                        imGuiIo.MouseDrawCursor = false;
+                    }
+
+                    break;
+
+                case WM_LBUTTONDOWN:
+                    imGuiIo.MouseDown[0] = true;
+                    break;
+
+                case WM_LBUTTONUP:
+                    imGuiIo.MouseDown[0] = false;
+                    break;
+
+                case WM_RBUTTONDOWN:
+                    imGuiIo.MouseDown[1] = true;
+                    break;
+
+                case WM_RBUTTONUP:
+                    imGuiIo.MouseDown[1] = false;
+                    break;
+
+                case WM_MBUTTONDOWN:
+                    imGuiIo.MouseDown[2] = true;
+                    break;
+
+                case WM_MBUTTONUP:
+                    imGuiIo.MouseDown[2] = false;
+                    break;
+
+                case WM_MOUSEWHEEL:
+                    imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.unsignedParameter) > 0 ? +1.0f : -1.0f;
+                    break;
+
+                case WM_MOUSEMOVE:
+                    imGuiIo.MousePos.x = (int16_t)(eventData.signedParameter);
+                    imGuiIo.MousePos.y = (int16_t)(eventData.signedParameter >> 16);
+                    break;
+
+                case WM_KEYDOWN:
+                    if (eventData.unsignedParameter < 256)
+                    {
+                        imGuiIo.KeysDown[eventData.unsignedParameter] = true;
+                    }
+
+                    break;
+
+                case WM_KEYUP:
+                    if (eventData.unsignedParameter == VK_ESCAPE)
+                    {
+                        imGuiIo.MouseDrawCursor = false;
+                        showCursor = false;
+                    }
+
+                    if (eventData.unsignedParameter < 256)
+                    {
+                        imGuiIo.KeysDown[eventData.unsignedParameter] = false;
+                    }
+
+                    break;
+
+                case WM_CHAR:
+                    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
+                    if (eventData.unsignedParameter > 0 && eventData.unsignedParameter < 0x10000)
+                    {
+                        imGuiIo.AddInputCharacter((uint16_t)eventData.unsignedParameter);
+                    }
+
+                    break;
+                };
+            }
+
+            void onPopulationEvent(Window::Event &eventData)
+            {
+                auto addAction = [this](uint32_t parameter, bool state) -> void
+                {
+                    switch (parameter)
+                    {
+                    case 'W':
+                    case VK_UP:
+                        population->action(L"move_forward", state);
+                        break;
+
+                    case 'S':
+                    case VK_DOWN:
+                        population->action(L"move_backward", state);
+                        break;
+
+                    case 'A':
+                    case VK_LEFT:
+                        population->action(L"strafe_left", state);
+                        break;
+
+                    case 'D':
+                    case VK_RIGHT:
+                        population->action(L"strafe_right", state);
+                        break;
+
+                    case VK_SPACE:
+                        population->action(L"jump", state);
+                        break;
+
+                    case VK_LCONTROL:
+                        population->action(L"crouch", state);
+                        break;
+                    };
+                };
+
+                switch (eventData.message)
+                {
+                case WM_KEYDOWN:
+                    addAction(eventData.unsignedParameter, true);
+                    break;
+
+                case WM_KEYUP:
+                    addAction(eventData.unsignedParameter, false);
+                    break;
+
+                case WM_INPUT:
+                    if (population)
+                    {
+                        UINT inputSize = 40;
+                        static BYTE rawInputBuffer[40];
+                        GetRawInputData((HRAWINPUT)eventData.signedParameter, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
+
+                        RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
+                        if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                        {
+                            float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
+                            float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
+                            population->action(L"turn", xMovement);
+                            population->action(L"tilt", yMovement);
+                        }
+
+                        break;
+                    }
+                };
+            }
+
             // Window slots
             void onEvent(Window::Event &eventData)
             {
@@ -690,7 +842,7 @@ namespace Gek
                 {
                 case WM_CLOSE:
                     engineRunning = false;
-                    return;
+                    break;
 
                 case WM_ACTIVATE:
                     if (HIWORD(eventData.unsignedParameter))
@@ -712,7 +864,7 @@ namespace Gek
                         };
                     }
 
-                    return;
+                    break;
 
                 case WM_SIZE:
                     if (videoDevice)
@@ -724,7 +876,7 @@ namespace Gek
                         }
                     }
 
-                    return;
+                    break;
 
                 case WM_KEYUP:
                     if (population)
@@ -742,162 +894,7 @@ namespace Gek
 
                 if (showCursor)
                 {
-                    ImGuiIO &imGuiIo = ImGui::GetIO();
-                    switch (eventData.message)
-                    {
-                    case WM_SETCURSOR:
-                        if (LOWORD(eventData.signedParameter) == HTCLIENT)
-                        {
-                            ShowCursor(false);
-                            imGuiIo.MouseDrawCursor = true;
-                        }
-                        else
-                        {
-                            ShowCursor(true);
-                            imGuiIo.MouseDrawCursor = false;
-                        }
-
-                        return;
-
-                    case WM_LBUTTONDOWN:
-                        imGuiIo.MouseDown[0] = true;
-                        return;
-
-                    case WM_LBUTTONUP:
-                        imGuiIo.MouseDown[0] = false;
-                        return;
-
-                    case WM_RBUTTONDOWN:
-                        imGuiIo.MouseDown[1] = true;
-                        return;
-
-                    case WM_RBUTTONUP:
-                        imGuiIo.MouseDown[1] = false;
-                        return;
-
-                    case WM_MBUTTONDOWN:
-                        imGuiIo.MouseDown[2] = true;
-                        return;
-
-                    case WM_MBUTTONUP:
-                        imGuiIo.MouseDown[2] = false;
-                        return;
-
-                    case WM_MOUSEWHEEL:
-                        imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.unsignedParameter) > 0 ? +1.0f : -1.0f;
-                        return;
-
-                    case WM_MOUSEMOVE:
-                        imGuiIo.MousePos.x = (int16_t)(eventData.signedParameter);
-                        imGuiIo.MousePos.y = (int16_t)(eventData.signedParameter >> 16);
-                        return;
-
-                    case WM_KEYDOWN:
-                        if (eventData.unsignedParameter < 256)
-                        {
-                            imGuiIo.KeysDown[eventData.unsignedParameter] = 1;
-                        }
-
-                        return;
-
-                    case WM_KEYUP:
-                        if (eventData.unsignedParameter == VK_ESCAPE)
-                        {
-                            imGuiIo.MouseDrawCursor = false;
-                            showCursor = false;
-                        }
-
-                        if (eventData.unsignedParameter < 256)
-                        {
-                            imGuiIo.KeysDown[eventData.unsignedParameter] = 0;
-                        }
-
-                        return;
-
-                    case WM_CHAR:
-                        // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-                        if (eventData.unsignedParameter > 0 && eventData.unsignedParameter < 0x10000)
-                        {
-                            imGuiIo.AddInputCharacter((uint16_t)eventData.unsignedParameter);
-                        }
-
-                        return;
-                    };
-                }
-                else if (population)
-                {
-                    auto addAction = [this](uint32_t parameter, bool state) -> void
-                    {
-                        switch (parameter)
-                        {
-                        case 'W':
-                        case VK_UP:
-                            population->action(L"move_forward", state);
-                            break;
-
-                        case 'S':
-                        case VK_DOWN:
-                            population->action(L"move_backward", state);
-                            break;
-
-                        case 'A':
-                        case VK_LEFT:
-                            population->action(L"strafe_left", state);
-                            break;
-
-                        case 'D':
-                        case VK_RIGHT:
-                            population->action(L"strafe_right", state);
-                            break;
-
-                        case VK_SPACE:
-                            population->action(L"jump", state);
-                            break;
-
-                        case VK_LCONTROL:
-                            population->action(L"crouch", state);
-                            break;
-                        };
-                    };
-
-                    switch (eventData.message)
-                    {
-                    case WM_SETCURSOR:
-                        ShowCursor(false);
-                        return;
-
-                    case WM_KEYDOWN:
-                        addAction(eventData.unsignedParameter, true);
-                        return;
-
-                    case WM_KEYUP:
-                        addAction(eventData.unsignedParameter, false);
-                        if (eventData.unsignedParameter == VK_ESCAPE)
-                        {
-                            showCursor = true;
-                        }
-
-                        return;
-
-                    case WM_INPUT:
-                        if (population)
-                        {
-                            UINT inputSize = 40;
-                            static BYTE rawInputBuffer[40];
-                            GetRawInputData((HRAWINPUT)eventData.signedParameter, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
-
-                            RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
-                            if (rawInput->header.dwType == RIM_TYPEMOUSE)
-                            {
-                                float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
-                                float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
-                                population->action(L"turn", xMovement);
-                                population->action(L"tilt", yMovement);
-                            }
-
-                            return;
-                        }
-                    };
+                    onCursorEvent(eventData);
                 }
                 else
                 {
@@ -905,10 +902,7 @@ namespace Gek
                     {
                     case WM_SETCURSOR:
                         ShowCursor(false);
-                        return;
-
-                    case WM_KEYDOWN:
-                        return;
+                        break;
 
                     case WM_KEYUP:
                         if (eventData.unsignedParameter == VK_ESCAPE)
@@ -916,14 +910,21 @@ namespace Gek
                             showCursor = true;
                         }
 
-                        return;
+                        break;
                     };
+
+                    if (population)
+                    {
+                        onPopulationEvent(eventData);
+                    }
                 }
             }
 
             // Plugin::Core
             bool update(void)
             {
+                window->readEvents();
+
                 timer.update();
                 float frameTime = timer.getUpdateTime();
                 if (windowActive)
@@ -1048,8 +1049,8 @@ namespace Gek
                 {
                     auto rectangle = window->getScreenRectangle();
                     window->setCursorPosition(Math::Int2(
-                        int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.minimum.y), 0.5f)),
-                        int(Math::Interpolate(float(rectangle.maximum.x), float(rectangle.maximum.y), 0.5f))));
+                        int(Math::Interpolate(float(rectangle.minimum.x), float(rectangle.maximum.x), 0.5f)),
+                        int(Math::Interpolate(float(rectangle.minimum.y), float(rectangle.maximum.y), 0.5f))));
                 }
 
                 gui->panelManager.render();

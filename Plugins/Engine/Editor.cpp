@@ -135,114 +135,117 @@ namespace Gek
                         ImGui::ListBoxFooter();
                     }
 
-                    auto entitySearch = std::begin(entityMap);
-                    std::advance(entitySearch, selectedEntity);
-                    Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
-                    if (entity)
+                    if (selectedEntity >= 0 && selectedEntity < entityMap.size())
                     {
-                        if (entity->hasComponent<Components::Transform>())
+                        auto entitySearch = std::begin(entityMap);
+                        std::advance(entitySearch, selectedEntity);
+                        Edit::Entity *entity = dynamic_cast<Edit::Entity *>(entitySearch->second.get());
+                        if (entity)
                         {
-                            auto &transformComponent = entity->getComponent<Components::Transform>();
-                        }
-
-                        if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
-                        {
-                            ImGui::OpenPopup("Select Component");
-                        }
-
-                        if (ImGui::BeginPopup("Select Component"))
-                        {
-                            auto &componentMap = population->getComponentMap();
-                            auto componentCount = componentMap.size();
-                            if (ImGui::ListBoxHeader("##Components", componentCount, 7))
+                            if (entity->hasComponent<Components::Transform>())
                             {
-                                ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
-                                while (clipper.Step())
-                                {
-                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
-                                    {
-                                        auto componentSearch = std::begin(componentMap);
-                                        std::advance(componentSearch, componentIndex);
-                                        if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                        {
-                                            JSON::Member componentData(componentSearch->second->getName(), JSON::Object());
-                                            population->addComponent(entity, componentData);
-                                            ImGui::CloseCurrentPopup();
-                                        }
-                                    }
-                                };
-
-                                ImGui::ListBoxFooter();
+                                auto &transformComponent = entity->getComponent<Components::Transform>();
                             }
 
-                            ImGui::EndPopup();
-                        }
-
-                        auto &entityComponentMap = entity->getComponentMap();
-                        if (!entityComponentMap.empty())
-                        {
-                            auto entityComponentsCount = entityComponentMap.size();
-                            if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
+                            if (ImGui::Button("Add Component", ImVec2(ImGui::GetWindowContentRegionWidth(), 0)))
                             {
-                                std::vector<std::type_index> componentDeleteList;
-                                ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
-                                while (clipper.Step())
+                                ImGui::OpenPopup("Select Component");
+                            }
+
+                            if (ImGui::BeginPopup("Select Component"))
+                            {
+                                auto &componentMap = population->getComponentMap();
+                                auto componentCount = componentMap.size();
+                                if (ImGui::ListBoxHeader("##Components", componentCount, 7))
                                 {
-                                    for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
+                                    ImGuiListClipper clipper(componentCount, ImGui::GetTextLineHeightWithSpacing());
+                                    while (clipper.Step())
                                     {
-                                        auto entityComponentSearch = std::begin(entityComponentMap);
-                                        std::advance(entityComponentSearch, componentIndex);
-
-                                        ImGui::PushID(componentIndex);
-                                        if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
+                                        for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                         {
-                                            componentDeleteList.push_back(entityComponentSearch->first);
+                                            auto componentSearch = std::begin(componentMap);
+                                            std::advance(componentSearch, componentIndex);
+                                            if (ImGui::Selectable((componentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                            {
+                                                JSON::Member componentData(componentSearch->second->getName(), JSON::Object());
+                                                population->addComponent(entity, componentData);
+                                                ImGui::CloseCurrentPopup();
+                                            }
                                         }
+                                    };
 
-                                        ImGui::PopID();
-                                        ImGui::SameLine();
-                                        ImGui::SetItemAllowOverlap();
-                                        if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
-                                        {
-                                            selectedComponent = componentIndex;
-                                        }
-                                    }
-                                };
-
-                                ImGui::ListBoxFooter();
-                                for (auto &componentType : componentDeleteList)
-                                {
-                                    population->removeComponent(entity, componentType);
+                                    ImGui::ListBoxFooter();
                                 }
+
+                                ImGui::EndPopup();
                             }
 
-                            auto entityComponentSearch = std::begin(entityComponentMap);
-                            std::advance(entityComponentSearch, selectedComponent);
-                            if (entityComponentSearch != std::end(entityComponentMap))
+                            auto &entityComponentMap = entity->getComponentMap();
+                            if (!entityComponentMap.empty())
                             {
-                                Edit::Component *component = population->getComponent(entityComponentSearch->first);
-                                Plugin::Component::Data *componentData = entityComponentSearch->second.get();
-                                if (component && componentData)
+                                auto entityComponentsCount = entityComponentMap.size();
+                                if (ImGui::ListBoxHeader("##Components", entityComponentsCount, 7))
                                 {
-                                    if (core->isEditorActive())
+                                    std::vector<std::type_index> componentDeleteList;
+                                    ImGuiListClipper clipper(entityComponentsCount, ImGui::GetTextLineHeightWithSpacing());
+                                    while (clipper.Step())
                                     {
-                                        Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
-                                        viewMatrix.translation.xyz = position;
-                                        viewMatrix.invert();
-
-                                        const auto backBuffer = core->getVideoDevice()->getBackBuffer();
-                                        const float width = float(backBuffer->getDescription().width);
-                                        const float height = float(backBuffer->getDescription().height);
-                                        auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
-
-                                        if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, entity, componentData))
+                                        for (auto componentIndex = clipper.DisplayStart; componentIndex < clipper.DisplayEnd; ++componentIndex)
                                         {
-                                            onModified.emit(entity, entityComponentSearch->first);
+                                            auto entityComponentSearch = std::begin(entityComponentMap);
+                                            std::advance(entityComponentSearch, componentIndex);
+
+                                            ImGui::PushID(componentIndex);
+                                            if (ImGui::ImageButton((Video::Object *)deleteTexture.get(), ImVec2(9, 9)))
+                                            {
+                                                componentDeleteList.push_back(entityComponentSearch->first);
+                                            }
+
+                                            ImGui::PopID();
+                                            ImGui::SameLine();
+                                            ImGui::SetItemAllowOverlap();
+                                            if (ImGui::Selectable((entityComponentSearch->first.name() + 7), (selectedComponent == componentIndex)))
+                                            {
+                                                selectedComponent = componentIndex;
+                                            }
                                         }
-                                    }
-                                    else
+                                    };
+
+                                    ImGui::ListBoxFooter();
+                                    for (auto &componentType : componentDeleteList)
                                     {
-                                        component->show(ImGui::GetCurrentContext(), entity, componentData);
+                                        population->removeComponent(entity, componentType);
+                                    }
+                                }
+
+                                auto entityComponentSearch = std::begin(entityComponentMap);
+                                std::advance(entityComponentSearch, selectedComponent);
+                                if (entityComponentSearch != std::end(entityComponentMap))
+                                {
+                                    Edit::Component *component = population->getComponent(entityComponentSearch->first);
+                                    Plugin::Component::Data *componentData = entityComponentSearch->second.get();
+                                    if (component && componentData)
+                                    {
+                                        if (core->isEditorActive())
+                                        {
+                                            Math::Float4x4 viewMatrix(Math::Float4x4::FromPitch(lookingAngle) * Math::Float4x4::FromYaw(headingAngle));
+                                            viewMatrix.translation.xyz = position;
+                                            viewMatrix.invert();
+
+                                            const auto backBuffer = core->getVideoDevice()->getBackBuffer();
+                                            const float width = float(backBuffer->getDescription().width);
+                                            const float height = float(backBuffer->getDescription().height);
+                                            auto projectionMatrix(Math::Float4x4::MakePerspective(Math::DegreesToRadians(90.0f), (width / height), 0.1f, 200.0f));
+
+                                            if (component->edit(ImGui::GetCurrentContext(), viewMatrix, projectionMatrix, entity, componentData))
+                                            {
+                                                onModified.emit(entity, entityComponentSearch->first);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            component->show(ImGui::GetCurrentContext(), entity, componentData);
+                                        }
                                     }
                                 }
                             }
