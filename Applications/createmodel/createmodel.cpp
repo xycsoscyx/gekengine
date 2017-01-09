@@ -6,10 +6,9 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <Windows.h>
-#include <experimental\filesystem>
 #include <unordered_map>
 #include <algorithm>
+#include <string.h>
 #include <vector>
 #include <map>
 
@@ -466,7 +465,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             printf("    %d indices\r\n", material.second.indexList.size());
 
             Header::Material materialHeader;
-            wcsncpy(materialHeader.name, material.first, 63);
+            std::wcsncpy(materialHeader.name, material.first, 63);
             materialHeader.vertexCount = material.second.vertexList.size();
             materialHeader.indexCount = material.second.indexList.size();
             fwrite(&materialHeader, sizeof(Header::Material), 1, file);

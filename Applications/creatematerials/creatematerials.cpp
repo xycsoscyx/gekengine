@@ -2,7 +2,6 @@
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
 #include <experimental\filesystem>
-#include <Windows.h>
 #include <map>
 
 using namespace Gek;
