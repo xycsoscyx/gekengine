@@ -161,7 +161,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         unsigned int importFlags =
             aiProcess_RemoveComponent |
-            aiProcess_OptimizeGraph |
             aiProcess_OptimizeMeshes |
             aiProcess_FindInstances |
             aiProcess_PreTransformVertices |
@@ -170,7 +169,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         unsigned int postProcessFlags =
             aiProcess_JoinIdenticalVertices |
             aiProcess_FindInvalidData |
-			0;
+            aiProcess_OptimizeGraph |
+            0;
 
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);

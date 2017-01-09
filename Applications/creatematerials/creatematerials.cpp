@@ -72,6 +72,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                             {
                                 extensionImportance = 4;
                             }
+                            else if (extension.compareNoCase(L".tif") == 0 ||
+                                extension.compareNoCase(L".tiff") == 0)
+                            {
+                                extensionImportance = 5;
+                            }
                             else
                             {
                                 return true;
@@ -84,7 +89,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                             if (textureName.endsWith(L"basecolor") ||
                                 textureName.endsWith(L"base_color") ||
                                 textureName.endsWith(L"diffuse") ||
+                                textureName.endsWith(L"diffuse_s") ||
                                 textureName.endsWith(L"albedo") ||
+                                textureName.endsWith(L"albedo_s") ||
                                 textureName.endsWith(L"alb") ||
                                 textureName.endsWith(L"_d") ||
                                 textureName.endsWith(L"_c"))
@@ -92,11 +99,14 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
                                 fileMap[L"albedo"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
                             else if (textureName.endsWith(L"normal") ||
+                                textureName.endsWith(L"normalmap") ||
+                                textureName.endsWith(L"normalmap_s") ||
                                 textureName.endsWith(L"_n"))
                             {
                                 fileMap[L"normal"][extensionImportance] = std::make_pair(filePath, textureName);
                             }
                             else if (textureName.endsWith(L"roughness") ||
+                                textureName.endsWith(L"roughness_s") ||
                                 textureName.endsWith(L"rough") ||
                                 textureName.endsWith(L"_r"))
                             {

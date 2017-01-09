@@ -29,7 +29,7 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(resources);
 
-                const JSON::Object visualNode = JSON::Load(getContext()->getRootFileName(L"data", L"programs", visualName, L"visual.json"));
+                const JSON::Object visualNode = JSON::Load(getContext()->getRootFileName(L"data", L"visuals", visualName).withExtension(L".json"));
 
 				String inputVertexData;
 				std::vector<Video::InputElement> elementList;

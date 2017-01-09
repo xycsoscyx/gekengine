@@ -114,7 +114,7 @@ namespace Gek
                 auto backBuffer = videoDevice->getBackBuffer();
                 auto &backBufferDescription = backBuffer->getDescription();
 
-                const JSON::Object shaderNode = JSON::Load(getContext()->getRootFileName(L"data", L"programs", shaderName, L"shader.json"));
+                const JSON::Object shaderNode = JSON::Load(getContext()->getRootFileName(L"data", L"shaders", shaderName).withExtension(L".json"));
                 if (!shaderNode.has_member(L"passes"))
                 {
                     throw MissingParameter("Shader requires pass list");

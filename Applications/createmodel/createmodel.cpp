@@ -270,7 +270,6 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         unsigned int importFlags =
             (flipWinding ? aiProcess_FlipWindingOrder : 0) |
             (flipCoords ? aiProcess_FlipUVs : 0) |
-            aiProcess_OptimizeGraph |
             aiProcess_OptimizeMeshes |
             aiProcess_RemoveComponent |
             aiProcess_SplitLargeMeshes |
@@ -290,6 +289,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             aiProcess_FindInvalidData |
             aiProcess_GenSmoothNormals |
             aiProcess_CalcTangentSpace |
+            aiProcess_OptimizeGraph |
             0;
 
         aiPropertyStore *propertyStore = aiCreatePropertyStore();

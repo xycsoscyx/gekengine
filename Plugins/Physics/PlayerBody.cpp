@@ -184,6 +184,7 @@ namespace Gek
 
                 // make the body collidable with other dynamics bodies, by default
                 NewtonBodySetCollidable(newtonBody, true);
+                NewtonBodySetAutoSleep(newtonBody, false);
 
                 float castHeight = capsuleHigh * 0.4f;
                 float castRadius = (playerComponent.innerRadius * 0.5f > 0.05f) ? playerComponent.innerRadius * 0.5f : 0.05f;

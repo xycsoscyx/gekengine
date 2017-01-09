@@ -95,6 +95,8 @@ namespace Gek
                 GEK_REQUIRE(core);
                 GEK_REQUIRE(newtonWorld);
 
+                NewtonSetSolverModel(newtonWorld, 1);
+                NewtonSetFrictionModel(newtonWorld, 1);
                 NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
                 NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);
@@ -495,7 +497,14 @@ namespace Gek
 
                 if (!core->isEditorActive() && population->getFrameTime() > 0.0f)
                 {
-                    NewtonUpdate(newtonWorld, population->getFrameTime());
+                    float frameTime = population->getFrameTime();
+                    static const float StepTime = (1.0f / 120.0f);
+                    while (frameTime > 0.0f)
+                    {
+                        NewtonUpdate(newtonWorld, std::min(frameTime, StepTime));
+                        frameTime -= StepTime;
+                    };
+
                     NewtonWaitForUpdateToFinish(newtonWorld);
                 }
             }

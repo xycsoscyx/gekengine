@@ -99,6 +99,11 @@ namespace Gek
                 throw std::out_of_range("BaseString<ELEMENT>::subString() - position out of range");
             }
 
+            if ((position + length) >= size())
+            {
+                length = std::string::npos;
+            }
+
             return BaseString(substr(position, length));
         }
 

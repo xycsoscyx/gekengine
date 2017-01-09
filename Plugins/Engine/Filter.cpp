@@ -94,7 +94,7 @@ namespace Gek
                 depthState = resources->createDepthState(Video::DepthStateInformation());
                 renderState = resources->createRenderState(Video::RenderStateInformation());
 
-                const JSON::Object filterNode = JSON::Load(getContext()->getRootFileName(L"data", L"programs", filterName, L"filter.json"));
+                const JSON::Object filterNode = JSON::Load(getContext()->getRootFileName(L"data", L"filters", filterName).withExtension(L".json"));
                 if (!filterNode.has_member(L"passes"))
                 {
                     throw MissingParameter("Shader requiredspass list");

@@ -41,6 +41,7 @@ namespace Gek
                 NewtonBodySetUserData(newtonBody, dynamic_cast<Newton::Entity *>(this));
                 NewtonBodySetMassProperties(newtonBody, physical.mass, newtonCollision);
                 NewtonBodySetCollidable(newtonBody, true);
+                NewtonBodySetAutoSleep(newtonBody, true);
             }
 
             ~RigidBody(void)
