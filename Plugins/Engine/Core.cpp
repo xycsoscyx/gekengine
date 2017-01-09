@@ -109,7 +109,16 @@ namespace Gek
                     window = getContext()->createClass<Window>(L"Default::System::Window", description);
                 }
 
-                window->onEvent.connect<Core, &Core::onEvent>(this);
+                window->onClose.connect<Core, &Core::onClose>(this);
+                window->onActivate.connect<Core, &Core::onActivate>(this);
+                window->onSizeChanged.connect<Core, &Core::onSizeChanged>(this);
+                window->onKeyPressed.connect<Core, &Core::onKeyPressed>(this);
+                window->onCharacter.connect<Core, &Core::onCharacter>(this);
+                window->onSetCursor.connect<Core, &Core::onSetCursor>(this);
+                window->onMouseClicked.connect<Core, &Core::onMouseClicked>(this);
+                window->onMouseWheel.connect<Core, &Core::onMouseWheel>(this);
+                window->onMousePosition.connect<Core, &Core::onMousePosition>(this);
+                window->onMouseMovement.connect<Core, &Core::onMouseMovement>(this);
 
                 try
                 {
@@ -397,7 +406,16 @@ namespace Gek
 
             ~Core(void)
             {
-                window->onEvent.disconnect<Core, &Core::onEvent>(this);
+                window->onClose.disconnect<Core, &Core::onClose>(this);
+                window->onActivate.disconnect<Core, &Core::onActivate>(this);
+                window->onSizeChanged.disconnect<Core, &Core::onSizeChanged>(this);
+                window->onKeyPressed.disconnect<Core, &Core::onKeyPressed>(this);
+                window->onCharacter.disconnect<Core, &Core::onCharacter>(this);
+                window->onSetCursor.disconnect<Core, &Core::onSetCursor>(this);
+                window->onMouseClicked.disconnect<Core, &Core::onMouseClicked>(this);
+                window->onMouseWheel.disconnect<Core, &Core::onMouseWheel>(this);
+                window->onMousePosition.disconnect<Core, &Core::onMousePosition>(this);
+                window->onMouseMovement.disconnect<Core, &Core::onMouseMovement>(this);
 
                 gui = nullptr;
                 ImGui::GetIO().Fonts->TexID = 0;
@@ -683,96 +701,69 @@ namespace Gek
                 }
             }
 
-            void onCursorEvent(Window::Event &eventData)
+            // Window slots
+            void onClose(void)
             {
-                ImGuiIO &imGuiIo = ImGui::GetIO();
-                switch (eventData.message)
-                {
-                case WM_SETCURSOR:
-                    if (LOWORD(eventData.signedParameter) == HTCLIENT)
-                    {
-                        ShowCursor(false);
-                        imGuiIo.MouseDrawCursor = true;
-                    }
-                    else
-                    {
-                        ShowCursor(true);
-                        imGuiIo.MouseDrawCursor = false;
-                    }
-
-                    break;
-
-                case WM_LBUTTONDOWN:
-                    imGuiIo.MouseDown[0] = true;
-                    break;
-
-                case WM_LBUTTONUP:
-                    imGuiIo.MouseDown[0] = false;
-                    break;
-
-                case WM_RBUTTONDOWN:
-                    imGuiIo.MouseDown[1] = true;
-                    break;
-
-                case WM_RBUTTONUP:
-                    imGuiIo.MouseDown[1] = false;
-                    break;
-
-                case WM_MBUTTONDOWN:
-                    imGuiIo.MouseDown[2] = true;
-                    break;
-
-                case WM_MBUTTONUP:
-                    imGuiIo.MouseDown[2] = false;
-                    break;
-
-                case WM_MOUSEWHEEL:
-                    imGuiIo.MouseWheel += GET_WHEEL_DELTA_WPARAM(eventData.unsignedParameter) > 0 ? +1.0f : -1.0f;
-                    break;
-
-                case WM_MOUSEMOVE:
-                    imGuiIo.MousePos.x = (int16_t)(eventData.signedParameter);
-                    imGuiIo.MousePos.y = (int16_t)(eventData.signedParameter >> 16);
-                    break;
-
-                case WM_KEYDOWN:
-                    if (eventData.unsignedParameter < 256)
-                    {
-                        imGuiIo.KeysDown[eventData.unsignedParameter] = true;
-                    }
-
-                    break;
-
-                case WM_KEYUP:
-                    if (eventData.unsignedParameter == VK_ESCAPE)
-                    {
-                        imGuiIo.MouseDrawCursor = false;
-                        showCursor = false;
-                    }
-
-                    if (eventData.unsignedParameter < 256)
-                    {
-                        imGuiIo.KeysDown[eventData.unsignedParameter] = false;
-                    }
-
-                    break;
-
-                case WM_CHAR:
-                    // You can also use ToAscii()+GetKeyboardState() to retrieve characters.
-                    if (eventData.unsignedParameter > 0 && eventData.unsignedParameter < 0x10000)
-                    {
-                        imGuiIo.AddInputCharacter((uint16_t)eventData.unsignedParameter);
-                    }
-
-                    break;
-                };
+                engineRunning = false;
             }
 
-            void onPopulationEvent(Window::Event &eventData)
+            void onActivate(bool isActive)
             {
-                auto addAction = [this](uint32_t parameter, bool state) -> void
+                windowActive = isActive;
+            }
+
+            void onSetCursor(bool &showCursor)
+            {
+                showCursor = false;
+            }
+
+            void onSizeChanged(bool isMinimized)
+            {
+                if (videoDevice && !isMinimized)
                 {
-                    switch (parameter)
+                    videoDevice->handleResize();
+                    onResize.emit();
+                }
+            }
+
+            void onCharacter(wchar_t character)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.AddInputCharacter(character);
+            }
+
+            void onKeyPressed(uint16_t key, bool state)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.KeysDown[key] = state;
+                if (state)
+                {
+                    switch (key)
+                    {
+                    case VK_ESCAPE:
+                        showCursor = !showCursor;
+                        imGuiIo.MouseDrawCursor = showCursor;
+                        break;
+                    };
+
+                    if (population)
+                    {
+                        switch (key)
+                        {
+                        case VK_F5:
+                            population->save(L"autosave");
+                            break;
+
+                        case VK_F6:
+                            population->load(L"autosave");
+                            break;
+                        };
+                    }
+                }
+
+                if (!showCursor && population)
+                {
+                    switch (key)
                     {
                     case 'W':
                     case VK_UP:
@@ -802,121 +793,47 @@ namespace Gek
                         population->action(L"crouch", state);
                         break;
                     };
-                };
+                }
+            }
 
-                switch (eventData.message)
+            void onMouseClicked(Window::Button button, bool state)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                switch(button)
                 {
-                case WM_KEYDOWN:
-                    addAction(eventData.unsignedParameter, true);
+                case Window::Button::Left:
+                    imGuiIo.MouseDown[0] = state;
                     break;
 
-                case WM_KEYUP:
-                    addAction(eventData.unsignedParameter, false);
+                case Window::Button::Middle:
+                    imGuiIo.MouseDown[2] = state;
                     break;
 
-                case WM_INPUT:
-                    if (population)
-                    {
-                        UINT inputSize = 40;
-                        static BYTE rawInputBuffer[40];
-                        GetRawInputData((HRAWINPUT)eventData.signedParameter, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
-
-                        RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
-                        if (rawInput->header.dwType == RIM_TYPEMOUSE)
-                        {
-                            float xMovement = (float(rawInput->data.mouse.lLastX) * mouseSensitivity);
-                            float yMovement = (float(rawInput->data.mouse.lLastY) * mouseSensitivity);
-                            population->action(L"turn", xMovement);
-                            population->action(L"tilt", yMovement);
-                        }
-
-                        break;
-                    }
+                case Window::Button::Right:
+                    imGuiIo.MouseDown[1] = state;
+                    break;
                 };
             }
 
-            // Window slots
-            void onEvent(Window::Event &eventData)
+            void onMouseWheel(int32_t offset)
             {
-                switch (eventData.message)
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.MouseWheel += (offset > 0 ? +1.0f : -1.0f);
+            }
+
+            void onMousePosition(int32_t xPosition, int32_t yPosition)
+            {
+                ImGuiIO &imGuiIo = ImGui::GetIO();
+                imGuiIo.MousePos.x = xPosition;
+                imGuiIo.MousePos.y = yPosition;
+            }
+
+            void onMouseMovement(int32_t xMovement, int32_t yMovement)
+            {
+                if (population)
                 {
-                case WM_CLOSE:
-                    engineRunning = false;
-                    break;
-
-                case WM_ACTIVATE:
-                    if (HIWORD(eventData.unsignedParameter))
-                    {
-                        windowActive = false;
-                    }
-                    else
-                    {
-                        switch (LOWORD(eventData.unsignedParameter))
-                        {
-                        case WA_ACTIVE:
-                        case WA_CLICKACTIVE:
-                            windowActive = true;
-                            break;
-
-                        case WA_INACTIVE:
-                            windowActive = false;
-                            break;
-                        };
-                    }
-
-                    break;
-
-                case WM_SIZE:
-                    if (videoDevice)
-                    {
-                        if (eventData.unsignedParameter != SIZE_MINIMIZED)
-                        {
-                            videoDevice->handleResize();
-                            onResize.emit();
-                        }
-                    }
-
-                    break;
-
-                case WM_KEYUP:
-                    if (population)
-                    {
-                        if (eventData.unsignedParameter == VK_F1)
-                        {
-                            population->save(L"autosave");
-                        }
-                        else if (eventData.unsignedParameter == VK_F2)
-                        {
-                            population->load(L"autosave");
-                        }
-                    }
-                };
-
-                if (showCursor)
-                {
-                    onCursorEvent(eventData);
-                }
-                else
-                {
-                    switch (eventData.message)
-                    {
-                    case WM_SETCURSOR:
-                        ShowCursor(false);
-                        break;
-
-                    case WM_KEYUP:
-                        if (eventData.unsignedParameter == VK_ESCAPE)
-                        {
-                            showCursor = true;
-                        }
-
-                        break;
-                    };
-
-                    if (population)
-                    {
-                        onPopulationEvent(eventData);
-                    }
+                    population->action(L"turn", xMovement * mouseSensitivity);
+                    population->action(L"tilt", yMovement * mouseSensitivity);
                 }
             }
 

@@ -31,12 +31,113 @@ namespace Gek
                     Window *window = reinterpret_cast<Window *>(GetWindowLongPtr(handle, GWLP_USERDATA));
                     if (window)
                     {
-                        Gek::Window::Event data(message, wParam, lParam);
-                        window->onEvent.emit(data);
-                        if (data.result.handled)
+                        switch (message)
                         {
-                            return data.result.value;
-                        }
+                        case WM_SETCURSOR:
+                            if (LOWORD(lParam) == HTCLIENT)
+                            {
+                                bool showCursor = true;
+                                window->onSetCursor.emit(showCursor);
+                                ShowCursor(showCursor);
+                                return TRUE;
+                            }
+                            else
+                            {
+                                ShowCursor(true);
+                            }
+
+                            break;
+
+                        case WM_LBUTTONDOWN:
+                            window->onMouseClicked.emit(Window::Button::Left, true);
+                            break;
+
+                        case WM_LBUTTONUP:
+                            window->onMouseClicked.emit(Window::Button::Left, false);
+                            break;
+
+                        case WM_RBUTTONDOWN:
+                            window->onMouseClicked.emit(Window::Button::Right, true);
+                            break;
+
+                        case WM_RBUTTONUP:
+                            window->onMouseClicked.emit(Window::Button::Right, false);
+                            break;
+
+                        case WM_MBUTTONDOWN:
+                            window->onMouseClicked.emit(Window::Button::Middle, true);
+                            break;
+
+                        case WM_MBUTTONUP:
+                            window->onMouseClicked.emit(Window::Button::Middle, false);
+                            break;
+
+                        case WM_MOUSEWHEEL:
+                            window->onMouseWheel.emit(GET_WHEEL_DELTA_WPARAM(wParam));
+                            break;
+
+                        case WM_MOUSEMOVE:
+                            window->onMousePosition.emit((int16_t)(lParam), (int16_t)(lParam >> 16));
+                            break;
+
+                        case WM_KEYDOWN:
+                            window->onKeyPressed.emit(wParam, true);
+                            break;
+
+                        case WM_KEYUP:
+                            window->onKeyPressed.emit(wParam, false);
+                            break;
+
+                        case WM_CHAR:
+                            window->onCharacter.emit(wParam);
+                            break;
+
+                        case WM_INPUT:
+                            if (true)
+                            {
+                                UINT inputSize = 40;
+                                static BYTE rawInputBuffer[40];
+                                GetRawInputData((HRAWINPUT)lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
+
+                                RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
+                                if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                                {
+                                    window->onMouseMovement.emit(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
+                                }
+
+                                break;
+                            }
+
+                        case WM_CLOSE:
+                            window->onClose.emit();
+                            return TRUE;
+
+                        case WM_ACTIVATE:
+                            if (HIWORD(wParam))
+                            {
+                                window->onActivate.emit(false);
+                            }
+                            else
+                            {
+                                switch (LOWORD(wParam))
+                                {
+                                case WA_ACTIVE:
+                                case WA_CLICKACTIVE:
+                                    window->onActivate.emit(true);
+                                    break;
+
+                                case WA_INACTIVE:
+                                    window->onActivate.emit(false);
+                                    break;
+                                };
+                            }
+
+                            return TRUE;
+
+                        case WM_SIZE:
+                            window->onSizeChanged.emit(wParam == SIZE_MINIMIZED);
+                            break;
+                        };
                     }
 
                     return DefWindowProc(handle, message, wParam, lParam);
@@ -73,7 +174,7 @@ namespace Gek
                 }
 
                 SetWindowLongPtr(window, GWLP_USERDATA, LONG_PTR(this));
-                if (description.getRawInput)
+                if (description.readMouseMovement)
                 {
                     RAWINPUTDEVICE inputDevice;
                     inputDevice.usUsagePage = HID_USAGE_PAGE_GENERIC;
@@ -102,11 +203,6 @@ namespace Gek
                     TranslateMessage(&message);
                     DispatchMessage(&message);
                 };
-            }
-
-            Event::Result sendEvent(const Event &eventData)
-            {
-                return SendMessage(window, eventData.message, eventData.unsignedParameter, eventData.signedParameter);
             }
 
             void *getBaseWindow(void) const

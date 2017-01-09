@@ -15,6 +15,13 @@ namespace Gek
 {
     GEK_INTERFACE(Window)
     {
+        enum class Button : uint32_t
+        {
+            Left = 0,
+            Middle,
+            Right,
+        };
+
         struct Description
         {
             String className;
@@ -23,45 +30,25 @@ namespace Gek
             String windowName;
             uint32_t initialWidth = 1;
             uint32_t initialHeight = 1;
-            bool getRawInput = true;
-        };
-
-        struct Event
-        {
-            struct Result
-            {
-                bool handled = false;
-                int32_t value = 0;;
-
-                Result(void)
-                {
-                }
-
-                Result(int32_t value)
-                    : handled(true)
-                    , value(value)
-                {
-                }
-            } result;
-
-            const uint32_t message;
-            const uint32_t unsignedParameter;
-            const int32_t signedParameter;
-
-            Event(uint32_t message, uint32_t unsignedParameter, int32_t signedParameter)
-                : message(message)
-                , unsignedParameter(unsignedParameter)
-                , signedParameter(signedParameter)
-            {
-            }
+            bool readMouseMovement = true;
         };
 
         virtual ~Window(void) = default;
+        
+        Nano::Signal<void(void)> onClose;
+        Nano::Signal<void(bool isActive)> onActivate;
+        Nano::Signal<void(bool isMinimized)> onSizeChanged;
 
-        Nano::Signal<void(Event &data)> onEvent;
+        Nano::Signal<void(uint16_t key, bool state)> onKeyPressed;
+        Nano::Signal<void(wchar_t character)> onCharacter;
+
+        Nano::Signal<void(bool &showCursor)> onSetCursor;
+        Nano::Signal<void(Button button, bool state)> onMouseClicked;
+        Nano::Signal<void(int32_t offset)> onMouseWheel;
+        Nano::Signal<void(int32_t xPosition, int32_t yPosition)> onMousePosition;
+        Nano::Signal<void(int32_t xMovement, int32_t yMovement)> onMouseMovement;
 
         virtual void readEvents(void) = 0;
-        virtual Event::Result sendEvent(const Event &eventData) = 0;
 
         virtual void *getBaseWindow(void) const = 0;
 
