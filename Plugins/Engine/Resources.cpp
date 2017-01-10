@@ -671,7 +671,7 @@ namespace Gek
                     L".bmp",
                 };
 
-                auto texturePath(getContext()->getRootFileName(L"data", L"materials", textureName));
+                auto texturePath(getContext()->getRootFileName(L"data", L"textures", textureName));
                 for (auto &format : formatList)
                 {
                     auto filePath(texturePath.withExtension(format));

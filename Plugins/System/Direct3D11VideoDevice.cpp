@@ -1613,12 +1613,6 @@ namespace Gek
                 dxgiSwapChain.Release();
                 d3dDeviceContext.Release();
 
-#ifdef _DEBUG
-                CComQIPtr<ID3D11Debug> d3dDebug(d3dDevice);
-                d3dDebug->ReportLiveDeviceObjects(D3D11_RLDO_DETAIL);
-                d3dDebug = nullptr;
-#endif
-
                 d3dDevice.Release();
             }
 
