@@ -32,26 +32,21 @@ struct Header
 
     uint32_t identifier = *(uint32_t *)"GEKX";
     uint16_t type = 0;
-    uint16_t version = 5;
+    uint16_t version = 6;
 
     Shapes::AlignedBox boundingBox;
 
     uint32_t materialCount;
 };
 
-struct Vertex
-{
-    Math::Float3 position;
-    Math::Float2 texCoord;
-	Math::Float3 tangent;
-	Math::Float3 biTangent;
-	Math::Float3 normal;
-};
-
 struct Model
 {
     std::vector<uint16_t> indexList;
-    std::vector<Vertex> vertexList;
+    std::vector<Math::Float3> vertexPositionList;
+    std::vector<Math::Float2> vertexTexCoordList;
+    std::vector<Math::Float3> vertexTangentList;
+    std::vector<Math::Float3> vertexBiTangentList;
+    std::vector<Math::Float3> vertexNormalList;
 };
 
 struct Parameters
@@ -89,84 +84,86 @@ void getMeshes(const Parameters &parameters, const aiScene *scene, const aiNode 
                     throw std::exception("Invalid mesh face list");
                 }
 
-				if (mesh->mVertices == nullptr)
-				{
-					throw std::exception("Invalid mesh vertex list");
-				}
+                if (mesh->mVertices == nullptr)
+                {
+                    throw std::exception("Invalid mesh vertex list");
+                }
 
-				if (mesh->mTextureCoords[0] == nullptr)
-				{
-					throw std::exception("Invalid mesh texture coordinate list");
-				}
+                if (mesh->mTextureCoords[0] == nullptr)
+                {
+                    throw std::exception("Invalid mesh texture coordinate list");
+                }
 
-				if (mesh->mTangents == nullptr)
-				{
-					throw std::exception("Invalid mesh tangent list");
-				}
+                if (mesh->mTangents == nullptr)
+                {
+                    throw std::exception("Invalid mesh tangent list");
+                }
 
-				if (mesh->mBitangents == nullptr)
-				{
-					throw std::exception("Invalid mesh bitangent list");
-				}
+                if (mesh->mBitangents == nullptr)
+                {
+                    throw std::exception("Invalid mesh bitangent list");
+                }
 
-				if (mesh->mNormals == nullptr)
-				{
-					throw std::exception("Invalid mesh normal list");
-				}
+                if (mesh->mNormals == nullptr)
+                {
+                    throw std::exception("Invalid mesh normal list");
+                }
 
                 Model model;
+                model.indexList.resize(mesh->mNumFaces * 3);
                 for (uint32_t faceIndex = 0; faceIndex < mesh->mNumFaces; ++faceIndex)
                 {
                     const aiFace &face = mesh->mFaces[faceIndex];
-                    if (face.mNumIndices == 3)
+                    if (face.mNumIndices != 3)
                     {
-						model.indexList.push_back(face.mIndices[0]);
-                        model.indexList.push_back(face.mIndices[1]);
-						model.indexList.push_back(face.mIndices[2]);
+                        throw std::exception("Non-triangular face encountered");
                     }
-                    else
+
+                    uint32_t edgeStartIndex = (faceIndex * 3);
+                    for (uint32_t edgeIndex = 0; edgeIndex < 3; edgeIndex++)
                     {
-                        printf("(Mesh %d) Invalid Face Found: %d (%d vertices)\r\n", meshIndex, faceIndex, face.mNumIndices);
+                        model.indexList[edgeStartIndex + edgeIndex] = face.mIndices[edgeIndex];
                     }
                 }
 
+                model.vertexPositionList.resize(mesh->mNumVertices);
+                model.vertexTexCoordList.resize(mesh->mNumVertices);
+                model.vertexTangentList.resize(mesh->mNumVertices);
+                model.vertexBiTangentList.resize(mesh->mNumVertices);
+                model.vertexNormalList.resize(mesh->mNumVertices);
                 for (uint32_t vertexIndex = 0; vertexIndex < mesh->mNumVertices; ++vertexIndex)
                 {
-                    Vertex vertex;
-                    vertex.position.set(
-                        mesh->mVertices[vertexIndex].x,
-                        mesh->mVertices[vertexIndex].y,
-                        mesh->mVertices[vertexIndex].z);
-                    vertex.position *= parameters.feetPerUnit;
-                    boundingBox.extend(vertex.position);
+                    model.vertexPositionList[vertexIndex].set(
+                        (mesh->mVertices[vertexIndex].x * parameters.feetPerUnit),
+                        (mesh->mVertices[vertexIndex].y * parameters.feetPerUnit),
+                        (mesh->mVertices[vertexIndex].z * parameters.feetPerUnit));
+                    boundingBox.extend(model.vertexPositionList[vertexIndex]);
 
-					vertex.texCoord.set(
-						mesh->mTextureCoords[0][vertexIndex].x,
-						mesh->mTextureCoords[0][vertexIndex].y);
+                    model.vertexTexCoordList[vertexIndex].set(
+                        mesh->mTextureCoords[0][vertexIndex].x,
+                        mesh->mTextureCoords[0][vertexIndex].y);
 
-                    vertex.tangent.set(
-						mesh->mTangents[vertexIndex].x,
-						mesh->mTangents[vertexIndex].y,
-						mesh->mTangents[vertexIndex].z);
+                    model.vertexTangentList[vertexIndex].set(
+                        mesh->mTangents[vertexIndex].x,
+                        mesh->mTangents[vertexIndex].y,
+                        mesh->mTangents[vertexIndex].z);
 
-                    vertex.biTangent.set(
+                    model.vertexBiTangentList[vertexIndex].set(
                         mesh->mBitangents[vertexIndex].x,
-						mesh->mBitangents[vertexIndex].y,
-						mesh->mBitangents[vertexIndex].z);
+                        mesh->mBitangents[vertexIndex].y,
+                        mesh->mBitangents[vertexIndex].z);
 
-                    vertex.normal.set(
+                    model.vertexNormalList[vertexIndex].set(
                         mesh->mNormals[vertexIndex].x,
-						mesh->mNormals[vertexIndex].y,
-						mesh->mNormals[vertexIndex].z);
-
-                    model.vertexList.push_back(vertex);
+                        mesh->mNormals[vertexIndex].y,
+                        mesh->mNormals[vertexIndex].z);
                 }
 
                 aiString sceneDiffuseMaterial;
                 const aiMaterial *sceneMaterial = scene->mMaterials[mesh->mMaterialIndex];
                 sceneMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &sceneDiffuseMaterial);
                 FileSystem::Path materialPath(sceneDiffuseMaterial.C_Str());
-                modelAlbedoMap[materialPath].push_back(model);
+                modelAlbedoMap[materialPath].push_back(std::move(model));
             }
         }
     }
@@ -199,7 +196,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         String fileNameInput;
         String fileNameOutput;
-		Parameters parameters;
+        Parameters parameters;
         bool flipCoords = false;
         bool flipWinding = false;
         float smoothingAngle = 80.0f;
@@ -237,30 +234,30 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
                 smoothingAngle = arguments[1];
             }
-			else if (arguments[0].compareNoCase(L"-unitsInFoot") == 0)
-			{
-				if (arguments.size() != 2)
-				{
-					throw std::exception("Missing parameters for unitsInFoot");
-				}
+            else if (arguments[0].compareNoCase(L"-unitsInFoot") == 0)
+            {
+                if (arguments.size() != 2)
+                {
+                    throw std::exception("Missing parameters for unitsInFoot");
+                }
 
-				parameters.feetPerUnit = (1.0f / (float)arguments[1]);
-			}
-		}
+                parameters.feetPerUnit = (1.0f / (float)arguments[1]);
+            }
+        }
 
-		aiLogStream logStream;
-		logStream.callback = [](const char *message, char *user) -> void
-		{
-			printf("Assimp: %s", message);
-		};
+        aiLogStream logStream;
+        logStream.callback = [](const char *message, char *user) -> void
+        {
+            printf("Assimp: %s", message);
+        };
 
-		logStream.user = nullptr;
-		aiAttachLogStream(&logStream);
+        logStream.user = nullptr;
+        aiAttachLogStream(&logStream);
 
         int notRequiredComponents =
-			aiComponent_NORMALS |
-			aiComponent_TANGENTS_AND_BITANGENTS |
-			aiComponent_COLORS |
+            aiComponent_NORMALS |
+            aiComponent_TANGENTS_AND_BITANGENTS |
+            aiComponent_COLORS |
             aiComponent_BONEWEIGHTS |
             aiComponent_ANIMATIONS |
             aiComponent_LIGHTS |
@@ -295,8 +292,8 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         aiPropertyStore *propertyStore = aiCreatePropertyStore();
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_GLOB_MEASURE_TIME, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-		aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
-		aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
+        aiSetImportPropertyFloat(propertyStore, AI_CONFIG_PP_GSN_MAX_SMOOTHING_ANGLE, smoothingAngle);
+        aiSetImportPropertyInteger(propertyStore, AI_CONFIG_IMPORT_TER_MAKE_UVS, 1);
         aiSetImportPropertyInteger(propertyStore, AI_CONFIG_PP_RVC_FLAGS, notRequiredComponents);
         auto scene = aiImportFileExWithProperties(StringUTF8(fileNameInput), importFlags, nullptr, propertyStore);
         if (scene == nullptr)
@@ -306,9 +303,9 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 
         scene = aiApplyPostProcessing(scene, postProcessFlags);
         if (scene == nullptr)
-		{
-			throw std::exception("Unable to apply post processing with Assimp");
-		}
+        {
+            throw std::exception("Unable to apply post processing with Assimp");
+        }
 
         if (!scene->HasMeshes())
         {
@@ -320,7 +317,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             throw std::exception("Exporting to model requires materials in scene");
         }
 
-		Shapes::AlignedBox boundingBox;
+        Shapes::AlignedBox boundingBox;
         std::unordered_map<FileSystem::Path, std::list<Model>> modelAlbedoMap;
         getMeshes(parameters, scene, scene->mRootNode, modelAlbedoMap, boundingBox);
 
@@ -431,19 +428,23 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
             {
                 for (auto &index : instance.indexList)
                 {
-                    material.indexList.push_back(uint16_t(index + material.vertexList.size()));
+                    material.indexList.push_back(uint16_t(index + material.vertexPositionList.size()));
                 }
 
-                material.vertexList.insert(std::end(material.vertexList), std::begin(instance.vertexList), std::end(instance.vertexList));
+                material.vertexPositionList.insert(std::end(material.vertexPositionList), std::begin(instance.vertexPositionList), std::end(instance.vertexPositionList));
+                material.vertexTexCoordList.insert(std::end(material.vertexTexCoordList), std::begin(instance.vertexTexCoordList), std::end(instance.vertexTexCoordList));
+                material.vertexTangentList.insert(std::end(material.vertexTangentList), std::begin(instance.vertexTangentList), std::end(instance.vertexTangentList));
+                material.vertexBiTangentList.insert(std::end(material.vertexBiTangentList), std::begin(instance.vertexBiTangentList), std::end(instance.vertexBiTangentList));
+                material.vertexNormalList.insert(std::end(material.vertexNormalList), std::begin(instance.vertexNormalList), std::end(instance.vertexNormalList));
             }
         }
 
-		if (materialMap.empty())
-		{
-			throw std::exception("No valid material models found");
-		}
+        if (materialMap.empty())
+        {
+            throw std::exception("No valid material models found");
+        }
 
-		printf("> Num. Models: %d\r\n", materialMap.size());
+        printf("> Num. Models: %d\r\n", materialMap.size());
         printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
         printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
@@ -461,12 +462,12 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         for (auto &material : materialMap)
         {
             printf("-  %S\r\n", material.first.c_str());
-            printf("    %d vertices\r\n", material.second.vertexList.size());
+            printf("    %d vertices\r\n", material.second.vertexPositionList.size());
             printf("    %d indices\r\n", material.second.indexList.size());
 
             Header::Material materialHeader;
             std::wcsncpy(materialHeader.name, material.first, 63);
-            materialHeader.vertexCount = material.second.vertexList.size();
+            materialHeader.vertexCount = material.second.vertexPositionList.size();
             materialHeader.indexCount = material.second.indexList.size();
             fwrite(&materialHeader, sizeof(Header::Material), 1, file);
         }
@@ -474,7 +475,11 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         for (auto &material : materialMap)
         {
             fwrite(material.second.indexList.data(), sizeof(uint16_t), material.second.indexList.size(), file);
-            fwrite(material.second.vertexList.data(), sizeof(Vertex), material.second.vertexList.size(), file);
+            fwrite(material.second.vertexPositionList.data(), sizeof(Math::Float3), material.second.vertexPositionList.size(), file);
+            fwrite(material.second.vertexTexCoordList.data(), sizeof(Math::Float2), material.second.vertexTexCoordList.size(), file);
+            fwrite(material.second.vertexTangentList.data(), sizeof(Math::Float3), material.second.vertexTangentList.size(), file);
+            fwrite(material.second.vertexBiTangentList.data(), sizeof(Math::Float3), material.second.vertexBiTangentList.size(), file);
+            fwrite(material.second.vertexNormalList.data(), sizeof(Math::Float3), material.second.vertexNormalList.size(), file);
         }
 
         fclose(file);

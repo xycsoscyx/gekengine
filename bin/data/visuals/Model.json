@@ -5,35 +5,35 @@
             "format": "R32G32B32_FLOAT",
             "semantic": "POSITION",
             "source": "vertex",
-            "sourceindex": "0"
+            "sourceIndex": 0
         },
         {
             "name": "texCoord",
             "format": "R32G32_FLOAT",
             "semantic": "TEXCOORD",
             "source": "vertex",
-            "sourceindex": "0"
+            "sourceIndex": 1
         },
         {
             "name": "tangent",
             "format": "R32G32B32_FLOAT",
             "semantic": "TANGENT",
             "source": "vertex",
-            "sourceindex": "0"
+            "sourceIndex": 2
         },
         {
             "name": "biTangent",
             "format": "R32G32B32_FLOAT",
             "semantic": "BITANGENT",
             "source": "vertex",
-            "sourceindex": "0"
+            "sourceIndex": 3
         },
         {
             "name": "normal",
             "format": "R32G32B32_FLOAT",
             "semantic": "NORMAL",
             "source": "vertex",
-            "sourceindex": "0"
+            "sourceIndex": 4
         }
     ],
     "output": [

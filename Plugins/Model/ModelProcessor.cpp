@@ -116,7 +116,7 @@ namespace Gek
         {
             bool skin = false;
             MaterialHandle material;
-            ResourceHandle vertexBuffer;
+            std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
             ResourceHandle indexBuffer;
             uint32_t indexCount = 0;
         };
@@ -141,6 +141,7 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr constantBuffer;
+        std::vector<Video::Buffer *> constantBufferList;
         ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
@@ -175,6 +176,7 @@ namespace Gek
             description.type = Video::Buffer::Description::Type::Constant;
             description.flags = Video::Buffer::Description::Flags::Mappable;
             constantBuffer = videoDevice->createBuffer(description);
+            constantBufferList.push_back(constantBuffer.get());
         }
 
         ~ModelProcessor(void)
@@ -212,7 +214,7 @@ namespace Gek
                             throw InvalidModelType("Unsupported model type encountered");
                         }
 
-                        if (header->version != 5)
+                        if (header->version != 6)
                         {
                             throw InvalidModelVersion("Unsupported model version encountered");
                         }
@@ -243,15 +245,31 @@ namespace Gek
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = materialHeader.indexCount;
                                 indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                material.indexBuffer = resources->createBuffer(String::Format(L"model:index:%v:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                material.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                 bufferData += (sizeof(uint16_t) * materialHeader.indexCount);
 
                                 Video::Buffer::Description vertexBufferDescription;
-                                vertexBufferDescription.stride = sizeof(Vertex);
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
                                 vertexBufferDescription.count = materialHeader.vertexCount;
                                 vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                material.vertexBuffer = resources->createBuffer(String::Format(L"model:vertex:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Vertex *>(bufferData));
-                                bufferData += (sizeof(Vertex) * materialHeader.vertexCount);
+                                material.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float2);
+                                material.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                bufferData += (sizeof(Math::Float2) * materialHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                material.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                material.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
+
+                                vertexBufferDescription.stride = sizeof(Math::Float3);
+                                material.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
 
                                 material.indexCount = materialHeader.indexCount;
                             }
@@ -327,8 +345,8 @@ namespace Gek
                                 memcpy(constantData, &modelViewMatrix, sizeof(Math::Float4x4));
                                 videoDevice->unmapBuffer(constantBuffer.get());
 
-                                videoContext->vertexPipeline()->setConstantBufferList({ constantBuffer.get() }, 4);
-                                resources->setVertexBufferList(videoContext, { material.vertexBuffer }, 0);
+                                videoContext->vertexPipeline()->setConstantBufferList(constantBufferList, 4);
+                                resources->setVertexBufferList(videoContext, material.vertexBufferList, 0);
                                 resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
                                 resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
                             }

@@ -2252,23 +2252,13 @@ namespace Gek
                 GEK_REQUIRE(compiledSize);
                 GEK_REQUIRE(compiledData);
 
-                std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
-                Video::InputElement::Source lastSource = Video::InputElement::Source::Vertex;
                 uint32_t semanticIndexList[static_cast<uint8_t>(Video::InputElement::Semantic::Count)] = { 0 };
+                std::vector<D3D11_INPUT_ELEMENT_DESC> d3dElementList;
                 for (auto &element : elementList)
                 {
                     D3D11_INPUT_ELEMENT_DESC elementDesc;
-                    if (lastSource != element.source)
-                    {
-                        elementDesc.AlignedByteOffset = 0;
-                    }
-                    else
-                    {
-                        elementDesc.AlignedByteOffset = D3D11_APPEND_ALIGNED_ELEMENT;
-                    }
-
-                    lastSource = element.source;
                     elementDesc.Format = DirectX::BufferFormatList[static_cast<uint8_t>(element.format)];
+                    elementDesc.AlignedByteOffset = (element.alignedByteOffset == Video::InputElement::AlignedByteOffset ? D3D11_APPEND_ALIGNED_ELEMENT : element.alignedByteOffset);
                     elementDesc.SemanticName = DirectX::SemanticNameList[static_cast<uint8_t>(element.semantic)];
                     elementDesc.SemanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
                     elementDesc.InputSlot = element.sourceIndex;
