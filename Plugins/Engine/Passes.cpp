@@ -98,6 +98,17 @@ namespace Gek
         return L"";
     }
 
+    String getFormatSemantic(Video::Format format, uint32_t count)
+    {
+        String semantic(getFormatSemantic(format));
+        if (count > 0)
+        {
+            semantic.appendFormat(L"x%v", count);
+        }
+
+        return semantic;
+    }
+
     ClearType getClearType(const String &clearType)
     {
         if (clearType.compareNoCase(L"Target") == 0) return ClearType::Target;

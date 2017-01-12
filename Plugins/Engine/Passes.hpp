@@ -32,6 +32,7 @@ namespace Gek
     };
 
     String getFormatSemantic(Video::Format format);
+    String getFormatSemantic(Video::Format format, uint32_t count);
 
     ClearType getClearType(const String &clearType);
 

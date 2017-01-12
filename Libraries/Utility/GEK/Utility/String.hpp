@@ -240,13 +240,13 @@ namespace Gek
             return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
         }
 
-        BaseString & format(const BaseString &string)
+        BaseString & appendFormat(const BaseString &string)
         {
             return static_cast<BaseString &>(std::basic_string<ELEMENT, TRAITS, ALLOCATOR>::append(string));
         }
 
         template<typename TYPE, typename... PARAMETERS>
-        BaseString & format(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
+        BaseString & appendFormat(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
         {
             while (formatting && *formatting)
             {
@@ -265,7 +265,45 @@ namespace Gek
                         // use += operator for automatic type conversion
                         // will fail at compile time with unknown types
                         (*this) += value;
-                        return format(formatting, arguments...);
+                        return appendFormat(formatting, arguments...);
+                    }
+                    else
+                    {
+                        // %(other)
+                        append(1U, currentCharacter).append(1U, nextCharacter);
+                    }
+                }
+                else
+                {
+                    append(1U, currentCharacter);
+                }
+            };
+
+            return (*this);
+        }
+
+        template<typename TYPE, typename... PARAMETERS>
+        BaseString & format(const ELEMENT *formatting, const TYPE &value, PARAMETERS... arguments)
+        {
+            clear();
+            while (formatting && *formatting)
+            {
+                ELEMENT currentCharacter = *formatting++;
+                if (currentCharacter == ELEMENT('%') && formatting && *formatting)
+                {
+                    ELEMENT nextCharacter = *formatting++;
+                    if (nextCharacter == ELEMENT('%'))
+                    {
+                        // %%
+                        append(1U, nextCharacter);
+                    }
+                    else if (nextCharacter == ELEMENT('v'))
+                    {
+                        // %v
+                        // use += operator for automatic type conversion
+                        // will fail at compile time with unknown types
+                        (*this) += value;
+                        return appendFormat(formatting, arguments...);
                     }
                     else
                     {

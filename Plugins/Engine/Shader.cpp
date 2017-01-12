@@ -162,11 +162,11 @@ namespace Gek
                             String system(elementNode.get(L"system").as_string());
                             if (system.compareNoCase(L"IsFrontFacing") == 0)
                             {
-                                inputData.format(L"    uint %v : SV_IsFrontFace;\r\n", name);
+                                inputData.appendFormat(L"    uint %v : SV_IsFrontFace;\r\n", name);
                             }
                             else if (system.compareNoCase(L"SampleIndex") == 0)
                             {
-                                inputData.format(L"    uint %v : SV_SampleIndex;\r\n", name);
+                                inputData.appendFormat(L"    uint %v : SV_SampleIndex;\r\n", name);
                             }
                         }
                         else
@@ -189,7 +189,7 @@ namespace Gek
 
                             auto semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
                             auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-                            inputData.format(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                            inputData.appendFormat(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), name, videoDevice->getSemanticMoniker(semantic), semanticIndex);
                         }
                     }
                 }
@@ -445,11 +445,11 @@ namespace Gek
                                 }
                                 else if (bufferValue.has_member(L"structure"))
                                 {
-                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
+                                    resourceSemanticsMap[bufferName].appendFormat(L"Buffer<%v>", bufferValue.get(L"structure").as_string());
                                 }
                                 else
                                 {
-                                    resourceSemanticsMap[bufferName].format(L"Buffer<%v>", getFormatSemantic(description->format));
+                                    resourceSemanticsMap[bufferName].appendFormat(L"Buffer<%v>", getFormatSemantic(description->format));
                                 }
                             }
                         }
@@ -546,7 +546,7 @@ namespace Gek
                             L"{\r\n";
                         if (pass.mode == Pass::Mode::Forward)
                         {
-                            engineData.format(
+                            engineData.appendFormat(
                                 L"    float4 screen : SV_POSITION;\r\n" \
                                 L"%v", inputData);
                         }
@@ -578,14 +578,14 @@ namespace Gek
                                 auto description = resources->getTextureDescription(resourceSearch->second);
                                 if (description)
                                 {
-                                    outputData.format(L"    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
+                                    outputData.appendFormat(L"    %v %v : SV_TARGET%v;\r\n", getFormatSemantic(description->format), renderTarget.second, currentStage++);
                                 }
                             }
                         }
 
                         if (!outputData.empty())
                         {
-                            engineData.format(
+                            engineData.appendFormat(
                                 L"struct OutputPixel\r\n" \
                                 L"{\r\n" \
                                 L"%v" \
@@ -804,7 +804,7 @@ namespace Gek
                                     textureType = L"Texture1D";
                                 }
 
-                                resourceData.format(L"    %v<%v> %v : register(t%v);\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);
+                                resourceData.appendFormat(L"    %v<%v> %v : register(t%v);\r\n", textureType, getFormatSemantic(description->format), initializer.name, currentStage);
                             }
                         }
                     }
@@ -822,13 +822,13 @@ namespace Gek
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            resourceData.format(L"    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            resourceData.appendFormat(L"    %v %v : register(t%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 
                     if (!resourceData.empty())
                     {
-                        engineData.format(
+                        engineData.appendFormat(
                             L"namespace Resources\r\n" \
                             L"{\r\n" \
                             L"%v" \
@@ -856,13 +856,13 @@ namespace Gek
                         auto semanticsSearch = resourceSemanticsMap.find(resourcePair.first);
                         if (semanticsSearch != std::end(resourceSemanticsMap))
                         {
-                            unorderedAccessData.format(L"    RW%v %v : register(u%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
+                            unorderedAccessData.appendFormat(L"    RW%v %v : register(u%v);\r\n", semanticsSearch->second, resourcePair.second, currentStage);
                         }
                     }
 
                     if (!unorderedAccessData.empty())
                     {
-                        engineData.format(
+                        engineData.appendFormat(
                             L"namespace UnorderedAccess\r\n" \
                             L"{\r\n" \
                             L"%v" \

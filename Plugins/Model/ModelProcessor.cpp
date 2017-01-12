@@ -133,6 +133,11 @@ namespace Gek
             MaterialHandle skin;
         };
 
+        struct Instance
+        {
+            Math::Float4x4 transform;
+        };
+
     private:
         Video::Device *videoDevice = nullptr;
         Plugin::Population *population = nullptr;
@@ -140,8 +145,7 @@ namespace Gek
         Plugin::Renderer *renderer = nullptr;
 
         VisualHandle visual;
-        Video::BufferPtr constantBuffer;
-        std::vector<Video::Buffer *> constantBufferList;
+        Video::BufferPtr instanceBuffer;
         ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
@@ -170,13 +174,12 @@ namespace Gek
 
             visual = resources->loadVisual(L"model");
 
-            Video::Buffer::Description description;
-            description.stride = sizeof(Math::Float4x4);
-            description.count = 1;
-            description.type = Video::Buffer::Description::Type::Constant;
-            description.flags = Video::Buffer::Description::Flags::Mappable;
-            constantBuffer = videoDevice->createBuffer(description);
-            constantBufferList.push_back(constantBuffer.get());
+            Video::Buffer::Description instanceDescription;
+            instanceDescription.stride = sizeof(Math::Float4x4);
+            instanceDescription.count = 1;
+            instanceDescription.type = Video::Buffer::Description::Type::Vertex;
+            instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
+            instanceBuffer = videoDevice->createBuffer(instanceDescription);
         }
 
         ~ModelProcessor(void)
@@ -339,16 +342,16 @@ namespace Gek
                     {
                         renderer->queueDrawCall(visual, (material.skin ? data.skin : material.material), std::move([this, modelViewMatrix, material](Video::Device::Context *videoContext) -> void
                         {
-                            Math::Float4x4 *constantData = nullptr;
-                            if (videoDevice->mapBuffer(constantBuffer.get(), constantData))
+                            Math::Float4x4 *instanceData = nullptr;
+                            if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
                             {
-                                memcpy(constantData, &modelViewMatrix, sizeof(Math::Float4x4));
-                                videoDevice->unmapBuffer(constantBuffer.get());
+                                memcpy(instanceData, &modelViewMatrix, sizeof(Math::Float4x4));
+                                videoDevice->unmapBuffer(instanceBuffer.get());
 
-                                videoContext->vertexPipeline()->setConstantBufferList(constantBufferList, 4);
                                 resources->setVertexBufferList(videoContext, material.vertexBufferList, 0);
+                                videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
                                 resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
-                                resources->drawIndexedPrimitive(videoContext, material.indexCount, 0, 0);
+                                resources->drawInstancedIndexedPrimitive(videoContext, 1, 0, material.indexCount, 0, 0);
                             }
                         }));
                     });

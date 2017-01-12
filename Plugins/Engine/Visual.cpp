@@ -50,15 +50,15 @@ namespace Gek
                             String system(elementNode[L"system"].as_string());
 							if (system.compareNoCase(L"InstanceIndex") == 0)
 							{
-								inputVertexData.format(L"    int %v : SV_InstanceId;\r\n", elementName);
+								inputVertexData.appendFormat(L"    uint %v : SV_InstanceId;\r\n", elementName);
 							}
 							else if (system.compareNoCase(L"VertexIndex") == 0)
 							{
-								inputVertexData.format(L"    int %v : SV_VertexId;\r\n", elementName);
+								inputVertexData.appendFormat(L"    uint %v : SV_VertexId;\r\n", elementName);
 							}
 							else if (system.compareNoCase(L"IsFrontFacing") == 0)
 							{
-								inputVertexData.format(L"    uint %v : SV_IsFrontFace;\r\n", elementName);
+								inputVertexData.appendFormat(L"    uint %v : SV_IsFrontFace;\r\n", elementName);
                             }
 						}
 						else
@@ -86,9 +86,15 @@ namespace Gek
 							element.source = Video::InputElement::getSource(elementNode.get(L"source", L"vertex").as_string());
                             element.sourceIndex = elementNode.get(L"sourceIndex", 0).as_uint();
 
-							auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)]++;
-							inputVertexData.format(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
-							elementList.push_back(element);
+                            uint32_t count = elementNode.get(L"count", 1).as_uint();
+                            auto semanticIndex = semanticIndexList[static_cast<uint8_t>(element.semantic)];
+                            semanticIndexList[static_cast<uint8_t>(element.semantic)] += count;
+
+                            inputVertexData.appendFormat(L"    %v %v : %v%v;\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(element.semantic), semanticIndex);
+                            while (count-- > 0)
+                            {
+                                elementList.push_back(element);
+                            };
 						}
 					}
 				}
@@ -118,8 +124,10 @@ namespace Gek
                         String elementName(elementNode.get(L"name").as_string());
                         Video::Format format = Video::getFormat(elementNode.get(L"format").as_string());
 						auto semantic = Video::InputElement::getSemantic(elementNode.get(L"semantic").as_string());
-						auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)]++;
-						outputVertexData.format(L"    %v %v : %v%v;\r\n", getFormatSemantic(format), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
+                        uint32_t count = elementNode.get(L"count", 1).as_uint();
+                        auto semanticIndex = semanticIndexList[static_cast<uint8_t>(semantic)];
+                        semanticIndexList[static_cast<uint8_t>(semantic)] += count;
+                        outputVertexData.appendFormat(L"    %v %v : %v%v;\r\n", getFormatSemantic(format, count), elementName, videoDevice->getSemanticMoniker(semantic), semanticIndex);
 					}
 				}
 
@@ -127,7 +135,7 @@ namespace Gek
                 if (vertexNode.is_object())
                 {
 					String engineData;
-					engineData.format(
+					engineData.appendFormat(
 						L"struct InputVertex\r\n" \
 						L"{\r\n" \
 						L"%v" \
