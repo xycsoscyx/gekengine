@@ -16,10 +16,127 @@
 
 namespace Gek
 {
+    Plugin::Core::Options::Value::Value(void)
+        : type(Type::Empty)
+    {
+    }
+
+    Plugin::Core::Options::Value::Value(const Value &value)
+        : type(value.type)
+    {
+        switch (type)
+        {
+        case Type::Boolean:
+            boolean = value.boolean;
+            break;
+
+        case Type::Integer:
+            integer = value.integer;
+            break;
+
+        case Type::Float:
+            floater = value.floater;
+            break;
+
+        case Type::Vector:
+            vector = value.vector;
+            break;
+        };
+    }
+
+    void Plugin::Core::Options::Value::operator = (const Value &value)
+    {
+        type = value.type;
+        switch (type)
+        {
+        case Type::Boolean:
+            boolean = value.boolean;
+            break;
+
+        case Type::Integer:
+            integer = value.integer;
+            break;
+
+        case Type::Float:
+            floater = value.floater;
+            break;
+
+        case Type::Vector:
+            vector = value.vector;
+            break;
+        };
+    }
+
+    Plugin::Core::Options::Value::Value(bool initialValue)
+        : type(Type::Boolean)
+        , boolean(initialValue)
+    {
+    }
+
+    Plugin::Core::Options::Value::Value(int32_t initialValue)
+        : type(Type::Integer)
+        , integer(initialValue)
+    {
+    }
+
+    Plugin::Core::Options::Value::Value(float initialValue)
+        : type(Type::Float)
+        , floater(initialValue)
+    {
+    }
+
+    Plugin::Core::Options::Value::Value(Math::Float4 initialValue)
+        : type(Type::Vector)
+        , vector(initialValue)
+    {
+    }
+
+    Plugin::Core::Options::Value::operator bool()
+    {
+        if (type != Type::Boolean)
+        {
+            return false;
+        }
+
+        return boolean;
+    }
+
+    Plugin::Core::Options::Value::operator int32_t()
+    {
+        if (type != Type::Boolean)
+        {
+            return 0;
+        }
+
+        return integer;
+    }
+
+    Plugin::Core::Options::Value::operator float()
+    {
+        if (type != Type::Boolean)
+        {
+            return 0.0f;
+        }
+
+        return floater;
+    }
+
+    Plugin::Core::Options::Value::operator Math::Float4()
+    {
+        if (type != Type::Boolean)
+        {
+            return Math::Float4::Zero;
+        }
+
+        return vector;
+    }
+
     namespace Implementation
     {
         GEK_CONTEXT_USER(Core, Window *)
             , public Plugin::Core
+            , public Plugin::Core::Log
+            , public Plugin::Core::Options
         {
         public:
             struct Command
@@ -93,13 +210,14 @@ namespace Gek
 
             PerformanceMap performanceMap;
             PerformanceHistory performanceHistory;
+            std::vector<std::tuple<String, Log::Type, String>> logList;
 
         public:
             Core(Context *context, Window *_window)
                 : ContextRegistration(context)
                 , window(_window)
             {
-                log(L"Core", LogType::Message, L"Starting GEK Engine");
+                message(L"Core", Log::Type::Message, L"Starting GEK Engine");
 
                 if (!window)
                 {
@@ -123,11 +241,11 @@ namespace Gek
                 try
                 {
                     configuration = JSON::Load(getContext()->getRootFileName(L"config.json"));
-                    log(L"Core", LogType::Message, L"Configuration loaded");
+                    message(L"Core", Log::Type::Message, L"Configuration loaded");
                 }
                 catch (const std::exception &)
                 {
-                    log(L"Core", Plugin::Core::LogType::Debug, L"Configuration not found, using default values");
+                    message(L"Core", Plugin::Core::Log::Type::Debug, L"Configuration not found, using default values");
                 };
 
                 if (!configuration.is_object())
@@ -215,10 +333,10 @@ namespace Gek
                 resources = getContext()->createClass<Engine::Resources>(L"Engine::Resources", (Plugin::Core *)this);
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
 
-                log(L"Core", LogType::Message, L"Loading processor plugins");
+                message(L"Core", Log::Type::Message, L"Loading processor plugins");
                 getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
                 {
-                    log(L"Core", LogType::Message, String::Format(L"Processor found: %v", className));
+                    message(L"Core", Log::Type::Message, String::Format(L"Processor found: %v", className));
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
                 });
 
@@ -227,7 +345,7 @@ namespace Gek
                     processor->onInitialized();
                 }
 
-                log(L"Core", LogType::Message, L"Initializing UI");
+                message(L"Core", Log::Type::Message, L"Initializing UI");
 
                 ImGuiIO &imGuiIo = ImGui::GetIO();
                 imGuiIo.Fonts->AddFontDefault();
@@ -399,7 +517,7 @@ namespace Gek
 
                 window->setVisibility(true);
 
-                log(L"Core", LogType::Message, L"Starting engine");
+                message(L"Core", Log::Type::Message, L"Starting engine");
 
                 population->load(L"demo");
             }
@@ -434,7 +552,7 @@ namespace Gek
 			void setDisplayMode(uint32_t displayMode)
 			{
                 auto &displayModeData = displayModeList[displayMode];
-                log(L"Core", LogType::Message, String::Format(L"Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
+                message(L"Core", Log::Type::Message, String::Format(L"Setting display mode: %vx%v", displayModeData.width, displayModeData.height));
                 if (displayMode >= displayModeList.size())
                 {
                     throw InvalidDisplayMode("Invalid display mode encountered");
@@ -467,19 +585,19 @@ namespace Gek
                             ImVec4 color;
                             switch (type)
                             {
-                            case LogType::Message:
+                            case Log::Type::Message:
                                 color = ImVec4(0.0f, 0.0f, 0.0f, 1.0f);
                                 break;
 
-                            case LogType::Warning:
+                            case Log::Type::Warning:
                                 color = ImVec4(0.5f, 0.5f, 0.0f, 1.0f);
                                 break;
 
-                            case LogType::Error:
+                            case Log::Type::Error:
                                 color = ImVec4(0.5f, 0.0f, 0.0f, 1.0f);
                                 break;
 
-                            case LogType::Debug:
+                            case Log::Type::Debug:
                                 color = ImVec4(0.0f, 0.5f, 0.5f, 1.0f);
                                 break;
                             };
@@ -837,6 +955,67 @@ namespace Gek
                 }
             }
 
+            // Plugin::Core::Log
+            void message(const wchar_t *system, Log::Type logType, const wchar_t *message)
+            {
+                logList.push_back(std::make_tuple(system, logType, message));
+                switch (logType)
+                {
+                case Log::Type::Message:
+                    OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
+                    break;
+
+                case Log::Type::Warning:
+                    OutputDebugString(String::Format(L"WARNING: (%v) %v\r\n", system, message));
+                    break;
+
+                case Log::Type::Error:
+                    OutputDebugString(String::Format(L"ERROR: (%v) %v\r\n", system, message));
+                    break;
+
+                case Log::Type::Debug:
+                    OutputDebugString(String::Format(L"DEBUG: (%v) %v\r\n", system, message));
+                    break;
+                };
+            }
+
+            void beginEvent(const char *name)
+            {
+                performanceMap[name] = timer.getImmediateTime();
+            }
+
+            void endEvent(const char *name)
+            {
+                auto &time = performanceMap[name];
+                time = (timer.getImmediateTime() - time);
+            }
+
+            void addValue(const char *name, float value)
+            {
+                performanceMap[name] += value;
+            }
+
+            // Plugin::Core::Options
+            std::unordered_map<String, Options::Value> optionsMap;
+            void addValue(const wchar_t *name, const Options::Value &value)
+            {
+                optionsMap[name] = value;
+            }
+
+            const Options::Value &getValue(const wchar_t *name) const
+            {
+                auto search = optionsMap.find(name);
+                if (search == optionsMap.end())
+                {
+                    static const Options::Value defaultValue;
+                    return defaultValue;
+                }
+                else
+                {
+                    return search->second;
+                }
+            }
+
             // Plugin::Core
             bool update(void)
             {
@@ -981,56 +1160,6 @@ namespace Gek
                 return engineRunning;
             }
 
-            std::vector<std::tuple<String, LogType, String>> logList;
-            void log(const wchar_t *system, LogType logType, const wchar_t *message)
-            {
-                logList.push_back(std::make_tuple(system, logType, message));
-                switch (logType)
-                {
-                case LogType::Message:
-                    OutputDebugString(String::Format(L"(%v) %v\r\n", system, message));
-                    break;
-
-                case LogType::Warning:
-                    OutputDebugString(String::Format(L"WARNING: (%v) %v\r\n", system, message));
-                    break;
-
-                case LogType::Error:
-                    OutputDebugString(String::Format(L"ERROR: (%v) %v\r\n", system, message));
-                    break;
-
-                case LogType::Debug:
-                    OutputDebugString(String::Format(L"DEBUG: (%v) %v\r\n", system, message));
-                    break;
-                };
-            }
-
-            void beginEvent(const char *name)
-            {
-                performanceMap[name] = timer.getImmediateTime();
-            }
-
-            void endEvent(const char *name)
-            {
-                auto &time = performanceMap[name];
-                time = (timer.getImmediateTime() - time);
-            }
-
-            void addValue(const char *name, float value)
-            {
-                performanceMap[name] += value;
-            }
-
-            JSON::Object &getConfiguration(void)
-            {
-                return configuration;
-            }
-
-            JSON::Object const &getConfiguration(void) const
-            {
-                return configuration;
-            }
-
             void setEditorState(bool enabled)
             {
                 editorActive = enabled;
@@ -1039,6 +1168,16 @@ namespace Gek
             bool isEditorActive(void) const
             {
                 return editorActive;
+            }
+
+            Log * getLog(void) const
+            {
+                return (Plugin::Core::Log *)this;
+            }
+
+            Options * getOptions(void) const
+            {
+                return (Plugin::Core::Options *)this;
             }
 
             Window * getWindow(void) const

@@ -192,7 +192,7 @@ namespace Gek
                 , resources(dynamic_cast<Engine::Resources *>(core->getResources()))
                 , threadPool(3)
             {
-                core->log(L"Renderer", Plugin::Core::LogType::Message, L"Initializing rendering system components");
+                core->getLog()->message(L"Renderer", Plugin::Core::Log::Type::Message, L"Initializing rendering system components");
 
                 core->onDisplay.connect<Renderer, &Renderer::onDisplay>(this);
                 population->onLoadBegin.connect<Renderer, &Renderer::onLoadBegin>(this);
@@ -643,15 +643,15 @@ namespace Gek
                 GEK_REQUIRE(videoDevice);
                 GEK_REQUIRE(population);
 
-                Plugin::Core::Scope function(core, __FUNCTION__);
-                core->addValue("Cameras", renderCallList.unsafe_size());
+                Plugin::Core::Log::Scope function(core->getLog(), __FUNCTION__);
+                core->getLog()->addValue("Cameras", renderCallList.unsafe_size());
                 while (renderCallList.try_pop(currentRenderCall))
                 {
                     drawCallList.clear();
                     onRenderScene.emit(currentRenderCall.viewFrustum, currentRenderCall.viewMatrix);
                     if (!drawCallList.empty())
                     {
-                        core->addValue("Draw Calls", drawCallList.size());
+                        core->getLog()->addValue("Draw Calls", drawCallList.size());
                         auto backBuffer = videoDevice->getBackBuffer();
                         auto width = backBuffer->getDescription().width;
                         auto height = backBuffer->getDescription().height;
@@ -714,7 +714,7 @@ namespace Gek
 
                                 if (!directionalLightList.empty())
                                 {
-                                    core->addValue("Directional Lights", directionalLightList.size());
+                                    core->getLog()->addValue("Directional Lights", directionalLightList.size());
                                     if (!directionalLightDataBuffer || directionalLightDataBuffer->getDescription().count < directionalLightList.size())
                                     {
                                         directionalLightDataBuffer = nullptr;
@@ -741,7 +741,7 @@ namespace Gek
 
                                 if (!pointLightList.empty())
                                 {
-                                    core->addValue("Point Lights", pointLightList.size());
+                                    core->getLog()->addValue("Point Lights", pointLightList.size());
                                     if (!pointLightDataBuffer || pointLightDataBuffer->getDescription().count < pointLightList.size())
                                     {
                                         pointLightDataBuffer = nullptr;
@@ -768,7 +768,7 @@ namespace Gek
 
                                 if (!spotLightList.empty())
                                 {
-                                    core->addValue("Spot Lights", spotLightList.size());
+                                    core->getLog()->addValue("Spot Lights", spotLightList.size());
                                     if (!spotLightDataBuffer || spotLightDataBuffer->getDescription().count < spotLightList.size())
                                     {
                                         spotLightDataBuffer = nullptr;

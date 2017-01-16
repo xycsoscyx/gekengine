@@ -28,30 +28,82 @@ namespace Gek
             GEK_ADD_EXCEPTION(InitializationFailed);
             GEK_ADD_EXCEPTION(InvalidDisplayMode);
             GEK_ADD_EXCEPTION(InvalidIndexBufferFormat);
+            GEK_ADD_EXCEPTION(InvalidOptionName);
 
-            struct Scope
+            GEK_INTERFACE(Log)
             {
-                Core *core = nullptr;
-                const char *name = nullptr;
-                Scope(Core *core, const char *name)
-                    : core(core)
-                    , name(name)
+                struct Scope
                 {
-                    core->beginEvent(name);
-                }
+                    Log *log = nullptr;
+                    const char *name = nullptr;
+                    Scope(Log *log, const char *name)
+                        : log(log)
+                        , name(name)
+                    {
+                        log->beginEvent(name);
+                    }
 
-                ~Scope(void)
+                    ~Scope(void)
+                    {
+                        log->endEvent(name);
+                    }
+                };
+
+                enum class Type : uint8_t
                 {
-                    core->endEvent(name);
-                }
+                    Message = 0,
+                    Warning,
+                    Error,
+                    Debug,
+                };
+
+                virtual void message(const wchar_t *system, Type logType, const wchar_t *message) = 0;
+
+                virtual void beginEvent(const char *name) = 0;
+                virtual void endEvent(const char *name) = 0;
+
+                virtual void addValue(const char *name, float value) = 0;
             };
 
-            enum class LogType : uint8_t
+            GEK_INTERFACE(Options)
             {
-                Message = 0,
-                Warning,
-                Error,
-                Debug,
+                struct Value
+                {
+                    enum class Type : uint8_t
+                    {
+                        Empty = 0,
+                        Boolean,
+                        Integer,
+                        Float,
+                        Vector,
+                    };
+
+                    Type type;
+                    union
+                    {
+                        bool boolean;
+                        int32_t integer;
+                        float floater;
+                        Math::Float4 vector;
+                    };
+
+                    Value(void);
+                    Value(const Value &value);
+                    void operator = (const Value &value);
+
+                    Value(bool initialValue);
+                    Value(int32_t initialValue);
+                    Value(float initialValue);
+                    Value(Math::Float4 initialValue);
+
+                    operator bool();
+                    operator int32_t();
+                    operator float();
+                    operator Math::Float4();
+                };
+
+                virtual void addValue(const wchar_t *name, const Value &value) = 0;
+                virtual const Value &getValue(const wchar_t *name) const = 0;
             };
 
             Nano::Signal<void(void)> onResize;
@@ -62,17 +114,11 @@ namespace Gek
 
             virtual bool update(void) = 0;
 
-            virtual void log(const wchar_t *system, LogType logType, const wchar_t *message) = 0;
-            virtual void beginEvent(const char *name) = 0;
-            virtual void endEvent(const char *name) = 0;
-            virtual void addValue(const char *name, float value) = 0;
-
-            virtual JSON::Object &getConfiguration(void) = 0;
-            virtual JSON::Object const &getConfiguration(void) const = 0;
-
             virtual void setEditorState(bool enabled) = 0;
             virtual bool isEditorActive(void) const = 0;
 
+            virtual Log * getLog(void) const = 0;
+            virtual Options * getOptions(void) const = 0;
             virtual Window * getWindow(void) const = 0;
             virtual Video::Device * getVideoDevice(void) const = 0;
 

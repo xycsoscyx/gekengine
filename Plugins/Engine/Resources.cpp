@@ -35,7 +35,7 @@ namespace Gek
 
         GEK_INTERFACE(ResourceRequester)
         {
-            virtual void log(const wchar_t *system, Plugin::Core::LogType logType, const wchar_t *message) = 0;
+            virtual void message(const wchar_t *system, Plugin::Core::Log::Type logType, const wchar_t *message) = 0;
 
             virtual void addRequest(std::function<void(void)> &&load) = 0;
         };
@@ -283,11 +283,11 @@ namespace Gek
                         }
                         catch (const std::exception &exception)
                         {
-                            resources->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"Error occurred trying to reload an external resource: %v", exception.what()));
+                            resources->message(L"Resources", Plugin::Core::Log::Type::Error, String::Format(L"Error occurred trying to reload an external resource: %v", exception.what()));
                         }
                         catch (...)
                         {
-                            resources->log(L"Resources", Plugin::Core::LogType::Error, L"Unknown error occurred trying to reload an external resource");
+                            resources->message(L"Resources", Plugin::Core::Log::Type::Error, L"Unknown error occurred trying to reload an external resource");
                         };
                     }
                 }
@@ -322,11 +322,11 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        resources->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"Error occurred trying to load an external resource: %v", exception.what()));
+                        resources->message(L"Resources", Plugin::Core::Log::Type::Error, String::Format(L"Error occurred trying to load an external resource: %v", exception.what()));
                     }
                     catch (...)
                     {
-                        resources->log(L"Resources", Plugin::Core::LogType::Error, L"Unknown error occurred trying to load an external resource");
+                        resources->message(L"Resources", Plugin::Core::Log::Type::Error, L"Unknown error occurred trying to load an external resource");
                     };
                 }
 
@@ -605,9 +605,9 @@ namespace Gek
             }
 
             // ResourceRequester
-            void log(const wchar_t *system, Plugin::Core::LogType logType, const wchar_t *message)
+            void message(const wchar_t *system, Plugin::Core::Log::Type logType, const wchar_t *message)
             {
-                core->log(system, logType, message);
+                core->getLog()->message(system, logType, message);
             }
 
             void addRequest(std::function<void(void)> &&load)
@@ -620,11 +620,11 @@ namespace Gek
                     }
                     catch (const std::exception &exception)
                     {
-                        core->log(L"Resources", Plugin::Core::LogType::Error, String::Format(L"Error occurred trying to load an external resource: %v", exception.what()));
+                        core->getLog()->message(L"Resources", Plugin::Core::Log::Type::Error, String::Format(L"Error occurred trying to load an external resource: %v", exception.what()));
                     }
                     catch (...)
                     {
-                        core->log(L"Resources", Plugin::Core::LogType::Error, L"Unknown error occurred trying to load an external resource");
+                        core->getLog()->message(L"Resources", Plugin::Core::Log::Type::Error, L"Unknown error occurred trying to load an external resource");
                     };
                 });
             }
@@ -1008,7 +1008,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Vertex Count", vertexCount);
                     videoContext->drawPrimitive(vertexCount, firstVertex);
                 }
             }
@@ -1017,7 +1018,9 @@ namespace Gek
             {
                 if (drawPrimitiveValid)
                 {
-                    core->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Vertex Count", vertexCount);
+                    core->getLog()->addValue("Instance Count", instanceCount);
                     videoContext->drawInstancedPrimitive(instanceCount, firstInstance, vertexCount, firstVertex);
                 }
             }
@@ -1030,7 +1033,8 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Index Count", indexCount);
                     videoContext->drawIndexedPrimitive(indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1041,7 +1045,9 @@ namespace Gek
 
                 if (drawPrimitiveValid)
                 {
-                    core->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Draw Calls", 1.0f);
+                    core->getLog()->addValue("Index Count", indexCount);
+                    core->getLog()->addValue("Instance Count", instanceCount);
                     videoContext->drawInstancedIndexedPrimitive(instanceCount, firstInstance, indexCount, firstIndex, firstVertex);
                 }
             }
@@ -1052,7 +1058,8 @@ namespace Gek
 
                 if (dispatchValid)
                 {
-                    core->addValue("Dispatch Calls", 1.0f);
+                    core->getLog()->addValue("Dispatch Calls", 1.0f);
+                    core->getLog()->addValue("Dishatch Thread Count", threadGroupCountX * threadGroupCountY * threadGroupCountZ);
                     videoContext->dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
             }
