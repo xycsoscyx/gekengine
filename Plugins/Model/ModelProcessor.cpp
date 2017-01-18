@@ -115,7 +115,7 @@ namespace Gek
         struct Material
         {
             bool skin = false;
-            MaterialHandle material;
+            MaterialHandle handle;
             std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
             ResourceHandle indexBuffer;
             uint32_t indexCount = 0;
@@ -146,6 +146,7 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr instanceBuffer;
+        static const uint32_t MaximumInstances = 500;
         ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
@@ -176,7 +177,7 @@ namespace Gek
 
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
-            instanceDescription.count = 1;
+            instanceDescription.count = MaximumInstances;
             instanceDescription.type = Video::Buffer::Description::Type::Vertex;
             instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
@@ -241,7 +242,7 @@ namespace Gek
                                 }
                                 else
                                 {
-                                    material.material = resources->loadMaterial(materialHeader.name);
+                                    material.handle = resources->loadMaterial(materialHeader.name);
                                 }
 
                                 Video::Buffer::Description indexBufferDescription;
@@ -325,11 +326,16 @@ namespace Gek
             removeEntity(entity);
         }
 
+        using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
+        using MaterialMap = concurrency::concurrent_unordered_map<const Material *, InstanceList>;
+        using HandleMap = concurrency::concurrent_unordered_map<MaterialHandle, MaterialMap>;
+
         // Plugin::Renderer Slots
         void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
         {
             GEK_REQUIRE(renderer);
 
+            HandleMap handleMap;
             list([&](Plugin::Entity *entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
@@ -340,23 +346,38 @@ namespace Gek
                     auto modelViewMatrix(matrix * viewMatrix);
                     concurrency::parallel_for_each(std::begin(model.materialList), std::end(model.materialList), [&](const Material &material) -> void
                     {
-                        renderer->queueDrawCall(visual, (material.skin ? data.skin : material.material), std::move([this, modelViewMatrix, material](Video::Device::Context *videoContext) -> void
-                        {
-                            Math::Float4x4 *instanceData = nullptr;
-                            if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
-                            {
-                                memcpy(instanceData, &modelViewMatrix, sizeof(Math::Float4x4));
-                                videoDevice->unmapBuffer(instanceBuffer.get());
-
-                                resources->setVertexBufferList(videoContext, material.vertexBufferList, 0);
-                                videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-                                resources->setIndexBuffer(videoContext, material.indexBuffer, 0);
-                                resources->drawInstancedIndexedPrimitive(videoContext, 1, 0, material.indexCount, 0, 0);
-                            }
-                        }));
+                        auto handle = (material.skin ? data.skin : material.handle);
+                        auto &materialMap = handleMap[handle];
+                        auto &instanceList = materialMap[&material];
+                        instanceList.push_back(modelViewMatrix);
                     });
                 }
             });
+
+            for (auto &handlePair : handleMap)
+            {
+                auto handle = handlePair.first;
+                auto &materialMap = handlePair.second;
+                for (auto &materialPair : materialMap)
+                {
+                    auto &material = materialPair.first;
+                    auto &instanceList = materialPair.second;
+                    renderer->queueDrawCall(visual, handle, std::move([this, material, instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
+                    {
+                        Math::Float4x4 *instanceData = nullptr;
+                        if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
+                        {
+                            std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
+                            videoDevice->unmapBuffer(instanceBuffer.get());
+
+                            resources->setVertexBufferList(videoContext, material->vertexBufferList, 0);
+                            videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
+                            resources->setIndexBuffer(videoContext, material->indexBuffer, 0);
+                            resources->drawInstancedIndexedPrimitive(videoContext, instanceList.size(), 0, material->indexCount, 0, 0);
+                        }
+                    }));
+                }
+            }
         }
     };
 

@@ -16,127 +16,11 @@
 
 namespace Gek
 {
-    Plugin::Core::Options::Value::Value(void)
-        : type(Type::Empty)
-    {
-    }
-
-    Plugin::Core::Options::Value::Value(const Value &value)
-        : type(value.type)
-    {
-        switch (type)
-        {
-        case Type::Boolean:
-            boolean = value.boolean;
-            break;
-
-        case Type::Integer:
-            integer = value.integer;
-            break;
-
-        case Type::Float:
-            floater = value.floater;
-            break;
-
-        case Type::Vector:
-            vector = value.vector;
-            break;
-        };
-    }
-
-    void Plugin::Core::Options::Value::operator = (const Value &value)
-    {
-        type = value.type;
-        switch (type)
-        {
-        case Type::Boolean:
-            boolean = value.boolean;
-            break;
-
-        case Type::Integer:
-            integer = value.integer;
-            break;
-
-        case Type::Float:
-            floater = value.floater;
-            break;
-
-        case Type::Vector:
-            vector = value.vector;
-            break;
-        };
-    }
-
-    Plugin::Core::Options::Value::Value(bool initialValue)
-        : type(Type::Boolean)
-        , boolean(initialValue)
-    {
-    }
-
-    Plugin::Core::Options::Value::Value(int32_t initialValue)
-        : type(Type::Integer)
-        , integer(initialValue)
-    {
-    }
-
-    Plugin::Core::Options::Value::Value(float initialValue)
-        : type(Type::Float)
-        , floater(initialValue)
-    {
-    }
-
-    Plugin::Core::Options::Value::Value(Math::Float4 initialValue)
-        : type(Type::Vector)
-        , vector(initialValue)
-    {
-    }
-
-    Plugin::Core::Options::Value::operator bool()
-    {
-        if (type != Type::Boolean)
-        {
-            return false;
-        }
-
-        return boolean;
-    }
-
-    Plugin::Core::Options::Value::operator int32_t()
-    {
-        if (type != Type::Boolean)
-        {
-            return 0;
-        }
-
-        return integer;
-    }
-
-    Plugin::Core::Options::Value::operator float()
-    {
-        if (type != Type::Boolean)
-        {
-            return 0.0f;
-        }
-
-        return floater;
-    }
-
-    Plugin::Core::Options::Value::operator Math::Float4()
-    {
-        if (type != Type::Boolean)
-        {
-            return Math::Float4::Zero;
-        }
-
-        return vector;
-    }
-
     namespace Implementation
     {
         GEK_CONTEXT_USER(Core, Window *)
             , public Plugin::Core
             , public Plugin::Core::Log
-            , public Plugin::Core::Options
         {
         public:
             struct Command
@@ -696,6 +580,8 @@ namespace Gek
                 }
 
                 ImGui::PopItemWidth();
+
+                onOptions.emit(ImGui::GetCurrentContext(), windowData);
             }
 
             void renderDrawData(ImDrawData *drawData)
@@ -995,27 +881,6 @@ namespace Gek
                 performanceMap[name] += value;
             }
 
-            // Plugin::Core::Options
-            std::unordered_map<String, Options::Value> optionsMap;
-            void addValue(const wchar_t *name, const Options::Value &value)
-            {
-                optionsMap[name] = value;
-            }
-
-            const Options::Value &getValue(const wchar_t *name) const
-            {
-                auto search = optionsMap.find(name);
-                if (search == optionsMap.end())
-                {
-                    static const Options::Value defaultValue;
-                    return defaultValue;
-                }
-                else
-                {
-                    return search->second;
-                }
-            }
-
             // Plugin::Core
             bool update(void)
             {
@@ -1173,11 +1038,6 @@ namespace Gek
             Log * getLog(void) const
             {
                 return (Plugin::Core::Log *)this;
-            }
-
-            Options * getOptions(void) const
-            {
-                return (Plugin::Core::Options *)this;
             }
 
             Window * getWindow(void) const
