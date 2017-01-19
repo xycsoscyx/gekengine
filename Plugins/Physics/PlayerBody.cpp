@@ -127,9 +127,9 @@ namespace Gek
 				, world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
 				, newtonWorld(newtonWorld)
 				, entity(entity)
-				, currentState(std::make_shared<IdleState>())
+				, currentState(std::make_unique<IdleState>())
 			{
-				const auto &physicalComponent = entity->getComponent<Components::Physical>();
+                const auto &physicalComponent = entity->getComponent<Components::Physical>();
 				const auto &transformComponent = entity->getComponent<Components::Transform>();
 				const auto &playerComponent = entity->getComponent<Components::Player>();
 
@@ -205,6 +205,8 @@ namespace Gek
                 NewtonDestroyCollision(bodyCapsule);
                 NewtonDestroyCollision(supportShape);
                 NewtonDestroyCollision(playerShape);
+
+                population->onAction.connect<PlayerBody, &PlayerBody::onAction>(this);
             }
 
 			~PlayerBody(void)
@@ -440,7 +442,7 @@ namespace Gek
 				{
 					currentState->onExit(this);
 					nextState->onEnter(this);
-					currentState = nextState;
+                    currentState = std::move(nextState);
 				}
 			}
 
@@ -467,7 +469,7 @@ namespace Gek
 				{
 					currentState->onExit(this);
 					nextState->onEnter(this);
-					currentState = nextState;
+                    currentState = std::move(nextState);
 				}
 
                 Math::Float4x4 matrix;
@@ -679,23 +681,23 @@ namespace Gek
 			}
 			else if (actionName.compareNoCase(L"move_forward") == 0 && parameter.state)
 			{
-				return std::make_shared<WalkingState>();
+				return std::make_unique<WalkingState>();
 			}
 			else if (actionName.compareNoCase(L"move_backward") == 0 && parameter.state)
 			{
-				return std::make_shared<WalkingState>();
+				return std::make_unique<WalkingState>();
 			}
 			else if (actionName.compareNoCase(L"strafe_left") == 0 && parameter.state)
 			{
-				return std::make_shared<WalkingState>();
+				return std::make_unique<WalkingState>();
 			}
 			else if (actionName.compareNoCase(L"strafe_right") == 0 && parameter.state)
 			{
-				return std::make_shared<WalkingState>();
+				return std::make_unique<WalkingState>();
 			}
 			else if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
 			{
-				return std::make_shared<JumpingState>();
+				return std::make_unique<JumpingState>();
 			}
 
 			return nullptr;
@@ -705,7 +707,7 @@ namespace Gek
 		{
 			if (!player->moveForward && !player->moveBackward && !player->strafeLeft && !player->strafeRight)
 			{
-				return std::make_shared<IdleState>();
+				return std::make_unique<IdleState>();
 			}
 
 			player->forwardSpeed += (((player->moveForward ? 1.0f : 0.0f) + (player->moveBackward ? -1.0f : 0.0f)) * 5.0f);
@@ -717,7 +719,7 @@ namespace Gek
 		{
 			if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
 			{
-				return std::make_shared<JumpingState>();
+				return std::make_unique<JumpingState>();
 			}
 
 			return nullptr;
@@ -735,11 +737,11 @@ namespace Gek
 			{
                 if (player->moveForward || player->moveBackward || player->strafeLeft || player->strafeRight)
                 {
-                    return std::make_shared<WalkingState>();
+                    return std::make_unique<WalkingState>();
                 }
                 else
                 {
-                    return std::make_shared<IdleState>();
+                    return std::make_unique<IdleState>();
                 }
             }
 
@@ -750,7 +752,7 @@ namespace Gek
         {
             if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
             {
-                return std::make_shared<JumpingState>();
+                return std::make_unique<JumpingState>();
             }
 
             return nullptr;
@@ -758,9 +760,7 @@ namespace Gek
 
         Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
 		{
-			std::shared_ptr<PlayerBody> player(std::make_shared<PlayerBody>(core, population, newtonWorld, entity));
-            population->onAction.connect<PlayerBody, &PlayerBody::onAction>(player.get());
-			return player;
+			return std::make_unique<PlayerBody>(core, population, newtonWorld, entity);
 		}
 	}; // namespace Newton
 }; // namespace Gek

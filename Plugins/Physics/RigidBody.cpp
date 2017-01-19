@@ -86,7 +86,7 @@ namespace Gek
 
         Newton::EntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
         {
-            return std::make_shared<RigidBody>(newtonWorld, newtonCollision, entity);
+            return std::make_unique<RigidBody>(newtonWorld, newtonCollision, entity);
         }
     }; // namespace Newton
 }; // namespace Gek

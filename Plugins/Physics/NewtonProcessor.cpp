@@ -334,8 +334,8 @@ namespace Gek
                         Newton::EntityPtr playerBody(createPlayerBody(core, population, newtonWorld, entity));
                         if (playerBody)
                         {
-                            entityMap[entity] = playerBody;
                             NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
+                            entityMap[entity] = std::move(playerBody);
                         }
                     }
                     else
@@ -361,8 +361,8 @@ namespace Gek
                                 Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
                                 if (rigidBody)
                                 {
-                                    entityMap[entity] = rigidBody;
                                     NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
+                                    entityMap[entity] = std::move(rigidBody);
                                 }
                             }
                         }

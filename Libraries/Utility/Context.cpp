@@ -110,6 +110,6 @@ namespace Gek
 
     ContextPtr Context::Create(const FileSystem::Path &rootPath, const std::vector<FileSystem::Path> &searchPathList)
     {
-        return std::make_shared<ContextImplementation>(rootPath, searchPathList);
+        return std::make_unique<ContextImplementation>(rootPath, searchPathList);
     }
 }; // namespace Gek

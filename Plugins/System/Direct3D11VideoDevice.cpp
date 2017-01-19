@@ -1519,7 +1519,7 @@ namespace Gek
                         throw Video::OperationFailed("Unable to finish command list compilation");
                     }
 
-                    return std::make_shared<CommandList>(d3dCommandList.p);
+                    return std::make_unique<CommandList>(d3dCommandList.p);
                 }
             };
 
@@ -1600,7 +1600,7 @@ namespace Gek
                 //d3dInfoQueue->SetBreakOnSeverity(D3D11_MESSAGE_SEVERITY_WARNING, true);
 #endif
 
-                defaultContext = std::make_shared<Context>(d3dDeviceContext);
+                defaultContext = std::make_unique<Context>(d3dDeviceContext);
             }
 
             ~Device(void)
@@ -1793,7 +1793,7 @@ namespace Gek
                     description.width = textureDescription.Width;
                     description.height = textureDescription.Height;
                     description.format = DirectX::getFormat(textureDescription.Format);
-                    backBuffer = std::make_shared<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, description);
+                    backBuffer = std::make_unique<TargetTexture>(d3dRenderTarget.p, d3dRenderTargetView.p, description);
                 }
 
                 return backBuffer.get();
@@ -1817,7 +1817,7 @@ namespace Gek
                     throw Video::OperationFailed("Unable to create deferred context");
                 }
 
-                return std::make_shared<Context>(d3dDeferredDeviceContext.p);
+                return std::make_unique<Context>(d3dDeferredDeviceContext.p);
             }
 
             Video::ObjectPtr createEvent(void)
@@ -1835,7 +1835,7 @@ namespace Gek
                     throw Video::OperationFailed("Unable to create event");
                 }
 
-                return std::make_shared<Event>(d3dQuery);
+                return std::make_unique<Event>(d3dQuery);
             }
 
             void setEvent(Video::Object *gpuEvent)
@@ -1883,7 +1883,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create rasterizer state");
                 }
 
-                return std::make_shared<RenderState>(d3dStates);
+                return std::make_unique<RenderState>(d3dStates);
             }
 
             Video::ObjectPtr createDepthState(const Video::DepthStateInformation &depthState)
@@ -1913,7 +1913,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create depth stencil state");
                 }
 
-                return std::make_shared<DepthState>(d3dStates);
+                return std::make_unique<DepthState>(d3dStates);
             }
 
             Video::ObjectPtr createBlendState(const Video::UnifiedBlendStateInformation &blendState)
@@ -1958,7 +1958,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create unified blend state");
                 }
 
-                return std::make_shared<BlendState>(d3dStates);
+                return std::make_unique<BlendState>(d3dStates);
             }
 
             Video::ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState)
@@ -2006,7 +2006,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create independent blend state");
                 }
 
-                return std::make_shared<BlendState>(d3dStates);
+                return std::make_unique<BlendState>(d3dStates);
             }
 
             Video::ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState)
@@ -2035,7 +2035,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create sampler state");
                 }
 
-                return std::make_shared<SamplerState>(d3dStates);
+                return std::make_unique<SamplerState>(d3dStates);
             }
 
             Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)
@@ -2179,7 +2179,7 @@ namespace Gek
                     }
                 }
 
-                return std::make_shared<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, description);
+                return std::make_unique<Buffer>(d3dBuffer, d3dShaderResourceView, d3dUnorderedAccessView, description);
             }
 
             bool mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
@@ -2286,7 +2286,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create input vertex layout");
                 }
 
-                return std::make_shared<InputLayout>(d3dInputLayout);
+                return std::make_unique<InputLayout>(d3dInputLayout);
             }
 
             template <class SHADER, class PROGRAM, typename RETURN, typename CLASS, typename... PARAMETERS>
@@ -2303,7 +2303,7 @@ namespace Gek
                     throw Video::CreateObjectFailed("Unable to create program from compiled data");
                 }
 
-                return std::make_shared<PROGRAM>(d3dShader);
+                return std::make_unique<PROGRAM>(d3dShader);
             }
 
             Video::ObjectPtr createProgram(Video::PipelineType pipelineType, const void *compiledData, uint32_t compiledSize)
@@ -2565,7 +2565,7 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create render target view");
                     }
 
-                    return std::make_shared<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
+                    return std::make_unique<TargetViewTexture>(d3dResource.p, d3dRenderTargetView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
                 else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
                 {
@@ -2582,11 +2582,11 @@ namespace Gek
                         throw Video::CreateObjectFailed("Unable to create depth stencil view");
                     }
 
-                    return std::make_shared<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
+                    return std::make_unique<DepthTexture>(d3dResource.p, d3dDepthStencilView.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
                 else
                 {
-                    return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
+                    return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, d3dUnorderedAccessView.p, description);
                 }
             }
 
@@ -2653,7 +2653,7 @@ namespace Gek
                 description.depth = image.GetMetadata().depth;
                 description.format = DirectX::getFormat(image.GetMetadata().format);
                 description.mipMapCount = image.GetMetadata().mipLevels;
-                return std::make_shared<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
+                return std::make_unique<ViewTexture>(d3dResource.p, d3dShaderResourceView.p, nullptr, description);
             }
 
             Texture::Description loadTextureDescription(const FileSystem::Path &filePath)

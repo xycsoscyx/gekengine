@@ -277,7 +277,7 @@ namespace Gek
 					throw Audio::CreateSampleFailed();
 				}
 
-				return std::make_shared<Effect>(directSound8Buffer.p);
+				return std::make_unique<Effect>(directSound8Buffer.p);
 			}
 
 			Audio::SoundPtr loadSound(const FileSystem::Path &filePath)
@@ -298,7 +298,7 @@ namespace Gek
 					throw Audio::CreateSampleFailed();
 				}
 
-				return std::make_shared<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
+				return std::make_unique<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
 			}
 
 			Audio::EffectPtr copyEffect(Audio::Effect *source)
@@ -319,7 +319,7 @@ namespace Gek
 					throw Audio::CreateSampleFailed();
 				}
 
-				return std::make_shared<Effect>(directSound8Buffer.p);
+				return std::make_unique<Effect>(directSound8Buffer.p);
 			}
 
 			Audio::SoundPtr copySound(Audio::Sound *source)
@@ -346,7 +346,7 @@ namespace Gek
 					throw Audio::CreateSampleFailed();
 				}
 
-				return std::make_shared<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
+				return std::make_unique<Sound>(directSound8Buffer.p, directSound8Buffer3D.p);
 			}
 */
 		};

@@ -133,21 +133,21 @@ namespace Gek
                 {
                     core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Component found: %v", className));
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
-                    auto componentSearch = componentMap.insert(std::make_pair(component->getIdentifier(), component));
-                    if (componentSearch.second)
-                    {
-                        componentNameTypeMap.insert(std::make_pair(component->getIdentifier(), component->getName()));
-                        auto componentNameSearch = componentTypeNameMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
-                        if (!componentNameSearch.second)
-                        {
-                            core->getLog()->message(L"Population", Plugin::Core::Log::Type::Debug, String::Format(L"Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
-                            componentMap.erase(componentSearch.first);
-                        }
-                    }
-                    else
+                    if (componentMap.count(component->getIdentifier()) > 0)
                     {
                         core->getLog()->message(L"Population", Plugin::Core::Log::Type::Debug, String::Format(L"Duplicate component identifier found: Class(%v), Identifier(%v)", className, component->getIdentifier().name()));
+                        return;
                     }
+
+                    if (componentNameTypeMap.count(component->getIdentifier()) > 0)
+                    {
+                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Debug, String::Format(L"Duplicate component name found: Class(%v), Name(%v)", className, component->getName()));
+                        return;
+                    }
+
+                    componentNameTypeMap.insert(std::make_pair(component->getIdentifier(), component->getName()));
+                    componentTypeNameMap.insert(std::make_pair(component->getName(), component->getIdentifier()));
+                    componentMap[component->getIdentifier()] = std::move(component);
                 });
             }
 
@@ -241,12 +241,12 @@ namespace Gek
                                 }
                             }
 
-                            auto entity(std::make_shared<Entity>());
+                            auto entity(std::make_unique<Entity>());
                             for (auto &componentData : entityComponentList)
                             {
                                 if (componentData.name().compare(L"Name") != 0 &&
                                     componentData.name().compare(L"Template") != 0)
-                                    {
+                                {
                                     addComponent(entity.get(), componentData);
                                 }
                             }
@@ -417,15 +417,17 @@ namespace Gek
                     addComponent(entity.get(), componentData);
                 }
 
-                entityQueue.push([this, entityName = String(entityName), entity = std::move(entity)](void) -> void
+                entityQueue.push([this, requestedName = String(entityName), entity = move(entity)](void) -> void
                 {
-                    if (entityMap.insert(std::make_pair((entityName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : entityName), entity)).second)
+                    auto entityName(requestedName.empty() ? String::Format(L"unnamed_%v", ++uniqueEntityIdentifier) : requestedName);
+                    if (entityMap.count(requestedName) > 0)
                     {
-                        onEntityCreated.emit(entity.get(), entityName);
+                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
                     }
                     else
                     {
-                        core->getLog()->message(L"Population", Plugin::Core::Log::Type::Error, String::Format(L"Unable to add entity to scene: %v", entityName));
+                        entityMap[entityName].reset(entity.get());
+                        onEntityCreated.emit(entity.get(), entityName);
                     }
                 });
 

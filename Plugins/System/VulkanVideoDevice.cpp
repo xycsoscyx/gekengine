@@ -764,7 +764,7 @@ namespace Gek
 
             Video::ObjectPtr finishCommandList(void)
             {
-                return std::make_shared<CommandList>();
+                return std::make_unique<CommandList>();
             }
         };
 
@@ -783,7 +783,7 @@ namespace Gek
             {
                 GEK_REQUIRE(window);
 
-                defaultContext = std::make_shared<Context>(this);
+                defaultContext = std::make_unique<Context>(this);
             }
 
             ~Device(void)
@@ -821,7 +821,7 @@ namespace Gek
             {
                 if (!backBuffer)
                 {
-                    backBuffer = std::make_shared<TargetTexture>(Video::Texture::Description());
+                    backBuffer = std::make_unique<TargetTexture>(Video::Texture::Description());
                 }
 
                 return backBuffer.get();
@@ -836,12 +836,12 @@ namespace Gek
 
             Video::Device::ContextPtr createDeferredContext(void)
             {
-                return std::make_shared<Context>(this);
+                return std::make_unique<Context>(this);
             }
 
             Video::ObjectPtr createEvent(void)
             {
-                return std::make_shared<Event>();
+                return std::make_unique<Event>();
             }
 
             void setEvent(Video::Object *event)
@@ -855,33 +855,33 @@ namespace Gek
 
             Video::ObjectPtr createRenderState(const Video::RenderStateInformation &renderState)
             {
-                return std::make_shared<RenderState>();
+                return std::make_unique<RenderState>();
             }
 
             Video::ObjectPtr createDepthState(const Video::DepthStateInformation &depthState)
             {
-                return std::make_shared<DepthState>();
+                return std::make_unique<DepthState>();
             }
 
             Video::ObjectPtr createBlendState(const Video::UnifiedBlendStateInformation &blendState)
             {
-                return std::make_shared<BlendState>();
+                return std::make_unique<BlendState>();
             }
 
             Video::ObjectPtr createBlendState(const Video::IndependentBlendStateInformation &blendState)
             {
-                return std::make_shared<BlendState>();
+                return std::make_unique<BlendState>();
             }
 
             Video::ObjectPtr createSamplerState(const Video::SamplerStateInformation &samplerState)
             {
-                return std::make_shared<SamplerState>();
+                return std::make_unique<SamplerState>();
             }
 
             Video::BufferPtr createBuffer(const Video::Buffer::Description &description, const void *data)
             {
                 uint32_t stride = 0;// DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
-                return std::make_shared<Buffer>(description);
+                return std::make_unique<Buffer>(description);
             }
 
             bool mapBuffer(Video::Buffer *buffer, void *&data, Video::Map mapping)
@@ -904,12 +904,12 @@ namespace Gek
 
             Video::ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize)
             {
-                return std::make_shared<InputLayout>();
+                return std::make_unique<InputLayout>();
             }
 
             Video::ObjectPtr createProgram(Video::PipelineType pipelineType, const void *compiledData, uint32_t compiledSize)
             {
-                return std::make_shared<ComputeProgram>();
+                return std::make_unique<ComputeProgram>();
             }
 
             std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
@@ -921,21 +921,21 @@ namespace Gek
             {
                 if (description.flags & Video::Texture::Description::Flags::RenderTarget)
                 {
-                    return std::make_shared<TargetViewTexture>(description);
+                    return std::make_unique<TargetViewTexture>(description);
                 }
                 else if (description.flags & Video::Texture::Description::Flags::DepthTarget)
                 {
-                    return std::make_shared<DepthTexture>(description);
+                    return std::make_unique<DepthTexture>(description);
                 }
                 else
                 {
-                    return std::make_shared<ViewTexture>(description);
+                    return std::make_unique<ViewTexture>(description);
                 }
             }
 
             Video::TexturePtr loadTexture(const FileSystem::Path &filePath, uint32_t flags)
             {
-                return std::make_shared<ViewTexture>(Video::Texture::Description());
+                return std::make_unique<ViewTexture>(Video::Texture::Description());
             }
 
             Texture::Description loadTextureDescription(const FileSystem::Path &filePath)
