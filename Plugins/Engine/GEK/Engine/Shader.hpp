@@ -62,11 +62,6 @@ namespace Gek
                 uint32_t identifier = 0;
                 RenderStateHandle renderState;
                 std::vector<Initializer> initializerList;
-
-                Material(uint32_t identifier)
-                    : identifier(identifier)
-                {
-                }
             };
 
             virtual ~Shader(void) = default;

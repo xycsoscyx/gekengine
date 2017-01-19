@@ -60,7 +60,7 @@ namespace Gek
 
             DepthStateHandle depthState;
             RenderStateHandle renderState;
-            std::list<PassData> passList;
+            std::vector<PassData> passList;
 
         public:
             Filter(Context *context, Video::Device *videoDevice, Engine::Resources *resources, Plugin::Population *population, String filterName)
@@ -326,6 +326,9 @@ namespace Gek
                     }
                 }
 
+                passList.resize(passesNode.size());
+                auto passData = passList.begin();
+
                 for (auto &passNode : passesNode.elements())
                 {
                     if (!passNode.has_member(L"program"))
@@ -338,8 +341,7 @@ namespace Gek
                         throw MissingParameter("Pass required program entry point");
                     }
 
-                    passList.push_back(PassData());
-                    PassData &pass = passList.back();
+                    PassData &pass = *passData++;
 
                     String engineData;
                     if (passNode.has_member(L"engineData"))
@@ -743,10 +745,10 @@ namespace Gek
             public:
                 Video::Device::Context *videoContext;
                 Filter *filterNode;
-                std::list<Filter::PassData>::iterator current, end;
+                std::vector<Filter::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Filter *filterNode, std::list<Filter::PassData>::iterator current, std::list<Filter::PassData>::iterator end)
+                PassImplementation(Video::Device::Context *videoContext, Filter *filterNode, std::vector<Filter::PassData>::iterator current, std::vector<Filter::PassData>::iterator end)
                     : videoContext(videoContext)
                     , filterNode(filterNode)
                     , current(current)

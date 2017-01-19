@@ -49,11 +49,6 @@ namespace Gek
                 std::vector<ResourceHandle> generateMipMapsList;
                 std::unordered_map<ResourceHandle, ResourceHandle> copyResourceMap;
                 std::unordered_map<ResourceHandle, ResourceHandle> resolveSampleMap;
-
-                PassData(uint32_t identifier)
-                    : Material(identifier)
-                {
-                }
             };
 
             struct ShaderConstantData
@@ -79,7 +74,7 @@ namespace Gek
 
             Video::BufferPtr shaderConstantBuffer;
 
-            std::list<PassData> passList;
+            std::vector<PassData> passList;
             std::unordered_map<String, PassData *> forwardPassMap;
             bool lightingRequired = false;
 
@@ -462,6 +457,9 @@ namespace Gek
                     drawOrder += requiredShader->getDrawOrder();
                 }
 
+                passList.resize(passesNode.size());
+                auto passData = passList.begin();
+
                 for (auto &passNode : passesNode.elements())
                 {
                     if (!passNode.has_member(L"program"))
@@ -474,8 +472,8 @@ namespace Gek
                         throw MissingParameter("Pass required program entry point");
                     }
 
-                    passList.push_back(PassData(passIndex++));
-                    PassData &pass = passList.back();
+                    PassData &pass = *passData++;
+                    pass.identifier = std::distance(passList.begin(), passData);
 
                     pass.lighting = passNode.get(L"lighting", false).as_bool();
                     lightingRequired |= pass.lighting;
@@ -1052,10 +1050,10 @@ namespace Gek
             public:
                 Video::Device::Context *videoContext;
                 Shader *shaderNode;
-                std::list<Shader::PassData>::iterator current, end;
+                std::vector<Shader::PassData>::iterator current, end;
 
             public:
-                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, std::list<Shader::PassData>::iterator current, std::list<Shader::PassData>::iterator end)
+                PassImplementation(Video::Device::Context *videoContext, Shader *shaderNode, std::vector<Shader::PassData>::iterator current, std::vector<Shader::PassData>::iterator end)
                     : videoContext(videoContext)
                     , shaderNode(shaderNode)
                     , current(current)

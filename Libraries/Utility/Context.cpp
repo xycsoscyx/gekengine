@@ -5,7 +5,6 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include <unordered_map>
 #include <Windows.h>
-#include <list>
 
 namespace Gek
 {
@@ -14,7 +13,7 @@ namespace Gek
     {
     private:
         FileSystem::Path rootPath;
-        std::list<HMODULE> moduleList;
+        std::vector<HMODULE> moduleList;
         std::unordered_map<String, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)>> classMap;
         std::unordered_multimap<String, String> typeMap;
 

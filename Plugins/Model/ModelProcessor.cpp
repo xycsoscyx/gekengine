@@ -86,7 +86,7 @@ namespace Gek
     public:
         struct Header
         {
-            struct Material
+            struct Part
             {
                 wchar_t name[64];
                 uint32_t vertexCount = 0;
@@ -99,8 +99,8 @@ namespace Gek
 
             Shapes::AlignedBox boundingBox;
 
-            uint32_t materialCount = 0;
-            Material materialList[1];
+            uint32_t partCount = 0;
+            Part partList[1];
         };
 
         struct Vertex
@@ -112,25 +112,23 @@ namespace Gek
 			Math::Float3 normal;
         };
 
-        struct Material
-        {
-            bool skin = false;
-            MaterialHandle handle;
-            std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
-            ResourceHandle indexBuffer;
-            uint32_t indexCount = 0;
-        };
-
         struct Model
         {
+            struct Part
+            {
+                MaterialHandle material;
+                std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
+                ResourceHandle indexBuffer;
+                uint32_t indexCount = 0;
+            };
+
             Shapes::AlignedBox alignedBox;
-            std::vector<Material> materialList;
+            std::vector<Part> partList;
         };
 
         struct Data
         {
             Model *model = nullptr;
-            MaterialHandle skin;
         };
 
         struct Instance
@@ -230,60 +228,48 @@ namespace Gek
                             FileSystem::Load(fileName, buffer);
 
                             Header *header = (Header *)buffer.data();
-                            model.materialList.resize(header->materialCount);
-                            uint8_t *bufferData = (uint8_t *)&header->materialList[header->materialCount];
-                            for (uint32_t materialIndex = 0; materialIndex < header->materialCount; ++materialIndex)
+                            model.partList.resize(header->partCount);
+                            uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
+                            for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
                             {
-                                Header::Material &materialHeader = header->materialList[materialIndex];
-                                Material &material = model.materialList[materialIndex];
-                                if (wcsicmp(materialHeader.name, L"skin") == 0)
-                                {
-                                    material.skin = true;
-                                }
-                                else
-                                {
-                                    material.handle = resources->loadMaterial(materialHeader.name);
-                                }
+                                Header::Part &materialHeader = header->partList[partIndex];
+                                Model::Part &part = model.partList[partIndex];
+                                part.material = resources->loadMaterial(materialHeader.name);
 
                                 Video::Buffer::Description indexBufferDescription;
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = materialHeader.indexCount;
                                 indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                material.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, materialIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                part.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                 bufferData += (sizeof(uint16_t) * materialHeader.indexCount);
 
                                 Video::Buffer::Description vertexBufferDescription;
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
                                 vertexBufferDescription.count = materialHeader.vertexCount;
                                 vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                material.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float2);
-                                material.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                part.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
                                 bufferData += (sizeof(Math::Float2) * materialHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                                material.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                                material.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                                material.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, materialIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * materialHeader.vertexCount);
 
-                                material.indexCount = materialHeader.indexCount;
+                                part.indexCount = materialHeader.indexCount;
                             }
                         });
                     });
-                }
-
-                if (!modelComponent.skin.empty())
-                {
-                    data.skin = resources->loadMaterial(modelComponent.skin);
                 }
 
                 data.model = &pair.first->second;
@@ -327,15 +313,15 @@ namespace Gek
         }
 
         using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using MaterialMap = concurrency::concurrent_unordered_map<const Material *, InstanceList>;
-        using HandleMap = concurrency::concurrent_unordered_map<MaterialHandle, MaterialMap>;
+        using PartMap = concurrency::concurrent_unordered_map<const Model::Part *, InstanceList>;
+        using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, PartMap>;
 
         // Plugin::Renderer Slots
         void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
         {
             GEK_REQUIRE(renderer);
 
-            HandleMap handleMap;
+            MaterialMap materialMap;
             list([&](Plugin::Entity *entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
@@ -344,25 +330,24 @@ namespace Gek
                 if (viewFrustum.isVisible(orientedBox))
                 {
                     auto modelViewMatrix(matrix * viewMatrix);
-                    concurrency::parallel_for_each(std::begin(model.materialList), std::end(model.materialList), [&](const Material &material) -> void
+                    concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
                     {
-                        auto handle = (material.skin ? data.skin : material.handle);
-                        auto &materialMap = handleMap[handle];
-                        auto &instanceList = materialMap[&material];
+                        auto &partMap = materialMap[part.material];
+                        auto &instanceList = partMap[&part];
                         instanceList.push_back(modelViewMatrix);
                     });
                 }
             });
 
-            for (auto &handlePair : handleMap)
+            for (auto &materialPair : materialMap)
             {
-                auto handle = handlePair.first;
-                auto &materialMap = handlePair.second;
-                for (auto &materialPair : materialMap)
+                auto material = materialPair.first;
+                auto &partMap = materialPair.second;
+                for (auto &partPair : partMap)
                 {
-                    auto &material = materialPair.first;
-                    auto &instanceList = materialPair.second;
-                    renderer->queueDrawCall(visual, handle, std::move([this, material, instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
+                    auto part = partPair.first;
+                    auto &instanceList = partPair.second;
+                    renderer->queueDrawCall(visual, material, std::move([this, part, instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
                     {
                         Math::Float4x4 *instanceData = nullptr;
                         if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
@@ -370,10 +355,10 @@ namespace Gek
                             std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
                             videoDevice->unmapBuffer(instanceBuffer.get());
 
-                            resources->setVertexBufferList(videoContext, material->vertexBufferList, 0);
+                            resources->setVertexBufferList(videoContext, part->vertexBufferList, 0);
                             videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-                            resources->setIndexBuffer(videoContext, material->indexBuffer, 0);
-                            resources->drawInstancedIndexedPrimitive(videoContext, instanceList.size(), 0, material->indexCount, 0, 0);
+                            resources->setIndexBuffer(videoContext, part->indexBuffer, 0);
+                            resources->drawInstancedIndexedPrimitive(videoContext, instanceList.size(), 0, part->indexCount, 0, 0);
                         }
                     }));
                 }

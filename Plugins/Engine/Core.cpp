@@ -49,7 +49,7 @@ namespace Gek
             Video::DevicePtr videoDevice;
             Plugin::RendererPtr renderer;
             Engine::ResourcesPtr resources;
-            std::list<Plugin::ProcessorPtr> processorList;
+            std::vector<Plugin::ProcessorPtr> processorList;
             Plugin::PopulationPtr population;
 
             struct Resources
@@ -85,7 +85,7 @@ namespace Gek
             {
                 float minimum = 0.0f;
                 float maximum = 0.0f;
-                std::list<float> data;
+                std::vector<float> data;
             };
 
             static const uint32_t HistoryLength = 200;
@@ -535,7 +535,7 @@ namespace Gek
                 historySize.x -= ImGui::GetStyle().WindowPadding.x;
                 ImGui::PlotHistogram("##history", [](void *data, int index) -> float
                 {
-                    auto &history = *(std::list<float> *)data;
+                    auto &history = *(std::vector<float> *)data;
                     if (index < history.size())
                     {
                         return *std::next(std::begin(history), index);
@@ -901,7 +901,8 @@ namespace Gek
                         history.data.push_back(frame.second);
                         if (history.data.size() > HistoryLength)
                         {
-                            history.data.pop_front();
+                            auto iterator = history.data.begin();
+                            history.data.erase(iterator);
                         }
 
                         auto minmax = std::minmax_element(std::begin(history.data), std::end(history.data));
