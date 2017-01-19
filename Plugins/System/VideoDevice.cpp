@@ -401,8 +401,9 @@ namespace Gek
                 auto &targetStates = object.get(L"targetStates");
                 if (targetStates.is_array())
                 {
-                    uint32_t targetCount = std::min(8U, targetStates.size());
-                    for (uint32_t target = 0; target < targetCount; target++)
+                    static const size_t MaximumTargetCount = 8;
+                    size_t targetCount = std::min(targetStates.size(), MaximumTargetCount);
+                    for (size_t target = 0; target < targetCount; target++)
                     {
                         this->targetStates[target].load(targetStates[target]);
                     }

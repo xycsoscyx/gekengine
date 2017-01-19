@@ -339,7 +339,7 @@ namespace Gek
                 }
             });
 
-            uint32_t maximumInstanceCount = 0;
+            size_t maximumInstanceCount = 0;
             for (auto &materialPair : materialMap)
             {
                 auto material = materialPair.first;

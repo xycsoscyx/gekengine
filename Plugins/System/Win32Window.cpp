@@ -93,20 +93,24 @@ namespace Gek
                             break;
 
                         case WM_INPUT:
-                            if (true)
+                            if (GET_RAWINPUT_CODE_WPARAM(wParam) == RIM_INPUT)
                             {
-                                UINT inputSize = 40;
-                                static BYTE rawInputBuffer[40];
-                                GetRawInputData((HRAWINPUT)lParam, RID_INPUT, rawInputBuffer, &inputSize, sizeof(RAWINPUTHEADER));
-
-                                RAWINPUT *rawInput = (RAWINPUT*)rawInputBuffer;
-                                if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                                uint32_t inputSize = 0;
+                                GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, nullptr, &inputSize, sizeof(RAWINPUTHEADER));
+                                if (inputSize > 0)
                                 {
-                                    window->onMouseMovement.emit(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
-                                }
+                                    std::vector<uint8_t> rawInputBuffer(inputSize);
+                                    GetRawInputData(reinterpret_cast<HRAWINPUT>(lParam), RID_INPUT, rawInputBuffer.data(), &inputSize, sizeof(RAWINPUTHEADER));
 
-                                break;
+                                    RAWINPUT *rawInput = reinterpret_cast<RAWINPUT *>(rawInputBuffer.data());
+                                    if (rawInput->header.dwType == RIM_TYPEMOUSE)
+                                    {
+                                        window->onMouseMovement.emit(rawInput->data.mouse.lLastX, rawInput->data.mouse.lLastY);
+                                    }
+                                }
                             }
+
+                            break;
 
                         case WM_CLOSE:
                             window->onClose.emit();
