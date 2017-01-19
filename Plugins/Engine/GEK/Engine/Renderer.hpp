@@ -51,12 +51,12 @@ namespace Gek
 				float padding2;
             };
 
-            Nano::Signal<void(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)> onRenderScene;
+            Nano::Signal<void(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix)> onRenderScene;
 
             virtual ~Renderer(void) = default;
 
             virtual void queueDrawCall(VisualHandle plugin, MaterialHandle material, std::function<void(Video::Device::Context *)> &&draw) = 0;
-            virtual void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget = ResourceHandle()) = 0;
+            virtual void queueRenderCall(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget = ResourceHandle()) = 0;
 
             virtual void renderOverlay(Video::Device::Context *videoContext, ResourceHandle input, ResourceHandle target) = 0;
         };

@@ -89,8 +89,8 @@ namespace Gek
             };
 
             static const uint32_t HistoryLength = 200;
-            using PerformanceMap = concurrency::concurrent_unordered_map<const char *, float>;
-            using PerformanceHistory = concurrency::concurrent_unordered_map<const char *, History>;
+            using PerformanceMap = concurrency::concurrent_unordered_map<char const * const, float>;
+            using PerformanceHistory = concurrency::concurrent_unordered_map<char const * const, History>;
 
             PerformanceMap performanceMap;
             PerformanceHistory performanceHistory;
@@ -218,7 +218,7 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
 
                 message(L"Core", Log::Type::Message, L"Loading processor plugins");
-                getContext()->listTypes(L"ProcessorType", [&](const wchar_t *className) -> void
+                getContext()->listTypes(L"ProcessorType", [&](wchar_t const * const className) -> void
                 {
                     message(L"Core", Log::Type::Message, String::Format(L"Processor found: %v", className));
                     processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
@@ -263,7 +263,7 @@ namespace Gek
                 style.WindowRounding = 0.0f;
                 style.FrameRounding = 3.0f;
 
-                static const wchar_t *vertexShader =
+                static wchar_t const * const vertexShader =
                     L"cbuffer vertexBuffer : register(b0)" \
                     L"{" \
                     L"    float4x4 ProjectionMatrix;" \
@@ -321,7 +321,7 @@ namespace Gek
                 gui->constantBuffer = videoDevice->createBuffer(constantBufferDescription);
                 gui->constantBuffer->setName(L"core:constantBuffer");
 
-                static const wchar_t *pixelShader =
+                static wchar_t const * const pixelShader =
                     L"struct PixelInput" \
                     L"{" \
                     L"    float4 position : SV_POSITION;" \
@@ -553,7 +553,7 @@ namespace Gek
                 {
                     if (fullScreen)
                     {
-                        window->move(0, 0);
+                        window->move(Math::Int2::Zero);
                     }
 
                     videoDevice->setFullScreenState(fullScreen);
@@ -842,7 +842,7 @@ namespace Gek
             }
 
             // Plugin::Core::Log
-            void message(const wchar_t *system, Log::Type logType, const wchar_t *message)
+            void message(wchar_t const * const system, Log::Type logType, wchar_t const * const message)
             {
                 logList.push_back(std::make_tuple(system, logType, message));
                 switch (logType)
@@ -865,18 +865,18 @@ namespace Gek
                 };
             }
 
-            void beginEvent(const char *name)
+            void beginEvent(char const * const name)
             {
                 performanceMap[name] = timer.getImmediateTime();
             }
 
-            void endEvent(const char *name)
+            void endEvent(char const * const name)
             {
                 auto &time = performanceMap[name];
                 time = (timer.getImmediateTime() - time);
             }
 
-            void addValue(const char *name, float value)
+            void addValue(char const * const name, float value)
             {
                 performanceMap[name] += value;
             }

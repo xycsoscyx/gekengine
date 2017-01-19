@@ -10,40 +10,40 @@ namespace Gek
         {
         }
 
-        Path::Path(const wchar_t *path)
+        Path::Path(wchar_t const * const path)
             : std::experimental::filesystem::path(path)
         {
             make_preferred();
         }
 
-        Path::Path(const String &path)
+        Path::Path(String const &path)
             : std::experimental::filesystem::path(path)
         {
             make_preferred();
         }
 
-        Path::Path(const Path &path)
+        Path::Path(Path const &path)
             : std::experimental::filesystem::path(path)
         {
             make_preferred();
         }
 
-        void Path::operator = (const wchar_t *path)
+        void Path::operator = (wchar_t const * const path)
         {
             assign(path);
         }
 
-        void Path::operator = (const String &path)
+        void Path::operator = (String const &path)
         {
             assign(path);
         }
 
-        void Path::operator = (const Path &path)
+        void Path::operator = (Path const &path)
         {
             assign(path);
         }
 
-        Path::operator const wchar_t * (void) const
+        Path::operator wchar_t const * const  (void) const
         {
             return c_str();
         }
@@ -58,17 +58,17 @@ namespace Gek
             replace_extension(L"");
         }
 
-        void Path::replaceFileName(const wchar_t *fileName)
+        void Path::replaceFileName(wchar_t const * const fileName)
         {
             replace_filename(fileName);
         }
 
-        void Path::replaceExtension(const wchar_t *extension)
+        void Path::replaceExtension(wchar_t const * const extension)
         {
             replace_extension(extension);
         }
 
-        Path Path::withExtension(const wchar_t *extension) const
+        Path Path::withExtension(wchar_t const * const extension) const
         {
             Path path(*this);
             path.replace_extension(extension);
@@ -107,7 +107,7 @@ namespace Gek
             return std::experimental::filesystem::is_directory(*this);
         }
 
-        bool Path::isNewerThan(const Path &path) const
+        bool Path::isNewerThan(Path const &path) const
         {
             auto thisWriteTime = std::experimental::filesystem::last_write_time(*this);
             auto thatWriteTime = std::experimental::filesystem::last_write_time(path);
@@ -133,19 +133,19 @@ namespace Gek
             return absoluteName;
         }
 
-        Path GetFileName(const Path &rootDirectory, const std::vector<String> &list)
+        Path GetFileName(Path const &rootDirectory, const std::vector<String> &list)
 		{
             String filePath(rootDirectory);
             filePath.join(list, std::experimental::filesystem::path::preferred_separator);
             return filePath;
 		}
 
-        void MakeDirectoryChain(const Path &filePath)
+        void MakeDirectoryChain(Path const &filePath)
         {
             std::experimental::filesystem::create_directories(filePath);
         }
 
-        void Find(const Path &rootDirectory, std::function<bool(const Path &)> onFileFound)
+        void Find(Path const &rootDirectory, std::function<bool(Path const &)> onFileFound)
 		{
 			for (auto &fileSearch : std::experimental::filesystem::directory_iterator(rootDirectory))
 			{
@@ -153,7 +153,7 @@ namespace Gek
 			}
 		}
 
-		void Load(const Path &filePath, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
+		void Load(Path const &filePath, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize)
 		{
             auto size = std::experimental::filesystem::file_size(filePath);
             size = (limitReadSize == 0 ? size : std::min(size, limitReadSize));
@@ -176,7 +176,7 @@ namespace Gek
             }
 		}
 
-		void Load(const Path &filePath, StringUTF8 &string)
+		void Load(Path const &filePath, StringUTF8 &string)
 		{
 			std::vector<uint8_t> buffer;
 			Load(filePath, buffer);
@@ -184,7 +184,7 @@ namespace Gek
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-		void Load(const Path &filePath, String &string)
+		void Load(Path const &filePath, String &string)
 		{
 			std::vector<uint8_t> buffer;
 			Load(filePath, buffer);
@@ -192,7 +192,7 @@ namespace Gek
 			string = reinterpret_cast<char *>(buffer.data());
 		}
 
-        void Save(const Path &filePath, const std::vector<uint8_t> &buffer)
+        void Save(Path const &filePath, std::vector<uint8_t> const &buffer)
         {
             MakeDirectoryChain(filePath.getParentPath());
 
@@ -211,14 +211,14 @@ namespace Gek
 			}
         }
 
-        void Save(const Path &filePath, const StringUTF8 &string)
+        void Save(Path const &filePath, StringUTF8 const &string)
         {
             std::vector<uint8_t> buffer(string.length());
             std::copy(std::begin(string), std::end(string), std::begin(buffer));
             Save(filePath, buffer);
         }
 
-        void Save(const Path &filePath, const String &string)
+        void Save(Path const &filePath, String const &string)
         {
             Save(filePath, StringUTF8(string));
         }

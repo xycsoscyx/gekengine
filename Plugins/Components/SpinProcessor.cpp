@@ -31,11 +31,11 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::Spin *data, JSON::Object &componentData) const
+        void save(Components::Spin const * const data, JSON::Object &componentData) const
         {
         }
 
-        void load(Components::Spin *data, const JSON::Object &componentData)
+        void load(Components::Spin * const data, const JSON::Object &componentData)
         {
             data->torque.x = population->getShuntingYard().evaluate(L"random(-pi,pi)");
             data->torque.y = population->getShuntingYard().evaluate(L"random(-pi,pi)");
@@ -73,7 +73,7 @@ namespace Gek
 
             if (!core->isEditorActive())
             {
-                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity *entity, const wchar_t *, auto &transformComponent, auto &spinComponent) -> void
+                population->listEntities<Components::Transform, Components::Spin>([&](Plugin::Entity * const entity, wchar_t const * const , auto &transformComponent, auto &spinComponent) -> void
                 {
                     auto omega(spinComponent.torque * population->getFrameTime());
                     transformComponent.rotation *= Math::Quaternion::FromEuler(omega.x, omega.y, omega.z);

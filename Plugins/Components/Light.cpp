@@ -16,14 +16,14 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::PointLight *data, JSON::Object &componentData) const
+        void save(Components::PointLight const * const data, JSON::Object &componentData) const
         {
             componentData.set(L"range", data->range);
             componentData.set(L"radius", data->radius);
             componentData.set(L"intensity", data->intensity);
         }
 
-        void load(Components::PointLight *data, const JSON::Object &componentData)
+        void load(Components::PointLight * const data, const JSON::Object &componentData)
         {
             data->range = getValue(componentData, L"range", 0.0f);
             data->radius = getValue(componentData, L"radius", 0.0f);
@@ -31,7 +31,7 @@ namespace Gek
         }
 
         // Edit::Component
-        bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::PointLight *>(data);
@@ -43,12 +43,12 @@ namespace Gek
             return changed;
         }
 
-        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
@@ -65,7 +65,7 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::SpotLight *data, JSON::Object &componentData) const
+        void save(Components::SpotLight const * const data, JSON::Object &componentData) const
         {
             componentData.set(L"range", data->range);
             componentData.set(L"radius", data->radius);
@@ -75,7 +75,7 @@ namespace Gek
             componentData.set(L"coneFalloff", data->coneFalloff);
         }
 
-        void load(Components::SpotLight *data, const JSON::Object &componentData)
+        void load(Components::SpotLight * const data, const JSON::Object &componentData)
         {
             data->range = getValue(componentData, L"range", 0.0f);
             data->radius = getValue(componentData, L"radius", 0.0f);
@@ -86,7 +86,7 @@ namespace Gek
         }
 
         // Edit::Component
-        bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::SpotLight *>(data);
@@ -101,12 +101,12 @@ namespace Gek
             return changed;
         }
 
-        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }
@@ -123,18 +123,18 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::DirectionalLight *data, JSON::Object &componentData) const
+        void save(Components::DirectionalLight const * const data, JSON::Object &componentData) const
         {
             componentData.set(L"intensity", data->intensity);
         }
 
-        void load(Components::DirectionalLight *data, const JSON::Object &componentData)
+        void load(Components::DirectionalLight * const data, const JSON::Object &componentData)
         {
             data->intensity = getValue(componentData, L"intensity", 0.0f);
         }
 
         // Edit::Component
-        bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &lightComponent = *dynamic_cast<Components::DirectionalLight *>(data);
@@ -144,12 +144,12 @@ namespace Gek
             return false;
         }
 
-        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
         }

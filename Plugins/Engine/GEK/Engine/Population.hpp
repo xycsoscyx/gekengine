@@ -59,37 +59,37 @@ namespace Gek
             virtual ~Population(void) = default;
 
             std::map<int32_t, Nano::Signal<void(void)>> onUpdate;
-            Nano::Signal<void(const String &actionName, const ActionParameter &actionParameter)> onAction;
+            Nano::Signal<void(String const &actionName, const ActionParameter &actionParameter)> onAction;
 
-            Nano::Signal<void(const String &populationName)> onLoadBegin;
-            Nano::Signal<void(const String &populationName)> onLoadSucceeded;
-            Nano::Signal<void(const String &populationName)> onLoadFailed;
+            Nano::Signal<void(String const &populationName)> onLoadBegin;
+            Nano::Signal<void(String const &populationName)> onLoadSucceeded;
+            Nano::Signal<void(String const &populationName)> onLoadFailed;
 
-            Nano::Signal<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntityCreated;
-            Nano::Signal<void(Plugin::Entity *entity)> onEntityDestroyed;
+            Nano::Signal<void(Plugin::Entity * const entity, wchar_t const * const entityName)> onEntityCreated;
+            Nano::Signal<void(Plugin::Entity * const entity)> onEntityDestroyed;
 
-            Nano::Signal<void(Plugin::Entity *entity, const std::type_index &type)> onComponentAdded;
-            Nano::Signal<void(Plugin::Entity *entity, const std::type_index &type)> onComponentRemoved;
+            Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentAdded;
+            Nano::Signal<void(Plugin::Entity * const entity, const std::type_index &type)> onComponentRemoved;
 
             virtual ShuntingYard &getShuntingYard(void) = 0;
             virtual float getWorldTime(void) const = 0;
             virtual float getFrameTime(void) const = 0;
             virtual bool isLoading(void) const = 0;
 
-            virtual void load(const wchar_t *populationName) = 0;
-            virtual void save(const wchar_t *populationName) = 0;
+            virtual void load(wchar_t const * const populationName) = 0;
+            virtual void save(wchar_t const * const populationName) = 0;
 
-            virtual Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
-            virtual void killEntity(Plugin::Entity *entity) = 0;
-            virtual void addComponent(Plugin::Entity *entity, const JSON::Member &componentData) = 0;
-            virtual void removeComponent(Plugin::Entity *entity, const std::type_index &type) = 0;
+            virtual Plugin::Entity *createEntity(wchar_t const * const entityName, const std::vector<JSON::Member> &componentList = std::vector<JSON::Member>()) = 0;
+            virtual void killEntity(Plugin::Entity * const entity) = 0;
+            virtual void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData) = 0;
+            virtual void removeComponent(Plugin::Entity * const entity, const std::type_index &type) = 0;
 
-            virtual void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName)> onEntity) const = 0;
+            virtual void listEntities(std::function<void(Plugin::Entity * const entity, wchar_t const * const entityName)> onEntity) const = 0;
 
             template<typename... COMPONENTS>
-            void listEntities(std::function<void(Plugin::Entity *entity, const wchar_t *entityName, COMPONENTS&... components)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity * const entity, wchar_t const * const entityName, COMPONENTS&... components)> onEntity) const
             {
-                listEntities([onEntity = move(onEntity)](Plugin::Entity *entity, const wchar_t *entityName) -> void
+                listEntities([onEntity = move(onEntity)](Plugin::Entity * const entity, wchar_t const * const entityName) -> void
                 {
                     if (entity->hasComponents<COMPONENTS...>())
                     {
@@ -99,7 +99,7 @@ namespace Gek
             }
 
             virtual void update(float frameTime = 0.0f) = 0;
-            virtual void action(const String &actionName, const ActionParameter &actionParameter) = 0;
+            virtual void action(String const &actionName, const ActionParameter &actionParameter) = 0;
         };
     }; // namespace Plugin
 

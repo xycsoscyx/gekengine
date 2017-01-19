@@ -59,7 +59,7 @@ namespace Gek
             float value;
 
             Token(TokenType type = TokenType::Unknown);
-            Token(TokenType type, const wchar_t *string, uint32_t parameterCount = 0);
+            Token(TokenType type, wchar_t const * const string, uint32_t parameterCount = 0);
             Token(float value);
         };
 
@@ -105,27 +105,27 @@ namespace Gek
         void setRandomSeed(uint32_t seed);
         uint32_t getRandomSeed(void);
 
-        TokenList getTokenList(const wchar_t *expression);
+        TokenList getTokenList(wchar_t const * const expression);
         float evaluate(TokenList &rpnTokenList);
-        float evaluate(const wchar_t *expression);
+        float evaluate(wchar_t const * const expression);
 
     private:
-        bool isNumber(const wchar_t *token);
-        bool isOperation(const wchar_t *token);
-        bool isFunction(const wchar_t *token);
-        bool isLeftParenthesis(const wchar_t *token);
-        bool isRightParenthesis(const wchar_t *token);
-        bool isParenthesis(const wchar_t *token);
-        bool isSeparator(const wchar_t *token);
-        bool isAssociative(const wchar_t *token, const Associations &type);
-        int comparePrecedence(const wchar_t *token1, const wchar_t *token2);
-        TokenType getTokenType(const wchar_t *token);
+        bool isNumber(wchar_t const * const token);
+        bool isOperation(wchar_t const * const token);
+        bool isFunction(wchar_t const * const token);
+        bool isLeftParenthesis(wchar_t const * const token);
+        bool isRightParenthesis(wchar_t const * const token);
+        bool isParenthesis(wchar_t const * const token);
+        bool isSeparator(wchar_t const * const token);
+        bool isAssociative(wchar_t const * const token, const Associations &type);
+        int comparePrecedence(wchar_t const * const token1, wchar_t const * const token2);
+        TokenType getTokenType(wchar_t const * const token);
         bool isValidReturnType(const Token &token);
 
     private:
         void insertToken(TokenList &infixTokenList, Token &token);
-        void parseSubTokens(TokenList &infixTokenList, const String &token);
-        TokenList convertExpressionToInfix(const String &expression);
+        void parseSubTokens(TokenList &infixTokenList, String const &token);
+        TokenList convertExpressionToInfix(String const &expression);
         TokenList convertInfixToReversePolishNotation(const TokenList &infixTokenList);
         float evaluateReversePolishNotation(const TokenList &rpnTokenList);
     };

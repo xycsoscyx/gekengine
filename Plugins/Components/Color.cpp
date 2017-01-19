@@ -17,18 +17,18 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::Color *data, JSON::Object &componentData) const
+        void save(Components::Color const * const data, JSON::Object &componentData) const
         {
             componentData = data->value;
         }
 
-        void load(Components::Color *data, const JSON::Object &componentData)
+        void load(Components::Color * const data, const JSON::Object &componentData)
         {
             data->value = getValue(componentData, Math::Float4::White);
         }
 
         // Edit::Component
-        bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &colorComponent = *dynamic_cast<Components::Color *>(data);
@@ -37,12 +37,12 @@ namespace Gek
             return changed;
         }
 
-        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ui(guiContext, entity, data, 0);
         }
 
-        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             return ui(guiContext, entity, data, 0);
         }

@@ -16,17 +16,17 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, float>
     {
-        static bool is(const Json &object)
+        static bool is(Json const &object)
         {
             return object.is_double();
         }
 
-        static float as(const Json &object)
+        static float as(Json const &object)
         {
             return float(object.as_double());
         }
 
-        static Json to_json(const float &value)
+        static Json to_json(float const &value)
         {
             return double(value);
         }
@@ -35,7 +35,7 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector2<TYPE>>
     {
-        static Json to_json(const Gek::Math::Vector2<TYPE> &value)
+        static Json to_json(Gek::Math::Vector2<TYPE> const &value)
         {
             return Json::array {
                 value.x,
@@ -47,7 +47,7 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector3<TYPE>>
     {
-        static Json to_json(const Gek::Math::Vector3<TYPE> &value)
+        static Json to_json(Gek::Math::Vector3<TYPE> const &value)
         {
             return Json::array {
                 value.x,
@@ -60,7 +60,7 @@ namespace jsoncons
     template<typename TYPE, class Json>
     struct json_type_traits<Json, Gek::Math::Vector4<TYPE>>
     {
-        static Json to_json(const Gek::Math::Vector4<TYPE> &value)
+        static Json to_json(Gek::Math::Vector4<TYPE> const &value)
         {
             return Json::array {
                 value.x,
@@ -74,7 +74,7 @@ namespace jsoncons
     template<class Json>
     struct json_type_traits<Json, Gek::Math::Quaternion>
     {
-        static Json to_json(const Gek::Math::Quaternion &value)
+        static Json to_json(Gek::Math::Quaternion const &value)
         {
             return Json::array {
                 value.x,
@@ -94,7 +94,7 @@ namespace Gek
         using Member = Object::member_type;
         using Array = Object::array;
 
-        Object Load(const FileSystem::Path &filePath);
-        void Save(const FileSystem::Path &filePath, const Object &object);
+        Object Load(FileSystem::Path const &filePath);
+        void Save(FileSystem::Path const &filePath, Object const &object);
 	}; // namespace JSON
 }; // namespace Gek

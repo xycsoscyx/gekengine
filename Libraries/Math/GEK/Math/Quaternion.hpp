@@ -42,7 +42,7 @@ namespace Gek
             };
 
         public:
-            inline static Quaternion FromEuler(const Math::Float3 &euler)
+            inline static Quaternion FromEuler(Math::Float3 const &euler)
             {
                 return FromEuler(euler.x, euler.y, euler.z);
             }
@@ -134,7 +134,7 @@ namespace Gek
             {
             }
 
-            explicit inline Quaternion(const Math::Float3 &axis, float angle)
+            explicit inline Quaternion(Math::Float3 const &axis, float angle)
                 : axis(axis)
                 , angle(angle)
             {

@@ -16,7 +16,7 @@ namespace Gek
         {
         }
 
-        Sphere::Sphere(const Math::Float3 &position, float radius)
+        Sphere::Sphere(Math::Float3 const &position, float radius)
             : position(position)
             , radius(radius)
         {

@@ -26,7 +26,7 @@ namespace Gek
             }
 
             // Plugin::Component
-            void save(const Components::Player *data, JSON::Object &componentData) const
+            void save(Components::Player const * const data, JSON::Object &componentData) const
             {
                 componentData.set(L"height", data->height);
                 componentData.set(L"outerRadius", data->outerRadius);
@@ -34,7 +34,7 @@ namespace Gek
                 componentData.set(L"stairStep", data->stairStep);
             }
 
-            void load(Components::Player *data, const JSON::Object &componentData)
+            void load(Components::Player * const data, const JSON::Object &componentData)
             {
                 data->height = getValue(componentData, L"height", 0.0f);
                 data->outerRadius = getValue(componentData, L"outerRadius", 0.0f);
@@ -43,7 +43,7 @@ namespace Gek
             }
 
             // Edit::Component
-            bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+            bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
             {
                 ImGui::SetCurrentContext(guiContext);
                 auto &playerComponent = *dynamic_cast<Components::Player *>(data);
@@ -56,12 +56,12 @@ namespace Gek
                 return changed;
             }
 
-            void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+            void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
                 ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
             }
 
-            bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+            bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
                 return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             }

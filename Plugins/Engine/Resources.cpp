@@ -35,7 +35,7 @@ namespace Gek
 
         GEK_INTERFACE(ResourceRequester)
         {
-            virtual void message(const wchar_t *system, Plugin::Core::Log::Type logType, const wchar_t *message) = 0;
+            virtual void message(wchar_t const * const system, Plugin::Core::Log::Type logType, wchar_t const * const message) = 0;
 
             virtual void addRequest(std::function<void(void)> &&load) = 0;
         };
@@ -494,14 +494,14 @@ namespace Gek
                 return (videoPipeline->getType() == Video::PipelineType::Compute ? dispatchValid : drawPrimitiveValid);
             }
 
-            Video::TexturePtr loadTextureData(const FileSystem::Path &filePath, const wchar_t *textureName, uint32_t flags)
+            Video::TexturePtr loadTextureData(const FileSystem::Path &filePath, wchar_t const * const textureName, uint32_t flags)
             {
                 auto texture = videoDevice->loadTexture(filePath, flags);
                 texture->setName(textureName);
                 return texture;
             }
 
-            String getFullProgram(const wchar_t *name, const wchar_t *engineData)
+            String getFullProgram(wchar_t const * const name, wchar_t const * const engineData)
             {
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(engineData);
@@ -605,7 +605,7 @@ namespace Gek
             }
 
             // ResourceRequester
-            void message(const wchar_t *system, Plugin::Core::Log::Type logType, const wchar_t *message)
+            void message(wchar_t const * const system, Plugin::Core::Log::Type logType, wchar_t const * const message)
             {
                 core->getLog()->message(system, logType, message);
             }
@@ -630,7 +630,7 @@ namespace Gek
             }
 
             // Plugin::Resources
-            VisualHandle loadVisual(const wchar_t *visualName)
+            VisualHandle loadVisual(wchar_t const * const visualName)
             {
                 GEK_REQUIRE(visualName);
 
@@ -643,7 +643,7 @@ namespace Gek
                 return visualCache.getHandle(hash, std::move(load)).second;
             }
 
-            MaterialHandle loadMaterial(const wchar_t *materialName)
+            MaterialHandle loadMaterial(wchar_t const * const materialName)
             {
                 GEK_REQUIRE(materialName);
 
@@ -656,7 +656,7 @@ namespace Gek
                 return materialCache.getHandle(hash, std::move(load)).second;
             }
 
-            ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags)
+            ResourceHandle loadTexture(wchar_t const * const textureName, uint32_t flags)
             {
                 GEK_REQUIRE(textureName);
 
@@ -697,7 +697,7 @@ namespace Gek
                 return ResourceHandle();
             }
 
-            ResourceHandle createPattern(const wchar_t *pattern, const JSON::Object &parameters)
+            ResourceHandle createPattern(wchar_t const * const pattern, const JSON::Object &parameters)
             {
                 GEK_REQUIRE(pattern);
 
@@ -837,7 +837,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createTexture(const wchar_t *textureName, const Video::Texture::Description &description)
+            ResourceHandle createTexture(wchar_t const * const textureName, const Video::Texture::Description &description)
             {
                 GEK_REQUIRE(textureName);
 
@@ -859,7 +859,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description)
+            ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description)
             {
                 GEK_REQUIRE(bufferName);
                 GEK_REQUIRE(description.count > 0);
@@ -882,7 +882,7 @@ namespace Gek
                 return resource.second;
             }
 
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
+            ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData)
             {
                 GEK_REQUIRE(bufferName);
                 GEK_REQUIRE(description.count > 0);
@@ -1101,7 +1101,7 @@ namespace Gek
                 return ShaderHandle();
             }
 
-            ResourceHandle getResourceHandle(const wchar_t *resourceName) const
+            ResourceHandle getResourceHandle(wchar_t const * const resourceName) const
             {
                 GEK_REQUIRE(resourceName);
 
@@ -1113,7 +1113,7 @@ namespace Gek
                 return shaderCache.getResource(handle);
             }
 
-            Engine::Shader * const getShader(const wchar_t *shaderName, MaterialHandle material)
+            Engine::Shader * const getShader(wchar_t const * const shaderName, MaterialHandle material)
             {
                 GEK_REQUIRE(shaderName);
 
@@ -1133,7 +1133,7 @@ namespace Gek
                 return shaderCache.getResource(resource.second);
             }
 
-            Engine::Filter * const getFilter(const wchar_t *filterName)
+            Engine::Filter * const getFilter(wchar_t const * const filterName)
             {
                 GEK_REQUIRE(filterName);
 
@@ -1173,7 +1173,7 @@ namespace Gek
                 }
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData)
             {
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(entryFunction);
@@ -1205,7 +1205,7 @@ namespace Gek
                 return compiledProgram;
             }
 
-            ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData)
+            ProgramHandle loadProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData)
             {
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(entryFunction);
@@ -1305,7 +1305,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value)
+            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &value)
             {
                 GEK_REQUIRE(videoContext);
 
@@ -1316,7 +1316,7 @@ namespace Gek
                 }
             }
 
-            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::UInt4 &value)
+            void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value)
             {
                 GEK_REQUIRE(videoContext);
 
@@ -1327,7 +1327,7 @@ namespace Gek
                 }
             }
 
-            void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &color)
+            void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &color)
             {
                 GEK_REQUIRE(videoContext);
 
@@ -1411,7 +1411,7 @@ namespace Gek
                 }
             }
 
-            void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Float4 &blendFactor, uint32_t sampleMask)
+            void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, Math::Float4 const &blendFactor, uint32_t sampleMask)
             {
                 GEK_REQUIRE(videoContext);
 

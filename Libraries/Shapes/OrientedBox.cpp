@@ -16,13 +16,13 @@ namespace Gek
         {
         }
 
-        OrientedBox::OrientedBox(const AlignedBox &box, const Math::Quaternion &rotation, const Math::Float3 &translation)
+        OrientedBox::OrientedBox(const AlignedBox &box, Math::Quaternion const &rotation, Math::Float3 const &translation)
             : matrix(rotation, translation + box.getCenter())
             , halfsize(box.getSize() * 0.5f)
         {
         }
 
-        OrientedBox::OrientedBox(const AlignedBox &box, const Math::Float4x4 &matrix)
+        OrientedBox::OrientedBox(const AlignedBox &box, Math::Float4x4 const &matrix)
             : matrix(matrix)
             , halfsize(box.getSize() * 0.5f)
         {

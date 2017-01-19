@@ -93,7 +93,7 @@ namespace Gek
                 {
                 }
 
-                Action(const String &name, const ActionParameter &parameter)
+                Action(String const &name, const ActionParameter &parameter)
                     : name(name)
                     , parameter(parameter)
                 {
@@ -129,7 +129,7 @@ namespace Gek
                 GEK_REQUIRE(core);
 
                 core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, L"Loading component plugins");
-                getContext()->listTypes(L"ComponentType", [&](const wchar_t *className) -> void
+                getContext()->listTypes(L"ComponentType", [&](wchar_t const * const className) -> void
                 {
                     core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Component found: %v", className));
                     Plugin::ComponentPtr component(getContext()->createClass<Plugin::Component>(className, static_cast<Plugin::Population *>(this)));
@@ -158,7 +158,7 @@ namespace Gek
                 componentMap.clear();
             }
 
-            void loadLevel(const String &populationName)
+            void loadLevel(String const &populationName)
             {
                 core->getLog()->message(L"Population", Plugin::Core::Log::Type::Message, String::Format(L"Loading population: %v", populationName));
 
@@ -357,7 +357,7 @@ namespace Gek
                 }
             }
 
-            void action(const String &actionName, const ActionParameter &actionParameter)
+            void action(String const &actionName, const ActionParameter &actionParameter)
             {
                 if (!loading)
                 {
@@ -365,12 +365,12 @@ namespace Gek
                 }
             }
 
-            void load(const wchar_t *populationName)
+            void load(wchar_t const * const populationName)
             {
                 loadQueue.push(populationName);
             }
 
-            void save(const wchar_t *populationName)
+            void save(wchar_t const * const populationName)
             {
                 GEK_REQUIRE(populationName);
 
@@ -409,7 +409,7 @@ namespace Gek
                 JSON::Save(getContext()->getRootFileName(L"data", L"scenes", populationName).withExtension(L".json"), scene);
             }
 
-            Plugin::Entity *createEntity(const wchar_t *entityName, const std::vector<JSON::Member> &componentList)
+            Plugin::Entity *createEntity(wchar_t const * const entityName, const std::vector<JSON::Member> &componentList)
             {
                 std::shared_ptr<Entity> entity(std::make_shared<Entity>());
                 for (auto &componentData : componentList)
@@ -434,7 +434,7 @@ namespace Gek
                 return entity.get();
             }
 
-            void killEntity(Plugin::Entity *entity)
+            void killEntity(Plugin::Entity * const entity)
             {
                 entityQueue.push([this, entity = std::move(entity)](void) -> void
                 {
@@ -486,7 +486,7 @@ namespace Gek
                 return false;
             }
 
-            void addComponent(Plugin::Entity *entity, const JSON::Member &componentData)
+            void addComponent(Plugin::Entity * const entity, const JSON::Member &componentData)
             {
                 std::type_index componentIdentifier(typeid(nullptr));
                 if (addComponent(static_cast<Entity *>(entity), componentData, &componentIdentifier))
@@ -495,7 +495,7 @@ namespace Gek
                 }
             }
 
-            void removeComponent(Plugin::Entity *entity, const std::type_index &type)
+            void removeComponent(Plugin::Entity * const entity, const std::type_index &type)
             {
                 GEK_REQUIRE(entity);
 
@@ -506,7 +506,7 @@ namespace Gek
                 }
             }
 
-            void listEntities(std::function<void(Plugin::Entity *, const wchar_t *)> onEntity) const
+            void listEntities(std::function<void(Plugin::Entity *, wchar_t const * const )> onEntity) const
             {
                 concurrency::parallel_for_each(std::begin(entityMap), std::end(entityMap), [&](auto &entity) -> void
                 {

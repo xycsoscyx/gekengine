@@ -23,8 +23,8 @@ namespace Gek
 {
     namespace Newton
     {
-        extern Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity);
-        extern EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity *entity);
+        extern Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity * const entity);
+        extern EntityPtr createRigidBody(NewtonWorld *newton, const NewtonCollision* const newtonCollision, Plugin::Entity * const entity);
 
         GEK_CONTEXT_USER(Processor, Plugin::Core *)
             , public Plugin::Processor
@@ -154,7 +154,7 @@ namespace Gek
                 GEK_REQUIRE(NewtonGetMemoryUsed() == 0);
             }
 
-            uint32_t getStaticSceneSurface(const Math::Float3 &position, const Math::Float3 &normal)
+            uint32_t getStaticSceneSurface(Math::Float3 const &position, Math::Float3 const &normal)
             {
                 dLong surfaceAttribute = 0;
                 Math::Float3 collisionNormal;
@@ -321,7 +321,7 @@ namespace Gek
             }
 
             concurrency::critical_section criticalSection;
-            void addEntity(Plugin::Entity *entity)
+            void addEntity(Plugin::Entity * const entity)
             {
                 if (entity->hasComponents<Components::Transform, Components::Physical>())
                 {
@@ -370,7 +370,7 @@ namespace Gek
                 }
             }
 
-            void removeEntity(Plugin::Entity *entity)
+            void removeEntity(Plugin::Entity * const entity)
             {
                 auto entitySearch = entityMap.find(entity);
                 if (entitySearch != std::end(entityMap))
@@ -394,7 +394,7 @@ namespace Gek
             }
 
             // Plugin::Editor Slots
-            void onModified(Plugin::Entity *entity, const std::type_index &type)
+            void onModified(Plugin::Entity * const entity, const std::type_index &type)
             {
                 if (type == typeid(Components::Transform))
                 {
@@ -413,7 +413,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onLoadBegin(const String &populationName)
+            void onLoadBegin(String const &populationName)
             {
                 NewtonWaitForUpdateToFinish(newtonWorld);
                 for (auto &collisionPair : collisionMap)
@@ -442,7 +442,7 @@ namespace Gek
             }
 
             bool loadingScene = false;
-            void onLoadSucceeded(const String &populationName)
+            void onLoadSucceeded(String const &populationName)
             {
                 loadingScene = true;
                 newtonStaticScene = NewtonCreateSceneCollision(newtonWorld, 1);
@@ -452,7 +452,7 @@ namespace Gek
                 }
 
                 NewtonSceneCollisionBeginAddRemove(newtonStaticScene);
-                population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
+                population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
                 {
                     addEntity(entity);
                 });
@@ -467,22 +467,22 @@ namespace Gek
                 loadingScene = false;
             }
 
-            void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
+            void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
             {
                 addEntity(entity);
             }
 
-            void onEntityDestroyed(Plugin::Entity *entity)
+            void onEntityDestroyed(Plugin::Entity * const entity)
             {
                 removeEntity(entity);
             }
 
-            void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+            void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
             {
                 addEntity(entity);
             }
 
-            void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+            void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
             {
                 if (!entity->hasComponents<Components::Transform, Components::Physical>())
                 {
@@ -510,13 +510,13 @@ namespace Gek
             }
 
             // Newton::World
-            Math::Float3 getGravity(const Math::Float3 &position)
+            Math::Float3 getGravity(Math::Float3 const &position)
             {
                 const Math::Float3 Gravity(0.0f, -32.174f, 0.0f);
                 return Gravity;
             }
 
-            uint32_t loadSurface(const wchar_t *surfaceName)
+            uint32_t loadSurface(wchar_t const * const surfaceName)
             {
                 uint32_t surfaceIndex = 0;
 

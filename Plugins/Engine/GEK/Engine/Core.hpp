@@ -35,8 +35,8 @@ namespace Gek
                 struct Scope
                 {
                     Log *log = nullptr;
-                    const char *name = nullptr;
-                    Scope(Log *log, const char *name)
+                    char const * const name = nullptr;
+                    Scope(Log *log, char const * const name)
                         : log(log)
                         , name(name)
                     {
@@ -57,12 +57,12 @@ namespace Gek
                     Debug,
                 };
 
-                virtual void message(const wchar_t *system, Type logType, const wchar_t *message) = 0;
+                virtual void message(wchar_t const * const system, Type logType, wchar_t const * const message) = 0;
 
-                virtual void beginEvent(const char *name) = 0;
-                virtual void endEvent(const char *name) = 0;
+                virtual void beginEvent(char const * const name) = 0;
+                virtual void endEvent(char const * const name) = 0;
 
-                virtual void addValue(const char *name, float value) = 0;
+                virtual void addValue(char const * const name, float value) = 0;
             };
 
             Nano::Signal<void(void)> onResize;

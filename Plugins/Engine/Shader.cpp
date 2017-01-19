@@ -881,7 +881,7 @@ namespace Gek
                 return drawOrder;
             }
 
-            const Material *getMaterial(const wchar_t *passName) const
+            const Material *getMaterial(wchar_t const * const passName) const
             {
                 auto passSearch = forwardPassMap.find(passName);
                 if (passSearch != std::end(forwardPassMap))
@@ -1093,7 +1093,7 @@ namespace Gek
                 }
             };
 
-            Pass::Iterator begin(Video::Device::Context *videoContext, const Math::Float4x4 &viewMatrix, const Shapes::Frustum &viewFrustum)
+            Pass::Iterator begin(Video::Device::Context *videoContext, Math::Float4x4 const &viewMatrix, const Shapes::Frustum &viewFrustum)
             {
                 GEK_REQUIRE(videoContext);
 

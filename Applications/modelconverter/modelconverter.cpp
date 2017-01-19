@@ -322,7 +322,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		}
 
 		aiLogStream logStream;
-		logStream.callback = [](const char *message, char *user) -> void
+		logStream.callback = [](char const *message, char *user) -> void
 		{
 			printf("Assimp: %s", message);
 		};

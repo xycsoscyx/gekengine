@@ -11,7 +11,7 @@ namespace Gek
         {
         }
 
-        Ray::Ray(const Math::Float3 &origin, const Math::Float3 &normal)
+        Ray::Ray(Math::Float3 const &origin, Math::Float3 const &normal)
             : origin(origin)
             , normal(normal)
         {

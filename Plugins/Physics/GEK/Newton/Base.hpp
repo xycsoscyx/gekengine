@@ -47,7 +47,7 @@ namespace Gek
 
             virtual NewtonBody * const getNewtonBody(void) const = 0;
 
-            virtual uint32_t getSurface(const Math::Float3 &position, const Math::Float3 &normal) = 0;
+            virtual uint32_t getSurface(Math::Float3 const &position, Math::Float3 const &normal) = 0;
 
             // Called before the update phase to set the frame data for the body
             // Applies to rigid and player bodies
@@ -73,13 +73,13 @@ namespace Gek
                 float softness = 1.0f;
             };
             
-            Nano::Signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, const Math::Float3 &position, const Math::Float3 &normal)> onCollision;
+            Nano::Signal<void(Plugin::Entity *entity0, Plugin::Entity *entity1, Math::Float3 const &position, Math::Float3 const &normal)> onCollision;
 
             virtual ~World(void) = default;
 
-            virtual Math::Float3 getGravity(const Math::Float3 &position) = 0;
+            virtual Math::Float3 getGravity(Math::Float3 const &position) = 0;
 
-            virtual uint32_t loadSurface(const wchar_t *surfaceName) = 0;
+            virtual uint32_t loadSurface(wchar_t const * const surfaceName) = 0;
             virtual const Surface &getSurface(uint32_t surfaceIndex) const = 0;
         };
     };

@@ -25,7 +25,7 @@ namespace Gek
         {
         }
 
-        AlignedBox::AlignedBox(const Math::Float3 &minimum, const Math::Float3 &maximum)
+        AlignedBox::AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum)
             : minimum(minimum)
             , maximum(maximum)
         {

@@ -54,7 +54,7 @@ namespace Gek
 			virtual void onExit(PlayerBody *player) { };
 
 			virtual StatePtr onUpdate(PlayerBody *player, float frameTime) { return nullptr; };
-			virtual StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter) { return nullptr; };
+			virtual StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter) { return nullptr; };
 		};
 
 		class IdleState
@@ -62,7 +62,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class WalkingState
@@ -70,7 +70,7 @@ namespace Gek
 		{
 		public:
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-			StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter);
+			StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter);
 		};
 
 		class JumpingState
@@ -79,7 +79,7 @@ namespace Gek
 		public:
 			void onEnter(PlayerBody *player);
 			StatePtr onUpdate(PlayerBody *player, float frameTime);
-            StatePtr onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter);
+            StatePtr onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter);
         };
 
 		class PlayerBody
@@ -91,7 +91,7 @@ namespace Gek
 			Newton::World *world = nullptr;
 			NewtonWorld *newtonWorld = nullptr;
 
-            Plugin::Entity *entity = nullptr;
+            Plugin::Entity * const entity = nullptr;
 			float maximumSlope = 0.0f;
 			float restrainingDistance = 0.0f;
 			float sphereCastOrigin = 0.0f;
@@ -121,7 +121,7 @@ namespace Gek
 			PlayerBody(Plugin::Core *core,
                 Plugin::Population *population,
 				NewtonWorld *newtonWorld,
-				Plugin::Entity *entity)
+				Plugin::Entity * const entity)
                 : core(core)
 				, population(population)
 				, world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
@@ -225,7 +225,7 @@ namespace Gek
                 maximumSlope = std::cos(std::abs(slopeInRadians));
             }
 
-            Math::Float3 calculateAverageOmega(const Math::Quaternion &currentRotation, const Math::Quaternion &targetRotation, float inverseFrameTime) const
+            Math::Float3 calculateAverageOmega(Math::Quaternion const &currentRotation, Math::Quaternion const &targetRotation, float inverseFrameTime) const
             {
                 float scale = 1.0f;
                 if (currentRotation.dot(targetRotation) < 0.0f)
@@ -252,7 +252,7 @@ namespace Gek
             }
 
             // New way, but doesn't work despite the comment from Newton code
-            void integrateOmegaBAD(Math::Float4x4 &matrix, const Math::Float3& omega, float frameTIme) const
+            void integrateOmegaBAD(Math::Float4x4 &matrix, Math::Float3 const &omega, float frameTIme) const
             {
                 // this is correct
                 float omegaMagnitudeSquared = omega.getMagnitudeSquared();
@@ -269,7 +269,7 @@ namespace Gek
             }
 
             // Old way, works but may not actually be correct?
-            void integrateOmega(Math::Float4x4 &matrix, const Math::Float3 &omega, float frameTime) const
+            void integrateOmega(Math::Float4x4 &matrix, Math::Float3 const &omega, float frameTime) const
             {
                 Math::Float3 theta(omega * frameTime * 0.5f);
                 float thetaMagnitideSquared = theta.getMagnitudeSquared();
@@ -292,18 +292,18 @@ namespace Gek
                 matrix.setRotation((matrix.getRotation() * deltaRotation).getNormal());
             }
 
-            Math::Float3 calculateDesiredOmega(const Math::Float4x4 &matrix, float frameTime) const
+            Math::Float3 calculateDesiredOmega(Math::Float4x4 const &matrix, float frameTime) const
             {
                 Math::Quaternion playerRotation(matrix.getRotation());
                 Math::Quaternion targetRotation(Math::Quaternion::FromYaw(headingAngle));
                 return calculateAverageOmega(playerRotation, targetRotation, 0.5f / frameTime);
             }
 
-            Math::Float3 calculateDesiredVelocity(const Math::Float4x4 &matrix, const Math::Float3& gravity, float frameTime) const
+            Math::Float3 calculateDesiredVelocity(Math::Float4x4 const &matrix, Math::Float3 const &gravity, float frameTime) const
             {
-                const Math::Float3 &playerXAxis = matrix.rx.xyz;
-                const Math::Float3 &playerYAxis = matrix.ry.xyz;
-                const Math::Float3 &playerZAxis = matrix.rz.xyz;
+                Math::Float3 const &playerXAxis = matrix.rx.xyz;
+                Math::Float3 const &playerYAxis = matrix.ry.xyz;
+                Math::Float3 const &playerZAxis = matrix.rz.xyz;
 
                 Math::Float3 desiredVelocity;
                 if (verticalSpeed <= 0.0f && groundNormal.dot(groundNormal) > 0.0f)
@@ -354,7 +354,7 @@ namespace Gek
                 return desiredVelocity;
             }
 
-            void setPlayerVelocity(const Math::Float4x4 &matrix, const Math::Float3& gravity, float frameTime)
+            void setPlayerVelocity(Math::Float4x4 const &matrix, Math::Float3 const &gravity, float frameTime)
             {
                 Math::Float3 omega(calculateDesiredOmega(matrix, frameTime));
                 Math::Float3 velocity(calculateDesiredVelocity(matrix, gravity, frameTime));
@@ -363,7 +363,7 @@ namespace Gek
                 NewtonBodySetVelocity(newtonBody, velocity.data);
             }
 
-            float calculateContactKinematics(const Math::Float3& velocity, const NewtonWorldConvexCastReturnInfo* const contactInfo) const
+            float calculateContactKinematics(Math::Float3 const &velocity, NewtonWorldConvexCastReturnInfo const * const contactInfo) const
             {
                 Math::Float3 contactVelocity = Math::Float3::Zero;
                 if (contactInfo->m_hitBody)
@@ -377,7 +377,7 @@ namespace Gek
                 return (reboundVelocity > 0.0f) ? reboundVelocity : 0.0f;
             }
 
-            void updateGroundPlane(Math::Float4x4& matrix, const Math::Float4x4& castMatrix, const Math::Float3& targetPoint, int threadHandle)
+            void updateGroundPlane(Math::Float4x4& matrix, Math::Float4x4 const &castMatrix, Math::Float3 const &targetPoint, int threadHandle)
             {
                 groundNormal = Math::Float3::Zero;
                 groundVelocity = Math::Float3::Zero;
@@ -401,7 +401,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-			void onAction(const String &actionName, const Plugin::Population::ActionParameter &parameter)
+			void onAction(String const &actionName, const Plugin::Population::ActionParameter &parameter)
 			{
                 if (core->isEditorActive())
                 {
@@ -457,7 +457,7 @@ namespace Gek
 				return newtonBody;
 			}
 
-			uint32_t getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+			uint32_t getSurface(Math::Float3 const &position, Math::Float3 const &normal)
 			{
 				return 0;
 			}
@@ -501,7 +501,7 @@ namespace Gek
                 ConvexCastFilter castFilterData(newtonBody);
                 std::array<NewtonWorldConvexCastReturnInfo, MaximumContactCount> previousContactList;
 
-                const Math::Float3 &playerYAxis = matrix.ry.xyz;
+                Math::Float3 const &playerYAxis = matrix.ry.xyz;
 
                 Math::Float3 scale(0.0f);
                 NewtonCollisionGetScale(newtonUpperBodyShape, &scale.x, &scale.y, &scale.z);
@@ -674,7 +674,7 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr IdleState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
+		StatePtr IdleState::onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter)
 		{
 			if (actionName.compareNoCase(L"crouch") == 0 && parameter.state)
 			{
@@ -715,7 +715,7 @@ namespace Gek
 			return nullptr;
 		}
 
-		StatePtr WalkingState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
+		StatePtr WalkingState::onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter)
 		{
 			if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
 			{
@@ -748,7 +748,7 @@ namespace Gek
 			return nullptr;
 		}
 
-        StatePtr JumpingState::onAction(PlayerBody *player, const String &actionName, const Plugin::Population::ActionParameter &parameter)
+        StatePtr JumpingState::onAction(PlayerBody *player, String const &actionName, const Plugin::Population::ActionParameter &parameter)
         {
             if (actionName.compareNoCase(L"jump") == 0 && parameter.state && player->touchingSurface)
             {
@@ -758,7 +758,7 @@ namespace Gek
             return nullptr;
         }
 
-        Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity *entity)
+        Newton::EntityPtr createPlayerBody(Plugin::Core *core, Plugin::Population *population, NewtonWorld *newtonWorld, Plugin::Entity * const entity)
 		{
 			return std::make_unique<PlayerBody>(core, population, newtonWorld, entity);
 		}

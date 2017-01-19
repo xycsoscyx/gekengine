@@ -95,7 +95,7 @@ namespace Gek
             Count,
         };
 
-        Format getFormat(const String &format);
+        Format getFormat(String const &format);
 
         struct DisplayMode
         {
@@ -184,7 +184,7 @@ namespace Gek
 
 			ViewPort(void) = default;
 
-			ViewPort(const Math::Float2 &position, const Math::Float2 &size, float nearClip, float farClip)
+			ViewPort(Math::Float2 const &position, Math::Float2 const &size, float nearClip, float farClip)
 				: position(position)
 				, size(size)
 				, nearClip(nearClip)
@@ -426,8 +426,8 @@ namespace Gek
 
             static const uint32_t AlignedByteOffset = 0xFFFFFFFF;
 
-            static Source getSource(const String &elementSource);
-            static Semantic getSemantic(const String &semantic);
+            static Source getSource(String const &elementSource);
+            static Semantic getSemantic(String const &semantic);
 
             Video::Format format = Format::Unknown;
             Semantic semantic = Semantic::TexCoord;
@@ -440,7 +440,7 @@ namespace Gek
         {
             virtual ~Object(void) = default;
 
-            virtual void setName(const wchar_t *name) = 0;
+            virtual void setName(wchar_t const * const name) = 0;
         };
 
         GEK_INTERFACE(Buffer)
@@ -562,9 +562,9 @@ namespace Gek
                 virtual void resolveSamples(Texture *destination, Texture *source) = 0;
 
                 virtual void clearState(void) = 0;
-                virtual void clearUnorderedAccess(Object *object, const Math::Float4 &value) = 0;
-                virtual void clearUnorderedAccess(Object *object, const Math::UInt4 &value) = 0;
-                virtual void clearRenderTarget(Target *renderTarget, const Math::Float4 &clearColor) = 0;
+                virtual void clearUnorderedAccess(Object *object, Math::Float4 const &value) = 0;
+                virtual void clearUnorderedAccess(Object *object, Math::UInt4 const &value) = 0;
+                virtual void clearRenderTarget(Target *renderTarget, Math::Float4 const &clearColor) = 0;
                 virtual void clearDepthStencilTarget(Object *depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
                 virtual void clearRenderTargetList(uint32_t count, bool depthBuffer) = 0;
@@ -577,7 +577,7 @@ namespace Gek
 
                 virtual void setRenderState(Object *renderState) = 0;
                 virtual void setDepthState(Object *depthState, uint32_t stencilReference) = 0;
-                virtual void setBlendState(Object *blendState, const Math::Float4 &blendFactor, uint32_t sampleMask) = 0;
+                virtual void setBlendState(Object *blendState, Math::Float4 const &blendFactor, uint32_t sampleMask) = 0;
 
                 virtual void setInputLayout(Object *inputLayout) = 0;
                 virtual void setIndexBuffer(Buffer *indexBuffer, uint32_t offset) = 0;
@@ -601,7 +601,7 @@ namespace Gek
             virtual void setDisplayMode(const DisplayMode &displayMode) = 0;
             virtual void handleResize(void) = 0;
 
-			virtual const char * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
+			virtual char const * const getSemanticMoniker(InputElement::Semantic semantic) = 0;
 
             virtual Target * const getBackBuffer(void) = 0;
             virtual Context * const getDefaultContext(void) = 0;
@@ -638,7 +638,7 @@ namespace Gek
 
 			virtual ObjectPtr createInputLayout(const std::vector<Video::InputElement> &elementList, const void *compiledData, uint32_t compiledSize) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction) = 0;
+            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction) = 0;
             virtual ObjectPtr createProgram(PipelineType pipelineType, const void *compiledData, uint32_t compiledSize) = 0;
 
             virtual void executeCommandList(Object *commandList) = 0;

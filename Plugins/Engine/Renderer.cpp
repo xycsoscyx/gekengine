@@ -335,7 +335,7 @@ namespace Gek
                 core->onDisplay.disconnect<Renderer, &Renderer::onDisplay>(this);
             }
 
-            void addEntity(Plugin::Entity *entity)
+            void addEntity(Plugin::Entity * const entity)
             {
                 if (entity->hasComponent<Components::Transform>())
                 {
@@ -356,7 +356,7 @@ namespace Gek
                 }
             }
 
-            void removeEntity(Plugin::Entity *entity)
+            void removeEntity(Plugin::Entity * const entity)
             {
                 directionalLightEntities.unsafe_erase(entity);
                 pointLightEntities.unsafe_erase(entity);
@@ -364,7 +364,7 @@ namespace Gek
             }
 
             // Clustered Lighting
-            inline Math::Float3 getLightDirection(const Math::Quaternion &quaternion) const
+            inline Math::Float3 getLightDirection(Math::Quaternion const &quaternion) const
             {
                 float xx(quaternion.x * quaternion.x);
                 float yy(quaternion.y * quaternion.y);
@@ -425,7 +425,7 @@ namespace Gek
             }
 
             // Returns bounding box [min.xy, max.xy] in clip [-1, 1] space.
-            inline Math::Float4 getClipBounds(const Math::Float3 &position, float range) const
+            inline Math::Float4 getClipBounds(Math::Float3 const &position, float range) const
             {
                 // Early out with empty rectangle if the light is too far behind the view frustum
                 Math::Float4 clipRegion(1.0f, 1.0f, 0.0f, 0.0f);
@@ -439,13 +439,13 @@ namespace Gek
                 return clipRegion;
             }
 
-            inline Math::Float4 getScreenBounds(const Math::Float3 &position, float range) const
+            inline Math::Float4 getScreenBounds(Math::Float3 const &position, float range) const
             {
                 auto clipBounds((getClipBounds(position, range) + 1.0f) * 0.5f);
                 return Math::Float4(clipBounds.x, (1.0f - clipBounds.w), clipBounds.z, (1.0f - clipBounds.y));
             }
 
-            bool isSeparated(float x, float y, float z, const Math::Float3 &position, float range) const
+            bool isSeparated(float x, float y, float z, Math::Float3 const &position, float range) const
             {
                 // sub-frustrum bounds in view space       
                 float minimumZ = (z - 0) * 1.0f / GridDepth * (currentRenderCall.farClip - currentRenderCall.nearClip) + currentRenderCall.nearClip;
@@ -476,7 +476,7 @@ namespace Gek
                 return (std::min(tileCorners.minimum, tileCorners.maximum) > range);
             }
 
-            void addLightCluster(const Math::Float3 &position, float range, uint32_t lightIndex, bool pointLight)
+            void addLightCluster(Math::Float3 const &position, float range, uint32_t lightIndex, bool pointLight)
             {
                 Math::Float4 screenBounds(getScreenBounds(position, range));
 
@@ -532,7 +532,7 @@ namespace Gek
                 });
             }
 
-            void addLight(Plugin::Entity *entity, const Components::PointLight &lightComponent)
+            void addLight(Plugin::Entity * const entity, const Components::PointLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 if (currentRenderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range + lightComponent.radius)))
@@ -551,7 +551,7 @@ namespace Gek
                 }
             }
 
-            void addLight(Plugin::Entity *entity, const Components::SpotLight &lightComponent)
+            void addLight(Plugin::Entity * const entity, const Components::SpotLight &lightComponent)
             {
                 auto &transformComponent = entity->getComponent<Components::Transform>();
                 if (currentRenderCall.viewFrustum.isVisible(Shapes::Sphere(transformComponent.position, lightComponent.range)))
@@ -575,7 +575,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onLoadBegin(const String &populationName)
+            void onLoadBegin(String const &populationName)
             {
                 GEK_REQUIRE(resources);
                 resources->clear();
@@ -584,30 +584,30 @@ namespace Gek
                 spotLightEntities.clear();
             }
 
-            void onLoadSucceeded(const String &populationName)
+            void onLoadSucceeded(String const &populationName)
             {
-                population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
+                population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
                 {
                     addEntity(entity);
                 });
             }
 
-            void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
+            void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
             {
                 addEntity(entity);
             }
 
-            void onEntityDestroyed(Plugin::Entity *entity)
+            void onEntityDestroyed(Plugin::Entity * const entity)
             {
                 removeEntity(entity);
             }
 
-            void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+            void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
             {
                 addEntity(entity);
             }
 
-            void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+            void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
             {
                 removeEntity(entity);
             }
@@ -625,7 +625,7 @@ namespace Gek
                 }
             }
             
-            void queueRenderCall(const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
+            void queueRenderCall(Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, float nearClip, float farClip, ResourceHandle cameraTarget)
             {
                 RenderCall renderCall;
                 renderCall.viewMatrix = viewMatrix;
@@ -733,7 +733,7 @@ namespace Gek
                             auto pointLightsDone = threadPool.enqueue([&](void) -> void
                             {
                                 pointLightList.clear();
-                                concurrency::parallel_for_each(std::begin(pointLightEntities), std::end(pointLightEntities), [&](Plugin::Entity *entity) -> void
+                                concurrency::parallel_for_each(std::begin(pointLightEntities), std::end(pointLightEntities), [&](Plugin::Entity * const entity) -> void
                                 {
                                     auto &lightComponent = entity->getComponent<Components::PointLight>();
                                     addLight(entity, lightComponent);
@@ -760,7 +760,7 @@ namespace Gek
                             auto spotLightsDone = threadPool.enqueue([&](void) -> void
                             {
                                 spotLightList.clear();
-                                concurrency::parallel_for_each(std::begin(spotLightEntities), std::end(spotLightEntities), [&](Plugin::Entity *entity) -> void
+                                concurrency::parallel_for_each(std::begin(spotLightEntities), std::end(spotLightEntities), [&](Plugin::Entity * const entity) -> void
                                 {
                                     auto &lightComponent = entity->getComponent<Components::SpotLight>();
                                     addLight(entity, lightComponent);

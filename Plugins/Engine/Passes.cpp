@@ -3,14 +3,14 @@
 
 namespace Gek
 {
-    ClearData::ClearData(ClearType type, const String &data)
+    ClearData::ClearData(ClearType type, String const &data)
         : type(type)
     {
         switch (type)
         {
         case ClearType::Float:
         case ClearType::Target:
-            floats = data;
+            floats.set((float)data);
             break;
             
         case ClearType::UInt:
@@ -109,7 +109,7 @@ namespace Gek
         return semantic;
     }
 
-    ClearType getClearType(const String &clearType)
+    ClearType getClearType(String const &clearType)
     {
         if (clearType.compareNoCase(L"Target") == 0) return ClearType::Target;
         else if (clearType.compareNoCase(L"Float") == 0) return ClearType::Float;
@@ -117,7 +117,7 @@ namespace Gek
         return ClearType::Unknown;
     }
 
-    uint32_t getTextureLoadFlags(const String &loadFlags)
+    uint32_t getTextureLoadFlags(String const &loadFlags)
     {
         uint32_t flags = 0;
         int position = 0;
@@ -133,7 +133,7 @@ namespace Gek
         return flags;
     }
 
-    uint32_t getTextureFlags(const String &createFlags)
+    uint32_t getTextureFlags(String const &createFlags)
     {
         uint32_t flags = 0;
         int position = 0;
@@ -158,7 +158,7 @@ namespace Gek
         return (flags | Video::Texture::Description::Flags::Resource);
     }
 
-    uint32_t getBufferFlags(const String &createFlags)
+    uint32_t getBufferFlags(String const &createFlags)
     {
         uint32_t flags = 0;
         int position = 0;
@@ -179,7 +179,7 @@ namespace Gek
         return (flags | Video::Buffer::Description::Flags::Resource);
     }
 
-    std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, const wchar_t *name)
+    std::unordered_map<String, String> getAliasedMap(const JSON::Object &parent, wchar_t const * const name)
     {
         std::unordered_map<String, String> aliasedMap;
         if (parent.has_member(name))

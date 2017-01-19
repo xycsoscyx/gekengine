@@ -26,23 +26,23 @@ namespace Gek
             public std::experimental::filesystem::path
         {
             Path(void);
-            Path(const wchar_t *path);
-            Path(const String &path);
-            Path(const Path &path);
+            Path(wchar_t const * const path);
+            Path(String const &path);
+            Path(Path const &path);
 
-            void operator = (const wchar_t *path);
-            void operator = (const String &path);
-            void operator = (const Path &path);
+            void operator = (wchar_t const * const path);
+            void operator = (String const &path);
+            void operator = (Path const &path);
 
-            operator const wchar_t * (void) const;
+            operator wchar_t const * const  (void) const;
 
             void removeFileName(void);
             void removeExtension(void);
 
-            void replaceFileName(const wchar_t *fileName);
-            void replaceExtension(const wchar_t *extension);
+            void replaceFileName(wchar_t const * const fileName);
+            void replaceExtension(wchar_t const * const extension);
 
-            Path withExtension(const wchar_t *extension = nullptr) const;
+            Path withExtension(wchar_t const * const extension = nullptr) const;
             Path withoutExtension() const;
 
             Path getParentPath(void) const;
@@ -51,30 +51,30 @@ namespace Gek
 
             bool isFile(void) const;
             bool isDirectory(void) const;
-            bool isNewerThan(const Path &path) const;
+            bool isNewerThan(Path const &path) const;
         };
 
         Path GetModuleFilePath(void);
 
-        Path GetFileName(const Path &rootDirectory, const std::vector<String> &list);
+        Path GetFileName(Path const &rootDirectory, const std::vector<String> &list);
         
-        void MakeDirectoryChain(const Path &filePath);
+        void MakeDirectoryChain(Path const &filePath);
 
         template <typename... PARAMETERS>
-        Path GetFileName(const Path &rootDirectory, PARAMETERS... nameList)
+        Path GetFileName(Path const &rootDirectory, PARAMETERS... nameList)
         {
             return GetFileName(rootDirectory, { nameList... });
         }
 
-        void Find(const Path &rootDirectory, std::function<bool(const Path &filePath)> onFileFound);
+        void Find(Path const &rootDirectory, std::function<bool(Path const &filePath)> onFileFound);
 
-        void Load(const Path &fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);
-        void Load(const Path &fileName, StringUTF8 &string);
-        void Load(const Path &fileName, String &string);
+        void Load(Path const &fileName, std::vector<uint8_t> &buffer, std::uintmax_t limitReadSize = 0);
+        void Load(Path const &fileName, StringUTF8 &string);
+        void Load(Path const &fileName, String &string);
 
-        void Save(const Path &fileName, const std::vector<uint8_t> &buffer);
-        void Save(const Path &fileName, const StringUTF8 &string);
-        void Save(const Path &fileName, const String &string);
+        void Save(Path const &fileName, std::vector<uint8_t> const &buffer);
+        void Save(Path const &fileName, StringUTF8 const &string);
+        void Save(Path const &fileName, String const &string);
     }; // namespace File
 }; // namespace Gek
 

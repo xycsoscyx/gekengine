@@ -32,12 +32,12 @@ namespace Gek
 
             virtual ~Component(void) = default;
 
-            virtual const wchar_t * const getName(void) const = 0;
+            virtual wchar_t const * const getName(void) const = 0;
             virtual std::type_index getIdentifier(void) const = 0;
 
             virtual std::unique_ptr<Data> create(void) = 0;
-            virtual void save(const Data *data, JSON::Object &componentData) const = 0;
-            virtual void load(Data *data, const JSON::Object &componentData) = 0;
+            virtual void save(Data const * const data, JSON::Object &componentData) const = 0;
+            virtual void load(Data * const data, const JSON::Object &componentData) = 0;
         };
     }; // namespace Plugin
 
@@ -48,8 +48,8 @@ namespace Gek
         {
             virtual ~Component(void) = default;
             
-            virtual void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data) = 0;
-            virtual bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data) = 0;
+            virtual void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
+            virtual bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data) = 0;
         };
     }; // namespace Edit
 }; // namespace Gek

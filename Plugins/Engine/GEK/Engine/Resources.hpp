@@ -28,18 +28,18 @@ namespace Gek
 
             virtual ~Resources(void) = default;
 
-            virtual VisualHandle loadVisual(const wchar_t *pluginName) = 0;
-            virtual MaterialHandle loadMaterial(const wchar_t *materialName) = 0;
+            virtual VisualHandle loadVisual(wchar_t const * const pluginName) = 0;
+            virtual MaterialHandle loadMaterial(wchar_t const * const materialName) = 0;
 
-            virtual ResourceHandle loadTexture(const wchar_t *textureName, uint32_t flags) = 0;
-            virtual ResourceHandle createPattern(const wchar_t *pattern, const JSON::Object &parameters) = 0;
+            virtual ResourceHandle loadTexture(wchar_t const * const textureName, uint32_t flags) = 0;
+            virtual ResourceHandle createPattern(wchar_t const * const pattern, const JSON::Object &parameters) = 0;
 
-            virtual ResourceHandle createTexture(const wchar_t *textureName, const Video::Texture::Description &description) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description) = 0;
-            virtual ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData) = 0;
+            virtual ResourceHandle createTexture(wchar_t const * const textureName, const Video::Texture::Description &description) = 0;
+            virtual ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description) = 0;
+            virtual ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description, std::vector<uint8_t> &&staticData) = 0;
 
             template <typename TYPE>
-            ResourceHandle createBuffer(const wchar_t *bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
+            ResourceHandle createBuffer(wchar_t const * const bufferName, const Video::Buffer::Description &description, const TYPE *staticData)
             {
                 auto rawData = reinterpret_cast<const uint8_t *>(staticData);
                 std::vector<uint8_t> rawBuffer(rawData, (rawData + (sizeof(TYPE) * description.count)));
@@ -78,17 +78,17 @@ namespace Gek
             virtual void clear(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
-            virtual ResourceHandle getResourceHandle(const wchar_t *resourceName) const = 0;
+            virtual ResourceHandle getResourceHandle(wchar_t const * const resourceName) const = 0;
 
-            virtual Shader * const getShader(const wchar_t *shaderName, MaterialHandle materialHandle) = 0;
+            virtual Shader * const getShader(wchar_t const * const shaderName, MaterialHandle materialHandle) = 0;
             virtual Shader * const getShader(ShaderHandle handle) const = 0;
-            virtual Filter * const getFilter(const wchar_t *filterName) = 0;
+            virtual Filter * const getFilter(wchar_t const * const filterName) = 0;
 
             virtual Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle) = 0;
             virtual Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
-            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *entryFunction, const wchar_t *engineData = nullptr) = 0;
+            virtual std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData = nullptr) = 0;
+            virtual ProgramHandle loadProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const entryFunction, wchar_t const * const engineData = nullptr) = 0;
 
             virtual RenderStateHandle createRenderState(const Video::RenderStateInformation &renderState) = 0;
             virtual DepthStateHandle createDepthState(const Video::DepthStateInformation &depthState) = 0;
@@ -99,16 +99,16 @@ namespace Gek
             virtual void resolveSamples(Video::Device::Context *videoContext, ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
             virtual void copyResource(ResourceHandle destinationHandle, ResourceHandle sourceHandle) = 0;
 
-            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &value) = 0;
-            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::UInt4 &value) = 0;
-            virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, const Math::Float4 &color) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &value) = 0;
+            virtual void clearUnorderedAccess(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::UInt4 const &value) = 0;
+            virtual void clearRenderTarget(Video::Device::Context *videoContext, ResourceHandle resourceHandle, Math::Float4 const &color) = 0;
             virtual void clearDepthStencilTarget(Video::Device::Context *videoContext, ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil) = 0;
 
             virtual void setMaterial(Video::Device::Context *videoContext, Shader::Pass *pass, MaterialHandle handle) = 0;
             virtual void setVisual(Video::Device::Context *videoContext, VisualHandle handle) = 0;
             virtual void setRenderState(Video::Device::Context *videoContext, RenderStateHandle renderStateHandle) = 0;
             virtual void setDepthState(Video::Device::Context *videoContext, DepthStateHandle depthStateHandle, uint32_t stencilReference) = 0;
-            virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, const Math::Float4 &blendFactor, uint32_t sampleMask) = 0;
+            virtual void setBlendState(Video::Device::Context *videoContext, BlendStateHandle blendStateHandle, Math::Float4 const &blendFactor, uint32_t sampleMask) = 0;
             virtual void setProgram(Video::Device::Context::Pipeline *videoPipeline, ProgramHandle programHandle) = 0;
 
             virtual void setRenderTargetList(Video::Device::Context *videoContext, const std::vector<ResourceHandle> &renderTargetHandleList, ResourceHandle *depthBuffer) = 0;

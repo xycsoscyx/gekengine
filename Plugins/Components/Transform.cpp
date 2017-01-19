@@ -26,20 +26,20 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::Transform *data, JSON::Object &componentData) const
+        void save(Components::Transform const * const data, JSON::Object &componentData) const
         {
             componentData.set(L"position", data->position);
             componentData.set(L"rotation", data->rotation);
         }
 
-        void load(Components::Transform *data, const JSON::Object &componentData)
+        void load(Components::Transform * const data, const JSON::Object &componentData)
         {
             data->position = getValue(componentData, L"position", Math::Float3::Zero);
             data->rotation = getValue(componentData, L"rotation", Math::Quaternion::Identity);
         }
 
         // Edit::Component
-        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);
@@ -82,7 +82,7 @@ namespace Gek
             ImGui::SetCurrentContext(nullptr);
         }
 
-        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &transformComponent = *dynamic_cast<Components::Transform *>(data);

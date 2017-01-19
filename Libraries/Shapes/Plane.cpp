@@ -16,13 +16,13 @@ namespace Gek
         {
         }
 
-        Plane::Plane(const Math::Float3 &normal, float distance)
+        Plane::Plane(Math::Float3 const &normal, float distance)
             : normal(normal)
             , distance(distance)
         {
         }
 
-        Plane::Plane(const Math::Float3 &pointA, const Math::Float3 &pointB, const Math::Float3 &pointC)
+        Plane::Plane(Math::Float3 const &pointA, Math::Float3 const &pointB, Math::Float3 const &pointC)
         {
             Math::Float3 sideA(pointB - pointA);
             Math::Float3 sideB(pointC - pointA);
@@ -32,7 +32,7 @@ namespace Gek
             distance = -normal.dot(pointA);
         }
 
-        Plane::Plane(const Math::Float3 &normal, const Math::Float3 &pointOnPlane)
+        Plane::Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane)
             : normal(normal)
             , distance(-normal.dot(pointOnPlane))
         {
@@ -43,7 +43,7 @@ namespace Gek
             vector *= (1.0f / normal.getMagnitude());
         }
 
-        float Plane::getDistance(const Math::Float3 &point) const
+        float Plane::getDistance(Math::Float3 const &point) const
         {
             // +distance because we negated it when creating
             return (normal.dot(point) + distance);

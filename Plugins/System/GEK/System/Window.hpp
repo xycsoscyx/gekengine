@@ -56,9 +56,9 @@ namespace Gek
         virtual Math::Int4 getScreenRectangle(void) const = 0;
 
         virtual Math::Int2 getCursorPosition(void) const = 0;
-        virtual void setCursorPosition(const Math::Int2 &position) = 0;
+        virtual void setCursorPosition(Math::Int2 const &position) = 0;
 
         virtual void setVisibility(bool isVisible) = 0;
-        virtual void move(int32_t xPosition = -1, int32_t yPosition = -1) = 0;
+        virtual void move(Math::Int2 const &position = Math::Int2(-1, -1)) = 0;
     };
 }; // namespace Gek

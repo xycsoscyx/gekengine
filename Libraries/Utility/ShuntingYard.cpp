@@ -21,7 +21,7 @@ namespace Gek
     {
     }
 
-    ShuntingYard::Token::Token(ShuntingYard::TokenType type, const wchar_t *string, uint32_t parameterCount)
+    ShuntingYard::Token::Token(ShuntingYard::TokenType type, wchar_t const * const string, uint32_t parameterCount)
         : type(type)
         , string(string)
         , parameterCount(parameterCount)
@@ -171,7 +171,7 @@ namespace Gek
         return seed;
     }
 
-    ShuntingYard::TokenList ShuntingYard::getTokenList(const wchar_t *expression)
+    ShuntingYard::TokenList ShuntingYard::getTokenList(wchar_t const * const expression)
     {
         TokenList infixTokenList = convertExpressionToInfix(expression);
         return convertInfixToReversePolishNotation(infixTokenList);
@@ -182,61 +182,61 @@ namespace Gek
         return evaluateReversePolishNotation(rpnTokenList);
     }
 
-    float ShuntingYard::evaluate(const wchar_t *expression)
+    float ShuntingYard::evaluate(wchar_t const * const expression)
     {
         TokenList rpnTokenList(getTokenList(expression));
         return evaluateReversePolishNotation(rpnTokenList);
     }
 
-    bool ShuntingYard::isNumber(const wchar_t *token)
+    bool ShuntingYard::isNumber(wchar_t const * const token)
     {
         return std::regex_search(token, SearchNumber);
     }
 
-    bool ShuntingYard::isOperation(const wchar_t *token)
+    bool ShuntingYard::isOperation(wchar_t const * const token)
     {
         return (operationsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isFunction(const wchar_t *token)
+    bool ShuntingYard::isFunction(wchar_t const * const token)
     {
         return (functionsMap.count(token) > 0);
     }
 
-    bool ShuntingYard::isLeftParenthesis(const wchar_t *token)
+    bool ShuntingYard::isLeftParenthesis(wchar_t const * const token)
     {
         return (token && *token == L'(');
     }
 
-    bool ShuntingYard::isRightParenthesis(const wchar_t *token)
+    bool ShuntingYard::isRightParenthesis(wchar_t const * const token)
     {
         return (token && *token == L')');
     }
 
-    bool ShuntingYard::isParenthesis(const wchar_t *token)
+    bool ShuntingYard::isParenthesis(wchar_t const * const token)
     {
         return (isLeftParenthesis(token) || isRightParenthesis(token));
     }
 
-    bool ShuntingYard::isSeparator(const wchar_t *token)
+    bool ShuntingYard::isSeparator(wchar_t const * const token)
     {
         return (token && *token == L',');
     }
 
-    bool ShuntingYard::isAssociative(const wchar_t *token, const Associations &type)
+    bool ShuntingYard::isAssociative(wchar_t const * const token, const Associations &type)
     {
         auto &p = operationsMap.find(token)->second;
         return p.association == type;
     }
 
-    int ShuntingYard::comparePrecedence(const wchar_t *token1, const wchar_t *token2)
+    int ShuntingYard::comparePrecedence(wchar_t const * const token1, wchar_t const * const token2)
     {
         auto &p1 = operationsMap.find(token1)->second;
         auto &p2 = operationsMap.find(token2)->second;
         return p1.precedence - p2.precedence;
     }
 
-    ShuntingYard::TokenType ShuntingYard::getTokenType(const wchar_t *token)
+    ShuntingYard::TokenType ShuntingYard::getTokenType(wchar_t const * const token)
     {
         if (isSeparator(token))
         {
@@ -338,7 +338,7 @@ namespace Gek
         infixTokenList.push_back(token);
     }
 
-    void ShuntingYard::parseSubTokens(TokenList &infixTokenList, const String &token)
+    void ShuntingYard::parseSubTokens(TokenList &infixTokenList, String const &token)
     {
         for (std::wsregex_iterator tokenSearch(std::begin(token), std::end(token), SearchWord), end; tokenSearch != end; ++tokenSearch)
         {
@@ -370,7 +370,7 @@ namespace Gek
         }
     }
 
-    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(const String &expression)
+    ShuntingYard::TokenList ShuntingYard::convertExpressionToInfix(String const &expression)
     {
         String runningToken;
         TokenList infixTokenList;

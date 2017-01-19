@@ -22,9 +22,9 @@ namespace Gek
         public:
             Frustum(void);
             Frustum(const Frustum &frustum);
-            Frustum(const Math::Float4x4 &perspectiveTransform);
+            Frustum(Math::Float4x4 const &perspectiveTransform);
 
-            void create(const Math::Float4x4 &perspectiveTransform);
+            void create(Math::Float4x4 const &perspectiveTransform);
 
             template <class SHAPE>
             bool isVisible(const SHAPE &shape) const

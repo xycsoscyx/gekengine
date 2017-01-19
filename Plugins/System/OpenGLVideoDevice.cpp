@@ -21,7 +21,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -36,7 +36,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -51,7 +51,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -66,7 +66,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -81,7 +81,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -96,7 +96,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -111,7 +111,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -126,7 +126,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -141,7 +141,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -156,7 +156,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -171,7 +171,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -244,7 +244,7 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
 
@@ -291,7 +291,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -340,7 +340,7 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-            virtual void setName(const wchar_t *name)
+            virtual void setName(wchar_t const * const name)
             {
             }
         };
@@ -360,7 +360,7 @@ namespace Gek
 
             virtual ~TargetViewTexture(void) = default;
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -384,7 +384,7 @@ namespace Gek
 
             virtual ~DepthTexture(void) = default;
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
             }
         };
@@ -670,19 +670,19 @@ namespace Gek
             {
             }
 
-            void clearResource(Video::Object *object, const Math::Float4 &value)
+            void clearResource(Video::Object *object, Math::Float4 const &value)
             {
             }
 
-            void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
+            void clearUnorderedAccess(Video::Object *object, Math::Float4 const &value)
             {
             }
 
-            void clearUnorderedAccess(Video::Object *object, const Math::UInt4 &value)
+            void clearUnorderedAccess(Video::Object *object, Math::UInt4 const &value)
             {
             }
 
-            void clearRenderTarget(Video::Target *renderTarget, const Math::Float4 &clearColor)
+            void clearRenderTarget(Video::Target *renderTarget, Math::Float4 const &clearColor)
             {
             }
 
@@ -722,7 +722,7 @@ namespace Gek
             {
             }
 
-            void setBlendState(Video::Object *blendState, const Math::Float4 &blendFactor, uint32_t mask)
+            void setBlendState(Video::Object *blendState, Math::Float4 const &blendFactor, uint32_t mask)
             {
             }
 
@@ -812,7 +812,7 @@ namespace Gek
             {
             }
 
-            const char * const getSemanticMoniker(Video::InputElement::Semantic semantic)
+            char const * const getSemanticMoniker(Video::InputElement::Semantic semantic)
             {
                 return nullptr;
             }
@@ -912,7 +912,7 @@ namespace Gek
                 return std::make_unique<ComputeProgram>();
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
             {
                 return std::vector<uint8_t>();
             }

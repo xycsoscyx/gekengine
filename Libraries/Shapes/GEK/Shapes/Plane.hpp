@@ -28,9 +28,9 @@ namespace Gek
         public:
             Plane(void);
             Plane(float a, float b, float c, float d);
-            Plane(const Math::Float3 &normal, float distance);
-            Plane(const Math::Float3 &pointA, const Math::Float3 &pointB, const Math::Float3 &pointC);
-            Plane(const Math::Float3 &normal, const Math::Float3 &pointOnPlane);
+            Plane(Math::Float3 const &normal, float distance);
+            Plane(Math::Float3 const &pointA, Math::Float3 const &pointB, Math::Float3 const &pointC);
+            Plane(Math::Float3 const &normal, Math::Float3 const &pointOnPlane);
 
             inline Plane &operator = (const Plane &plane)
             {
@@ -40,7 +40,7 @@ namespace Gek
 
             void normalize(void);
 
-            float getDistance(const Math::Float3 &point) const;
+            float getDistance(Math::Float3 const &point) const;
         };
     }; // namespace Shapes
 }; // namespace Gek

@@ -499,7 +499,7 @@ namespace Gek
             D3D11_MAP_WRITE_NO_OVERWRITE,
         };
 
-        static const char *SemanticNameList[] =
+        static char const * const SemanticNameList[] =
         {
             "POSITION",
             "TEXCOORD",
@@ -571,7 +571,7 @@ namespace Gek
     namespace Direct3D11
     {
         template <typename CLASS>
-        void setDebugName(CComPtr<CLASS> &object, const wchar_t *name)
+        void setDebugName(CComPtr<CLASS> &object, wchar_t const * const name)
         {
             if (object)
             {
@@ -615,7 +615,7 @@ namespace Gek
                 }
             }
 
-            TYPE * const *get(void) const
+            TYPE * const * const get(void) const
             {
                 return objectList.data();
             }
@@ -651,7 +651,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
                 setDebugName(d3dObject, name);
             }
@@ -696,7 +696,7 @@ namespace Gek
 
             virtual ~Buffer(void) = default;
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
                 setDebugName(d3dObject, name);
                 setDebugName(Resource::d3dObject, name);
@@ -757,7 +757,7 @@ namespace Gek
             {
             }
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
@@ -809,7 +809,7 @@ namespace Gek
 
             virtual ~TargetTexture(void) = default;
 
-            virtual void setName(const wchar_t *name)
+            virtual void setName(wchar_t const * const name)
             {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(RenderTargetView::d3dObject, name);
@@ -831,7 +831,7 @@ namespace Gek
 
             virtual ~TargetViewTexture(void) = default;
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(RenderTargetView::d3dObject, name);
@@ -861,7 +861,7 @@ namespace Gek
 
             virtual ~DepthTexture(void) = default;
 
-            void setName(const wchar_t *name)
+            void setName(wchar_t const * const name)
             {
                 setDebugName(Resource::d3dObject, name);
                 setDebugName(ShaderResourceView::d3dObject, name);
@@ -1331,13 +1331,13 @@ namespace Gek
                     d3dDeviceContext->RSSetScissorRects(UINT(rectangleList.size()), (D3D11_RECT *)rectangleList.data());
                 }
 
-                void clearResource(Video::Object *object, const Math::Float4 &value)
+                void clearResource(Video::Object *object, Math::Float4 const &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
                 }
 
-                void clearUnorderedAccess(Video::Object *object, const Math::Float4 &value)
+                void clearUnorderedAccess(Video::Object *object, Math::Float4 const &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
@@ -1345,7 +1345,7 @@ namespace Gek
                     d3dDeviceContext->ClearUnorderedAccessViewFloat(getObject<UnorderedAccessView>(object), value.data);
                 }
 
-                void clearUnorderedAccess(Video::Object *object, const Math::UInt4 &value)
+                void clearUnorderedAccess(Video::Object *object, Math::UInt4 const &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(object);
@@ -1353,7 +1353,7 @@ namespace Gek
                     d3dDeviceContext->ClearUnorderedAccessViewUint(getObject<UnorderedAccessView>(object), value.data);
                 }
 
-                void clearRenderTarget(Video::Target *renderTarget, const Math::Float4 &clearColor)
+                void clearRenderTarget(Video::Target *renderTarget, Math::Float4 const &clearColor)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(renderTarget);
@@ -1422,7 +1422,7 @@ namespace Gek
                     d3dDeviceContext->OMSetDepthStencilState(getObject<DepthState>(depthState), stencilReference);
                 }
 
-                void setBlendState(Video::Object *blendState, const Math::Float4 &blendFactor, uint32_t mask)
+                void setBlendState(Video::Object *blendState, Math::Float4 const &blendFactor, uint32_t mask)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
                     GEK_REQUIRE(blendState);
@@ -1763,7 +1763,7 @@ namespace Gek
                 }
             }
 
-            const char * const getSemanticMoniker(Video::InputElement::Semantic semantic)
+            char const * const getSemanticMoniker(Video::InputElement::Semantic semantic)
             {
                 return DirectX::SemanticNameList[static_cast<uint8_t>(semantic)];
             }
@@ -2329,7 +2329,7 @@ namespace Gek
                 throw Video::CreateObjectFailed("Unknown program pipline encountered");
             }
 
-            std::vector<uint8_t> compileProgram(const StringUTF8 &name, const StringUTF8 &type, const StringUTF8 &uncompiledProgram, const StringUTF8 &entryFunction)
+            std::vector<uint8_t> compileProgram(StringUTF8 const &name, StringUTF8 const &type, StringUTF8 const &uncompiledProgram, StringUTF8 const &entryFunction)
             {
                 GEK_REQUIRE(d3dDevice);
 
@@ -2348,7 +2348,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (const char *)d3dCompilerErrors->GetBufferPointer()));
+                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const )d3dCompilerErrors->GetBufferPointer()));
                     throw Video::ProgramCompilationFailed("Unable to compile program");
                 }
 
@@ -2356,7 +2356,7 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, const wchar_t *name, const wchar_t *uncompiledProgram, const wchar_t *entryFunction)
+            std::vector<uint8_t> compileProgram(Video::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
             {
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(uncompiledProgram);

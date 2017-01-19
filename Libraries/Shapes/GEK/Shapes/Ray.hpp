@@ -23,7 +23,7 @@ namespace Gek
 
         public:
             Ray(void);
-            Ray(const Math::Float3 &origin, const Math::Float3 &normal);
+            Ray(Math::Float3 const &origin, Math::Float3 const &normal);
             Ray(const Ray &ray);
 
             Ray &operator = (const Ray &ray);

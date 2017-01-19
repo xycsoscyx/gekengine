@@ -24,7 +24,7 @@ namespace Gek
         public:
             Sphere(void);
             Sphere(const Sphere &sphere);
-            Sphere(const Math::Float3 &position, float radius);
+            Sphere(Math::Float3 const &position, float radius);
 
             Sphere &operator = (const Sphere &sphere);
 

@@ -19,18 +19,18 @@ namespace Gek
             }
 
             // Plugin::Component
-            void save(const Components::Physical *data, JSON::Object &componentData) const
+            void save(Components::Physical const * const data, JSON::Object &componentData) const
             {
                 componentData.set(L"mass", data->mass);
             }
 
-            void load(Components::Physical *data, const JSON::Object &componentData)
+            void load(Components::Physical * const data, const JSON::Object &componentData)
             {
                 data->mass = getValue(componentData, L"mass", 0.0f);
             }
 
             // Edit::Component
-            bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+            bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
             {
                 ImGui::SetCurrentContext(guiContext);
                 auto &physicalComponent = *dynamic_cast<Components::Physical *>(data);
@@ -40,12 +40,12 @@ namespace Gek
                 return changed;
             }
 
-            void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+            void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
                 ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
             }
 
-            bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+            bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
             {
                 return ui(guiContext, entity, data, ImGuiInputTextFlags_CharsDecimal | ImGuiInputTextFlags_CharsNoBlank);
             }

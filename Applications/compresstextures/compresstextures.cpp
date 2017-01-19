@@ -161,7 +161,7 @@ void compressTexture(Video::Debug::Device *device, const FileSystem::Path &input
 	printf(".done!\r\n");
 }
 
-int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *environmentVariableList)
+int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
     printf("GEK Texture Compressor\r\n");
 
@@ -182,7 +182,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         Video::Device::Description deviceDescription;
         Video::DevicePtr device(context->createClass<Video::Device>(L"Device::Video::D3D11", window.get(), deviceDescription));
 
-        std::function<bool(const wchar_t *)> searchDirectory;
+        std::function<bool(wchar_t const * const )> searchDirectory;
 		searchDirectory = [&](const FileSystem::Path &filePath) -> bool
 		{
 			if (filePath.isDirectory())

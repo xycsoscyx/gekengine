@@ -6,7 +6,7 @@
 
 using namespace Gek;
 
-int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *environmentVariableList)
+int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
     try
     {
@@ -21,7 +21,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
         String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
         materialsPath.toLower();
 
-		std::function<bool(const wchar_t *)> findMaterials;
+		std::function<bool(wchar_t const * const )> findMaterials;
 		findMaterials = [&](const FileSystem::Path &materialCollectionPath) -> bool
 		{
 			if (materialCollectionPath.isDirectory())

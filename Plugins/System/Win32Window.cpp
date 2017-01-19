@@ -235,7 +235,7 @@ namespace Gek
                 return position;
             }
 
-            void setCursorPosition(const Math::Int2 &position)
+            void setCursorPosition(Math::Int2 const &position)
             {
                 SetCursorPos(position.x, position.y);
             }
@@ -246,17 +246,19 @@ namespace Gek
                 UpdateWindow(window);
             }
 
-            void move(int32_t xPosition, int32_t yPosition)
+            void move(Math::Int2 const &position)
             {
-                if (xPosition < 0 || yPosition < 0)
+                int32_t x = position.x;
+                int32_t y = position.y;
+                if (x < 0 || y < 0)
                 {
                     RECT clientRectangle;
                     GetWindowRect(window, &clientRectangle);
-                    xPosition = (xPosition < 0 ? ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2) : xPosition);
-                    yPosition = (yPosition < 0 ? ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2) : yPosition);
+                    x = (x < 0 ? ((GetSystemMetrics(SM_CXSCREEN) - (clientRectangle.right - clientRectangle.left)) / 2) : x);
+                    y = (y < 0 ? ((GetSystemMetrics(SM_CYSCREEN) - (clientRectangle.bottom - clientRectangle.top)) / 2) : y);
                 }
 
-                SetWindowPos(window, nullptr, xPosition, yPosition, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
+                SetWindowPos(window, nullptr, x, y, 0, 0, SWP_NOZORDER | SWP_NOSIZE);
             }
         };
 

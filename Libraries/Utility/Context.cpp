@@ -36,7 +36,7 @@ namespace Gek
 							InitializePlugin initializePlugin = (InitializePlugin)GetProcAddress(module, "initializePlugin");
 							if (initializePlugin)
 							{
-								initializePlugin([this](const wchar_t *className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
+								initializePlugin([this](wchar_t const * const className, std::function<ContextUserPtr(Context *, void *, std::vector<std::type_index> &)> creator) -> void
 								{
 									if (classMap.count(className) == 0)
 									{
@@ -46,7 +46,7 @@ namespace Gek
 									{
                                         throw DuplicateClass("Duplicate class found in plugin library");
 									}
-								}, [this](const wchar_t *typeName, const wchar_t *className) -> void
+								}, [this](wchar_t const * const typeName, wchar_t const * const className) -> void
 								{
 									typeMap.insert(std::make_pair(typeName, className));
 								});
@@ -85,7 +85,7 @@ namespace Gek
             return rootPath;
         }
 
-        ContextUserPtr createBaseClass(const wchar_t *className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
+        ContextUserPtr createBaseClass(wchar_t const * const className, void *typelessArguments, std::vector<std::type_index> &argumentTypes) const
         {
             auto classSearch = classMap.find(className);
             if (classSearch == std::end(classMap))
@@ -96,7 +96,7 @@ namespace Gek
             return (*classSearch).second((Context *)this, typelessArguments, argumentTypes);
         }
 
-        void listTypes(const wchar_t *typeName, std::function<void(const wchar_t *)> onType) const
+        void listTypes(wchar_t const * const typeName, std::function<void(wchar_t const * const )> onType) const
         {
             GEK_REQUIRE(onType);
 

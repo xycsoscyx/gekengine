@@ -27,7 +27,7 @@ namespace Gek
                 return Math::Float4x4(rotation, position);
             }
 
-            inline void setMatrix(const Math::Float4x4 &matrix)
+            inline void setMatrix(Math::Float4x4 const &matrix)
             {
                 rotation = matrix.getRotation();
                 position = matrix.translation.xyz;

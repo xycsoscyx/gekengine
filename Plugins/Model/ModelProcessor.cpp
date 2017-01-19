@@ -40,20 +40,20 @@ namespace Gek
         }
 
         // Plugin::Component
-        void save(const Components::Model *data, JSON::Object &componentData) const
+        void save(Components::Model const * const data, JSON::Object &componentData) const
         {
             componentData.set(L"name", data->name);
             componentData.set(L"skin", data->skin);
         }
 
-        void load(Components::Model *data, const JSON::Object &componentData)
+        void load(Components::Model * const data, const JSON::Object &componentData)
         {
             data->name = getValue(componentData, L"name", String());
             data->skin = getValue(componentData, L"skin", String());
         }
 
         // Edit::Component
-        bool ui(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data, uint32_t flags)
+        bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
             auto &modelComponent = *dynamic_cast<Components::Model *>(data);
@@ -64,12 +64,12 @@ namespace Gek
             return changed;
         }
 
-        void show(ImGuiContext *guiContext, Plugin::Entity *entity, Plugin::Component::Data *data)
+        void show(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             ui(guiContext, entity, data, ImGuiInputTextFlags_ReadOnly);
         }
 
-        bool edit(ImGuiContext *guiContext, const Math::Float4x4 &viewMatrix, const Math::Float4x4 &projectionMatrix, Plugin::Entity *entity, Plugin::Component::Data *data)
+        bool edit(ImGuiContext * const guiContext, Math::Float4x4 const &viewMatrix, Math::Float4x4 const &projectionMatrix, Plugin::Entity * const entity, Plugin::Component::Data *data)
         {
             return ui(guiContext, entity, data, 0);
         }
@@ -192,7 +192,7 @@ namespace Gek
             population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
         }
 
-        void addEntity(Plugin::Entity *entity)
+        void addEntity(Plugin::Entity * const entity)
         {
             ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
@@ -277,37 +277,37 @@ namespace Gek
         }
 
         // Plugin::Population Slots
-        void onLoadBegin(const String &populationName)
+        void onLoadBegin(String const &populationName)
         {
             loadPool.clear();
             modelMap.clear();
             clear();
         }
 
-        void onLoadSucceeded(const String &populationName)
+        void onLoadSucceeded(String const &populationName)
         {
-            population->listEntities([&](Plugin::Entity *entity, const wchar_t *) -> void
+            population->listEntities([&](Plugin::Entity * const entity, wchar_t const * const ) -> void
             {
                 addEntity(entity);
             });
         }
 
-        void onEntityCreated(Plugin::Entity *entity, const wchar_t *entityName)
+        void onEntityCreated(Plugin::Entity * const entity, wchar_t const * const entityName)
         {
             addEntity(entity);
         }
 
-        void onEntityDestroyed(Plugin::Entity *entity)
+        void onEntityDestroyed(Plugin::Entity * const entity)
         {
             removeEntity(entity);
         }
 
-        void onComponentAdded(Plugin::Entity *entity, const std::type_index &type)
+        void onComponentAdded(Plugin::Entity * const entity, const std::type_index &type)
         {
             addEntity(entity);
         }
 
-        void onComponentRemoved(Plugin::Entity *entity, const std::type_index &type)
+        void onComponentRemoved(Plugin::Entity * const entity, const std::type_index &type)
         {
             removeEntity(entity);
         }
@@ -317,12 +317,12 @@ namespace Gek
         using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, PartMap>;
 
         // Plugin::Renderer Slots
-        void onRenderScene(const Shapes::Frustum &viewFrustum, const Math::Float4x4 &viewMatrix)
+        void onRenderScene(const Shapes::Frustum &viewFrustum, Math::Float4x4 const &viewMatrix)
         {
             GEK_REQUIRE(renderer);
 
             MaterialMap materialMap;
-            list([&](Plugin::Entity *entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+            list([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
             {
                 Model &model = *data.model;
                 Math::Float4x4 matrix(transformComponent.getMatrix());

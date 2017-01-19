@@ -138,7 +138,7 @@ void serializeCollision(void* const serializeHandle, const void* const buffer, i
     fwrite(buffer, 1, size, file);
 }
 
-int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *environmentVariableList)
+int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
     try
     {
@@ -181,7 +181,7 @@ int wmain(int argumentCount, const wchar_t *argumentList[], const wchar_t *envir
 		}
 
 		aiLogStream logStream;
-		logStream.callback = [](const char *message, char *user) -> void
+		logStream.callback = [](char const *message, char *user) -> void
 		{
 			printf("Assimp: %s", message);
 		};

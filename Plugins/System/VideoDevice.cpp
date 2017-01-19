@@ -4,13 +4,13 @@ namespace Gek
 {
     namespace Video
     {
-        InputElement::Source InputElement::getSource(const String &elementSource)
+        InputElement::Source InputElement::getSource(String const &elementSource)
         {
             if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
             else return Source::Vertex;
         }
 
-        InputElement::Semantic InputElement::getSemantic(const String &semantic)
+        InputElement::Semantic InputElement::getSemantic(String const &semantic)
         {
             if (semantic.compareNoCase(L"Position") == 0) return Semantic::Position;
             else if (semantic.compareNoCase(L"Tangent") == 0) return Semantic::Tangent;
@@ -20,7 +20,7 @@ namespace Gek
             else return Semantic::TexCoord;
         }
 
-        Format getFormat(const String &format)
+        Format getFormat(String const &format)
         {
             if (format.compareNoCase(L"R32G32B32A32_FLOAT") == 0) return Format::R32G32B32A32_FLOAT;
             else if (format.compareNoCase(L"R16G16B16A16_FLOAT") == 0) return Format::R16G16B16A16_FLOAT;
@@ -79,7 +79,7 @@ namespace Gek
             return Format::Unknown;
         }
 
-        ComparisonFunction getComparisonFunction(const String &comparisonFunction)
+        ComparisonFunction getComparisonFunction(String const &comparisonFunction)
         {
             if (comparisonFunction.compareNoCase(L"Never") == 0)
             {
@@ -163,7 +163,7 @@ namespace Gek
                 return;
             }
 
-            auto getOperation = [](const String &operation) -> Operation
+            auto getOperation = [](String const &operation) -> Operation
             {
                 if (operation.compareNoCase(L"Replace") == 0)
                 {
@@ -241,7 +241,7 @@ namespace Gek
                 return;
             }
 
-            auto getSource = [](const String &source) -> Source
+            auto getSource = [](String const &source) -> Source
             {
                 if (source.compareNoCase(L"Zero") == 0)
                 {
@@ -313,7 +313,7 @@ namespace Gek
                 }
             };
 
-            auto getOperation = [](const String &operation) -> Operation
+            auto getOperation = [](String const &operation) -> Operation
             {
                 if (operation.compareNoCase(L"Subtract") == 0)
                 {
@@ -418,7 +418,7 @@ namespace Gek
                 return;
             }
 
-            auto getFilterMode = [](const String &filterMode) -> FilterMode
+            auto getFilterMode = [](String const &filterMode) -> FilterMode
             {
                 if (filterMode.compareNoCase(L"MinificationMagnificationPointMipMapLinear") == 0)
                 {
@@ -566,7 +566,7 @@ namespace Gek
                 }
             };
 
-            auto getAddressMode = [](const String &addressMode) -> AddressMode
+            auto getAddressMode = [](String const &addressMode) -> AddressMode
             {
                 if (addressMode.compareNoCase(L"Wrap") == 0)
                 {
@@ -597,9 +597,43 @@ namespace Gek
             mipLevelBias = object.get(L"mipLevelBias", 0.0).as<float>();
             maximumAnisotropy = object.get(L"maximumAnisotropy", 1).as_uint();
             comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Never").as_string());
-            borderColor = String(object.get(L"borderColor", L"(0,0,0,0)").as_string());
             minimumMipLevel = object.get(L"minimumMipLevel", 0.0).as<float>();
             maximumMipLevel = object.get(L"maximumMipLevel", Math::Infinity).as<float>();
+
+            if (object.has_member(L"borderColor"))
+            {
+                auto borderColorNode = object.get(L"borderColor");
+                if (borderColorNode.is<float>())
+                {
+                    borderColor = Math::Float4(borderColorNode.as<float>());
+                }
+                else if (borderColorNode.is_array())
+                {
+                    if (borderColorNode.size() == 1)
+                    {
+                        borderColor = Math::Float4(borderColorNode.at(0).as<float>());
+                    }
+                    else if (borderColorNode.size() == 3)
+                    {
+                        borderColor = Math::Float4(
+                            borderColorNode.at(0).as<float>(),
+                            borderColorNode.at(1).as<float>(),
+                            borderColorNode.at(2).as<float>(), 1.0f);
+                    }
+                    else if (borderColorNode.size() == 4)
+                    {
+                        borderColor = Math::Float4(
+                            borderColorNode.at(0).as<float>(),
+                            borderColorNode.at(1).as<float>(),
+                            borderColorNode.at(2).as<float>(),
+                            borderColorNode.at(3).as<float>());
+                    }
+                }
+            }
+            else
+            {
+                borderColor = Math::Float4::Black;
+            }
         }
     }; // namespace Video
 }; // namespace Gek

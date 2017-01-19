@@ -257,7 +257,7 @@ namespace Gek
             }
 
             // Plugin::Population Slots
-            void onAction(const String &actionName, const Plugin::Population::ActionParameter &parameter)
+            void onAction(String const &actionName, const Plugin::Population::ActionParameter &parameter)
             {
                 if (!core->isEditorActive())
                 {
@@ -291,7 +291,7 @@ namespace Gek
                 }
             }
 
-            void onLoadBegin(const String &populationName)
+            void onLoadBegin(String const &populationName)
             {
                 selectedEntity = 0;
                 selectedComponent = 0;

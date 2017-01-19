@@ -17,11 +17,11 @@ namespace Gek
         {
         private:
             Newton::World *world = nullptr;
-            Plugin::Entity *entity = nullptr;
+            Plugin::Entity * const entity = nullptr;
             NewtonBody *newtonBody = nullptr;
 
         public:
-            RigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
+            RigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity * const entity)
                 : world(static_cast<Newton::World *>(NewtonWorldGetUserData(newtonWorld)))
                 , entity(entity)
             {
@@ -59,7 +59,7 @@ namespace Gek
                 return newtonBody;
             }
 
-            uint32_t getSurface(const Math::Float3 &position, const Math::Float3 &normal)
+            uint32_t getSurface(Math::Float3 const &position, Math::Float3 const &normal)
             {
                 return 0;
             }
@@ -84,7 +84,7 @@ namespace Gek
             }
         };
 
-        Newton::EntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity *entity)
+        Newton::EntityPtr createRigidBody(NewtonWorld *newtonWorld, const NewtonCollision* const newtonCollision, Plugin::Entity * const entity)
         {
             return std::make_unique<RigidBody>(newtonWorld, newtonCollision, entity);
         }

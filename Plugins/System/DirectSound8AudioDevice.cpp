@@ -107,7 +107,7 @@ namespace Gek
 				directSound8Buffer3D->SetMaxDistance(maximum, DS3D_DEFERRED);
 			}
 
-			void play(const Math::Float3 &origin, bool loop)
+			void play(Math::Float3 const &origin, bool loop)
 			{
 				GEK_REQUIRE(directSound8Buffer3D);
 				GEK_REQUIRE(directSoundBuffer);
@@ -225,7 +225,7 @@ namespace Gek
 				return (float(volumeNumber - DSBVOLUME_MIN) / float(DSBVOLUME_MAX - DSBVOLUME_MIN));
 			}
 
-			void setListener(const Math::Float4x4 &matrix)
+			void setListener(Math::Float4x4 const &matrix)
 			{
 				GEK_REQUIRE(directSoundListener);
 

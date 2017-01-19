@@ -25,7 +25,7 @@ namespace Gek
             AlignedBox(void);
             AlignedBox(const AlignedBox &box);
             AlignedBox(float size);
-            AlignedBox(const Math::Float3 &minimum, const Math::Float3 &maximum);
+            AlignedBox(Math::Float3 const &minimum, Math::Float3 const &maximum);
 
             AlignedBox &operator = (const AlignedBox &box);
 

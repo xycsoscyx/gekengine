@@ -355,44 +355,6 @@ namespace Gek
             return static_cast<BaseString &>(assign(stream.str()));
         }
 
-        template <typename TYPE>
-        BaseString &operator = (const Math::Vector2<TYPE> &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ')';
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        template <typename TYPE>
-        BaseString &operator = (const Math::Vector3<TYPE> &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ',' << value.z << ')';
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        template <typename TYPE>
-        BaseString &operator = (const Math::Vector4<TYPE> &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.r << ',' << value.g << ',' << value.b << ',' << value.a << ')';
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString &operator = (const Math::Float4 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
-        BaseString &operator = (const Math::Quaternion &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
-            return static_cast<BaseString &>(assign(stream.str()));
-        }
-
         BaseString &operator = (const ELEMENT *string)
         {
             if (string)
@@ -495,44 +457,6 @@ namespace Gek
             append(stream.str());
         }
 
-        template <typename TYPE>
-        void operator += (const Math::Vector2<TYPE> &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ')';
-            append(stream.str());
-        }
-
-        template <typename TYPE>
-        void operator += (const Math::Vector3<TYPE> &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ',' << value.z << ')';
-            append(stream.str());
-        }
-
-        template <typename TYPE>
-        void operator += (const Math::Vector4<TYPE> &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.r << ',' << value.g << ',' << value.b << ',' << value.a << ')';
-            append(stream.str());
-        }
-
-        void operator += (const Math::Float4 &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
-            append(stream.str());
-        }
-
-        void operator += (const Math::Quaternion &value)
-        {
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream;
-            stream << '(' << value.x << ',' << value.y << ',' << value.z << ',' << value.w << ')';
-            append(stream.str());
-        }
-
         void operator += (const ELEMENT *string)
         {
             if (string)
@@ -599,82 +523,7 @@ namespace Gek
             return (stream.fail() ? 0 : value);
         }
 
-        template <typename TYPE>
-        operator Math::Vector2<TYPE> () const
-        {
-            Math::Vector2<TYPE> value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(')'); // ( X , Y )
-            return (stream.fail() ? Math::Vector2<TYPE>::Zero : value);
-        }
-
-        template <typename TYPE>
-        operator Math::Vector3<TYPE> () const
-        {
-            Math::Vector3<TYPE> value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(')'); // ( x , Y , Z )
-            return (stream.fail() ? Math::Vector3<TYPE>::Zero : value);
-        }
-
-		template <typename TYPE>
-		operator Math::Vector4<TYPE>() const
-		{
-			Math::Vector4<TYPE> value;
-			std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-			if (stream.peek() == '(')
-			{
-				stream >> MustMatch('(') >> value.r >> MustMatch(',') >> value.g >> MustMatch(',') >> value.b;
-				switch (stream.peek())
-				{
-				case ')':
-					value.a = TYPE(1);
-					stream >> MustMatch(')');
-					break;
-
-				case ',':
-					stream >> MustMatch(',') >> value.a >> MustMatch(')');
-					break;
-				};
-			}
-			else
-			{
-				stream >> value.r;
-				value.set(value.r);
-			}
-
-			return (stream.fail() ? Math::Vector4<TYPE>::Zero : value);
-		}
-
-        operator Math::Float4() const
-        {
-            Math::Float4 value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z >> MustMatch(',') >> value.w >> MustMatch(')'); // ( X , Y , Z , W )
-            return (stream.fail() ? Math::Float4::Zero : value);
-        }
-
-		operator Math::Quaternion () const
-        {
-            Math::Quaternion value;
-            std::basic_stringstream<ELEMENT, std::char_traits<ELEMENT>, std::allocator<ELEMENT>> stream(*this);
-            stream >> MustMatch('(') >> value.x >> MustMatch(',') >> value.y >> MustMatch(',') >> value.z;
-            switch (stream.peek())
-            {
-            case ')':
-                value = Math::Quaternion::FromEuler(value.x, value.y, value.z);
-                stream >> MustMatch(')');
-                break;
-
-            case ',':
-                stream >> MustMatch(',') >> value.w >> MustMatch(')');
-                break;
-            };
-
-            return (stream.fail() ? Math::Quaternion::Identity : value);
-        }
-
-        operator const ELEMENT * () const
+        operator ELEMENT const * const () const
         {
             return data();
         }
@@ -686,7 +535,7 @@ namespace Gek
         template <>
         struct traits<char>
         {
-            static void convert(std::basic_string<wchar_t> &result, const char *input)
+            static void convert(std::basic_string<wchar_t> &result, char const * const input)
             {
                 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
                 result.assign(convert.from_bytes(input));
@@ -696,7 +545,7 @@ namespace Gek
         template <>
         struct traits<wchar_t>
         {
-            static void convert(std::basic_string<char> &result, const wchar_t *input)
+            static void convert(std::basic_string<char> &result, wchar_t const * const input)
             {
                 static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>, wchar_t> convert;
                 result.assign(convert.to_bytes(input));

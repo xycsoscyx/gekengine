@@ -12,23 +12,41 @@
 
 namespace std
 {
-	template <>
-	struct hash<const char *>
-	{
-		size_t operator()(const char *value) const
-		{
-			return hash<string>()(value);
-		}
-	};
+    template <>
+    struct hash<char const *>
+    {
+        size_t operator()(char const * value) const
+        {
+            return hash<string>()(value);
+        }
+    };
 
-	template <>
-	struct hash<const wchar_t *>
-	{
-		size_t operator()(const wchar_t *value) const
-		{
-			return hash<wstring>()(value);
-		}
-	};
+    template <>
+    struct hash<char const * const>
+    {
+        size_t operator()(char const * const value) const
+        {
+            return hash<string>()(value);
+        }
+    };
+
+    template <>
+    struct hash<wchar_t const *>
+    {
+        size_t operator()(wchar_t const * value) const
+        {
+            return hash<wstring>()(value);
+        }
+    };
+
+    template <>
+    struct hash<wchar_t const * const>
+    {
+        size_t operator()(wchar_t const * const value) const
+        {
+            return hash<wstring>()(value);
+        }
+    };
 }; // namespace std
 
 namespace Gek

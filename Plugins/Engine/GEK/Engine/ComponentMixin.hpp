@@ -43,7 +43,7 @@ namespace Gek
             virtual ~ComponentMixin(void) = default;
 
             // Plugin::Component
-            const wchar_t * const getName(void) const
+            wchar_t const * const getName(void) const
             {
                 return name;
             }
@@ -58,7 +58,7 @@ namespace Gek
                 return std::make_unique<COMPONENT>();
             }
 
-            bool getValue(const JSON::Object &data, bool defaultValue)
+            bool getValue(JSON::Object const &data, bool defaultValue)
             {
                 try
                 {
@@ -70,7 +70,7 @@ namespace Gek
                 };
             }
 
-            int32_t getValue(const JSON::Object &data, int32_t defaultValue)
+            int32_t getValue(JSON::Object const &data, int32_t defaultValue)
             {
                 try
                 {
@@ -89,7 +89,7 @@ namespace Gek
                 };
             }
 
-            uint32_t getValue(const JSON::Object &data, uint32_t defaultValue)
+            uint32_t getValue(JSON::Object const &data, uint32_t defaultValue)
             {
                 try
                 {
@@ -108,7 +108,7 @@ namespace Gek
                 };
             }
 
-            float getValue(const JSON::Object &data, float defaultValue)
+            float getValue(JSON::Object const &data, float defaultValue)
             {
                 try
                 {
@@ -128,7 +128,7 @@ namespace Gek
             }
 
             template <typename TYPE>
-            Math::Vector2<TYPE> getValue(const JSON::Object &data, const Math::Vector2<TYPE> &defaultValue)
+            Math::Vector2<TYPE> getValue(JSON::Object const &data, Math::Vector2<TYPE> const &defaultValue)
             {
                 try
                 {
@@ -147,7 +147,7 @@ namespace Gek
             }
 
             template <typename TYPE>
-            Math::Vector3<TYPE> getValue(const JSON::Object &data, const Math::Vector3<TYPE> &defaultValue)
+            Math::Vector3<TYPE> getValue(JSON::Object const &data, Math::Vector3<TYPE> const &defaultValue)
             {
                 try
                 {
@@ -167,7 +167,7 @@ namespace Gek
             }
 
             template <typename TYPE>
-            Math::Vector4<TYPE> getValue(const JSON::Object &data, const Math::Vector4<TYPE> &defaultValue)
+            Math::Vector4<TYPE> getValue(JSON::Object const &data, Math::Vector4<TYPE> const &defaultValue)
             {
                 try
                 {
@@ -197,7 +197,7 @@ namespace Gek
                 return defaultValue;
             }
 
-            Math::Quaternion getValue(const JSON::Object &data, const Math::Quaternion &defaultValue)
+            Math::Quaternion getValue(JSON::Object const &data, Math::Quaternion const &defaultValue)
             {
                 try
                 {
@@ -227,7 +227,7 @@ namespace Gek
                 return defaultValue;
             }
 
-            String getValue(const JSON::Object &data, const String &defaultValue)
+            String getValue(JSON::Object const &data, String const &defaultValue)
             {
                 try
                 {
@@ -240,7 +240,7 @@ namespace Gek
             }
 
             template <typename TYPE>
-            TYPE getValue(const JSON::Object &componentData, const wchar_t *name, const TYPE &defaultValue)
+            TYPE getValue(JSON::Object const &componentData, wchar_t const * const name, TYPE const &defaultValue)
             {
                 if (componentData.is_object() && componentData.has_member(name))
                 {
@@ -251,17 +251,17 @@ namespace Gek
                 return defaultValue;
             }
 
-            virtual void save(const COMPONENT *component, JSON::Object &componentData) const { };
-            virtual void load(COMPONENT *component, const JSON::Object &componentData) { };
+            virtual void save(COMPONENT const * const component, JSON::Object &componentData) const { };
+            virtual void load(COMPONENT * const component, JSON::Object const &componentData) { };
 
-            void save(const Plugin::Component::Data *component, JSON::Object &componentData) const
+            void save(Plugin::Component::Data const * const component, JSON::Object &componentData) const
             {
-                save(static_cast<const COMPONENT *>(component), componentData);
+                save(static_cast<COMPONENT const * const>(component), componentData);
             }
 
-            void load(Plugin::Component::Data *component, const JSON::Object &componentData)
+            void load(Plugin::Component::Data * const component, JSON::Object const &componentData)
             {
-                load(static_cast<COMPONENT *>(component), componentData);
+                load(static_cast<COMPONENT * const>(component), componentData);
             }
         };
 
@@ -286,7 +286,7 @@ namespace Gek
                 entityDataMap.clear();
             }
 
-            void addEntity(Plugin::Entity *entity, std::function<void(Data &data, REQUIRED&... components)> onAdded)
+            void addEntity(Plugin::Entity * const entity, std::function<void(Data &data, REQUIRED&... components)> onAdded)
             {
                 GEK_REQUIRE(entity);
 
@@ -300,7 +300,7 @@ namespace Gek
                 }
             }
 
-            void removeEntity(Plugin::Entity *entity)
+            void removeEntity(Plugin::Entity * const entity)
             {
                 GEK_REQUIRE(entity);
 
@@ -316,7 +316,7 @@ namespace Gek
                 return entityDataMap.size();
             }
 
-            void list(std::function<void(Plugin::Entity *entity, Data &data, REQUIRED&... components)> onEntity)
+            void list(std::function<void(Plugin::Entity * const entity, Data &data, REQUIRED&... components)> onEntity)
             {
                 GEK_REQUIRE(onEntity);
 
