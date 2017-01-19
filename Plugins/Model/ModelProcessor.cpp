@@ -144,7 +144,6 @@ namespace Gek
 
         VisualHandle visual;
         Video::BufferPtr instanceBuffer;
-        static const uint32_t MaximumInstances = 500;
         ThreadPool loadPool;
 
         concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
@@ -175,10 +174,11 @@ namespace Gek
 
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
-            instanceDescription.count = MaximumInstances;
+            instanceDescription.count = 100;
             instanceDescription.type = Video::Buffer::Description::Type::Vertex;
             instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
+            instanceBuffer->setName(L"model:instances");
         }
 
         ~ModelProcessor(void)
@@ -339,29 +339,68 @@ namespace Gek
                 }
             });
 
+            uint32_t maximumInstanceCount = 0;
             for (auto &materialPair : materialMap)
             {
                 auto material = materialPair.first;
                 auto &partMap = materialPair.second;
+
+                struct DrawData
+                {
+                    uint32_t instanceStart = 0;
+                    uint32_t instanceCount = 0;
+                    const Model::Part *part = nullptr;
+
+                    DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Part *part = nullptr)
+                        : instanceStart(instanceStart)
+                        , instanceCount(instanceCount)
+                        , part(part)
+                    {
+                    }
+                };
+
+                std::vector<Math::Float4x4> instanceList;
+                std::vector<DrawData> drawDataList;
+
                 for (auto &partPair : partMap)
                 {
                     auto part = partPair.first;
-                    auto &instanceList = partPair.second;
-                    renderer->queueDrawCall(visual, material, std::move([this, part, instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
-                    {
-                        Math::Float4x4 *instanceData = nullptr;
-                        if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
-                        {
-                            std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
-                            videoDevice->unmapBuffer(instanceBuffer.get());
-
-                            resources->setVertexBufferList(videoContext, part->vertexBufferList, 0);
-                            videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
-                            resources->setIndexBuffer(videoContext, part->indexBuffer, 0);
-                            resources->drawInstancedIndexedPrimitive(videoContext, instanceList.size(), 0, part->indexCount, 0, 0);
-                        }
-                    }));
+                    auto &partInstanceList = partPair.second;
+                    drawDataList.push_back(DrawData(instanceList.size(), partInstanceList.size(), part));
+                    instanceList.insert(std::end(instanceList), std::begin(partInstanceList), std::end(partInstanceList));
                 }
+
+                maximumInstanceCount = std::max(maximumInstanceCount, instanceList.size());
+                renderer->queueDrawCall(visual, material, std::move([this, drawDataList = move(drawDataList), instanceList = move(instanceList)](Video::Device::Context *videoContext) -> void
+                {
+                    Math::Float4x4 *instanceData = nullptr;
+                    if (videoDevice->mapBuffer(instanceBuffer.get(), instanceData))
+                    {
+                        std::copy(std::begin(instanceList), std::end(instanceList), instanceData);
+                        videoDevice->unmapBuffer(instanceBuffer.get());
+
+                        videoContext->setVertexBufferList({ instanceBuffer.get() }, 5);
+
+                        for (auto &drawData : drawDataList)
+                        {
+                            resources->setVertexBufferList(videoContext, drawData.part->vertexBufferList, 0);
+                            resources->setIndexBuffer(videoContext, drawData.part->indexBuffer, 0);
+                            resources->drawInstancedIndexedPrimitive(videoContext, drawData.instanceCount, drawData.instanceStart, drawData.part->indexCount, 0, 0);
+                        }
+                    }
+                }));
+            }
+
+            if (instanceBuffer->getDescription().count < maximumInstanceCount)
+            {
+                instanceBuffer = nullptr;
+                Video::Buffer::Description instanceDescription;
+                instanceDescription.stride = sizeof(Math::Float4x4);
+                instanceDescription.count = maximumInstanceCount;
+                instanceDescription.type = Video::Buffer::Description::Type::Vertex;
+                instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
+                instanceBuffer = videoDevice->createBuffer(instanceDescription);
+                instanceBuffer->setName(L"model:instances");
             }
         }
     };
