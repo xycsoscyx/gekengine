@@ -208,7 +208,7 @@ namespace Gek
 				Back,
 			};
 
-			FillMode fillMode = FillMode::Solid;
+            FillMode fillMode = FillMode::Solid;
             CullMode cullMode = CullMode::Back;
             bool frontCounterClockwise = false;
             uint32_t depthBias = 0;
@@ -220,6 +220,7 @@ namespace Gek
             bool antialiasedLineEnable = false;
 
             void load(const JSON::Object &object);
+            size_t getHash(void) const;
         };
 
         struct DepthStateInformation
@@ -250,6 +251,7 @@ namespace Gek
                 ComparisonFunction comparisonFunction = ComparisonFunction::Always;
 
                 void load(const JSON::Object &object);
+                size_t getHash(void) const;
             };
 
             bool enable = false;
@@ -262,6 +264,7 @@ namespace Gek
             StencilStateInformation stencilBackState;
 
             void load(const JSON::Object &object);
+            size_t getHash(void) const;
         };
 
         struct BlendStateInformation
@@ -322,6 +325,7 @@ namespace Gek
             uint8_t writeMask = Mask::RGBA;
 
             void load(const JSON::Object &object);
+            size_t getHash(void) const;
         };
 
         struct UnifiedBlendStateInformation
@@ -330,14 +334,16 @@ namespace Gek
             bool alphaToCoverage = false;
 
             void load(const JSON::Object &object);
+            size_t getHash(void) const;
         };
 
         struct IndependentBlendStateInformation
         {
             bool alphaToCoverage = false;
-            BlendStateInformation targetStates[8];
+            std::array<BlendStateInformation, 8> targetStates;
 
             void load(const JSON::Object &object);
+            size_t getHash(void) const;
         };
 
         struct SamplerStateInformation
@@ -403,6 +409,7 @@ namespace Gek
             float maximumMipLevel = Math::Infinity;
 
             void load(const JSON::Object &object);
+            size_t getHash(void) const;
         };
 
         struct InputElement
@@ -474,6 +481,8 @@ namespace Gek
                 uint32_t count = 0;
                 Type type = Type::Raw;
                 uint32_t flags = 0;
+
+                size_t getHash(void) const;
             };
 
             virtual ~Buffer(void) = default;
@@ -505,6 +514,8 @@ namespace Gek
                 uint32_t sampleCount = 1;
                 uint32_t sampleQuality = 0;
                 uint32_t flags = 0;
+
+                size_t getHash(void) const;
             };
 
             virtual ~Texture(void) = default;
@@ -651,6 +662,8 @@ namespace Gek
             GEK_INTERFACE(Device)
                 : public Video::Device
             {
+                virtual ~Device(void) = default;
+
                 virtual void *getDevice(void) = 0;
             };
         }; // namespace Debug

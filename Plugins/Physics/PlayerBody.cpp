@@ -50,7 +50,9 @@ namespace Gek
 
 		GEK_INTERFACE(State)
 		{
-			virtual void onEnter(PlayerBody *player) { };
+            virtual ~State(void) = default;
+
+            virtual void onEnter(PlayerBody *player) { };
 			virtual void onExit(PlayerBody *player) { };
 
 			virtual StatePtr onUpdate(PlayerBody *player, float frameTime) { return nullptr; };

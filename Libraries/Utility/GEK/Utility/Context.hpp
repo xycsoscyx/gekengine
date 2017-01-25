@@ -31,6 +31,8 @@ namespace Gek
 
         static ContextPtr Create(const FileSystem::Path &rootPath, const std::vector<FileSystem::Path> &searchPathList);
 
+        virtual ~Context(void) = default;
+
         virtual const FileSystem::Path &getRootPath(void) const = 0;
 
         template <typename... PARAMETERS>

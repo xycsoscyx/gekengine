@@ -1,9 +1,20 @@
 #include "GEK/System/VideoDevice.hpp"
+#include "GEK/Utility/Hash.hpp"
 
 namespace Gek
 {
     namespace Video
     {
+        size_t Buffer::Description::getHash(void) const
+        {
+            return GetHash(format, stride, count, type, flags);
+        }
+
+        size_t Texture::Description::getHash(void) const
+        {
+            return GetHash(format, width, height, depth, mipMapCount, sampleCount, sampleQuality, flags);
+        }
+
         InputElement::Source InputElement::getSource(String const &elementSource)
         {
             if (elementSource.compareNoCase(L"instance") == 0) return Source::Instance;
@@ -156,6 +167,11 @@ namespace Gek
             antialiasedLineEnable = object.get(L"antialiasedLineEnable", false).as_bool();
         }
 
+        size_t RenderStateInformation::getHash(void) const
+        {
+            return GetHash(fillMode, cullMode, frontCounterClockwise, depthBias, depthBiasClamp, slopeScaledDepthBias, depthClipEnable, scissorEnable, multisampleEnable, antialiasedLineEnable);
+        }
+
         void DepthStateInformation::StencilStateInformation::load(const JSON::Object &object)
         {
             if (!object.is_object())
@@ -201,6 +217,11 @@ namespace Gek
             comparisonFunction = getComparisonFunction(object.get(L"comparisonFunction", L"Always").as_string());
         }
 
+        size_t DepthStateInformation::StencilStateInformation::getHash(void) const
+        {
+            return GetHash(failOperation, depthFailOperation, passOperation, comparisonFunction);
+        }
+
         void DepthStateInformation::load(const JSON::Object &object)
         {
             if (!object.is_object())
@@ -232,6 +253,13 @@ namespace Gek
             {
                 stencilBackState.load(object.get(L"stencilBackState"));
             }
+        }
+
+        size_t DepthStateInformation::getHash(void) const
+        {
+            return CombineHashes(
+                GetHash(enable, writeMask, comparisonFunction, stencilEnable, stencilReadMask, stencilWriteMask),
+                CombineHashes(stencilFrontState.getHash(), stencilBackState.getHash()));
         }
 
         void BlendStateInformation::load(const JSON::Object &object)
@@ -376,6 +404,11 @@ namespace Gek
             }
         }
 
+        size_t BlendStateInformation::getHash(void) const
+        {
+            return GetHash(enable, colorSource, colorDestination, colorOperation, alphaSource, alphaDestination, alphaOperation, writeMask);
+        }
+
         void UnifiedBlendStateInformation::load(const JSON::Object &object)
         {
             if (!object.is_object())
@@ -385,6 +418,11 @@ namespace Gek
 
             alphaToCoverage = object.get(L"alphaToCoverage", false).as_bool();
             BlendStateInformation::load(object);
+        }
+
+        size_t UnifiedBlendStateInformation::getHash(void) const
+        {
+            return CombineHashes(GetHash(alphaToCoverage), BlendStateInformation::getHash());
         }
 
         void IndependentBlendStateInformation::load(const JSON::Object &object)
@@ -401,14 +439,24 @@ namespace Gek
                 auto &targetStates = object.get(L"targetStates");
                 if (targetStates.is_array())
                 {
-                    static const size_t MaximumTargetCount = 8;
-                    size_t targetCount = std::min(targetStates.size(), MaximumTargetCount);
+                    size_t targetCount = std::min(targetStates.size(), this->targetStates.size());
                     for (size_t target = 0; target < targetCount; target++)
                     {
                         this->targetStates[target].load(targetStates[target]);
                     }
                 }
             }
+        }
+
+        size_t IndependentBlendStateInformation::getHash(void) const
+        {
+            auto hash = GetHash(alphaToCoverage);
+            for (auto &targetState : targetStates)
+            {
+                CombineHashes(hash, targetState.getHash());
+            }
+
+            return hash;
         }
 
         void SamplerStateInformation::load(const JSON::Object &object)
@@ -634,6 +682,11 @@ namespace Gek
             {
                 borderColor = Math::Float4::Black;
             }
+        }
+
+        size_t SamplerStateInformation::getHash(void) const
+        {
+            return GetHash(filterMode, addressModeU, addressModeV, addressModeW, mipLevelBias, maximumAnisotropy, comparisonFunction, borderColor.x, borderColor.y, borderColor.z, borderColor.w, minimumMipLevel, maximumMipLevel);
         }
     }; // namespace Video
 }; // namespace Gek

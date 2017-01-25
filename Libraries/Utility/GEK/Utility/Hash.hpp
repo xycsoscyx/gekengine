@@ -68,26 +68,4 @@ namespace Gek
         size_t remainder = GetHash(arguments...);
         return CombineHashes(seed, remainder);
     }
-
-    template <typename STRUCT>
-    size_t GetStructHash(const STRUCT &data)
-    {
-        size_t hash = 0;
-
-        size_t remainder = (sizeof(STRUCT) % 4);
-        const uint8_t *rawBytes = (const uint8_t *)&data;
-        for (size_t index = 0; index < remainder; index++)
-        {
-            hash = CombineHashes(hash, GetHash(rawBytes++));
-        }
-
-        size_t size = (sizeof(STRUCT) / 4);
-        const uint32_t *rawIntegers = (const uint32_t *)rawBytes;
-        for (size_t index = 0; index < size; index++)
-        {
-            hash = CombineHashes(hash, GetHash(rawIntegers++));
-        }
-
-        return hash;
-    }
 };

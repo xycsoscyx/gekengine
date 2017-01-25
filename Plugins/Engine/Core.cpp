@@ -218,11 +218,19 @@ namespace Gek
                 renderer = getContext()->createClass<Plugin::Renderer>(L"Engine::Renderer", (Plugin::Core *)this);
 
                 message(L"Core", Log::Type::Message, L"Loading processor plugins");
+
+                std::vector<String> processorNameList;
                 getContext()->listTypes(L"ProcessorType", [&](wchar_t const * const className) -> void
                 {
-                    message(L"Core", Log::Type::Message, String::Format(L"Processor found: %v", className));
-                    processorList.push_back(getContext()->createClass<Plugin::Processor>(className, (Plugin::Core *)this));
+                    processorNameList.push_back(className);
                 });
+
+                processorList.reserve(processorNameList.size());
+                for (auto &processorName : processorNameList)
+                {
+                    message(L"Core", Log::Type::Message, String::Format(L"Processor found: %v", processorName));
+                    processorList.push_back(getContext()->createClass<Plugin::Processor>(processorName, (Plugin::Core *)this));
+                }
 
                 for (auto &processor : processorList)
                 {

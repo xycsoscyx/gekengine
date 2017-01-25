@@ -35,6 +35,8 @@ namespace Gek
 
         GEK_INTERFACE(ResourceRequester)
         {
+            virtual ~ResourceRequester(void) = default;
+
             virtual void message(wchar_t const * const system, Plugin::Core::Log::Type logType, wchar_t const * const message) = 0;
 
             virtual void addRequest(std::function<void(void)> &&load) = 0;
@@ -849,7 +851,7 @@ namespace Gek
                 };
 
                 auto hash = GetHash(textureName);
-                auto parameters = GetStructHash(description);
+                auto parameters = description.getHash();
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
                 if (resource.first)
                 {
@@ -872,7 +874,7 @@ namespace Gek
                 };
 
                 auto hash = GetHash(bufferName);
-                auto parameters = GetStructHash(description);
+                auto parameters = description.getHash();
                 auto resource = dynamicCache.getHandle(hash, parameters, std::move(load));
                 if (resource.first)
                 {
@@ -1231,7 +1233,7 @@ namespace Gek
 					return state;
                 };
 
-                auto hash = GetStructHash(renderState);
+                auto hash = renderState.getHash();
                 return renderStateCache.getHandle(hash, std::move(load)).second;
             }
 
@@ -1244,7 +1246,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = GetStructHash(depthState);
+                auto hash = depthState.getHash();
                 return depthStateCache.getHandle(hash, std::move(load)).second;
             }
 
@@ -1257,7 +1259,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = GetStructHash(blendState);
+                auto hash = blendState.getHash();
                 return blendStateCache.getHandle(hash, std::move(load)).second;
             }
 
@@ -1270,7 +1272,7 @@ namespace Gek
 					return state;
 				};
 
-                auto hash = GetStructHash(blendState);
+                auto hash = blendState.getHash();
                 return blendStateCache.getHandle(hash, std::move(load)).second;
             }
 

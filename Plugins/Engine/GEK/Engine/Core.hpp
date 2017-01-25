@@ -57,6 +57,8 @@ namespace Gek
                     Debug,
                 };
 
+                virtual ~Log(void) = default;
+
                 virtual void message(wchar_t const * const system, Type logType, wchar_t const * const message) = 0;
 
                 virtual void beginEvent(char const * const name) = 0;

@@ -75,6 +75,8 @@ namespace Gek
         GEK_INTERFACE(Resources)
             : virtual public Plugin::Resources
         {
+            virtual ~Resources(void) = default;
+        
             virtual void clear(void) = 0;
 
             virtual ShaderHandle getMaterialShader(MaterialHandle material) const = 0;
