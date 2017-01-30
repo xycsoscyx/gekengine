@@ -96,7 +96,9 @@ namespace Gek
                 GEK_REQUIRE(newtonWorld);
 
                 NewtonSetSolverModel(newtonWorld, 1);
+#if NEWTON_MINOR_VERSION < 14
                 NewtonSetFrictionModel(newtonWorld, 1);
+#endif
                 NewtonWorldSetUserData(newtonWorld, static_cast<Newton::World *>(this));
 
                 NewtonWorldAddPreListener(newtonWorld, "__gek_pre_listener__", this, newtonWorldPreUpdate, nullptr);

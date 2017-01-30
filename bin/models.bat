@@ -1,3 +1,6 @@
+.\debug\createlevel -input data\models\sponza.fbx -output data\models\sponza.gek -flipCoords -smoothAngle:75
+pause
+
 .\debug\createmodel -input data\models\sponza.fbx -output data\models\sponza.gek -flipCoords -smoothAngle:75
 pause
 

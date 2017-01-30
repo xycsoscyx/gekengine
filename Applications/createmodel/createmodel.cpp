@@ -12,8 +12,6 @@
 #include <vector>
 #include <map>
 
-#include <Newton.h>
-
 #include <assimp/config.h>
 #include <assimp/cimport.h>
 #include <assimp/scene.h>
@@ -182,12 +180,6 @@ void getSceneParts(const Parameters &parameters, const aiScene *scene, const aiN
     }
 }
 
-void serializeCollision(void* const serializeHandle, const void* const buffer, int size)
-{
-    FILE *file = (FILE *)serializeHandle;
-    fwrite(buffer, 1, size, file);
-}
-
 int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const * const environmentVariableList)
 {
     try
@@ -333,7 +325,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
         materialsPath.toLower();
 
-        std::map<FileSystem::Path, String> pathToAlbedoMap;
+        std::map<FileSystem::Path, String> albedoToMaterialMap;
         std::function<bool(const FileSystem::Path &)> findMaterials;
         findMaterials = [&](const FileSystem::Path &filePath) -> bool
         {
@@ -360,7 +352,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             materialName.toLower();
 
                             FileSystem::Path albedoPath(albedoNode[L"file"].as_string());
-                            pathToAlbedoMap[albedoPath] = materialName;
+                            albedoToMaterialMap[albedoPath] = materialName;
 
                             //printf("Material %S with %S albedo\r\n", materialName.c_str(), albedoPath.c_str());
                         }
@@ -408,8 +400,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             //printf("FileName: %S\r\n", modelAlbedo.first.c_str());
             //printf("Albedo: %S\r\n", albedoName.c_str());
 
-            auto materialAlebedoSearch = pathToAlbedoMap.find(albedoName);
-            if (materialAlebedoSearch == std::end(pathToAlbedoMap))
+            auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
+            if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
                 printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
             }
@@ -445,8 +437,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         printf("> Num. Parts: %d\r\n", materialPartMap.size());
-        printf("< Size: Min(%f, %f, %f)\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
-        printf("        Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
+        printf("-   World Size Min(%f, %f, %f),\r\n", boundingBox.minimum.x, boundingBox.minimum.y, boundingBox.minimum.z);
+        printf("               Max(%f, %f, %f)\r\n", boundingBox.maximum.x, boundingBox.maximum.y, boundingBox.maximum.z);
 
         FILE *file = nullptr;
         _wfopen_s(&file, fileNameOutput, L"wb");
@@ -461,9 +453,9 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         fwrite(&header, sizeof(Header), 1, file);
         for (auto &material : materialPartMap)
         {
-            printf("-  %S\r\n", material.first.c_str());
-            printf("    %d vertices\r\n", material.second.vertexPositionList.size());
-            printf("    %d indices\r\n", material.second.indexList.size());
+            printf("-    Material: %S\r\n", material.first.c_str());
+            printf("       Num. Vertices: %d\r\n", material.second.vertexPositionList.size());
+            printf("       Num. Indices: %d\r\n", material.second.indexList.size());
 
             Header::Material materialHeader;
             std::wcsncpy(materialHeader.name, material.first, 63);
