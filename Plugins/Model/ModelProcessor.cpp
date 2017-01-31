@@ -232,7 +232,10 @@ namespace Gek
                                 {
                                     Header::Part &partHeader = header->partList[partIndex];
                                     Model::Part &part = model.partList[partIndex];
-                                    part.material = resources->loadMaterial(partHeader.name);
+                                    if (wcslen(partHeader.name) > 0)
+                                    {
+                                        part.material = resources->loadMaterial(partHeader.name);
+                                    }
 
                                     Video::Buffer::Description indexBufferDescription;
                                     indexBufferDescription.format = Video::Format::R16_UINT;

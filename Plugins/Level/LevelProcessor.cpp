@@ -248,9 +248,12 @@ namespace Gek
                                 {
                                     const Header::Part &partHeader = partData[partIndex];
                                     Level::Part &part = level.partList[partIndex];
-                                    part.material = resources->loadMaterial(partHeader.name);
-                                    part.boundingBox = partHeader.boundingBox;
+                                    if (wcslen(partHeader.name) > 0)
+                                    {
+                                        part.material = resources->loadMaterial(partHeader.name);
+                                    }
 
+                                    part.boundingBox = partHeader.boundingBox;
                                     Video::Buffer::Description indexBufferDescription;
                                     indexBufferDescription.format = Video::Format::R16_UINT;
                                     indexBufferDescription.count = partHeader.indexCount;
@@ -350,7 +353,7 @@ namespace Gek
                     auto transform(matrix * instance.transform);
                     for (uint32_t partIndexIndex = 0; partIndexIndex < instance.partIndexCount; partIndexIndex++)
                     {
-                        auto partIndex = level.partIndexList[partIndexIndex];
+                        auto partIndex = level.partIndexList[instance.partIndexStart + partIndexIndex];
                         auto &part = level.partList[partIndex];
                         Shapes::OrientedBox orientedBox(part.boundingBox, transform);
                         if (viewFrustum.isVisible(orientedBox))
