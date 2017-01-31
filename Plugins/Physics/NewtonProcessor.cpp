@@ -264,51 +264,57 @@ namespace Gek
             concurrency::critical_section criticalSection;
             void addEntity(Plugin::Entity * const entity)
             {
-                if (entity->hasComponents<Components::Transform, Components::Physical>())
+                try
                 {
-                    auto &transformComponent = entity->getComponent<Components::Transform>();
-                    auto &physicalComponent = entity->getComponent<Components::Physical>();
-
-                    concurrency::critical_section::scoped_lock lock(criticalSection);
-                    if (entity->hasComponent<Components::Player>())
+                    if (entity->hasComponents<Components::Transform, Components::Physical>())
                     {
-                        Newton::EntityPtr playerBody(createPlayerBody(core, population, newtonWorld, entity));
-                        if (playerBody)
-                        {
-                            NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
-                            entityMap[entity] = std::move(playerBody);
-                        }
-                    }
-                    else
-                    {
-                        NewtonCollision *newtonCollision = nullptr;
-                        if (entity->hasComponent<Components::Model>())
-                        {
-                            const auto &modelComponent = entity->getComponent<Components::Model>();
-                            newtonCollision = loadCollision(modelComponent);
-                        }
+                        auto &transformComponent = entity->getComponent<Components::Transform>();
+                        auto &physicalComponent = entity->getComponent<Components::Physical>();
 
-                        if (newtonCollision)
+                        concurrency::critical_section::scoped_lock lock(criticalSection);
+                        if (entity->hasComponent<Components::Player>())
                         {
-                            if (physicalComponent.mass == 0.0f && loadingScene)
+                            Newton::EntityPtr playerBody(createPlayerBody(core, population, newtonWorld, entity));
+                            if (playerBody)
                             {
-                                NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
-                                NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
-                                NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
-                                NewtonDestroyCollision(clonedCollision);
+                                NewtonBodySetTransformCallback(playerBody->getNewtonBody(), newtonSetTransform);
+                                entityMap[entity] = std::move(playerBody);
                             }
-                            else
+                        }
+                        else
+                        {
+                            NewtonCollision *newtonCollision = nullptr;
+                            if (entity->hasComponent<Components::Model>())
                             {
-                                Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
-                                if (rigidBody)
+                                const auto &modelComponent = entity->getComponent<Components::Model>();
+                                newtonCollision = loadCollision(modelComponent);
+                            }
+
+                            if (newtonCollision)
+                            {
+                                if (physicalComponent.mass == 0.0f && loadingScene)
                                 {
-                                    NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
-                                    entityMap[entity] = std::move(rigidBody);
+                                    NewtonCollision *clonedCollision = NewtonCollisionCreateInstance(newtonCollision);
+                                    NewtonCollisionSetMatrix(clonedCollision, transformComponent.getMatrix().data);
+                                    NewtonSceneCollisionAddSubCollision(newtonStaticScene, clonedCollision);
+                                    NewtonDestroyCollision(clonedCollision);
+                                }
+                                else
+                                {
+                                    Newton::EntityPtr rigidBody(createRigidBody(newtonWorld, newtonCollision, entity));
+                                    if (rigidBody)
+                                    {
+                                        NewtonBodySetTransformCallback(rigidBody->getNewtonBody(), newtonSetTransform);
+                                        entityMap[entity] = std::move(rigidBody);
+                                    }
                                 }
                             }
                         }
                     }
                 }
+                catch (...)
+                {
+                };
             }
 
             void removeEntity(Plugin::Entity * const entity)

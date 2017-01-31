@@ -190,86 +190,92 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
+            try
             {
-                String fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
-                auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
-                if (pair.second)
+                ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
                 {
-                    loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
+                    String fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
+                    auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
+                    if (pair.second)
                     {
-                        std::vector<uint8_t> buffer;
-                        FileSystem::Load(fileName, buffer, sizeof(Header));
-
-                        Header *header = (Header *)buffer.data();
-                        if (header->identifier != *(uint32_t *)"GEKX")
-                        {
-                            throw InvalidModelIdentifier("Unknown model file identifier encountered");
-                        }
-
-                        if (header->type != 0)
-                        {
-                            throw InvalidModelType("Unsupported model type encountered");
-                        }
-
-                        if (header->version != 6)
-                        {
-                            throw InvalidModelVersion("Unsupported model version encountered");
-                        }
-
-                        model.boundingBox = header->boundingBox;
-                        loadPool.enqueue([this, name = name, fileName, &model](void) -> void
+                        loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
                         {
                             std::vector<uint8_t> buffer;
-                            FileSystem::Load(fileName, buffer);
+                            FileSystem::Load(fileName, buffer, sizeof(Header));
 
                             Header *header = (Header *)buffer.data();
-                            model.partList.resize(header->partCount);
-                            uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
-                            for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
+                            if (header->identifier != *(uint32_t *)"GEKX")
                             {
-                                Header::Part &partHeader = header->partList[partIndex];
-                                Model::Part &part = model.partList[partIndex];
-                                part.material = resources->loadMaterial(partHeader.name);
-
-                                Video::Buffer::Description indexBufferDescription;
-                                indexBufferDescription.format = Video::Format::R16_UINT;
-                                indexBufferDescription.count = partHeader.indexCount;
-                                indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                part.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                bufferData += (sizeof(uint16_t) * partHeader.indexCount);
-
-                                Video::Buffer::Description vertexBufferDescription;
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                vertexBufferDescription.count = partHeader.vertexCount;
-                                vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                part.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float2);
-                                part.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                part.indexCount = partHeader.indexCount;
+                                throw InvalidModelIdentifier("Unknown model file identifier encountered");
                             }
-                        });
-                    });
-                }
 
-                data.model = &pair.first->second;
-            });
+                            if (header->type != 0)
+                            {
+                                throw InvalidModelType("Unsupported model type encountered");
+                            }
+
+                            if (header->version != 6)
+                            {
+                                throw InvalidModelVersion("Unsupported model version encountered");
+                            }
+
+                            model.boundingBox = header->boundingBox;
+                            loadPool.enqueue([this, name = name, fileName, &model](void) -> void
+                            {
+                                std::vector<uint8_t> buffer;
+                                FileSystem::Load(fileName, buffer);
+
+                                Header *header = (Header *)buffer.data();
+                                model.partList.resize(header->partCount);
+                                uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
+                                for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
+                                {
+                                    Header::Part &partHeader = header->partList[partIndex];
+                                    Model::Part &part = model.partList[partIndex];
+                                    part.material = resources->loadMaterial(partHeader.name);
+
+                                    Video::Buffer::Description indexBufferDescription;
+                                    indexBufferDescription.format = Video::Format::R16_UINT;
+                                    indexBufferDescription.count = partHeader.indexCount;
+                                    indexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                                    part.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                    bufferData += (sizeof(uint16_t) * partHeader.indexCount);
+
+                                    Video::Buffer::Description vertexBufferDescription;
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    vertexBufferDescription.count = partHeader.vertexCount;
+                                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                                    part.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float2);
+                                    part.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    part.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    part.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    part.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    part.indexCount = partHeader.indexCount;
+                                }
+                            });
+                        });
+                    }
+
+                    data.model = &pair.first->second;
+                });
+            }
+            catch (...)
+            {
+            };
         }
 
         // Plugin::Population Slots

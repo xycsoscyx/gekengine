@@ -41,7 +41,6 @@ struct Header
 struct Instance
 {
     Math::Float4x4 transform;
-    Math::Float3 scale;
     uint32_t partIndexStart;
     uint32_t partIndexCount;
 };
@@ -178,7 +177,7 @@ void getSceneInstances(const Parameters &parameters, const aiScene *scene, const
         throw std::exception("Invalid scene node");
     }
 
-    auto localTransform(*(Math::Float4x4 *)&node->mTransformation);
+    auto localTransform((*(Math::Float4x4 *)&node->mTransformation).getTranspose());
     auto absoluteTransform(parentTransform * localTransform);
     if (node->mNumMeshes > 0)
     {
@@ -189,8 +188,6 @@ void getSceneInstances(const Parameters &parameters, const aiScene *scene, const
 
         Instance instance;
         instance.transform = absoluteTransform;
-        instance.transform._11 = instance.transform._22 = instance.transform._33 = 1.0f;
-        instance.scale = absoluteTransform.getScaling();
         instance.partIndexStart = partIndexList.size();
         instance.partIndexCount = node->mNumMeshes;
         for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
@@ -477,6 +474,8 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             }
 
             printf("-    Part: %S\r\n", partHeader.name);
+            printf("       Size Minimum: %f, %f, %f\r\n", part.boundingBox.minimum.x, part.boundingBox.minimum.y, part.boundingBox.minimum.z);
+            printf("       Size Maximum: %f, %f, %f\r\n", part.boundingBox.maximum.x, part.boundingBox.maximum.y, part.boundingBox.maximum.z);
             printf("       Num. Vertices: %d\r\n", part.vertexPositionList.size());
             printf("       Num. Indices: %d\r\n", part.indexList.size());
 

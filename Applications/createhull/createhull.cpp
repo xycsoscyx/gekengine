@@ -162,7 +162,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         unsigned int importFlags =
             aiProcess_RemoveComponent |
             aiProcess_OptimizeMeshes |
-            aiProcess_FindInstances |
             aiProcess_PreTransformVertices |
             0;
 

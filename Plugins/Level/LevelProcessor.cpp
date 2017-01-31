@@ -113,7 +113,6 @@ namespace Gek
             struct Instance
             {
                 Math::Float4x4 transform;
-                Math::Float3 scale;
                 uint32_t partIndexStart;
                 uint32_t partIndexCount;
             };
@@ -171,7 +170,7 @@ namespace Gek
             population->onComponentRemoved.connect<LevelProcessor, &LevelProcessor::onComponentRemoved>(this);
             renderer->onRenderScene.connect<LevelProcessor, &LevelProcessor::onRenderScene>(this);
 
-            visual = resources->loadVisual(L"level");
+            visual = resources->loadVisual(L"model");
 
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
@@ -195,99 +194,105 @@ namespace Gek
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](auto &data, auto &levelComponent, auto &transformComponent) -> void
+            try
             {
-                String fileName(getContext()->getRootFileName(L"data", L"models", levelComponent.name).withExtension(L".gek"));
-                auto pair = levelMap.insert(std::make_pair(GetHash(levelComponent.name), Level()));
-                if (pair.second)
+                ProcessorMixin::addEntity(entity, [&](auto &data, auto &levelComponent, auto &transformComponent) -> void
                 {
-                    loadPool.enqueue([this, name = levelComponent.name, fileName, &level = pair.first->second](void) -> void
+                    String fileName(getContext()->getRootFileName(L"data", L"models", levelComponent.name).withExtension(L".gek"));
+                    auto pair = levelMap.insert(std::make_pair(GetHash(levelComponent.name), Level()));
+                    if (pair.second)
                     {
-                        std::vector<uint8_t> buffer;
-                        FileSystem::Load(fileName, buffer, sizeof(Header));
-
-                        Header *header = (Header *)buffer.data();
-                        if (header->identifier != *(uint32_t *)"GEKX")
-                        {
-                            throw InvalidLevelIdentifier("Unknown level file identifier encountered");
-                        }
-
-                        if (header->type != 3)
-                        {
-                            throw InvalidLevelType("Unsupported level type encountered");
-                        }
-
-                        if (header->version != 1)
-                        {
-                            throw InvalidLevelVersion("Unsupported level version encountered");
-                        }
-
-                        loadPool.enqueue([this, name = name, fileName, &level](void) -> void
+                        loadPool.enqueue([this, name = levelComponent.name, fileName, &level = pair.first->second](void) -> void
                         {
                             std::vector<uint8_t> buffer;
-                            FileSystem::Load(fileName, buffer);
+                            FileSystem::Load(fileName, buffer, sizeof(Header));
 
                             Header *header = (Header *)buffer.data();
-
-                            uint8_t *bufferData = (uint8_t *)&header[1];
-                            auto instanceData = (Level::Instance *)bufferData;
-                            level.instanceList.resize(header->instanceCount);
-                            std::copy(instanceData, &instanceData[header->instanceCount], level.instanceList.data());
-
-                            bufferData = (uint8_t *)&instanceData[header->instanceCount];
-                            auto partIndexData = (uint32_t *)bufferData;
-                            level.partIndexList.resize(header->partIndexCount);
-                            std::copy(partIndexData, &partIndexData[header->partIndexCount], level.partIndexList.data());
-
-                            level.partList.resize(header->partCount);
-                            bufferData = (uint8_t *)&partIndexData[header->partIndexCount];
-                            auto partData = (Header::Part *)bufferData;
-                            bufferData = (uint8_t *)&partData[header->partCount];
-                            for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
+                            if (header->identifier != *(uint32_t *)"GEKX")
                             {
-                                const Header::Part &partHeader = partData[partIndex];
-                                Level::Part &part = level.partList[partIndex];
-                                part.material = resources->loadMaterial(partHeader.name);
-                                part.boundingBox = partHeader.boundingBox;
-
-                                Video::Buffer::Description indexBufferDescription;
-                                indexBufferDescription.format = Video::Format::R16_UINT;
-                                indexBufferDescription.count = partHeader.indexCount;
-                                indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                part.indexBuffer = resources->createBuffer(String::Format(L"level:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
-                                bufferData += (sizeof(uint16_t) * partHeader.indexCount);
-
-                                Video::Buffer::Description vertexBufferDescription;
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                vertexBufferDescription.count = partHeader.vertexCount;
-                                vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                part.vertexBufferList[0] = resources->createBuffer(String::Format(L"level:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float2);
-                                part.vertexBufferList[1] = resources->createBuffer(String::Format(L"level:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
-                                bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[2] = resources->createBuffer(String::Format(L"level:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[3] = resources->createBuffer(String::Format(L"level:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[4] = resources->createBuffer(String::Format(L"level:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
-                                bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
-
-                                part.indexCount = partHeader.indexCount;
+                                throw InvalidLevelIdentifier("Unknown level file identifier encountered");
                             }
-                        });
-                    });
-                }
 
-                data.level = &pair.first->second;
-            });
+                            if (header->type != 3)
+                            {
+                                throw InvalidLevelType("Unsupported level type encountered");
+                            }
+
+                            if (header->version != 1)
+                            {
+                                throw InvalidLevelVersion("Unsupported level version encountered");
+                            }
+
+                            loadPool.enqueue([this, name = name, fileName, &level](void) -> void
+                            {
+                                std::vector<uint8_t> buffer;
+                                FileSystem::Load(fileName, buffer);
+
+                                Header *header = (Header *)buffer.data();
+
+                                uint8_t *bufferData = (uint8_t *)&header[1];
+                                auto instanceData = (Level::Instance *)bufferData;
+                                level.instanceList.resize(header->instanceCount);
+                                std::copy(instanceData, &instanceData[header->instanceCount], level.instanceList.data());
+
+                                bufferData = (uint8_t *)&instanceData[header->instanceCount];
+                                auto partIndexData = (uint32_t *)bufferData;
+                                level.partIndexList.resize(header->partIndexCount);
+                                std::copy(partIndexData, &partIndexData[header->partIndexCount], level.partIndexList.data());
+
+                                level.partList.resize(header->partCount);
+                                bufferData = (uint8_t *)&partIndexData[header->partIndexCount];
+                                auto partData = (Header::Part *)bufferData;
+                                bufferData = (uint8_t *)&partData[header->partCount];
+                                for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
+                                {
+                                    const Header::Part &partHeader = partData[partIndex];
+                                    Level::Part &part = level.partList[partIndex];
+                                    part.material = resources->loadMaterial(partHeader.name);
+                                    part.boundingBox = partHeader.boundingBox;
+
+                                    Video::Buffer::Description indexBufferDescription;
+                                    indexBufferDescription.format = Video::Format::R16_UINT;
+                                    indexBufferDescription.count = partHeader.indexCount;
+                                    indexBufferDescription.type = Video::Buffer::Description::Type::Index;
+                                    part.indexBuffer = resources->createBuffer(String::Format(L"level:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                    bufferData += (sizeof(uint16_t) * partHeader.indexCount);
+
+                                    Video::Buffer::Description vertexBufferDescription;
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    vertexBufferDescription.count = partHeader.vertexCount;
+                                    vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
+                                    part.vertexBufferList[0] = resources->createBuffer(String::Format(L"level:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float2);
+                                    part.vertexBufferList[1] = resources->createBuffer(String::Format(L"level:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    part.vertexBufferList[2] = resources->createBuffer(String::Format(L"level:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    part.vertexBufferList[3] = resources->createBuffer(String::Format(L"level:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    vertexBufferDescription.stride = sizeof(Math::Float3);
+                                    part.vertexBufferList[4] = resources->createBuffer(String::Format(L"level:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                    bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
+
+                                    part.indexCount = partHeader.indexCount;
+                                }
+                            });
+                        });
+                    }
+
+                    data.level = &pair.first->second;
+                });
+            }
+            catch(...)
+            {
+            };
         }
 
         // Plugin::Population Slots
@@ -342,14 +347,12 @@ namespace Gek
                 Math::Float4x4 matrix(transformComponent.getMatrix());
                 for (auto &instance : level.instanceList)
                 {
-                    auto scale = instance.transform.getScaling();
                     auto transform(matrix * instance.transform);
                     for (uint32_t partIndexIndex = 0; partIndexIndex < instance.partIndexCount; partIndexIndex++)
                     {
                         auto partIndex = level.partIndexList[partIndexIndex];
                         auto &part = level.partList[partIndex];
                         Shapes::OrientedBox orientedBox(part.boundingBox, transform);
-                        orientedBox.halfsize *= instance.scale;
                         if (viewFrustum.isVisible(orientedBox))
                         {
                             auto levelViewMatrix(transform * viewMatrix);

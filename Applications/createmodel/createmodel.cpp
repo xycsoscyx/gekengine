@@ -268,7 +268,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             aiProcess_ImproveCacheLocality |
             aiProcess_RemoveRedundantMaterials |
             aiProcess_FindDegenerates |
-            aiProcess_FindInstances |
             aiProcess_GenUVCoords |
             aiProcess_TransformUVCoords |
             0;
