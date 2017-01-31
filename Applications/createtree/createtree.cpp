@@ -262,7 +262,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         String materialsPath(FileSystem::GetFileName(dataPath, L"Materials"));
         materialsPath.toLower();
 
-        std::map<FileSystem::Path, String> pathToAlbedoMap;
+        std::map<FileSystem::Path, String> albedoToMaterialMap;
         std::function<bool(const FileSystem::Path &)> findMaterials;
         findMaterials = [&](const FileSystem::Path &filePath) -> bool
         {
@@ -289,9 +289,7 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                             materialName.toLower();
 
                             FileSystem::Path albedoPath(albedoNode[L"file"].as_string());
-                            pathToAlbedoMap[albedoPath] = materialName;
-
-                            //printf("Material %S with %S albedo\r\n", materialName.c_str(), albedoPath.c_str());
+                            albedoToMaterialMap[albedoPath] = materialName;
                         }
                     }
                 }
@@ -311,6 +309,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         FileSystem::Find(materialsPath, findMaterials);
+        if (albedoToMaterialMap.empty())
+        {
+            throw std::exception("Unable to locate any materials");
+        }
+
         std::unordered_map<FileSystem::Path, std::vector<Part>> albedoPartMap;
         for (auto &modelAlbedo : scenePartMap)
         {
@@ -334,18 +337,14 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 }
             }
 
-            //printf("FileName: %S\r\n", modelAlbedo.first.c_str());
-            //printf("Albedo: %S\r\n", albedoName.c_str());
-
-            auto materialAlebedoSearch = pathToAlbedoMap.find(albedoName);
-            if (materialAlebedoSearch == std::end(pathToAlbedoMap))
+            auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
+            if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
                 printf("! Unable to find material for albedo: %S\r\n", albedoName.c_str());
             }
             else
             {
                 albedoPartMap[materialAlebedoSearch->second] = modelAlbedo.second;
-                //printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
             }
         }
 

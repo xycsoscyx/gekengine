@@ -168,68 +168,7 @@ namespace Gek
 
                 return 0;
             }
-            /*
-            NewtonCollision *createCollision(const Components::Shape &shapeComponent)
-            {
-            GEK_REQUIRE(population);
 
-            NewtonCollision *newtonCollision = nullptr;
-
-            auto hash = GetHash(shapeComponent.type, shapeComponent.parameters);
-            auto collisionSearch = collisionMap.find(hash);
-            if (collisionSearch != std::end(collisionMap))
-            {
-            if (collisionSearch->second)
-            {
-            newtonCollision = collisionSearch->second;
-            }
-            }
-            else
-            {
-            collisionMap[hash] = nullptr;
-
-            if (shapeComponent.type.compareNoCase(L"cube") == 0)
-            {
-            Math::Float3 size(Evaluator::Get<Math::Float3>(population->getShuntingYard(), shapeComponent.parameters));
-            newtonCollision = NewtonCreateBox(newtonWorld, size.x, size.y, size.z, hash, Math::Float4x4::Identity.data);
-            }
-            else if (shapeComponent.type.compareNoCase(L"sphere") == 0)
-            {
-            float size = Evaluator::Get<float>(population->getShuntingYard(), shapeComponent.parameters);
-            newtonCollision = NewtonCreateSphere(newtonWorld, size, hash, Math::Float4x4::Identity.data);
-            }
-            else if (shapeComponent.type.compareNoCase(L"cone") == 0)
-            {
-            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-            newtonCollision = NewtonCreateCone(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
-            }
-            else if (shapeComponent.type.compareNoCase(L"capsule") == 0)
-            {
-            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-            newtonCollision = NewtonCreateCapsule(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
-            }
-            else if (shapeComponent.type.compareNoCase(L"cylinder") == 0)
-            {
-            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-            newtonCollision = NewtonCreateCylinder(newtonWorld, size.x, size.x, size.y, hash, Math::Float4x4::Identity.data);
-            }
-            else if (shapeComponent.type.compareNoCase(L"chamfer_cylinder") == 0)
-            {
-            Math::Float2 size(Evaluator::Get<Math::Float2>(population->getShuntingYard(), shapeComponent.parameters));
-            newtonCollision = NewtonCreateChamferCylinder(newtonWorld, size.x, size.y, hash, Math::Float4x4::Identity.data);
-            }
-
-            if (newtonCollision == nullptr)
-            {
-            throw Newton::UnableToCreateCollision("Unable to create shape collision object");
-            }
-
-            collisionMap[hash] = newtonCollision;
-            }
-
-            return newtonCollision;
-            }
-            */
             NewtonCollision *loadCollision(const Components::Model &modelComponent)
             {
                 NewtonCollision *newtonCollision = nullptr;

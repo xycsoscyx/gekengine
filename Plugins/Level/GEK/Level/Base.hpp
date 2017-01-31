@@ -14,7 +14,7 @@ namespace Gek
 {
     namespace Components
     {
-        GEK_COMPONENT(Model)
+        GEK_COMPONENT(Level)
         {
             String name;
         };

@@ -32,7 +32,7 @@
     "Population": [
         {
             "Transform": { },
-            "Model": {
+            "Level": {
                 "name": "sponza"
             },
             "Physical": { }

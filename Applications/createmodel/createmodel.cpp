@@ -353,8 +353,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                             FileSystem::Path albedoPath(albedoNode[L"file"].as_string());
                             albedoToMaterialMap[albedoPath] = materialName;
-
-                            //printf("Material %S with %S albedo\r\n", materialName.c_str(), albedoPath.c_str());
                         }
                     }
                 }
@@ -374,6 +372,11 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         FileSystem::Find(materialsPath, findMaterials);
+        if (albedoToMaterialMap.empty())
+        {
+            throw std::exception("Unable to locate any materials");
+        }
+
         std::unordered_map<FileSystem::Path, std::vector<Part>> albedoPartMap;
         for (auto &modelAlbedo : scenePartMap)
         {
@@ -397,9 +400,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 }
             }
 
-            //printf("FileName: %S\r\n", modelAlbedo.first.c_str());
-            //printf("Albedo: %S\r\n", albedoName.c_str());
-
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch == std::end(albedoToMaterialMap))
             {
@@ -408,7 +408,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             else
             {
                 albedoPartMap[materialAlebedoSearch->second] = modelAlbedo.second;
-                //printf("Remap: %S: %S\r\n", albedoName.c_str(), materialAlebedoSearch->second.c_str());
             }
         }
 

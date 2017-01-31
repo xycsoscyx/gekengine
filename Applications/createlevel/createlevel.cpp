@@ -21,16 +21,17 @@ using namespace Gek;
 
 struct Header
 {
-    struct Material
+    struct Part
     {
         wchar_t name[64] = L"";
+        Shapes::AlignedBox boundingBox;
         uint32_t vertexCount = 0;
         uint32_t indexCount = 0;
     };
 
     uint32_t identifier = *(uint32_t *)"GEKX";
-    uint16_t type = 0;
-    uint16_t version = 6;
+    uint16_t type = 3;
+    uint16_t version = 1;
 
     uint32_t instanceCount;
     uint32_t partIndexCount;
@@ -40,6 +41,7 @@ struct Header
 struct Instance
 {
     Math::Float4x4 transform;
+    Math::Float3 scale;
     uint32_t partIndexStart;
     uint32_t partIndexCount;
 };
@@ -187,6 +189,8 @@ void getSceneInstances(const Parameters &parameters, const aiScene *scene, const
 
         Instance instance;
         instance.transform = absoluteTransform;
+        instance.transform._11 = instance.transform._22 = instance.transform._33 = 1.0f;
+        instance.scale = absoluteTransform.getScaling();
         instance.partIndexStart = partIndexList.size();
         instance.partIndexCount = node->mNumMeshes;
         for (uint32_t meshIndex = 0; meshIndex < node->mNumMeshes; ++meshIndex)
@@ -344,19 +348,19 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
             throw std::exception("Exporting to model requires materials in scene");
         }
 
-        std::vector<Part> scenePartList;
-        getSceneParts(parameters, scene, scenePartList);
-        if (scenePartList.empty())
-        {
-            throw std::exception("No valid models found");
-        }
-
         std::vector<Instance> instanceList;
         std::vector<uint32_t> partIndexList;
         getSceneInstances(parameters, scene, scene->mRootNode, Math::Float4x4::Identity, instanceList, partIndexList);
         if (instanceList.empty())
         {
             throw std::exception("No valid instances found");
+        }
+
+        std::vector<Part> scenePartList;
+        getSceneParts(parameters, scene, scenePartList);
+        if (scenePartList.empty())
+        {
+            throw std::exception("No valid models found");
         }
 
         aiReleasePropertyStore(propertyStore);
@@ -399,8 +403,6 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
 
                             FileSystem::Path albedoPath(albedoNode[L"file"].as_string());
                             albedoToMaterialMap[albedoPath] = materialName;
-
-                            //printf("Material %S with %S albedo\r\n", materialName.c_str(), albedoPath.c_str());
                         }
                     }
                 }
@@ -420,6 +422,10 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
         }
 
         FileSystem::Find(materialsPath, findMaterials);
+        if (albedoToMaterialMap.empty())
+        {
+            throw std::exception("Unable to locate any materials");
+        }
 
         printf("> Num. Instances: %d\r\n", instanceList.size());
         printf("> Num. Part Indices: %d\r\n", partIndexList.size());
@@ -463,20 +469,21 @@ int wmain(int argumentCount, wchar_t const * const argumentList[], wchar_t const
                 }
             }
 
-            Header::Material materialHeader;
+            Header::Part partHeader;
             auto materialAlebedoSearch = albedoToMaterialMap.find(albedoName);
             if (materialAlebedoSearch != std::end(albedoToMaterialMap))
             {
-                std::wcsncpy(materialHeader.name, materialAlebedoSearch->second.c_str(), 63);
+                std::wcsncpy(partHeader.name, materialAlebedoSearch->second.c_str(), 63);
             }
 
-            printf("-    Material: %S\r\n", materialHeader.name);
+            printf("-    Part: %S\r\n", partHeader.name);
             printf("       Num. Vertices: %d\r\n", part.vertexPositionList.size());
             printf("       Num. Indices: %d\r\n", part.indexList.size());
 
-            materialHeader.vertexCount = part.vertexPositionList.size();
-            materialHeader.indexCount = part.indexList.size();
-            fwrite(&materialHeader, sizeof(Header::Material), 1, file);
+            partHeader.boundingBox = part.boundingBox;
+            partHeader.vertexCount = part.vertexPositionList.size();
+            partHeader.indexCount = part.indexList.size();
+            fwrite(&partHeader, sizeof(Header::Part), 1, file);
         }
 
         for (auto &part : scenePartList)

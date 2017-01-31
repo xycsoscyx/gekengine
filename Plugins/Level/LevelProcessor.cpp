@@ -17,7 +17,7 @@
 #include "GEK/Engine/Resources.hpp"
 #include "GEK/Components/Transform.hpp"
 #include "GEK/Components/Color.hpp"
-#include "GEK/Model/Base.hpp"
+#include "GEK/Level/Base.hpp"
 #include <concurrent_unordered_map.h>
 #include <concurrent_vector.h>
 #include <algorithm>
@@ -29,23 +29,23 @@
 
 namespace Gek
 {
-    GEK_CONTEXT_USER(Model, Plugin::Population *)
-        , public Plugin::ComponentMixin<Components::Model, Edit::Component>
+    GEK_CONTEXT_USER(Level, Plugin::Population *)
+        , public Plugin::ComponentMixin<Components::Level, Edit::Component>
     {
     public:
-        Model(Context *context, Plugin::Population *population)
+        Level(Context *context, Plugin::Population *population)
             : ContextRegistration(context)
             , ComponentMixin(population)
         {
         }
 
         // Plugin::Component
-        void save(Components::Model const * const data, JSON::Object &componentData) const
+        void save(Components::Level const * const data, JSON::Object &componentData) const
         {
             componentData.set(L"name", data->name);
         }
 
-        void load(Components::Model * const data, const JSON::Object &componentData)
+        void load(Components::Level * const data, const JSON::Object &componentData)
         {
             data->name = getValue(componentData, L"name", String());
         }
@@ -54,8 +54,8 @@ namespace Gek
         bool ui(ImGuiContext * const guiContext, Plugin::Entity * const entity, Plugin::Component::Data *data, uint32_t flags)
         {
             ImGui::SetCurrentContext(guiContext);
-            auto &modelComponent = *dynamic_cast<Components::Model *>(data);
-            bool changed = ImGui::Gek::InputString("Model", modelComponent.name, flags);
+            auto &levelComponent = *dynamic_cast<Components::Level *>(data);
+            bool changed = ImGui::Gek::InputString("Level", levelComponent.name, flags);
             ImGui::SetCurrentContext(nullptr);
             return changed;
         }
@@ -71,13 +71,13 @@ namespace Gek
         }
     };
 
-    GEK_CONTEXT_USER(ModelProcessor, Plugin::Core *)
-        , public Plugin::ProcessorMixin<ModelProcessor, Components::Model, Components::Transform>
+    GEK_CONTEXT_USER(LevelProcessor, Plugin::Core *)
+        , public Plugin::ProcessorMixin<LevelProcessor, Components::Level, Components::Transform>
         , public Plugin::Processor
     {
-        GEK_ADD_EXCEPTION(InvalidModelIdentifier);
-        GEK_ADD_EXCEPTION(InvalidModelType);
-        GEK_ADD_EXCEPTION(InvalidModelVersion);
+        GEK_ADD_EXCEPTION(InvalidLevelIdentifier);
+        GEK_ADD_EXCEPTION(InvalidLevelType);
+        GEK_ADD_EXCEPTION(InvalidLevelVersion);
 
     public:
         struct Header
@@ -85,6 +85,7 @@ namespace Gek
             struct Part
             {
                 wchar_t name[64];
+                Shapes::AlignedBox boundingBox;
                 uint32_t vertexCount = 0;
                 uint32_t indexCount = 0;
             };
@@ -93,10 +94,9 @@ namespace Gek
             uint16_t type = 0;
             uint16_t version = 0;
 
-            Shapes::AlignedBox boundingBox;
-
-            uint32_t partCount = 0;
-            Part partList[1];
+            uint32_t instanceCount;
+            uint32_t partIndexCount;
+            uint32_t partCount;
         };
 
         struct Vertex
@@ -108,28 +108,33 @@ namespace Gek
 			Math::Float3 normal;
         };
 
-        struct Model
+        struct Level
         {
+            struct Instance
+            {
+                Math::Float4x4 transform;
+                Math::Float3 scale;
+                uint32_t partIndexStart;
+                uint32_t partIndexCount;
+            };
+
             struct Part
             {
                 MaterialHandle material;
+                Shapes::AlignedBox boundingBox;
                 std::vector<ResourceHandle> vertexBufferList = std::vector<ResourceHandle>(5);
                 ResourceHandle indexBuffer;
                 uint32_t indexCount = 0;
             };
 
-            Shapes::AlignedBox boundingBox;
+            std::vector<Instance> instanceList;
+            std::vector<uint32_t> partIndexList;
             std::vector<Part> partList;
         };
 
         struct Data
         {
-            Model *model = nullptr;
-        };
-
-        struct Instance
-        {
-            Math::Float4x4 transform;
+            Level *level = nullptr;
         };
 
     private:
@@ -142,10 +147,10 @@ namespace Gek
         Video::BufferPtr instanceBuffer;
         ThreadPool loadPool;
 
-        concurrency::concurrent_unordered_map<std::size_t, Model> modelMap;
+        concurrency::concurrent_unordered_map<std::size_t, Level> levelMap;
 
     public:
-        ModelProcessor(Context *context, Plugin::Core *core)
+        LevelProcessor(Context *context, Plugin::Core *core)
             : ContextRegistration(context)
             , videoDevice(core->getVideoDevice())
             , population(core->getPopulation())
@@ -158,15 +163,15 @@ namespace Gek
             GEK_REQUIRE(resources);
             GEK_REQUIRE(renderer);
 
-            population->onLoadBegin.connect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
-            population->onLoadSucceeded.connect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
-            population->onEntityCreated.connect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
-            population->onEntityDestroyed.connect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
-            population->onComponentAdded.connect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
-            population->onComponentRemoved.connect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
-            renderer->onRenderScene.connect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
+            population->onLoadBegin.connect<LevelProcessor, &LevelProcessor::onLoadBegin>(this);
+            population->onLoadSucceeded.connect<LevelProcessor, &LevelProcessor::onLoadSucceeded>(this);
+            population->onEntityCreated.connect<LevelProcessor, &LevelProcessor::onEntityCreated>(this);
+            population->onEntityDestroyed.connect<LevelProcessor, &LevelProcessor::onEntityDestroyed>(this);
+            population->onComponentAdded.connect<LevelProcessor, &LevelProcessor::onComponentAdded>(this);
+            population->onComponentRemoved.connect<LevelProcessor, &LevelProcessor::onComponentRemoved>(this);
+            renderer->onRenderScene.connect<LevelProcessor, &LevelProcessor::onRenderScene>(this);
 
-            visual = resources->loadVisual(L"model");
+            visual = resources->loadVisual(L"level");
 
             Video::Buffer::Description instanceDescription;
             instanceDescription.stride = sizeof(Math::Float4x4);
@@ -174,29 +179,29 @@ namespace Gek
             instanceDescription.type = Video::Buffer::Description::Type::Vertex;
             instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
             instanceBuffer = videoDevice->createBuffer(instanceDescription);
-            instanceBuffer->setName(L"model:instances");
+            instanceBuffer->setName(L"level:instances");
         }
 
-        ~ModelProcessor(void)
+        ~LevelProcessor(void)
         {
-            renderer->onRenderScene.disconnect<ModelProcessor, &ModelProcessor::onRenderScene>(this);
-            population->onComponentRemoved.disconnect<ModelProcessor, &ModelProcessor::onComponentRemoved>(this);
-            population->onComponentAdded.disconnect<ModelProcessor, &ModelProcessor::onComponentAdded>(this);
-            population->onEntityDestroyed.disconnect<ModelProcessor, &ModelProcessor::onEntityDestroyed>(this);
-            population->onEntityCreated.disconnect<ModelProcessor, &ModelProcessor::onEntityCreated>(this);
-            population->onLoadSucceeded.disconnect<ModelProcessor, &ModelProcessor::onLoadSucceeded>(this);
-            population->onLoadBegin.disconnect<ModelProcessor, &ModelProcessor::onLoadBegin>(this);
+            renderer->onRenderScene.disconnect<LevelProcessor, &LevelProcessor::onRenderScene>(this);
+            population->onComponentRemoved.disconnect<LevelProcessor, &LevelProcessor::onComponentRemoved>(this);
+            population->onComponentAdded.disconnect<LevelProcessor, &LevelProcessor::onComponentAdded>(this);
+            population->onEntityDestroyed.disconnect<LevelProcessor, &LevelProcessor::onEntityDestroyed>(this);
+            population->onEntityCreated.disconnect<LevelProcessor, &LevelProcessor::onEntityCreated>(this);
+            population->onLoadSucceeded.disconnect<LevelProcessor, &LevelProcessor::onLoadSucceeded>(this);
+            population->onLoadBegin.disconnect<LevelProcessor, &LevelProcessor::onLoadBegin>(this);
         }
 
         void addEntity(Plugin::Entity * const entity)
         {
-            ProcessorMixin::addEntity(entity, [&](auto &data, auto &modelComponent, auto &transformComponent) -> void
+            ProcessorMixin::addEntity(entity, [&](auto &data, auto &levelComponent, auto &transformComponent) -> void
             {
-                String fileName(getContext()->getRootFileName(L"data", L"models", modelComponent.name).withExtension(L".gek"));
-                auto pair = modelMap.insert(std::make_pair(GetHash(modelComponent.name), Model()));
+                String fileName(getContext()->getRootFileName(L"data", L"models", levelComponent.name).withExtension(L".gek"));
+                auto pair = levelMap.insert(std::make_pair(GetHash(levelComponent.name), Level()));
                 if (pair.second)
                 {
-                    loadPool.enqueue([this, name = modelComponent.name, fileName, &model = pair.first->second](void) -> void
+                    loadPool.enqueue([this, name = levelComponent.name, fileName, &level = pair.first->second](void) -> void
                     {
                         std::vector<uint8_t> buffer;
                         FileSystem::Load(fileName, buffer, sizeof(Header));
@@ -204,62 +209,75 @@ namespace Gek
                         Header *header = (Header *)buffer.data();
                         if (header->identifier != *(uint32_t *)"GEKX")
                         {
-                            throw InvalidModelIdentifier("Unknown model file identifier encountered");
+                            throw InvalidLevelIdentifier("Unknown level file identifier encountered");
                         }
 
-                        if (header->type != 0)
+                        if (header->type != 3)
                         {
-                            throw InvalidModelType("Unsupported model type encountered");
+                            throw InvalidLevelType("Unsupported level type encountered");
                         }
 
-                        if (header->version != 6)
+                        if (header->version != 1)
                         {
-                            throw InvalidModelVersion("Unsupported model version encountered");
+                            throw InvalidLevelVersion("Unsupported level version encountered");
                         }
 
-                        model.boundingBox = header->boundingBox;
-                        loadPool.enqueue([this, name = name, fileName, &model](void) -> void
+                        loadPool.enqueue([this, name = name, fileName, &level](void) -> void
                         {
                             std::vector<uint8_t> buffer;
                             FileSystem::Load(fileName, buffer);
 
                             Header *header = (Header *)buffer.data();
-                            model.partList.resize(header->partCount);
-                            uint8_t *bufferData = (uint8_t *)&header->partList[header->partCount];
+
+                            uint8_t *bufferData = (uint8_t *)&header[1];
+                            auto instanceData = (Level::Instance *)bufferData;
+                            level.instanceList.resize(header->instanceCount);
+                            std::copy(instanceData, &instanceData[header->instanceCount], level.instanceList.data());
+
+                            bufferData = (uint8_t *)&instanceData[header->instanceCount];
+                            auto partIndexData = (uint32_t *)bufferData;
+                            level.partIndexList.resize(header->partIndexCount);
+                            std::copy(partIndexData, &partIndexData[header->partIndexCount], level.partIndexList.data());
+
+                            level.partList.resize(header->partCount);
+                            bufferData = (uint8_t *)&partIndexData[header->partIndexCount];
+                            auto partData = (Header::Part *)bufferData;
+                            bufferData = (uint8_t *)&partData[header->partCount];
                             for (uint32_t partIndex = 0; partIndex < header->partCount; ++partIndex)
                             {
-                                Header::Part &partHeader = header->partList[partIndex];
-                                Model::Part &part = model.partList[partIndex];
+                                const Header::Part &partHeader = partData[partIndex];
+                                Level::Part &part = level.partList[partIndex];
                                 part.material = resources->loadMaterial(partHeader.name);
+                                part.boundingBox = partHeader.boundingBox;
 
                                 Video::Buffer::Description indexBufferDescription;
                                 indexBufferDescription.format = Video::Format::R16_UINT;
                                 indexBufferDescription.count = partHeader.indexCount;
                                 indexBufferDescription.type = Video::Buffer::Description::Type::Index;
-                                part.indexBuffer = resources->createBuffer(String::Format(L"model:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
+                                part.indexBuffer = resources->createBuffer(String::Format(L"level:indices:%v:%v", name, partIndex), indexBufferDescription, reinterpret_cast<uint16_t *>(bufferData));
                                 bufferData += (sizeof(uint16_t) * partHeader.indexCount);
 
                                 Video::Buffer::Description vertexBufferDescription;
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
                                 vertexBufferDescription.count = partHeader.vertexCount;
                                 vertexBufferDescription.type = Video::Buffer::Description::Type::Vertex;
-                                part.vertexBufferList[0] = resources->createBuffer(String::Format(L"model:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[0] = resources->createBuffer(String::Format(L"level:positions:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float2);
-                                part.vertexBufferList[1] = resources->createBuffer(String::Format(L"model:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
+                                part.vertexBufferList[1] = resources->createBuffer(String::Format(L"level:texcoords:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float2 *>(bufferData));
                                 bufferData += (sizeof(Math::Float2) * partHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[2] = resources->createBuffer(String::Format(L"model:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[2] = resources->createBuffer(String::Format(L"level:tangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[3] = resources->createBuffer(String::Format(L"model:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[3] = resources->createBuffer(String::Format(L"level:bitangents:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                 vertexBufferDescription.stride = sizeof(Math::Float3);
-                                part.vertexBufferList[4] = resources->createBuffer(String::Format(L"model:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
+                                part.vertexBufferList[4] = resources->createBuffer(String::Format(L"level:normals:%v:%v", name, partIndex), vertexBufferDescription, reinterpret_cast<Math::Float3 *>(bufferData));
                                 bufferData += (sizeof(Math::Float3) * partHeader.vertexCount);
 
                                 part.indexCount = partHeader.indexCount;
@@ -268,7 +286,7 @@ namespace Gek
                     });
                 }
 
-                data.model = &pair.first->second;
+                data.level = &pair.first->second;
             });
         }
 
@@ -276,7 +294,7 @@ namespace Gek
         void onLoadBegin(String const &populationName)
         {
             loadPool.clear();
-            modelMap.clear();
+            levelMap.clear();
             clear();
         }
 
@@ -309,7 +327,7 @@ namespace Gek
         }
 
         using InstanceList = concurrency::concurrent_vector<Math::Float4x4>;
-        using PartMap = concurrency::concurrent_unordered_map<const Model::Part *, InstanceList>;
+        using PartMap = concurrency::concurrent_unordered_map<const Level::Part *, InstanceList>;
         using MaterialMap = concurrency::concurrent_unordered_map<MaterialHandle, PartMap>;
 
         // Plugin::Renderer Slots
@@ -318,20 +336,31 @@ namespace Gek
             GEK_REQUIRE(renderer);
 
             MaterialMap materialMap;
-            list([&](Plugin::Entity * const entity, auto &data, auto &modelComponent, auto &transformComponent) -> void
+            list([&](Plugin::Entity * const entity, auto &data, auto &levelComponent, auto &transformComponent) -> void
             {
-                Model &model = *data.model;
+                Level &level = *data.level;
                 Math::Float4x4 matrix(transformComponent.getMatrix());
-                Shapes::OrientedBox orientedBox(model.boundingBox, matrix);
-                if (viewFrustum.isVisible(orientedBox))
+                for (auto &instance : level.instanceList)
                 {
-                    auto modelViewMatrix(matrix * viewMatrix);
-                    concurrency::parallel_for_each(std::begin(model.partList), std::end(model.partList), [&](const Model::Part &part) -> void
+                    auto scale = instance.transform.getScaling();
+                    auto transform(matrix * instance.transform);
+                    for (uint32_t partIndexIndex = 0; partIndexIndex < instance.partIndexCount; partIndexIndex++)
                     {
-                        auto &partMap = materialMap[part.material];
-                        auto &instanceList = partMap[&part];
-                        instanceList.push_back(modelViewMatrix);
-                    });
+                        auto partIndex = level.partIndexList[partIndexIndex];
+                        auto &part = level.partList[partIndex];
+                        Shapes::OrientedBox orientedBox(part.boundingBox, transform);
+                        orientedBox.halfsize *= instance.scale;
+                        if (viewFrustum.isVisible(orientedBox))
+                        {
+                            auto levelViewMatrix(transform * viewMatrix);
+                            concurrency::parallel_for_each(std::begin(level.partList), std::end(level.partList), [&](const Level::Part &part) -> void
+                            {
+                                auto &partMap = materialMap[part.material];
+                                auto &instanceList = partMap[&part];
+                                instanceList.push_back(levelViewMatrix);
+                            });
+                        }
+                    }
                 }
             });
 
@@ -345,9 +374,9 @@ namespace Gek
                 {
                     uint32_t instanceStart = 0;
                     uint32_t instanceCount = 0;
-                    const Model::Part *part = nullptr;
+                    const Level::Part *part = nullptr;
 
-                    DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Model::Part *part = nullptr)
+                    DrawData(uint32_t instanceStart = 0, uint32_t instanceCount = 0, const Level::Part *part = nullptr)
                         : instanceStart(instanceStart)
                         , instanceCount(instanceCount)
                         , part(part)
@@ -396,11 +425,11 @@ namespace Gek
                 instanceDescription.type = Video::Buffer::Description::Type::Vertex;
                 instanceDescription.flags = Video::Buffer::Description::Flags::Mappable;
                 instanceBuffer = videoDevice->createBuffer(instanceDescription);
-                instanceBuffer->setName(L"model:instances");
+                instanceBuffer->setName(L"level:instances");
             }
         }
     };
 
-    GEK_REGISTER_CONTEXT_USER(Model)
-    GEK_REGISTER_CONTEXT_USER(ModelProcessor)
+    GEK_REGISTER_CONTEXT_USER(Level)
+    GEK_REGISTER_CONTEXT_USER(LevelProcessor)
 }; // namespace Gek
