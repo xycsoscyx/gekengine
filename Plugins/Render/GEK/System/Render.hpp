@@ -538,7 +538,7 @@ namespace Gek
         using PipelineStateHandle = Handle<uint16_t, __LINE__>;
         using SamplerStateHandle = Handle<uint8_t, __LINE__>;
         using ProgramHandle = Handle<uint16_t, __LINE__>;
-        using CommandListHandle = Handle<uint16_t, __LINE__>;
+        using RenderListHandle = Handle<uint16_t, __LINE__>;
         using ResourceHandle = Handle<uint32_t, __LINE__>;
 
         GEK_INTERFACE(Device)
@@ -551,7 +551,7 @@ namespace Gek
                 uint32_t sampleQuality = 0;
             };
 
-            GEK_INTERFACE(CommandQueue)
+            GEK_INTERFACE(RenderQueue)
             {
                 struct Pipeline
                 {
@@ -562,7 +562,7 @@ namespace Gek
                     };
                 }; // Pipeline
 
-                virtual ~CommandQueue(void) = default;
+                virtual ~RenderQueue(void) = default;
 
                 virtual void generateMipMaps(ResourceHandle texture) = 0;
                 virtual void resolveSamples(ResourceHandle destination, ResourceHandle source) = 0;
@@ -627,9 +627,9 @@ namespace Gek
             virtual void updateResource(ResourceHandle buffer, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
-            virtual CommandQueuePtr createCommandQueue(void) = 0;
-            virtual CommandListHandle createCommandList(CommandQueue *commandQueue) = 0;
-            virtual void executeCommandList(CommandListHandle commandList) = 0;
+            virtual RenderQueuePtr createRenderQueue(void) = 0;
+            virtual RenderListHandle createRenderList(RenderQueue *renderQueue) = 0;
+            virtual void executeRenderList(RenderListHandle renderList) = 0;
 
             virtual void present(bool waitForVerticalSync) = 0;
         };

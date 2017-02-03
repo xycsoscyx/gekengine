@@ -606,8 +606,8 @@ namespace Gek
             DataCache<Render::ResourceHandle, CComPtr<ID3D11DepthStencilView>> depthStencilViewCache;
             DataCache<Render::SamplerStateHandle, CComPtr<ID3D11SamplerState>> samplerStateCache;
 
-            class CommandQueue
-                : public Render::Device::CommandQueue
+            class RenderQueue
+                : public Render::Device::RenderQueue
             {
             public:
                 Device *device = nullptr;
@@ -621,7 +621,7 @@ namespace Gek
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
 
             public:
-                CommandQueue(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
+                RenderQueue(Device *device, CComPtr<ID3D11DeviceContext> &d3dDeviceContext)
                     : device(device)
                     , d3dDeviceContext(d3dDeviceContext)
                     , samplerStateCache(device->samplerStateCache)
@@ -634,7 +634,7 @@ namespace Gek
                     GEK_REQUIRE(d3dDeviceContext);
                 }
 
-                // Render::Device::CommandQueue
+                // Render::Device::RenderQueue
                 void generateMipMaps(Render::ResourceHandle texture)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
@@ -1759,42 +1759,42 @@ namespace Gek
                 return Render::ResourceHandle();
             }
 
-            Render::Device::CommandQueuePtr createCommandQueue(void)
+            Render::Device::RenderQueuePtr createRenderQueue(void)
             {
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
                 HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
                 if (!d3dDeviceContext)
                 {
-                    throw Render::CreateObjectFailed("Unable to create deferred context");
+                    throw Render::CreateObjectFailed("Unable to create render queue");
                 }
 
-                return std::make_unique<CommandQueue>(this, d3dDeviceContext);
+                return std::make_unique<RenderQueue>(this, d3dDeviceContext);
             }
 
-            DataCache<Render::CommandListHandle, CComPtr<ID3D11CommandList>> commandListCache;
-            Render::CommandListHandle createCommandList(Render::Device::CommandQueue *deviceCommandQueue)
+            DataCache<Render::RenderListHandle, CComPtr<ID3D11CommandList>> renderListCache;
+            Render::RenderListHandle createRenderList(Render::Device::RenderQueue *baseRenderQueue)
             {
                 GEK_REQUIRE(d3dDevice);
-                GEK_REQUIRE(deviceCommandQueue);
+                GEK_REQUIRE(baseRenderQueue);
 
-                CommandQueue *commandQueue = dynamic_cast<CommandQueue *>(deviceCommandQueue);
-                if (!commandQueue)
+                RenderQueue *renderQueue = dynamic_cast<RenderQueue *>(baseRenderQueue);
+                if (!renderQueue)
                 {
                 }
 
                 CComPtr<ID3D11CommandList> commandList;
-                HRESULT resultValue = commandQueue->d3dDeviceContext->FinishCommandList(false, &commandList);
+                HRESULT resultValue = renderQueue->d3dDeviceContext->FinishCommandList(false, &commandList);
                 if (FAILED(resultValue) || !commandList)
                 {
-                    throw Render::CreateObjectFailed("Unable to create command list");
+                    throw Render::CreateObjectFailed("Unable to create render list");
                 }
 
-                return commandListCache(std::move(commandList));
+                return renderListCache(std::move(commandList));
             }
 
-            void executeCommandList(Render::CommandListHandle commandListHandle)
+            void executeRenderList(Render::RenderListHandle RenderListHandle)
             {
-                auto commandList = commandListCache(commandListHandle);
+                auto commandList = renderListCache(RenderListHandle);
                 if (commandList)
                 {
                     d3dDeviceContext->ExecuteCommandList(commandList, false);
