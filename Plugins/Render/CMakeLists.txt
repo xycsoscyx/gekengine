@@ -7,9 +7,11 @@ file(GLOB HEADERS "GEK/${ProjectID}/*.hpp")
 file(GLOB SOURCES "*.cpp")
 add_library(${ProjectID} SHARED ${SOURCES} ${HEADERS})
 
-target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} "${CMAKE_CURRENT_SOURCE_DIR}/../system" "${CMAKE_CURRENT_SOURCE_DIR}/../engine" "${CMAKE_CURRENT_SOURCE_DIR}/../components")
+set_property(TARGET ${ProjectID} PROPERTY WINDOWS_EXPORT_ALL_SYMBOLS True)
 
-target_link_libraries(${ProjectID} Math Shapes Utility GUI nano-signal-slot)
+target_include_directories(${ProjectID} BEFORE PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+
+target_link_libraries(${ProjectID} Math Utility nano-signal-slot DirectXTex glbinding)
 
 set_target_properties(${ProjectID}
     PROPERTIES
