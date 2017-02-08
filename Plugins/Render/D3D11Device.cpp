@@ -645,7 +645,8 @@ namespace Gek
                 CComPtr<ID3D11InputLayout> inputLayout;
                 CComPtr<ID3D11VertexShader> vertexShader;
                 CComPtr<ID3D11PixelShader> pixelShader;
-                Render::PrimitiveType primitiveType = Render::PrimitiveType::TriangleList;
+                D3D11_PRIMITIVE_TOPOLOGY primitiveTopology;
+                uint32_t sampleMask = 0x0;
 
                 uint32_t referenceCount = 0;
                 STDMETHODIMP QueryInterface(REFIID interfaceID, void **returnObject)
@@ -782,9 +783,21 @@ namespace Gek
                     d3dDeviceContext->RSSetScissorRects(rectangleList.size(), (D3D11_RECT *)rectangleList.data());
                 }
 
-                void bindPipelineState(Render::PipelineStateHandle pipelineState)
+                void bindPipelineState(Render::PipelineStateHandle pipelineStateHandle)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
+
+                    auto pipelineState = device->pipelineStateCache.get(pipelineStateHandle);
+                    if (pipelineState)
+                    {
+                        d3dDeviceContext->RSSetState(pipelineState->rasterizerState);
+                        d3dDeviceContext->OMSetDepthStencilState(pipelineState->depthStencilState, 0x0);
+                        d3dDeviceContext->OMSetBlendState(pipelineState->blendState, Math::Float4::Zero.data, pipelineState->sampleMask);
+                        d3dDeviceContext->IASetInputLayout(pipelineState->inputLayout);
+                        d3dDeviceContext->VSSetShader(pipelineState->vertexShader, nullptr, 0);
+                        d3dDeviceContext->PSSetShader(pipelineState->pixelShader, nullptr, 0);
+                        d3dDeviceContext->IASetPrimitiveTopology(pipelineState->primitiveTopology);
+                    }
                 }
 
                 void bindSamplerStateList(const std::vector<Render::SamplerStateHandle> &list, uint32_t firstStage, uint8_t pipelineFlags)
@@ -1285,7 +1298,8 @@ namespace Gek
                     d3dDevice->CreateInputLayout(inputElementDescriptionList.data(), inputElementDescriptionList.size(), pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), &pipelineState->inputLayout);
                     d3dDevice->CreateVertexShader(pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
                     d3dDevice->CreatePixelShader(pipelineStateInformation.compiledPixelShader.data(), pipelineStateInformation.compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
-                    pipelineState->primitiveType = pipelineStateInformation.primitiveType;
+                    pipelineState->primitiveTopology = DirectX::TopologList[static_cast<uint8_t>(pipelineStateInformation.primitiveType)];
+                    pipelineState->sampleMask = pipelineStateInformation.sampleMask;
                     return pipelineState;
                 });
             }
