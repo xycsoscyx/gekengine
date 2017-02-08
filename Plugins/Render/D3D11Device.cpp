@@ -2,10 +2,12 @@
 
 #include "GEK/Utility/Exceptions.hpp"
 #include "GEK/Utility/String.hpp"
-#include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/ContextUser.hpp"
-#include "GEK/System/Render.hpp"
-#include "GEK/System/Window.hpp"
+#include "GEK/Utility/FileSystem.hpp"
+#include "GEK/Utility/ThreadPool.hpp"
+#include "GEK/Utility/Hash.hpp"
+#include "GEK/Render/Device.hpp"
+#include "GEK/Render/Window.hpp"
 #include <atlbase.h>
 #include <d3d11.h>
 #include <dxgi1_3.h>
@@ -547,19 +549,15 @@ namespace Gek
         class DataCache
         {
         private:
-            uint32_t nextHandle = 0;
-            std::unordered_map<size_t, HANDLE> hashMap;
-            std::unordered_map<HANDLE, TYPE> dataMap;
+            std::unordered_map<HANDLE, CComPtr<TYPE>> dataMap;
 
         public:
-            HANDLE operator () (TYPE &&data)
+            void set(HANDLE handle, CComPtr<TYPE> &data)
             {
-                HANDLE handle(InterlockedIncrement(&nextHandle));
-                dataMap.insert(std::make_pair(handle, std::move(data)));
-                return handle;
+                dataMap[handle] = data;
             }
 
-            TYPE operator () (HANDLE handle)
+            TYPE * get(HANDLE handle)
             {
                 if (!handle)
                 {
@@ -567,28 +565,68 @@ namespace Gek
                 }
 
                 auto dataSearch = dataMap.find(handle);
-                return (dataSearch == dataMap.end() ? nullptr : dataSearch->second.p);
+                return (dataSearch == std::end(dataMap) ? nullptr : dataSearch->second.p);
             }
         };
 
         template <typename HANDLE, typename TYPE>
-        struct ListCache
+        class HashCache
+            : public DataCache<HANDLE, TYPE>
         {
-            DataCache<HANDLE, CComPtr<TYPE>> &dataCache;
+        private:
+            uint32_t nextHandle = 0;
+            std::unordered_map<size_t, HANDLE> hashMap;
+
+        public:
+            HANDLE insert(size_t hash, std::function<CComPtr<TYPE>(HANDLE)> &&onLoadRequired)
+            {
+                auto hashSearch = hashMap.find(hash);
+                if (hashSearch != hashMap.end())
+                {
+                    return hashSearch->second;
+                }
+
+                auto handle(InterlockedIncrement(&nextHandle));
+                hashMap[hash] = handle;
+                set(handle, onLoadRequired(handle));
+                return handle;
+            }
+        };
+
+        template <typename HANDLE, typename TYPE>
+        class UniqueCache
+            : public DataCache<HANDLE, TYPE>
+        {
+        private:
+            uint32_t nextHandle = 0;
+
+        public:
+            HANDLE insert(CComPtr<TYPE> &data)
+            {
+                auto handle(InterlockedIncrement(&nextHandle));
+                set(handle, data);
+                return handle;
+            }
+        };
+
+        template <typename HANDLE, typename TYPE>
+        struct FunctionCache
+        {
+            DataCache<HANDLE, TYPE> &dataCache;
             std::vector<TYPE *> objectList;
 
-            ListCache(DataCache<HANDLE, CComPtr<TYPE>> &dataCache)
+            FunctionCache(DataCache<HANDLE, TYPE> &dataCache)
                 : dataCache(dataCache)
             {
             }
 
-            TYPE * const * const operator () (const std::vector<HANDLE> &inputList)
+            TYPE * const * const update(const std::vector<HANDLE> &inputList)
             {
                 size_t listCount = inputList.size();
                 objectList.reserve(std::max(listCount, objectList.size()));
                 for (auto &handle : inputList)
                 {
-                    objectList.push_back(dataCache(handle));
+                    objectList.push_back(dataCache.get(handle));
                 }
 
                 return objectList.data();
@@ -598,25 +636,68 @@ namespace Gek
         GEK_CONTEXT_USER(Device, Window *, Render::Device::Description)
             , public Render::Debug::Device
         {
-            DataCache<Render::ResourceHandle, CComPtr<ID3D11Resource>> resourceCache;
-            DataCache<Render::ResourceHandle, CComPtr<ID3D11Buffer>> bufferCache;
-            DataCache<Render::ResourceHandle, CComPtr<ID3D11ShaderResourceView>> shaderResourceViewCache;
-            DataCache<Render::ResourceHandle, CComPtr<ID3D11UnorderedAccessView>> unorderedAccessViewCache;
-            DataCache<Render::ResourceHandle, CComPtr<ID3D11RenderTargetView>> renderTargetViewCache;
-            DataCache<Render::ResourceHandle, CComPtr<ID3D11DepthStencilView>> depthStencilViewCache;
-            DataCache<Render::SamplerStateHandle, CComPtr<ID3D11SamplerState>> samplerStateCache;
+            struct PipelineState
+                : public IUnknown
+            {
+                CComPtr<ID3D11RasterizerState> rasterizerState;
+                CComPtr<ID3D11DepthStencilState> depthStencilState;
+                CComPtr<ID3D11BlendState> blendState;
+                CComPtr<ID3D11InputLayout> inputLayout;
+                CComPtr<ID3D11VertexShader> vertexShader;
+                CComPtr<ID3D11PixelShader> pixelShader;
+                Render::PrimitiveType primitiveType = Render::PrimitiveType::TriangleList;
+
+                uint32_t referenceCount = 0;
+                STDMETHODIMP QueryInterface(REFIID interfaceID, void **returnObject)
+                {
+                    if (IsEqualIID(interfaceID, IID_IUnknown))
+                    {
+                        (*returnObject) = static_cast<IUnknown *>(this);
+                        return S_OK;
+                    }
+
+                    return E_NOINTERFACE;
+                }
+
+                STDMETHODIMP_(ULONG) AddRef(void)
+                {
+                    return InterlockedIncrement(&referenceCount);
+                }
+
+                STDMETHODIMP_(ULONG) Release(void)
+                {
+                    auto returnValue = InterlockedDecrement(&referenceCount);
+                    if (returnValue == 0)
+                    {
+                        delete this;
+                    }
+
+                    return returnValue;
+                }
+            };
+
+            HashCache<Render::ResourceHandle, ID3D11Resource> resourceCache;
+            DataCache<Render::ResourceHandle, ID3D11Buffer> bufferCache;
+            DataCache<Render::ResourceHandle, ID3D11ShaderResourceView> shaderResourceViewCache;
+            DataCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessViewCache;
+            DataCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetViewCache;
+            DataCache<Render::ResourceHandle, ID3D11DepthStencilView> depthStencilViewCache;
+            HashCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
+            HashCache<Render::PipelineStateHandle, PipelineState> pipelineStateCache;
+            UniqueCache<Render::RenderListHandle, ID3D11CommandList> renderListCache;
+            ThreadPool resourceLoadPool;
 
             class RenderQueue
                 : public Render::Device::RenderQueue
             {
             public:
                 Device *device = nullptr;
-                ListCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
-                ListCache<Render::ResourceHandle, ID3D11Buffer> constantBufferCache;
-                ListCache<Render::ResourceHandle, ID3D11ShaderResourceView> resourceCache;
-                ListCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessCache;
-                ListCache<Render::ResourceHandle, ID3D11Buffer> vertexBufferCache;
-                ListCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetCache;
+                FunctionCache<Render::SamplerStateHandle, ID3D11SamplerState> samplerStateCache;
+                FunctionCache<Render::ResourceHandle, ID3D11Buffer> constantBufferCache;
+                FunctionCache<Render::ResourceHandle, ID3D11ShaderResourceView> resourceCache;
+                FunctionCache<Render::ResourceHandle, ID3D11UnorderedAccessView> unorderedAccessCache;
+                FunctionCache<Render::ResourceHandle, ID3D11Buffer> vertexBufferCache;
+                FunctionCache<Render::ResourceHandle, ID3D11RenderTargetView> renderTargetCache;
 
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
 
@@ -639,14 +720,14 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->GenerateMips(device->shaderResourceViewCache(texture));
+                    d3dDeviceContext->GenerateMips(device->shaderResourceViewCache.get(texture));
                 }
 
                 void resolveSamples(Render::ResourceHandle destination, Render::ResourceHandle source)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->ResolveSubresource(device->resourceCache(destination), 0, device->resourceCache(source), 0, DXGI_FORMAT_UNKNOWN);
+                    d3dDeviceContext->ResolveSubresource(device->resourceCache.get(destination), 0, device->resourceCache.get(source), 0, DXGI_FORMAT_UNKNOWN);
                 }
 
                 void clearState(void)
@@ -660,28 +741,28 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->ClearUnorderedAccessViewFloat(device->unorderedAccessViewCache(object), value.data);
+                    d3dDeviceContext->ClearUnorderedAccessViewFloat(device->unorderedAccessViewCache.get(object), value.data);
                 }
 
                 void clearUnorderedAccess(Render::ResourceHandle object, Math::UInt4 const &value)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->ClearUnorderedAccessViewUint(device->unorderedAccessViewCache(object), value.data);
+                    d3dDeviceContext->ClearUnorderedAccessViewUint(device->unorderedAccessViewCache.get(object), value.data);
                 }
 
                 void clearRenderTarget(Render::ResourceHandle renderTarget, Math::Float4 const &clearColor)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->ClearRenderTargetView(device->renderTargetViewCache(renderTarget), clearColor.data);
+                    d3dDeviceContext->ClearRenderTargetView(device->renderTargetViewCache.get(renderTarget), clearColor.data);
                 }
 
                 void clearDepthStencilTarget(Render::ResourceHandle depthBuffer, uint32_t flags, float clearDepth, uint32_t clearStencil)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->ClearDepthStencilView(device->depthStencilViewCache(depthBuffer),
+                    d3dDeviceContext->ClearDepthStencilView(device->depthStencilViewCache.get(depthBuffer),
                         ((flags & Render::ClearFlags::Depth ? D3D11_CLEAR_DEPTH : 0) |
                         (flags & Render::ClearFlags::Stencil ? D3D11_CLEAR_STENCIL : 0)),
                         clearDepth, clearStencil);
@@ -712,12 +793,12 @@ namespace Gek
 
                     if (pipelineFlags & Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetSamplers(firstStage, list.size(), samplerStateCache(list));
+                        d3dDeviceContext->VSSetSamplers(firstStage, list.size(), samplerStateCache.update(list));
                     }
 
                     if (pipelineFlags & Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetSamplers(firstStage, list.size(), samplerStateCache(list));
+                        d3dDeviceContext->PSSetSamplers(firstStage, list.size(), samplerStateCache.update(list));
                     }
                 }
 
@@ -727,12 +808,12 @@ namespace Gek
 
                     if (pipelineFlags & Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetConstantBuffers(firstStage, list.size(), constantBufferCache(list));
+                        d3dDeviceContext->VSSetConstantBuffers(firstStage, list.size(), constantBufferCache.update(list));
                     }
 
                     if (pipelineFlags & Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetConstantBuffers(firstStage, list.size(), constantBufferCache(list));
+                        d3dDeviceContext->PSSetConstantBuffers(firstStage, list.size(), constantBufferCache.update(list));
                     }
                 }
 
@@ -742,12 +823,12 @@ namespace Gek
 
                     if (pipelineFlags & Pipeline::Vertex)
                     {
-                        d3dDeviceContext->VSSetShaderResources(firstStage, list.size(), resourceCache(list));
+                        d3dDeviceContext->VSSetShaderResources(firstStage, list.size(), resourceCache.update(list));
                     }
 
                     if (pipelineFlags & Pipeline::Pixel)
                     {
-                        d3dDeviceContext->PSSetShaderResources(firstStage, list.size(), resourceCache(list));
+                        d3dDeviceContext->PSSetShaderResources(firstStage, list.size(), resourceCache.update(list));
                     }
                 }
 
@@ -755,29 +836,29 @@ namespace Gek
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, list.size(), unorderedAccessCache(list), countList);
+                    d3dDeviceContext->OMSetRenderTargetsAndUnorderedAccessViews(D3D11_KEEP_RENDER_TARGETS_AND_DEPTH_STENCIL, nullptr, nullptr, firstStage, list.size(), unorderedAccessCache.update(list), countList);
                 }
 
                 void bindIndexBuffer(Render::ResourceHandle indexBuffer, uint32_t offset)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    DXGI_FORMAT format = DXGI_FORMAT_UNKNOWN;// DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
-                    d3dDeviceContext->IASetIndexBuffer(device->bufferCache(indexBuffer), format, offset);
+                    DXGI_FORMAT format = DXGI_FORMAT_R16_UINT;// DirectX::BufferFormatList[static_cast<uint8_t>(indexBuffer->getDescription().format)];
+                    d3dDeviceContext->IASetIndexBuffer(device->bufferCache.get(indexBuffer), format, offset);
                 }
 
                 void bindVertexBufferList(const std::vector<Render::ResourceHandle> &list, uint32_t firstSlot, uint32_t *offsetList)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->IASetVertexBuffers(firstSlot, list.size(), vertexBufferCache(list), nullptr, offsetList);
+                    d3dDeviceContext->IASetVertexBuffers(firstSlot, list.size(), vertexBufferCache.update(list), nullptr, offsetList);
                 }
 
                 void bindRenderTargetList(const std::vector<Render::ResourceHandle> &list, Render::ResourceHandle depthBuffer)
                 {
                     GEK_REQUIRE(d3dDeviceContext);
 
-                    d3dDeviceContext->OMSetRenderTargets(list.size(), renderTargetCache(list), nullptr);
+                    d3dDeviceContext->OMSetRenderTargets(list.size(), renderTargetCache.update(list), nullptr);
                 }
 
                 void drawPrimitive(uint32_t vertexCount, uint32_t firstVertex)
@@ -814,6 +895,27 @@ namespace Gek
 
                     d3dDeviceContext->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
                 }
+
+                void drawInstancedPrimitive(Render::ResourceHandle bufferArguments)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    
+                    d3dDeviceContext->DrawInstancedIndirect(device->bufferCache.get(bufferArguments), 0);
+                }
+
+                void drawInstancedIndexedPrimitive(Render::ResourceHandle bufferArguments)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    
+                    d3dDeviceContext->DrawIndexedInstancedIndirect(device->bufferCache.get(bufferArguments), 0);
+                }
+
+                void dispatch(Render::ResourceHandle bufferArguments)
+                {
+                    GEK_REQUIRE(d3dDeviceContext);
+                    
+                    d3dDeviceContext->DispatchIndirect(device->bufferCache.get(bufferArguments), 0);
+                }
             };
 
         public:
@@ -829,6 +931,7 @@ namespace Gek
                 : ContextRegistration(context)
                 , window(window)
                 , isChildWindow(GetParent((HWND)window->getBaseWindow()) != nullptr)
+                , resourceLoadPool(1)
             {
                 GEK_REQUIRE(window);
 
@@ -1036,7 +1139,7 @@ namespace Gek
                 GEK_REQUIRE(dxgiSwapChain);
 
                 d3dDeviceContext->ClearState();
-                
+
                 HRESULT resultValue = dxgiSwapChain->ResizeBuffers(0, 0, 0, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH);
                 if (FAILED(resultValue))
                 {
@@ -1169,56 +1272,49 @@ namespace Gek
 
                 return inputElementDescriptionList;
             }
-            
-            struct PipelineState
-            {
-                CComPtr<ID3D11RasterizerState> rasterizerState;
-                CComPtr<ID3D11DepthStencilState> depthStencilState;
-                CComPtr<ID3D11BlendState> blendState;
-                CComPtr<ID3D11InputLayout> inputLayout;
-                CComPtr<ID3D11VertexShader> vertexShader;
-                CComPtr<ID3D11PixelShader> pixelShader;
-                Render::PrimitiveType primitiveType = Render::PrimitiveType::TriangleList;
-            };
 
-            DataCache<Render::PipelineStateHandle, std::unique_ptr<PipelineState>> pipelineStateCache;
             Render::PipelineStateHandle createPipelineState(const Render::PipelineStateInformation &pipelineStateInformation)
             {
-                auto pipelineState(std::make_unique<PipelineState>());
-                pipelineState->rasterizerState = createRasterizerState(pipelineStateInformation.rasterizerStateInformation);
-                pipelineState->depthStencilState = createDepthState(pipelineStateInformation.depthStateInformation);
-                pipelineState->blendState = createBlendState(pipelineStateInformation.blendStateInformation);
-                auto inputElementDescriptionList = getInputLayout(pipelineStateInformation.inputElementList);
-                d3dDevice->CreateInputLayout(inputElementDescriptionList.data(), inputElementDescriptionList.size(), pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), &pipelineState->inputLayout);
-                d3dDevice->CreateVertexShader(pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
-                d3dDevice->CreatePixelShader(pipelineStateInformation.compiledPixelShader.data(), pipelineStateInformation.compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
-                pipelineState->primitiveType = pipelineStateInformation.primitiveType;
-                return pipelineStateCache(std::move(pipelineState));
+                return pipelineStateCache.insert(pipelineStateInformation.getHash(), [this, pipelineStateInformation](Render::PipelineStateHandle) -> CComPtr<PipelineState>
+                {
+                    CComPtr<PipelineState> pipelineState(new PipelineState());
+                    pipelineState->rasterizerState = createRasterizerState(pipelineStateInformation.rasterizerStateInformation);
+                    pipelineState->depthStencilState = createDepthState(pipelineStateInformation.depthStateInformation);
+                    pipelineState->blendState = createBlendState(pipelineStateInformation.blendStateInformation);
+                    auto inputElementDescriptionList = getInputLayout(pipelineStateInformation.inputElementList);
+                    d3dDevice->CreateInputLayout(inputElementDescriptionList.data(), inputElementDescriptionList.size(), pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), &pipelineState->inputLayout);
+                    d3dDevice->CreateVertexShader(pipelineStateInformation.compiledVertexShader.data(), pipelineStateInformation.compiledVertexShader.size(), nullptr, &pipelineState->vertexShader);
+                    d3dDevice->CreatePixelShader(pipelineStateInformation.compiledPixelShader.data(), pipelineStateInformation.compiledPixelShader.size(), nullptr, &pipelineState->pixelShader);
+                    pipelineState->primitiveType = pipelineStateInformation.primitiveType;
+                    return pipelineState;
+                });
             }
 
             Render::SamplerStateHandle createSamplerState(const Render::SamplerStateInformation &samplerStateInformation)
             {
                 GEK_REQUIRE(d3dDevice);
 
-                D3D11_SAMPLER_DESC samplerDescription;
-                samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeU)];
-                samplerDescription.AddressV = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeV)];
-                samplerDescription.AddressW = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeW)];
-                samplerDescription.MipLODBias = samplerStateInformation.mipLevelBias;
-                samplerDescription.MaxAnisotropy = samplerStateInformation.maximumAnisotropy;
-                samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(samplerStateInformation.comparisonFunction)];
-                samplerDescription.BorderColor[0] = samplerStateInformation.borderColor.r;
-                samplerDescription.BorderColor[1] = samplerStateInformation.borderColor.g;
-                samplerDescription.BorderColor[2] = samplerStateInformation.borderColor.b;
-                samplerDescription.BorderColor[3] = samplerStateInformation.borderColor.a;
-                samplerDescription.MinLOD = samplerStateInformation.minimumMipLevel;
-                samplerDescription.MaxLOD = samplerStateInformation.maximumMipLevel;
-                samplerDescription.Filter = DirectX::FilterList[static_cast<uint8_t>(samplerStateInformation.filterMode)];
+                return samplerStateCache.insert(samplerStateInformation.getHash(), [this, samplerStateInformation](Render::SamplerStateHandle) -> CComPtr<ID3D11SamplerState>
+                {
+                    D3D11_SAMPLER_DESC samplerDescription;
+                    samplerDescription.AddressU = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeU)];
+                    samplerDescription.AddressV = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeV)];
+                    samplerDescription.AddressW = DirectX::AddressModeList[static_cast<uint8_t>(samplerStateInformation.addressModeW)];
+                    samplerDescription.MipLODBias = samplerStateInformation.mipLevelBias;
+                    samplerDescription.MaxAnisotropy = samplerStateInformation.maximumAnisotropy;
+                    samplerDescription.ComparisonFunc = DirectX::ComparisonFunctionList[static_cast<uint8_t>(samplerStateInformation.comparisonFunction)];
+                    samplerDescription.BorderColor[0] = samplerStateInformation.borderColor.r;
+                    samplerDescription.BorderColor[1] = samplerStateInformation.borderColor.g;
+                    samplerDescription.BorderColor[2] = samplerStateInformation.borderColor.b;
+                    samplerDescription.BorderColor[3] = samplerStateInformation.borderColor.a;
+                    samplerDescription.MinLOD = samplerStateInformation.minimumMipLevel;
+                    samplerDescription.MaxLOD = samplerStateInformation.maximumMipLevel;
+                    samplerDescription.Filter = DirectX::FilterList[static_cast<uint8_t>(samplerStateInformation.filterMode)];
 
-                CComPtr<ID3D11SamplerState> samplerState;
-                d3dDevice->CreateSamplerState(&samplerDescription, &samplerState);
-
-                return Render::SamplerStateHandle();
+                    CComPtr<ID3D11SamplerState> samplerState;
+                    d3dDevice->CreateSamplerState(&samplerDescription, &samplerState);
+                    return samplerState;
+                });
             }
 
             Render::ResourceHandle createBuffer(const Render::BufferDescription &description, const void *data)
@@ -1226,146 +1322,158 @@ namespace Gek
                 GEK_REQUIRE(d3dDevice);
                 GEK_REQUIRE(description.count > 0);
 
-                uint32_t stride = description.stride;
-                if (description.format != Render::Format::Unknown)
+                return resourceCache.insert(CombineHashes(description.getHash(), GetHash(data)), [this, description, data](Render::ResourceHandle handle) -> CComPtr<ID3D11Resource>
                 {
-                    if (description.stride > 0)
+                    uint32_t stride = description.stride;
+                    if (description.format != Render::Format::Unknown)
                     {
-                        throw Render::InvalidParameter("Buffer requires only a format or an element stride");
+                        if (description.stride > 0)
+                        {
+                            throw Render::InvalidParameter("Buffer requires only a format or an element stride");
+                        }
+
+                        stride = DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
+                    }
+                    else if (description.stride == 0)
+                    {
+                        throw Render::InvalidParameter("Buffer requires either a format or an element stride");
                     }
 
-                    stride = DirectX::FormatStrideList[static_cast<uint8_t>(description.format)];
-                }
-                else if (description.stride > 0)
-                {
-                }
-                else
-                {
-                    throw Render::InvalidParameter("Buffer requires either a format or an element stride");
-                }
-
-                D3D11_BUFFER_DESC bufferDescription;
-                bufferDescription.ByteWidth = (stride * description.count);
-                switch (description.type)
-                {
-                case Render::BufferDescription::Type::Structured:
-                    bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
-                    bufferDescription.StructureByteStride = stride;
-                    bufferDescription.BindFlags = 0;
-                    break;
-
-                default:
-                    bufferDescription.MiscFlags = 0;
-                    bufferDescription.StructureByteStride = 0;
+                    D3D11_BUFFER_DESC bufferDescription;
+                    bufferDescription.ByteWidth = (stride * description.count);
                     switch (description.type)
                     {
-                    case Render::BufferDescription::Type::Vertex:
-                        bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+                    case Render::BufferDescription::Type::Structured:
+                        bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+                        bufferDescription.StructureByteStride = stride;
+                        bufferDescription.BindFlags = 0;
                         break;
 
-                    case Render::BufferDescription::Type::Index:
-                        bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
-                        break;
-
-                    case Render::BufferDescription::Type::Constant:
-                        bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+                    case Render::BufferDescription::Type::IndirectArguments:
+                        bufferDescription.MiscFlags = D3D11_RESOURCE_MISC_DRAWINDIRECT_ARGS;
+                        bufferDescription.StructureByteStride = stride;
+                        bufferDescription.BindFlags = 0;
                         break;
 
                     default:
-                        bufferDescription.BindFlags = 0;
-                        break;
+                        bufferDescription.MiscFlags = 0;
+                        bufferDescription.StructureByteStride = 0;
+                        switch (description.type)
+                        {
+                        case Render::BufferDescription::Type::Vertex:
+                            bufferDescription.BindFlags = D3D11_BIND_VERTEX_BUFFER;
+                            break;
+
+                        case Render::BufferDescription::Type::Index:
+                            bufferDescription.BindFlags = D3D11_BIND_INDEX_BUFFER;
+                            break;
+
+                        case Render::BufferDescription::Type::Constant:
+                            bufferDescription.BindFlags = D3D11_BIND_CONSTANT_BUFFER;
+                            break;
+
+                        default:
+                            bufferDescription.BindFlags = 0;
+                            break;
+                        };
                     };
-                };
 
-                if (data != nullptr)
-                {
-                    bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
-                    bufferDescription.CPUAccessFlags = 0;
-                }
-                else if (description.flags & Render::BufferDescription::Flags::Staging)
-                {
-                    bufferDescription.Usage = D3D11_USAGE_STAGING;
-                    bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
-                }
-                else if (description.flags & Render::BufferDescription::Flags::Mappable)
-                {
-                    bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
-                    bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
-                }
-                else
-                {
-                    bufferDescription.Usage = D3D11_USAGE_DEFAULT;
-                    bufferDescription.CPUAccessFlags = 0;
-                }
-
-                if (description.flags & Render::BufferDescription::Flags::Resource)
-                {
-                    bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
-                }
-
-                if (description.flags & Render::BufferDescription::Flags::UnorderedAccess)
-                {
-                    bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
-                }
-
-                CComPtr<ID3D11Buffer> d3dBuffer;
-                if (data == nullptr)
-                {
-                    HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
-                    if (FAILED(resultValue) || !d3dBuffer)
+                    if (data != nullptr)
                     {
-                        throw Render::CreateObjectFailed("Unable to dynamic buffer");
+                        bufferDescription.Usage = D3D11_USAGE_IMMUTABLE;
+                        bufferDescription.CPUAccessFlags = 0;
                     }
-                }
-                else
-                {
-                    D3D11_SUBRESOURCE_DATA resourceData;
-                    resourceData.pSysMem = data;
-                    resourceData.SysMemPitch = 0;
-                    resourceData.SysMemSlicePitch = 0;
-                    HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
-                    if (FAILED(resultValue) || !d3dBuffer)
+                    else if (description.flags & Render::BufferDescription::Flags::Staging)
                     {
-                        throw Render::CreateObjectFailed("Unable to create static buffer");
+                        bufferDescription.Usage = D3D11_USAGE_STAGING;
+                        bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_READ | D3D11_CPU_ACCESS_WRITE;
                     }
-                }
-
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Render::BufferDescription::Flags::Resource)
-                {
-                    D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
-                    viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
-                    viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = description.count;
-                    HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
-                    if (FAILED(resultValue) || !d3dShaderResourceView)
+                    else if (description.flags & Render::BufferDescription::Flags::Mappable)
                     {
-                        throw Render::CreateObjectFailed("Unable to create buffer shader resource view");
+                        bufferDescription.Usage = D3D11_USAGE_DYNAMIC;
+                        bufferDescription.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
                     }
-                }
-
-                CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Render::BufferDescription::Flags::UnorderedAccess)
-                {
-                    D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
-                    viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
-                    viewDescription.Buffer.FirstElement = 0;
-                    viewDescription.Buffer.NumElements = description.count;
-                    viewDescription.Buffer.Flags = (description.flags & Render::BufferDescription::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
-
-                    HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
-                    if (FAILED(resultValue) || !d3dUnorderedAccessView)
+                    else
                     {
-                        throw Render::CreateObjectFailed("Unable to create buffer unordered access view");
+                        bufferDescription.Usage = D3D11_USAGE_DEFAULT;
+                        bufferDescription.CPUAccessFlags = 0;
                     }
-                }
 
-                return Render::ResourceHandle();
+                    if (description.flags & Render::BufferDescription::Flags::Resource)
+                    {
+                        bufferDescription.BindFlags |= D3D11_BIND_SHADER_RESOURCE;
+                    }
+
+                    if (description.flags & Render::BufferDescription::Flags::UnorderedAccess)
+                    {
+                        bufferDescription.BindFlags |= D3D11_BIND_UNORDERED_ACCESS;
+                    }
+
+                    CComPtr<ID3D11Buffer> d3dBuffer;
+                    if (data == nullptr)
+                    {
+                        HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, nullptr, &d3dBuffer);
+                        if (FAILED(resultValue) || !d3dBuffer)
+                        {
+                            throw Render::CreateObjectFailed("Unable to dynamic buffer");
+                        }
+                    }
+                    else
+                    {
+                        D3D11_SUBRESOURCE_DATA resourceData;
+                        resourceData.pSysMem = data;
+                        resourceData.SysMemPitch = 0;
+                        resourceData.SysMemSlicePitch = 0;
+                        HRESULT resultValue = d3dDevice->CreateBuffer(&bufferDescription, &resourceData, &d3dBuffer);
+                        if (FAILED(resultValue) || !d3dBuffer)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create static buffer");
+                        }
+                    }
+
+                    bufferCache.set(handle, d3dBuffer);
+                    if (description.flags & Render::BufferDescription::Flags::Resource)
+                    {
+                        D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
+                        viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
+                        viewDescription.ViewDimension = D3D11_SRV_DIMENSION_BUFFER;
+                        viewDescription.Buffer.FirstElement = 0;
+                        viewDescription.Buffer.NumElements = description.count;
+
+                        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                        HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dBuffer, &viewDescription, &d3dShaderResourceView);
+                        if (FAILED(resultValue) || !d3dShaderResourceView)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create buffer shader resource view");
+                        }
+
+                        shaderResourceViewCache.set(handle, d3dShaderResourceView);
+                    }
+
+                    if (description.flags & Render::BufferDescription::Flags::UnorderedAccess)
+                    {
+                        D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
+                        viewDescription.Format = DirectX::BufferFormatList[static_cast<uint8_t>(description.format)];
+                        viewDescription.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+                        viewDescription.Buffer.FirstElement = 0;
+                        viewDescription.Buffer.NumElements = description.count;
+                        viewDescription.Buffer.Flags = (description.flags & Render::BufferDescription::Flags::Counter ? D3D11_BUFFER_UAV_FLAG_COUNTER : 0);
+
+                        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
+                        HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dBuffer, &viewDescription, &d3dUnorderedAccessView);
+                        if (FAILED(resultValue) || !d3dUnorderedAccessView)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create buffer unordered access view");
+                        }
+
+                        unorderedAccessViewCache.set(handle, d3dUnorderedAccessView);
+                    }
+
+                    return CComQIPtr<ID3D11Resource>(d3dBuffer);
+                });
             }
 
-            bool mapBuffer(Render::ResourceHandle buffer, void *&data, Render::Map mapping)
+            bool mapResource(Render::ResourceHandle resource, void *&data, Render::Map mapping)
             {
                 GEK_REQUIRE(d3dDeviceContext);
 
@@ -1376,7 +1484,7 @@ namespace Gek
                 mappedSubResource.RowPitch = 0;
                 mappedSubResource.DepthPitch = 0;
 
-                //if (SUCCEEDED(d3dDeviceContext->Map(getObject<Buffer>(buffer), 0, d3dMapping, 0, &mappedSubResource)))
+                if (SUCCEEDED(d3dDeviceContext->Map(resourceCache.get(resource), 0, d3dMapping, 0, &mappedSubResource)))
                 {
                     data = mappedSubResource.pData;
                     return true;
@@ -1385,28 +1493,24 @@ namespace Gek
                 return false;
             }
 
-            void unmapBuffer(Render::ResourceHandle buffer)
+            void unmapResource(Render::ResourceHandle resource)
             {
                 GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(buffer);
 
-                //d3dDeviceContext->Unmap(getObject<Buffer>(buffer), 0);
+                d3dDeviceContext->Unmap(resourceCache.get(resource), 0);
             }
 
-            void updateResource(Render::ResourceHandle object, const void *data)
+            void updateResource(Render::ResourceHandle resource, const void *data)
             {
                 GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(object);
                 GEK_REQUIRE(data);
 
-                //d3dDeviceContext->UpdateSubresource(getObject<Resource>(object), 0, nullptr, data, 0, 0);
+                d3dDeviceContext->UpdateSubresource(resourceCache.get(resource), 0, nullptr, data, 0, 0);
             }
 
             void copyResource(Render::ResourceHandle destination, Render::ResourceHandle source)
             {
                 GEK_REQUIRE(d3dDeviceContext);
-                GEK_REQUIRE(destination);
-                GEK_REQUIRE(source);
 
                 /*
                 auto destinationTexture = dynamic_cast<BaseResourceHandle >(destination);
@@ -1436,14 +1540,14 @@ namespace Gek
             {
                 GEK_REQUIRE(d3dDevice);
 
-				uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
+                uint32_t flags = D3DCOMPILE_ENABLE_STRICTNESS;
 #ifdef _DEBUG
                 flags |= D3DCOMPILE_DEBUG;
-				flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
-				flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
+                flags |= D3DCOMPILE_SKIP_OPTIMIZATION;
+                flags |= D3DCOMPILE_WARNINGS_ARE_ERRORS;
 #else
-				flags |= D3DCOMPILE_SKIP_VALIDATION;
-				flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
+                flags |= D3DCOMPILE_SKIP_VALIDATION;
+                flags |= D3DCOMPILE_OPTIMIZATION_LEVEL3;
 #endif
 
                 CComPtr<ID3DBlob> d3dShaderBlob;
@@ -1451,7 +1555,7 @@ namespace Gek
                 HRESULT resultValue = D3DCompile(uncompiledProgram, (uncompiledProgram.size() + 1), name, nullptr, nullptr, entryFunction, type, flags, 0, &d3dShaderBlob, &d3dCompilerErrors);
                 if (FAILED(resultValue) || !d3dShaderBlob)
                 {
-                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const )d3dCompilerErrors->GetBufferPointer()));
+                    OutputDebugStringW(String::Format(L"D3DCompile Failed: %v\r\n%v\r\n", resultValue, (char const * const)d3dCompilerErrors->GetBufferPointer()));
                     throw Render::ProgramCompilationFailed("Unable to compile program");
                 }
 
@@ -1491,272 +1595,280 @@ namespace Gek
                 GEK_REQUIRE(description.height != 0);
                 GEK_REQUIRE(description.depth != 0);
 
-                uint32_t bindFlags = 0;
-                if (description.flags & Render::TextureDescription::Flags::RenderTarget)
+                return resourceCache.insert(CombineHashes(description.getHash(), GetHash(data)), [this, description, data](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
                 {
+                    uint32_t bindFlags = 0;
+                    if (description.flags & Render::TextureDescription::Flags::RenderTarget)
+                    {
+                        if (description.flags & Render::TextureDescription::Flags::DepthTarget)
+                        {
+                            throw Render::InvalidParameter("Cannot create render target when depth target flag also specified");
+                        }
+
+                        bindFlags |= D3D11_BIND_RENDER_TARGET;
+                    }
+
                     if (description.flags & Render::TextureDescription::Flags::DepthTarget)
                     {
-                        throw Render::InvalidParameter("Cannot create render target when depth target flag also specified");
+                        if (description.depth > 1)
+                        {
+                            throw Render::InvalidParameter("Depth target must have depth of one");
+                        }
+
+                        bindFlags |= D3D11_BIND_DEPTH_STENCIL;
                     }
 
-                    bindFlags |= D3D11_BIND_RENDER_TARGET;
-                }
-
-                if (description.flags & Render::TextureDescription::Flags::DepthTarget)
-                {
-                    if (description.depth > 1)
+                    if (description.flags & Render::TextureDescription::Flags::Resource)
                     {
-                        throw Render::InvalidParameter("Depth target must have depth of one");
+                        bindFlags |= D3D11_BIND_SHADER_RESOURCE;
                     }
 
-                    bindFlags |= D3D11_BIND_DEPTH_STENCIL;
-                }
-
-                if (description.flags & Render::TextureDescription::Flags::Resource)
-                {
-                    bindFlags |= D3D11_BIND_SHADER_RESOURCE;
-                }
-
-                if (description.flags & Render::TextureDescription::Flags::UnorderedAccess)
-                {
-                    bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
-                }
-
-                D3D11_SUBRESOURCE_DATA resourceData;
-                resourceData.pSysMem = data;
-                resourceData.SysMemPitch = (DirectX::FormatStrideList[static_cast<uint8_t>(description.format)] * description.width);
-                resourceData.SysMemSlicePitch = (description.depth == 1 ? 0 : (resourceData.SysMemPitch * description.height));
-
-                CComQIPtr<ID3D11Resource> d3dResource;
-                if (description.depth == 1)
-                {
-                    D3D11_TEXTURE2D_DESC textureDescription;
-                    textureDescription.Width = description.width;
-                    textureDescription.Height = description.height;
-                    textureDescription.MipLevels = description.mipMapCount;
-                    textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(description.format)];
-                    textureDescription.ArraySize = 1;
-                    textureDescription.SampleDesc.Count = description.sampleCount;
-                    textureDescription.SampleDesc.Quality = description.sampleQuality;
-                    textureDescription.BindFlags = bindFlags;
-                    textureDescription.CPUAccessFlags = 0;
-                    textureDescription.MiscFlags = (description.mipMapCount == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
-                    if (data == nullptr)
+                    if (description.flags & Render::TextureDescription::Flags::UnorderedAccess)
                     {
-                        textureDescription.Usage = D3D11_USAGE_DEFAULT;
-                    }
-                    else
-                    {
-                        textureDescription.Usage = D3D11_USAGE_IMMUTABLE;
+                        bindFlags |= D3D11_BIND_UNORDERED_ACCESS;
                     }
 
-                    CComPtr<ID3D11Texture2D> texture2D;
-                    HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
-                    if (FAILED(resultValue) || !texture2D)
-                    {
-                        throw Render::CreateObjectFailed("Unable to create 2D texture");
-                    }
+                    D3D11_SUBRESOURCE_DATA resourceData;
+                    resourceData.pSysMem = data;
+                    resourceData.SysMemPitch = (DirectX::FormatStrideList[static_cast<uint8_t>(description.format)] * description.width);
+                    resourceData.SysMemSlicePitch = (description.depth == 1 ? 0 : (resourceData.SysMemPitch * description.height));
 
-                    d3dResource = texture2D;
-                }
-                else
-                {
-                    D3D11_TEXTURE3D_DESC textureDescription;
-                    textureDescription.Width = description.width;
-                    textureDescription.Height = description.height;
-                    textureDescription.Depth = description.depth;
-                    textureDescription.MipLevels = description.mipMapCount;
-                    textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(description.format)];
-                    textureDescription.BindFlags = bindFlags;
-                    textureDescription.CPUAccessFlags = 0;
-                    textureDescription.MiscFlags = (description.mipMapCount == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
-                    if (data == nullptr)
-                    {
-                        textureDescription.Usage = D3D11_USAGE_DEFAULT;
-                    }
-                    else
-                    {
-                        textureDescription.Usage = D3D11_USAGE_IMMUTABLE;
-                    }
-
-                    CComPtr<ID3D11Texture3D> texture3D;
-                    HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
-                    if (FAILED(resultValue) || !texture3D)
-                    {
-                        throw Render::CreateObjectFailed("Unable to create 3D texture");
-                    }
-
-                    d3dResource = texture3D;
-                }
-
-                if (!d3dResource)
-                {
-                    throw Render::CreateObjectFailed("Unable to get texture resource");
-                }
-
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                if (description.flags & Render::TextureDescription::Flags::Resource)
-                {
-                    D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                    CComQIPtr<ID3D11Resource> d3dResource;
                     if (description.depth == 1)
                     {
-                        viewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D);
-                        viewDescription.Texture2D.MostDetailedMip = 0;
-                        viewDescription.Texture2D.MipLevels = -1;
+                        D3D11_TEXTURE2D_DESC textureDescription;
+                        textureDescription.Width = description.width;
+                        textureDescription.Height = description.height;
+                        textureDescription.MipLevels = description.mipMapCount;
+                        textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(description.format)];
+                        textureDescription.ArraySize = 1;
+                        textureDescription.SampleDesc.Count = description.sampleCount;
+                        textureDescription.SampleDesc.Quality = description.sampleQuality;
+                        textureDescription.BindFlags = bindFlags;
+                        textureDescription.CPUAccessFlags = 0;
+                        textureDescription.MiscFlags = (description.mipMapCount == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
+                        if (data == nullptr)
+                        {
+                            textureDescription.Usage = D3D11_USAGE_DEFAULT;
+                        }
+                        else
+                        {
+                            textureDescription.Usage = D3D11_USAGE_IMMUTABLE;
+                        }
+
+                        CComPtr<ID3D11Texture2D> texture2D;
+                        HRESULT resultValue = d3dDevice->CreateTexture2D(&textureDescription, (data ? &resourceData : nullptr), &texture2D);
+                        if (FAILED(resultValue) || !texture2D)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create 2D texture");
+                        }
+
+                        d3dResource = texture2D;
                     }
                     else
                     {
-                        viewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-                        viewDescription.Texture3D.MostDetailedMip = 0;
-                        viewDescription.Texture3D.MipLevels = -1;
+                        D3D11_TEXTURE3D_DESC textureDescription;
+                        textureDescription.Width = description.width;
+                        textureDescription.Height = description.height;
+                        textureDescription.Depth = description.depth;
+                        textureDescription.MipLevels = description.mipMapCount;
+                        textureDescription.Format = DirectX::TextureFormatList[static_cast<uint8_t>(description.format)];
+                        textureDescription.BindFlags = bindFlags;
+                        textureDescription.CPUAccessFlags = 0;
+                        textureDescription.MiscFlags = (description.mipMapCount == 1 ? 0 : D3D11_RESOURCE_MISC_GENERATE_MIPS);
+                        if (data == nullptr)
+                        {
+                            textureDescription.Usage = D3D11_USAGE_DEFAULT;
+                        }
+                        else
+                        {
+                            textureDescription.Usage = D3D11_USAGE_IMMUTABLE;
+                        }
+
+                        CComPtr<ID3D11Texture3D> texture3D;
+                        HRESULT resultValue = d3dDevice->CreateTexture3D(&textureDescription, (data ? &resourceData : nullptr), &texture3D);
+                        if (FAILED(resultValue) || !texture3D)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create 3D texture");
+                        }
+
+                        d3dResource = texture3D;
                     }
 
-                    HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
-                    if (FAILED(resultValue) || !d3dShaderResourceView)
+                    if (!d3dResource)
                     {
-                        throw Render::CreateObjectFailed("Unable to create texture shader resource view");
-                    }
-                }
-
-                CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
-                if (description.flags & Render::TextureDescription::Flags::UnorderedAccess)
-                {
-                    D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
-                    viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
-                    if (description.depth == 1)
-                    {
-                        viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
-                        viewDescription.Texture2D.MipSlice = 0;
-                    }
-                    else
-                    {
-                        viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
-                        viewDescription.Texture3D.MipSlice = 0;
-                        viewDescription.Texture3D.FirstWSlice = 0;
-                        viewDescription.Texture3D.WSize = description.depth;
+                        throw Render::CreateObjectFailed("Unable to get texture resource");
                     }
 
-                    HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
-                    if (FAILED(resultValue) || !d3dUnorderedAccessView)
+                    if (description.flags & Render::TextureDescription::Flags::Resource)
                     {
-                        throw Render::CreateObjectFailed("Unable to create texture unordered access view");
-                    }
-                }
+                        D3D11_SHADER_RESOURCE_VIEW_DESC viewDescription;
+                        viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                        if (description.depth == 1)
+                        {
+                            viewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_SRV_DIMENSION_TEXTURE2DMS : D3D11_SRV_DIMENSION_TEXTURE2D);
+                            viewDescription.Texture2D.MostDetailedMip = 0;
+                            viewDescription.Texture2D.MipLevels = -1;
+                        }
+                        else
+                        {
+                            viewDescription.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+                            viewDescription.Texture3D.MostDetailedMip = 0;
+                            viewDescription.Texture3D.MipLevels = -1;
+                        }
 
-                if (description.flags & Render::TextureDescription::Flags::RenderTarget)
-                {
-                    D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
-                    renderViewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
-                    if (description.depth == 1)
-                    {
-                        renderViewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D);
-                        renderViewDescription.Texture2D.MipSlice = 0;
-                    }
-                    else
-                    {
-                        renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
-                        renderViewDescription.Texture3D.MipSlice = 0;
-                        renderViewDescription.Texture3D.FirstWSlice = 0;
-                        renderViewDescription.Texture3D.WSize = description.depth;
-                    }
+                        CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                        HRESULT resultValue = d3dDevice->CreateShaderResourceView(d3dResource, &viewDescription, &d3dShaderResourceView);
+                        if (FAILED(resultValue) || !d3dShaderResourceView)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create texture shader resource view");
+                        }
 
-                    CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
-                    HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
-                    if (FAILED(resultValue) || !d3dRenderTargetView)
-                    {
-                        throw Render::CreateObjectFailed("Unable to create render target view");
+                        shaderResourceViewCache.set(handle, d3dShaderResourceView);
                     }
 
-                    return Render::ResourceHandle();
-                }
-                else if (description.flags & Render::TextureDescription::Flags::DepthTarget)
-                {
-                    D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
-                    depthStencilDescription.Format = DirectX::DepthFormatList[static_cast<uint8_t>(description.format)];
-                    depthStencilDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D);
-                    depthStencilDescription.Flags = 0;
-                    depthStencilDescription.Texture2D.MipSlice = 0;
-
-                    CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
-                    HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
-                    if (FAILED(resultValue) || !d3dDepthStencilView)
+                    if (description.flags & Render::TextureDescription::Flags::UnorderedAccess)
                     {
-                        throw Render::CreateObjectFailed("Unable to create depth stencil view");
+                        D3D11_UNORDERED_ACCESS_VIEW_DESC viewDescription;
+                        viewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                        if (description.depth == 1)
+                        {
+                            viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE2D;
+                            viewDescription.Texture2D.MipSlice = 0;
+                        }
+                        else
+                        {
+                            viewDescription.ViewDimension = D3D11_UAV_DIMENSION_TEXTURE3D;
+                            viewDescription.Texture3D.MipSlice = 0;
+                            viewDescription.Texture3D.FirstWSlice = 0;
+                            viewDescription.Texture3D.WSize = description.depth;
+                        }
+
+                        CComPtr<ID3D11UnorderedAccessView> d3dUnorderedAccessView;
+                        HRESULT resultValue = d3dDevice->CreateUnorderedAccessView(d3dResource, &viewDescription, &d3dUnorderedAccessView);
+                        if (FAILED(resultValue) || !d3dUnorderedAccessView)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create texture unordered access view");
+                        }
+
+                        unorderedAccessViewCache.set(handle, d3dUnorderedAccessView);
                     }
 
-                    return Render::ResourceHandle();
-                }
-                else
-                {
-                    return Render::ResourceHandle();
-                }
+                    if (description.flags & Render::TextureDescription::Flags::RenderTarget)
+                    {
+                        D3D11_RENDER_TARGET_VIEW_DESC renderViewDescription;
+                        renderViewDescription.Format = DirectX::ViewFormatList[static_cast<uint8_t>(description.format)];
+                        if (description.depth == 1)
+                        {
+                            renderViewDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_RTV_DIMENSION_TEXTURE2DMS : D3D11_RTV_DIMENSION_TEXTURE2D);
+                            renderViewDescription.Texture2D.MipSlice = 0;
+                        }
+                        else
+                        {
+                            renderViewDescription.ViewDimension = D3D11_RTV_DIMENSION_TEXTURE3D;
+                            renderViewDescription.Texture3D.MipSlice = 0;
+                            renderViewDescription.Texture3D.FirstWSlice = 0;
+                            renderViewDescription.Texture3D.WSize = description.depth;
+                        }
+
+                        CComPtr<ID3D11RenderTargetView> d3dRenderTargetView;
+                        HRESULT resultValue = d3dDevice->CreateRenderTargetView(d3dResource, &renderViewDescription, &d3dRenderTargetView);
+                        if (FAILED(resultValue) || !d3dRenderTargetView)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create render target view");
+                        }
+
+                        renderTargetViewCache.set(handle, d3dRenderTargetView);
+                    }
+                    else if (description.flags & Render::TextureDescription::Flags::DepthTarget)
+                    {
+                        D3D11_DEPTH_STENCIL_VIEW_DESC depthStencilDescription;
+                        depthStencilDescription.Format = DirectX::DepthFormatList[static_cast<uint8_t>(description.format)];
+                        depthStencilDescription.ViewDimension = (description.sampleCount > 1 ? D3D11_DSV_DIMENSION_TEXTURE2DMS : D3D11_DSV_DIMENSION_TEXTURE2D);
+                        depthStencilDescription.Flags = 0;
+                        depthStencilDescription.Texture2D.MipSlice = 0;
+
+                        CComPtr<ID3D11DepthStencilView> d3dDepthStencilView;
+                        HRESULT resultValue = d3dDevice->CreateDepthStencilView(d3dResource, &depthStencilDescription, &d3dDepthStencilView);
+                        if (FAILED(resultValue) || !d3dDepthStencilView)
+                        {
+                            throw Render::CreateObjectFailed("Unable to create depth stencil view");
+                        }
+
+                        depthStencilViewCache.set(handle, d3dDepthStencilView);
+                    }
+
+                    return d3dResource;
+                });
             }
 
             Render::ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags)
             {
                 GEK_REQUIRE(d3dDevice);
 
-                std::vector<uint8_t> buffer;
-                FileSystem::Load(filePath, buffer);
+                return resourceCache.insert(GetHash(filePath), [this, filePath, flags](Render::ResourceHandle handle)->CComPtr<ID3D11Resource>
+                {
+                    std::vector<uint8_t> buffer;
+                    FileSystem::Load(filePath, buffer);
 
-                String extension(filePath.getExtension());
-                std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
-                if (extension.compareNoCase(L".dds") == 0)
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
-                }
-                else if (extension.compareNoCase(L".tga") == 0)
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
-                }
-                else if (extension.compareNoCase(L".png") == 0)
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
-                }
-                else if (extension.compareNoCase(L".bmp") == 0)
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
-                }
-                else if (extension.compareNoCase(L".jpg") == 0 ||
-                    extension.compareNoCase(L".jpeg") == 0)
-                {
-                    load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
-                }
+                    String extension(filePath.getExtension());
+                    std::function<HRESULT(const std::vector<uint8_t> &, ::DirectX::ScratchImage &)> load;
+                    if (extension.compareNoCase(L".dds") == 0)
+                    {
+                        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromDDSMemory(buffer.data(), buffer.size(), 0, nullptr, image); };
+                    }
+                    else if (extension.compareNoCase(L".tga") == 0)
+                    {
+                        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromTGAMemory(buffer.data(), buffer.size(), nullptr, image); };
+                    }
+                    else if (extension.compareNoCase(L".png") == 0)
+                    {
+                        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_PNG, nullptr, image); };
+                    }
+                    else if (extension.compareNoCase(L".bmp") == 0)
+                    {
+                        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_BMP, nullptr, image); };
+                    }
+                    else if (extension.compareNoCase(L".jpg") == 0 ||
+                        extension.compareNoCase(L".jpeg") == 0)
+                    {
+                        load = [](const std::vector<uint8_t> &buffer, ::DirectX::ScratchImage &image) -> HRESULT { return ::DirectX::LoadFromWICMemory(buffer.data(), buffer.size(), ::DirectX::WIC_CODEC_JPEG, nullptr, image); };
+                    }
 
-                if (!load)
-                {
-                    throw Render::InvalidFileType("Unknown texture extension encountered");
-                }
+                    if (!load)
+                    {
+                        throw Render::InvalidFileType("Unknown texture extension encountered");
+                    }
 
-                ::DirectX::ScratchImage image;
-                HRESULT resultValue = load(buffer, image);
-                if (FAILED(resultValue))
-                {
-                    throw Render::LoadFileFailed("Unable to load texture from file");
-                }
+                    ::DirectX::ScratchImage image;
+                    HRESULT resultValue = load(buffer, image);
+                    if (FAILED(resultValue))
+                    {
+                        throw Render::LoadFileFailed("Unable to load texture from file");
+                    }
 
-                CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
-                resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Render::TextureLoadFlags::sRGB), &d3dShaderResourceView);
-                if (FAILED(resultValue) || !d3dShaderResourceView)
-                {
-                    throw Render::CreateObjectFailed("Unable to create texture shader resource view");
-                }
+                    CComPtr<ID3D11ShaderResourceView> d3dShaderResourceView;
+                    resultValue = ::DirectX::CreateShaderResourceViewEx(d3dDevice, image.GetImages(), image.GetImageCount(), image.GetMetadata(), D3D11_USAGE_DEFAULT, D3D11_BIND_SHADER_RESOURCE, 0, 0, (flags & Render::TextureLoadFlags::sRGB), &d3dShaderResourceView);
+                    if (FAILED(resultValue) || !d3dShaderResourceView)
+                    {
+                        throw Render::CreateObjectFailed("Unable to create texture shader resource view");
+                    }
 
-                CComPtr<ID3D11Resource> d3dResource;
-                d3dShaderResourceView->GetResource(&d3dResource);
-                if (!d3dResource)
-                {
-                    throw Render::CreateObjectFailed("Unable to get texture resource");
-                }
+                    CComPtr<ID3D11Resource> d3dResource;
+                    d3dShaderResourceView->GetResource(&d3dResource);
+                    if (!d3dResource)
+                    {
+                        throw Render::CreateObjectFailed("Unable to get texture resource");
+                    }
 
-                Render::TextureDescription description;
-                description.width = image.GetMetadata().width;
-                description.height = image.GetMetadata().height;
-                description.depth = image.GetMetadata().depth;
-                description.format = DirectX::getFormat(image.GetMetadata().format);
-                description.mipMapCount = image.GetMetadata().mipLevels;
-                return Render::ResourceHandle();
+                    Render::TextureDescription description;
+                    description.width = image.GetMetadata().width;
+                    description.height = image.GetMetadata().height;
+                    description.depth = image.GetMetadata().depth;
+                    description.format = DirectX::getFormat(image.GetMetadata().format);
+                    description.mipMapCount = image.GetMetadata().mipLevels;
+                    return d3dResource;
+                });
             }
 
             Render::Device::RenderQueuePtr createRenderQueue(void)
@@ -1771,7 +1883,6 @@ namespace Gek
                 return std::make_unique<RenderQueue>(this, d3dDeviceContext);
             }
 
-            DataCache<Render::RenderListHandle, CComPtr<ID3D11CommandList>> renderListCache;
             Render::RenderListHandle createRenderList(Render::Device::RenderQueue *baseRenderQueue)
             {
                 GEK_REQUIRE(d3dDevice);
@@ -1789,12 +1900,12 @@ namespace Gek
                     throw Render::CreateObjectFailed("Unable to create render list");
                 }
 
-                return renderListCache(std::move(commandList));
+                return renderListCache.insert(commandList);
             }
 
             void executeRenderList(Render::RenderListHandle RenderListHandle)
             {
-                auto commandList = renderListCache(RenderListHandle);
+                auto commandList = renderListCache.get(RenderListHandle);
                 if (commandList)
                 {
                     d3dDeviceContext->ExecuteCommandList(commandList, false);

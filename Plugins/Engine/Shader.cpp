@@ -610,7 +610,7 @@ namespace Gek
 								}
 
 								auto depthBufferSearch = resourceMap.find(passNode.get(L"depthBuffer").as_string());
-								if (depthBufferSearch == resourceMap.end())
+								if (depthBufferSearch == std::end(resourceMap))
 								{
 									throw UnlistedRenderTarget("Missing depth buffer encountered");
 								}

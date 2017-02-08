@@ -430,6 +430,8 @@ namespace Gek
 			Source source = Source::Vertex;
             uint32_t sourceIndex = 0;
             uint32_t alignedByteOffset = AlignedByteOffset;
+
+            size_t getHash(void) const;
         };
 
         struct PipelineStateInformation
@@ -445,6 +447,8 @@ namespace Gek
             uint32_t renderTargetCount = 1;
             Format renderTargetFormatList[8] = { Format::Unknown };
             Format depthTargetFormat = Format::Unknown;
+
+            size_t getHash(void) const;
         };
 
         struct BufferDescription
@@ -468,6 +472,7 @@ namespace Gek
                 Index,
                 Constant,
                 Structured,
+                IndirectArguments,
             };
 
             Format format = Format::Unknown;
@@ -593,6 +598,10 @@ namespace Gek
                 virtual void drawIndexedPrimitive(uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
                 virtual void drawInstancedIndexedPrimitive(uint32_t instanceCount, uint32_t firstInstance, uint32_t indexCount, uint32_t firstIndex, uint32_t firstVertex) = 0;
                 virtual void dispatch(uint32_t threadGroupCountX, uint32_t threadGroupCountY, uint32_t threadGroupCountZ) = 0;
+
+                virtual void drawInstancedPrimitive(ResourceHandle bufferArguments) = 0;
+                virtual void drawInstancedIndexedPrimitive(ResourceHandle bufferArguments) = 0;
+                virtual void dispatch(ResourceHandle bufferArguments) = 0;
             };
 
             virtual ~Device(void) = default;
@@ -621,10 +630,10 @@ namespace Gek
                 return mapBuffer(buffer, (void *&)data, mapping);
             }
 
-            virtual bool mapBuffer(ResourceHandle buffer, void *&data, Map mapping = Map::WriteDiscard) = 0;
-            virtual void unmapBuffer(ResourceHandle buffer) = 0;
+            virtual bool mapResource(ResourceHandle resource, void *&data, Map mapping = Map::WriteDiscard) = 0;
+            virtual void unmapResource(ResourceHandle resource) = 0;
 
-            virtual void updateResource(ResourceHandle buffer, const void *data) = 0;
+            virtual void updateResource(ResourceHandle resource, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
             virtual RenderQueuePtr createRenderQueue(void) = 0;

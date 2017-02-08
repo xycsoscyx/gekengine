@@ -1152,7 +1152,7 @@ namespace Gek
             Video::Texture::Description * const getTextureDescription(ResourceHandle resourceHandle)
             {
                 auto descriptionSearch = textureDescriptionMap.find(resourceHandle);
-                if (descriptionSearch != textureDescriptionMap.end())
+                if (descriptionSearch != std::end(textureDescriptionMap))
                 {
                     return &descriptionSearch->second;
                 }
@@ -1165,7 +1165,7 @@ namespace Gek
             Video::Buffer::Description * const getBufferDescription(ResourceHandle resourceHandle)
             {
                 auto descriptionSearch = bufferDescriptionMap.find(resourceHandle);
-                if (descriptionSearch != bufferDescriptionMap.end())
+                if (descriptionSearch != std::end(bufferDescriptionMap))
                 {
                     return &descriptionSearch->second;
                 }

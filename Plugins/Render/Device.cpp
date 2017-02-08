@@ -1,4 +1,4 @@
-#include "GEK/Render/Render.hpp"
+#include "GEK/Render/Device.hpp"
 #include "GEK/Utility/Hash.hpp"
 
 namespace Gek
@@ -671,6 +671,34 @@ namespace Gek
         size_t SamplerStateInformation::getHash(void) const
         {
             return GetHash(filterMode, addressModeU, addressModeV, addressModeW, mipLevelBias, maximumAnisotropy, comparisonFunction, borderColor.x, borderColor.y, borderColor.z, borderColor.w, minimumMipLevel, maximumMipLevel);
+        }
+
+        size_t InputElement::getHash(void) const
+        {
+            return GetHash(format, semantic, source, sourceIndex, alignedByteOffset);
+        }
+
+        size_t PipelineStateInformation::getHash(void) const
+        {
+            auto hash = GetHash(compiledVertexShader.data());
+            hash = CombineHashes(hash, GetHash(compiledPixelShader.data()));
+            hash = CombineHashes(hash, blendStateInformation.getHash());
+            hash = CombineHashes(hash, sampleMask);
+            hash = CombineHashes(hash, rasterizerStateInformation.getHash());
+            hash = CombineHashes(hash, depthStateInformation.getHash());
+            for (auto &inputElement : inputElementList)
+            {
+                hash = CombineHashes(hash, inputElement.getHash());
+            }
+
+            hash = CombineHashes(hash, GetHash(primitiveType, renderTargetCount));
+            for (auto &format : renderTargetFormatList)
+            {
+                hash = CombineHashes(hash, GetHash(format));
+            }
+
+            hash = CombineHashes(hash, GetHash(depthTargetFormat));
+            return hash;
         }
     }; // namespace Render
 }; // namespace Gek
