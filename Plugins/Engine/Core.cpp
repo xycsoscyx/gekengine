@@ -75,7 +75,6 @@ namespace Gek
             std::unique_ptr<Resources> gui = std::make_unique<Resources>();
 
             bool showCursor = false;
-            bool showOptionsMenu = false;
 			bool showModeChange = false;
 			float modeChangeTimer = 0.0f;
             bool editorActive = false;

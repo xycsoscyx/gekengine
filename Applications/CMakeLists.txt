@@ -1,13 +1,15 @@
 project (Applications)
 
-add_subdirectory("demo")
+add_subdirectory("demo_render")
+add_subdirectory("demo_engine")
 add_subdirectory("creatematerials")
 add_subdirectory("createtree")
 add_subdirectory("createmodel")
 add_subdirectory("createhull")
 add_subdirectory("compresstextures")
 
-set_property(TARGET demo PROPERTY FOLDER "Applications")
+set_property(TARGET demo_render PROPERTY FOLDER "Applications")
+set_property(TARGET demo_engine PROPERTY FOLDER "Applications")
 set_property(TARGET creatematerials PROPERTY FOLDER "Applications")
 set_property(TARGET createtree PROPERTY FOLDER "Applications")
 set_property(TARGET createmodel PROPERTY FOLDER "Applications")

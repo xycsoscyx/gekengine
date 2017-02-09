@@ -4,7 +4,6 @@
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/System/VideoDevice.hpp"
 #include "GEK/System/Window.hpp"
-#include <experimental\filesystem>
 #include <algorithm>
 #include <map>
 

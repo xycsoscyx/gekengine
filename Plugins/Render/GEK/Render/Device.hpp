@@ -120,13 +120,16 @@ namespace Gek
 
         using DisplayModeList = std::vector<DisplayMode>;
 
-        enum class PipelineType : uint8_t
+        namespace PipelineType
         {
-            Compute = 0,
-            Vertex,
-            Geometry,
-            Pixel,
-        };
+            enum
+            {
+                Compute = 1 << 0,
+                Vertex = 1 << 1,
+                Geometry = 1 << 2,
+                Pixel = 1 << 3,
+            };
+        }; // namespace PipelineType
 
         enum class ComparisonFunction : uint8_t
         {
@@ -174,6 +177,14 @@ namespace Gek
                 Stencil = 1 << 1,
             };
         }; // ClearFlags
+
+        namespace RenderQueueFlags
+        {
+            enum
+            {
+                Direct = 1 << 0,
+            };
+        }; // namespace RenderQueueFlags
 
         struct ViewPort
         {
@@ -269,51 +280,51 @@ namespace Gek
 
         struct BlendStateInformation
         {
+            enum class Source : uint8_t
+            {
+                Zero = 0,
+                One,
+                BlendFactor,
+                InverseBlendFactor,
+                SourceColor,
+                InverseSourceColor,
+                SourceAlpha,
+                InverseSourceAlpha,
+                SourceAlphaSaturated,
+                DestinationColor,
+                InverseDestinationColor,
+                DestinationAlpha,
+                InverseDestinationAlpha,
+                SecondarySourceColor,
+                InverseSecondarySourceColor,
+                SecondarySourceAlpha,
+                InverseSecondarySourceAlpha,
+            };
+
+            enum class Operation : uint8_t
+            {
+                Add = 0,
+                Subtract,
+                ReverseSubtract,
+                Minimum,
+                Maximum,
+            };
+
+            struct Mask
+            {
+                enum
+                {
+                    R = 1 << 0,
+                    G = 1 << 1,
+                    B = 1 << 2,
+                    A = 1 << 3,
+                    RGB = (R | G | B),
+                    RGBA = (R | G | B | A),
+                };
+            }; // struct Mask
+
             struct TargetStateInformation
             {
-                enum class Source : uint8_t
-                {
-                    Zero = 0,
-                    One,
-                    BlendFactor,
-                    InverseBlendFactor,
-                    SourceColor,
-                    InverseSourceColor,
-                    SourceAlpha,
-                    InverseSourceAlpha,
-                    SourceAlphaSaturated,
-                    DestinationColor,
-                    InverseDestinationColor,
-                    DestinationAlpha,
-                    InverseDestinationAlpha,
-                    SecondarySourceColor,
-                    InverseSecondarySourceColor,
-                    SecondarySourceAlpha,
-                    InverseSecondarySourceAlpha,
-                };
-
-                enum class Operation : uint8_t
-                {
-                    Add = 0,
-                    Subtract,
-                    ReverseSubtract,
-                    Minimum,
-                    Maximum,
-                };
-
-                struct Mask
-                {
-                    enum
-                    {
-                        R = 1 << 0,
-                        G = 1 << 1,
-                        B = 1 << 2,
-                        A = 1 << 3,
-                        RGB = (R | G | B),
-                        RGBA = (R | G | B | A),
-                    };
-                }; // struct Mask
-
                 bool enable = false;
                 Source colorSource = Source::One;
                 Source colorDestination = Source::One;
@@ -618,16 +629,16 @@ namespace Gek
 
             virtual SamplerStateHandle createSamplerState(const SamplerStateInformation &samplerState) = 0;
 
-            virtual std::vector<uint8_t> compileProgram(PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction) = 0;
+            virtual std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction) = 0;
 
             virtual ResourceHandle createBuffer(const BufferDescription &description, const void *staticData = nullptr) = 0;
             virtual ResourceHandle createTexture(const TextureDescription &description, const void *data = nullptr) = 0;
             virtual ResourceHandle loadTexture(const FileSystem::Path &filePath, uint32_t flags) = 0;
 
             template <typename TYPE>
-            bool mapBuffer(ResourceHandle buffer, TYPE *&data, Map mapping = Map::WriteDiscard)
+            bool mapResource(ResourceHandle buffer, TYPE *&data, Map mapping = Map::WriteDiscard)
             {
-                return mapBuffer(buffer, (void *&)data, mapping);
+                return mapResource(buffer, (void *&)data, mapping);
             }
 
             virtual bool mapResource(ResourceHandle resource, void *&data, Map mapping = Map::WriteDiscard) = 0;
@@ -636,7 +647,7 @@ namespace Gek
             virtual void updateResource(ResourceHandle resource, const void *data) = 0;
             virtual void copyResource(ResourceHandle destination, ResourceHandle source) = 0;
 
-            virtual RenderQueuePtr createRenderQueue(void) = 0;
+            virtual RenderQueuePtr createRenderQueue(uint32_t flags) = 0;
             virtual RenderListHandle createRenderList(RenderQueue *renderQueue) = 0;
             virtual void executeRenderList(RenderListHandle renderList) = 0;
 

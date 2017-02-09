@@ -1,7 +1,6 @@
 #include "GEK/Utility/String.hpp"
 #include "GEK/Utility/FileSystem.hpp"
 #include "GEK/Utility/JSON.hpp"
-#include <experimental\filesystem>
 #include <map>
 
 using namespace Gek;

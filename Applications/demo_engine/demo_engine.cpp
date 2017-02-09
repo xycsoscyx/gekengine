@@ -4,7 +4,6 @@
 #include "GEK/Utility/Context.hpp"
 #include "GEK/Utility/ContextUser.hpp"
 #include "GEK/Engine/Core.hpp"
-#include <experimental\filesystem>
 
 using namespace Gek;
 
@@ -13,10 +12,11 @@ int CALLBACK wWinMain(_In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance
     try
     {
         auto pluginPath(FileSystem::GetModuleFilePath().getParentPath());
+        auto rootPath(pluginPath.getParentPath());
+
         std::vector<FileSystem::Path> searchPathList;
         searchPathList.push_back(pluginPath);
 
-        auto rootPath(pluginPath.getParentPath());
         ContextPtr context(Context::Create(rootPath, searchPathList));
         if (true)
         {

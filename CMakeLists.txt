@@ -21,4 +21,4 @@ add_subdirectory("Libraries")
 add_subdirectory("Plugins")
 add_subdirectory("Applications")
 
-set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT demo)
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT demo_render)

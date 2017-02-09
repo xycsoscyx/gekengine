@@ -6,7 +6,7 @@ project(${ProjectID})
 file(GLOB SOURCES "*.cpp")
 add_executable(${ProjectID} WIN32 ${SOURCES})
 
-target_link_libraries(${ProjectID} Math Utility Render)
+target_link_libraries(${ProjectID} Math Utility Render GUI)
 
 set_target_properties(${ProjectID}
     PROPERTIES

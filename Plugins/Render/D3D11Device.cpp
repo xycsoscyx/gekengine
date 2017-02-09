@@ -1577,13 +1577,13 @@ namespace Gek
                 return std::vector<uint8_t>(data, (data + d3dShaderBlob->GetBufferSize()));
             }
 
-            std::vector<uint8_t> compileProgram(Render::PipelineType pipelineType, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
+            std::vector<uint8_t> compileProgram(uint32_t pipeline, wchar_t const * const name, wchar_t const * const uncompiledProgram, wchar_t const * const entryFunction)
             {
                 GEK_REQUIRE(name);
                 GEK_REQUIRE(uncompiledProgram);
                 GEK_REQUIRE(entryFunction);
 
-                switch (pipelineType)
+                switch (pipeline)
                 {
                 case Render::PipelineType::Compute:
                     return compileProgram(name, "cs_5_0", uncompiledProgram, entryFunction);
@@ -1598,7 +1598,7 @@ namespace Gek
                     return compileProgram(name, "ps_5_0", uncompiledProgram, entryFunction);
                 };
 
-                throw Render::CreateObjectFailed("Unknown program pipline encountered");
+                throw Render::CreateObjectFailed("Unknown program pipline encountered, only use single pipelines for program compilation");
             }
 
             Render::ResourceHandle createTexture(const Render::TextureDescription &description, const void *data)
@@ -1885,13 +1885,24 @@ namespace Gek
                 });
             }
 
-            Render::Device::RenderQueuePtr createRenderQueue(void)
+            Render::Device::RenderQueuePtr createRenderQueue(uint32_t flags)
             {
                 CComPtr<ID3D11DeviceContext> d3dDeviceContext;
-                HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
-                if (!d3dDeviceContext)
+                if (flags & Render::RenderQueueFlags::Direct)
                 {
-                    throw Render::CreateObjectFailed("Unable to create render queue");
+                    d3dDevice->GetImmediateContext(&d3dDeviceContext);
+                    if (!d3dDeviceContext)
+                    {
+                        throw Render::CreateObjectFailed("Unable to get direct render queue");
+                    }
+                }
+                else
+                {
+                    HRESULT resultValue = d3dDevice->CreateDeferredContext(0, &d3dDeviceContext);
+                    if (!d3dDeviceContext)
+                    {
+                        throw Render::CreateObjectFailed("Unable to create render queue");
+                    }
                 }
 
                 return std::make_unique<RenderQueue>(this, d3dDeviceContext);
